@@ -1,0 +1,434 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/config/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserRole {
+  WORKER
+  ENGINEER
+  ACCOUNTANT
+  ADMIN
+}
+
+enum InventoryType {
+  IN
+  OUT
+}
+
+enum ReferenceType {
+  PRODUCTION
+  PURCHASE
+  SALE
+}
+
+//////////////////////
+// CORE TABLES
+//////////////////////
+
+model User {
+  id           Int      @id @default(autoincrement())
+  nationalId   String   @unique
+  fullName     String
+  username     String   @unique
+  phone        String?
+  email        String?  @unique
+  password     String
+  idImage      String?
+  profileImage String?
+  role         UserRole
+  isActive     Boolean  @default(true)
+
+  shiftId Int?
+  shift   Shift? @relation(fields: [shiftId], references: [id])
+
+  attendances   Attendance[]
+  machineReads  MachineReading[]
+  productions   ProductionRecord[]
+  maintenances  Maintenance[]
+  qualityChecks QualityCheck[]
+  payrolls      Payroll[]
+  notifications Notification[]
+
+  electricityReadings   ElectricityReading[]
+  inventoryTransactions InventoryTransaction[]
+  purchases             Purchase[]
+  sales                 Sale[]
+
+  // 🔥 CHAT RELATIONS
+  createdGroups    ChatGroup[]    @relation("GroupCreator")
+  groupMemberships GroupMember[]
+  sentMessages     GroupMessage[]
+
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+  chatGroups ChatGroup[]
+}
+
+model Shift {
+  id        Int      @id @default(autoincrement())
+  name      String
+  startTime DateTime
+  endTime   DateTime
+
+  users            User[]
+  attendances      Attendance[]
+  productions      ProductionRecord[]
+  maintenances     Maintenance[]
+  qualityChecks    QualityCheck[]
+  machineReads     MachineReading[]
+  electricityReads ElectricityReading[]
+}
+
+model Attendance {
+  id              Int       @id @default(autoincrement())
+  userId          Int
+  shiftId         Int
+  checkIn         DateTime
+  checkOut        DateTime?
+  lateMinutes     Int       @default(0)
+  overtimeMinutes Int       @default(0)
+
+  user  User  @relation(fields: [userId], references: [id])
+  shift Shift @relation(fields: [shiftId], references: [id])
+
+  createdAt DateTime @default(now())
+}
+
+//////////////////////
+// MACHINES
+//////////////////////
+
+model Machine {
+  id   Int    @id @default(autoincrement())
+  name String
+  type String
+
+  productions   ProductionRecord[]
+  maintenances  Maintenance[]
+  qualityChecks QualityCheck[]
+  readings      MachineReading[]
+}
+
+model MachineReading {
+  id           Int     @id @default(autoincrement())
+  machineId    Int
+  userId       Int
+  shiftId      Int
+  startCounter Int
+  endCounter   Int
+  imagePath    String?
+
+  machine Machine @relation(fields: [machineId], references: [id])
+  user    User    @relation(fields: [userId], references: [id])
+  shift   Shift   @relation(fields: [shiftId], references: [id])
+
+  recordedAt DateTime @default(now())
+}
+
+model ElectricityReading {
+  id           Int     @id @default(autoincrement())
+  shiftId      Int
+  userId       Int
+  startReading Float
+  endReading   Float
+  imagePath    String?
+
+  shift Shift @relation(fields: [shiftId], references: [id])
+  user  User  @relation(fields: [userId], references: [id])
+
+  recordedAt DateTime @default(now())
+}
+
+//////////////////////
+// PRODUCTION
+//////////////////////
+
+model ProductionRecord {
+  id        Int    @id @default(autoincrement())
+  machineId Int
+  userId    Int
+  shiftId   Int
+  hourSlot  String
+
+  cartonsCount    Int
+  piecesPerCarton Int
+  totalPieces     Int
+
+  rawHdpeUsed   Float?
+  rawLdpeUsed   Float?
+  rawPetUsed    Float?
+  adhesiveUsed  Float?
+  emptyBagsUsed Float?
+  colorUsed     Float?
+
+  downtimeReason  String?
+  downtimeMinutes Int?
+
+  notes String?
+
+  machine Machine @relation(fields: [machineId], references: [id])
+  user    User    @relation(fields: [userId], references: [id])
+  shift   Shift   @relation(fields: [shiftId], references: [id])
+
+  createdAt DateTime @default(now())
+}
+
+//////////////////////
+// MAINTENANCE & QUALITY
+//////////////////////
+
+model Maintenance {
+  id              Int     @id @default(autoincrement())
+  machineId       Int
+  engineerId      Int
+  shiftId         Int
+  partsUsed       String
+  downtimeMinutes Int
+  reportText      String?
+
+  machine  Machine @relation(fields: [machineId], references: [id])
+  engineer User    @relation(fields: [engineerId], references: [id])
+  shift    Shift   @relation(fields: [shiftId], references: [id])
+
+  createdAt DateTime @default(now())
+}
+
+model QualityCheck {
+  id         Int @id @default(autoincrement())
+  machineId  Int
+  engineerId Int
+  shiftId    Int
+
+  capsStatus    String?
+  preformStatus String?
+  notes         String?
+
+  machine  Machine @relation(fields: [machineId], references: [id])
+  engineer User    @relation(fields: [engineerId], references: [id])
+  shift    Shift   @relation(fields: [shiftId], references: [id])
+
+  createdAt DateTime @default(now())
+}
+
+//////////////////////
+// INVENTORY
+//////////////////////
+
+model RawMaterial {
+  id              Int    @id @default(autoincrement())
+  name            String
+  currentQuantity Float
+  unit            String
+
+  transactions  InventoryTransaction[]
+  purchaseItems PurchaseItem[]
+}
+
+model InventoryTransaction {
+  id            Int           @id @default(autoincrement())
+  materialId    Int
+  type          InventoryType
+  quantity      Float
+  referenceType ReferenceType
+  referenceId   Int?
+  createdById   Int?
+
+  material  RawMaterial @relation(fields: [materialId], references: [id])
+  createdBy User?       @relation(fields: [createdById], references: [id])
+
+  createdAt DateTime @default(now())
+}
+
+//////////////////////
+// PURCHASES
+//////////////////////
+
+model Supplier {
+  id      Int     @id @default(autoincrement())
+  name    String
+  phone   String?
+  email   String?
+  address String?
+
+  purchases Purchase[]
+}
+
+model Purchase {
+  id           Int      @id @default(autoincrement())
+  supplierId   Int
+  receivedById Int
+  totalAmount  Float
+  invoiceImage String?
+  date         DateTime
+
+  supplier   Supplier       @relation(fields: [supplierId], references: [id])
+  receivedBy User           @relation(fields: [receivedById], references: [id])
+  items      PurchaseItem[]
+}
+
+model PurchaseItem {
+  id           Int   @id @default(autoincrement())
+  purchaseId   Int
+  materialId   Int
+  quantity     Float
+  pricePerUnit Float
+
+  purchase Purchase    @relation(fields: [purchaseId], references: [id])
+  material RawMaterial @relation(fields: [materialId], references: [id])
+}
+
+//////////////////////
+// SALES
+//////////////////////
+
+model Customer {
+  id      Int     @id @default(autoincrement())
+  name    String
+  phone   String?
+  email   String?
+  address String?
+
+  sales Sale[]
+}
+
+model Sale {
+  id           Int      @id @default(autoincrement())
+  customerId   Int
+  soldById     Int
+  totalAmount  Float
+  invoiceImage String?
+  date         DateTime
+
+  customer   Customer         @relation(fields: [customerId], references: [id])
+  soldBy     User             @relation(fields: [soldById], references: [id])
+  items      SaleItem[]
+  aiAnalysis InvoiceAnalysis?
+}
+
+model SaleItem {
+  id           Int    @id @default(autoincrement())
+  saleId       Int
+  machineType  String
+  size         String
+  quantity     Float
+  pricePerUnit Float
+
+  sale Sale @relation(fields: [saleId], references: [id])
+}
+
+//////////////////////
+// AI INVOICE ANALYSIS
+//////////////////////
+
+model InvoiceAnalysis {
+  id                    Int       @id @default(autoincrement())
+  saleId                Int       @unique
+  extractedCustomerName String?
+  extractedProduct      String?
+  extractedQuantity     Float?
+  extractedDate         DateTime?
+  confidenceScore       Float?
+
+  sale Sale @relation(fields: [saleId], references: [id])
+
+  processedAt DateTime @default(now())
+}
+
+//////////////////////
+// PAYROLL
+//////////////////////
+
+model Payroll {
+  id             Int    @id @default(autoincrement())
+  userId         Int
+  month          String
+  totalHours     Float
+  overtimeHours  Float
+  baseSalary     Float
+  overtimeSalary Float
+  totalSalary    Float
+
+  user User @relation(fields: [userId], references: [id])
+
+  calculatedAt DateTime @default(now())
+}
+
+//////////////////////
+// NOTIFICATIONS
+//////////////////////
+
+model Notification {
+  id      Int     @id @default(autoincrement())
+  userId  Int
+  title   String
+  message String
+  type    String
+  isRead  Boolean @default(false)
+
+  user User @relation(fields: [userId], references: [id])
+
+  createdAt DateTime @default(now())
+}
+
+//////////////////////
+// GROUP CHAT SYSTEM
+//////////////////////
+
+model ChatGroup {
+  id          Int     @id @default(autoincrement())
+  name        String
+  description String?
+  createdById Int
+
+  createdBy User           @relation("GroupCreator", fields: [createdById], references: [id])
+  members   GroupMember[]
+  messages  GroupMessage[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User?    @relation(fields: [userId], references: [id])
+  userId    Int?
+}
+
+model GroupMember {
+  id      Int       @id @default(autoincrement())
+  groupId Int
+  userId  Int
+  role    GroupRole @default(MEMBER)
+
+  group ChatGroup @relation(fields: [groupId], references: [id])
+  user  User      @relation(fields: [userId], references: [id])
+
+  joinedAt DateTime @default(now())
+
+  @@unique([groupId, userId])
+}
+
+enum GroupRole {
+  ADMIN
+  MEMBER
+}
+
+model GroupMessage {
+  id       Int @id @default(autoincrement())
+  groupId  Int
+  senderId Int
+
+  content String
+  isRead  Boolean @default(false)
+
+  group  ChatGroup @relation(fields: [groupId], references: [id])
+  sender User      @relation(fields: [senderId], references: [id])
+
+  createdAt DateTime @default(now())
+}
