@@ -6,7 +6,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "npx tsx src/app.ts",
-    "apply-schema": "npx prisma migrate dev & npx generate"
+    "apply-schema": "npx prisma migrate dev & npx prisma generate"
   },
   "keywords": [],
   "author": "",
