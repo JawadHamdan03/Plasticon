@@ -432,9 +432,3 @@ model GroupMessage {
 
   createdAt DateTime @default(now())
 }
-
-model Student {
-  id   Int      @id @default(autoincrement())
-  name String
-  age  DateTime @default(now())
-}
