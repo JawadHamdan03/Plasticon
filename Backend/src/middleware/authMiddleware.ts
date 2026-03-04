@@ -11,7 +11,7 @@ export type AuthenticatedRequest = Request & {
 }
 
 
-export const authMiddleware = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+const authMiddleware = async (req: AuthenticatedRequest, res: Response) => {
     console.log("the request has passed the authentication middleware")
 
     let token: string = ""
@@ -43,7 +43,7 @@ export const authMiddleware = async (req: AuthenticatedRequest, res: Response, n
         }
 
         req.user = { id: user.id, role: user.role }
-        next()
+
     }
     catch (err) {
         return res.status(401).send({ message: "user no longer exist" })
@@ -53,7 +53,8 @@ export const authMiddleware = async (req: AuthenticatedRequest, res: Response, n
 }
 
 export const authorizeRoles = (allowedRoles: UserRole[]) => {
-    return (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    return async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+        await authMiddleware(req, res)
         const role = req.user?.role
 
         if (!role || !allowedRoles.includes(role)) {
