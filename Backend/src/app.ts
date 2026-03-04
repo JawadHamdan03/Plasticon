@@ -3,7 +3,7 @@ import dotenv from "dotenv";
 import authRoutes from "./routes/authRoutes";
 import userRoutes from "./routes/userRoutes"
 dotenv.config();
-const PORT = Number(process.env.PORT) || 5000
+const PORT = Number(process.env.PORT) || 8080
 
 
 const app = express();
