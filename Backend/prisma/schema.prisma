@@ -31,6 +31,17 @@ enum ReferenceType {
   SALE
 }
 
+enum ProductType {
+  CAPS
+  PREFORM
+}
+
+enum InventoryAuditFrequency {
+  DAILY
+  WEEKLY
+  MONTHLY
+}
+
 //////////////////////
 // CORE TABLES
 //////////////////////
@@ -69,9 +80,11 @@ model User {
   groupMemberships GroupMember[]
   sentMessages     GroupMessage[]
 
-  createdAt  DateTime    @default(now())
-  updatedAt  DateTime    @updatedAt
-  chatGroups ChatGroup[]
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  chatGroups         ChatGroup[]
+  productionSettings ProductionSetting[]
+  systemSettings     SystemSetting[]
 }
 
 model Shift {
@@ -92,14 +105,14 @@ model Shift {
 model Attendance {
   id              Int       @id @default(autoincrement())
   userId          Int
-  shiftId         Int
+  shiftId         Int?
   checkIn         DateTime
   checkOut        DateTime?
   lateMinutes     Int       @default(0)
   overtimeMinutes Int       @default(0)
 
-  user  User  @relation(fields: [userId], references: [id])
-  shift Shift @relation(fields: [shiftId], references: [id])
+  user  User   @relation(fields: [userId], references: [id])
+  shift Shift? @relation(fields: [shiftId], references: [id])
 
   createdAt DateTime @default(now())
 }
@@ -193,8 +206,9 @@ model Maintenance {
   engineerId      Int
   shiftId         Int
   partsUsed       String
-  downtimeMinutes Int
+  downtimeMinutes Int?
   reportText      String?
+  imagePath       String?
 
   machine  Machine @relation(fields: [machineId], references: [id])
   engineer User    @relation(fields: [engineerId], references: [id])
@@ -268,7 +282,7 @@ model Purchase {
   supplierId   Int
   receivedById Int
   totalAmount  Float
-  invoiceImage String?
+  invoiceImage String
   date         DateTime
 
   supplier   Supplier       @relation(fields: [supplierId], references: [id])
@@ -306,7 +320,7 @@ model Sale {
   customerId   Int
   soldById     Int
   totalAmount  Float
-  invoiceImage String?
+  invoiceImage String
   date         DateTime
 
   customer   Customer         @relation(fields: [customerId], references: [id])
@@ -377,6 +391,40 @@ model Notification {
 
   user User @relation(fields: [userId], references: [id])
 
+  createdAt DateTime @default(now())
+}
+
+//////////////////////
+// SETTINGS
+//////////////////////
+
+model ProductionSetting {
+  id              Int         @id @default(autoincrement())
+  productType     ProductType @unique
+  piecesPerCarton Int
+  updatedById     Int?
+
+  updatedBy User? @relation(fields: [updatedById], references: [id])
+
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+}
+
+model SystemSetting {
+  id                          Int                     @id @default(autoincrement())
+  qualityCheckIntervalMinutes Int
+  qualityCheckReminderMinutes Int
+  inventoryAuditFrequency     InventoryAuditFrequency
+  shiftEndReminderMinutes     Int
+  weeklyReportDayOfWeek       Int
+  weeklyReportTime            String
+  monthlyReportDayOfMonth     Int
+  monthlyReportTime           String
+  updatedById                 Int?
+
+  updatedBy User? @relation(fields: [updatedById], references: [id])
+
+  updatedAt DateTime @updatedAt
   createdAt DateTime @default(now())
 }
 
