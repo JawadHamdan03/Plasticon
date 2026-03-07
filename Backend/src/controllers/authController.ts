@@ -1,7 +1,7 @@
 import { Request, Response } from "express"
 import { $Enums, User } from "../config/generated/prisma/client";
-import { prisma } from "../lib/prisma";
-import { hashPassword, generateToken } from "../services/authServices";
+import { prisma } from "../config/lib/prisma";
+import { hashPassword, generateToken } from "../utils/authServices";
 import bcrypt from "bcrypt";
 
 

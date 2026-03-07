@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { prisma } from "../lib/prisma";
+import { prisma } from "../config/lib/prisma";
 import { AuthenticatedRequest } from "../middleware/authMiddleware";
 
 const LATE_GRACE_MINUTES = 30;
