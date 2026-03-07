@@ -1,29 +1,36 @@
-import { type Request, type Response } from "express"
-import { prisma } from '../config/lib/prisma'
+import { type Request, type Response } from "express";
+import {
+    deleteUser as deleteUserService,
+    getUserById as getUserByIdService,
+    getUsers as getUsersService,
+} from "../services/userServices";
 
 export const getUsers = async (req: Request, res: Response) => {
-    const users = await prisma.user.findMany()
-    res.status(200).send(users)
+    const result = await getUsersService();
+    res.status(result.status).send(result.data);
 }
 
 
 export const getUserById = async (req: Request, res: Response) => {
-    const id: number = Number(req.params.id)
-    const user = await prisma.user.findFirst({ where: { id: id } })
-    if (!user) {
-        res.status(404).send({ message: "there is no user with this id" })
+    const id: number = Number(req.params.id);
+    const result = await getUserByIdService(id);
+
+    if (result.message) {
+        res.status(result.status).send({ message: result.message });
+        return;
     }
-    res.status(200).send(user)
+
+    res.status(result.status).send(result.data);
 }
 
 export const deleteUser = async (req: Request, res: Response) => {
-    const id: number = Number(req.params.id)
-    const op = await prisma.user.delete({
-        where: { id: id }
-    })
+    const id: number = Number(req.params.id);
+    const result = await deleteUserService(id);
 
-    if (!op) {
-        res.status(404).send({ message: "user with this id were not found" })
+    if (result.message) {
+        res.status(result.status).send({ message: result.message });
+        return;
     }
-    res.status(200).send({ message: "Deleted successfully" })
+
+    res.status(result.status).send(result.data);
 }
