@@ -1,5 +1,5 @@
 import jwt from 'jsonwebtoken'
-import { prisma } from '../lib/prisma'
+import { prisma } from '../config/lib/prisma'
 import { Request, Response, NextFunction } from 'express'
 import { UserRole } from '../config/generated/prisma/client'
 
