@@ -1,5 +1,5 @@
 import { type Request, type Response } from "express"
-import { prisma } from '../lib/prisma'
+import { prisma } from '../config/lib/prisma'
 
 export const getUsers = async (req: Request, res: Response) => {
     const users = await prisma.user.findMany()
