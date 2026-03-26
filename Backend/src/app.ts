@@ -1,5 +1,6 @@
 import express from "express";
 import dotenv from "dotenv";
+import path from "path";
 import authRoutes from "./routes/authRoutes";
 import userRoutes from "./routes/userRoutes"
 import settingsRoutes from "./routes/settingsRoutes";
@@ -19,7 +20,10 @@ const PORT = Number(process.env.PORT) || 8080
 const app = express();
 
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
+// Serve static files from prisma/pictures
+app.use('/pictures', express.static(path.join(process.cwd(), 'prisma', 'pictures')));
 
 app.use("/auth", authRoutes);
 app.use("/users", userRoutes);
