@@ -11,6 +11,7 @@ RUN npm i
 
 COPY tsconfig.json ./
 COPY src ./src
-
+RUN npm run apply-schema
+RUN npm run seed
 EXPOSE 8080
 CMD ["npm", "run", "dev"]
