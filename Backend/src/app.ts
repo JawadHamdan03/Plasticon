@@ -10,6 +10,7 @@ import qualityRoutes from "./routes/qualityRoutes";
 import inventoryRoutes from "./routes/inventoryRoutes";
 import purchaseRoutes from "./routes/purchaseRoutes";
 import saleRoutes from "./routes/saleRoutes";
+import reportRoutes from "./routes/reportRoutes";
 
 dotenv.config();
 const PORT = Number(process.env.PORT) || 8080
@@ -30,5 +31,6 @@ app.use("/quality-checks", qualityRoutes);
 app.use("/inventory", inventoryRoutes);
 app.use("/purchases", purchaseRoutes);
 app.use("/sales", saleRoutes);
+app.use("/reports", reportRoutes);
 
 app.listen(PORT, () => console.log(`server is running on port ${PORT}`));
