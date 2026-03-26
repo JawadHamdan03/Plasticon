@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import fs from "fs/promises";
 import {
     loginUser,
     logoutUser,
@@ -14,15 +15,25 @@ export const registerHandler = async (req: Request, res: Response) => {
         }
 
         const body = req.body as RegisterBody;
+        // Store relative path to the image only if an image is uploaded
+        if (req.file) {
+            body.profileImage = `prisma/pictures/${req.file.filename}`;
+        }
         const result = await registerUser(body);
 
         if (result.message) {
+            if (req.file) {
+                await fs.unlink(req.file.path).catch(() => undefined);
+            }
             res.status(result.status).json({ message: result.message });
             return;
         }
 
         res.status(result.status).json(result.data);
     } catch (error) {
+        if (req.file) {
+            await fs.unlink(req.file.path).catch(() => undefined);
+        }
         console.error("Register error:", error);
         res.status(500).json({ message: "Failed to register user" });
     }
