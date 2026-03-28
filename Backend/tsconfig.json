@@ -5,6 +5,7 @@
     "target": "ES2023",
     "strict": true,
     "esModuleInterop": true,
+    "types": ["node", "vitest/globals", "supertest"]
     //"ignoreDeprecations": "6.0"
   }
 }
