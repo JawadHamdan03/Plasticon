@@ -1,6 +1,8 @@
 import express from "express";
 import dotenv from "dotenv";
+import { createServer } from "http";
 import path from "path";
+import { initializeSocketServer } from "./config/socket";
 import authRoutes from "./routes/authRoutes";
 import userRoutes from "./routes/userRoutes"
 import settingsRoutes from "./routes/settingsRoutes";
@@ -12,12 +14,14 @@ import inventoryRoutes from "./routes/inventoryRoutes";
 import purchaseRoutes from "./routes/purchaseRoutes";
 import saleRoutes from "./routes/saleRoutes";
 import reportRoutes from "./routes/reportRoutes";
+import chatRoutes from "./routes/chatRoutes";
 
 dotenv.config();
 const PORT = Number(process.env.PORT) || 8080
 
 
 const app = express();
+const server = createServer(app);
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -36,5 +40,8 @@ app.use("/inventory", inventoryRoutes);
 app.use("/purchases", purchaseRoutes);
 app.use("/sales", saleRoutes);
 app.use("/reports", reportRoutes);
+app.use("/chat", chatRoutes);
 
-app.listen(PORT, () => console.log(`server is running on port ${PORT}`));
+initializeSocketServer(server);
+
+server.listen(PORT, () => console.log(`server is running on port ${PORT}`));
