@@ -44,4 +44,20 @@ app.use("/chat", chatRoutes);
 
 initializeSocketServer(server);
 
+let hasRetriedPortBind = false;
+
+server.on("error", (error: NodeJS.ErrnoException) => {
+	if (error.code === "EADDRINUSE" && !hasRetriedPortBind) {
+		hasRetriedPortBind = true;
+		console.warn(`port ${PORT} is busy, retrying once...`);
+		setTimeout(() => {
+			server.listen(PORT);
+		}, 1000);
+		return;
+	}
+
+	console.error("server startup error:", error);
+	process.exit(1);
+});
+
 server.listen(PORT, () => console.log(`server is running on port ${PORT}`));

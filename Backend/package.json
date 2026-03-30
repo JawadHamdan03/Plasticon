@@ -8,7 +8,8 @@
     "test:watch": "vitest",
     "test:chat": "vitest run tests",
     "test:chat:watch": "vitest tests",
-    "dev": "npx tsx src/app.ts",
+    "dev": "kill-port 8080 && npx tsx src/app.ts",
+    "dev:raw": "npx tsx src/app.ts",
     "apply-schema": "npx prisma migrate dev & npx prisma generate",
     "seed": "npx tsx prisma/seed.ts",
     "chat:socket-test": "node scripts/socket-chat-test.mjs"
@@ -24,6 +25,7 @@
     "@types/node": "^25.3.2",
     "@types/pg": "^8.16.0",
     "@types/supertest": "^6.0.3",
+    "kill-port": "^2.0.1",
     "prisma": "^7.4.2",
     "supertest": "^7.1.4",
     "tsx": "^4.21.0",
