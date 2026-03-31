@@ -1,5 +1,7 @@
 import { InventoryType, ReferenceType } from "../config/generated/prisma/client";
 import { prisma } from "../config/lib/prisma";
+import { auditAsync } from "./auditHelper";
+import { AuditAction, AuditEntityType } from "./auditServices";
 
 type ServiceResult<T> = {
     status: number;
@@ -151,6 +153,12 @@ export const createPurchase = async (
                 },
             },
         });
+    });
+
+    auditAsync(userId, AuditAction.PURCHASE_CREATED, AuditEntityType.PURCHASE, result?.id ?? null, {
+        supplierId,
+        totalAmount,
+        itemCount: preparedItems.length,
     });
 
     return { status: 201, data: result };

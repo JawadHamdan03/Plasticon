@@ -1,5 +1,7 @@
 import { ProductType } from "../config/generated/prisma/client";
 import { prisma } from "../config/lib/prisma";
+import { auditAsync } from "./auditHelper";
+import { AuditAction, AuditEntityType } from "./auditServices";
 
 type ServiceResult<T> = {
     status: number;
@@ -171,6 +173,13 @@ export const createProductionRecord = async (
             machine: { select: { id: true, name: true, type: true } },
             shift: true,
         },
+    });
+
+    auditAsync(userId, AuditAction.PRODUCTION_RECORD_CREATED, AuditEntityType.PRODUCTION_RECORD, production.id, {
+        machineId: machine.id,
+        machineName: machine.name,
+        cartonsCount,
+        totalPieces,
     });
 
     return { status: 201, data: production };

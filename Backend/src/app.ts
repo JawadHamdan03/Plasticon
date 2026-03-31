@@ -15,6 +15,7 @@ import purchaseRoutes from "./routes/purchaseRoutes";
 import saleRoutes from "./routes/saleRoutes";
 import reportRoutes from "./routes/reportRoutes";
 import chatRoutes from "./routes/chatRoutes";
+import auditRoutes from "./routes/auditRoutes";
 
 dotenv.config();
 const PORT = Number(process.env.PORT) || 8080
@@ -41,6 +42,7 @@ app.use("/purchases", purchaseRoutes);
 app.use("/sales", saleRoutes);
 app.use("/reports", reportRoutes);
 app.use("/chat", chatRoutes);
+app.use("/audit", auditRoutes);
 
 initializeSocketServer(server);
 

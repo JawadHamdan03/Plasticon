@@ -1,4 +1,6 @@
 import { prisma } from "../config/lib/prisma";
+import { auditAsync } from "./auditHelper";
+import { AuditAction, AuditEntityType } from "./auditServices";
 
 type ServiceResult<T> = {
     status: number;
@@ -123,6 +125,12 @@ export const createSale = async (
                 items: true,
             },
         });
+    });
+
+    auditAsync(userId, AuditAction.SALE_CREATED, AuditEntityType.SALE, result?.id ?? null, {
+        customerId,
+        totalAmount,
+        itemCount: preparedItems.length,
     });
 
     return { status: 201, data: result };

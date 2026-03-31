@@ -1,5 +1,7 @@
 import { GroupRole } from "../config/generated/prisma/client";
 import { prisma } from "../config/lib/prisma";
+import { auditAsync } from "./auditHelper";
+import { AuditAction, AuditEntityType } from "./auditServices";
 
 type ServiceResult<T> = {
     status: number;
@@ -118,6 +120,11 @@ export const createChatGroup = async (
                 },
             },
         });
+    });
+
+    auditAsync(userId, AuditAction.CHAT_GROUP_CREATED, AuditEntityType.CHAT_GROUP, group?.id ?? null, {
+        name: group?.name,
+        memberCount: (memberIds.length ?? 0) + 1,
     });
 
     return { status: 201, data: group };
@@ -280,6 +287,11 @@ export const addGroupMember = async (
         },
     });
 
+    auditAsync(requesterId, AuditAction.CHAT_MEMBER_ADDED, AuditEntityType.CHAT_GROUP, groupId, {
+        targetUserId,
+        role: memberRole,
+    });
+
     return { status: 201, data: member };
 };
 
@@ -328,6 +340,10 @@ export const removeGroupMember = async (
                 userId: targetUserId,
             },
         },
+    });
+
+    auditAsync(requesterId, AuditAction.CHAT_MEMBER_REMOVED, AuditEntityType.CHAT_GROUP, groupId, {
+        targetUserId,
     });
 
     return { status: 200, data: { message: "Member removed successfully" } };

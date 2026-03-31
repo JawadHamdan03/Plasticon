@@ -1,5 +1,7 @@
 import { InventoryType, ReferenceType } from "../config/generated/prisma/client";
 import { prisma } from "../config/lib/prisma";
+import { auditAsync } from "./auditHelper";
+import { AuditAction, AuditEntityType } from "./auditServices";
 
 type ServiceResult<T> = {
     status: number;
@@ -94,6 +96,15 @@ export const createInventoryTransaction = async (
             transaction,
             updatedMaterial,
         };
+    });
+
+    const auditAction =
+        payload.type === InventoryType.IN ? AuditAction.INVENTORY_IN : AuditAction.INVENTORY_OUT;
+    auditAsync(userId, auditAction, AuditEntityType.INVENTORY_TRANSACTION, result.transaction.id, {
+        materialId: material.id,
+        materialName: material.name,
+        quantity,
+        type: payload.type,
     });
 
     return { status: 201, data: result };

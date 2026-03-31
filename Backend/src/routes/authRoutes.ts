@@ -10,7 +10,7 @@ router.post("/register", authorizeRoles([UserRole.ADMIN]), upload.single('profil
 
 router.post("/login", loginHandler);
 
-router.post("/logout", logoutHandler);
+router.post("/logout", authorizeRoles([UserRole.WORKER, UserRole.ENGINEER, UserRole.ACCOUNTANT, UserRole.ADMIN]), logoutHandler);
 
 
 

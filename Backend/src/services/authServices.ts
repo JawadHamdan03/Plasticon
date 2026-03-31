@@ -3,6 +3,8 @@ import { $Enums, User } from "../config/generated/prisma/client";
 import { prisma } from "../config/lib/prisma";
 import { hashPassword, generateToken } from "../utils/authServices";
 import bcrypt from "bcrypt";
+import { auditAsync } from "./auditHelper";
+import { AuditAction, AuditEntityType } from "./auditServices";
 
 export type RegisterBody = {
     nationalId?: string;
@@ -93,6 +95,8 @@ export const registerUser = async (body: RegisterBody): Promise<ServiceResult<{ 
         },
     });
 
+    auditAsync(user.id, AuditAction.USER_CREATED, AuditEntityType.USER, user.id, { role: user.role });
+
     return { status: 201, data: { user } };
 };
 
@@ -115,14 +119,20 @@ export const loginUser = async (
 
     const token = generateToken(user.id, res);
 
+    auditAsync(user.id, AuditAction.LOGIN, AuditEntityType.USER, user.id);
+
     return { status: 200, data: { name: user.fullName, email: user.email, token } };
 };
 
-export const logoutUser = (res: Response): ServiceResult<{ message: string }> => {
+export const logoutUser = (res: Response, userId?: number): ServiceResult<{ message: string }> => {
     res.cookie("jwt", "", {
         httpOnly: true,
         expires: new Date(0),
     });
+
+    if (userId) {
+        auditAsync(userId, AuditAction.LOGOUT, AuditEntityType.USER, userId);
+    }
 
     return { status: 200, data: { message: "logged out successfully" } };
 };
