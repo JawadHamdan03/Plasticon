@@ -1,4 +1,6 @@
 import { prisma } from "../config/lib/prisma";
+import { auditAsync } from "./auditHelper";
+import { AuditAction, AuditEntityType } from "./auditServices";
 
 type ServiceResult<T> = {
     status: number;
@@ -73,6 +75,11 @@ export const createQualityCheck = async (
             machine: { select: { id: true, name: true, type: true } },
             shift: true,
         },
+    });
+
+    auditAsync(engineerId, AuditAction.QUALITY_CHECK_CREATED, AuditEntityType.QUALITY_CHECK, qualityCheck.id, {
+        machineId: machine.id,
+        machineName: machine.name,
     });
 
     return { status: 201, data: qualityCheck };

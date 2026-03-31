@@ -1,4 +1,6 @@
 import { prisma } from "../config/lib/prisma";
+import { auditAsync } from "./auditHelper";
+import { AuditAction, AuditEntityType } from "./auditServices";
 
 type ServiceResult<T> = {
     status: number;
@@ -94,6 +96,11 @@ export const createMaintenance = async (
             machine: { select: { id: true, name: true, type: true } },
             shift: true,
         },
+    });
+
+    auditAsync(engineerId, AuditAction.MAINTENANCE_CREATED, AuditEntityType.MAINTENANCE, maintenance.id, {
+        machineId: machine.id,
+        machineName: machine.name,
     });
 
     return { status: 201, data: maintenance };

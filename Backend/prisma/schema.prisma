@@ -42,6 +42,51 @@ enum InventoryAuditFrequency {
   MONTHLY
 }
 
+enum MachineStatus {
+  OPERATIONAL
+  UNDER_MAINTENANCE
+  BROKEN
+  OFFLINE
+  DECOMMISSIONED
+}
+
+enum DowntimeReason {
+  BELT_FAILURE
+  MOTOR_ISSUE
+  HYDRAULIC_FAILURE
+  SEAL_LEAK
+  ELECTRICAL
+  SENSOR_MALFUNCTION
+  SCHEDULED_MAINTENANCE
+  OTHER
+}
+
+enum QualityStatus {
+  PASS
+  FAIL
+  REWORK_REQUIRED
+  PENDING_REVIEW
+}
+
+enum NotificationType {
+  CHAT_MESSAGE
+  PRODUCTION_ALERT
+  MAINTENANCE_URGENT
+  QUALITY_ISSUE
+  SYSTEM_MESSAGE
+  PAYROLL_READY
+  INVENTORY_LOW
+}
+
+enum FileType {
+  PROFILE_IMAGE
+  ID_IMAGE
+  INVOICE
+  MACHINE_READING
+  MAINTENANCE_REPORT
+  QUALITY_REPORT
+}
+
 //////////////////////
 // CORE TABLES
 //////////////////////
@@ -82,9 +127,12 @@ model User {
 
   createdAt          DateTime            @default(now())
   updatedAt          DateTime            @updatedAt
-  chatGroups         ChatGroup[]
+  deletedAt          DateTime?
   productionSettings ProductionSetting[]
   systemSettings     SystemSetting[]
+  auditLogs          AuditLog[]
+  fileAttachments    FileAttachment[]
+  machineStatusChanges Machine[] @relation("StatusChangedBy")
 }
 
 model Shift {
@@ -122,14 +170,25 @@ model Attendance {
 //////////////////////
 
 model Machine {
-  id   Int    @id @default(autoincrement())
-  name String
-  type String
+  id      Int    @id @default(autoincrement())
+  name    String
+  type    String
+  status  MachineStatus @default(OPERATIONAL)
+
+  statusChangedBy  Int?
+  statusChangedAt  DateTime?
 
   productions   ProductionRecord[]
   maintenances  Maintenance[]
   qualityChecks QualityCheck[]
   readings      MachineReading[]
+  notifications Notification[]
+
+  statusChangedByUser User? @relation("StatusChangedBy", fields: [statusChangedBy], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
 }
 
 model MachineReading {
@@ -144,6 +203,8 @@ model MachineReading {
   machine Machine @relation(fields: [machineId], references: [id])
   user    User    @relation(fields: [userId], references: [id])
   shift   Shift   @relation(fields: [shiftId], references: [id])
+
+  fileAttachments FileAttachment[]
 
   recordedAt DateTime @default(now())
 }
@@ -193,6 +254,8 @@ model ProductionRecord {
   user    User    @relation(fields: [userId], references: [id])
   shift   Shift   @relation(fields: [shiftId], references: [id])
 
+  notifications Notification[]
+
   createdAt DateTime @default(now())
 }
 
@@ -201,12 +264,13 @@ model ProductionRecord {
 //////////////////////
 
 model Maintenance {
-  id              Int     @id @default(autoincrement())
+  id              Int      @id @default(autoincrement())
   machineId       Int
   engineerId      Int
   shiftId         Int
   partsUsed       String
   downtimeMinutes Int?
+  downtimeReason  DowntimeReason @default(OTHER)
   reportText      String?
   imagePath       String?
 
@@ -214,24 +278,29 @@ model Maintenance {
   engineer User    @relation(fields: [engineerId], references: [id])
   shift    Shift   @relation(fields: [shiftId], references: [id])
 
+  fileAttachments FileAttachment[]
+
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model QualityCheck {
-  id         Int @id @default(autoincrement())
-  machineId  Int
-  engineerId Int
-  shiftId    Int
-
-  capsStatus    String?
-  preformStatus String?
-  notes         String?
+  id             Int @id @default(autoincrement())
+  machineId      Int
+  engineerId     Int
+  shiftId        Int
+  capsStatus     QualityStatus @default(PENDING_REVIEW)
+  preformStatus  QualityStatus @default(PENDING_REVIEW)
+  notes          String?
 
   machine  Machine @relation(fields: [machineId], references: [id])
   engineer User    @relation(fields: [engineerId], references: [id])
   shift    Shift   @relation(fields: [shiftId], references: [id])
 
+  fileAttachments FileAttachment[]
+
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 //////////////////////
@@ -275,6 +344,10 @@ model Supplier {
   address String?
 
   purchases Purchase[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
 }
 
 model Purchase {
@@ -288,6 +361,10 @@ model Purchase {
   supplier   Supplier       @relation(fields: [supplierId], references: [id])
   receivedBy User           @relation(fields: [receivedById], references: [id])
   items      PurchaseItem[]
+  fileAttachments FileAttachment[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model PurchaseItem {
@@ -313,6 +390,10 @@ model Customer {
   address String?
 
   sales Sale[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
 }
 
 model Sale {
@@ -327,6 +408,10 @@ model Sale {
   soldBy     User             @relation(fields: [soldById], references: [id])
   items      SaleItem[]
   aiAnalysis InvoiceAnalysis?
+  fileAttachments FileAttachment[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model SaleItem {
@@ -382,14 +467,22 @@ model Payroll {
 //////////////////////
 
 model Notification {
-  id      Int     @id @default(autoincrement())
-  userId  Int
-  title   String
-  message String
-  type    String
-  isRead  Boolean @default(false)
+  id           Int                @id @default(autoincrement())
+  userId       Int
+  title        String
+  message      String
+  type         NotificationType
+  isRead       Boolean            @default(false)
+  readAt       DateTime?
 
-  user User @relation(fields: [userId], references: [id])
+  chatGroupId  Int?
+  machineId    Int?
+  productionId Int?
+
+  user             User              @relation(fields: [userId], references: [id])
+  chatGroup        ChatGroup?        @relation(fields: [chatGroupId], references: [id])
+  machine          Machine?          @relation(fields: [machineId], references: [id])
+  productionRecord ProductionRecord? @relation(fields: [productionId], references: [id])
 
   createdAt DateTime @default(now())
 }
@@ -432,20 +525,27 @@ model SystemSetting {
 // GROUP CHAT SYSTEM
 //////////////////////
 
+enum GroupCategory {
+  DEPARTMENT
+  TEAM
+  PROJECT
+  GENERAL
+}
+
 model ChatGroup {
-  id          Int     @id @default(autoincrement())
+  id          Int            @id @default(autoincrement())
   name        String
   description String?
   createdById Int
+  category    GroupCategory  @default(GENERAL)
 
   createdBy User           @relation("GroupCreator", fields: [createdById], references: [id])
   members   GroupMember[]
   messages  GroupMessage[]
+  notifications Notification[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  user      User?    @relation(fields: [userId], references: [id])
-  userId    Int?
 }
 
 model GroupMember {
@@ -474,10 +574,52 @@ model GroupMessage {
   senderId Int
 
   content String
-  isRead  Boolean @default(false)
 
   group  ChatGroup @relation(fields: [groupId], references: [id])
   sender User      @relation(fields: [senderId], references: [id])
 
   createdAt DateTime @default(now())
+}
+
+//////////////////////
+// AUDIT & FILE MANAGEMENT
+//////////////////////
+
+model AuditLog {
+  id        Int     @id @default(autoincrement())
+  userId    Int?
+  action    String  // "USER_CREATED", "PAYROLL_CALCULATED", "INVENTORY_ADJUSTED", etc.
+  entityType String // "User", "Payroll", "InventoryTransaction", etc.
+  entityId  Int?
+  changes   String? // JSON object with before/after values
+
+  user User? @relation(fields: [userId], references: [id])
+
+  createdAt DateTime @default(now())
+}
+
+model FileAttachment {
+  id                Int      @id @default(autoincrement())
+  fileName          String
+  filePath          String
+  fileSize          Int
+  mimeType          String
+  fileType          FileType
+
+  userId            Int?
+  purchaseId        Int?
+  saleId            Int?
+  machineReadingId  Int?
+  maintenanceId     Int?
+  qualityCheckId    Int?
+
+  user             User?           @relation(fields: [userId], references: [id])
+  purchase         Purchase?       @relation(fields: [purchaseId], references: [id])
+  sale             Sale?           @relation(fields: [saleId], references: [id])
+  machineReading   MachineReading? @relation(fields: [machineReadingId], references: [id])
+  maintenance      Maintenance?    @relation(fields: [maintenanceId], references: [id])
+  qualityCheck     QualityCheck?   @relation(fields: [qualityCheckId], references: [id])
+
+  uploadedAt DateTime @default(now())
+  deletedAt  DateTime?
 }

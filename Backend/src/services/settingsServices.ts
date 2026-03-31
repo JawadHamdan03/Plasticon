@@ -1,5 +1,7 @@
 import { InventoryAuditFrequency, ProductType } from "../config/generated/prisma/client";
 import { prisma } from "../config/lib/prisma";
+import { auditAsync } from "./auditHelper";
+import { AuditAction, AuditEntityType } from "./auditServices";
 
 const isValidTime = (value: string): boolean => /^([01]\d|2[0-3]):[0-5]\d$/.test(value);
 
@@ -42,6 +44,11 @@ export const upsertProductionSetting = async (
             piecesPerCarton: pieces,
             updatedById: userId ?? null,
         },
+    });
+
+    auditAsync(userId ?? null, AuditAction.PRODUCTION_SETTINGS_UPDATED, AuditEntityType.PRODUCTION_SETTING, setting.id, {
+        productType,
+        piecesPerCarton: pieces,
     });
 
     return { status: 200, data: setting };
@@ -160,6 +167,13 @@ export const upsertSystemSettings = async (
                 updatedById: userId ?? null,
             },
         });
+
+    auditAsync(userId ?? null, AuditAction.SYSTEM_SETTINGS_UPDATED, AuditEntityType.SYSTEM_SETTING, setting.id, {
+        qualityCheckIntervalMinutes: interval,
+        qualityCheckReminderMinutes: reminder,
+        inventoryAuditFrequency,
+        shiftEndReminderMinutes: shiftReminder,
+    });
 
     return { status: 200, data: setting };
 };

@@ -6,6 +6,7 @@ import {
     registerUser,
     type RegisterBody,
 } from "../services/authServices";
+import { type AuthenticatedRequest } from "../middleware/authMiddleware";
 
 export const registerHandler = async (req: Request, res: Response) => {
     try {
@@ -53,7 +54,7 @@ export const loginHandler = async (req: Request, res: Response) => {
     res.status(result.status).json(result.data);
 };
 
-export const logoutHandler = async (_req: Request, res: Response) => {
-    const result = logoutUser(res);
+export const logoutHandler = async (req: AuthenticatedRequest, res: Response) => {
+    const result = logoutUser(res, req.user?.id);
     res.status(result.status).send(result.data);
 };

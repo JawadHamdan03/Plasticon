@@ -1,4 +1,6 @@
 import { prisma } from "../config/lib/prisma";
+import { auditAsync } from "./auditHelper";
+import { AuditAction, AuditEntityType } from "./auditServices";
 
 const LATE_GRACE_MINUTES = 30;
 const OVERTIME_GRACE_MINUTES = 30;
@@ -85,6 +87,8 @@ export const checkIn = async (userId: number): Promise<ServiceResult<unknown>> =
         },
     });
 
+    auditAsync(userId, AuditAction.ATTENDANCE_CHECKED_IN, AuditEntityType.ATTENDANCE, attendance.id);
+
     return { status: 201, data: attendance };
 };
 
@@ -122,6 +126,8 @@ export const checkOut = async (userId: number): Promise<ServiceResult<unknown>> 
             },
         });
 
+        auditAsync(userId, AuditAction.ATTENDANCE_CHECKED_OUT, AuditEntityType.ATTENDANCE, attendance.id);
+
         return { status: 200, data: attendance };
     }
 
@@ -132,6 +138,8 @@ export const checkOut = async (userId: number): Promise<ServiceResult<unknown>> 
             overtimeMinutes: 0,
         },
     });
+
+    auditAsync(userId, AuditAction.ATTENDANCE_CHECKED_OUT, AuditEntityType.ATTENDANCE, attendance.id);
 
     return { status: 200, data: attendance };
 };
