@@ -24,6 +24,9 @@ const { mockPrisma } = vi.hoisted(() => ({
             findMany: vi.fn(),
             count: vi.fn(),
         },
+        notification: {
+            createMany: vi.fn(),
+        },
         $transaction: vi.fn(),
     },
 }));

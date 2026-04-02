@@ -1,4 +1,5 @@
 import { prisma } from "../config/lib/prisma";
+import { NotificationType, UserRole } from "../config/generated/prisma/client";
 import { auditAsync } from "./auditHelper";
 import { AuditAction, AuditEntityType } from "./auditServices";
 
@@ -81,6 +82,28 @@ export const createQualityCheck = async (
         machineId: machine.id,
         machineName: machine.name,
     });
+
+    const hasFailure =
+        String(qualityCheck.capsStatus) === "FAIL" || String(qualityCheck.preformStatus) === "FAIL";
+
+    if (hasFailure) {
+        const adminUsers = await prisma.user.findMany({
+            where: { role: UserRole.ADMIN },
+            select: { id: true },
+        });
+
+        if (adminUsers.length > 0) {
+            await prisma.notification.createMany({
+                data: adminUsers.map((admin) => ({
+                    userId: admin.id,
+                    title: "Quality issue detected",
+                    message: `A failed quality check was recorded on ${machine.name}.`,
+                    type: NotificationType.QUALITY_ISSUE,
+                    machineId: machine.id,
+                })),
+            });
+        }
+    }
 
     return { status: 201, data: qualityCheck };
 };
