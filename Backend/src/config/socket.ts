@@ -120,3 +120,19 @@ export const emitUnreadCountUpdate = (userId: number, payload: unknown) => {
 
     ioInstance.to(`user:${userId}`).emit("chat:unread-count-updated", payload);
 };
+
+export const emitNotificationToUser = (userId: number, payload: unknown) => {
+    if (!ioInstance) {
+        return;
+    }
+
+    ioInstance.to(`user:${userId}`).emit("notification:new", payload);
+};
+
+export const emitNotificationUnreadCountUpdate = (userId: number, payload: unknown) => {
+    if (!ioInstance) {
+        return;
+    }
+
+    ioInstance.to(`user:${userId}`).emit("notification:unread-count-updated", payload);
+};

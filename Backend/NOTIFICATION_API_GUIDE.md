@@ -249,6 +249,67 @@ Notes:
 - These notifications are in addition to manual admin-created notifications from `POST /notifications`.
 - Automatic notifications are saved in the same `Notification` table and are retrieved via the same read endpoints.
 
+## Realtime Events (Socket.IO)
+
+The backend emits realtime events to the user room (`user:{userId}`) so frontend badges and notification lists can update instantly.
+
+### Event: `notification:new`
+
+- Triggered when a new notification is created (manual or automatic).
+- Payload: full notification object.
+
+Example payload:
+
+{
+  "id": 42,
+  "userId": 5,
+  "title": "Payroll ready",
+  "message": "Your payroll for 2026-03 is ready.",
+  "type": "PAYROLL_READY",
+  "isRead": false,
+  "readAt": null,
+  "createdAt": "2026-04-02T14:00:00.000Z"
+}
+
+### Event: `notification:unread-count-updated`
+
+- Triggered when:
+  - new notification is created
+  - one notification is marked read
+  - all notifications are marked read
+- Payload example:
+
+{
+  "refresh": true
+}
+
+Recommended client behavior:
+
+- On receiving this event, call `GET /notifications/unread-count` and refresh the badge number.
+
+### Frontend Socket Example
+
+```javascript
+import { io } from "socket.io-client";
+
+const socket = io("http://localhost:8080", {
+  auth: {
+    token: "Bearer <JWT_TOKEN>",
+  },
+});
+
+socket.on("notification:new", (notification) => {
+  // Option 1: prepend to in-memory notifications list
+  // Option 2: trigger refetch of GET /notifications
+  console.log("new notification", notification);
+});
+
+socket.on("notification:unread-count-updated", async () => {
+  // fetch latest unread count and update badge
+  // GET /notifications/unread-count
+});
+```
+
 ## Common Errors
 
 - 400: Invalid id, missing required fields, invalid type, or invalid query/body shape.

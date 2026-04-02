@@ -1,5 +1,6 @@
 import { NotificationType } from "../config/generated/prisma/client";
 import { prisma } from "../config/lib/prisma";
+import { emitNotificationToUser, emitNotificationUnreadCountUpdate } from "../config/socket";
 import { auditAsync } from "./auditHelper";
 import { AuditEntityType } from "./auditServices";
 
@@ -106,6 +107,11 @@ export const markNotificationAsRead = async (
 
     auditAsync(userId, NOTIFICATION_READ, AuditEntityType.NOTIFICATION, notificationId);
 
+    emitNotificationUnreadCountUpdate(userId, {
+        refresh: true,
+        notificationId,
+    });
+
     return { status: 200, data: updated };
 };
 
@@ -124,6 +130,11 @@ export const markAllNotificationsAsRead = async (userId: number): Promise<Servic
     });
 
     auditAsync(userId, NOTIFICATION_READ_ALL, AuditEntityType.NOTIFICATION, undefined, {
+        updatedCount: result.count,
+    });
+
+    emitNotificationUnreadCountUpdate(userId, {
+        refresh: true,
         updatedCount: result.count,
     });
 
@@ -184,6 +195,11 @@ export const createNotification = async (
         type: payload.type,
         targetCount: created.length,
         targetUserIds,
+    });
+
+    created.forEach((notification) => {
+        emitNotificationToUser(notification.userId, notification);
+        emitNotificationUnreadCountUpdate(notification.userId, { refresh: true });
     });
 
     return { status: 201, data: created };

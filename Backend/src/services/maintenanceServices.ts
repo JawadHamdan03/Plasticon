@@ -1,5 +1,6 @@
 import { prisma } from "../config/lib/prisma";
 import { NotificationType, UserRole } from "../config/generated/prisma/client";
+import { emitNotificationUnreadCountUpdate } from "../config/socket";
 import { auditAsync } from "./auditHelper";
 import { AuditAction, AuditEntityType } from "./auditServices";
 
@@ -119,6 +120,10 @@ export const createMaintenance = async (
                     type: NotificationType.MAINTENANCE_URGENT,
                     machineId: machine.id,
                 })),
+            });
+
+            adminUsers.forEach((admin) => {
+                emitNotificationUnreadCountUpdate(admin.id, { refresh: true });
             });
         }
     }
