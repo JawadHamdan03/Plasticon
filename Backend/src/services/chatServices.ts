@@ -1,5 +1,6 @@
 import { GroupRole, NotificationType } from "../config/generated/prisma/client";
 import { prisma } from "../config/lib/prisma";
+import { emitNotificationUnreadCountUpdate } from "../config/socket";
 import { auditAsync } from "./auditHelper";
 import { AuditAction, AuditEntityType } from "./auditServices";
 
@@ -424,6 +425,13 @@ export const sendGroupMessage = async (
                 type: NotificationType.CHAT_MESSAGE,
                 chatGroupId: groupId,
             })),
+        });
+
+        recipientUserIds.forEach((recipientUserId) => {
+            emitNotificationUnreadCountUpdate(recipientUserId, {
+                refresh: true,
+                chatGroupId: groupId,
+            });
         });
     }
 

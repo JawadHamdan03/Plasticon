@@ -7,7 +7,7 @@ ENV JWT_SECRET=a-string-secret-at-least-256-bits-long
 
 COPY package*.json ./
 COPY prisma ./prisma
-RUN npm i
+RUN npm ci
 
 COPY tsconfig.json ./
 COPY src ./src

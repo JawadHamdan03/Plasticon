@@ -1,5 +1,6 @@
 import { prisma } from "../config/lib/prisma";
 import { NotificationType } from "../config/generated/prisma/client";
+import { emitNotificationToUser, emitNotificationUnreadCountUpdate } from "../config/socket";
 import { auditAsync } from "./auditHelper";
 import { AuditAction, AuditEntityType } from "./auditServices";
 
@@ -137,7 +138,7 @@ export const calculatePayroll = async (
         totalSalary,
     });
 
-    await prisma.notification.create({
+    const createdNotification = await prisma.notification.create({
         data: {
             userId: targetUserId,
             title: "Payroll ready",
@@ -145,6 +146,9 @@ export const calculatePayroll = async (
             type: NotificationType.PAYROLL_READY,
         },
     });
+
+    emitNotificationToUser(targetUserId, createdNotification);
+    emitNotificationUnreadCountUpdate(targetUserId, { refresh: true });
 
     return { status: 201, data: payroll };
 };

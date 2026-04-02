@@ -1,19 +1,62 @@
+import "dotenv/config";
 import { io } from "socket.io-client";
 
 const serverUrl = process.env.SOCKET_URL || "http://localhost:8080";
-const token = process.env.CHAT_TOKEN;
+const providedToken = process.env.CHAT_TOKEN;
+const loginEmail = process.env.CHAT_EMAIL;
+const loginPassword = process.env.CHAT_PASSWORD;
 const groupId = Number(process.env.CHAT_GROUP_ID || "0");
 const timeoutMs = Number(process.env.CHAT_TEST_TIMEOUT_MS || "15000");
-
-if (!token) {
-    console.error("Missing CHAT_TOKEN environment variable");
-    process.exit(1);
-}
 
 if (!Number.isInteger(groupId) || groupId <= 0) {
     console.error("Missing or invalid CHAT_GROUP_ID environment variable");
     process.exit(1);
 }
+
+const getToken = async () => {
+    if (providedToken) {
+        return providedToken;
+    }
+
+    if (!loginEmail || !loginPassword) {
+        console.error(
+            "Missing auth credentials: provide CHAT_TOKEN, or provide CHAT_EMAIL and CHAT_PASSWORD"
+        );
+        process.exit(1);
+    }
+
+    const response = await fetch(`${serverUrl}/auth/login`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+            email: loginEmail,
+            password: loginPassword,
+        }),
+    });
+
+    if (!response.ok) {
+        const text = await response.text();
+        console.error("Failed to login for socket test", {
+            status: response.status,
+            body: text,
+        });
+        process.exit(1);
+    }
+
+    const body = await response.json();
+    const tokenFromLogin = body?.token;
+
+    if (!tokenFromLogin || typeof tokenFromLogin !== "string") {
+        console.error("Login response did not include token");
+        process.exit(1);
+    }
+
+    return tokenFromLogin;
+};
+
+const token = await getToken();
 
 const socket = io(serverUrl, {
     auth: { token },
