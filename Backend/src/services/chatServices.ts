@@ -1,4 +1,4 @@
-import { GroupRole } from "../config/generated/prisma/client";
+import { GroupRole, NotificationType } from "../config/generated/prisma/client";
 import { prisma } from "../config/lib/prisma";
 import { auditAsync } from "./auditHelper";
 import { AuditAction, AuditEntityType } from "./auditServices";
@@ -412,6 +412,20 @@ export const sendGroupMessage = async (
             };
         })
     );
+
+    const recipientUserIds = messageResult.memberUserIds.filter((memberUserId) => memberUserId !== userId);
+
+    if (recipientUserIds.length > 0) {
+        await prisma.notification.createMany({
+            data: recipientUserIds.map((recipientUserId) => ({
+                userId: recipientUserId,
+                title: "New chat message",
+                message: content,
+                type: NotificationType.CHAT_MESSAGE,
+                chatGroupId: groupId,
+            })),
+        });
+    }
 
     return {
         status: 201,

@@ -1,4 +1,5 @@
 import { prisma } from "../config/lib/prisma";
+import { NotificationType } from "../config/generated/prisma/client";
 import { auditAsync } from "./auditHelper";
 import { AuditAction, AuditEntityType } from "./auditServices";
 
@@ -134,6 +135,15 @@ export const calculatePayroll = async (
         month,
         totalHours,
         totalSalary,
+    });
+
+    await prisma.notification.create({
+        data: {
+            userId: targetUserId,
+            title: "Payroll ready",
+            message: `Your payroll for ${month} is ready. Total salary: ${totalSalary}`,
+            type: NotificationType.PAYROLL_READY,
+        },
     });
 
     return { status: 201, data: payroll };

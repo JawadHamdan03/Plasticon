@@ -1,4 +1,5 @@
 import { prisma } from "../config/lib/prisma";
+import { NotificationType, UserRole } from "../config/generated/prisma/client";
 import { auditAsync } from "./auditHelper";
 import { AuditAction, AuditEntityType } from "./auditServices";
 
@@ -102,6 +103,25 @@ export const createMaintenance = async (
         machineId: machine.id,
         machineName: machine.name,
     });
+
+    if ((downtimeMinutes ?? 0) >= 60) {
+        const adminUsers = await prisma.user.findMany({
+            where: { role: UserRole.ADMIN },
+            select: { id: true },
+        });
+
+        if (adminUsers.length > 0) {
+            await prisma.notification.createMany({
+                data: adminUsers.map((admin) => ({
+                    userId: admin.id,
+                    title: "Urgent maintenance alert",
+                    message: `${machine.name} has high downtime (${downtimeMinutes} minutes).`,
+                    type: NotificationType.MAINTENANCE_URGENT,
+                    machineId: machine.id,
+                })),
+            });
+        }
+    }
 
     return { status: 201, data: maintenance };
 };
