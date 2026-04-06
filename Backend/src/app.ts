@@ -2,9 +2,10 @@ import express from "express";
 import dotenv from "dotenv";
 import { createServer } from "http";
 import path from "path";
+import cors from "cors";
 import { initializeSocketServer } from "./config/socket";
 import authRoutes from "./routes/authRoutes";
-import userRoutes from "./routes/userRoutes"
+import userRoutes from "./routes/userRoutes";
 import settingsRoutes from "./routes/settingsRoutes";
 import attendanceRoutes from "./routes/attendanceRoutes";
 import productionRoutes from "./routes/productionRoutes";
@@ -18,19 +19,31 @@ import chatRoutes from "./routes/chatRoutes";
 import auditRoutes from "./routes/auditRoutes";
 import payrollRoutes from "./routes/payrollRoutes";
 import notificationRoutes from "./routes/notificationRoutes";
+import { initializeEmailService } from "./utils/emailService";
 
 dotenv.config();
-const PORT = Number(process.env.PORT) || 8080
-
+const PORT = Number(process.env.PORT) || 8080;
+const frontendOrigin = process.env.FRONTEND_ORIGIN || "http://localhost:5173";
+const corsOptions = {
+  origin: frontendOrigin,
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+};
 
 const app = express();
 const server = createServer(app);
+
+app.use(cors(corsOptions));
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Serve static files from prisma/pictures
-app.use('/pictures', express.static(path.join(process.cwd(), 'prisma', 'pictures')));
+app.use(
+  "/pictures",
+  express.static(path.join(process.cwd(), "prisma", "pictures")),
+);
 
 app.use("/auth", authRoutes);
 app.use("/users", userRoutes);
@@ -53,17 +66,19 @@ initializeSocketServer(server);
 let hasRetriedPortBind = false;
 
 server.on("error", (error: NodeJS.ErrnoException) => {
-	if (error.code === "EADDRINUSE" && !hasRetriedPortBind) {
-		hasRetriedPortBind = true;
-		console.warn(`port ${PORT} is busy, retrying once...`);
-		setTimeout(() => {
-			server.listen(PORT);
-		}, 1000);
-		return;
-	}
+  if (error.code === "EADDRINUSE" && !hasRetriedPortBind) {
+    hasRetriedPortBind = true;
+    console.warn(`port ${PORT} is busy, retrying once...`);
+    setTimeout(() => {
+      server.listen(PORT);
+    }, 1000);
+    return;
+  }
 
-	console.error("server startup error:", error);
-	process.exit(1);
+  console.error("server startup error:", error);
+  process.exit(1);
 });
 
 server.listen(PORT, () => console.log(`server is running on port ${PORT}`));
+
+void initializeEmailService();
