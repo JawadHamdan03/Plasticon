@@ -254,6 +254,108 @@ export const deletePayroll = async (
   return { status: 200, data: { message: "Payroll record deleted" } };
 };
 
+export const updatePayroll = async (
+  id: number,
+  payload: {
+    month?: string;
+    totalHours?: number;
+    overtimeHours?: number;
+    baseSalary?: number;
+    overtimeSalary?: number;
+    totalSalary?: number;
+  },
+  updatedById: number,
+): Promise<ServiceResult<unknown>> => {
+  const payroll = await prisma.payroll.findUnique({
+    where: { id },
+    include: {
+      user: {
+        select: { id: true, fullName: true, username: true, role: true },
+      },
+    },
+  });
+
+  if (!payroll) {
+    return { status: 404, message: "Payroll record not found" };
+  }
+
+  const nextMonth = payload.month?.trim() || payroll.month;
+  if (payload.month !== undefined && !/^\d{4}-\d{2}$/.test(nextMonth)) {
+    return { status: 400, message: "month must be in YYYY-MM format" };
+  }
+
+  const numericFields = [
+    ["totalHours", payload.totalHours],
+    ["overtimeHours", payload.overtimeHours],
+    ["baseSalary", payload.baseSalary],
+    ["overtimeSalary", payload.overtimeSalary],
+    ["totalSalary", payload.totalSalary],
+  ] as const;
+
+  for (const [field, value] of numericFields) {
+    if (value !== undefined && (!Number.isFinite(value) || value < 0)) {
+      return {
+        status: 400,
+        message: `${field} must be zero or a positive number`,
+      };
+    }
+  }
+
+  const updatedPayroll = await prisma.payroll.update({
+    where: { id },
+    data: {
+      month: nextMonth,
+      ...(payload.totalHours !== undefined && {
+        totalHours: payload.totalHours,
+      }),
+      ...(payload.overtimeHours !== undefined && {
+        overtimeHours: payload.overtimeHours,
+      }),
+      ...(payload.baseSalary !== undefined && {
+        baseSalary: payload.baseSalary,
+      }),
+      ...(payload.overtimeSalary !== undefined && {
+        overtimeSalary: payload.overtimeSalary,
+      }),
+      ...(payload.totalSalary !== undefined && {
+        totalSalary: payload.totalSalary,
+      }),
+    },
+    include: {
+      user: {
+        select: { id: true, fullName: true, username: true, role: true },
+      },
+    },
+  });
+
+  auditAsync(
+    updatedById,
+    AuditAction.PAYROLL_UPDATED,
+    AuditEntityType.PAYROLL,
+    updatedPayroll.id,
+    {
+      before: {
+        month: payroll.month,
+        totalHours: payroll.totalHours,
+        overtimeHours: payroll.overtimeHours,
+        baseSalary: payroll.baseSalary,
+        overtimeSalary: payroll.overtimeSalary,
+        totalSalary: payroll.totalSalary,
+      },
+      after: {
+        month: updatedPayroll.month,
+        totalHours: updatedPayroll.totalHours,
+        overtimeHours: updatedPayroll.overtimeHours,
+        baseSalary: updatedPayroll.baseSalary,
+        overtimeSalary: updatedPayroll.overtimeSalary,
+        totalSalary: updatedPayroll.totalSalary,
+      },
+    },
+  );
+
+  return { status: 200, data: updatedPayroll };
+};
+
 export const getPayrollAdminOverview = async (): Promise<
   ServiceResult<unknown>
 > => {

@@ -19,6 +19,9 @@ import chatRoutes from "./routes/chatRoutes";
 import auditRoutes from "./routes/auditRoutes";
 import payrollRoutes from "./routes/payrollRoutes";
 import notificationRoutes from "./routes/notificationRoutes";
+import shiftsRoutes from "./routes/shiftsRoutes";
+import machinesRoutes from "./routes/machinesRoutes";
+import dashboardRoutes from "./routes/dashboardRoutes";
 import { initializeEmailService } from "./utils/emailService";
 
 dotenv.config();
@@ -78,6 +81,9 @@ app.use("/chat", chatRoutes);
 app.use("/audit", auditRoutes);
 app.use("/payroll", payrollRoutes);
 app.use("/notifications", notificationRoutes);
+app.use("/shifts", shiftsRoutes);
+app.use("/machines", machinesRoutes);
+app.use("/dashboard", dashboardRoutes);
 
 initializeSocketServer(server);
 
