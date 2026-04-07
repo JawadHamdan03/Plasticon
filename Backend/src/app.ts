@@ -2,7 +2,7 @@ import express from "express";
 import dotenv from "dotenv";
 import { createServer } from "http";
 import path from "path";
-import cors from "cors";
+import cors, { type CorsOptions } from "cors";
 import { initializeSocketServer } from "./config/socket";
 import authRoutes from "./routes/authRoutes";
 import userRoutes from "./routes/userRoutes";
@@ -23,9 +23,27 @@ import { initializeEmailService } from "./utils/emailService";
 
 dotenv.config();
 const PORT = Number(process.env.PORT) || 8080;
-const frontendOrigin = process.env.FRONTEND_ORIGIN || "http://localhost:5173";
-const corsOptions = {
-  origin: frontendOrigin,
+const defaultFrontendOrigins = [
+  "http://localhost:5173",
+  "http://localhost:5174",
+];
+const configuredFrontendOrigins = (process.env.FRONTEND_ORIGIN ?? "")
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+const allowedOrigins = Array.from(
+  new Set([...defaultFrontendOrigins, ...configuredFrontendOrigins]),
+);
+
+const corsOptions: CorsOptions = {
+  origin(origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+      return;
+    }
+
+    callback(new Error(`origin ${origin} is not allowed by CORS`));
+  },
   credentials: true,
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],

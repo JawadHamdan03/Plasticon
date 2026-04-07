@@ -471,6 +471,12 @@
   gap: 8px;
 }
 
+.field__input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
 .field__label {
   font-size: 0.95rem;
   font-weight: 700;
@@ -492,6 +498,10 @@
     transform 180ms ease;
 }
 
+.field__control--with-action {
+  padding-inline-end: 42px;
+}
+
 .field__control::placeholder {
   color: rgba(3, 39, 97, 0.44);
 }
@@ -505,6 +515,44 @@
 
 .field__control--file {
   padding: 12px 14px;
+}
+
+.field__action {
+  position: absolute;
+  inset-inline-end: 8px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.field__action-button {
+  width: 30px;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: rgba(3, 39, 97, 0.74);
+  cursor: pointer;
+  transition:
+    background-color 160ms ease,
+    color 160ms ease;
+}
+
+.field__action-button:hover {
+  background: rgba(3, 39, 97, 0.08);
+  color: var(--brand-primary);
+}
+
+.field__action-button:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--brand-secondary) 70%, white);
+  outline-offset: 1px;
+}
+
+.field__action-button svg {
+  width: 18px;
+  height: 18px;
 }
 
 .field__hint {
@@ -529,7 +577,8 @@
     135deg,
     var(--brand-secondary),
     var(--brand-accent)
-  );  border: 1px solid rgba(253, 110, 13, 0.18);
+  );
+  border: 1px solid rgba(253, 110, 13, 0.18);
   color: color-mix(in srgb, var(--brand-secondary) 62%, black);
 }
 
@@ -540,7 +589,7 @@
   font: inherit;
   font-weight: 800;
   color: var(--brand-surface);
-     background: linear-gradient(
+  background: linear-gradient(
     135deg,
     var(--brand-secondary),
     var(--brand-accent)
@@ -1064,7 +1113,7 @@
   border: 1px solid rgba(3, 39, 97, 0.14);
   border-radius: 16px;
   padding: 16px;
-   background: var(--brand-surface);
+  background: var(--brand-surface);
   display: grid;
   gap: 8px;
 }
@@ -1182,7 +1231,7 @@
 }
 
 .dashboard-side-btn--users {
-   background: linear-gradient(
+  background: linear-gradient(
     135deg,
     var(--brand-secondary),
     color-mix(in srgb, var(--brand-secondary) 78%, black)
