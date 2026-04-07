@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+﻿import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useLocale } from "../context/LocaleContext";
@@ -210,21 +210,21 @@ export function AdminPage() {
     () =>
       isArabic
         ? {
-            overview: "ملخص الإعدادات",
+            overview: "نظرة عامة على الإعدادات",
             productionSettingsCount: "عدد إعدادات الإنتاج",
-            missingProductTypes: "أنواع المنتجات الناقصة",
-            noMissing: "لا يوجد أنواع ناقصة",
-            hasSystemSetting: "يوجد إعداد نظام",
-            latestSystemUpdater: "آخر من حدّث إعداد النظام",
+            missingProductTypes: "أنواع المنتجات المفقودة",
+            noMissing: "لا توجد أنواع مفقودة",
+            hasSystemSetting: "وجود إعداد نظام",
+            latestSystemUpdater: "آخر من قام بتحديث إعدادات النظام",
             updatedBy: "تم التحديث بواسطة",
-            updatedAt: "آخر تحديث",
+            updatedAt: "وقت التحديث",
             notAvailable: "غير متوفر",
-            loadingOverview: "جارٍ تحميل ملخص الإعدادات...",
-            failedOverview: "فشل تحميل ملخص الإعدادات",
+            loadingOverview: "جاري تحميل نظرة عامة على الإعدادات...",
+            failedOverview: "فشل تحميل نظرة عامة على الإعدادات",
             complete: "مكتمل",
-            missing: "ناقص",
-            latestSystemUpdatedAt: "وقت آخر تحديث للنظام",
-            noSystemSetting: "لا يوجد إعداد نظام حتى الآن",
+            missing: "مفقود",
+            latestSystemUpdatedAt: "وقت آخر تحديث لإعدادات النظام",
+            noSystemSetting: "لا يوجد إعداد نظام بعد",
           }
         : {
             overview: "Settings overview",
@@ -254,17 +254,17 @@ export function AdminPage() {
             title: "الحضور والغياب",
             todayAttendance: "حضور اليوم",
             todayAbsence: "غياب اليوم",
-            openShifts: "دوام مفتوح",
-            lateCases: "حالات تأخير",
+            openShifts: "المناوبات المفتوحة",
+            lateCases: "حالات التأخير",
             recentAttendances: "آخر سجلات الحضور",
-            loading: "جارٍ تحميل الحضور...",
+            loading: "جاري تحميل بيانات الحضور...",
             noData: "لا توجد سجلات حضور",
             status: "الحالة",
-            checkedOut: "انتهى الدوام",
-            checkedIn: "داخل الدوام",
-            checkIn: "دخول",
-            checkOut: "خروج",
-            shift: "الشفت",
+            checkedOut: "تم تسجيل الخروج",
+            checkedIn: "داخل المناوبة",
+            checkIn: "وقت الدخول",
+            checkOut: "وقت الخروج",
+            shift: "الوردية",
           }
         : {
             tab: "Attendance & Absence",
@@ -298,7 +298,7 @@ export function AdminPage() {
             totalPayout: "إجمالي المدفوعات",
             byRole: "حسب الدور",
             recentPayrolls: "آخر الرواتب",
-            loading: "جارٍ تحميل الرواتب...",
+            loading: "جاري تحميل بيانات الرواتب...",
             noData: "لا توجد بيانات رواتب",
           }
         : {
@@ -333,7 +333,7 @@ export function AdminPage() {
     [copy.admin.auditFrequencyLabels],
   );
 
-  const loadUsers = async () => {
+  const loadUsers = useCallback(async () => {
     setUsersLoading(true);
     setUsersError("");
     try {
@@ -358,9 +358,9 @@ export function AdminPage() {
     } finally {
       setUsersLoading(false);
     }
-  };
+  }, []);
 
-  const loadProductionSettings = async () => {
+  const loadProductionSettings = useCallback(async () => {
     setProductionLoading(true);
     setProductionError("");
     try {
@@ -379,9 +379,9 @@ export function AdminPage() {
     } finally {
       setProductionLoading(false);
     }
-  };
+  }, []);
 
-  const loadSystemSettings = async () => {
+  const loadSystemSettings = useCallback(async () => {
     setSystemLoading(true);
     setSystemError("");
     try {
@@ -414,9 +414,9 @@ export function AdminPage() {
     } finally {
       setSystemLoading(false);
     }
-  };
+  }, []);
 
-  const loadSettingsOverview = async () => {
+  const loadSettingsOverview = useCallback(async () => {
     setSettingsOverviewLoading(true);
     setSettingsOverviewError("");
     try {
@@ -586,9 +586,9 @@ export function AdminPage() {
     } finally {
       setSettingsOverviewLoading(false);
     }
-  };
+  }, [adminSettingsText.failedOverview, supportsSettingsOverviewApi]);
 
-  const loadAttendanceData = async () => {
+  const loadAttendanceData = useCallback(async () => {
     setAttendanceLoading(true);
     setAttendanceError("");
     try {
@@ -606,9 +606,9 @@ export function AdminPage() {
     } finally {
       setAttendanceLoading(false);
     }
-  };
+  }, [attendanceText.loading]);
 
-  const loadPayrollData = async () => {
+  const loadPayrollData = useCallback(async () => {
     setPayrollLoading(true);
     setPayrollError("");
     try {
@@ -638,7 +638,7 @@ export function AdminPage() {
     } finally {
       setPayrollLoading(false);
     }
-  };
+  }, [payrollText.loading]);
 
   useEffect(() => {
     void loadUsers();
@@ -647,7 +647,14 @@ export function AdminPage() {
     void loadSettingsOverview();
     void loadAttendanceData();
     void loadPayrollData();
-  }, []);
+  }, [
+    loadAttendanceData,
+    loadPayrollData,
+    loadProductionSettings,
+    loadSettingsOverview,
+    loadSystemSettings,
+    loadUsers,
+  ]);
 
   const attendanceTodayStats = useMemo(() => {
     const start = new Date();
@@ -849,51 +856,6 @@ export function AdminPage() {
             </button>
           </div>
         </header>
-
-        <nav className="admin-tabs">
-          <button
-            type="button"
-            className={tab === "users" ? "is-active" : ""}
-            onClick={() => handleTabChange("users")}
-          >
-            {copy.admin.usersTab}
-          </button>
-          <button
-            type="button"
-            className={tab === "attendance" ? "is-active" : ""}
-            onClick={() => handleTabChange("attendance")}
-          >
-            {attendanceText.tab}
-          </button>
-          <button
-            type="button"
-            className={tab === "payroll" ? "is-active" : ""}
-            onClick={() => handleTabChange("payroll")}
-          >
-            {payrollText.tab}
-          </button>
-          <button
-            type="button"
-            className={tab === "settingsOverview" ? "is-active" : ""}
-            onClick={() => handleTabChange("settingsOverview")}
-          >
-            {copy.admin.settingsOverviewTab}
-          </button>
-          <button
-            type="button"
-            className={tab === "production" ? "is-active" : ""}
-            onClick={() => handleTabChange("production")}
-          >
-            {copy.admin.productionTab}
-          </button>
-          <button
-            type="button"
-            className={tab === "system" ? "is-active" : ""}
-            onClick={() => handleTabChange("system")}
-          >
-            {copy.admin.systemTab}
-          </button>
-        </nav>
 
         {tab === "users" ? (
           <section className="admin-section">
@@ -1299,6 +1261,34 @@ export function AdminPage() {
               <p className="admin-muted">{payrollText.noData}</p>
             ) : null}
           </section>
+        ) : null}
+
+        {tab === "settingsOverview" ||
+        tab === "production" ||
+        tab === "system" ? (
+          <nav className="admin-tabs">
+            <button
+              type="button"
+              className={tab === "settingsOverview" ? "is-active" : ""}
+              onClick={() => handleTabChange("settingsOverview")}
+            >
+              {copy.admin.settingsOverviewTab}
+            </button>
+            <button
+              type="button"
+              className={tab === "production" ? "is-active" : ""}
+              onClick={() => handleTabChange("production")}
+            >
+              {copy.admin.productionTab}
+            </button>
+            <button
+              type="button"
+              className={tab === "system" ? "is-active" : ""}
+              onClick={() => handleTabChange("system")}
+            >
+              {copy.admin.systemTab}
+            </button>
+          </nav>
         ) : null}
 
         {tab === "settingsOverview" ? (

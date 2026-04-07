@@ -1,9 +1,9 @@
 :root {
-  --brand-primary: #0b3a8a;
+  --brand-primary: #032761;
   --brand-primary-rgb: 11, 58, 138;
-  --brand-secondary: #f26b1d;
+  --brand-secondary: #fd6e0d;
   --brand-secondary-rgb: 242, 107, 29;
-  --brand-accent: #1f9d8f;
+  --brand-accent: #fd6e0d;
   --brand-accent-rgb: 31, 157, 143;
   --brand-surface: #fefefa;
   --brand-surface-rgb: 254, 254, 250;
@@ -525,8 +525,11 @@
 .auth-alert {
   border-radius: 18px;
   padding: 14px 16px;
-  background: rgba(253, 110, 13, 0.1);
-  border: 1px solid rgba(253, 110, 13, 0.18);
+  background: linear-gradient(
+    135deg,
+    var(--brand-secondary),
+    var(--brand-accent)
+  );  border: 1px solid rgba(253, 110, 13, 0.18);
   color: color-mix(in srgb, var(--brand-secondary) 62%, black);
 }
 
@@ -537,13 +540,13 @@
   font: inherit;
   font-weight: 800;
   color: var(--brand-surface);
-  background: linear-gradient(
+     background: linear-gradient(
     135deg,
-    var(--brand-primary),
+    var(--brand-secondary),
     var(--brand-accent)
   );
   cursor: pointer;
-  box-shadow: 0 18px 40px rgba(3, 39, 97, 0.18);
+  box-shadow: 0 18px 40px rgba(85, 131, 204, 0.18);
   transition:
     transform 180ms ease,
     box-shadow 180ms ease,
@@ -564,9 +567,8 @@
   background: linear-gradient(
     135deg,
     var(--brand-secondary),
-    var(--brand-primary)
+    var(--brand-accent)
   );
-  box-shadow: 0 18px 40px rgba(3, 39, 97, 0.16);
 }
 
 .auth-card__footer {
@@ -778,6 +780,41 @@
   font-size: 1.1rem;
 }
 
+.dashboard-admin-shortcuts {
+  display: grid;
+  gap: 12px;
+}
+
+.dashboard-admin-shortcuts__eyebrow {
+  margin: 0;
+  color: rgba(254, 254, 250, 0.72);
+  font-size: 0.86rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.dashboard-admin-shortcuts h2 {
+  margin: 0;
+  color: #fefefa;
+  font-size: 1.15rem;
+}
+
+.dashboard-admin-shortcuts p {
+  margin: 0;
+  color: rgba(254, 254, 250, 0.78);
+}
+
+.dashboard-shortcut-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.dashboard-shortcut-grid--single {
+  grid-template-columns: 1fr;
+}
+
 .dashboard-card__meta {
   display: flex;
   flex-wrap: wrap;
@@ -901,6 +938,11 @@
   justify-content: flex-end;
 }
 
+.admin-section__actions--inline {
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
 .admin-table-wrap {
   overflow-x: auto;
   border-radius: 16px;
@@ -983,6 +1025,17 @@
   color: var(--brand-primary);
 }
 
+.admin-table input,
+.admin-table select {
+  width: 100%;
+  box-sizing: border-box;
+  border-radius: 12px;
+  border: 1px solid rgba(3, 39, 97, 0.14);
+  padding: 10px 12px;
+  font: inherit;
+  color: var(--brand-primary);
+}
+
 .admin-form-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1003,7 +1056,7 @@
 
 .admin-kpi-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
   gap: 14px;
 }
 
@@ -1011,10 +1064,10 @@
   border: 1px solid rgba(3, 39, 97, 0.14);
   border-radius: 16px;
   padding: 16px;
-  background: linear-gradient(
+   background: linear-gradient(
     135deg,
-    rgba(3, 39, 97, 0.06),
-    rgba(255, 140, 0, 0.1)
+    var(--brand-secondary),
+    color-mix(in srgb, var(--brand-secondary) 78%, black)
   );
   display: grid;
   gap: 8px;
@@ -1044,6 +1097,35 @@
 .admin-kpi-card__status {
   margin: 0;
   color: rgba(3, 39, 97, 0.72);
+  font-weight: 700;
+}
+
+.admin-filter-bar {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  align-items: end;
+}
+
+.admin-filter-bar label {
+  display: grid;
+  gap: 8px;
+  color: var(--brand-primary);
+  font-weight: 700;
+}
+
+.admin-filter-bar input {
+  width: 100%;
+  border-radius: 12px;
+  border: 1px solid rgba(3, 39, 97, 0.14);
+  padding: 10px 12px;
+  font: inherit;
+  color: var(--brand-primary);
+}
+
+.admin-report-note {
+  margin: 0;
+  color: rgba(3, 39, 97, 0.68);
   font-weight: 700;
 }
 
@@ -1100,6 +1182,30 @@
     135deg,
     var(--brand-secondary),
     color-mix(in srgb, var(--brand-secondary) 78%, black)
+  );
+}
+
+.dashboard-side-btn--users {
+   background: linear-gradient(
+    135deg,
+    var(--brand-secondary),
+    color-mix(in srgb, var(--brand-secondary) 78%, black)
+  );
+}
+
+.dashboard-side-btn--attendance {
+  background: linear-gradient(
+    135deg,
+    var(--brand-accent),
+    color-mix(in srgb, var(--brand-accent) 82%, black)
+  );
+}
+
+.dashboard-side-btn--payroll {
+  background: linear-gradient(
+    135deg,
+    var(--brand-accent),
+    color-mix(in srgb, var(--brand-accent) 82%, black)
   );
 }
 
