@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { authCopy, type Locale } from "../content/authCopy";
 import { useLocale } from "../context/LocaleContext";
 import { LocaleSwitch } from "./LocaleSwitch";
+import { DateTimeBadge } from "./DateTimeBadge";
 import logo from "../assets/plasticon.png";
 
 type AuthLayoutProps = {
@@ -37,6 +38,9 @@ export function AuthLayout({ children }: AuthLayoutProps) {
 
           <div className="auth-brand__copy">
             <p className="auth-eyebrow">{copy.appName}</p>
+            <span className="dashboard-brand__tag auth-brand__tag">
+              {copy.commandCenterLabel}
+            </span>
             <h1>{copy.heroTitle}</h1>
             <p className="auth-hero__text">{copy.heroDescription}</p>
             <button type="button" className="auth-hero__cta">
@@ -97,8 +101,18 @@ export function AuthLayout({ children }: AuthLayoutProps) {
           <div>
             <p className="auth-panel__kicker">{copy.appTagline}</p>
           </div>
-
-          <LocaleSwitch />
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "12px",
+              flexWrap: "wrap",
+              justifyContent: "flex-end",
+            }}
+          >
+            <DateTimeBadge />
+            <LocaleSwitch />
+          </div>
         </header>
 
         <div className="auth-panel__body">{children(locale)}</div>

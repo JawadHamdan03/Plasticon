@@ -1,197 +1,231 @@
-import { InventoryType, ReferenceType } from "../config/generated/prisma/client";
+import {
+  InventoryType,
+  ReferenceType,
+} from "../config/generated/prisma/client";
 import { prisma } from "../config/lib/prisma";
 import { auditAsync } from "./auditHelper";
 import { AuditAction, AuditEntityType } from "./auditServices";
 
 type ServiceResult<T> = {
-    status: number;
-    message?: string;
-    data?: T;
+  status: number;
+  message?: string;
+  data?: T;
 };
 
 type PurchaseItemPayload = {
-    materialId?: number;
-    quantity?: number;
-    pricePerUnit?: number;
+  materialId?: number;
+  quantity?: number;
+  pricePerUnit?: number;
 };
 
 type CreatePurchasePayload = {
-    supplierId?: number;
-    invoiceImage?: string;
-    date?: string;
-    totalAmount?: number;
-    items?: PurchaseItemPayload[];
+  supplierId?: number;
+  invoiceImage?: string;
+  date?: string;
+  totalAmount?: number;
+  items?: PurchaseItemPayload[];
 };
 
 export const createPurchase = async (
-    userId: number,
-    payload: CreatePurchasePayload = {}
+  userId: number,
+  payload: CreatePurchasePayload = {},
 ): Promise<ServiceResult<unknown>> => {
-    const supplierId = Number(payload.supplierId);
+  const supplierId = Number(payload.supplierId);
 
-    if (!Number.isInteger(supplierId) || supplierId <= 0) {
-        return { status: 400, message: "supplierId is required and must be a positive integer" };
+  if (!Number.isInteger(supplierId) || supplierId <= 0) {
+    return {
+      status: 400,
+      message: "supplierId is required and must be a positive integer",
+    };
+  }
+
+  if (!payload.invoiceImage || !payload.invoiceImage.trim()) {
+    return { status: 400, message: "invoiceImage is required" };
+  }
+
+  if (!Array.isArray(payload.items) || payload.items.length === 0) {
+    return { status: 400, message: "items are required" };
+  }
+
+  const supplier = await prisma.supplier.findUnique({
+    where: { id: supplierId },
+  });
+  if (!supplier) {
+    return { status: 404, message: "Supplier not found" };
+  }
+
+  const preparedItems: {
+    materialId: number;
+    quantity: number;
+    pricePerUnit: number;
+  }[] = [];
+  for (const item of payload.items) {
+    const materialId = Number(item.materialId);
+    const quantity = Number(item.quantity);
+    const pricePerUnit = Number(item.pricePerUnit);
+
+    if (!Number.isInteger(materialId) || materialId <= 0) {
+      return {
+        status: 400,
+        message: "Each item materialId must be a positive integer",
+      };
     }
 
-    if (!payload.invoiceImage || !payload.invoiceImage.trim()) {
-        return { status: 400, message: "invoiceImage is required" };
+    if (!Number.isFinite(quantity) || quantity <= 0) {
+      return {
+        status: 400,
+        message: "Each item quantity must be a positive number",
+      };
     }
 
-    if (!Array.isArray(payload.items) || payload.items.length === 0) {
-        return { status: 400, message: "items are required" };
+    if (!Number.isFinite(pricePerUnit) || pricePerUnit < 0) {
+      return {
+        status: 400,
+        message: "Each item pricePerUnit must be zero or a positive number",
+      };
     }
 
-    const supplier = await prisma.supplier.findUnique({ where: { id: supplierId } });
-    if (!supplier) {
-        return { status: 404, message: "Supplier not found" };
-    }
+    preparedItems.push({ materialId, quantity, pricePerUnit });
+  }
 
-    const preparedItems: { materialId: number; quantity: number; pricePerUnit: number }[] = [];
-    for (const item of payload.items) {
-        const materialId = Number(item.materialId);
-        const quantity = Number(item.quantity);
-        const pricePerUnit = Number(item.pricePerUnit);
+  const materials = await prisma.rawMaterial.findMany({
+    where: { id: { in: preparedItems.map((x) => x.materialId) } },
+    select: { id: true, currentQuantity: true },
+  });
 
-        if (!Number.isInteger(materialId) || materialId <= 0) {
-            return { status: 400, message: "Each item materialId must be a positive integer" };
-        }
+  if (
+    materials.length !== new Set(preparedItems.map((x) => x.materialId)).size
+  ) {
+    return { status: 404, message: "One or more materials were not found" };
+  }
 
-        if (!Number.isFinite(quantity) || quantity <= 0) {
-            return { status: 400, message: "Each item quantity must be a positive number" };
-        }
+  const computedTotalAmount = preparedItems.reduce(
+    (sum, item) => sum + item.quantity * item.pricePerUnit,
+    0,
+  );
 
-        if (!Number.isFinite(pricePerUnit) || pricePerUnit < 0) {
-            return { status: 400, message: "Each item pricePerUnit must be zero or a positive number" };
-        }
+  const totalAmount =
+    payload.totalAmount !== undefined && payload.totalAmount !== null
+      ? Number(payload.totalAmount)
+      : computedTotalAmount;
 
-        preparedItems.push({ materialId, quantity, pricePerUnit });
-    }
+  if (!Number.isFinite(totalAmount) || totalAmount < 0) {
+    return {
+      status: 400,
+      message: "totalAmount must be zero or a positive number",
+    };
+  }
 
-    const materials = await prisma.rawMaterial.findMany({
-        where: { id: { in: preparedItems.map((x) => x.materialId) } },
-        select: { id: true, currentQuantity: true },
-    });
+  const purchaseDate = payload.date ? new Date(payload.date) : new Date();
+  if (Number.isNaN(purchaseDate.getTime())) {
+    return { status: 400, message: "Invalid purchase date" };
+  }
 
-    if (materials.length !== new Set(preparedItems.map((x) => x.materialId)).size) {
-        return { status: 404, message: "One or more materials were not found" };
-    }
+  const materialMap = new Map(materials.map((m) => [m.id, m]));
 
-    const computedTotalAmount = preparedItems.reduce(
-        (sum, item) => sum + item.quantity * item.pricePerUnit,
-        0
-    );
-
-    const totalAmount =
-        payload.totalAmount !== undefined && payload.totalAmount !== null
-            ? Number(payload.totalAmount)
-            : computedTotalAmount;
-
-    if (!Number.isFinite(totalAmount) || totalAmount < 0) {
-        return { status: 400, message: "totalAmount must be zero or a positive number" };
-    }
-
-    const purchaseDate = payload.date ? new Date(payload.date) : new Date();
-    if (Number.isNaN(purchaseDate.getTime())) {
-        return { status: 400, message: "Invalid purchase date" };
-    }
-
-    const materialMap = new Map(materials.map((m) => [m.id, m]));
-
-    const result = await prisma.$transaction(async (tx) => {
-        const purchase = await tx.purchase.create({
-            data: {
-                supplierId,
-                receivedById: userId,
-                totalAmount,
-                invoiceImage: payload.invoiceImage!.trim(),
-                date: purchaseDate,
-            },
-        });
-
-        for (const item of preparedItems) {
-            await tx.purchaseItem.create({
-                data: {
-                    purchaseId: purchase.id,
-                    materialId: item.materialId,
-                    quantity: item.quantity,
-                    pricePerUnit: item.pricePerUnit,
-                },
-            });
-
-            const material = materialMap.get(item.materialId)!;
-
-            await tx.rawMaterial.update({
-                where: { id: item.materialId },
-                data: {
-                    currentQuantity: material.currentQuantity + item.quantity,
-                },
-            });
-
-            await tx.inventoryTransaction.create({
-                data: {
-                    materialId: item.materialId,
-                    type: InventoryType.IN,
-                    quantity: item.quantity,
-                    referenceType: ReferenceType.PURCHASE,
-                    referenceId: purchase.id,
-                    createdById: userId,
-                },
-            });
-        }
-
-        return tx.purchase.findUnique({
-            where: { id: purchase.id },
-            include: {
-                supplier: true,
-                receivedBy: {
-                    select: { id: true, fullName: true, username: true, role: true },
-                },
-                items: {
-                    include: {
-                        material: true,
-                    },
-                },
-            },
-        });
-    });
-
-    auditAsync(userId, AuditAction.PURCHASE_CREATED, AuditEntityType.PURCHASE, result?.id ?? null, {
+  const result = await prisma.$transaction(async (tx) => {
+    const purchase = await tx.purchase.create({
+      data: {
         supplierId,
+        receivedById: userId,
         totalAmount,
-        itemCount: preparedItems.length,
+        invoiceImage: payload.invoiceImage!.trim(),
+        date: purchaseDate,
+      },
     });
 
-    return { status: 201, data: result };
+    for (const item of preparedItems) {
+      await tx.purchaseItem.create({
+        data: {
+          purchaseId: purchase.id,
+          materialId: item.materialId,
+          quantity: item.quantity,
+          pricePerUnit: item.pricePerUnit,
+        },
+      });
+
+      const material = materialMap.get(item.materialId)!;
+
+      await tx.rawMaterial.update({
+        where: { id: item.materialId },
+        data: {
+          currentQuantity: material.currentQuantity + item.quantity,
+        },
+      });
+
+      await tx.inventoryTransaction.create({
+        data: {
+          materialId: item.materialId,
+          type: InventoryType.IN,
+          quantity: item.quantity,
+          referenceType: ReferenceType.PURCHASE,
+          referenceId: purchase.id,
+          createdById: userId,
+        },
+      });
+    }
+
+    return tx.purchase.findUnique({
+      where: { id: purchase.id },
+      include: {
+        supplier: true,
+        receivedBy: {
+          select: { id: true, fullName: true, username: true, role: true },
+        },
+        items: {
+          include: {
+            material: true,
+          },
+        },
+      },
+    });
+  });
+
+  auditAsync(
+    userId,
+    AuditAction.PURCHASE_CREATED,
+    AuditEntityType.PURCHASE,
+    result?.id ?? undefined,
+    {
+      supplierId,
+      totalAmount,
+      itemCount: preparedItems.length,
+    },
+  );
+
+  return { status: 201, data: result };
 };
 
 export const getAllPurchases = async (): Promise<ServiceResult<unknown>> => {
-    const purchases = await prisma.purchase.findMany({
-        include: {
-            supplier: true,
-            receivedBy: {
-                select: { id: true, fullName: true, username: true, role: true },
-            },
-            items: {
-                include: { material: true },
-            },
-        },
-        orderBy: { date: "desc" },
-    });
+  const purchases = await prisma.purchase.findMany({
+    include: {
+      supplier: true,
+      receivedBy: {
+        select: { id: true, fullName: true, username: true, role: true },
+      },
+      items: {
+        include: { material: true },
+      },
+    },
+    orderBy: { date: "desc" },
+  });
 
-    return { status: 200, data: purchases };
+  return { status: 200, data: purchases };
 };
 
-export const getMyPurchases = async (userId: number): Promise<ServiceResult<unknown>> => {
-    const purchases = await prisma.purchase.findMany({
-        where: { receivedById: userId },
-        include: {
-            supplier: true,
-            items: {
-                include: { material: true },
-            },
-        },
-        orderBy: { date: "desc" },
-    });
+export const getMyPurchases = async (
+  userId: number,
+): Promise<ServiceResult<unknown>> => {
+  const purchases = await prisma.purchase.findMany({
+    where: { receivedById: userId },
+    include: {
+      supplier: true,
+      items: {
+        include: { material: true },
+      },
+    },
+    orderBy: { date: "desc" },
+  });
 
-    return { status: 200, data: purchases };
+  return { status: 200, data: purchases };
 };

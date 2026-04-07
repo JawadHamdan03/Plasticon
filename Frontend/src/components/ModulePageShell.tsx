@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { appCopy } from "../content/appCopy";
 import { useLocale } from "../context/LocaleContext";
 import { LocaleSwitch } from "./LocaleSwitch";
+import { DateTimeBadge } from "./DateTimeBadge";
 import logo from "../assets/plasticon.png";
 
 type ModulePageShellProps = {
@@ -32,13 +33,24 @@ export function ModulePageShell({
               alt="Plasticon logo"
             />
             <div>
-              <p className="auth-eyebrow">{copy.appName}</p>
+              <h1 className="dashboard-brand__name">{copy.appName}</h1>
               <span className="dashboard-brand__tag">
                 {copy.commandCenterLabel}
               </span>
             </div>
           </div>
-          <LocaleSwitch />
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "12px",
+              flexWrap: "wrap",
+              justifyContent: "flex-end",
+            }}
+          >
+            <DateTimeBadge />
+            <LocaleSwitch />
+          </div>
         </div>
         <header className="module-header">
           <div>

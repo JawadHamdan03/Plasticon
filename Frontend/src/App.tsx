@@ -11,6 +11,14 @@ import { ForgotPasswordPage } from "./pages/ForgotPasswordPage";
 import { ResetPasswordPage } from "./pages/ResetPasswordPage";
 import { VerifyEmailPage } from "./pages/VerifyEmailPage";
 import { AdminPage } from "./pages/AdminPage";
+import { ShiftsPage } from "./pages/ShiftsPage";
+import { MachinesPage } from "./pages/MachinesPage";
+import { AuditLogsPage } from "./pages/AuditLogsPage";
+import { DashboardAnalyticsPage } from "./pages/DashboardAnalyticsPage";
+import { UsersAdminPage } from "./pages/UsersAdminPage";
+import { AttendanceAdminPage } from "./pages/AttendanceAdminPage";
+import { PayrollAdminPage } from "./pages/PayrollAdminPage";
+import { SettingsAdminPage } from "./pages/SettingsAdminPage";
 import { RoleProtectedRoute } from "./components/RoleProtectedRoute";
 import { InventoryPage } from "./pages/InventoryPage";
 import { ProductionPage } from "./pages/ProductionPage";
@@ -78,6 +86,70 @@ function App() {
             element={
               <AdminOnlyRoute>
                 <AdminPage />
+              </AdminOnlyRoute>
+            }
+          />
+          <Route
+            path="/admin/users"
+            element={
+              <AdminOnlyRoute>
+                <UsersAdminPage />
+              </AdminOnlyRoute>
+            }
+          />
+          <Route
+            path="/admin/attendance"
+            element={
+              <AdminOnlyRoute>
+                <AttendanceAdminPage />
+              </AdminOnlyRoute>
+            }
+          />
+          <Route
+            path="/admin/payroll"
+            element={
+              <AdminOnlyRoute>
+                <PayrollAdminPage />
+              </AdminOnlyRoute>
+            }
+          />
+          <Route
+            path="/admin/settings"
+            element={
+              <AdminOnlyRoute>
+                <SettingsAdminPage />
+              </AdminOnlyRoute>
+            }
+          />
+          <Route
+            path="/admin/shifts"
+            element={
+              <AdminOnlyRoute>
+                <ShiftsPage />
+              </AdminOnlyRoute>
+            }
+          />
+          <Route
+            path="/admin/machines"
+            element={
+              <AdminOnlyRoute>
+                <MachinesPage />
+              </AdminOnlyRoute>
+            }
+          />
+          <Route
+            path="/admin/audit-logs"
+            element={
+              <AdminOnlyRoute>
+                <AuditLogsPage />
+              </AdminOnlyRoute>
+            }
+          />
+          <Route
+            path="/admin/dashboard-analytics"
+            element={
+              <AdminOnlyRoute>
+                <DashboardAnalyticsPage />
               </AdminOnlyRoute>
             }
           />

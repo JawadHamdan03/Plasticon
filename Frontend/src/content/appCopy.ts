@@ -42,6 +42,11 @@ type AppCopy = {
     productionTab: string;
     systemTab: string;
     settingsOverviewTab: string;
+    shiftsTab: string;
+    machinesTab: string;
+    auditLogsTab: string;
+    dashboardTab: string;
+    chatTab: string;
     usersTitle: string;
     attendanceTitle: string;
     payrollTitle: string;
@@ -52,6 +57,33 @@ type AppCopy = {
     loadingPayroll: string;
     loadingProduction: string;
     loadingSystem: string;
+    loadingShifts: string;
+    loadingMachines: string;
+    loadingAuditLogs: string;
+    loadingDashboard: string;
+    noShifts: string;
+    noMachines: string;
+    noPayrolls: string;
+    noAuditLogs: string;
+    addNewMachine: string;
+    shiftStart: string;
+    shiftEnd: string;
+    machineType: string;
+    machineStatus: string;
+    auditEntity: string;
+    auditAction: string;
+    totalUsers: string;
+    activeUsers: string;
+    totalMachines: string;
+    operationalMachines: string;
+    totalShifts: string;
+    todayTotalHours: string;
+    thisMonthPayroll: string;
+    productionToday: string;
+    inventoryItems: string;
+    lowStockItems: string;
+    openChat: string;
+    chatTabDescription: string;
     addNewUser: string;
     id: string;
     name: string;
@@ -237,7 +269,7 @@ export const appCopy: Record<Locale, AppCopy> = {
     delete: "Delete",
     signOut: "Sign out",
     backToDashboard: "Back to dashboard",
-    commandCenterLabel: "ERP Command Center",
+    commandCenterLabel: "Smart Factory Management System",
     dashboard: {
       title: "Operations Dashboard",
       subtitle:
@@ -272,6 +304,11 @@ export const appCopy: Record<Locale, AppCopy> = {
       productionTab: "Production Settings",
       systemTab: "System Settings",
       settingsOverviewTab: "Settings Overview",
+      shiftsTab: "Shifts",
+      machinesTab: "Machines",
+      auditLogsTab: "Audit Logs",
+      dashboardTab: "Dashboard Analytics",
+      chatTab: "Chat",
       usersTitle: "Users",
       attendanceTitle: "Attendance & Absence",
       payrollTitle: "Payroll",
@@ -282,6 +319,33 @@ export const appCopy: Record<Locale, AppCopy> = {
       loadingPayroll: "Loading payroll...",
       loadingProduction: "Loading production settings...",
       loadingSystem: "Loading system settings...",
+      loadingShifts: "Loading shifts...",
+      loadingMachines: "Loading machines...",
+      loadingAuditLogs: "Loading audit logs...",
+      loadingDashboard: "Loading dashboard analytics...",
+      noShifts: "No shifts available",
+      noMachines: "No machines available",
+      noPayrolls: "No payroll records",
+      noAuditLogs: "No audit logs found",
+      addNewMachine: "Add Machine",
+      shiftStart: "Start",
+      shiftEnd: "End",
+      machineType: "Type",
+      machineStatus: "Status",
+      auditEntity: "Entity",
+      auditAction: "Action",
+      totalUsers: "Total users",
+      activeUsers: "Active users",
+      totalMachines: "Total machines",
+      operationalMachines: "Operational machines",
+      totalShifts: "Total shifts",
+      todayTotalHours: "Today's total hours",
+      thisMonthPayroll: "This month payroll",
+      productionToday: "Production today",
+      inventoryItems: "Inventory items",
+      lowStockItems: "Low stock items",
+      openChat: "Open chat",
+      chatTabDescription: "Use this tab to access the internal chat module.",
       addNewUser: "Add New User",
       id: "ID",
       name: "Name",
@@ -500,6 +564,11 @@ export const appCopy: Record<Locale, AppCopy> = {
       productionTab: "إعدادات الإنتاج",
       systemTab: "إعدادات النظام",
       settingsOverviewTab: "ملخص الإعدادات",
+      shiftsTab: "الشفتات",
+      machinesTab: "الماكينات",
+      auditLogsTab: "سجل التدقيق",
+      dashboardTab: "لوحة التحليلات",
+      chatTab: "الدردشة",
       usersTitle: "المستخدمون",
       attendanceTitle: "الحضور والغياب",
       payrollTitle: "الرواتب",
@@ -510,6 +579,34 @@ export const appCopy: Record<Locale, AppCopy> = {
       loadingPayroll: "جارٍ تحميل الرواتب...",
       loadingProduction: "جارٍ تحميل إعدادات الإنتاج...",
       loadingSystem: "جارٍ تحميل إعدادات النظام...",
+      loadingShifts: "جارٍ تحميل الشفتات...",
+      loadingMachines: "جارٍ تحميل الماكينات...",
+      loadingAuditLogs: "جارٍ تحميل سجل التدقيق...",
+      loadingDashboard: "جارٍ تحميل تحليلات اللوحة...",
+      noShifts: "لا توجد شفتات",
+      noMachines: "لا توجد ماكينات",
+      noPayrolls: "لا توجد سجلات رواتب",
+      noAuditLogs: "لا توجد سجلات تدقيق",
+      addNewMachine: "إضافة ماكينة",
+      shiftStart: "بداية",
+      shiftEnd: "نهاية",
+      machineType: "النوع",
+      machineStatus: "الحالة",
+      auditEntity: "الكيان",
+      auditAction: "الإجراء",
+      totalUsers: "إجمالي المستخدمين",
+      activeUsers: "المستخدمون النشطون",
+      totalMachines: "إجمالي الماكينات",
+      operationalMachines: "الماكينات التشغيلية",
+      totalShifts: "إجمالي الشفتات",
+      todayTotalHours: "إجمالي ساعات اليوم",
+      thisMonthPayroll: "رواتب هذا الشهر",
+      productionToday: "إنتاج اليوم",
+      inventoryItems: "عناصر المخزون",
+      lowStockItems: "عناصر منخفضة المخزون",
+      openChat: "فتح الدردشة",
+      chatTabDescription:
+        "استخدم هذا التبويب للوصول إلى وحدة الدردشة الداخلية.",
       addNewUser: "إضافة مستخدم جديد",
       id: "الرقم",
       name: "الاسم",

@@ -1,5 +1,6 @@
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import type { SignOptions } from "jsonwebtoken";
 import { Response } from "express";
 
 const BCRYPT_SALT_ROUNDS = 12;
@@ -35,7 +36,7 @@ type ActionTokenPayload = {
 export const generateActionToken = (
   userId: number,
   purpose: AuthAction,
-  expiresIn: string,
+  expiresIn: SignOptions["expiresIn"],
 ) => {
   const payload: ActionTokenPayload = { id: userId, purpose };
   return jwt.sign(payload, jwtSecret, { expiresIn });

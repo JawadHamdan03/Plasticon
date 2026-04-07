@@ -4,6 +4,7 @@ import { appCopy } from "../content/appCopy";
 import { useAuth } from "../context/AuthContext";
 import { useLocale } from "../context/LocaleContext";
 import { LocaleSwitch } from "../components/LocaleSwitch";
+import { DateTimeBadge } from "../components/DateTimeBadge";
 import logo from "../assets/plasticon.png";
 
 export function DashboardPage() {
@@ -29,13 +30,14 @@ export function DashboardPage() {
               alt="Plasticon logo"
             />
             <div>
-              <p className="auth-eyebrow">{copy.appName}</p>
+              <h1 className="dashboard-brand__name">{copy.appName}</h1>
               <span className="dashboard-brand__tag">
                 {copy.commandCenterLabel}
               </span>
             </div>
           </div>
           <div className="dashboard-topbar__actions">
+            <DateTimeBadge tone="dark" />
             <LocaleSwitch variant="dark" />
             <button
               type="button"
@@ -130,7 +132,7 @@ export function DashboardPage() {
                   <button
                     type="button"
                     className="auth-button dashboard-side-btn dashboard-side-btn--users"
-                    onClick={() => navigate("/admin?tab=users")}
+                    onClick={() => navigate("/admin/users")}
                   >
                     {copy.admin.usersTab}
                   </button>
@@ -138,7 +140,7 @@ export function DashboardPage() {
                   <button
                     type="button"
                     className="auth-button dashboard-side-btn dashboard-side-btn--settings"
-                    onClick={() => navigate("/admin?tab=settingsOverview")}
+                    onClick={() => navigate("/admin/settings")}
                   >
                     {copy.dashboard.settingsShortcut}
                   </button>
@@ -146,7 +148,7 @@ export function DashboardPage() {
                   <button
                     type="button"
                     className="auth-button dashboard-side-btn dashboard-side-btn--attendance"
-                    onClick={() => navigate("/admin?tab=attendance")}
+                    onClick={() => navigate("/admin/attendance")}
                   >
                     {copy.admin.attendanceTab}
                   </button>
@@ -154,9 +156,41 @@ export function DashboardPage() {
                   <button
                     type="button"
                     className="auth-button dashboard-side-btn dashboard-side-btn--payroll"
-                    onClick={() => navigate("/admin?tab=payroll")}
+                    onClick={() => navigate("/admin/payroll")}
                   >
                     {copy.admin.payrollTab}
+                  </button>
+
+                  <button
+                    type="button"
+                    className="auth-button dashboard-side-btn dashboard-side-btn--users"
+                    onClick={() => navigate("/admin/shifts")}
+                  >
+                    {copy.admin.shiftsTab}
+                  </button>
+
+                  <button
+                    type="button"
+                    className="auth-button dashboard-side-btn dashboard-side-btn--users"
+                    onClick={() => navigate("/admin/machines")}
+                  >
+                    {copy.admin.machinesTab}
+                  </button>
+
+                  <button
+                    type="button"
+                    className="auth-button dashboard-side-btn dashboard-side-btn--settings"
+                    onClick={() => navigate("/admin/audit-logs")}
+                  >
+                    {copy.admin.auditLogsTab}
+                  </button>
+
+                  <button
+                    type="button"
+                    className="auth-button dashboard-side-btn dashboard-side-btn--settings"
+                    onClick={() => navigate("/admin/dashboard-analytics")}
+                  >
+                    {copy.admin.dashboardTab}
                   </button>
                 </div>
               </div>

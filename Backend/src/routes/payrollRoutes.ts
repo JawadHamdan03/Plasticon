@@ -6,6 +6,7 @@ import {
   getAllPayrollsHandler,
   getMyPayrollsHandler,
   getPayrollByIdHandler,
+  updatePayrollHandler,
   deletePayrollHandler,
 } from "../controllers/payrollController";
 import { authorizeRoles } from "../middleware/authMiddleware";
@@ -43,6 +44,9 @@ router.get("/me", authorizeRoles(allRoles), getMyPayrollsHandler);
 
 // Get single payroll by id — ACCOUNTANT/ADMIN
 router.get("/:id", authorizeRoles(accountingRoles), getPayrollByIdHandler);
+
+// Update payroll — ACCOUNTANT/ADMIN
+router.put("/:id", authorizeRoles(accountingRoles), updatePayrollHandler);
 
 // Delete payroll — ADMIN only
 router.delete("/:id", authorizeRoles([UserRole.ADMIN]), deletePayrollHandler);
