@@ -18,6 +18,9 @@ type AppCopy = {
     reports: string;
     notifications: string;
     adminPanel: string;
+    adminShortcutsTitle: string;
+    adminShortcutsSubtitle: string;
+    settingsShortcut: string;
     userFallback: string;
     emailFallback: string;
     roleFallback: string;
@@ -34,13 +37,19 @@ type AppCopy = {
     title: string;
     subtitle: string;
     usersTab: string;
+    attendanceTab: string;
+    payrollTab: string;
     productionTab: string;
     systemTab: string;
     settingsOverviewTab: string;
     usersTitle: string;
+    attendanceTitle: string;
+    payrollTitle: string;
     productionTitle: string;
     systemTitle: string;
     loadingUsers: string;
+    loadingAttendance: string;
+    loadingPayroll: string;
     loadingProduction: string;
     loadingSystem: string;
     id: string;
@@ -64,6 +73,31 @@ type AppCopy = {
     monthlyReportDayOfMonth: string;
     monthlyReportTime: string;
     systemSettingLoaded: string;
+    dateFrom: string;
+    dateTo: string;
+    clearFilters: string;
+    reportPeriod: string;
+    recordsShown: string;
+    recordsInRange: string;
+    presentEmployees: string;
+    absentEmployees: string;
+    totalLateMinutes: string;
+    totalOvertimeMinutes: string;
+    totalHours: string;
+    overtimeHours: string;
+    workedHours: string;
+    baseSalary: string;
+    overtimeSalary: string;
+    totalPayout: string;
+    calculatedAt: string;
+    exportPdf: string;
+    edit: string;
+    cancel: string;
+    checkInLabel: string;
+    checkOutLabel: string;
+    attendanceReportTitle: string;
+    payrollReportTitle: string;
+    employeeReport: string;
     userUpdated: string;
     userUpdateFailed: string;
     deleteUserConfirm: string;
@@ -195,6 +229,10 @@ export const appCopy: Record<Locale, AppCopy> = {
       reports: "Reports",
       notifications: "Notifications",
       adminPanel: "Open Admin Panel",
+      adminShortcutsTitle: "Admin shortcuts",
+      adminShortcutsSubtitle:
+        "Jump directly to the admin areas that matter most.",
+      settingsShortcut: "Settings",
       userFallback: "User",
       emailFallback: "user@example.com",
       roleFallback: "Role pending from backend",
@@ -211,13 +249,19 @@ export const appCopy: Record<Locale, AppCopy> = {
       title: "Admin Control Center",
       subtitle: "Manage users and global settings from one panel.",
       usersTab: "Users",
+      attendanceTab: "Attendance & Absence",
+      payrollTab: "Payroll",
       productionTab: "Production Settings",
       systemTab: "System Settings",
       settingsOverviewTab: "Settings Overview",
       usersTitle: "Users",
+      attendanceTitle: "Attendance & Absence",
+      payrollTitle: "Payroll",
       productionTitle: "Production settings",
       systemTitle: "System settings",
       loadingUsers: "Loading users...",
+      loadingAttendance: "Loading attendance...",
+      loadingPayroll: "Loading payroll...",
       loadingProduction: "Loading production settings...",
       loadingSystem: "Loading system settings...",
       id: "ID",
@@ -241,6 +285,31 @@ export const appCopy: Record<Locale, AppCopy> = {
       monthlyReportDayOfMonth: "Monthly report day (1-31)",
       monthlyReportTime: "Monthly report time (HH:mm)",
       systemSettingLoaded: "Last loaded system setting ID",
+      dateFrom: "From date",
+      dateTo: "To date",
+      clearFilters: "Clear filters",
+      reportPeriod: "Report period",
+      recordsShown: "Records shown",
+      recordsInRange: "Records in range",
+      presentEmployees: "Employees present",
+      absentEmployees: "Employees absent",
+      totalLateMinutes: "Total late minutes",
+      totalOvertimeMinutes: "Total overtime minutes",
+      totalHours: "Total hours",
+      overtimeHours: "Overtime hours",
+      workedHours: "Worked hours",
+      baseSalary: "Base salary",
+      overtimeSalary: "Overtime salary",
+      totalPayout: "Total payout",
+      calculatedAt: "Calculated at",
+      exportPdf: "Export PDF",
+      edit: "Edit",
+      cancel: "Cancel",
+      checkInLabel: "Check in",
+      checkOutLabel: "Check out",
+      attendanceReportTitle: "Attendance report",
+      payrollReportTitle: "Payroll report",
+      employeeReport: "Employee report",
       userUpdated: "User updated successfully",
       userUpdateFailed: "Failed to update user",
       deleteUserConfirm: "Are you sure you want to delete this user?",
@@ -371,6 +440,9 @@ export const appCopy: Record<Locale, AppCopy> = {
       reports: "التقارير",
       notifications: "الإشعارات",
       adminPanel: "فتح لوحة المدير",
+      adminShortcutsTitle: "اختصارات الأدمن",
+      adminShortcutsSubtitle: "انتقل مباشرة إلى أقسام الإدارة الأكثر أهمية.",
+      settingsShortcut: "الإعدادات",
       userFallback: "مستخدم",
       emailFallback: "user@example.com",
       roleFallback: "الدور قيد الإعداد من الباك إند",
@@ -387,13 +459,19 @@ export const appCopy: Record<Locale, AppCopy> = {
       title: "مركز التحكم الإداري",
       subtitle: "إدارة المستخدمين والإعدادات العامة من لوحة واحدة.",
       usersTab: "المستخدمون",
+      attendanceTab: "الحضور والغياب",
+      payrollTab: "الرواتب",
       productionTab: "إعدادات الإنتاج",
       systemTab: "إعدادات النظام",
       settingsOverviewTab: "ملخص الإعدادات",
       usersTitle: "المستخدمون",
+      attendanceTitle: "الحضور والغياب",
+      payrollTitle: "الرواتب",
       productionTitle: "إعدادات الإنتاج",
       systemTitle: "إعدادات النظام",
       loadingUsers: "جارٍ تحميل المستخدمين...",
+      loadingAttendance: "جارٍ تحميل الحضور...",
+      loadingPayroll: "جارٍ تحميل الرواتب...",
       loadingProduction: "جارٍ تحميل إعدادات الإنتاج...",
       loadingSystem: "جارٍ تحميل إعدادات النظام...",
       id: "الرقم",
@@ -417,6 +495,31 @@ export const appCopy: Record<Locale, AppCopy> = {
       monthlyReportDayOfMonth: "يوم التقرير الشهري (1-31)",
       monthlyReportTime: "وقت التقرير الشهري (HH:mm)",
       systemSettingLoaded: "آخر إعداد نظام تم تحميله، المعرف",
+      dateFrom: "من تاريخ",
+      dateTo: "إلى تاريخ",
+      clearFilters: "مسح الفلاتر",
+      reportPeriod: "فترة التقرير",
+      recordsShown: "السجلات الظاهرة",
+      recordsInRange: "السجلات ضمن النطاق",
+      presentEmployees: "الموظفون الحاضرون",
+      absentEmployees: "الموظفون الغائبون",
+      totalLateMinutes: "إجمالي دقائق التأخير",
+      totalOvertimeMinutes: "إجمالي دقائق الإضافي",
+      totalHours: "إجمالي الساعات",
+      overtimeHours: "ساعات الإضافي",
+      workedHours: "ساعات العمل",
+      baseSalary: "الراتب الأساسي",
+      overtimeSalary: "بدل الإضافي",
+      totalPayout: "إجمالي المدفوعات",
+      calculatedAt: "تم الحساب عند",
+      exportPdf: "تصدير PDF",
+      edit: "تعديل",
+      cancel: "إلغاء",
+      checkInLabel: "وقت الدخول",
+      checkOutLabel: "وقت الخروج",
+      attendanceReportTitle: "تقرير الحضور",
+      payrollReportTitle: "تقرير الرواتب",
+      employeeReport: "تقرير الموظف",
       userUpdated: "تم تحديث المستخدم بنجاح",
       userUpdateFailed: "فشل تحديث المستخدم",
       deleteUserConfirm: "هل أنت متأكد أنك تريد حذف هذا المستخدم؟",

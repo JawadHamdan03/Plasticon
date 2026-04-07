@@ -119,13 +119,47 @@ export function DashboardPage() {
             </div>
 
             {user?.role === "ADMIN" ? (
-              <button
-                type="button"
-                className="auth-button dashboard-side-btn dashboard-side-btn--settings"
-                onClick={() => navigate("/admin?tab=settingsOverview")}
-              >
-                {locale === "ar" ? "الإعدادات" : "Settings"}
-              </button>
+              <div className="dashboard-admin-shortcuts">
+                <p className="dashboard-admin-shortcuts__eyebrow">
+                  {copy.dashboard.adminShortcutsTitle}
+                </p>
+                <h2>{copy.dashboard.adminShortcutsTitle}</h2>
+                <p>{copy.dashboard.adminShortcutsSubtitle}</p>
+
+                <div className="dashboard-shortcut-grid">
+                  <button
+                    type="button"
+                    className="auth-button dashboard-side-btn dashboard-side-btn--users"
+                    onClick={() => navigate("/admin?tab=users")}
+                  >
+                    {copy.admin.usersTab}
+                  </button>
+
+                  <button
+                    type="button"
+                    className="auth-button dashboard-side-btn dashboard-side-btn--settings"
+                    onClick={() => navigate("/admin?tab=settingsOverview")}
+                  >
+                    {copy.dashboard.settingsShortcut}
+                  </button>
+
+                  <button
+                    type="button"
+                    className="auth-button dashboard-side-btn dashboard-side-btn--attendance"
+                    onClick={() => navigate("/admin?tab=attendance")}
+                  >
+                    {copy.admin.attendanceTab}
+                  </button>
+
+                  <button
+                    type="button"
+                    className="auth-button dashboard-side-btn dashboard-side-btn--payroll"
+                    onClick={() => navigate("/admin?tab=payroll")}
+                  >
+                    {copy.admin.payrollTab}
+                  </button>
+                </div>
+              </div>
             ) : null}
 
             <button
