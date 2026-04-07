@@ -52,6 +52,7 @@ type AppCopy = {
     loadingPayroll: string;
     loadingProduction: string;
     loadingSystem: string;
+    addNewUser: string;
     id: string;
     name: string;
     username: string;
@@ -169,16 +170,25 @@ type AppCopy = {
     title: string;
     subtitle: string;
     summaryLabel: string;
+    dailyProduction: string;
     weeklyProduction: string;
     monthlySales: string;
+    yearlySales: string;
     inventorySnapshot: string;
     week: string;
+    day: string;
     month: string;
+    year: string;
     threshold: string;
     load: string;
+    downloadPdf: string;
+    pdfNoData: string;
+    pdfDownloadFailed: string;
     adminNotice: string;
     loadingWeekly: string;
+    loadingDaily: string;
     loadingMonthly: string;
+    loadingYearly: string;
     loadingInventory: string;
     noReport: string;
     loaded: string;
@@ -264,6 +274,7 @@ export const appCopy: Record<Locale, AppCopy> = {
       loadingPayroll: "Loading payroll...",
       loadingProduction: "Loading production settings...",
       loadingSystem: "Loading system settings...",
+      addNewUser: "Add New User",
       id: "ID",
       name: "Name",
       username: "Username",
@@ -382,16 +393,25 @@ export const appCopy: Record<Locale, AppCopy> = {
       subtitle:
         "Inspect production, sales, and inventory indicators from one place.",
       summaryLabel: "Reporting hub",
+      dailyProduction: "Daily production",
       weeklyProduction: "Weekly production",
       monthlySales: "Monthly sales",
+      yearlySales: "Yearly sales",
       inventorySnapshot: "Inventory snapshot",
       week: "Week",
+      day: "Day",
       month: "Month",
+      year: "Year",
       threshold: "Threshold",
       load: "Load",
+      downloadPdf: "Download PDF",
+      pdfNoData: "Load report data first before downloading PDF.",
+      pdfDownloadFailed: "Failed to generate PDF report.",
       adminNotice: "This area is intended for accountant and admin users.",
+      loadingDaily: "Loading daily production report...",
       loadingWeekly: "Loading weekly production report...",
       loadingMonthly: "Loading monthly sales report...",
+      loadingYearly: "Loading yearly sales report...",
       loadingInventory: "Loading inventory snapshot...",
       noReport: "No report loaded yet.",
       loaded: "Loaded",
@@ -474,6 +494,7 @@ export const appCopy: Record<Locale, AppCopy> = {
       loadingPayroll: "جارٍ تحميل الرواتب...",
       loadingProduction: "جارٍ تحميل إعدادات الإنتاج...",
       loadingSystem: "جارٍ تحميل إعدادات النظام...",
+      addNewUser: "إضافة مستخدم جديد",
       id: "الرقم",
       name: "الاسم",
       username: "اسم المستخدم",
@@ -591,16 +612,25 @@ export const appCopy: Record<Locale, AppCopy> = {
       title: "التقارير",
       subtitle: "اعرض مؤشرات الإنتاج والمبيعات والمخزون من مكان واحد.",
       summaryLabel: "مركز التقارير",
+      dailyProduction: "الإنتاج اليومي",
       weeklyProduction: "الإنتاج الأسبوعي",
       monthlySales: "المبيعات الشهرية",
+      yearlySales: "المبيعات السنوية",
       inventorySnapshot: "لقطة المخزون",
       week: "الأسبوع",
+      day: "اليوم",
       month: "الشهر",
+      year: "السنة",
       threshold: "الحد",
       load: "تحميل",
+      downloadPdf: "تنزيل PDF",
+      pdfNoData: "حمّل بيانات التقرير أولاً قبل تنزيل ملف PDF.",
+      pdfDownloadFailed: "فشل إنشاء تقرير PDF.",
       adminNotice: "هذه الصفحة مخصصة للمحاسب والمدير.",
+      loadingDaily: "جارٍ تحميل تقرير الإنتاج اليومي...",
       loadingWeekly: "جارٍ تحميل تقرير الإنتاج الأسبوعي...",
       loadingMonthly: "جارٍ تحميل تقرير المبيعات الشهرية...",
+      loadingYearly: "جارٍ تحميل تقرير المبيعات السنوية...",
       loadingInventory: "جارٍ تحميل لقطة المخزون...",
       noReport: "لا يوجد تقرير محمّل بعد.",
       loaded: "محمّل",
