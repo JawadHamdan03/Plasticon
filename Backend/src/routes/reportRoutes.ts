@@ -1,8 +1,12 @@
 import { Router } from "express";
 import {
+  getAttendanceActivityReportHandler,
   getDailyProductionSummaryHandler,
+  getInventoryActivityReportHandler,
   getInventorySnapshotHandler,
   getMonthlySalesSummaryHandler,
+  getPayrollActivityReportHandler,
+  getProductionActivityReportHandler,
   getWeeklyProductionSummaryHandler,
   getYearlySalesSummaryHandler,
 } from "../controllers/reportController";
@@ -10,6 +14,12 @@ import { authorizeRoles } from "../middleware/authMiddleware";
 import { UserRole } from "../config/generated/prisma/client";
 
 const router = Router();
+
+router.get(
+  "/production/activity",
+  authorizeRoles([UserRole.ACCOUNTANT, UserRole.ADMIN]),
+  getProductionActivityReportHandler,
+);
 
 router.get(
   "/production/daily",
@@ -36,9 +46,27 @@ router.get(
 );
 
 router.get(
+  "/inventory/activity",
+  authorizeRoles([UserRole.ACCOUNTANT, UserRole.ADMIN]),
+  getInventoryActivityReportHandler,
+);
+
+router.get(
   "/inventory/snapshot",
   authorizeRoles([UserRole.ACCOUNTANT, UserRole.ADMIN]),
   getInventorySnapshotHandler,
+);
+
+router.get(
+  "/attendance/activity",
+  authorizeRoles([UserRole.ACCOUNTANT, UserRole.ADMIN]),
+  getAttendanceActivityReportHandler,
+);
+
+router.get(
+  "/payroll/activity",
+  authorizeRoles([UserRole.ACCOUNTANT, UserRole.ADMIN]),
+  getPayrollActivityReportHandler,
 );
 
 export default router;

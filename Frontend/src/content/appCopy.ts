@@ -179,6 +179,8 @@ type AppCopy = {
     day: string;
     month: string;
     year: string;
+    period: string;
+    generatedAt: string;
     threshold: string;
     load: string;
     downloadPdf: string;
@@ -190,6 +192,12 @@ type AppCopy = {
     loadingMonthly: string;
     loadingYearly: string;
     loadingInventory: string;
+    loadingInventoryActivity: string;
+    loadingAttendanceActivity: string;
+    loadingPayrollActivity: string;
+    inventoryActivity: string;
+    attendanceActivity: string;
+    payrollActivity: string;
     noReport: string;
     loaded: string;
     yes: string;
@@ -398,10 +406,15 @@ export const appCopy: Record<Locale, AppCopy> = {
       monthlySales: "Monthly sales",
       yearlySales: "Yearly sales",
       inventorySnapshot: "Inventory snapshot",
+      inventoryActivity: "Inventory activity",
+      attendanceActivity: "Attendance & Absence",
+      payrollActivity: "Payroll activity",
       week: "Week",
       day: "Day",
       month: "Month",
       year: "Year",
+      period: "Period",
+      generatedAt: "Generated at",
       threshold: "Threshold",
       load: "Load",
       downloadPdf: "Download PDF",
@@ -413,6 +426,9 @@ export const appCopy: Record<Locale, AppCopy> = {
       loadingMonthly: "Loading monthly sales report...",
       loadingYearly: "Loading yearly sales report...",
       loadingInventory: "Loading inventory snapshot...",
+      loadingInventoryActivity: "Loading inventory activity report...",
+      loadingAttendanceActivity: "Loading attendance report...",
+      loadingPayrollActivity: "Loading payroll report...",
       noReport: "No report loaded yet.",
       loaded: "Loaded",
       yes: "Yes",
@@ -616,11 +632,16 @@ export const appCopy: Record<Locale, AppCopy> = {
       weeklyProduction: "الإنتاج الأسبوعي",
       monthlySales: "المبيعات الشهرية",
       yearlySales: "المبيعات السنوية",
+      inventoryActivity: "حركة المخزون",
+      attendanceActivity: "الحضور والغياب",
+      payrollActivity: "الرواتب",
       inventorySnapshot: "لقطة المخزون",
       week: "الأسبوع",
       day: "اليوم",
       month: "الشهر",
       year: "السنة",
+      period: "الفترة",
+      generatedAt: "تم الإنشاء عند",
       threshold: "الحد",
       load: "تحميل",
       downloadPdf: "تنزيل PDF",
@@ -632,6 +653,9 @@ export const appCopy: Record<Locale, AppCopy> = {
       loadingMonthly: "جارٍ تحميل تقرير المبيعات الشهرية...",
       loadingYearly: "جارٍ تحميل تقرير المبيعات السنوية...",
       loadingInventory: "جارٍ تحميل لقطة المخزون...",
+      loadingInventoryActivity: "جارٍ تحميل تقرير حركة المخزون...",
+      loadingAttendanceActivity: "جارٍ تحميل تقرير الحضور...",
+      loadingPayrollActivity: "جارٍ تحميل تقرير الرواتب...",
       noReport: "لا يوجد تقرير محمّل بعد.",
       loaded: "محمّل",
       yes: "نعم",

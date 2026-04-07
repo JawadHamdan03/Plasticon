@@ -26,6 +26,15 @@ type InventorySnapshotQuery = {
   lowStockThreshold?: string;
 };
 
+type ReportPeriod = "daily" | "weekly" | "monthly" | "yearly";
+
+type PeriodQuery = {
+  period?: string;
+  date?: string;
+  month?: string;
+  year?: string;
+};
+
 const startOfDay = (date: Date): Date => {
   const value = new Date(date);
   value.setHours(0, 0, 0, 0);
@@ -144,6 +153,88 @@ const getWeekRange = (anchorDate: Date): { weekStart: Date; weekEnd: Date } => {
   const weekStart = addDays(normalized, diffToMonday);
   const weekEnd = endOfDay(addDays(weekStart, 6));
   return { weekStart, weekEnd };
+};
+
+const resolvePeriodRange = (
+  query: PeriodQuery = {},
+): {
+  period: ReportPeriod;
+  start: Date;
+  end: Date;
+  label: string;
+} | null => {
+  const rawPeriod = query.period?.trim().toLowerCase();
+  const period: ReportPeriod =
+    rawPeriod === "daily" ||
+    rawPeriod === "weekly" ||
+    rawPeriod === "monthly" ||
+    rawPeriod === "yearly"
+      ? rawPeriod
+      : "daily";
+
+  if (period === "daily") {
+    const anchorDate = parseDateInput(query.date);
+    if (!anchorDate) {
+      return null;
+    }
+
+    const start = startOfDay(anchorDate);
+    const end = endOfDay(anchorDate);
+    return {
+      period,
+      start,
+      end,
+      label: start.toISOString().slice(0, 10),
+    };
+  }
+
+  if (period === "weekly") {
+    const anchorDate = parseDateInput(query.date);
+    if (!anchorDate) {
+      return null;
+    }
+
+    const { weekStart, weekEnd } = getWeekRange(anchorDate);
+    return {
+      period,
+      start: weekStart,
+      end: weekEnd,
+      label: `${weekStart.toISOString().slice(0, 10)}_${weekEnd.toISOString().slice(0, 10)}`,
+    };
+  }
+
+  if (period === "monthly") {
+    const range = parseMonthInput(query.month);
+    if (!range) {
+      return null;
+    }
+
+    return {
+      period,
+      start: range.start,
+      end: range.end,
+      label: range.label,
+    };
+  }
+
+  const range = parseYearInput(query.year);
+  if (!range) {
+    return null;
+  }
+
+  return {
+    period,
+    start: range.start,
+    end: range.end,
+    label: String(range.year),
+  };
+};
+
+type ActivityRecordRange = {
+  period: ReportPeriod;
+  label: string;
+  start: Date;
+  end: Date;
 };
 
 export const getWeeklyProductionSummary = async (
@@ -391,6 +482,309 @@ export const getDailyProductionSummary = async (
       byShift: Array.from(byShift.values()).sort((a, b) =>
         a.shiftName.localeCompare(b.shiftName),
       ),
+    },
+  };
+};
+
+export const getProductionActivityReport = async (
+  query: PeriodQuery = {},
+): Promise<ServiceResult<unknown>> => {
+  const range = resolvePeriodRange(query);
+  if (!range) {
+    return {
+      status: 400,
+      message:
+        "period requires date for daily/weekly or month/year for monthly/yearly",
+    };
+  }
+
+  const records = await prisma.productionRecord.findMany({
+    where: {
+      createdAt: {
+        gte: range.start,
+        lte: range.end,
+      },
+    },
+    include: {
+      machine: { select: { id: true, name: true, type: true } },
+      shift: { select: { id: true, name: true } },
+      user: {
+        select: { id: true, fullName: true, username: true, role: true },
+      },
+    },
+    orderBy: { createdAt: "asc" },
+  });
+
+  const totals = records.reduce(
+    (accumulator, record) => {
+      accumulator.recordsCount += 1;
+      accumulator.totalCartons += record.cartonsCount;
+      accumulator.totalPieces += record.totalPieces;
+      accumulator.totalDowntimeMinutes += record.downtimeMinutes ?? 0;
+      return accumulator;
+    },
+    {
+      recordsCount: 0,
+      totalCartons: 0,
+      totalPieces: 0,
+      totalDowntimeMinutes: 0,
+    },
+  );
+
+  return {
+    status: 200,
+    data: {
+      period: range.period,
+      label: range.label,
+      rangeStart: range.start.toISOString(),
+      rangeEnd: range.end.toISOString(),
+      totals,
+      records: records.map((record) => ({
+        id: record.id,
+        createdAt: record.createdAt.toISOString(),
+        machineName: record.machine.name,
+        machineType: record.machine.type,
+        shiftName: record.shift.name,
+        userName: record.user.fullName,
+        username: record.user.username,
+        cartonsCount: record.cartonsCount,
+        piecesPerCarton: record.piecesPerCarton,
+        totalPieces: record.totalPieces,
+        downtimeMinutes: record.downtimeMinutes ?? 0,
+        hourSlot: record.hourSlot,
+        notes: record.notes,
+      })),
+    },
+  };
+};
+
+export const getInventoryActivityReport = async (
+  query: PeriodQuery = {},
+): Promise<ServiceResult<unknown>> => {
+  const range = resolvePeriodRange(query);
+  if (!range) {
+    return {
+      status: 400,
+      message:
+        "period requires date for daily/weekly or month/year for monthly/yearly",
+    };
+  }
+
+  const records = await prisma.inventoryTransaction.findMany({
+    where: {
+      createdAt: {
+        gte: range.start,
+        lte: range.end,
+      },
+    },
+    include: {
+      material: { select: { id: true, name: true, unit: true } },
+      createdBy: {
+        select: { id: true, fullName: true, username: true, role: true },
+      },
+    },
+    orderBy: { createdAt: "asc" },
+  });
+
+  const totals = records.reduce(
+    (accumulator, record) => {
+      accumulator.recordsCount += 1;
+      if (record.type === "IN") {
+        accumulator.totalInQuantity += record.quantity;
+        accumulator.inCount += 1;
+      } else {
+        accumulator.totalOutQuantity += record.quantity;
+        accumulator.outCount += 1;
+      }
+      return accumulator;
+    },
+    {
+      recordsCount: 0,
+      inCount: 0,
+      outCount: 0,
+      totalInQuantity: 0,
+      totalOutQuantity: 0,
+    },
+  );
+
+  return {
+    status: 200,
+    data: {
+      period: range.period,
+      label: range.label,
+      rangeStart: range.start.toISOString(),
+      rangeEnd: range.end.toISOString(),
+      totals,
+      records: records.map((record) => ({
+        id: record.id,
+        createdAt: record.createdAt.toISOString(),
+        materialName: record.material.name,
+        materialUnit: record.material.unit,
+        type: record.type,
+        quantity: record.quantity,
+        referenceType: record.referenceType,
+        referenceId: record.referenceId,
+        createdByName: record.createdBy?.fullName ?? null,
+        createdByUsername: record.createdBy?.username ?? null,
+      })),
+    },
+  };
+};
+
+export const getAttendanceActivityReport = async (
+  query: PeriodQuery = {},
+): Promise<ServiceResult<unknown>> => {
+  const range = resolvePeriodRange(query);
+  if (!range) {
+    return {
+      status: 400,
+      message:
+        "period requires date for daily/weekly or month/year for monthly/yearly",
+    };
+  }
+
+  const records = await prisma.attendance.findMany({
+    where: {
+      checkIn: {
+        gte: range.start,
+        lte: range.end,
+      },
+    },
+    include: {
+      user: {
+        select: { id: true, fullName: true, username: true, role: true },
+      },
+      shift: { select: { id: true, name: true } },
+    },
+    orderBy: { checkIn: "asc" },
+  });
+
+  const activeUsers = await prisma.user.findMany({
+    where: {
+      deletedAt: null,
+      isActive: true,
+      role: { in: ["WORKER", "ENGINEER", "ACCOUNTANT"] },
+    },
+    select: { id: true, fullName: true, username: true, role: true },
+  });
+
+  const attendedUserIds = new Set(records.map((item) => item.userId));
+  const absentUsers = activeUsers.filter(
+    (user) => !attendedUserIds.has(user.id),
+  );
+
+  const totals = records.reduce(
+    (accumulator, record) => {
+      accumulator.recordsCount += 1;
+      accumulator.totalLateMinutes += record.lateMinutes ?? 0;
+      accumulator.totalOvertimeMinutes += record.overtimeMinutes ?? 0;
+      if (record.checkOut) {
+        accumulator.checkedOutCount += 1;
+      } else {
+        accumulator.openCount += 1;
+      }
+      return accumulator;
+    },
+    {
+      recordsCount: 0,
+      checkedOutCount: 0,
+      openCount: 0,
+      totalLateMinutes: 0,
+      totalOvertimeMinutes: 0,
+      absentCount: absentUsers.length,
+    },
+  );
+
+  return {
+    status: 200,
+    data: {
+      period: range.period,
+      label: range.label,
+      rangeStart: range.start.toISOString(),
+      rangeEnd: range.end.toISOString(),
+      totals,
+      absentUsers,
+      records: records.map((record) => ({
+        id: record.id,
+        checkIn: record.checkIn.toISOString(),
+        checkOut: record.checkOut ? record.checkOut.toISOString() : null,
+        lateMinutes: record.lateMinutes,
+        overtimeMinutes: record.overtimeMinutes,
+        userId: record.user.id,
+        userName: record.user.fullName,
+        username: record.user.username,
+        role: record.user.role,
+        shiftName: record.shift?.name ?? null,
+      })),
+    },
+  };
+};
+
+export const getPayrollActivityReport = async (
+  query: PeriodQuery = {},
+): Promise<ServiceResult<unknown>> => {
+  const range = resolvePeriodRange(query);
+  if (!range) {
+    return {
+      status: 400,
+      message:
+        "period requires date for daily/weekly or month/year for monthly/yearly",
+    };
+  }
+
+  const records = await prisma.payroll.findMany({
+    where: {
+      calculatedAt: {
+        gte: range.start,
+        lte: range.end,
+      },
+    },
+    include: {
+      user: {
+        select: { id: true, fullName: true, username: true, role: true },
+      },
+    },
+    orderBy: { calculatedAt: "asc" },
+  });
+
+  const totals = records.reduce(
+    (accumulator, record) => {
+      accumulator.recordsCount += 1;
+      accumulator.totalBaseSalary += record.baseSalary ?? 0;
+      accumulator.totalOvertimeSalary += record.overtimeSalary ?? 0;
+      accumulator.totalPayout += record.totalSalary ?? 0;
+      return accumulator;
+    },
+    {
+      recordsCount: 0,
+      totalBaseSalary: 0,
+      totalOvertimeSalary: 0,
+      totalPayout: 0,
+    },
+  );
+
+  return {
+    status: 200,
+    data: {
+      period: range.period,
+      label: range.label,
+      rangeStart: range.start.toISOString(),
+      rangeEnd: range.end.toISOString(),
+      totals,
+      records: records.map((record) => ({
+        id: record.id,
+        month: record.month,
+        calculatedAt: record.calculatedAt.toISOString(),
+        userId: record.user.id,
+        userName: record.user.fullName,
+        username: record.user.username,
+        role: record.user.role,
+        totalHours: record.totalHours,
+        overtimeHours: record.overtimeHours,
+        baseSalary: record.baseSalary,
+        overtimeSalary: record.overtimeSalary,
+        totalSalary: record.totalSalary,
+      })),
     },
   };
 };

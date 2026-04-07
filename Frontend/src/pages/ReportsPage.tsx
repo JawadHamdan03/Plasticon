@@ -9,70 +9,126 @@ import { ModulePageShell } from "../components/ModulePageShell";
 
 type ReportBlock = Record<string, unknown>;
 
-type WeeklyReport = {
-  weekStart: string;
-  weekEnd: string;
-  totals: {
-    recordsCount: number;
-    totalCartons: number;
-    totalPieces: number;
-    totalDowntimeMinutes: number;
-  };
-  byDay: Array<{
-    date: string;
-    totalCartons: number;
-    totalPieces: number;
-    recordsCount: number;
-  }>;
-};
+type ReportPeriod = "daily" | "weekly" | "monthly" | "yearly";
 
-type DailyReport = {
-  day: string;
-  dayStart: string;
-  dayEnd: string;
-  totals: {
-    recordsCount: number;
-    totalCartons: number;
-    totalPieces: number;
-    totalDowntimeMinutes: number;
-  };
-  byShift: Array<{
-    shiftId: number | null;
-    shiftName: string;
-    totalCartons: number;
-    totalPieces: number;
-    recordsCount: number;
-  }>;
-};
-
-type MonthlySalesReport = {
+type PeriodFilters = {
+  period: ReportPeriod;
+  date: string;
   month: string;
+  year: string;
+};
+
+type ProductionActivityReport = {
+  period: ReportPeriod;
+  label: string;
+  rangeStart: string;
+  rangeEnd: string;
   totals: {
-    totalInvoices: number;
-    totalAmount: number;
-    totalItemsQuantity: number;
+    recordsCount: number;
+    totalCartons: number;
+    totalPieces: number;
+    totalDowntimeMinutes: number;
   };
-  byCustomer: Array<{
-    customerId: number;
-    customerName: string;
-    invoicesCount: number;
-    totalAmount: number;
-    itemsQuantity: number;
+  records: Array<{
+    id: number;
+    createdAt: string;
+    machineName: string;
+    machineType: string;
+    shiftName: string;
+    userName: string;
+    username: string;
+    cartonsCount: number;
+    piecesPerCarton: number;
+    totalPieces: number;
+    downtimeMinutes: number;
+    hourSlot: string;
+    notes: string | null;
   }>;
 };
 
-type YearlySalesReport = {
-  year: number;
+type InventoryActivityReport = {
+  period: ReportPeriod;
+  label: string;
+  rangeStart: string;
+  rangeEnd: string;
   totals: {
-    totalInvoices: number;
-    totalAmount: number;
-    totalItemsQuantity: number;
+    recordsCount: number;
+    inCount: number;
+    outCount: number;
+    totalInQuantity: number;
+    totalOutQuantity: number;
   };
-  byMonth: Array<{
+  records: Array<{
+    id: number;
+    createdAt: string;
+    materialName: string;
+    materialUnit: string;
+    type: string;
+    quantity: number;
+    referenceType: string;
+    referenceId: number | null;
+    createdByName: string | null;
+    createdByUsername: string | null;
+  }>;
+};
+
+type AttendanceActivityReport = {
+  period: ReportPeriod;
+  label: string;
+  rangeStart: string;
+  rangeEnd: string;
+  totals: {
+    recordsCount: number;
+    checkedOutCount: number;
+    openCount: number;
+    totalLateMinutes: number;
+    totalOvertimeMinutes: number;
+    absentCount: number;
+  };
+  absentUsers: Array<{
+    id: number;
+    fullName: string;
+    username: string;
+    role: string;
+  }>;
+  records: Array<{
+    id: number;
+    checkIn: string;
+    checkOut: string | null;
+    lateMinutes: number;
+    overtimeMinutes: number;
+    userId: number;
+    userName: string;
+    username: string;
+    role: string;
+    shiftName: string | null;
+  }>;
+};
+
+type PayrollActivityReport = {
+  period: ReportPeriod;
+  label: string;
+  rangeStart: string;
+  rangeEnd: string;
+  totals: {
+    recordsCount: number;
+    totalBaseSalary: number;
+    totalOvertimeSalary: number;
+    totalPayout: number;
+  };
+  records: Array<{
+    id: number;
     month: string;
-    invoicesCount: number;
-    totalAmount: number;
-    itemsQuantity: number;
+    calculatedAt: string;
+    userId: number;
+    userName: string;
+    username: string;
+    role: string;
+    totalHours: number;
+    overtimeHours: number;
+    baseSalary: number;
+    overtimeSalary: number;
+    totalSalary: number;
   }>;
 };
 
@@ -92,118 +148,110 @@ export function ReportsPage() {
   const { user } = useAuth();
   const { locale } = useLocale();
   const copy = appCopy[locale];
-  const [dailyReport, setDailyReport] = useState<DailyReport | null>(null);
-  const [weeklyReport, setWeeklyReport] = useState<WeeklyReport | null>(null);
-  const [monthlySales, setMonthlySales] = useState<MonthlySalesReport | null>(
-    null,
-  );
-  const [yearlySales, setYearlySales] = useState<YearlySalesReport | null>(
-    null,
-  );
+  const isArabic = locale === "ar";
+  const reportText = {
+    period: copy.reports.period,
+    generatedAt: copy.reports.generatedAt,
+    date: isArabic ? "التاريخ" : "Date",
+    machine: isArabic ? "الماكينة" : "Machine",
+    shift: isArabic ? "الشفت" : "Shift",
+    user: isArabic ? "المستخدم" : "User",
+    records: isArabic ? "السجلات" : "Records",
+    cartons: isArabic ? "الكرتونات" : "Cartons",
+    pieces: isArabic ? "القطع" : "Pieces",
+    customer: isArabic ? "العميل" : "Customer",
+    invoices: isArabic ? "الفواتير" : "Invoices",
+    items: isArabic ? "العناصر" : "Items",
+    total: isArabic ? "الإجمالي" : "Total",
+    material: isArabic ? "المادة" : "Material",
+    type: isArabic ? "النوع" : "Type",
+    qty: isArabic ? "الكمية" : "Qty",
+    reference: isArabic ? "المرجع" : "Reference",
+    checkIn: isArabic ? "الدخول" : "Check In",
+    checkOut: isArabic ? "الخروج" : "Check Out",
+    late: isArabic ? "التأخير" : "Late",
+    overtime: isArabic ? "الإضافي" : "OT",
+    month: isArabic ? "الشهر" : "Month",
+    hours: isArabic ? "الساعات" : "Hours",
+    overtimeHours: isArabic ? "ساعات الإضافي" : "OT Hours",
+  };
+  const [productionActivity, setProductionActivity] =
+    useState<ProductionActivityReport | null>(null);
+  const [inventoryActivity, setInventoryActivity] =
+    useState<InventoryActivityReport | null>(null);
+  const [attendanceActivity, setAttendanceActivity] =
+    useState<AttendanceActivityReport | null>(null);
+  const [payrollActivity, setPayrollActivity] =
+    useState<PayrollActivityReport | null>(null);
   const [inventorySnapshot, setInventorySnapshot] =
     useState<ReportBlock | null>(null);
-  const [filters, setFilters] = useState({
-    day: "",
-    week: "",
+  const [inventoryThreshold, setInventoryThreshold] = useState("");
+  const [productionFilters, setProductionFilters] = useState<PeriodFilters>({
+    period: "daily",
+    date: "",
     month: "",
     year: "",
-    threshold: "",
+  });
+  const [inventoryFilters, setInventoryFilters] = useState<PeriodFilters>({
+    period: "daily",
+    date: "",
+    month: "",
+    year: "",
+  });
+  const [attendanceFilters, setAttendanceFilters] = useState<PeriodFilters>({
+    period: "daily",
+    date: "",
+    month: "",
+    year: "",
+  });
+  const [payrollFilters, setPayrollFilters] = useState<PeriodFilters>({
+    period: "monthly",
+    date: "",
+    month: "",
+    year: "",
   });
   const [loadingSection, setLoadingSection] = useState<string>("");
   const [errorMessage, setErrorMessage] = useState("");
 
-  const loadDailyReport = async (event?: FormEvent<HTMLFormElement>) => {
-    event?.preventDefault();
-    setErrorMessage("");
-    setLoadingSection("daily");
+  const buildPeriodParams = (filters: PeriodFilters) => {
+    const params = new URLSearchParams({ period: filters.period });
 
-    try {
-      const suffix = filters.day ? `?date=${encodeURIComponent(filters.day)}` : "";
-      const response = await fetchWithAuth(`/reports/production/daily${suffix}`);
-      if (!response.ok) {
-        throw new Error(await readApiError(response));
+    if (filters.period === "daily" || filters.period === "weekly") {
+      if (filters.date) {
+        params.set("date", filters.date);
       }
-      setDailyReport((await response.json()) as DailyReport);
-    } catch (error) {
-      setErrorMessage(
-        error instanceof Error ? error.message : "Failed to load daily report",
-      );
-    } finally {
-      setLoadingSection("");
     }
+
+    if (filters.period === "monthly" && filters.month) {
+      params.set("month", filters.month);
+    }
+
+    if (filters.period === "yearly" && filters.year) {
+      params.set("year", filters.year);
+    }
+
+    return params.toString();
   };
 
-  const loadWeeklyReport = async (event?: FormEvent<HTMLFormElement>) => {
-    event?.preventDefault();
+  const loadActivityReport = async <TReport,>(
+    path: string,
+    setState: (value: TReport | null) => void,
+    loadingKey: string,
+    filtersValue: PeriodFilters,
+    fallbackMessage: string,
+  ) => {
     setErrorMessage("");
-    setLoadingSection("weekly");
+    setLoadingSection(loadingKey);
 
     try {
-      const anchorDate = weekInputToDate(filters.week);
-      const suffix = anchorDate
-        ? `?date=${encodeURIComponent(anchorDate)}`
-        : "";
-      const response = await fetchWithAuth(
-        `/reports/production/weekly${suffix}`,
-      );
+      const suffix = buildPeriodParams(filtersValue);
+      const response = await fetchWithAuth(suffix ? `${path}?${suffix}` : path);
       if (!response.ok) {
         throw new Error(await readApiError(response));
       }
-      setWeeklyReport((await response.json()) as WeeklyReport);
+      setState((await response.json()) as TReport);
     } catch (error) {
-      setErrorMessage(
-        error instanceof Error ? error.message : "Failed to load weekly report",
-      );
-    } finally {
-      setLoadingSection("");
-    }
-  };
-
-  const loadMonthlySales = async (event?: FormEvent<HTMLFormElement>) => {
-    event?.preventDefault();
-    setErrorMessage("");
-    setLoadingSection("monthly");
-
-    try {
-      const suffix = filters.month
-        ? `?month=${encodeURIComponent(filters.month)}`
-        : "";
-      const response = await fetchWithAuth(`/reports/sales/monthly${suffix}`);
-      if (!response.ok) {
-        throw new Error(await readApiError(response));
-      }
-      setMonthlySales((await response.json()) as MonthlySalesReport);
-    } catch (error) {
-      setErrorMessage(
-        error instanceof Error
-          ? error.message
-          : "Failed to load monthly sales report",
-      );
-    } finally {
-      setLoadingSection("");
-    }
-  };
-
-  const loadYearlySales = async (event?: FormEvent<HTMLFormElement>) => {
-    event?.preventDefault();
-    setErrorMessage("");
-    setLoadingSection("yearly");
-
-    try {
-      const suffix = filters.year
-        ? `?year=${encodeURIComponent(filters.year)}`
-        : "";
-      const response = await fetchWithAuth(`/reports/sales/yearly${suffix}`);
-      if (!response.ok) {
-        throw new Error(await readApiError(response));
-      }
-      setYearlySales((await response.json()) as YearlySalesReport);
-    } catch (error) {
-      setErrorMessage(
-        error instanceof Error
-          ? error.message
-          : "Failed to load yearly sales report",
-      );
+      setErrorMessage(error instanceof Error ? error.message : fallbackMessage);
     } finally {
       setLoadingSection("");
     }
@@ -215,8 +263,8 @@ export function ReportsPage() {
     setLoadingSection("inventory");
 
     try {
-      const suffix = filters.threshold
-        ? `?threshold=${encodeURIComponent(filters.threshold)}`
+      const suffix = inventoryThreshold
+        ? `?threshold=${encodeURIComponent(inventoryThreshold)}`
         : "";
       const response = await fetchWithAuth(
         `/reports/inventory/snapshot${suffix}`,
@@ -236,6 +284,61 @@ export function ReportsPage() {
     }
   };
 
+  const exportPdfTable = (
+    title: string,
+    metaLines: string[],
+    headers: string[],
+    rows: string[][],
+    fileName: string,
+  ) => {
+    const doc = new jsPDF();
+    doc.setTextColor(23, 37, 84);
+    doc.setFontSize(18);
+    doc.text(title, 14, 18);
+
+    doc.setFillColor(37, 99, 235);
+    doc.rect(0, 0, 210, 10, "F");
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(10);
+    doc.text("Plasticon", 14, 7);
+
+    doc.setTextColor(71, 85, 105);
+    doc.setFontSize(10);
+    doc.text(
+      `${reportText.generatedAt}: ${new Date().toLocaleString()}`,
+      14,
+      26,
+    );
+
+    let metaY = 34;
+    metaLines.forEach((line) => {
+      doc.text(line, 14, metaY);
+      metaY += 6;
+    });
+
+    autoTable(doc, {
+      startY: metaY + 4,
+      head: [headers],
+      body: rows,
+      theme: "grid",
+      headStyles: {
+        fillColor: [37, 99, 235],
+        textColor: 255,
+        fontStyle: "bold",
+      },
+      alternateRowStyles: {
+        fillColor: [248, 250, 252],
+      },
+      styles: {
+        fontSize: 9,
+        cellPadding: 3,
+        overflow: "linebreak",
+      },
+      margin: { left: 14, right: 14 },
+    });
+    doc.save(fileName);
+  };
+
   return (
     <ModulePageShell
       title={copy.reports.title}
@@ -245,10 +348,6 @@ export function ReportsPage() {
           type="button"
           className="auth-button auth-button--ghost"
           onClick={() => {
-            void loadDailyReport();
-            void loadWeeklyReport();
-            void loadMonthlySales();
-            void loadYearlySales();
             void loadInventorySnapshot();
           }}
         >
@@ -268,170 +367,154 @@ export function ReportsPage() {
       </div>
 
       <section className="module-grid module-grid--reports">
-        <article className="module-panel">
+        <article className="module-panel module-panel--full">
           <h2>{copy.reports.dailyProduction}</h2>
-          <form
-            className="module-form module-form--inline"
-            onSubmit={loadDailyReport}
-          >
+          <div className="module-form module-form--inline">
             <label>
-              {copy.reports.day}
-              <input
-                type="date"
-                value={filters.day}
+              {copy.reports.period}
+              <select
+                value={productionFilters.period}
                 onChange={(event) =>
-                  setFilters((prev) => ({ ...prev, day: event.target.value }))
+                  setProductionFilters((prev) => ({
+                    ...prev,
+                    period: event.target.value as ReportPeriod,
+                  }))
                 }
-              />
+              >
+                <option value="daily">{copy.reports.day}</option>
+                <option value="weekly">{copy.reports.week}</option>
+                <option value="monthly">{copy.reports.month}</option>
+                <option value="yearly">{copy.reports.year}</option>
+              </select>
             </label>
-            <button type="submit" className="auth-button">
+            {(productionFilters.period === "daily" ||
+              productionFilters.period === "weekly") && (
+              <label>
+                {copy.reports.day}
+                <input
+                  type="date"
+                  value={productionFilters.date}
+                  onChange={(event) =>
+                    setProductionFilters((prev) => ({
+                      ...prev,
+                      date: event.target.value,
+                    }))
+                  }
+                />
+              </label>
+            )}
+            {productionFilters.period === "monthly" && (
+              <label>
+                {copy.reports.month}
+                <input
+                  type="month"
+                  value={productionFilters.month}
+                  onChange={(event) =>
+                    setProductionFilters((prev) => ({
+                      ...prev,
+                      month: event.target.value,
+                    }))
+                  }
+                />
+              </label>
+            )}
+            {productionFilters.period === "yearly" && (
+              <label>
+                {copy.reports.year}
+                <input
+                  type="number"
+                  min={2000}
+                  max={9999}
+                  value={productionFilters.year}
+                  onChange={(event) =>
+                    setProductionFilters((prev) => ({
+                      ...prev,
+                      year: event.target.value,
+                    }))
+                  }
+                />
+              </label>
+            )}
+            <button
+              type="button"
+              className="auth-button"
+              onClick={() =>
+                void loadActivityReport(
+                  "/reports/production/activity",
+                  setProductionActivity,
+                  "productionActivity",
+                  productionFilters,
+                  "Failed to load production activity report",
+                )
+              }
+            >
               {copy.load}
             </button>
             <button
               type="button"
               className="auth-button auth-button--ghost"
               onClick={() => {
-                if (!dailyReport) {
+                if (!productionActivity) {
                   window.alert(copy.reports.pdfNoData);
                   return;
                 }
 
-                try {
-                  const doc = new jsPDF();
-                  doc.setFontSize(14);
-                  doc.text(copy.reports.dailyProduction, 14, 16);
-
-                  autoTable(doc, {
-                    startY: 22,
-                    head: [["Shift", "Records", "Cartons", "Pieces"]],
-                    body: dailyReport.byShift.map((row) => [
-                      row.shiftName,
-                      String(row.recordsCount),
-                      String(row.totalCartons),
-                      String(row.totalPieces),
-                    ]),
-                  });
-
-                  doc.save(`daily-production-${dailyReport.day}.pdf`);
-                } catch {
-                  window.alert(copy.reports.pdfDownloadFailed);
-                }
+                exportPdfTable(
+                  copy.reports.dailyProduction,
+                  [
+                    `${reportText.period}: ${productionActivity.rangeStart.slice(0, 10)} ${isArabic ? "إلى" : "to"} ${productionActivity.rangeEnd.slice(0, 10)} (${productionActivity.period})`,
+                    `${reportText.records}: ${productionActivity.totals.recordsCount}`,
+                    `${reportText.cartons}: ${productionActivity.totals.totalCartons}`,
+                    `${reportText.pieces}: ${productionActivity.totals.totalPieces}`,
+                    `${isArabic ? "دقائق التوقف" : "Downtime minutes"}: ${productionActivity.totals.totalDowntimeMinutes}`,
+                  ],
+                  [
+                    reportText.date,
+                    reportText.machine,
+                    reportText.shift,
+                    reportText.user,
+                    reportText.cartons,
+                    reportText.pieces,
+                  ],
+                  productionActivity.records.map((row) => [
+                    row.createdAt.slice(0, 10),
+                    row.machineName,
+                    row.shiftName,
+                    row.userName,
+                    String(row.cartonsCount),
+                    String(row.totalPieces),
+                  ]),
+                  `production-${productionActivity.label}.pdf`,
+                );
               }}
             >
               {copy.reports.downloadPdf}
             </button>
-          </form>
-          {loadingSection === "daily" ? <p>{copy.reports.loadingDaily}</p> : null}
-          {dailyReport ? (
-            <div className="admin-table-wrap">
-              <table className="admin-table">
-                <thead>
-                  <tr>
-                    <th>Shift</th>
-                    <th>Records</th>
-                    <th>Cartons</th>
-                    <th>Pieces</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {dailyReport.byShift.map((row) => (
-                    <tr key={row.shiftName}>
-                      <td>{row.shiftName}</td>
-                      <td>{row.recordsCount}</td>
-                      <td>{row.totalCartons}</td>
-                      <td>{row.totalPieces}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+          </div>
+          {loadingSection === "productionActivity" ? (
+            <p>{copy.reports.loadingDaily}</p>
           ) : null}
-          <ReportView data={dailyReport} copy={copy} />
-        </article>
-
-        <article className="module-panel">
-          <h2>{copy.reports.weeklyProduction}</h2>
-          <form
-            className="module-form module-form--inline"
-            onSubmit={loadWeeklyReport}
-          >
-            <label>
-              {copy.reports.week}
-              <input
-                type="week"
-                value={filters.week}
-                onChange={(event) =>
-                  setFilters((prev) => ({ ...prev, week: event.target.value }))
-                }
-              />
-            </label>
-            <button type="submit" className="auth-button">
-              {copy.load}
-            </button>
-            <button
-              type="button"
-              className="auth-button auth-button--ghost"
-              onClick={() => {
-                if (!weeklyReport) {
-                  window.alert(copy.reports.pdfNoData);
-                  return;
-                }
-
-                try {
-                  const doc = new jsPDF();
-                  doc.setFontSize(14);
-                  doc.text(copy.reports.weeklyProduction, 14, 16);
-
-                  autoTable(doc, {
-                    startY: 22,
-                    head: [["Date", "Records", "Cartons", "Pieces"]],
-                    body: weeklyReport.byDay.map((row) => [
-                      row.date,
-                      String(row.recordsCount),
-                      String(row.totalCartons),
-                      String(row.totalPieces),
-                    ]),
-                  });
-
-                  const finalY = (
-                    doc as jsPDF & { lastAutoTable?: { finalY: number } }
-                  ).lastAutoTable?.finalY;
-                  doc.text(
-                    `Total records: ${weeklyReport.totals.recordsCount}`,
-                    14,
-                    (finalY ?? 22) + 10,
-                  );
-                  doc.save(
-                    `weekly-production-${weeklyReport.weekStart.slice(0, 10)}.pdf`,
-                  );
-                } catch {
-                  window.alert(copy.reports.pdfDownloadFailed);
-                }
-              }}
-            >
-              {copy.reports.downloadPdf}
-            </button>
-          </form>
-          {loadingSection === "weekly" ? (
-            <p>{copy.reports.loadingWeekly}</p>
-          ) : null}
-          {weeklyReport ? (
+          {productionActivity ? (
             <div className="admin-table-wrap">
               <table className="admin-table">
                 <thead>
                   <tr>
                     <th>Date</th>
-                    <th>Records</th>
+                    <th>Machine</th>
+                    <th>Shift</th>
+                    <th>User</th>
                     <th>Cartons</th>
                     <th>Pieces</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {weeklyReport.byDay.map((row) => (
-                    <tr key={row.date}>
-                      <td>{row.date}</td>
-                      <td>{row.recordsCount}</td>
-                      <td>{row.totalCartons}</td>
+                  {productionActivity.records.map((row) => (
+                    <tr key={row.id}>
+                      <td>{row.createdAt.slice(0, 10)}</td>
+                      <td>{row.machineName}</td>
+                      <td>{row.shiftName}</td>
+                      <td>{row.userName}</td>
+                      <td>{row.cartonsCount}</td>
                       <td>{row.totalPieces}</td>
                     </tr>
                   ))}
@@ -439,178 +522,474 @@ export function ReportsPage() {
               </table>
             </div>
           ) : null}
-          <ReportView data={weeklyReport} copy={copy} />
         </article>
 
-        <article className="module-panel">
-          <h2>{copy.reports.monthlySales}</h2>
-          <form
-            className="module-form module-form--inline"
-            onSubmit={loadMonthlySales}
-          >
+        <article className="module-panel module-panel--full">
+          <h2>{copy.reports.inventoryActivity}</h2>
+          <div className="module-form module-form--inline">
             <label>
-              {copy.reports.month}
-              <input
-                type="month"
-                value={filters.month}
+              {copy.reports.period}
+              <select
+                value={inventoryFilters.period}
                 onChange={(event) =>
-                  setFilters((prev) => ({ ...prev, month: event.target.value }))
+                  setInventoryFilters((prev) => ({
+                    ...prev,
+                    period: event.target.value as ReportPeriod,
+                  }))
                 }
-              />
+              >
+                <option value="daily">{copy.reports.day}</option>
+                <option value="weekly">{copy.reports.week}</option>
+                <option value="monthly">{copy.reports.month}</option>
+                <option value="yearly">{copy.reports.year}</option>
+              </select>
             </label>
-            <button type="submit" className="auth-button">
+            {(inventoryFilters.period === "daily" ||
+              inventoryFilters.period === "weekly") && (
+              <label>
+                {copy.reports.day}
+                <input
+                  type="date"
+                  value={inventoryFilters.date}
+                  onChange={(event) =>
+                    setInventoryFilters((prev) => ({
+                      ...prev,
+                      date: event.target.value,
+                    }))
+                  }
+                />
+              </label>
+            )}
+            {inventoryFilters.period === "monthly" && (
+              <label>
+                {copy.reports.month}
+                <input
+                  type="month"
+                  value={inventoryFilters.month}
+                  onChange={(event) =>
+                    setInventoryFilters((prev) => ({
+                      ...prev,
+                      month: event.target.value,
+                    }))
+                  }
+                />
+              </label>
+            )}
+            {inventoryFilters.period === "yearly" && (
+              <label>
+                {copy.reports.year}
+                <input
+                  type="number"
+                  min={2000}
+                  max={9999}
+                  value={inventoryFilters.year}
+                  onChange={(event) =>
+                    setInventoryFilters((prev) => ({
+                      ...prev,
+                      year: event.target.value,
+                    }))
+                  }
+                />
+              </label>
+            )}
+            <button
+              type="button"
+              className="auth-button"
+              onClick={() =>
+                void loadActivityReport(
+                  "/reports/inventory/activity",
+                  setInventoryActivity,
+                  "inventoryActivity",
+                  inventoryFilters,
+                  "Failed to load inventory activity report",
+                )
+              }
+            >
               {copy.load}
             </button>
             <button
               type="button"
               className="auth-button auth-button--ghost"
               onClick={() => {
-                if (!monthlySales) {
+                if (!inventoryActivity) {
                   window.alert(copy.reports.pdfNoData);
                   return;
                 }
 
-                try {
-                  const doc = new jsPDF();
-                  doc.setFontSize(14);
-                  doc.text(copy.reports.monthlySales, 14, 16);
-
-                  autoTable(doc, {
-                    startY: 22,
-                    head: [["Customer", "Invoices", "Items", "Total"]],
-                    body: monthlySales.byCustomer.map((row) => [
-                      row.customerName,
-                      String(row.invoicesCount),
-                      String(row.itemsQuantity),
-                      row.totalAmount.toLocaleString(),
-                    ]),
-                  });
-
-                  doc.save(`monthly-sales-${monthlySales.month}.pdf`);
-                } catch {
-                  window.alert(copy.reports.pdfDownloadFailed);
-                }
+                exportPdfTable(
+                  copy.reports.inventoryActivity,
+                  [
+                    `${reportText.period}: ${inventoryActivity.rangeStart.slice(0, 10)} ${isArabic ? "إلى" : "to"} ${inventoryActivity.rangeEnd.slice(0, 10)} (${inventoryActivity.period})`,
+                    `${reportText.records}: ${inventoryActivity.totals.recordsCount}`,
+                    `${isArabic ? "الوارد" : "IN"}: ${inventoryActivity.totals.inCount} (${inventoryActivity.totals.totalInQuantity})`,
+                    `${isArabic ? "الصادر" : "OUT"}: ${inventoryActivity.totals.outCount} (${inventoryActivity.totals.totalOutQuantity})`,
+                  ],
+                  [
+                    reportText.date,
+                    reportText.material,
+                    reportText.type,
+                    reportText.qty,
+                    reportText.reference,
+                  ],
+                  inventoryActivity.records.map((row) => [
+                    row.createdAt.slice(0, 10),
+                    row.materialName,
+                    row.type,
+                    `${row.quantity} ${row.materialUnit}`,
+                    row.referenceType,
+                  ]),
+                  `inventory-${inventoryActivity.label}.pdf`,
+                );
               }}
             >
               {copy.reports.downloadPdf}
             </button>
-          </form>
-          {loadingSection === "monthly" ? (
-            <p>{copy.reports.loadingMonthly}</p>
+          </div>
+          {loadingSection === "inventoryActivity" ? (
+            <p>{copy.reports.loadingInventoryActivity}</p>
           ) : null}
-          {monthlySales ? (
+          {inventoryActivity ? (
             <div className="admin-table-wrap">
               <table className="admin-table">
                 <thead>
                   <tr>
-                    <th>Customer</th>
-                    <th>Invoices</th>
-                    <th>Items</th>
-                    <th>Total</th>
+                    <th>Date</th>
+                    <th>Material</th>
+                    <th>Type</th>
+                    <th>Qty</th>
+                    <th>Reference</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {monthlySales.byCustomer.map((row) => (
-                    <tr key={row.customerId}>
-                      <td>{row.customerName}</td>
-                      <td>{row.invoicesCount}</td>
-                      <td>{row.itemsQuantity}</td>
-                      <td>{row.totalAmount.toLocaleString()}</td>
+                  {inventoryActivity.records.map((row) => (
+                    <tr key={row.id}>
+                      <td>{row.createdAt.slice(0, 10)}</td>
+                      <td>{row.materialName}</td>
+                      <td>{row.type}</td>
+                      <td>{`${row.quantity} ${row.materialUnit}`}</td>
+                      <td>{row.referenceType}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
           ) : null}
-          <ReportView data={monthlySales} copy={copy} />
         </article>
 
-        <article className="module-panel">
-          <h2>{copy.reports.yearlySales}</h2>
-          <form
-            className="module-form module-form--inline"
-            onSubmit={loadYearlySales}
-          >
+        <article className="module-panel module-panel--full">
+          <h2>{copy.reports.attendanceActivity}</h2>
+          <div className="module-form module-form--inline">
             <label>
-              {copy.reports.year}
-              <input
-                type="number"
-                min={2000}
-                max={9999}
-                value={filters.year}
+              {copy.reports.period}
+              <select
+                value={attendanceFilters.period}
                 onChange={(event) =>
-                  setFilters((prev) => ({ ...prev, year: event.target.value }))
+                  setAttendanceFilters((prev) => ({
+                    ...prev,
+                    period: event.target.value as ReportPeriod,
+                  }))
                 }
-              />
+              >
+                <option value="daily">{copy.reports.day}</option>
+                <option value="weekly">{copy.reports.week}</option>
+                <option value="monthly">{copy.reports.month}</option>
+                <option value="yearly">{copy.reports.year}</option>
+              </select>
             </label>
-            <button type="submit" className="auth-button">
+            {(attendanceFilters.period === "daily" ||
+              attendanceFilters.period === "weekly") && (
+              <label>
+                {copy.reports.day}
+                <input
+                  type="date"
+                  value={attendanceFilters.date}
+                  onChange={(event) =>
+                    setAttendanceFilters((prev) => ({
+                      ...prev,
+                      date: event.target.value,
+                    }))
+                  }
+                />
+              </label>
+            )}
+            {attendanceFilters.period === "monthly" && (
+              <label>
+                {copy.reports.month}
+                <input
+                  type="month"
+                  value={attendanceFilters.month}
+                  onChange={(event) =>
+                    setAttendanceFilters((prev) => ({
+                      ...prev,
+                      month: event.target.value,
+                    }))
+                  }
+                />
+              </label>
+            )}
+            {attendanceFilters.period === "yearly" && (
+              <label>
+                {copy.reports.year}
+                <input
+                  type="number"
+                  min={2000}
+                  max={9999}
+                  value={attendanceFilters.year}
+                  onChange={(event) =>
+                    setAttendanceFilters((prev) => ({
+                      ...prev,
+                      year: event.target.value,
+                    }))
+                  }
+                />
+              </label>
+            )}
+            <button
+              type="button"
+              className="auth-button"
+              onClick={() =>
+                void loadActivityReport(
+                  "/reports/attendance/activity",
+                  setAttendanceActivity,
+                  "attendanceActivity",
+                  attendanceFilters,
+                  "Failed to load attendance report",
+                )
+              }
+            >
               {copy.load}
             </button>
             <button
               type="button"
               className="auth-button auth-button--ghost"
               onClick={() => {
-                if (!yearlySales) {
+                if (!attendanceActivity) {
                   window.alert(copy.reports.pdfNoData);
                   return;
                 }
 
-                try {
-                  const doc = new jsPDF();
-                  doc.setFontSize(14);
-                  doc.text(copy.reports.yearlySales, 14, 16);
-
-                  autoTable(doc, {
-                    startY: 22,
-                    head: [["Month", "Invoices", "Items", "Total"]],
-                    body: yearlySales.byMonth.map((row) => [
-                      row.month,
-                      String(row.invoicesCount),
-                      String(row.itemsQuantity),
-                      row.totalAmount.toLocaleString(),
-                    ]),
-                  });
-
-                  doc.save(`yearly-sales-${yearlySales.year}.pdf`);
-                } catch {
-                  window.alert(copy.reports.pdfDownloadFailed);
-                }
+                exportPdfTable(
+                  copy.reports.attendanceActivity,
+                  [
+                    `${reportText.period}: ${attendanceActivity.rangeStart.slice(0, 10)} ${isArabic ? "إلى" : "to"} ${attendanceActivity.rangeEnd.slice(0, 10)} (${attendanceActivity.period})`,
+                    `${reportText.records}: ${attendanceActivity.totals.recordsCount}`,
+                    `${isArabic ? "الغياب" : "Absent"}: ${attendanceActivity.totals.absentCount}`,
+                    `${isArabic ? "دقائق التأخير" : "Late minutes"}: ${attendanceActivity.totals.totalLateMinutes}`,
+                    `${isArabic ? "دقائق الإضافي" : "Overtime minutes"}: ${attendanceActivity.totals.totalOvertimeMinutes}`,
+                  ],
+                  [
+                    reportText.user,
+                    reportText.shift,
+                    reportText.checkIn,
+                    reportText.checkOut,
+                    reportText.late,
+                    reportText.overtime,
+                  ],
+                  attendanceActivity.records.map((row) => [
+                    row.userName,
+                    row.shiftName ?? "-",
+                    row.checkIn.replace("T", " ").slice(0, 16),
+                    row.checkOut
+                      ? row.checkOut.replace("T", " ").slice(0, 16)
+                      : "-",
+                    String(row.lateMinutes),
+                    String(row.overtimeMinutes),
+                  ]),
+                  `attendance-${attendanceActivity.label}.pdf`,
+                );
               }}
             >
               {copy.reports.downloadPdf}
             </button>
-          </form>
-          {loadingSection === "yearly" ? (
-            <p>{copy.reports.loadingYearly}</p>
+          </div>
+          {loadingSection === "attendanceActivity" ? (
+            <p>{copy.reports.loadingAttendanceActivity}</p>
           ) : null}
-          {yearlySales ? (
+          {attendanceActivity ? (
             <div className="admin-table-wrap">
               <table className="admin-table">
                 <thead>
                   <tr>
+                    <th>User</th>
+                    <th>Shift</th>
+                    <th>Check In</th>
+                    <th>Check Out</th>
+                    <th>Late</th>
+                    <th>OT</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {attendanceActivity.records.map((row) => (
+                    <tr key={row.id}>
+                      <td>{row.userName}</td>
+                      <td>{row.shiftName ?? "-"}</td>
+                      <td>{row.checkIn.replace("T", " ").slice(0, 16)}</td>
+                      <td>
+                        {row.checkOut
+                          ? row.checkOut.replace("T", " ").slice(0, 16)
+                          : "-"}
+                      </td>
+                      <td>{row.lateMinutes}</td>
+                      <td>{row.overtimeMinutes}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : null}
+        </article>
+
+        <article className="module-panel module-panel--full">
+          <h2>{copy.reports.payrollActivity}</h2>
+          <div className="module-form module-form--inline">
+            <label>
+              {copy.reports.period}
+              <select
+                value={payrollFilters.period}
+                onChange={(event) =>
+                  setPayrollFilters((prev) => ({
+                    ...prev,
+                    period: event.target.value as ReportPeriod,
+                  }))
+                }
+              >
+                <option value="daily">{copy.reports.day}</option>
+                <option value="weekly">{copy.reports.week}</option>
+                <option value="monthly">{copy.reports.month}</option>
+                <option value="yearly">{copy.reports.year}</option>
+              </select>
+            </label>
+            {(payrollFilters.period === "daily" ||
+              payrollFilters.period === "weekly") && (
+              <label>
+                {copy.reports.day}
+                <input
+                  type="date"
+                  value={payrollFilters.date}
+                  onChange={(event) =>
+                    setPayrollFilters((prev) => ({
+                      ...prev,
+                      date: event.target.value,
+                    }))
+                  }
+                />
+              </label>
+            )}
+            {payrollFilters.period === "monthly" && (
+              <label>
+                {copy.reports.month}
+                <input
+                  type="month"
+                  value={payrollFilters.month}
+                  onChange={(event) =>
+                    setPayrollFilters((prev) => ({
+                      ...prev,
+                      month: event.target.value,
+                    }))
+                  }
+                />
+              </label>
+            )}
+            {payrollFilters.period === "yearly" && (
+              <label>
+                {copy.reports.year}
+                <input
+                  type="number"
+                  min={2000}
+                  max={9999}
+                  value={payrollFilters.year}
+                  onChange={(event) =>
+                    setPayrollFilters((prev) => ({
+                      ...prev,
+                      year: event.target.value,
+                    }))
+                  }
+                />
+              </label>
+            )}
+            <button
+              type="button"
+              className="auth-button"
+              onClick={() =>
+                void loadActivityReport(
+                  "/reports/payroll/activity",
+                  setPayrollActivity,
+                  "payrollActivity",
+                  payrollFilters,
+                  "Failed to load payroll report",
+                )
+              }
+            >
+              {copy.load}
+            </button>
+            <button
+              type="button"
+              className="auth-button auth-button--ghost"
+              onClick={() => {
+                if (!payrollActivity) {
+                  window.alert(copy.reports.pdfNoData);
+                  return;
+                }
+
+                exportPdfTable(
+                  copy.reports.payrollActivity,
+                  [
+                    `${reportText.period}: ${payrollActivity.rangeStart.slice(0, 10)} ${isArabic ? "إلى" : "to"} ${payrollActivity.rangeEnd.slice(0, 10)} (${payrollActivity.period})`,
+                    `${reportText.records}: ${payrollActivity.totals.recordsCount}`,
+                    `${isArabic ? "الراتب الأساسي" : "Base salary"}: ${payrollActivity.totals.totalBaseSalary.toLocaleString()}`,
+                    `${isArabic ? "بدل الإضافي" : "Overtime salary"}: ${payrollActivity.totals.totalOvertimeSalary.toLocaleString()}`,
+                    `${isArabic ? "إجمالي المدفوع" : "Total payout"}: ${payrollActivity.totals.totalPayout.toLocaleString()}`,
+                  ],
+                  [
+                    reportText.user,
+                    reportText.month,
+                    reportText.hours,
+                    reportText.overtimeHours,
+                    reportText.total,
+                  ],
+                  payrollActivity.records.map((row) => [
+                    row.userName,
+                    row.month,
+                    String(row.totalHours),
+                    String(row.overtimeHours),
+                    row.totalSalary.toLocaleString(),
+                  ]),
+                  `payroll-${payrollActivity.label}.pdf`,
+                );
+              }}
+            >
+              {copy.reports.downloadPdf}
+            </button>
+          </div>
+          {loadingSection === "payrollActivity" ? (
+            <p>{copy.reports.loadingPayrollActivity}</p>
+          ) : null}
+          {payrollActivity ? (
+            <div className="admin-table-wrap">
+              <table className="admin-table">
+                <thead>
+                  <tr>
+                    <th>User</th>
                     <th>Month</th>
-                    <th>Invoices</th>
-                    <th>Items</th>
+                    <th>Hours</th>
+                    <th>OT Hours</th>
                     <th>Total</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {yearlySales.byMonth.map((row) => (
-                    <tr key={row.month}>
+                  {payrollActivity.records.map((row) => (
+                    <tr key={row.id}>
+                      <td>{row.userName}</td>
                       <td>{row.month}</td>
-                      <td>{row.invoicesCount}</td>
-                      <td>{row.itemsQuantity}</td>
-                      <td>{row.totalAmount.toLocaleString()}</td>
+                      <td>{row.totalHours}</td>
+                      <td>{row.overtimeHours}</td>
+                      <td>{row.totalSalary.toLocaleString()}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
           ) : null}
-          <ReportView
-            data={yearlySales as unknown as ReportBlock}
-            copy={copy}
-          />
         </article>
 
         <article className="module-panel module-panel--full">
@@ -625,13 +1004,8 @@ export function ReportsPage() {
                 type="number"
                 min={0}
                 step="0.01"
-                value={filters.threshold}
-                onChange={(event) =>
-                  setFilters((prev) => ({
-                    ...prev,
-                    threshold: event.target.value,
-                  }))
-                }
+                value={inventoryThreshold}
+                onChange={(event) => setInventoryThreshold(event.target.value)}
               />
             </label>
             <button type="submit" className="auth-button">
@@ -650,26 +1024,6 @@ export function ReportsPage() {
       ) : null}
     </ModulePageShell>
   );
-}
-
-function weekInputToDate(weekInput: string): string {
-  const match = /^(\d{4})-W(\d{2})$/.exec(weekInput.trim());
-  if (!match) {
-    return "";
-  }
-
-  const year = Number(match[1]);
-  const week = Number(match[2]);
-
-  const jan4 = new Date(Date.UTC(year, 0, 4));
-  const jan4IsoDay = jan4.getUTCDay() === 0 ? 7 : jan4.getUTCDay();
-  const week1Monday = new Date(jan4);
-  week1Monday.setUTCDate(jan4.getUTCDate() - jan4IsoDay + 1);
-
-  const targetDate = new Date(week1Monday);
-  targetDate.setUTCDate(week1Monday.getUTCDate() + (week - 1) * 7);
-
-  return targetDate.toISOString().slice(0, 10);
 }
 
 function ReportView({
