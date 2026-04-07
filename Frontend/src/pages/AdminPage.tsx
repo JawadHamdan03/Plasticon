@@ -861,13 +861,22 @@ export function AdminPage() {
           <section className="admin-section">
             <div className="admin-section__head">
               <h2>{copy.admin.usersTitle}</h2>
-              <button
-                type="button"
-                className="auth-button"
-                onClick={() => void loadUsers()}
-              >
-                {copy.refresh}
-              </button>
+              <div style={{ display: "flex", gap: "8px" }}>
+                <button
+                  type="button"
+                  className="auth-button"
+                  onClick={() => navigate("/register")}
+                >
+                  {copy.admin.addNewUser}
+                </button>
+                <button
+                  type="button"
+                  className="auth-button"
+                  onClick={() => void loadUsers()}
+                >
+                  {copy.refresh}
+                </button>
+              </div>
             </div>
 
             {usersLoading ? <p>{copy.admin.loadingUsers}</p> : null}

@@ -637,12 +637,12 @@
 }
 
 .dashboard-brand__logo {
-  width: 54px;
-  height: 54px;
-  border-radius: 16px;
+  width: 100px;
+  height: 90px;
+  border-radius: 10px;
   object-fit: cover;
-  background: rgba(254, 254, 250, 0.12);
-  border: 1px solid rgba(254, 254, 250, 0.12);
+  background: var(--brand-surface);
+  border: 3px solid var(--brand-surface);
 }
 
 .dashboard-brand__tag {
@@ -1064,11 +1064,7 @@
   border: 1px solid rgba(3, 39, 97, 0.14);
   border-radius: 16px;
   padding: 16px;
-   background: linear-gradient(
-    135deg,
-    var(--brand-secondary),
-    color-mix(in srgb, var(--brand-secondary) 78%, black)
-  );
+   background: var(--brand-surface);
   display: grid;
   gap: 8px;
 }
@@ -1254,7 +1250,7 @@
 }
 
 .module-shell__bar .dashboard-brand__logo {
-  border-color: rgba(3, 39, 97, 0.14);
+  border-color: rgba(255, 255, 255, 0.14);
   background: rgba(3, 39, 97, 0.05);
 }
 
