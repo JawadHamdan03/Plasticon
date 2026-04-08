@@ -2,6 +2,7 @@ import express from "express";
 import dotenv from "dotenv";
 import { createServer } from "http";
 import path from "path";
+import { fileURLToPath } from "url";
 import cors, { type CorsOptions } from "cors";
 import { initializeSocketServer } from "./config/socket";
 import authRoutes from "./routes/authRoutes";
@@ -22,9 +23,12 @@ import notificationRoutes from "./routes/notificationRoutes";
 import shiftsRoutes from "./routes/shiftsRoutes";
 import machinesRoutes from "./routes/machinesRoutes";
 import dashboardRoutes from "./routes/dashboardRoutes";
+import workerFeaturesRoutes from "./routes/workerFeaturesRoutes";
 import { initializeEmailService } from "./utils/emailService";
 
-dotenv.config();
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+dotenv.config({ path: path.resolve(__dirname, "../.env") });
 const PORT = Number(process.env.PORT) || 8080;
 const defaultFrontendOrigins = [
   "http://localhost:5173",
@@ -63,7 +67,7 @@ app.use(express.urlencoded({ extended: true }));
 // Serve static files from prisma/pictures
 app.use(
   "/pictures",
-  express.static(path.join(process.cwd(), "prisma", "pictures")),
+  express.static(path.resolve(__dirname, "..", "prisma", "pictures")),
 );
 
 app.use("/auth", authRoutes);
@@ -84,6 +88,7 @@ app.use("/notifications", notificationRoutes);
 app.use("/shifts", shiftsRoutes);
 app.use("/machines", machinesRoutes);
 app.use("/dashboard", dashboardRoutes);
+app.use("/worker-tools", workerFeaturesRoutes);
 
 initializeSocketServer(server);
 

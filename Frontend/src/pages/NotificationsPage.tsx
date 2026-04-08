@@ -54,7 +54,7 @@ export function NotificationsPage() {
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [form, setForm] = useState({
-    type: "SYSTEM",
+    type: "SYSTEM_MESSAGE",
     title: "",
     message: "",
     userId: "",
@@ -164,7 +164,7 @@ export function NotificationsPage() {
       }
 
       setSuccessMessage("Notification created successfully.");
-      setForm({ type: "SYSTEM", title: "", message: "", userId: "" });
+      setForm({ type: "SYSTEM_MESSAGE", title: "", message: "", userId: "" });
       await loadNotifications();
     } catch (error) {
       setErrorMessage(
@@ -256,13 +256,13 @@ export function NotificationsPage() {
                     setForm((prev) => ({ ...prev, type: event.target.value }))
                   }
                 >
-                  <option value="SYSTEM">SYSTEM</option>
-                  <option value="SHIFT">SHIFT</option>
-                  <option value="PRODUCTION">PRODUCTION</option>
-                  <option value="INVENTORY">INVENTORY</option>
-                  <option value="PAYROLL">PAYROLL</option>
-                  <option value="QUALITY">QUALITY</option>
-                  <option value="GENERAL">GENERAL</option>
+                  <option value="SYSTEM_MESSAGE">SYSTEM_MESSAGE</option>
+                  <option value="CHAT_MESSAGE">CHAT_MESSAGE</option>
+                  <option value="PRODUCTION_ALERT">PRODUCTION_ALERT</option>
+                  <option value="MAINTENANCE_URGENT">MAINTENANCE_URGENT</option>
+                  <option value="QUALITY_ISSUE">QUALITY_ISSUE</option>
+                  <option value="PAYROLL_READY">PAYROLL_READY</option>
+                  <option value="INVENTORY_LOW">INVENTORY_LOW</option>
                 </select>
               </label>
 

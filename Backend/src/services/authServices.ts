@@ -207,11 +207,16 @@ export const loginUser = async (
     email: string | null;
     token: string;
     role: $Enums.UserRole;
+    profileImage: string | null;
   }>
 > => {
   const normalizedEmail = email?.trim().toLowerCase();
 
-  const user = (await prisma.user.findUnique({
+  if (!normalizedEmail || !password) {
+    return { status: 400, message: "Email and password are required" };
+  }
+
+  const user = (await prisma.user.findFirst({
     where: { email: normalizedEmail },
   })) as User;
 
@@ -266,6 +271,7 @@ export const loginUser = async (
       email: refreshedUser.email,
       token,
       role: refreshedUser.role,
+      profileImage: refreshedUser.profileImage,
     },
   };
 };

@@ -12,6 +12,8 @@ export function RoleProtectedRoute({
   children,
 }: RoleProtectedRouteProps) {
   const { loading, isAuthenticated, user } = useAuth();
+  const normalizedRole = String(user?.role ?? "").toUpperCase();
+  const normalizedAllowedRoles = allowedRoles.map((role) => role.toUpperCase());
 
   if (loading) {
     return <div className="route-loading">Loading...</div>;
@@ -21,7 +23,7 @@ export function RoleProtectedRoute({
     return <Navigate to="/login" replace />;
   }
 
-  if (!user?.role || !allowedRoles.includes(user.role)) {
+  if (!normalizedRole || !normalizedAllowedRoles.includes(normalizedRole)) {
     return <Navigate to="/dashboard" replace />;
   }
 

@@ -44,15 +44,20 @@ export const registerHandler = async (req: Request, res: Response) => {
 };
 
 export const loginHandler = async (req: Request, res: Response) => {
-  const { email, password } = req.body;
-  const result = await loginUser(email, password, res);
+  try {
+    const { email, password } = req.body;
+    const result = await loginUser(email, password, res);
 
-  if (result.message) {
-    res.status(result.status).send({ error: result.message });
-    return;
+    if (result.message) {
+      res.status(result.status).send({ error: result.message });
+      return;
+    }
+
+    res.status(result.status).json(result.data);
+  } catch (error) {
+    console.error("Login error:", error);
+    res.status(500).json({ message: "Failed to login" });
   }
-
-  res.status(result.status).json(result.data);
 };
 
 export const logoutHandler = async (

@@ -4,6 +4,7 @@ import { appCopy } from "../content/appCopy";
 import { useLocale } from "../context/LocaleContext";
 import { LocaleSwitch } from "./LocaleSwitch";
 import { DateTimeBadge } from "./DateTimeBadge";
+import { UserAvatarBadge } from "./UserAvatarBadge";
 import logo from "../assets/plasticon.png";
 
 type ModulePageShellProps = {
@@ -50,6 +51,7 @@ export function ModulePageShell({
           >
             <DateTimeBadge />
             <LocaleSwitch />
+            <UserAvatarBadge size="sm" />
           </div>
         </div>
         <header className="module-header">
