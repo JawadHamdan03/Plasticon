@@ -247,6 +247,14 @@ function App() {
               </RoleProtectedRoute>
             }
           />
+          <Route
+            path="/worker/readings"
+            element={<Navigate to="/worker/snapshots" replace />}
+          />
+          <Route
+            path="/worker/production"
+            element={<Navigate to="/worker/tools" replace />}
+          />
           <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
       </AuthProvider>

@@ -13,6 +13,15 @@ type ServiceResult<T> = {
 
 type StopPriority = "CRITICAL" | "HIGH" | "NORMAL";
 type ShiftPhase = "START" | "END";
+type WorkerFeatureEntryType =
+  | "stops"
+  | "checklist"
+  | "waste"
+  | "target"
+  | "kaizen"
+  | "quality"
+  | "micro"
+  | "anomaly";
 
 let workerFeaturesReady = false;
 
@@ -208,6 +217,17 @@ const notifyAdmins = async (
     message,
     type,
   );
+};
+
+const workerFeatureTableByType: Record<WorkerFeatureEntryType, string> = {
+  stops: "worker_machine_stop_alerts",
+  checklist: "worker_shift_checklists",
+  waste: "worker_material_waste_logs",
+  target: "worker_daily_targets",
+  kaizen: "worker_kaizen_suggestions",
+  quality: "worker_quality_issue_reports",
+  micro: "worker_micro_stops",
+  anomaly: "worker_electricity_anomaly_alerts",
 };
 
 export const createMachineStopAlert = async (
@@ -846,4 +866,44 @@ export const getMyElectricityAnomalyAlerts = async (userId: number) => {
   )) as Array<Record<string, unknown>>;
 
   return { status: 200, data: rows } as ServiceResult<unknown>;
+};
+
+export const deleteMyWorkerFeatureEntry = async (
+  userId: number,
+  feature: string,
+  entryId: number,
+): Promise<ServiceResult<unknown>> => {
+  await ensureWorkerFeaturesTables();
+
+  if (!Number.isInteger(entryId) || entryId <= 0) {
+    return { status: 400, message: "Invalid entry id" };
+  }
+
+  const normalized = feature.trim().toLowerCase() as WorkerFeatureEntryType;
+  const tableName = workerFeatureTableByType[normalized];
+
+  if (!tableName) {
+    return { status: 400, message: "Invalid feature type" };
+  }
+
+  const deletedRows = (await prisma.$queryRawUnsafe(
+    `DELETE FROM ${tableName}
+     WHERE id = $1 AND user_id = $2
+     RETURNING id`,
+    entryId,
+    userId,
+  )) as Array<{ id: number }>;
+
+  if (!deletedRows.length) {
+    return { status: 404, message: "Entry not found" };
+  }
+
+  return {
+    status: 200,
+    data: {
+      deleted: true,
+      id: deletedRows[0].id,
+      feature: normalized,
+    },
+  };
 };

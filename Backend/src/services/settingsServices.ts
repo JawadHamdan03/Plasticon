@@ -26,6 +26,8 @@ type SnapshotInput = {
   electricityImage?: string | null;
 };
 
+type SnapshotUpdateInput = Partial<SnapshotInput>;
+
 type SnapshotRow = {
   id: number;
   machine_label: string;
@@ -433,6 +435,164 @@ export const createSettingsSnapshot = async (
     status: 201,
     data: toSnapshotDto(snapshot),
   };
+};
+
+export const updateSettingsSnapshot = async (
+  snapshotId: number,
+  payload: SnapshotUpdateInput,
+  userId?: number,
+  isAdmin = false,
+): Promise<ServiceResult<unknown>> => {
+  if (!Number.isInteger(snapshotId) || snapshotId <= 0) {
+    return { status: 400, message: "Invalid snapshot id" };
+  }
+
+  await ensureSnapshotsTable();
+
+  const existing = await prisma.$queryRaw<SnapshotRow[]>`
+    SELECT
+      id,
+      machine_label,
+      machine_counter,
+      electricity_kwh,
+      notes,
+      machine_counter_image,
+      electricity_image,
+      created_by_id,
+      created_at
+    FROM operation_snapshots
+    WHERE id = ${snapshotId}
+    LIMIT 1
+  `;
+
+  const current = existing[0];
+  if (!current) {
+    return { status: 404, message: "Snapshot not found" };
+  }
+
+  if (!isAdmin && current.created_by_id !== userId) {
+    return { status: 403, message: "You can only edit your own snapshot" };
+  }
+
+  const machineLabel = payload.machineLabel?.trim() || current.machine_label;
+  const machineCounter =
+    payload.machineCounter !== undefined && payload.machineCounter !== null
+      ? Number(payload.machineCounter)
+      : Number(current.machine_counter);
+  const electricityKwh =
+    payload.electricityKwh !== undefined && payload.electricityKwh !== null
+      ? Number(payload.electricityKwh)
+      : Number(current.electricity_kwh);
+
+  if (!machineLabel) {
+    return { status: 400, message: "machineLabel is required" };
+  }
+
+  if (!Number.isFinite(machineCounter) || machineCounter < 0) {
+    return { status: 400, message: "machineCounter must be a valid number" };
+  }
+
+  if (!Number.isFinite(electricityKwh) || electricityKwh < 0) {
+    return { status: 400, message: "electricityKwh must be a valid number" };
+  }
+
+  const updated = await prisma.$queryRaw<SnapshotRow[]>`
+    UPDATE operation_snapshots
+    SET
+      machine_label = ${machineLabel},
+      machine_counter = ${machineCounter},
+      electricity_kwh = ${electricityKwh},
+      notes = ${payload.notes !== undefined ? payload.notes?.trim() || null : current.notes},
+      machine_counter_image = ${payload.machineCounterImage !== undefined ? payload.machineCounterImage : current.machine_counter_image},
+      electricity_image = ${payload.electricityImage !== undefined ? payload.electricityImage : current.electricity_image}
+    WHERE id = ${snapshotId}
+    RETURNING
+      id,
+      machine_label,
+      machine_counter,
+      electricity_kwh,
+      notes,
+      machine_counter_image,
+      electricity_image,
+      created_by_id,
+      created_at
+  `;
+
+  const snapshot = updated[0];
+  auditAsync(
+    userId,
+    AuditAction.SYSTEM_SETTINGS_UPDATED,
+    AuditEntityType.SYSTEM_SETTING,
+    snapshot.id,
+    {
+      snapshotType: "operations",
+      action: "updated",
+      machineLabel,
+      machineCounter,
+      electricityKwh,
+    },
+  );
+
+  return {
+    status: 200,
+    data: toSnapshotDto(snapshot),
+  };
+};
+
+export const deleteSettingsSnapshot = async (
+  snapshotId: number,
+  userId?: number,
+  isAdmin = false,
+): Promise<ServiceResult<unknown>> => {
+  if (!Number.isInteger(snapshotId) || snapshotId <= 0) {
+    return { status: 400, message: "Invalid snapshot id" };
+  }
+
+  await ensureSnapshotsTable();
+
+  const existing = await prisma.$queryRaw<SnapshotRow[]>`
+    SELECT
+      id,
+      machine_label,
+      machine_counter,
+      electricity_kwh,
+      notes,
+      machine_counter_image,
+      electricity_image,
+      created_by_id,
+      created_at
+    FROM operation_snapshots
+    WHERE id = ${snapshotId}
+    LIMIT 1
+  `;
+
+  const current = existing[0];
+  if (!current) {
+    return { status: 404, message: "Snapshot not found" };
+  }
+
+  if (!isAdmin && current.created_by_id !== userId) {
+    return { status: 403, message: "You can only delete your own snapshot" };
+  }
+
+  await prisma.$executeRaw`
+    DELETE FROM operation_snapshots
+    WHERE id = ${snapshotId}
+  `;
+
+  auditAsync(
+    userId,
+    AuditAction.SYSTEM_SETTINGS_UPDATED,
+    AuditEntityType.SYSTEM_SETTING,
+    snapshotId,
+    {
+      snapshotType: "operations",
+      action: "deleted",
+      machineLabel: current.machine_label,
+    },
+  );
+
+  return { status: 200, data: { deleted: true, id: snapshotId } };
 };
 
 export const getSettingsSnapshots = async (

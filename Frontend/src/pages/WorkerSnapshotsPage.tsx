@@ -49,8 +49,6 @@ const defaultDraft: SnapshotDraft = {
   electricityImage: null,
 };
 
-const ELECTRICITY_TARIFF_PER_KWH = 0.68;
-
 async function fetchWithWorkerAuth(path: string, options?: RequestInit) {
   const token = window.localStorage.getItem("plasticon_token");
   return fetch(`${API_BASE_URL}${path}`, {
@@ -112,12 +110,32 @@ export function WorkerSnapshotsPage({
             electricityImage: "صورة العداد الكهربائي",
             submit: "تسجيل القراءة",
             refresh: "تحديث",
+            clearFilters: "مسح الفلاتر",
+            searchSnapshots: "بحث في القراءات",
+            fromDate: "من تاريخ",
+            toDate: "إلى تاريخ",
+            edit: "تعديل",
+            remove: "حذف",
+            removeEntry: "حذف السجل",
+            cancel: "إلغاء",
+            saveChanges: "حفظ التغييرات",
             loading: "جارٍ التحميل...",
             noData: "لا توجد بيانات.",
             invalid: "تأكد من إدخال البيانات بشكل صحيح.",
             saved: "تم الحفظ بنجاح.",
+            updated: "تم التعديل بنجاح.",
+            deleted: "تم الحذف بنجاح.",
+            deleteConfirm: "هل تريد حذف هذا السجل؟",
             profileTitle: "بطاقة العامل",
             progressLabel: "تقدم اليوم",
+            summariesTitle: "ملخص القراءات",
+            entriesLabel: "السجلات الظاهرة",
+            totalElectricityLabel: "إجمالي الكهرباء",
+            averageElectricityLabel: "متوسط الكهرباء",
+            counterDeltaLabel: "فرق العداد",
+            machinesLabel: "الماكينات الظاهرة",
+            editHint:
+              "يمكنك تعديل السجل أو حذفه بعد الإرسال مباشرة من القائمة.",
             toolsTitle: "أدوات تشغيل العامل",
           }
         : {
@@ -132,12 +150,32 @@ export function WorkerSnapshotsPage({
             electricityImage: "Electric meter image",
             submit: "Save reading",
             refresh: "Refresh",
+            clearFilters: "Clear filters",
+            searchSnapshots: "Search readings",
+            fromDate: "From date",
+            toDate: "To date",
+            edit: "Edit",
+            remove: "Delete",
+            removeEntry: "Delete entry",
+            cancel: "Cancel",
+            saveChanges: "Save changes",
             loading: "Loading...",
             noData: "No data yet.",
             invalid: "Please enter valid values.",
             saved: "Saved successfully.",
+            updated: "Updated successfully.",
+            deleted: "Deleted successfully.",
+            deleteConfirm: "Delete this entry?",
             profileTitle: "Worker Card",
             progressLabel: "Today progress",
+            summariesTitle: "Reading summary",
+            entriesLabel: "Visible records",
+            totalElectricityLabel: "Total electricity",
+            averageElectricityLabel: "Average electricity",
+            counterDeltaLabel: "Counter delta",
+            machinesLabel: "Visible machines",
+            editHint:
+              "Edit or delete submitted readings directly from the list.",
             toolsTitle: "Worker Tools",
           },
     [locale],
@@ -145,6 +183,12 @@ export function WorkerSnapshotsPage({
 
   const [draft, setDraft] = useState<SnapshotDraft>(defaultDraft);
   const [history, setHistory] = useState<WorkerSnapshot[]>([]);
+  const [snapshotSearch, setSnapshotSearch] = useState("");
+  const [snapshotFrom, setSnapshotFrom] = useState("");
+  const [snapshotTo, setSnapshotTo] = useState("");
+  const [editingSnapshotId, setEditingSnapshotId] = useState<number | null>(
+    null,
+  );
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
@@ -233,8 +277,17 @@ export function WorkerSnapshotsPage({
   const loadHistory = useCallback(async () => {
     setLoading(true);
     try {
+      const params = new URLSearchParams();
+      params.set("limit", "200");
+      if (snapshotFrom) {
+        params.set("from", snapshotFrom);
+      }
+      if (snapshotTo) {
+        params.set("to", snapshotTo);
+      }
+
       const response = await fetchWithWorkerAuth(
-        "/settings/snapshots/mine?limit=200",
+        `/settings/snapshots/mine?${params.toString()}`,
       );
       if (!response.ok) {
         throw new Error(await readApiError(response));
@@ -249,7 +302,7 @@ export function WorkerSnapshotsPage({
     } finally {
       setLoading(false);
     }
-  }, [text.invalid]);
+  }, [snapshotFrom, snapshotTo, text.invalid]);
 
   const loadWorkerTools = useCallback(async () => {
     if (toolsApiUnavailable) {
@@ -361,10 +414,16 @@ export function WorkerSnapshotsPage({
         formData.append("electricityImage", draft.electricityImage);
       }
 
-      const response = await fetchWithWorkerAuth("/settings/snapshots", {
-        method: "POST",
-        body: formData,
-      });
+      const isEditing = editingSnapshotId !== null;
+      const response = await fetchWithWorkerAuth(
+        isEditing
+          ? `/settings/snapshots/${editingSnapshotId}`
+          : "/settings/snapshots",
+        {
+          method: isEditing ? "PUT" : "POST",
+          body: formData,
+        },
+      );
 
       if (!response.ok) {
         throw new Error(await readApiError(response));
@@ -383,9 +442,102 @@ export function WorkerSnapshotsPage({
       }
 
       setDraft(defaultDraft);
+      setEditingSnapshotId(null);
       setMessageTone("success");
-      setMessage(text.saved);
+      setMessage(isEditing ? text.updated : text.saved);
       await Promise.all([loadHistory(), loadWorkerTools()]);
+    } catch (error) {
+      setMessageTone("error");
+      setMessage(error instanceof Error ? error.message : text.invalid);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const beginSnapshotEdit = (item: WorkerSnapshot) => {
+    setEditingSnapshotId(item.id);
+    setDraft({
+      machineLabel: item.machineLabel,
+      machineCounter: String(item.machineCounter),
+      electricityKwh: String(item.electricityKwh),
+      notes: item.notes ?? "",
+      machineCounterImage: null,
+      electricityImage: null,
+    });
+    setMessage("");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const cancelSnapshotEdit = () => {
+    setEditingSnapshotId(null);
+    setDraft(defaultDraft);
+    setMessage("");
+  };
+
+  const deleteSnapshot = async (item: WorkerSnapshot) => {
+    const confirmed = window.confirm(
+      locale === "ar"
+        ? `حذف قراءة ${item.machineLabel}؟`
+        : `Delete the reading for ${item.machineLabel}?`,
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setSaving(true);
+    setMessage("");
+    try {
+      const response = await fetchWithWorkerAuth(
+        `/settings/snapshots/${item.id}`,
+        { method: "DELETE" },
+      );
+
+      if (!response.ok) {
+        throw new Error(await readApiError(response));
+      }
+
+      if (editingSnapshotId === item.id) {
+        cancelSnapshotEdit();
+      }
+
+      setMessageTone("success");
+      setMessage(text.deleted);
+      await loadHistory();
+    } catch (error) {
+      setMessageTone("error");
+      setMessage(error instanceof Error ? error.message : text.invalid);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const deleteToolLog = async (entryIdRaw: unknown) => {
+    const entryId = Number(entryIdRaw);
+    if (!Number.isInteger(entryId) || entryId <= 0) {
+      return;
+    }
+
+    const confirmed = window.confirm(text.deleteConfirm);
+    if (!confirmed) {
+      return;
+    }
+
+    setSaving(true);
+    setMessage("");
+    try {
+      const response = await fetchWithWorkerAuth(
+        `/worker-tools/entries/${activeTool}/${entryId}`,
+        { method: "DELETE" },
+      );
+
+      if (!response.ok) {
+        throw new Error(await readApiError(response));
+      }
+
+      setMessageTone("success");
+      setMessage(text.deleted);
+      await loadWorkerTools();
     } catch (error) {
       setMessageTone("error");
       setMessage(error instanceof Error ? error.message : text.invalid);
@@ -519,7 +671,28 @@ export function WorkerSnapshotsPage({
   };
 
   const latest = history[0] ?? null;
-  const previous = history[1] ?? null;
+
+  const visibleHistory = useMemo(() => {
+    const term = snapshotSearch.trim().toLowerCase();
+
+    if (!term) {
+      return history;
+    }
+
+    return history.filter((item) => {
+      const haystack = [
+        item.machineLabel,
+        item.notes ?? "",
+        String(item.machineCounter),
+        String(item.electricityKwh),
+        new Date(item.createdAt).toLocaleString(),
+      ]
+        .join(" ")
+        .toLowerCase();
+
+      return haystack.includes(term);
+    });
+  }, [history, snapshotSearch]);
 
   const todayStats = useMemo(() => {
     const today = new Date();
@@ -532,7 +705,9 @@ export function WorkerSnapshotsPage({
       );
     };
 
-    const todayRecords = history.filter((item) => sameDay(item.createdAt));
+    const todayRecords = visibleHistory.filter((item) =>
+      sameDay(item.createdAt),
+    );
     const avgElectricity = todayRecords.length
       ? todayRecords.reduce((sum, item) => sum + item.electricityKwh, 0) /
         todayRecords.length
@@ -548,15 +723,38 @@ export function WorkerSnapshotsPage({
       avgElectricity,
       totalElectricity,
     };
-  }, [history]);
+  }, [visibleHistory]);
 
   const counterDelta = useMemo(() => {
-    if (!latest || !previous) {
+    const latestVisible = visibleHistory[0] ?? null;
+    const previousVisible = visibleHistory[1] ?? null;
+
+    if (!latestVisible || !previousVisible) {
       return null;
     }
 
-    return latest.machineCounter - previous.machineCounter;
-  }, [latest, previous]);
+    return latestVisible.machineCounter - previousVisible.machineCounter;
+  }, [visibleHistory]);
+
+  const visibleSummary = useMemo(() => {
+    const totalElectricity = visibleHistory.reduce(
+      (sum, item) => sum + item.electricityKwh,
+      0,
+    );
+    const averageElectricity = visibleHistory.length
+      ? totalElectricity / visibleHistory.length
+      : 0;
+    const uniqueMachines = new Set(
+      visibleHistory.map((item) => item.machineLabel.trim()).filter(Boolean),
+    ).size;
+
+    return {
+      totalElectricity,
+      averageElectricity,
+      uniqueMachines,
+      entries: visibleHistory.length,
+    };
+  }, [visibleHistory]);
 
   const machineSuggestions = useMemo(
     () => Array.from(new Set(history.map((item) => item.machineLabel))),
@@ -573,15 +771,6 @@ export function WorkerSnapshotsPage({
     100,
     Math.round((todayStats.entries / targetEntries) * 100),
   );
-
-  const estimatedEntryCost = useMemo(() => {
-    const kwh = Number(draft.electricityKwh);
-    if (!Number.isFinite(kwh) || kwh <= 0) {
-      return 0;
-    }
-
-    return kwh * ELECTRICITY_TARIFF_PER_KWH;
-  }, [draft.electricityKwh]);
 
   const tabs: Array<{ id: ToolTab; label: string }> = [
     { id: "stops", label: locale === "ar" ? "توقف فوري" : "Stop Alerts" },
@@ -645,48 +834,137 @@ export function WorkerSnapshotsPage({
         </div>
       </section>
 
-      <section className="worker-snapshot-kpi-grid">
-        <article className="worker-snapshot-kpi">
-          <p>{locale === "ar" ? "قراءات اليوم" : "Today entries"}</p>
-          <strong>{todayStats.entries}</strong>
-          <small>
-            {locale === "ar" ? "آخر تحديث" : "Last sync"}:{" "}
-            {lastSyncAt ? new Date(lastSyncAt).toLocaleTimeString() : "-"}
-          </small>
-        </article>
-        <article className="worker-snapshot-kpi">
-          <p>{locale === "ar" ? "متوسط الكهرباء" : "Avg electricity"}</p>
-          <strong>{todayStats.avgElectricity.toFixed(2)} kWh</strong>
-          <small>
-            {locale === "ar" ? "الإجمالي" : "Total"}:{" "}
-            {todayStats.totalElectricity.toFixed(2)} kWh
-          </small>
-        </article>
-        <article className="worker-snapshot-kpi">
-          <p>{locale === "ar" ? "فرق العداد" : "Counter delta"}</p>
-          <strong>
-            {counterDelta === null
-              ? "-"
-              : `${counterDelta > 0 ? "+" : ""}${counterDelta}`}
-          </strong>
-          <small>
-            {latest ? new Date(latest.createdAt).toLocaleString() : "-"}
-          </small>
-        </article>
-        <article className="worker-snapshot-kpi">
-          <p>{locale === "ar" ? "تكلفة القراءة" : "Entry cost"}</p>
-          <strong>{estimatedEntryCost.toFixed(2)} ILS</strong>
-          <small>
-            {draft.electricityKwh || "0"} kWh × {ELECTRICITY_TARIFF_PER_KWH}
-          </small>
-        </article>
-      </section>
+      {showSnapshots ? (
+        <section className="worker-snapshot-kpi-grid">
+          <article className="worker-snapshot-kpi">
+            <p>{text.entriesLabel}</p>
+            <strong>{visibleSummary.entries}</strong>
+            <small>
+              {locale === "ar" ? "آخر تحديث" : "Last sync"}:{" "}
+              {lastSyncAt ? new Date(lastSyncAt).toLocaleTimeString() : "-"}
+            </small>
+          </article>
+          <article className="worker-snapshot-kpi">
+            <p>{text.totalElectricityLabel}</p>
+            <strong>{visibleSummary.totalElectricity.toFixed(2)} kWh</strong>
+            <small>
+              {locale === "ar" ? "اليوم" : "Today"}:{" "}
+              {todayStats.totalElectricity.toFixed(2)} kWh
+            </small>
+          </article>
+          <article className="worker-snapshot-kpi">
+            <p>{text.averageElectricityLabel}</p>
+            <strong>{visibleSummary.averageElectricity.toFixed(2)} kWh</strong>
+            <small>
+              {text.counterDeltaLabel}:{" "}
+              {counterDelta === null
+                ? "-"
+                : `${counterDelta > 0 ? "+" : ""}${counterDelta}`}
+            </small>
+          </article>
+          <article className="worker-snapshot-kpi">
+            <p>{text.machinesLabel}</p>
+            <strong>{visibleSummary.uniqueMachines}</strong>
+            <small>
+              {locale === "ar" ? "آخر قراءة" : "Latest"}:{" "}
+              {latest ? new Date(latest.createdAt).toLocaleString() : "-"}
+            </small>
+          </article>
+        </section>
+      ) : null}
 
       <section className="module-grid">
         <article className="module-panel worker-snapshot-form-panel">
           {showSnapshots ? (
             <>
-              <h2>{locale === "ar" ? "تسجيل قراءة" : "Add Snapshot"}</h2>
+              <div className="worker-snapshot-panel-head">
+                <div>
+                  <h2>{locale === "ar" ? "تسجيل قراءة" : "Add Snapshot"}</h2>
+                  <p className="worker-snapshot-panel-hint">{text.editHint}</p>
+                </div>
+                {editingSnapshotId !== null ? (
+                  <button
+                    type="button"
+                    className="auth-button auth-button--ghost"
+                    onClick={cancelSnapshotEdit}
+                  >
+                    {text.cancel}
+                  </button>
+                ) : null}
+              </div>
+              <div className="worker-snapshot-filter-grid">
+                <label>
+                  {text.searchSnapshots}
+                  <input
+                    value={snapshotSearch}
+                    onChange={(event) => setSnapshotSearch(event.target.value)}
+                    placeholder={
+                      locale === "ar"
+                        ? "ابحث باسم الماكينة أو الملاحظات"
+                        : "Search by machine or note"
+                    }
+                  />
+                </label>
+                <label>
+                  {text.fromDate}
+                  <input
+                    type="date"
+                    value={snapshotFrom}
+                    onChange={(event) => setSnapshotFrom(event.target.value)}
+                  />
+                </label>
+                <label>
+                  {text.toDate}
+                  <input
+                    type="date"
+                    value={snapshotTo}
+                    onChange={(event) => setSnapshotTo(event.target.value)}
+                  />
+                </label>
+                <button
+                  type="button"
+                  className="auth-button auth-button--ghost"
+                  onClick={() => {
+                    setSnapshotSearch("");
+                    setSnapshotFrom("");
+                    setSnapshotTo("");
+                  }}
+                >
+                  {text.clearFilters}
+                </button>
+              </div>
+              <h3 className="worker-snapshot-summary-title">
+                {text.summariesTitle}
+              </h3>
+              <div className="worker-snapshot-summary-strip">
+                <article className="worker-snapshot-summary-card">
+                  <span>{text.entriesLabel}</span>
+                  <strong>{visibleSummary.entries}</strong>
+                </article>
+                <article className="worker-snapshot-summary-card">
+                  <span>{text.totalElectricityLabel}</span>
+                  <strong>
+                    {visibleSummary.totalElectricity.toFixed(2)} kWh
+                  </strong>
+                </article>
+                <article className="worker-snapshot-summary-card">
+                  <span>{text.averageElectricityLabel}</span>
+                  <strong>
+                    {visibleSummary.averageElectricity.toFixed(2)} kWh
+                  </strong>
+                </article>
+                <article className="worker-snapshot-summary-card">
+                  <span>{text.machinesLabel}</span>
+                  <strong>{visibleSummary.uniqueMachines}</strong>
+                </article>
+              </div>
+              {editingSnapshotId !== null ? (
+                <div className="worker-snapshot-edit-banner">
+                  {locale === "ar"
+                    ? "أنت الآن تعدل سجلًا محفوظًا. عند الحفظ سيتم تحديثه مباشرة."
+                    : "You are editing a saved record. Saving will update it immediately."}
+                </div>
+              ) : null}
               <div className="worker-snapshot-form-grid">
                 <label>
                   {text.machineLabel}
@@ -794,7 +1072,11 @@ export function WorkerSnapshotsPage({
                   disabled={saving}
                   onClick={() => void handleSnapshotSubmit()}
                 >
-                  {saving ? text.loading : text.submit}
+                  {saving
+                    ? text.loading
+                    : editingSnapshotId !== null
+                      ? text.saveChanges
+                      : text.submit}
                 </button>
               </div>
 
@@ -1290,9 +1572,11 @@ export function WorkerSnapshotsPage({
             <>
               <h2>{locale === "ar" ? "آخر القراءات" : "Latest snapshots"}</h2>
               {loading ? <TruckLoader /> : null}
-              {!loading && history.length === 0 ? <p>{text.noData}</p> : null}
+              {!loading && visibleHistory.length === 0 ? (
+                <p>{text.noData}</p>
+              ) : null}
               <div className="module-list">
-                {history.slice(0, 20).map((item) => (
+                {visibleHistory.slice(0, 20).map((item) => (
                   <div className="module-row" key={item.id}>
                     <strong>{item.machineLabel}</strong>
                     <span>
@@ -1321,6 +1605,23 @@ export function WorkerSnapshotsPage({
                         />
                       ) : null}
                     </div>
+                    <div className="worker-snapshot-row-actions">
+                      <button
+                        type="button"
+                        className="auth-button auth-button--ghost"
+                        onClick={() => beginSnapshotEdit(item)}
+                      >
+                        {text.edit}
+                      </button>
+                      <button
+                        type="button"
+                        className="auth-button auth-button--ghost worker-snapshot-row-actions__danger"
+                        disabled={saving}
+                        onClick={() => void deleteSnapshot(item)}
+                      >
+                        {text.remove}
+                      </button>
+                    </div>
                     <small>{new Date(item.createdAt).toLocaleString()}</small>
                   </div>
                 ))}
@@ -1333,7 +1634,7 @@ export function WorkerSnapshotsPage({
               <h3>
                 {locale === "ar" ? "سجل الأداة الحالية" : "Current tool log"}
               </h3>
-              <div className="admin-table-wrap">
+              <div className="admin-table-wrap worker-tools-table-wrap">
                 <table className="admin-table">
                   <thead>
                     {activeTool === "stops" ? (
@@ -1352,6 +1653,7 @@ export function WorkerSnapshotsPage({
                         <th>{locale === "ar" ? "التوقيع" : "Signature"}</th>
                         <th>{locale === "ar" ? "المهام" : "Tasks"}</th>
                         <th>{locale === "ar" ? "التاريخ" : "Created"}</th>
+                        <th>{locale === "ar" ? "إجراء" : "Action"}</th>
                       </tr>
                     ) : null}
                     {activeTool === "waste" ? (
@@ -1361,6 +1663,7 @@ export function WorkerSnapshotsPage({
                         <th>{locale === "ar" ? "المادة" : "Material"}</th>
                         <th>{locale === "ar" ? "الهدر كغ" : "Waste Kg"}</th>
                         <th>{locale === "ar" ? "السبب" : "Reason"}</th>
+                        <th>{locale === "ar" ? "إجراء" : "Action"}</th>
                       </tr>
                     ) : null}
                     {activeTool === "target" ? (
@@ -1370,6 +1673,7 @@ export function WorkerSnapshotsPage({
                         <th>{locale === "ar" ? "المنجز" : "Actual"}</th>
                         <th>{locale === "ar" ? "الفجوة" : "Gap"}</th>
                         <th>{locale === "ar" ? "ملاحظة" : "Note"}</th>
+                        <th>{locale === "ar" ? "إجراء" : "Action"}</th>
                       </tr>
                     ) : null}
                     {activeTool === "kaizen" ? (
@@ -1379,6 +1683,7 @@ export function WorkerSnapshotsPage({
                         <th>{locale === "ar" ? "الأثر" : "Impact"}</th>
                         <th>{locale === "ar" ? "الحالة" : "Status"}</th>
                         <th>{locale === "ar" ? "النقاط" : "Reward"}</th>
+                        <th>{locale === "ar" ? "إجراء" : "Action"}</th>
                       </tr>
                     ) : null}
                     {activeTool === "quality" ? (
@@ -1388,6 +1693,7 @@ export function WorkerSnapshotsPage({
                         <th>{locale === "ar" ? "النوع" : "Issue type"}</th>
                         <th>{locale === "ar" ? "التفاصيل" : "Details"}</th>
                         <th>{locale === "ar" ? "صورة" : "Image"}</th>
+                        <th>{locale === "ar" ? "إجراء" : "Action"}</th>
                       </tr>
                     ) : null}
                     {activeTool === "micro" ? (
@@ -1396,6 +1702,7 @@ export function WorkerSnapshotsPage({
                         <th>{locale === "ar" ? "السبب" : "Reason"}</th>
                         <th>{locale === "ar" ? "المدة" : "Duration"}</th>
                         <th>{locale === "ar" ? "التاريخ" : "Created"}</th>
+                        <th>{locale === "ar" ? "إجراء" : "Action"}</th>
                       </tr>
                     ) : null}
                     {activeTool === "anomaly" ? (
@@ -1405,6 +1712,7 @@ export function WorkerSnapshotsPage({
                         <th>{locale === "ar" ? "النسبة" : "Ratio"}</th>
                         <th>{locale === "ar" ? "الإنذار" : "Alert"}</th>
                         <th>{locale === "ar" ? "التاريخ" : "Created"}</th>
+                        <th>{locale === "ar" ? "إجراء" : "Action"}</th>
                       </tr>
                     ) : null}
                   </thead>
@@ -1425,17 +1733,29 @@ export function WorkerSnapshotsPage({
                               </td>
                               <td>{resolvedAt ? "RESOLVED" : "OPEN"}</td>
                               <td>
-                                {!resolvedAt && id > 0 ? (
-                                  <button
-                                    type="button"
-                                    className="auth-button auth-button--ghost"
-                                    onClick={() => void resolveStopAlert(id)}
-                                  >
-                                    {locale === "ar" ? "إغلاق" : "Resolve"}
-                                  </button>
-                                ) : (
-                                  <span className="admin-muted">-</span>
-                                )}
+                                <div className="worker-snapshot-row-actions">
+                                  {!resolvedAt && id > 0 ? (
+                                    <button
+                                      type="button"
+                                      className="auth-button auth-button--ghost"
+                                      onClick={() => void resolveStopAlert(id)}
+                                    >
+                                      {locale === "ar" ? "إغلاق" : "Resolve"}
+                                    </button>
+                                  ) : (
+                                    <span className="admin-muted">-</span>
+                                  )}
+                                  {id > 0 ? (
+                                    <button
+                                      type="button"
+                                      className="auth-button auth-button--ghost worker-snapshot-row-actions__danger"
+                                      disabled={saving}
+                                      onClick={() => void deleteToolLog(id)}
+                                    >
+                                      {text.removeEntry}
+                                    </button>
+                                  ) : null}
+                                </div>
                               </td>
                             </tr>
                           );
@@ -1452,6 +1772,16 @@ export function WorkerSnapshotsPage({
                                 String(row.created_at),
                               ).toLocaleString()}
                             </td>
+                            <td>
+                              <button
+                                type="button"
+                                className="auth-button auth-button--ghost worker-snapshot-row-actions__danger"
+                                disabled={saving}
+                                onClick={() => void deleteToolLog(row.id)}
+                              >
+                                {text.removeEntry}
+                              </button>
+                            </td>
                           </tr>
                         ))
                       : null}
@@ -1463,6 +1793,16 @@ export function WorkerSnapshotsPage({
                             <td>{String(row.material_type ?? "-")}</td>
                             <td>{Number(row.waste_kg ?? 0).toFixed(2)}</td>
                             <td>{String(row.reason ?? "-")}</td>
+                            <td>
+                              <button
+                                type="button"
+                                className="auth-button auth-button--ghost worker-snapshot-row-actions__danger"
+                                disabled={saving}
+                                onClick={() => void deleteToolLog(row.id)}
+                              >
+                                {text.removeEntry}
+                              </button>
+                            </td>
                           </tr>
                         ))
                       : null}
@@ -1477,6 +1817,16 @@ export function WorkerSnapshotsPage({
                               <td>{actual}</td>
                               <td>{target - actual}</td>
                               <td>{String(row.note ?? "-")}</td>
+                              <td>
+                                <button
+                                  type="button"
+                                  className="auth-button auth-button--ghost worker-snapshot-row-actions__danger"
+                                  disabled={saving}
+                                  onClick={() => void deleteToolLog(row.id)}
+                                >
+                                  {text.removeEntry}
+                                </button>
+                              </td>
                             </tr>
                           );
                         })
@@ -1489,6 +1839,16 @@ export function WorkerSnapshotsPage({
                             <td>{String(row.estimated_impact ?? "-")}</td>
                             <td>{String(row.review_status ?? "PENDING")}</td>
                             <td>{Number(row.reward_points ?? 0)}</td>
+                            <td>
+                              <button
+                                type="button"
+                                className="auth-button auth-button--ghost worker-snapshot-row-actions__danger"
+                                disabled={saving}
+                                onClick={() => void deleteToolLog(row.id)}
+                              >
+                                {text.removeEntry}
+                              </button>
+                            </td>
                           </tr>
                         ))
                       : null}
@@ -1516,6 +1876,16 @@ export function WorkerSnapshotsPage({
                                 "-"
                               )}
                             </td>
+                            <td>
+                              <button
+                                type="button"
+                                className="auth-button auth-button--ghost worker-snapshot-row-actions__danger"
+                                disabled={saving}
+                                onClick={() => void deleteToolLog(row.id)}
+                              >
+                                {text.removeEntry}
+                              </button>
+                            </td>
                           </tr>
                         ))
                       : null}
@@ -1529,6 +1899,16 @@ export function WorkerSnapshotsPage({
                               {new Date(
                                 String(row.created_at),
                               ).toLocaleString()}
+                            </td>
+                            <td>
+                              <button
+                                type="button"
+                                className="auth-button auth-button--ghost worker-snapshot-row-actions__danger"
+                                disabled={saving}
+                                onClick={() => void deleteToolLog(row.id)}
+                              >
+                                {text.removeEntry}
+                              </button>
                             </td>
                           </tr>
                         ))
@@ -1555,6 +1935,16 @@ export function WorkerSnapshotsPage({
                                 String(row.created_at),
                               ).toLocaleString()}
                             </td>
+                            <td>
+                              <button
+                                type="button"
+                                className="auth-button auth-button--ghost worker-snapshot-row-actions__danger"
+                                disabled={saving}
+                                onClick={() => void deleteToolLog(row.id)}
+                              >
+                                {text.removeEntry}
+                              </button>
+                            </td>
                           </tr>
                         ))
                       : null}
@@ -1565,41 +1955,304 @@ export function WorkerSnapshotsPage({
                     ) : null}
                     {!checklists.length && activeTool === "checklist" ? (
                       <tr>
-                        <td colSpan={4}>{text.noData}</td>
+                        <td colSpan={5}>{text.noData}</td>
                       </tr>
                     ) : null}
                     {!wasteLogs.length && activeTool === "waste" ? (
                       <tr>
-                        <td colSpan={5}>{text.noData}</td>
+                        <td colSpan={6}>{text.noData}</td>
                       </tr>
                     ) : null}
                     {!targetLogs.length && activeTool === "target" ? (
                       <tr>
-                        <td colSpan={5}>{text.noData}</td>
+                        <td colSpan={6}>{text.noData}</td>
                       </tr>
                     ) : null}
                     {!kaizenLogs.length && activeTool === "kaizen" ? (
                       <tr>
-                        <td colSpan={5}>{text.noData}</td>
+                        <td colSpan={6}>{text.noData}</td>
                       </tr>
                     ) : null}
                     {!qualityLogs.length && activeTool === "quality" ? (
                       <tr>
-                        <td colSpan={5}>{text.noData}</td>
+                        <td colSpan={6}>{text.noData}</td>
                       </tr>
                     ) : null}
                     {!microLogs.length && activeTool === "micro" ? (
                       <tr>
-                        <td colSpan={4}>{text.noData}</td>
+                        <td colSpan={5}>{text.noData}</td>
                       </tr>
                     ) : null}
                     {!anomalyLogs.length && activeTool === "anomaly" ? (
                       <tr>
-                        <td colSpan={5}>{text.noData}</td>
+                        <td colSpan={6}>{text.noData}</td>
                       </tr>
                     ) : null}
                   </tbody>
                 </table>
+              </div>
+
+              <div className="worker-tools-mobile-list">
+                {activeTool === "stops"
+                  ? stopLogs.slice(0, 20).map((row, index) => {
+                      const id = Number(row.id ?? 0);
+                      const resolvedAt = row.resolved_at;
+                      return (
+                        <article
+                          className="worker-tools-mobile-card"
+                          key={`mobile-${activeTool}-${index}`}
+                        >
+                          <strong>{String(row.machine_label ?? "-")}</strong>
+                          <span>{String(row.priority ?? "NORMAL")}</span>
+                          <small>{String(row.reason ?? "-")}</small>
+                          <small>
+                            {resolvedAt ? "RESOLVED" : "OPEN"} •{" "}
+                            {new Date(String(row.created_at)).toLocaleString()}
+                          </small>
+                          <div className="worker-snapshot-row-actions">
+                            {!resolvedAt && id > 0 ? (
+                              <button
+                                type="button"
+                                className="auth-button auth-button--ghost"
+                                onClick={() => void resolveStopAlert(id)}
+                              >
+                                {locale === "ar" ? "إغلاق" : "Resolve"}
+                              </button>
+                            ) : null}
+                            {id > 0 ? (
+                              <button
+                                type="button"
+                                className="auth-button auth-button--ghost worker-snapshot-row-actions__danger"
+                                disabled={saving}
+                                onClick={() => void deleteToolLog(id)}
+                              >
+                                {text.removeEntry}
+                              </button>
+                            ) : null}
+                          </div>
+                        </article>
+                      );
+                    })
+                  : null}
+
+                {activeTool === "checklist"
+                  ? checklists.slice(0, 20).map((row, index) => (
+                      <article
+                        className="worker-tools-mobile-card"
+                        key={`mobile-${activeTool}-${index}`}
+                      >
+                        <strong>{String(row.shift_phase ?? "-")}</strong>
+                        <span>{String(row.digital_signature ?? "-")}</span>
+                        <small>{String(row.tasks_json ?? "-")}</small>
+                        <small>
+                          {new Date(String(row.created_at)).toLocaleString()}
+                        </small>
+                        <div className="worker-snapshot-row-actions">
+                          <button
+                            type="button"
+                            className="auth-button auth-button--ghost worker-snapshot-row-actions__danger"
+                            disabled={saving}
+                            onClick={() => void deleteToolLog(row.id)}
+                          >
+                            {text.removeEntry}
+                          </button>
+                        </div>
+                      </article>
+                    ))
+                  : null}
+
+                {activeTool === "waste"
+                  ? wasteLogs.slice(0, 20).map((row, index) => (
+                      <article
+                        className="worker-tools-mobile-card"
+                        key={`mobile-${activeTool}-${index}`}
+                      >
+                        <strong>{String(row.machine_label ?? "-")}</strong>
+                        <span>{String(row.machine_type ?? "-")}</span>
+                        <small>
+                          {String(row.material_type ?? "-")} •{" "}
+                          {Number(row.waste_kg ?? 0).toFixed(2)} kg
+                        </small>
+                        <small>{String(row.reason ?? "-")}</small>
+                        <div className="worker-snapshot-row-actions">
+                          <button
+                            type="button"
+                            className="auth-button auth-button--ghost worker-snapshot-row-actions__danger"
+                            disabled={saving}
+                            onClick={() => void deleteToolLog(row.id)}
+                          >
+                            {text.removeEntry}
+                          </button>
+                        </div>
+                      </article>
+                    ))
+                  : null}
+
+                {activeTool === "target"
+                  ? targetLogs.slice(0, 20).map((row, index) => {
+                      const target = Number(row.target_units ?? 0);
+                      const actual = Number(row.actual_units ?? 0);
+                      return (
+                        <article
+                          className="worker-tools-mobile-card"
+                          key={`mobile-${activeTool}-${index}`}
+                        >
+                          <strong>{String(row.target_date ?? "-")}</strong>
+                          <span>
+                            {locale === "ar" ? "الهدف" : "Target"}: {target}
+                          </span>
+                          <small>
+                            {locale === "ar" ? "المنجز" : "Actual"}: {actual} •{" "}
+                            {locale === "ar" ? "الفجوة" : "Gap"}:{" "}
+                            {target - actual}
+                          </small>
+                          <small>{String(row.note ?? "-")}</small>
+                          <div className="worker-snapshot-row-actions">
+                            <button
+                              type="button"
+                              className="auth-button auth-button--ghost worker-snapshot-row-actions__danger"
+                              disabled={saving}
+                              onClick={() => void deleteToolLog(row.id)}
+                            >
+                              {text.removeEntry}
+                            </button>
+                          </div>
+                        </article>
+                      );
+                    })
+                  : null}
+
+                {activeTool === "kaizen"
+                  ? kaizenLogs.slice(0, 20).map((row, index) => (
+                      <article
+                        className="worker-tools-mobile-card"
+                        key={`mobile-${activeTool}-${index}`}
+                      >
+                        <strong>{String(row.title ?? "-")}</strong>
+                        <span>{String(row.review_status ?? "PENDING")}</span>
+                        <small>{String(row.details ?? "-")}</small>
+                        <small>
+                          {locale === "ar" ? "النقاط" : "Points"}:{" "}
+                          {Number(row.reward_points ?? 0)}
+                        </small>
+                        <div className="worker-snapshot-row-actions">
+                          <button
+                            type="button"
+                            className="auth-button auth-button--ghost worker-snapshot-row-actions__danger"
+                            disabled={saving}
+                            onClick={() => void deleteToolLog(row.id)}
+                          >
+                            {text.removeEntry}
+                          </button>
+                        </div>
+                      </article>
+                    ))
+                  : null}
+
+                {activeTool === "quality"
+                  ? qualityLogs.slice(0, 20).map((row, index) => (
+                      <article
+                        className="worker-tools-mobile-card"
+                        key={`mobile-${activeTool}-${index}`}
+                      >
+                        <strong>{String(row.batch_code ?? "-")}</strong>
+                        <span>{String(row.machine_label ?? "-")}</span>
+                        <small>{String(row.issue_type ?? "-")}</small>
+                        <small>{String(row.details ?? "-")}</small>
+                        {row.issue_image ? (
+                          <a
+                            href={
+                              normalizeSnapshotImagePath(
+                                String(row.issue_image),
+                              ) ?? "#"
+                            }
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            {locale === "ar" ? "عرض الصورة" : "View image"}
+                          </a>
+                        ) : null}
+                        <div className="worker-snapshot-row-actions">
+                          <button
+                            type="button"
+                            className="auth-button auth-button--ghost worker-snapshot-row-actions__danger"
+                            disabled={saving}
+                            onClick={() => void deleteToolLog(row.id)}
+                          >
+                            {text.removeEntry}
+                          </button>
+                        </div>
+                      </article>
+                    ))
+                  : null}
+
+                {activeTool === "micro"
+                  ? microLogs.slice(0, 20).map((row, index) => (
+                      <article
+                        className="worker-tools-mobile-card"
+                        key={`mobile-${activeTool}-${index}`}
+                      >
+                        <strong>{String(row.machine_label ?? "-")}</strong>
+                        <span>{String(row.reason ?? "-")}</span>
+                        <small>{Number(row.duration_minutes ?? 0)} min</small>
+                        <small>
+                          {new Date(String(row.created_at)).toLocaleString()}
+                        </small>
+                        <div className="worker-snapshot-row-actions">
+                          <button
+                            type="button"
+                            className="auth-button auth-button--ghost worker-snapshot-row-actions__danger"
+                            disabled={saving}
+                            onClick={() => void deleteToolLog(row.id)}
+                          >
+                            {text.removeEntry}
+                          </button>
+                        </div>
+                      </article>
+                    ))
+                  : null}
+
+                {activeTool === "anomaly"
+                  ? anomalyLogs.slice(0, 20).map((row, index) => (
+                      <article
+                        className="worker-tools-mobile-card"
+                        key={`mobile-${activeTool}-${index}`}
+                      >
+                        <strong>{String(row.machine_label ?? "-")}</strong>
+                        <span>
+                          {Number(row.current_kwh ?? 0).toFixed(2)} kWh
+                        </span>
+                        <small>
+                          {locale === "ar" ? "النسبة" : "Ratio"}:{" "}
+                          {Number(row.threshold_ratio ?? 0).toFixed(2)}
+                        </small>
+                        <small>
+                          {new Date(String(row.created_at)).toLocaleString()}
+                        </small>
+                        <div className="worker-snapshot-row-actions">
+                          <button
+                            type="button"
+                            className="auth-button auth-button--ghost worker-snapshot-row-actions__danger"
+                            disabled={saving}
+                            onClick={() => void deleteToolLog(row.id)}
+                          >
+                            {text.removeEntry}
+                          </button>
+                        </div>
+                      </article>
+                    ))
+                  : null}
+
+                {(activeTool === "stops" && !stopLogs.length) ||
+                (activeTool === "checklist" && !checklists.length) ||
+                (activeTool === "waste" && !wasteLogs.length) ||
+                (activeTool === "target" && !targetLogs.length) ||
+                (activeTool === "kaizen" && !kaizenLogs.length) ||
+                (activeTool === "quality" && !qualityLogs.length) ||
+                (activeTool === "micro" && !microLogs.length) ||
+                (activeTool === "anomaly" && !anomalyLogs.length) ? (
+                  <p>{text.noData}</p>
+                ) : null}
               </div>
             </>
           ) : null}

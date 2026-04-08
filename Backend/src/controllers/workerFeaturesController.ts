@@ -7,6 +7,7 @@ import {
   createMaterialWasteLog,
   createMicroStop,
   createQualityIssueReport,
+  deleteMyWorkerFeatureEntry,
   getAdminKaizenSuggestions,
   getMyDailyTargets,
   getMyElectricityAnomalyAlerts,
@@ -229,4 +230,20 @@ export const getMyElectricityAnomalyAlertsHandler = async (
   const userId = withUserId(req, res);
   if (!userId) return;
   await handle(res, () => getMyElectricityAnomalyAlerts(userId));
+};
+
+export const deleteMyWorkerFeatureEntryHandler = async (
+  req: AuthenticatedRequest,
+  res: Response,
+) => {
+  const userId = withUserId(req, res);
+  if (!userId) return;
+
+  await handle(res, () =>
+    deleteMyWorkerFeatureEntry(
+      userId,
+      String(req.params.feature ?? ""),
+      Number(req.params.id),
+    ),
+  );
 };
