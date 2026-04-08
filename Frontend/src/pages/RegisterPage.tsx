@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { authCopy, type Locale } from "../content/authCopy";
 import { useAuth } from "../context/AuthContext";
 import { SelectField, TextField } from "../components/FormField";
+import { PhotoUploadButton } from "../components/PhotoUploadButton";
 
 type RegisterPageProps = {
   locale: Locale;
@@ -205,13 +206,10 @@ export function RegisterPage({ locale }: RegisterPageProps) {
 
         <label className="field field--full">
           <span className="field__label">{copy.profileImageLabel}</span>
-          <input
-            className="field__control field__control--file"
-            type="file"
-            accept="image/*"
-            onChange={(event) =>
-              setProfileImage(event.target.files?.[0] ?? null)
-            }
+          <PhotoUploadButton
+            label={locale === "ar" ? "التقط صورة" : "Take a Photo"}
+            selectedFileName={profileImage?.name ?? null}
+            onFileSelect={(file) => setProfileImage(file)}
           />
         </label>
 

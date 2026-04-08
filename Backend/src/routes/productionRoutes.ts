@@ -1,6 +1,7 @@
 import { Router } from "express";
 import {
   createProductionHandler,
+  getDailyRawDeductionsHandler,
   getProductionAdminOverviewHandler,
   getAllProductionHandler,
   getMyProductionHandler,
@@ -33,6 +34,12 @@ router.get(
   "/admin/overview",
   authorizeRoles([UserRole.ADMIN]),
   getProductionAdminOverviewHandler,
+);
+
+router.get(
+  "/admin/raw-deductions-daily",
+  authorizeRoles([UserRole.ADMIN]),
+  getDailyRawDeductionsHandler,
 );
 
 export default router;

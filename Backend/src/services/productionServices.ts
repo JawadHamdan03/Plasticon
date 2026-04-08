@@ -1,5 +1,14 @@
-import { ProductType } from "../config/generated/prisma/client";
+import {
+  InventoryType,
+  NotificationType,
+  ProductType,
+  ReferenceType,
+} from "../config/generated/prisma/client";
 import { prisma } from "../config/lib/prisma";
+import {
+  emitNotificationToUser,
+  emitNotificationUnreadCountUpdate,
+} from "../config/socket";
 import { auditAsync } from "./auditHelper";
 import { AuditAction, AuditEntityType } from "./auditServices";
 
@@ -23,6 +32,246 @@ type CreateProductionPayload = {
   downtimeReason?: string;
   downtimeMinutes?: number;
   notes?: string;
+};
+
+type MaterialUsageEntry = {
+  field: string;
+  quantity: number;
+};
+
+type DateRangeFilter = {
+  fromDate?: string;
+  toDate?: string;
+};
+
+type InventoryDailyDeductionRow = {
+  date: string;
+  hdpe: number;
+  ldpe: number;
+  pet: number;
+  adhesive: number;
+  emptyBags: number;
+  color: number;
+  other: number;
+  totalRawUsed: number;
+};
+
+const MATERIAL_ALIASES: Record<string, string[]> = {
+  rawHdpeUsed: [
+    "HDPE",
+    "HIGH DENSITY POLYETHYLENE",
+    "بولي ايثيلين عالي الكثافة",
+    "بولي ايثيلين عالي",
+    "بولي ايثيلين",
+  ],
+  rawLdpeUsed: [
+    "LDPE",
+    "LOW DENSITY POLYETHYLENE",
+    "بولي ايثيلين منخفض الكثافة",
+    "بولي ايثيلين منخفض",
+  ],
+  rawPetUsed: ["PET", "PREFORM", "بولي ايثيلين تيرفثالات", "بريفورم"],
+  adhesiveUsed: ["ADHESIVE", "GLUE", "لاصق", "غراء"],
+  emptyBagsUsed: ["EMPTY_BAGS", "EMPTY BAGS", "BAGS", "أكياس فارغة", "اكياس"],
+  colorUsed: [
+    "COLOR",
+    "COLORANT",
+    "MASTERBATCH",
+    "COLOR MASTERBATCH",
+    "ملون",
+    "ماستر باتش",
+  ],
+};
+
+const normalizeMaterialName = (value: string) =>
+  value
+    .toUpperCase()
+    .replace(/[^\p{L}\p{N}]+/gu, "")
+    .trim();
+
+const getUsageAliases = (field: string) => MATERIAL_ALIASES[field] ?? [];
+
+const classifyMaterialByName = (
+  materialName: string,
+): keyof Omit<InventoryDailyDeductionRow, "date" | "totalRawUsed"> => {
+  const normalized = normalizeMaterialName(materialName);
+
+  for (const [field, aliases] of Object.entries(MATERIAL_ALIASES)) {
+    const found = aliases.some((alias) => {
+      const normalizedAlias = normalizeMaterialName(alias);
+      return (
+        normalized === normalizedAlias ||
+        normalized.includes(normalizedAlias) ||
+        normalizedAlias.includes(normalized)
+      );
+    });
+
+    if (found) {
+      if (field === "rawHdpeUsed") return "hdpe";
+      if (field === "rawLdpeUsed") return "ldpe";
+      if (field === "rawPetUsed") return "pet";
+      if (field === "adhesiveUsed") return "adhesive";
+      if (field === "emptyBagsUsed") return "emptyBags";
+      if (field === "colorUsed") return "color";
+    }
+  }
+
+  return "other";
+};
+
+const buildCreatedAtFilter = (range: DateRangeFilter) => {
+  const createdAt: { gte?: Date; lte?: Date } = {};
+
+  if (range.fromDate) {
+    const from = new Date(`${range.fromDate}T00:00:00.000Z`);
+    if (!Number.isNaN(from.getTime())) {
+      createdAt.gte = from;
+    }
+  }
+
+  if (range.toDate) {
+    const to = new Date(`${range.toDate}T23:59:59.999Z`);
+    if (!Number.isNaN(to.getTime())) {
+      createdAt.lte = to;
+    }
+  }
+
+  return Object.keys(createdAt).length ? createdAt : undefined;
+};
+
+const COUNTER_REMINDER_TITLE = "Shift Counter Reminder";
+
+const minutesOfDay = (value: Date) =>
+  value.getHours() * 60 + value.getMinutes();
+
+const getShiftWindow = (baseDate: Date, startTime: Date, endTime: Date) => {
+  const start = new Date(baseDate);
+  start.setHours(0, 0, 0, 0);
+  start.setMinutes(minutesOfDay(startTime));
+
+  const end = new Date(baseDate);
+  end.setHours(0, 0, 0, 0);
+  end.setMinutes(minutesOfDay(endTime));
+
+  if (end <= start) {
+    end.setDate(end.getDate() + 1);
+  }
+
+  return { start, end };
+};
+
+const ensureOperationSnapshotsTableForReminder = async () => {
+  await prisma.$executeRaw`
+    CREATE TABLE IF NOT EXISTS operation_snapshots (
+      id SERIAL PRIMARY KEY,
+      machine_label TEXT NOT NULL,
+      machine_counter DOUBLE PRECISION NOT NULL CHECK (machine_counter >= 0),
+      electricity_kwh DOUBLE PRECISION NOT NULL CHECK (electricity_kwh >= 0),
+      notes TEXT,
+      machine_counter_image TEXT,
+      electricity_image TEXT,
+      created_by_id INTEGER REFERENCES "User"(id) ON DELETE SET NULL,
+      created_at TIMESTAMP NOT NULL DEFAULT NOW()
+    )
+  `;
+};
+
+const hasSnapshotInShiftWindow = async (
+  userId: number,
+  shiftStartTime: Date,
+  shiftEndTime: Date,
+  reference: Date,
+) => {
+  await ensureOperationSnapshotsTableForReminder();
+
+  const shiftWindow = getShiftWindow(reference, shiftStartTime, shiftEndTime);
+  const rows = await prisma.$queryRaw<Array<{ count: bigint | number }>>`
+    SELECT COUNT(*)::bigint AS count
+    FROM operation_snapshots
+    WHERE created_by_id = ${userId}
+      AND created_at >= ${shiftWindow.start}
+      AND created_at < ${shiftWindow.end}
+  `;
+
+  return Number(rows[0]?.count ?? 0) > 0;
+};
+
+const sendShiftCounterReminderIfNeeded = async (userId: number) => {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: {
+      shiftId: true,
+      shift: {
+        select: {
+          id: true,
+          name: true,
+          startTime: true,
+          endTime: true,
+        },
+      },
+    },
+  });
+
+  if (!user?.shiftId || !user.shift) {
+    return;
+  }
+
+  const now = new Date();
+  const shiftWindow = getShiftWindow(
+    now,
+    user.shift.startTime,
+    user.shift.endTime,
+  );
+
+  if (now < shiftWindow.start || now >= shiftWindow.end) {
+    return;
+  }
+
+  await ensureOperationSnapshotsTableForReminder();
+
+  const alreadyRecorded = await prisma.$queryRaw<
+    Array<{ count: bigint | number }>
+  >`
+    SELECT COUNT(*)::bigint AS count
+    FROM operation_snapshots
+    WHERE created_by_id = ${userId}
+      AND created_at >= ${shiftWindow.start}
+      AND created_at < ${shiftWindow.end}
+  `;
+
+  const recordsCount = Number(alreadyRecorded[0]?.count ?? 0);
+  if (recordsCount > 0) {
+    return;
+  }
+
+  const existingReminder = await prisma.notification.findFirst({
+    where: {
+      userId,
+      title: COUNTER_REMINDER_TITLE,
+      type: NotificationType.SYSTEM_MESSAGE,
+      createdAt: {
+        gte: shiftWindow.start,
+        lt: shiftWindow.end,
+      },
+    },
+    select: { id: true },
+  });
+
+  if (existingReminder) {
+    return;
+  }
+
+  const reminder = await prisma.notification.create({
+    data: {
+      userId,
+      title: COUNTER_REMINDER_TITLE,
+      message: `يرجى تسجيل عداد الماكينة وعداد الكهرباء المشترك للشفت ${user.shift.name}. Please record machine and shared electricity counters for shift ${user.shift.name}.`,
+      type: NotificationType.SYSTEM_MESSAGE,
+    },
+  });
+
+  emitNotificationToUser(userId, reminder);
+  emitNotificationUnreadCountUpdate(userId, { refresh: true });
 };
 
 const getProductTypeFromMachineType = (
@@ -63,6 +312,52 @@ const generateHourSlot = (): string => {
   const h = String(now.getHours()).padStart(2, "0");
   const m = String(now.getMinutes()).padStart(2, "0");
   return `${h}:${m}`;
+};
+
+const getMaterialUsageEntries = (payload: CreateProductionPayload) => {
+  const rawHdpeUsed = asNonNegativeNumber(payload.rawHdpeUsed);
+  const rawLdpeUsed = asNonNegativeNumber(payload.rawLdpeUsed);
+  const rawPetUsed = asNonNegativeNumber(payload.rawPetUsed);
+  const adhesiveUsed = asNonNegativeNumber(payload.adhesiveUsed);
+  const emptyBagsUsed = asNonNegativeNumber(payload.emptyBagsUsed);
+  const colorUsed = asNonNegativeNumber(payload.colorUsed);
+
+  const numericFields = [
+    ["rawHdpeUsed", payload.rawHdpeUsed, rawHdpeUsed],
+    ["rawLdpeUsed", payload.rawLdpeUsed, rawLdpeUsed],
+    ["rawPetUsed", payload.rawPetUsed, rawPetUsed],
+    ["adhesiveUsed", payload.adhesiveUsed, adhesiveUsed],
+    ["emptyBagsUsed", payload.emptyBagsUsed, emptyBagsUsed],
+    ["colorUsed", payload.colorUsed, colorUsed],
+  ] as const;
+
+  for (const [field, original, parsed] of numericFields) {
+    if (
+      original !== undefined &&
+      original !== null &&
+      original !== "" &&
+      parsed === null
+    ) {
+      return {
+        error: {
+          status: 400,
+          message: `${field} must be zero or a positive number`,
+        },
+        usages: [] as MaterialUsageEntry[],
+      };
+    }
+  }
+
+  const usages: MaterialUsageEntry[] = [
+    { field: "rawHdpeUsed", quantity: rawHdpeUsed ?? 0 },
+    { field: "rawLdpeUsed", quantity: rawLdpeUsed ?? 0 },
+    { field: "rawPetUsed", quantity: rawPetUsed ?? 0 },
+    { field: "adhesiveUsed", quantity: adhesiveUsed ?? 0 },
+    { field: "emptyBagsUsed", quantity: emptyBagsUsed ?? 0 },
+    { field: "colorUsed", quantity: colorUsed ?? 0 },
+  ].filter((entry) => entry.quantity > 0);
+
+  return { error: null, usages };
 };
 
 export const createProductionRecord = async (
@@ -141,34 +436,84 @@ export const createProductionRecord = async (
     return { status: 404, message: "Shift not found" };
   }
 
-  const rawHdpeUsed = asNonNegativeNumber(payload.rawHdpeUsed);
-  const rawLdpeUsed = asNonNegativeNumber(payload.rawLdpeUsed);
-  const rawPetUsed = asNonNegativeNumber(payload.rawPetUsed);
-  const adhesiveUsed = asNonNegativeNumber(payload.adhesiveUsed);
-  const emptyBagsUsed = asNonNegativeNumber(payload.emptyBagsUsed);
-  const colorUsed = asNonNegativeNumber(payload.colorUsed);
+  const hasShiftCounters = await hasSnapshotInShiftWindow(
+    userId,
+    shift.startTime,
+    shift.endTime,
+    new Date(),
+  );
+
+  if (!hasShiftCounters) {
+    return {
+      status: 400,
+      message:
+        "You must record machine and electricity counters first in this shift before saving production.",
+    };
+  }
+
+  const materialValidation = getMaterialUsageEntries(payload);
+  if (materialValidation.error) {
+    return materialValidation.error;
+  }
+
+  const materialUsages = materialValidation.usages;
   const downtimeMinutes = asNonNegativeNumber(payload.downtimeMinutes);
 
-  const numericFields = [
-    ["rawHdpeUsed", payload.rawHdpeUsed, rawHdpeUsed],
-    ["rawLdpeUsed", payload.rawLdpeUsed, rawLdpeUsed],
-    ["rawPetUsed", payload.rawPetUsed, rawPetUsed],
-    ["adhesiveUsed", payload.adhesiveUsed, adhesiveUsed],
-    ["emptyBagsUsed", payload.emptyBagsUsed, emptyBagsUsed],
-    ["colorUsed", payload.colorUsed, colorUsed],
-    ["downtimeMinutes", payload.downtimeMinutes, downtimeMinutes],
-  ];
+  if (
+    payload.downtimeMinutes !== undefined &&
+    payload.downtimeMinutes !== null &&
+    payload.downtimeMinutes !== "" &&
+    downtimeMinutes === null
+  ) {
+    return {
+      status: 400,
+      message: "downtimeMinutes must be zero or a positive number",
+    };
+  }
 
-  for (const [field, original, parsed] of numericFields) {
-    if (
-      original !== undefined &&
-      original !== null &&
-      original !== "" &&
-      parsed === null
-    ) {
+  const rawMaterials = materialUsages.length
+    ? await prisma.rawMaterial.findMany({
+        select: { id: true, name: true, currentQuantity: true, unit: true },
+      })
+    : [];
+
+  const resolveMaterialForUsage = (usage: MaterialUsageEntry) => {
+    const aliases = getUsageAliases(usage.field);
+    const normalizedAliases = aliases.map((alias) =>
+      normalizeMaterialName(alias),
+    );
+
+    return rawMaterials.find((material) => {
+      const normalizedMaterial = normalizeMaterialName(material.name);
+      return normalizedAliases.some(
+        (normalizedAlias) =>
+          normalizedMaterial === normalizedAlias ||
+          normalizedMaterial.includes(normalizedAlias) ||
+          normalizedAlias.includes(normalizedMaterial),
+      );
+    });
+  };
+
+  const resolvedMaterialByField = new Map<
+    string,
+    (typeof rawMaterials)[number]
+  >();
+
+  for (const usage of materialUsages) {
+    const material = resolveMaterialForUsage(usage);
+    if (!material) {
       return {
         status: 400,
-        message: `${field} must be zero or a positive number`,
+        message: `Raw material for field ${usage.field} was not found in inventory`,
+      };
+    }
+
+    resolvedMaterialByField.set(usage.field, material);
+
+    if (material.currentQuantity < usage.quantity) {
+      return {
+        status: 400,
+        message: `Insufficient stock for ${material.name}. Available: ${material.currentQuantity} ${material.unit}`,
       };
     }
   }
@@ -176,29 +521,62 @@ export const createProductionRecord = async (
   const piecesPerCarton = setting.piecesPerCarton;
   const totalPieces = cartonsCount * piecesPerCarton;
 
-  const production = await prisma.productionRecord.create({
-    data: {
-      machineId: machine.id,
-      userId,
-      shiftId: Number(resolvedShiftId),
-      hourSlot: payload.hourSlot?.trim() || generateHourSlot(),
-      cartonsCount,
-      piecesPerCarton,
-      totalPieces,
-      rawHdpeUsed,
-      rawLdpeUsed,
-      rawPetUsed,
-      adhesiveUsed,
-      emptyBagsUsed,
-      colorUsed,
-      downtimeReason: payload.downtimeReason?.trim() || null,
-      downtimeMinutes,
-      notes: payload.notes?.trim() || null,
-    },
-    include: {
-      machine: { select: { id: true, name: true, type: true } },
-      shift: true,
-    },
+  const production = await prisma.$transaction(async (tx) => {
+    const created = await tx.productionRecord.create({
+      data: {
+        machineId: machine.id,
+        userId,
+        shiftId: Number(resolvedShiftId),
+        hourSlot: payload.hourSlot?.trim() || generateHourSlot(),
+        cartonsCount,
+        piecesPerCarton,
+        totalPieces,
+        rawHdpeUsed: asNonNegativeNumber(payload.rawHdpeUsed),
+        rawLdpeUsed: asNonNegativeNumber(payload.rawLdpeUsed),
+        rawPetUsed: asNonNegativeNumber(payload.rawPetUsed),
+        adhesiveUsed: asNonNegativeNumber(payload.adhesiveUsed),
+        emptyBagsUsed: asNonNegativeNumber(payload.emptyBagsUsed),
+        colorUsed: asNonNegativeNumber(payload.colorUsed),
+        downtimeReason: payload.downtimeReason?.trim() || null,
+        downtimeMinutes,
+        notes: payload.notes?.trim() || null,
+      },
+      include: {
+        machine: { select: { id: true, name: true, type: true } },
+        shift: true,
+      },
+    });
+
+    for (const usage of materialUsages) {
+      const material = resolvedMaterialByField.get(usage.field);
+      if (!material) {
+        throw new Error(
+          `Material for ${usage.field} missing during transaction`,
+        );
+      }
+
+      await tx.rawMaterial.update({
+        where: { id: material.id },
+        data: {
+          currentQuantity: {
+            decrement: usage.quantity,
+          },
+        },
+      });
+
+      await tx.inventoryTransaction.create({
+        data: {
+          materialId: material.id,
+          type: InventoryType.OUT,
+          quantity: usage.quantity,
+          referenceType: ReferenceType.PRODUCTION,
+          referenceId: created.id,
+          createdById: userId,
+        },
+      });
+    }
+
+    return created;
   });
 
   auditAsync(
@@ -220,6 +598,8 @@ export const createProductionRecord = async (
 export const getMyProductionRecords = async (
   userId: number,
 ): Promise<ServiceResult<unknown>> => {
+  await sendShiftCounterReminderIfNeeded(userId);
+
   const records = await prisma.productionRecord.findMany({
     where: { userId },
     include: {
@@ -254,10 +634,13 @@ export const getAllProductionRecords = async (): Promise<
   return { status: 200, data: records };
 };
 
-export const getProductionAdminOverview = async (): Promise<
-  ServiceResult<unknown>
-> => {
+export const getProductionAdminOverview = async (
+  range: DateRangeFilter = {},
+): Promise<ServiceResult<unknown>> => {
+  const createdAtFilter = buildCreatedAtFilter(range);
+
   const records = await prisma.productionRecord.findMany({
+    where: createdAtFilter ? { createdAt: createdAtFilter } : undefined,
     include: {
       user: {
         select: {
@@ -318,6 +701,44 @@ export const getProductionAdminOverview = async (): Promise<
     }
   >();
 
+  const shiftProductMap = new Map<
+    string,
+    {
+      date: string;
+      shiftId: number | null;
+      shiftName: string;
+      capsCartons: number;
+      preformCartons: number;
+      totalCartons: number;
+      totalPieces: number;
+    }
+  >();
+
+  const dailyProductMap = new Map<
+    string,
+    {
+      date: string;
+      capsCartons: number;
+      preformCartons: number;
+      totalCartons: number;
+      totalPieces: number;
+    }
+  >();
+
+  const dailyRawUsageMap = new Map<
+    string,
+    {
+      date: string;
+      hdpe: number;
+      ldpe: number;
+      pet: number;
+      adhesive: number;
+      emptyBags: number;
+      color: number;
+      totalRawUsed: number;
+    }
+  >();
+
   for (const record of records) {
     const user = record.user;
     const currentByUser = productionByUserMap.get(user.id) ?? {
@@ -348,11 +769,90 @@ export const getProductionAdminOverview = async (): Promise<
     currentByShift.cartonsCount += record.cartonsCount ?? 0;
     currentByShift.totalPieces += record.totalPieces ?? 0;
     productionByShiftMap.set(shiftKey, currentByShift);
+
+    const dayKey = record.createdAt.toISOString().slice(0, 10);
+    const machineType = record.machine?.type?.trim().toUpperCase() ?? "";
+    const isCaps = machineType === "CAPS" || machineType.includes("CAP");
+    const isPreform = machineType === "PREFORM" || machineType.includes("PET");
+
+    const shiftProductKey = `${dayKey}-${record.shift?.id ?? "none"}`;
+    const byShiftProduct = shiftProductMap.get(shiftProductKey) ?? {
+      date: dayKey,
+      shiftId: record.shift?.id ?? null,
+      shiftName: record.shift?.name ?? "Unassigned",
+      capsCartons: 0,
+      preformCartons: 0,
+      totalCartons: 0,
+      totalPieces: 0,
+    };
+    byShiftProduct.totalCartons += record.cartonsCount ?? 0;
+    byShiftProduct.totalPieces += record.totalPieces ?? 0;
+    if (isCaps) {
+      byShiftProduct.capsCartons += record.cartonsCount ?? 0;
+    }
+    if (isPreform) {
+      byShiftProduct.preformCartons += record.cartonsCount ?? 0;
+    }
+    shiftProductMap.set(shiftProductKey, byShiftProduct);
+
+    const byDayProduct = dailyProductMap.get(dayKey) ?? {
+      date: dayKey,
+      capsCartons: 0,
+      preformCartons: 0,
+      totalCartons: 0,
+      totalPieces: 0,
+    };
+    byDayProduct.totalCartons += record.cartonsCount ?? 0;
+    byDayProduct.totalPieces += record.totalPieces ?? 0;
+    if (isCaps) {
+      byDayProduct.capsCartons += record.cartonsCount ?? 0;
+    }
+    if (isPreform) {
+      byDayProduct.preformCartons += record.cartonsCount ?? 0;
+    }
+    dailyProductMap.set(dayKey, byDayProduct);
+
+    const rawUsed = {
+      hdpe: Number(record.rawHdpeUsed ?? 0),
+      ldpe: Number(record.rawLdpeUsed ?? 0),
+      pet: Number(record.rawPetUsed ?? 0),
+      adhesive: Number(record.adhesiveUsed ?? 0),
+      emptyBags: Number(record.emptyBagsUsed ?? 0),
+      color: Number(record.colorUsed ?? 0),
+    };
+
+    const byDayRaw = dailyRawUsageMap.get(dayKey) ?? {
+      date: dayKey,
+      hdpe: 0,
+      ldpe: 0,
+      pet: 0,
+      adhesive: 0,
+      emptyBags: 0,
+      color: 0,
+      totalRawUsed: 0,
+    };
+
+    byDayRaw.hdpe += rawUsed.hdpe;
+    byDayRaw.ldpe += rawUsed.ldpe;
+    byDayRaw.pet += rawUsed.pet;
+    byDayRaw.adhesive += rawUsed.adhesive;
+    byDayRaw.emptyBags += rawUsed.emptyBags;
+    byDayRaw.color += rawUsed.color;
+    byDayRaw.totalRawUsed +=
+      rawUsed.hdpe +
+      rawUsed.ldpe +
+      rawUsed.pet +
+      rawUsed.adhesive +
+      rawUsed.emptyBags +
+      rawUsed.color;
+
+    dailyRawUsageMap.set(dayKey, byDayRaw);
   }
 
   return {
     status: 200,
     data: {
+      range,
       totals: {
         totalRecords,
         totalCartons,
@@ -364,7 +864,101 @@ export const getProductionAdminOverview = async (): Promise<
       byShift: Array.from(productionByShiftMap.values()).sort(
         (a, b) => b.totalPieces - a.totalPieces,
       ),
+      byShiftProduct: Array.from(shiftProductMap.values()).sort((a, b) =>
+        b.date === a.date
+          ? (a.shiftId ?? 0) - (b.shiftId ?? 0)
+          : b.date.localeCompare(a.date),
+      ),
+      dailyByProduct: Array.from(dailyProductMap.values()).sort((a, b) =>
+        b.date.localeCompare(a.date),
+      ),
+      dailyRawMaterialUsage: Array.from(dailyRawUsageMap.values()).sort(
+        (a, b) => b.date.localeCompare(a.date),
+      ),
       recentRecords: records.slice(0, 25),
+    },
+  };
+};
+
+export const getDailyRawDeductionFromInventoryTransactions = async (
+  range: DateRangeFilter = {},
+): Promise<ServiceResult<unknown>> => {
+  const createdAtFilter = buildCreatedAtFilter(range);
+
+  const transactions = await prisma.inventoryTransaction.findMany({
+    where: {
+      type: InventoryType.OUT,
+      referenceType: ReferenceType.PRODUCTION,
+      ...(createdAtFilter ? { createdAt: createdAtFilter } : {}),
+    },
+    include: {
+      material: {
+        select: {
+          name: true,
+          unit: true,
+        },
+      },
+    },
+    orderBy: { createdAt: "desc" },
+  });
+
+  const byDay = new Map<string, InventoryDailyDeductionRow>();
+
+  for (const tx of transactions) {
+    const dayKey = tx.createdAt.toISOString().slice(0, 10);
+    const current = byDay.get(dayKey) ?? {
+      date: dayKey,
+      hdpe: 0,
+      ldpe: 0,
+      pet: 0,
+      adhesive: 0,
+      emptyBags: 0,
+      color: 0,
+      other: 0,
+      totalRawUsed: 0,
+    };
+
+    const materialBucket = classifyMaterialByName(tx.material?.name ?? "");
+    current[materialBucket] += Number(tx.quantity ?? 0);
+    current.totalRawUsed += Number(tx.quantity ?? 0);
+
+    byDay.set(dayKey, current);
+  }
+
+  const daily = Array.from(byDay.values()).sort((a, b) =>
+    b.date.localeCompare(a.date),
+  );
+
+  const totals = daily.reduce(
+    (acc, row) => {
+      acc.hdpe += row.hdpe;
+      acc.ldpe += row.ldpe;
+      acc.pet += row.pet;
+      acc.adhesive += row.adhesive;
+      acc.emptyBags += row.emptyBags;
+      acc.color += row.color;
+      acc.other += row.other;
+      acc.totalRawUsed += row.totalRawUsed;
+      return acc;
+    },
+    {
+      hdpe: 0,
+      ldpe: 0,
+      pet: 0,
+      adhesive: 0,
+      emptyBags: 0,
+      color: 0,
+      other: 0,
+      totalRawUsed: 0,
+    },
+  );
+
+  return {
+    status: 200,
+    data: {
+      range,
+      daily,
+      totals,
     },
   };
 };

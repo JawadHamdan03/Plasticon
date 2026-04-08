@@ -19,12 +19,16 @@ import { UsersAdminPage } from "./pages/UsersAdminPage";
 import { AttendanceAdminPage } from "./pages/AttendanceAdminPage";
 import { PayrollAdminPage } from "./pages/PayrollAdminPage";
 import { SettingsAdminPage } from "./pages/SettingsAdminPage";
+import { SettingsElectricityPage } from "./pages/SettingsElectricityPage";
 import { RoleProtectedRoute } from "./components/RoleProtectedRoute";
 import { InventoryPage } from "./pages/InventoryPage";
 import { ProductionPage } from "./pages/ProductionPage";
 import { ReportsPage } from "./pages/ReportsPage";
 import { NotificationsPage } from "./pages/NotificationsPage";
 import { ChatPage } from "./pages/ChatPage";
+import { MyAttendancePage } from "./pages/MyAttendancePage";
+import { MyPayrollPage } from "./pages/MyPayrollPage";
+import { WorkerSnapshotsPage } from "./pages/WorkerSnapshotsPage";
 import "./App.css";
 
 function App() {
@@ -122,6 +126,14 @@ function App() {
             }
           />
           <Route
+            path="/admin/settings/electricity"
+            element={
+              <AdminOnlyRoute>
+                <SettingsElectricityPage />
+              </AdminOnlyRoute>
+            }
+          />
+          <Route
             path="/admin/shifts"
             element={
               <AdminOnlyRoute>
@@ -156,9 +168,7 @@ function App() {
           <Route
             path="/inventory"
             element={
-              <RoleProtectedRoute
-                allowedRoles={["ADMIN", "ACCOUNTANT", "ENGINEER", "WORKER"]}
-              >
+              <RoleProtectedRoute allowedRoles={["ADMIN", "ACCOUNTANT"]}>
                 <InventoryPage />
               </RoleProtectedRoute>
             }
@@ -192,12 +202,48 @@ function App() {
             }
           />
           <Route
+            path="/attendance"
+            element={
+              <RoleProtectedRoute
+                allowedRoles={["ADMIN", "ACCOUNTANT", "ENGINEER", "WORKER"]}
+              >
+                <MyAttendancePage />
+              </RoleProtectedRoute>
+            }
+          />
+          <Route
+            path="/my-payroll"
+            element={
+              <RoleProtectedRoute
+                allowedRoles={["ADMIN", "ACCOUNTANT", "ENGINEER", "WORKER"]}
+              >
+                <MyPayrollPage />
+              </RoleProtectedRoute>
+            }
+          />
+          <Route
             path="/chat"
             element={
               <RoleProtectedRoute
                 allowedRoles={["ADMIN", "ACCOUNTANT", "ENGINEER", "WORKER"]}
               >
                 <ChatPage />
+              </RoleProtectedRoute>
+            }
+          />
+          <Route
+            path="/worker/snapshots"
+            element={
+              <RoleProtectedRoute allowedRoles={["WORKER"]}>
+                <WorkerSnapshotsPage mode="snapshots" />
+              </RoleProtectedRoute>
+            }
+          />
+          <Route
+            path="/worker/tools"
+            element={
+              <RoleProtectedRoute allowedRoles={["WORKER"]}>
+                <WorkerSnapshotsPage mode="tools" />
               </RoleProtectedRoute>
             }
           />

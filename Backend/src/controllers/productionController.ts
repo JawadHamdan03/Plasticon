@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { AuthenticatedRequest } from "../middleware/authMiddleware";
 import {
   createProductionRecord,
+  getDailyRawDeductionFromInventoryTransactions,
   getProductionAdminOverview,
   getAllProductionRecords,
   getMyProductionRecords,
@@ -62,14 +63,40 @@ export const getAllProductionHandler = async (_req: Request, res: Response) => {
 };
 
 export const getProductionAdminOverviewHandler = async (
-  _req: Request,
+  req: Request,
   res: Response,
 ) => {
   try {
-    const result = await getProductionAdminOverview();
+    const fromDate =
+      typeof req.query.fromDate === "string" ? req.query.fromDate : undefined;
+    const toDate =
+      typeof req.query.toDate === "string" ? req.query.toDate : undefined;
+
+    const result = await getProductionAdminOverview({ fromDate, toDate });
     res.status(result.status).json(result.data);
   } catch (error) {
     console.error("Get production admin overview error:", error);
     res.status(500).json({ message: "Failed to fetch production overview" });
+  }
+};
+
+export const getDailyRawDeductionsHandler = async (
+  req: Request,
+  res: Response,
+) => {
+  try {
+    const fromDate =
+      typeof req.query.fromDate === "string" ? req.query.fromDate : undefined;
+    const toDate =
+      typeof req.query.toDate === "string" ? req.query.toDate : undefined;
+
+    const result = await getDailyRawDeductionFromInventoryTransactions({
+      fromDate,
+      toDate,
+    });
+    res.status(result.status).json(result.data);
+  } catch (error) {
+    console.error("Get daily raw deductions error:", error);
+    res.status(500).json({ message: "Failed to fetch raw deductions report" });
   }
 };

@@ -13,6 +13,7 @@ type UserProfile = {
   name: string;
   email: string;
   role?: string | null;
+  profileImage?: string | null;
 };
 
 type LoginValues = {
@@ -102,6 +103,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         email?: string;
         token?: string;
         role?: string;
+        profileImage?: string | null;
       };
 
       if (!data.token || !data.email) {
@@ -112,6 +114,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         name: data.name ?? values.email,
         email: data.email,
         role: data.role ?? "WORKER",
+        profileImage: data.profileImage ?? null,
       });
     },
     [persistSession],

@@ -5,6 +5,7 @@ import { useAuth } from "../context/AuthContext";
 import { useLocale } from "../context/LocaleContext";
 import { LocaleSwitch } from "../components/LocaleSwitch";
 import { DateTimeBadge } from "../components/DateTimeBadge";
+import { UserAvatarBadge } from "../components/UserAvatarBadge";
 import logo from "../assets/plasticon.png";
 
 export function DashboardPage() {
@@ -13,11 +14,57 @@ export function DashboardPage() {
   const { locale } = useLocale();
   const authText = authCopy[locale];
   const copy = appCopy[locale];
+  const role = String(user?.role ?? "").toUpperCase();
 
   const handleSignOut = () => {
     signOut();
     navigate("/login");
   };
+
+  const canAccessInventory = role === "ADMIN" || role === "ACCOUNTANT";
+  const canAccessReports = role === "ADMIN" || role === "ACCOUNTANT";
+  const workerTools = [
+    {
+      key: "stops",
+      labelAr: "توقف فوري",
+      labelEn: "Stop Alerts",
+    },
+    {
+      key: "checklist",
+      labelAr: "مهام الشفت",
+      labelEn: "Shift Checklist",
+    },
+    {
+      key: "waste",
+      labelAr: "هدر المواد",
+      labelEn: "Material Waste",
+    },
+    {
+      key: "target",
+      labelAr: "الهدف اليومي",
+      labelEn: "Daily Target",
+    },
+    {
+      key: "kaizen",
+      labelAr: "كايزن",
+      labelEn: "Kaizen",
+    },
+    {
+      key: "quality",
+      labelAr: "مشاكل الجودة",
+      labelEn: "Quality Issues",
+    },
+    {
+      key: "micro",
+      labelAr: "التوقفات القصيرة",
+      labelEn: "Micro-stops",
+    },
+    {
+      key: "anomaly",
+      labelAr: "شذوذ الكهرباء",
+      labelEn: "Electricity Anomaly",
+    },
+  ] as const;
 
   return (
     <main className="dashboard-shell" dir={locale === "ar" ? "rtl" : "ltr"}>
@@ -39,6 +86,7 @@ export function DashboardPage() {
           <div className="dashboard-topbar__actions">
             <DateTimeBadge tone="dark" />
             <LocaleSwitch variant="dark" />
+            <UserAvatarBadge />
             <button
               type="button"
               className="auth-button dashboard-topbar-btn dashboard-topbar-btn--signout"
@@ -86,9 +134,13 @@ export function DashboardPage() {
               <button
                 type="button"
                 className="auth-button dashboard-action-btn dashboard-action-btn--inventory"
-                onClick={() => navigate("/inventory")}
+                onClick={() =>
+                  navigate(canAccessInventory ? "/inventory" : "/attendance")
+                }
               >
-                {copy.dashboard.inventory}
+                {canAccessInventory
+                  ? copy.dashboard.inventory
+                  : copy.admin.attendanceTab}
               </button>
               <button
                 type="button"
@@ -100,9 +152,13 @@ export function DashboardPage() {
               <button
                 type="button"
                 className="auth-button dashboard-action-btn dashboard-action-btn--reports"
-                onClick={() => navigate("/reports")}
+                onClick={() =>
+                  navigate(canAccessReports ? "/reports" : "/my-payroll")
+                }
               >
-                {copy.dashboard.reports}
+                {canAccessReports
+                  ? copy.dashboard.reports
+                  : copy.admin.payrollTab}
               </button>
               <button
                 type="button"
@@ -120,7 +176,7 @@ export function DashboardPage() {
               <strong>{copy.dashboard.workspaceStatusValue}</strong>
             </div>
 
-            {user?.role === "ADMIN" ? (
+            {role === "ADMIN" ? (
               <div className="dashboard-admin-shortcuts">
                 <p className="dashboard-admin-shortcuts__eyebrow">
                   {copy.dashboard.adminShortcutsTitle}
@@ -192,17 +248,70 @@ export function DashboardPage() {
                   >
                     {copy.admin.dashboardTab}
                   </button>
+
+                  <button
+                    type="button"
+                    className="auth-button dashboard-side-btn dashboard-side-btn--payroll"
+                    onClick={() => navigate("/admin/settings/electricity")}
+                  >
+                    {locale === "ar" ? "الكهرباء" : "electry"}
+                  </button>
+
+                  <button
+                    type="button"
+                    className="auth-button dashboard-side-btn dashboard-side-btn--reports"
+                    onClick={() => navigate("/chat")}
+                  >
+                    {locale === "ar" ? "الدردشة" : "Chat"}
+                  </button>
                 </div>
               </div>
             ) : null}
 
-            <button
-              type="button"
-              className="auth-button dashboard-side-btn dashboard-side-btn--reports"
-              onClick={() => navigate("/chat")}
-            >
-              {locale === "ar" ? "الدردشة" : "Chat"}
-            </button>
+            {role !== "ADMIN" ? (
+              <button
+                type="button"
+                className="auth-button dashboard-side-btn dashboard-side-btn--reports"
+                onClick={() => navigate("/chat")}
+              >
+                {locale === "ar" ? "الدردشة" : "Chat"}
+              </button>
+            ) : null}
+
+            {role === "WORKER" ? (
+              <div className="dashboard-admin-shortcuts">
+                <p className="dashboard-admin-shortcuts__eyebrow">
+                  {locale === "ar" ? "أدوات العامل" : "Worker Tools"}
+                </p>
+                <h2>{locale === "ar" ? "أدوات العامل" : "Worker Tools"}</h2>
+                <p>
+                  {locale === "ar"
+                    ? "افتح كل أداة مباشرة من هنا"
+                    : "Open each tool directly from here"}
+                </p>
+
+                <div className="dashboard-shortcut-grid">
+                  <button
+                    type="button"
+                    className="auth-button dashboard-side-btn dashboard-side-btn--settings"
+                    onClick={() => navigate("/worker/snapshots")}
+                  >
+                    {locale === "ar" ? "قراءات الماكينة" : "Machine Log"}
+                  </button>
+
+                  {workerTools.map((tool) => (
+                    <button
+                      key={tool.key}
+                      type="button"
+                      className="auth-button dashboard-side-btn dashboard-side-btn--users"
+                      onClick={() => navigate(`/worker/tools?tab=${tool.key}`)}
+                    >
+                      {locale === "ar" ? tool.labelAr : tool.labelEn}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : null}
           </aside>
         </div>
       </section>
