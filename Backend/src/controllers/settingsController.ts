@@ -3,12 +3,14 @@ import { ProductType } from "../config/generated/prisma/client";
 import { AuthenticatedRequest } from "../middleware/authMiddleware";
 import {
   createSettingsSnapshot as createSettingsSnapshotService,
+  deleteSettingsSnapshot as deleteSettingsSnapshotService,
   getAdminSettingsOverview as getAdminSettingsOverviewService,
   getElectricityShiftConsumptionReport as getElectricityShiftConsumptionReportService,
   getProductionSettings as getProductionSettingsService,
   getSettingsSnapshots as getSettingsSnapshotsService,
   getSettingsSnapshotTrend as getSettingsSnapshotTrendService,
   getSystemSettings as getSystemSettingsService,
+  updateSettingsSnapshot as updateSettingsSnapshotService,
   upsertProductionSetting as upsertProductionSettingService,
   upsertSystemSettings as upsertSystemSettingsService,
 } from "../services/settingsServices";
@@ -105,6 +107,82 @@ export const createSettingsSnapshot = async (
   } catch (error) {
     console.error("create settings snapshot error:", error);
     res.status(500).json({ message: "Failed to save settings snapshot" });
+  }
+};
+
+export const updateSettingsSnapshot = async (
+  req: AuthenticatedRequest,
+  res: Response,
+) => {
+  try {
+    const files = (req.files ?? {}) as {
+      machineCounterImage?: Express.Multer.File[];
+      electricityImage?: Express.Multer.File[];
+    };
+
+    const machineCounterImagePath = files.machineCounterImage?.[0]
+      ? `prisma/pictures/${files.machineCounterImage[0].filename}`
+      : undefined;
+
+    const electricityImagePath = files.electricityImage?.[0]
+      ? `prisma/pictures/${files.electricityImage[0].filename}`
+      : undefined;
+
+    const result = await updateSettingsSnapshotService(
+      Number(req.params.id),
+      {
+        machineLabel:
+          typeof req.body?.machineLabel === "string"
+            ? req.body.machineLabel
+            : undefined,
+        machineCounter:
+          req.body?.machineCounter !== undefined
+            ? Number(req.body.machineCounter)
+            : undefined,
+        electricityKwh:
+          req.body?.electricityKwh !== undefined
+            ? Number(req.body.electricityKwh)
+            : undefined,
+        notes: typeof req.body?.notes === "string" ? req.body.notes : undefined,
+        machineCounterImage: machineCounterImagePath,
+        electricityImage: electricityImagePath,
+      },
+      req.user?.id,
+      req.user?.role === "ADMIN",
+    );
+
+    if (result.message) {
+      res.status(result.status).json({ message: result.message });
+      return;
+    }
+
+    res.status(result.status).json(result.data);
+  } catch (error) {
+    console.error("update settings snapshot error:", error);
+    res.status(500).json({ message: "Failed to update settings snapshot" });
+  }
+};
+
+export const deleteSettingsSnapshot = async (
+  req: AuthenticatedRequest,
+  res: Response,
+) => {
+  try {
+    const result = await deleteSettingsSnapshotService(
+      Number(req.params.id),
+      req.user?.id,
+      req.user?.role === "ADMIN",
+    );
+
+    if (result.message) {
+      res.status(result.status).json({ message: result.message });
+      return;
+    }
+
+    res.status(result.status).json(result.data);
+  } catch (error) {
+    console.error("delete settings snapshot error:", error);
+    res.status(500).json({ message: "Failed to delete settings snapshot" });
   }
 };
 

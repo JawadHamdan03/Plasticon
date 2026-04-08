@@ -7,6 +7,8 @@ import {
   getSettingsSnapshots,
   getSettingsSnapshotTrend,
   getSystemSettings,
+  deleteSettingsSnapshot,
+  updateSettingsSnapshot,
   upsertProductionSetting,
   upsertSystemSettings,
 } from "../controllers/settingsController";
@@ -54,6 +56,22 @@ router.get(
   "/snapshots",
   authorizeRoles([UserRole.ADMIN]),
   getSettingsSnapshots,
+);
+
+router.put(
+  "/snapshots/:id",
+  authorizeRoles([UserRole.WORKER, UserRole.ADMIN]),
+  upload.fields([
+    { name: "machineCounterImage", maxCount: 1 },
+    { name: "electricityImage", maxCount: 1 },
+  ]),
+  updateSettingsSnapshot,
+);
+
+router.delete(
+  "/snapshots/:id",
+  authorizeRoles([UserRole.WORKER, UserRole.ADMIN]),
+  deleteSettingsSnapshot,
 );
 
 router.get(

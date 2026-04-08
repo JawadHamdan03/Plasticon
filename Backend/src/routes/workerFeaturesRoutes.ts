@@ -9,6 +9,7 @@ import {
   createMaterialWasteLogHandler,
   createMicroStopHandler,
   createQualityIssueReportHandler,
+  deleteMyWorkerFeatureEntryHandler,
   getMyDailyTargetsHandler,
   getAdminKaizenSuggestionsHandler,
   getMyElectricityAnomalyAlertsHandler,
@@ -78,6 +79,12 @@ router.get(
   "/electricity-anomaly-alerts/mine",
   workerOnly,
   getMyElectricityAnomalyAlertsHandler,
+);
+
+router.delete(
+  "/entries/:feature/:id",
+  workerOnly,
+  deleteMyWorkerFeatureEntryHandler,
 );
 
 export default router;
