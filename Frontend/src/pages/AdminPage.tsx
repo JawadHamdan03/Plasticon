@@ -149,6 +149,62 @@ type DashboardAnalytics = {
   lowStockItems: number;
 };
 
+type WorkerToolsAdminOverview = {
+  summary: {
+    stops: number;
+    checklist: number;
+    waste: number;
+    target: number;
+    kaizen: number;
+    quality: number;
+    micro: number;
+    anomaly: number;
+    total: number;
+  };
+  items: Array<{
+    feature: string;
+    id: number;
+    user_id: number;
+    worker_name: string;
+    created_at: string;
+    title: string;
+    details: string;
+  }>;
+};
+
+type WorkerToolsTab =
+  | "all"
+  | "stops"
+  | "checklist"
+  | "waste"
+  | "target"
+  | "kaizen"
+  | "quality"
+  | "micro"
+  | "anomaly";
+
+const downloadCsv = (filename: string, header: string[], rows: string[][]) => {
+  const escape = (value: string) => {
+    const normalized = value.replace(/\r?\n|\r/g, " ").trim();
+    return /[",]/.test(normalized)
+      ? `"${normalized.replace(/"/g, '""')}"`
+      : normalized;
+  };
+
+  const csv = [header, ...rows]
+    .map((line) => line.map(escape).join(","))
+    .join("\n");
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+};
+
 const tokenKey = "plasticon_token";
 
 async function fetchWithAdminAuth(path: string, options?: RequestInit) {
@@ -223,6 +279,13 @@ export function AdminPage() {
   const [settingsOverviewError, setSettingsOverviewError] = useState("");
   const [supportsSettingsOverviewApi, setSupportsSettingsOverviewApi] =
     useState(true);
+
+  const [workerToolsOverview, setWorkerToolsOverview] =
+    useState<WorkerToolsAdminOverview | null>(null);
+  const [workerToolsLoading, setWorkerToolsLoading] = useState(false);
+  const [workerToolsError, setWorkerToolsError] = useState("");
+  const [showWorkerToolsPanel, setShowWorkerToolsPanel] = useState(false);
+  const [workerToolsTab, setWorkerToolsTab] = useState<WorkerToolsTab>("all");
 
   const [systemForm, setSystemForm] = useState({
     qualityCheckIntervalMinutes: "120",
@@ -654,6 +717,67 @@ export function AdminPage() {
     }
   }, [adminSettingsText.failedOverview, supportsSettingsOverviewApi]);
 
+  const loadWorkerToolsOverview = useCallback(async (featureOverride?: WorkerToolsTab) => {
+    setWorkerToolsLoading(true);
+    setWorkerToolsError("");
+    try {
+      const params = new URLSearchParams();
+      params.set("limit", "200");
+      const activeFeature =
+        featureOverride !== undefined
+          ? featureOverride
+          : workerToolsTab;
+      if (activeFeature && activeFeature !== "all") {
+        params.set("feature", activeFeature);
+      }
+
+      const response = await fetchWithAdminAuth(
+        `/worker-tools/admin/overview?${params.toString()}`,
+      );
+      if (!response.ok) {
+        throw new Error(await readApiError(response));
+      }
+      setWorkerToolsOverview(
+        (await response.json()) as WorkerToolsAdminOverview,
+      );
+    } catch (error) {
+      setWorkerToolsError(
+        error instanceof Error
+          ? error.message
+          : "Failed to load worker tools overview",
+      );
+    } finally {
+      setWorkerToolsLoading(false);
+    }
+  }, [workerToolsTab]);
+
+  const exportWorkerToolsCsv = useCallback(() => {
+    if (!workerToolsOverview?.items?.length) {
+      return;
+    }
+
+    const header = [
+      "id",
+      "feature",
+      "worker_name",
+      "title",
+      "details",
+      "created_at",
+    ];
+
+    const rows = workerToolsOverview.items.map((item) => [
+      String(item.id),
+      item.feature,
+      item.worker_name,
+      item.title,
+      item.details,
+      new Date(item.created_at).toISOString(),
+    ]);
+
+    const stamp = new Date().toISOString().slice(0, 10);
+    downloadCsv(`worker-tools-${stamp}.csv`, header, rows);
+  }, [workerToolsOverview]);
+
   useEffect(() => {
     void loadUsers();
     void loadAttendanceData();
@@ -665,6 +789,7 @@ export function AdminPage() {
     void loadProductionSettings();
     void loadSystemSettings();
     void loadSettingsOverview();
+    void loadWorkerToolsOverview();
   }, [
     loadAuditLogs,
     loadAttendanceData,
@@ -675,6 +800,7 @@ export function AdminPage() {
     loadSettingsOverview,
     loadShifts,
     loadSystemSettings,
+    loadWorkerToolsOverview,
     loadUsers,
   ]);
 
@@ -819,6 +945,17 @@ export function AdminPage() {
             subtitle={copy.admin.subtitle}
           />
           <div className="admin-header__actions">
+            <button
+              type="button"
+              className="auth-button auth-button--ghost"
+              onClick={() => {
+                setShowWorkerToolsPanel(true);
+                const target = document.getElementById("worker-tools");
+                target?.scrollIntoView({ behavior: "smooth", block: "start" });
+              }}
+            >
+              {isArabic ? "أدوات العامل" : "Worker Tools"}
+            </button>
             <span className="admin-role-badge">
               {roleBadge === "UNKNOWN"
                 ? roleBadge
@@ -1343,6 +1480,203 @@ export function AdminPage() {
                 </tbody>
               </TableBase>
             </TableShell>
+          ) : null}
+        </section>
+
+        <section className="admin-section" id="worker-tools">
+          <div className="admin-section__head">
+            <h2>
+              {isArabic
+                ? "أدوات العامل (من قاعدة البيانات)"
+                : "Worker Tools (Database)"}
+            </h2>
+            <div className="admin-section__actions">
+              <button
+                type="button"
+                className="auth-button"
+                onClick={() =>
+                  setShowWorkerToolsPanel((prev) => !prev)
+                }
+              >
+                {showWorkerToolsPanel
+                  ? isArabic
+                    ? "إخفاء"
+                    : "Hide"
+                  : isArabic
+                    ? "عرض"
+                    : "Show"}
+              </button>
+              <button
+                type="button"
+                className="auth-button"
+                onClick={() => void loadWorkerToolsOverview()}
+              >
+                {copy.refresh}
+              </button>
+              <button
+                type="button"
+                className="auth-button auth-button--ghost"
+                onClick={exportWorkerToolsCsv}
+                disabled={!workerToolsOverview?.items?.length}
+              >
+                {isArabic ? "تصدير CSV" : "Export CSV"}
+              </button>
+            </div>
+          </div>
+          {showWorkerToolsPanel ? (
+            <>
+              <div className="admin-section__actions" style={{ flexWrap: "wrap", gap: "8px" }}>
+                {([
+                  ["all", isArabic ? "الكل" : "All"],
+                  ["stops", isArabic ? "توقفات" : "Stops"],
+                  ["checklist", isArabic ? "فحص" : "Checklist"],
+                  ["waste", isArabic ? "مخلفات" : "Waste"],
+                  ["target", isArabic ? "أهداف" : "Targets"],
+                  ["kaizen", "Kaizen"],
+                  ["quality", isArabic ? "جودة" : "Quality"],
+                  ["micro", isArabic ? "توقفات صغيرة" : "Micro"],
+                  ["anomaly", isArabic ? "كهرباء" : "Anomaly"],
+                ] as Array<[WorkerToolsTab, string]>).map(([tab, label]) => (
+                  <button
+                    key={tab}
+                    type="button"
+                    className={`auth-button ${workerToolsTab === tab ? "" : "auth-button--ghost"}`}
+                    onClick={() => {
+                      setWorkerToolsTab(tab);
+                      const nextFilters: WorkerToolsFilters = {
+                        ...workerToolsFilters,
+                        feature: tab === "all" ? "" : tab,
+                      };
+                      setWorkerToolsFilters((prev) => ({
+                        ...prev,
+                        feature: tab === "all" ? "" : tab,
+                      }));
+                      void loadWorkerToolsOverview(nextFilters);
+                    }}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </>
+          ) : null}
+          {workerToolsLoading ? (
+            <p>
+              {isArabic
+                ? "جاري تحميل بيانات أدوات العامل..."
+                : "Loading worker tools data..."}
+            </p>
+          ) : null}
+          {workerToolsError ? (
+            <div className="auth-alert auth-alert--error">
+              {workerToolsError}
+            </div>
+          ) : null}
+          {showWorkerToolsPanel && workerToolsOverview ? (
+            <>
+              <div className="admin-kpi-grid">
+                <article className="admin-kpi-card">
+                  <p className="admin-kpi-card__label">
+                    {isArabic ? "الإجمالي" : "Total"}
+                  </p>
+                  <p className="admin-kpi-card__value">
+                    {workerToolsOverview.summary.total}
+                  </p>
+                </article>
+                <article className="admin-kpi-card">
+                  <p className="admin-kpi-card__label">
+                    {isArabic ? "توقفات" : "Stops"}
+                  </p>
+                  <p className="admin-kpi-card__value">
+                    {workerToolsOverview.summary.stops}
+                  </p>
+                </article>
+                <article className="admin-kpi-card">
+                  <p className="admin-kpi-card__label">
+                    {isArabic ? "فحص" : "Checklist"}
+                  </p>
+                  <p className="admin-kpi-card__value">
+                    {workerToolsOverview.summary.checklist}
+                  </p>
+                </article>
+                <article className="admin-kpi-card">
+                  <p className="admin-kpi-card__label">
+                    {isArabic ? "مخلفات" : "Waste"}
+                  </p>
+                  <p className="admin-kpi-card__value">
+                    {workerToolsOverview.summary.waste}
+                  </p>
+                </article>
+                <article className="admin-kpi-card">
+                  <p className="admin-kpi-card__label">
+                    {isArabic ? "أهداف" : "Targets"}
+                  </p>
+                  <p className="admin-kpi-card__value">
+                    {workerToolsOverview.summary.target}
+                  </p>
+                </article>
+                <article className="admin-kpi-card">
+                  <p className="admin-kpi-card__label">Kaizen</p>
+                  <p className="admin-kpi-card__value">
+                    {workerToolsOverview.summary.kaizen}
+                  </p>
+                </article>
+                <article className="admin-kpi-card">
+                  <p className="admin-kpi-card__label">
+                    {isArabic ? "جودة" : "Quality"}
+                  </p>
+                  <p className="admin-kpi-card__value">
+                    {workerToolsOverview.summary.quality}
+                  </p>
+                </article>
+                <article className="admin-kpi-card">
+                  <p className="admin-kpi-card__label">
+                    {isArabic ? "توقفات صغيرة" : "Micro Stops"}
+                  </p>
+                  <p className="admin-kpi-card__value">
+                    {workerToolsOverview.summary.micro}
+                  </p>
+                </article>
+                <article className="admin-kpi-card">
+                  <p className="admin-kpi-card__label">
+                    {isArabic ? "كهرباء" : "Electricity"}
+                  </p>
+                  <p className="admin-kpi-card__value">
+                    {workerToolsOverview.summary.anomaly}
+                  </p>
+                </article>
+              </div>
+
+              <h3>
+                {isArabic ? "آخر إدخالات العمال" : "Recent worker submissions"}
+              </h3>
+              <TableShell>
+                <TableBase className="admin-table">
+                  <thead>
+                    <tr>
+                      <th>{copy.admin.id}</th>
+                      <th>{isArabic ? "النوع" : "Feature"}</th>
+                      <th>{copy.admin.name}</th>
+                      <th>{isArabic ? "العنوان" : "Title"}</th>
+                      <th>{isArabic ? "التفاصيل" : "Details"}</th>
+                      <th>{copy.admin.calculatedAt}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {workerToolsOverview.items.slice(0, 150).map((item) => (
+                      <tr key={`${item.feature}-${item.id}`}>
+                        <td>{item.id}</td>
+                        <td>{item.feature}</td>
+                        <td>{item.worker_name}</td>
+                        <td>{item.title}</td>
+                        <td>{item.details}</td>
+                        <td>{new Date(item.created_at).toLocaleString()}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </TableBase>
+              </TableShell>
+            </>
           ) : null}
         </section>
 

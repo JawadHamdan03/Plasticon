@@ -193,6 +193,46 @@ export function AppScaffold({ children }: AppScaffoldProps) {
       labelEn: "Readings",
     });
     navItems.push({
+      to: "/worker/tools?tab=stops",
+      labelAr: "توقفات الماكنة",
+      labelEn: "Machine Stops",
+    });
+    navItems.push({
+      to: "/worker/tools?tab=checklist",
+      labelAr: "الفحص اليومي",
+      labelEn: "Daily Checklist",
+    });
+    navItems.push({
+      to: "/worker/tools?tab=waste",
+      labelAr: "مخلفات المواد",
+      labelEn: "Material Waste",
+    });
+    navItems.push({
+      to: "/worker/tools?tab=target",
+      labelAr: "الأهداف اليومية",
+      labelEn: "Daily Targets",
+    });
+    navItems.push({
+      to: "/worker/tools?tab=kaizen",
+      labelAr: "مقترحات التحسين",
+      labelEn: "Kaizen Ideas",
+    });
+    navItems.push({
+      to: "/worker/tools?tab=quality",
+      labelAr: "مشاكل الجودة",
+      labelEn: "Quality Issues",
+    });
+    navItems.push({
+      to: "/worker/tools?tab=micro",
+      labelAr: "التوقفات الصغيرة",
+      labelEn: "Micro Stops",
+    });
+    navItems.push({
+      to: "/worker/tools?tab=anomaly",
+      labelAr: "تنبيهات الكهرباء",
+      labelEn: "Electricity Alerts",
+    });
+    navItems.push({
       to: "/worker/tools",
       labelAr: "أدوات العامل",
       labelEn: "Worker Tools",
@@ -219,6 +259,11 @@ export function AppScaffold({ children }: AppScaffoldProps) {
       to: "/admin/audit-logs",
       labelAr: "سجل التدقيق",
       labelEn: "Audit Logs",
+    });
+    navItems.push({
+      to: "/admin#worker-tools",
+      labelAr: "أدوات العامل",
+      labelEn: "Worker Tools",
     });
     navItems.push({
       to: "/admin/dashboard-analytics",

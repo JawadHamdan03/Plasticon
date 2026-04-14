@@ -9,6 +9,7 @@ import {
   createQualityIssueReport,
   deleteMyWorkerFeatureEntry,
   getAdminKaizenSuggestions,
+  getAdminWorkerToolsOverview,
   getMyDailyTargets,
   getMyElectricityAnomalyAlerts,
   getMyKaizenSuggestions,
@@ -155,6 +156,31 @@ export const getAdminKaizenSuggestionsHandler = async (
         ? req.query.reviewStatus
         : undefined,
     ),
+  );
+};
+
+export const getAdminWorkerToolsOverviewHandler = async (
+  req: AuthenticatedRequest,
+  res: Response,
+) => {
+  const limit = Number(req.query.limit ?? 200);
+  const feature =
+    typeof req.query.feature === "string" ? req.query.feature : undefined;
+  const workerName =
+    typeof req.query.workerName === "string" ? req.query.workerName : undefined;
+  const fromDate =
+    typeof req.query.fromDate === "string" ? req.query.fromDate : undefined;
+  const toDate =
+    typeof req.query.toDate === "string" ? req.query.toDate : undefined;
+
+  await handle(res, () =>
+    getAdminWorkerToolsOverview({
+      limit,
+      feature,
+      workerName,
+      fromDate,
+      toDate,
+    }),
   );
 };
 

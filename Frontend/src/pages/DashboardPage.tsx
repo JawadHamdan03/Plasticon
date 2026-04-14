@@ -1,6 +1,14 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Activity, Bell, Boxes, CalendarClock, ClipboardList, Factory, ShieldCheck } from "lucide-react";
+import {
+  Activity,
+  Bell,
+  Boxes,
+  CalendarClock,
+  ClipboardList,
+  Factory,
+  ShieldCheck,
+} from "lucide-react";
 import { authCopy } from "../content/authCopy";
 import { appCopy } from "../content/appCopy";
 import { useAuth } from "../context/AuthContext";
@@ -104,13 +112,18 @@ export function DashboardPage() {
   const [loading, setLoading] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
 
-  const [dashboardAnalytics, setDashboardAnalytics] = useState<DashboardAnalytics | null>(null);
+  const [dashboardAnalytics, setDashboardAnalytics] =
+    useState<DashboardAnalytics | null>(null);
   const [quickStats, setQuickStats] = useState<QuickStats | null>(null);
-  const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([]);
+  const [attendanceRecords, setAttendanceRecords] = useState<
+    AttendanceRecord[]
+  >([]);
   const [payrollRecords, setPayrollRecords] = useState<PayrollRecord[]>([]);
   const [myProduction, setMyProduction] = useState<ProductionItem[]>([]);
   const [allProduction, setAllProduction] = useState<ProductionItem[]>([]);
-  const [inventoryTransactions, setInventoryTransactions] = useState<InventoryTransaction[]>([]);
+  const [inventoryTransactions, setInventoryTransactions] = useState<
+    InventoryTransaction[]
+  >([]);
   const [unreadNotifications, setUnreadNotifications] = useState(0);
   const [workerSnapshots, setWorkerSnapshots] = useState<WorkerSnapshot[]>([]);
   const [workerToolsCount, setWorkerToolsCount] = useState(0);
@@ -118,9 +131,14 @@ export function DashboardPage() {
   const loadDashboard = useCallback(async () => {
     setLoading(true);
 
-    const unread = await fetchWithAuth<{ unreadCount?: number; count?: number }>("/notifications/unread-count");
-    const attendance = await fetchWithAuth<AttendanceRecord[]>("/attendance/me");
-    const mineProduction = await fetchWithAuth<ProductionItem[]>("/production/me");
+    const unread = await fetchWithAuth<{
+      unreadCount?: number;
+      count?: number;
+    }>("/notifications/unread-count");
+    const attendance =
+      await fetchWithAuth<AttendanceRecord[]>("/attendance/me");
+    const mineProduction =
+      await fetchWithAuth<ProductionItem[]>("/production/me");
     const payroll = await fetchWithAuth<PayrollRecord[]>("/payroll/me");
 
     setUnreadNotifications(unread?.unreadCount ?? unread?.count ?? 0);
@@ -149,22 +167,54 @@ export function DashboardPage() {
     }
 
     if (isWorker) {
-      const [snapshots, stopLogs, checklists, waste, targets, kaizen, quality, micro, anomaly] = await Promise.all([
+      const [
+        snapshots,
+        stopLogs,
+        checklists,
+        waste,
+        targets,
+        kaizenLogs,
+        quality,
+        micro,
+        anomaly,
+      ] = await Promise.all([
         fetchWithAuth<WorkerSnapshot[]>("/settings/snapshots/mine?limit=200"),
-        fetchWithAuth<Array<Record<string, unknown>>>("/worker-tools/machine-stop-alerts/mine"),
-        fetchWithAuth<Array<Record<string, unknown>>>("/worker-tools/shift-checklists/mine"),
-        fetchWithAuth<Array<Record<string, unknown>>>("/worker-tools/material-waste/mine"),
-        fetchWithAuth<Array<Record<string, unknown>>>("/worker-tools/daily-targets/mine"),
-        fetchWithAuth<Array<Record<string, unknown>>>("/worker-tools/kaizen/mine"),
-        fetchWithAuth<Array<Record<string, unknown>>>("/worker-tools/quality-issues/mine"),
-        fetchWithAuth<Array<Record<string, unknown>>>("/worker-tools/micro-stops/mine"),
-        fetchWithAuth<Array<Record<string, unknown>>>("/worker-tools/electricity-anomaly-alerts/mine"),
+        fetchWithAuth<Array<Record<string, unknown>>>(
+          "/worker-tools/machine-stop-alerts/mine",
+        ),
+        fetchWithAuth<Array<Record<string, unknown>>>(
+          "/worker-tools/shift-checklists/mine",
+        ),
+        fetchWithAuth<Array<Record<string, unknown>>>(
+          "/worker-tools/material-waste/mine",
+        ),
+        fetchWithAuth<Array<Record<string, unknown>>>(
+          "/worker-tools/daily-targets/mine",
+        ),
+        fetchWithAuth<Array<Record<string, unknown>>>(
+          "/worker-tools/kaizen/mine",
+        ),
+        fetchWithAuth<Array<Record<string, unknown>>>(
+          "/worker-tools/quality-issues/mine",
+        ),
+        fetchWithAuth<Array<Record<string, unknown>>>(
+          "/worker-tools/micro-stops/mine",
+        ),
+        fetchWithAuth<Array<Record<string, unknown>>>(
+          "/worker-tools/electricity-anomaly-alerts/mine",
+        ),
       ]);
 
-      const toolTotal = [stopLogs, checklists, waste, targets, kaizen, quality, micro, anomaly].reduce(
-        (sum, item) => sum + (Array.isArray(item) ? item.length : 0),
-        0,
-      );
+      const toolTotal = [
+        stopLogs,
+        checklists,
+        waste,
+        targets,
+        kaizenLogs,
+        quality,
+        micro,
+        anomaly,
+      ].reduce((sum, item) => sum + (Array.isArray(item) ? item.length : 0), 0);
 
       setWorkerSnapshots(snapshots ?? []);
       setWorkerToolsCount(toolTotal);
@@ -180,27 +230,37 @@ export function DashboardPage() {
   const today = new Date().toISOString().slice(0, 10);
 
   const myTodayProductionCount = useMemo(
-    () => myProduction.filter((item) => item.createdAt.slice(0, 10) === today).length,
+    () =>
+      myProduction.filter((item) => item.createdAt.slice(0, 10) === today)
+        .length,
     [myProduction, today],
   );
 
   const allTodayProductionCount = useMemo(
-    () => allProduction.filter((item) => item.createdAt.slice(0, 10) === today).length,
+    () =>
+      allProduction.filter((item) => item.createdAt.slice(0, 10) === today)
+        .length,
     [allProduction, today],
   );
 
   const inventoryTodayCount = useMemo(
-    () => inventoryTransactions.filter((item) => item.createdAt.slice(0, 10) === today).length,
+    () =>
+      inventoryTransactions.filter(
+        (item) => item.createdAt.slice(0, 10) === today,
+      ).length,
     [inventoryTransactions, today],
   );
 
   const snapshotsTodayCount = useMemo(
-    () => workerSnapshots.filter((item) => item.createdAt.slice(0, 10) === today).length,
+    () =>
+      workerSnapshots.filter((item) => item.createdAt.slice(0, 10) === today)
+        .length,
     [workerSnapshots, today],
   );
 
   const latestAttendance = attendanceRecords[0] ?? null;
-  const openAttendance = attendanceRecords.find((item) => item.checkOut === null) ?? null;
+  const openAttendance =
+    attendanceRecords.find((item) => item.checkOut === null) ?? null;
 
   const insights = useMemo(() => {
     const items: Insight[] = [];
@@ -229,7 +289,9 @@ export function DashboardPage() {
           key: "production",
           titleAr: "إنتاج اليوم",
           titleEn: "Today production",
-          value: String(dashboardAnalytics?.productionToday ?? allTodayProductionCount),
+          value: String(
+            dashboardAnalytics?.productionToday ?? allTodayProductionCount,
+          ),
           hintAr: "سجلات الإنتاج الحالية",
           hintEn: "Current production records",
           to: "/production",
@@ -303,7 +365,13 @@ export function DashboardPage() {
           key: "attendance",
           titleAr: "حالة الدوام",
           titleEn: "Attendance state",
-          value: openAttendance ? (isArabic ? "داخل الدوام" : "Checked in") : (isArabic ? "خارج الدوام" : "Checked out"),
+          value: openAttendance
+            ? isArabic
+              ? "داخل الدوام"
+              : "Checked in"
+            : isArabic
+              ? "خارج الدوام"
+              : "Checked out",
           hintAr: "تأكد من تسجيل الدخول/الخروج",
           hintEn: "Keep check-in/out updated",
           to: "/attendance",
@@ -440,10 +508,15 @@ export function DashboardPage() {
     unreadNotifications,
   ]);
 
-  const shiftName = openAttendance?.shift?.name ?? latestAttendance?.shift?.name ?? "-";
+  const shiftName =
+    openAttendance?.shift?.name ?? latestAttendance?.shift?.name ?? "-";
   const shiftStart = openAttendance?.checkIn ?? latestAttendance?.checkIn;
 
-  const machineStatsTotal = quickStats?.machineStatusBreakdown.reduce((sum, item) => sum + item.count, 0) ?? 0;
+  const machineStatsTotal =
+    quickStats?.machineStatusBreakdown.reduce(
+      (sum, item) => sum + item.count,
+      0,
+    ) ?? 0;
 
   return (
     <section className="dashboard-card dashboard-card--expanded grid gap-4">
@@ -454,7 +527,9 @@ export function DashboardPage() {
               {isArabic ? "لوحة العمليات الذكية" : "Operations Intelligence"}
             </p>
             <h1 className="mt-2 text-3xl font-black tracking-[-0.04em] text-[#000000]">
-              {isArabic ? "تحليل مباشر لكل شيء في النظام" : "Live analytics for every module"}
+              {isArabic
+                ? "تحليل مباشر لكل شيء في النظام"
+                : "Live analytics for every module"}
             </h1>
             <p className="mt-2 max-w-3xl text-sm font-semibold text-[#2e3d2a]">
               {isArabic
@@ -474,8 +549,12 @@ export function DashboardPage() {
 
         <div className="mt-4 flex flex-wrap gap-2">
           <Badge>{user?.name ?? authText.dashboardUserFallback}</Badge>
-          <Badge tone="soft">{user?.email ?? authText.dashboardEmailFallback}</Badge>
-          <Badge tone="accent">{user?.role ?? authText.dashboardRoleFallback}</Badge>
+          <Badge tone="soft">
+            {user?.email ?? authText.dashboardEmailFallback}
+          </Badge>
+          <Badge tone="accent">
+            {user?.role ?? authText.dashboardRoleFallback}
+          </Badge>
         </div>
       </Card>
 
@@ -498,23 +577,35 @@ export function DashboardPage() {
                 <p className="text-xs font-bold uppercase tracking-[0.14em] text-[#5F6659]">
                   {isArabic ? item.titleAr : item.titleEn}
                 </p>
-                <p className="mt-2 text-2xl font-black text-[#000000]">{item.value}</p>
-                <p className="mt-1 text-xs text-[#5F6659]">{isArabic ? item.hintAr : item.hintEn}</p>
+                <p className="mt-2 text-2xl font-black text-[#000000]">
+                  {item.value}
+                </p>
+                <p className="mt-1 text-xs text-[#5F6659]">
+                  {isArabic ? item.hintAr : item.hintEn}
+                </p>
               </button>
             ))}
           </div>
 
-          {isAdmin && quickStats && quickStats.machineStatusBreakdown.length > 0 ? (
+          {isAdmin &&
+          quickStats &&
+          quickStats.machineStatusBreakdown.length > 0 ? (
             <div className="mt-5 rounded-2xl border border-[#EEEEEE] bg-[#FAF9EE] p-4">
               <div className="mb-2 flex items-center gap-2">
-                <Factory className="h-4 w-4 text-[#5F6659]" aria-hidden="true" />
+                <Factory
+                  className="h-4 w-4 text-[#5F6659]"
+                  aria-hidden="true"
+                />
                 <p className="text-sm font-bold text-[#000000]">
                   {isArabic ? "نسب تشغيل الماكينات" : "Machine status ratios"}
                 </p>
               </div>
               <div className="grid gap-2">
                 {quickStats.machineStatusBreakdown.map((item) => {
-                  const ratio = machineStatsTotal > 0 ? Math.round((item.count / machineStatsTotal) * 100) : 0;
+                  const ratio =
+                    machineStatsTotal > 0
+                      ? Math.round((item.count / machineStatsTotal) * 100)
+                      : 0;
                   return (
                     <div key={item.status}>
                       <div className="mb-1 flex items-center justify-between text-xs font-semibold text-[#5F6659]">
@@ -522,7 +613,10 @@ export function DashboardPage() {
                         <span>{ratio}%</span>
                       </div>
                       <div className="h-2 rounded-full bg-[#EEEEEE]">
-                        <div className="h-2 rounded-full bg-[#A2AF9B]" style={{ width: `${ratio}%` }} />
+                        <div
+                          className="h-2 rounded-full bg-[#A2AF9B]"
+                          style={{ width: `${ratio}%` }}
+                        />
                       </div>
                     </div>
                   );
@@ -533,7 +627,10 @@ export function DashboardPage() {
 
           <div className="mt-5 rounded-2xl border border-[#EEEEEE] bg-[#FFFFFF] p-4">
             <div className="mb-3 flex items-center gap-2">
-              <ClipboardList className="h-4 w-4 text-[#5F6659]" aria-hidden="true" />
+              <ClipboardList
+                className="h-4 w-4 text-[#5F6659]"
+                aria-hidden="true"
+              />
               <p className="text-sm font-bold text-[#000000]">
                 {isArabic ? "ماذا يجب أن تعمل الآن" : "What to do now"}
               </p>
@@ -548,7 +645,9 @@ export function DashboardPage() {
                     onClick={() => navigate(task.to)}
                   >
                     <span>{isArabic ? task.textAr : task.textEn}</span>
-                    <span className="text-xs text-[#5F6659]">{isArabic ? "فتح" : "Open"}</span>
+                    <span className="text-xs text-[#5F6659]">
+                      {isArabic ? "فتح" : "Open"}
+                    </span>
                   </button>
                 ))
               ) : (
@@ -563,43 +662,65 @@ export function DashboardPage() {
         <aside>
           <Card className="border-[#EEEEEE] bg-[#FFFFFF] p-4">
             <div className="mb-3 flex items-center gap-2">
-              <ShieldCheck className="h-4 w-4 text-[#5F6659]" aria-hidden="true" />
+              <ShieldCheck
+                className="h-4 w-4 text-[#5F6659]"
+                aria-hidden="true"
+              />
               <p className="text-sm font-bold text-[#000000]">
                 {isArabic ? "معلومات المستخدم" : "User info"}
               </p>
             </div>
             <div className="grid gap-2 text-sm">
               <div className="rounded-xl border border-[#EEEEEE] bg-[#FAF9EE] px-3 py-2">
-                <p className="text-[11px] font-bold uppercase tracking-[0.1em] text-[#5F6659]">{isArabic ? "الاسم" : "Name"}</p>
+                <p className="text-[11px] font-bold uppercase tracking-[0.1em] text-[#5F6659]">
+                  {isArabic ? "الاسم" : "Name"}
+                </p>
                 <strong>{user?.name ?? authText.dashboardUserFallback}</strong>
               </div>
               <div className="rounded-xl border border-[#EEEEEE] bg-[#FAF9EE] px-3 py-2">
-                <p className="text-[11px] font-bold uppercase tracking-[0.1em] text-[#5F6659]">{isArabic ? "الشفت" : "Shift"}</p>
+                <p className="text-[11px] font-bold uppercase tracking-[0.1em] text-[#5F6659]">
+                  {isArabic ? "الشفت" : "Shift"}
+                </p>
                 <strong>{shiftName}</strong>
               </div>
               <div className="rounded-xl border border-[#EEEEEE] bg-[#FAF9EE] px-3 py-2">
-                <p className="text-[11px] font-bold uppercase tracking-[0.1em] text-[#5F6659]">{isArabic ? "بداية الدوام" : "Shift start"}</p>
-                <strong>{shiftStart ? new Date(shiftStart).toLocaleString() : "-"}</strong>
+                <p className="text-[11px] font-bold uppercase tracking-[0.1em] text-[#5F6659]">
+                  {isArabic ? "بداية الدوام" : "Shift start"}
+                </p>
+                <strong>
+                  {shiftStart ? new Date(shiftStart).toLocaleString() : "-"}
+                </strong>
               </div>
             </div>
           </Card>
 
           <Card className="mt-4 border-[#EEEEEE] bg-[#FFFFFF] p-4">
             <div className="mb-3 flex items-center gap-2">
-              <CalendarClock className="h-4 w-4 text-[#5F6659]" aria-hidden="true" />
-              <p className="text-sm font-bold text-[#000000]">{isArabic ? "ملخص حمل اليوم" : "Today workload"}</p>
+              <CalendarClock
+                className="h-4 w-4 text-[#5F6659]"
+                aria-hidden="true"
+              />
+              <p className="text-sm font-bold text-[#000000]">
+                {isArabic ? "ملخص حمل اليوم" : "Today workload"}
+              </p>
             </div>
             <div className="grid gap-2 text-sm">
               <div className="flex items-center justify-between rounded-xl border border-[#EEEEEE] px-3 py-2">
-                <span className="text-[#5F6659]">{isArabic ? "الإنتاج اليوم" : "Production today"}</span>
+                <span className="text-[#5F6659]">
+                  {isArabic ? "الإنتاج اليوم" : "Production today"}
+                </span>
                 <strong>{myTodayProductionCount}</strong>
               </div>
               <div className="flex items-center justify-between rounded-xl border border-[#EEEEEE] px-3 py-2">
-                <span className="text-[#5F6659]">{isArabic ? "حركات المخزون اليوم" : "Inventory updates"}</span>
+                <span className="text-[#5F6659]">
+                  {isArabic ? "حركات المخزون اليوم" : "Inventory updates"}
+                </span>
                 <strong>{inventoryTodayCount}</strong>
               </div>
               <div className="flex items-center justify-between rounded-xl border border-[#EEEEEE] px-3 py-2">
-                <span className="text-[#5F6659]">{isArabic ? "الإشعارات" : "Notifications"}</span>
+                <span className="text-[#5F6659]">
+                  {isArabic ? "الإشعارات" : "Notifications"}
+                </span>
                 <strong>{unreadNotifications}</strong>
               </div>
             </div>
@@ -608,7 +729,9 @@ export function DashboardPage() {
           <Card className="mt-4 border-[#EEEEEE] bg-[#FFFFFF] p-4">
             <div className="mb-3 flex items-center gap-2">
               <Activity className="h-4 w-4 text-[#5F6659]" aria-hidden="true" />
-              <p className="text-sm font-bold text-[#000000]">{isArabic ? "تنقل سريع" : "Quick actions"}</p>
+              <p className="text-sm font-bold text-[#000000]">
+                {isArabic ? "تنقل سريع" : "Quick actions"}
+              </p>
             </div>
             <div className="grid gap-2">
               <Button
