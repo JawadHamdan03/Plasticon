@@ -240,6 +240,19 @@ export function AppScaffold({ children }: AppScaffoldProps) {
   }
 
   if (role === "ADMIN") {
+    const chatIndex = navItems.findIndex((item) => item.to === "/chat");
+    const workerToolsNavItem: NavItem = {
+      to: "/admin#worker-tools",
+      labelAr: "أدوات العامل",
+      labelEn: "Worker Tools",
+    };
+
+    if (chatIndex >= 0) {
+      navItems.splice(chatIndex + 1, 0, workerToolsNavItem);
+    } else {
+      navItems.push(workerToolsNavItem);
+    }
+
     navItems.push({
       to: "/admin/snapshots",
       labelAr: "اللقطات",
@@ -259,11 +272,6 @@ export function AppScaffold({ children }: AppScaffoldProps) {
       to: "/admin/audit-logs",
       labelAr: "سجل التدقيق",
       labelEn: "Audit Logs",
-    });
-    navItems.push({
-      to: "/admin#worker-tools",
-      labelAr: "أدوات العامل",
-      labelEn: "Worker Tools",
     });
     navItems.push({
       to: "/admin/dashboard-analytics",
@@ -303,7 +311,7 @@ export function AppScaffold({ children }: AppScaffoldProps) {
 
         <nav className="app-sidebar-modern__nav grid content-start gap-2 overflow-auto pr-1 max-xl:grid-cols-2 max-md:grid-cols-1">
           {navItems.map((item) => {
-            const itemPath = item.to.split("?")[0];
+            const itemPath = item.to.split("?")[0].split("#")[0];
             const isActive =
               location.pathname === itemPath ||
               (itemPath !== "/dashboard" &&

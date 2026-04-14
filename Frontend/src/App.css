@@ -778,6 +778,7 @@
   cursor: pointer;
   box-shadow: 0 4px 12px rgba(162, 175, 155, 0.2);
   transition: all 180ms ease;
+  margin-right: 10px;
 }
 
 .auth-button:hover:not(:disabled) {
@@ -1895,7 +1896,7 @@
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 12px;
-  margin-top:12px;
+  margin-top: 12px;
 }
 
 .worker-profile-strip {

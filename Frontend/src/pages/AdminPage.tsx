@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useLocale } from "../context/LocaleContext";
 import { appCopy } from "../content/appCopy";
@@ -172,16 +172,12 @@ type WorkerToolsAdminOverview = {
   }>;
 };
 
-type WorkerToolsTab =
-  | "all"
-  | "stops"
-  | "checklist"
-  | "waste"
-  | "target"
-  | "kaizen"
-  | "quality"
-  | "micro"
-  | "anomaly";
+type WorkerToolsFilters = {
+  feature: string;
+  workerName: string;
+  fromDate: string;
+  toDate: string;
+};
 
 const downloadCsv = (filename: string, header: string[], rows: string[][]) => {
   const escape = (value: string) => {
@@ -221,6 +217,7 @@ async function fetchWithAdminAuth(path: string, options?: RequestInit) {
 
 export function AdminPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuth();
   const { locale } = useLocale();
   const copy = appCopy[locale];
@@ -284,8 +281,20 @@ export function AdminPage() {
     useState<WorkerToolsAdminOverview | null>(null);
   const [workerToolsLoading, setWorkerToolsLoading] = useState(false);
   const [workerToolsError, setWorkerToolsError] = useState("");
-  const [showWorkerToolsPanel, setShowWorkerToolsPanel] = useState(false);
-  const [workerToolsTab, setWorkerToolsTab] = useState<WorkerToolsTab>("all");
+  const [workerToolsFilters, setWorkerToolsFilters] =
+    useState<WorkerToolsFilters>({
+      feature: "",
+      workerName: "",
+      fromDate: "",
+      toDate: "",
+    });
+  const [workerToolsAppliedFilters, setWorkerToolsAppliedFilters] =
+    useState<WorkerToolsFilters>({
+      feature: "",
+      workerName: "",
+      fromDate: "",
+      toDate: "",
+    });
 
   const [systemForm, setSystemForm] = useState({
     qualityCheckIntervalMinutes: "120",
@@ -300,6 +309,7 @@ export function AdminPage() {
 
   const roleBadge = useMemo(() => user?.role ?? "UNKNOWN", [user?.role]);
   const isArabic = locale === "ar";
+  const isWorkerToolsOnlyView = location.hash === "#worker-tools";
 
   const adminSettingsText = useMemo(
     () =>
@@ -717,18 +727,30 @@ export function AdminPage() {
     }
   }, [adminSettingsText.failedOverview, supportsSettingsOverviewApi]);
 
-  const loadWorkerToolsOverview = useCallback(async (featureOverride?: WorkerToolsTab) => {
+  const loadWorkerToolsOverview = useCallback(async () => {
     setWorkerToolsLoading(true);
     setWorkerToolsError("");
+    setWorkerToolsOverview(null);
     try {
       const params = new URLSearchParams();
       params.set("limit", "200");
-      const activeFeature =
-        featureOverride !== undefined
-          ? featureOverride
-          : workerToolsTab;
-      if (activeFeature && activeFeature !== "all") {
-        params.set("feature", activeFeature);
+      if (workerToolsAppliedFilters.feature) {
+        params.set("feature", workerToolsAppliedFilters.feature);
+      }
+      if (workerToolsAppliedFilters.workerName.trim()) {
+        params.set("workerName", workerToolsAppliedFilters.workerName.trim());
+      }
+      if (workerToolsAppliedFilters.fromDate) {
+        params.set(
+          "fromDate",
+          `${workerToolsAppliedFilters.fromDate}T00:00:00.000Z`,
+        );
+      }
+      if (workerToolsAppliedFilters.toDate) {
+        params.set(
+          "toDate",
+          `${workerToolsAppliedFilters.toDate}T23:59:59.999Z`,
+        );
       }
 
       const response = await fetchWithAdminAuth(
@@ -749,7 +771,7 @@ export function AdminPage() {
     } finally {
       setWorkerToolsLoading(false);
     }
-  }, [workerToolsTab]);
+  }, [workerToolsAppliedFilters]);
 
   const exportWorkerToolsCsv = useCallback(() => {
     if (!workerToolsOverview?.items?.length) {
@@ -789,7 +811,6 @@ export function AdminPage() {
     void loadProductionSettings();
     void loadSystemSettings();
     void loadSettingsOverview();
-    void loadWorkerToolsOverview();
   }, [
     loadAuditLogs,
     loadAttendanceData,
@@ -800,9 +821,24 @@ export function AdminPage() {
     loadSettingsOverview,
     loadShifts,
     loadSystemSettings,
-    loadWorkerToolsOverview,
     loadUsers,
   ]);
+
+  useEffect(() => {
+    void loadWorkerToolsOverview();
+  }, [loadWorkerToolsOverview]);
+
+  useEffect(() => {
+    if (location.hash !== "#worker-tools") {
+      return;
+    }
+    const timer = window.setTimeout(() => {
+      document
+        .getElementById("worker-tools")
+        ?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 60);
+    return () => window.clearTimeout(timer);
+  }, [location.hash]);
 
   const attendanceTodayStats = useMemo(() => {
     const start = new Date();
@@ -945,17 +981,6 @@ export function AdminPage() {
             subtitle={copy.admin.subtitle}
           />
           <div className="admin-header__actions">
-            <button
-              type="button"
-              className="auth-button auth-button--ghost"
-              onClick={() => {
-                setShowWorkerToolsPanel(true);
-                const target = document.getElementById("worker-tools");
-                target?.scrollIntoView({ behavior: "smooth", block: "start" });
-              }}
-            >
-              {isArabic ? "أدوات العامل" : "Worker Tools"}
-            </button>
             <span className="admin-role-badge">
               {roleBadge === "UNKNOWN"
                 ? roleBadge
@@ -964,524 +989,556 @@ export function AdminPage() {
           </div>
         </header>
 
-        <section className="admin-section" id="users">
-          <div className="admin-section__head">
-            <h2>{copy.admin.usersTitle}</h2>
-            <div style={{ display: "flex", gap: "8px" }}>
-              <Button onClick={() => navigate("/register")}>
-                {copy.admin.addNewUser}
-              </Button>
-              <Button onClick={() => void loadUsers()}>{copy.refresh}</Button>
-            </div>
-          </div>
-          {usersLoading ? <p>{copy.admin.loadingUsers}</p> : null}
-          {usersError ? (
-            <div className="auth-alert auth-alert--error">{usersError}</div>
-          ) : null}
-          <TableShell>
-            <TableBase className="admin-table">
-              <thead>
-                <tr>
-                  <th>{copy.admin.id}</th>
-                  <th>{copy.admin.name}</th>
-                  <th>{copy.admin.username}</th>
-                  <th>{copy.admin.email}</th>
-                  <th>{copy.admin.role}</th>
-                  <th>{copy.admin.status}</th>
-                  <th>{copy.admin.actions}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {users.map((item) => (
-                  <tr key={item.id}>
-                    <td>{item.id}</td>
-                    <td>{item.fullName}</td>
-                    <td>{item.username}</td>
-                    <td>{item.email ?? "-"}</td>
-                    <td>
-                      <select
-                        value={pendingUserChanges[item.id]?.role ?? item.role}
-                        onChange={(event) =>
-                          setPendingUserChanges((prev) => ({
-                            ...prev,
-                            [item.id]: {
-                              role: event.target.value as AdminUser["role"],
-                              isActive:
-                                prev[item.id]?.isActive ?? item.isActive,
-                            },
-                          }))
-                        }
-                      >
-                        <option value="ADMIN">{getRoleLabel("ADMIN")}</option>
-                        <option value="ENGINEER">
-                          {getRoleLabel("ENGINEER")}
-                        </option>
-                        <option value="ACCOUNTANT">
-                          {getRoleLabel("ACCOUNTANT")}
-                        </option>
-                        <option value="WORKER">{getRoleLabel("WORKER")}</option>
-                      </select>
-                    </td>
-                    <td>
-                      {item.deletedAt
-                        ? copy.admin.deleted
-                        : item.isActive
-                          ? copy.admin.active
-                          : copy.admin.inactive}
-                    </td>
-                    <td>
-                      <label className="admin-flag">
-                        <input
-                          type="checkbox"
-                          checked={
-                            pendingUserChanges[item.id]?.isActive ??
-                            item.isActive
-                          }
-                          disabled={Boolean(item.deletedAt)}
-                          onChange={(event) =>
-                            setPendingUserChanges((prev) => ({
-                              ...prev,
-                              [item.id]: {
-                                role: prev[item.id]?.role ?? item.role,
-                                isActive: event.target.checked,
-                              },
-                            }))
-                          }
-                        />
-                        {copy.admin.active}
-                      </label>
-                      <button
-                        type="button"
-                        className="auth-button"
-                        disabled={Boolean(item.deletedAt)}
-                        onClick={() => {
-                          const pending = pendingUserChanges[item.id];
-                          if (!pending) return;
-                          void (async () => {
-                            try {
-                              const roleResponse = await fetchWithAdminAuth(
-                                `/users/${item.id}/role`,
-                                {
-                                  method: "PUT",
-                                  headers: {
-                                    "Content-Type": "application/json",
-                                  },
-                                  body: JSON.stringify({ role: pending.role }),
-                                },
-                              );
-                              if (!roleResponse.ok)
-                                throw new Error(
-                                  await readApiError(roleResponse),
-                                );
-                              const updateResponse = await fetchWithAdminAuth(
-                                `/users/${item.id}`,
-                                {
-                                  method: "PUT",
-                                  headers: {
-                                    "Content-Type": "application/json",
-                                  },
-                                  body: JSON.stringify({
-                                    isActive: pending.isActive,
-                                  }),
-                                },
-                              );
-                              if (!updateResponse.ok)
-                                throw new Error(
-                                  await readApiError(updateResponse),
-                                );
-                              setUsers((prev) =>
-                                prev.map((userItem) =>
-                                  userItem.id === item.id
-                                    ? {
-                                        ...userItem,
-                                        role: pending.role,
-                                        isActive: pending.isActive,
-                                      }
-                                    : userItem,
-                                ),
-                              );
-                              window.alert(copy.admin.userUpdated);
-                            } catch (error) {
-                              window.alert(
-                                error instanceof Error
-                                  ? error.message
-                                  : copy.admin.userUpdateFailed,
-                              );
-                            }
-                          })();
-                        }}
-                      >
-                        {copy.admin.saveChanges}
-                      </button>
-                      <button
-                        type="button"
-                        className="auth-button auth-button--ghost"
-                        disabled={Boolean(item.deletedAt)}
-                        onClick={() => void handleDeleteUser(item.id)}
-                      >
-                        {copy.delete}
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </TableBase>
-          </TableShell>
-        </section>
-
-        <section className="admin-section" id="attendance">
-          <div className="admin-section__head">
-            <h2>{attendanceText.title}</h2>
-            <button
-              type="button"
-              className="auth-button"
-              onClick={() => {
-                void loadUsers();
-                void loadAttendanceData();
-              }}
-            >
-              {copy.refresh}
-            </button>
-          </div>
-          {attendanceLoading ? <p>{attendanceText.loading}</p> : null}
-          {attendanceError ? (
-            <div className="auth-alert auth-alert--error">
-              {attendanceError}
-            </div>
-          ) : null}
-          <div className="admin-kpi-grid">
-            <article className="admin-kpi-card">
-              <p className="admin-kpi-card__label">
-                {attendanceText.todayAttendance}
-              </p>
-              <p className="admin-kpi-card__value">
-                {attendanceTodayStats.attendanceCount}
-              </p>
-            </article>
-            <article className="admin-kpi-card">
-              <p className="admin-kpi-card__label">
-                {attendanceText.todayAbsence}
-              </p>
-              <p className="admin-kpi-card__value">
-                {attendanceTodayStats.absentCount}
-              </p>
-            </article>
-            <article className="admin-kpi-card">
-              <p className="admin-kpi-card__label">
-                {attendanceText.openShifts}
-              </p>
-              <p className="admin-kpi-card__value">
-                {attendanceTodayStats.openShiftCount}
-              </p>
-            </article>
-            <article className="admin-kpi-card">
-              <p className="admin-kpi-card__label">
-                {attendanceText.lateCases}
-              </p>
-              <p className="admin-kpi-card__value">
-                {attendanceTodayStats.lateCount}
-              </p>
-            </article>
-          </div>
-          <h3>{attendanceText.recentAttendances}</h3>
-          <TableShell>
-            <TableBase className="admin-table">
-              <thead>
-                <tr>
-                  <th>{copy.admin.id}</th>
-                  <th>{copy.admin.name}</th>
-                  <th>{copy.admin.role}</th>
-                  <th>{attendanceText.shift}</th>
-                  <th>{attendanceText.checkIn}</th>
-                  <th>{attendanceText.checkOut}</th>
-                  <th>{attendanceText.status}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {attendanceRecords.slice(0, 60).map((record) => (
-                  <tr key={record.id}>
-                    <td>{record.id}</td>
-                    <td>
-                      {record.user?.fullName || record.user?.username || "-"}
-                    </td>
-                    <td>{record.user?.role || "-"}</td>
-                    <td>{record.shift?.name || "-"}</td>
-                    <td>{new Date(record.checkIn).toLocaleString()}</td>
-                    <td>
-                      {record.checkOut
-                        ? new Date(record.checkOut).toLocaleString()
-                        : "-"}
-                    </td>
-                    <td>
-                      {record.checkOut
-                        ? attendanceText.checkedOut
-                        : attendanceText.checkedIn}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </TableBase>
-          </TableShell>
-          {!attendanceLoading && attendanceRecords.length === 0 ? (
-            <EmptyState title={attendanceText.noData} />
-          ) : null}
-        </section>
-
-        <section className="admin-section" id="payroll">
-          <div className="admin-section__head">
-            <h2>{payrollText.title}</h2>
-            <button
-              type="button"
-              className="auth-button"
-              onClick={() => void loadPayrollData()}
-            >
-              {copy.refresh}
-            </button>
-          </div>
-          {payrollLoading ? <p>{payrollText.loading}</p> : null}
-          {payrollError ? (
-            <div className="auth-alert auth-alert--error">{payrollError}</div>
-          ) : null}
-          <div className="admin-kpi-grid">
-            <article className="admin-kpi-card">
-              <p className="admin-kpi-card__label">
-                {payrollText.totalPayrolls}
-              </p>
-              <p className="admin-kpi-card__value">
-                {payrollOverview?.totals.payrollCount ?? payrollRecords.length}
-              </p>
-            </article>
-            <article className="admin-kpi-card">
-              <p className="admin-kpi-card__label">
-                {payrollText.totalBaseSalary}
-              </p>
-              <p className="admin-kpi-card__value admin-kpi-card__value--small">
-                {(
-                  payrollOverview?.totals.totalBaseSalary ?? 0
-                ).toLocaleString()}
-              </p>
-            </article>
-            <article className="admin-kpi-card">
-              <p className="admin-kpi-card__label">
-                {payrollText.totalOvertimeSalary}
-              </p>
-              <p className="admin-kpi-card__value admin-kpi-card__value--small">
-                {(
-                  payrollOverview?.totals.totalOvertimeSalary ?? 0
-                ).toLocaleString()}
-              </p>
-            </article>
-            <article className="admin-kpi-card">
-              <p className="admin-kpi-card__label">{payrollText.totalPayout}</p>
-              <p className="admin-kpi-card__value admin-kpi-card__value--small">
-                {(payrollOverview?.totals.totalPayout ?? 0).toLocaleString()}
-              </p>
-            </article>
-          </div>
-          <div className="admin-grid">
-            <article className="admin-panel">
-              <h3>{payrollText.byRole}</h3>
+        {!isWorkerToolsOnlyView ? (
+          <>
+            <section className="admin-section" id="users">
+              <div className="admin-section__head">
+                <h2>{copy.admin.usersTitle}</h2>
+                <div style={{ display: "flex", gap: "8px" }}>
+                  <Button onClick={() => navigate("/register")}>
+                    {copy.admin.addNewUser}
+                  </Button>
+                  <Button onClick={() => void loadUsers()}>
+                    {copy.refresh}
+                  </Button>
+                </div>
+              </div>
+              {usersLoading ? <p>{copy.admin.loadingUsers}</p> : null}
+              {usersError ? (
+                <div className="auth-alert auth-alert--error">{usersError}</div>
+              ) : null}
               <TableShell>
                 <TableBase className="admin-table">
                   <thead>
                     <tr>
+                      <th>{copy.admin.id}</th>
+                      <th>{copy.admin.name}</th>
+                      <th>{copy.admin.username}</th>
+                      <th>{copy.admin.email}</th>
                       <th>{copy.admin.role}</th>
-                      <th>{payrollText.totalPayrolls}</th>
-                      <th>{payrollText.totalPayout}</th>
+                      <th>{copy.admin.status}</th>
+                      <th>{copy.admin.actions}</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {(payrollOverview?.byRole ?? []).map((item) => (
-                      <tr key={item.role}>
-                        <td>{item.role}</td>
-                        <td>{item.payrollCount}</td>
-                        <td>{item.totalPayout.toLocaleString()}</td>
+                    {users.map((item) => (
+                      <tr key={item.id}>
+                        <td>{item.id}</td>
+                        <td>{item.fullName}</td>
+                        <td>{item.username}</td>
+                        <td>{item.email ?? "-"}</td>
+                        <td>
+                          <select
+                            value={
+                              pendingUserChanges[item.id]?.role ?? item.role
+                            }
+                            onChange={(event) =>
+                              setPendingUserChanges((prev) => ({
+                                ...prev,
+                                [item.id]: {
+                                  role: event.target.value as AdminUser["role"],
+                                  isActive:
+                                    prev[item.id]?.isActive ?? item.isActive,
+                                },
+                              }))
+                            }
+                          >
+                            <option value="ADMIN">
+                              {getRoleLabel("ADMIN")}
+                            </option>
+                            <option value="ENGINEER">
+                              {getRoleLabel("ENGINEER")}
+                            </option>
+                            <option value="ACCOUNTANT">
+                              {getRoleLabel("ACCOUNTANT")}
+                            </option>
+                            <option value="WORKER">
+                              {getRoleLabel("WORKER")}
+                            </option>
+                          </select>
+                        </td>
+                        <td>
+                          {item.deletedAt
+                            ? copy.admin.deleted
+                            : item.isActive
+                              ? copy.admin.active
+                              : copy.admin.inactive}
+                        </td>
+                        <td>
+                          <label className="admin-flag">
+                            <input
+                              type="checkbox"
+                              checked={
+                                pendingUserChanges[item.id]?.isActive ??
+                                item.isActive
+                              }
+                              disabled={Boolean(item.deletedAt)}
+                              onChange={(event) =>
+                                setPendingUserChanges((prev) => ({
+                                  ...prev,
+                                  [item.id]: {
+                                    role: prev[item.id]?.role ?? item.role,
+                                    isActive: event.target.checked,
+                                  },
+                                }))
+                              }
+                            />
+                            {copy.admin.active}
+                          </label>
+                          <button
+                            type="button"
+                            className="auth-button"
+                            disabled={Boolean(item.deletedAt)}
+                            onClick={() => {
+                              const pending = pendingUserChanges[item.id];
+                              if (!pending) return;
+                              void (async () => {
+                                try {
+                                  const roleResponse = await fetchWithAdminAuth(
+                                    `/users/${item.id}/role`,
+                                    {
+                                      method: "PUT",
+                                      headers: {
+                                        "Content-Type": "application/json",
+                                      },
+                                      body: JSON.stringify({
+                                        role: pending.role,
+                                      }),
+                                    },
+                                  );
+                                  if (!roleResponse.ok)
+                                    throw new Error(
+                                      await readApiError(roleResponse),
+                                    );
+                                  const updateResponse =
+                                    await fetchWithAdminAuth(
+                                      `/users/${item.id}`,
+                                      {
+                                        method: "PUT",
+                                        headers: {
+                                          "Content-Type": "application/json",
+                                        },
+                                        body: JSON.stringify({
+                                          isActive: pending.isActive,
+                                        }),
+                                      },
+                                    );
+                                  if (!updateResponse.ok)
+                                    throw new Error(
+                                      await readApiError(updateResponse),
+                                    );
+                                  setUsers((prev) =>
+                                    prev.map((userItem) =>
+                                      userItem.id === item.id
+                                        ? {
+                                            ...userItem,
+                                            role: pending.role,
+                                            isActive: pending.isActive,
+                                          }
+                                        : userItem,
+                                    ),
+                                  );
+                                  window.alert(copy.admin.userUpdated);
+                                } catch (error) {
+                                  window.alert(
+                                    error instanceof Error
+                                      ? error.message
+                                      : copy.admin.userUpdateFailed,
+                                  );
+                                }
+                              })();
+                            }}
+                          >
+                            {copy.admin.saveChanges}
+                          </button>
+                          <button
+                            type="button"
+                            className="auth-button auth-button--ghost"
+                            disabled={Boolean(item.deletedAt)}
+                            onClick={() => void handleDeleteUser(item.id)}
+                          >
+                            {copy.delete}
+                          </button>
+                        </td>
                       </tr>
                     ))}
                   </tbody>
                 </TableBase>
               </TableShell>
-            </article>
-            <article className="admin-panel">
-              <h3>{payrollText.recentPayrolls}</h3>
+            </section>
+
+            <section className="admin-section" id="attendance">
+              <div className="admin-section__head">
+                <h2>{attendanceText.title}</h2>
+                <button
+                  type="button"
+                  className="auth-button"
+                  onClick={() => {
+                    void loadUsers();
+                    void loadAttendanceData();
+                  }}
+                >
+                  {copy.refresh}
+                </button>
+              </div>
+              {attendanceLoading ? <p>{attendanceText.loading}</p> : null}
+              {attendanceError ? (
+                <div className="auth-alert auth-alert--error">
+                  {attendanceError}
+                </div>
+              ) : null}
+              <div className="admin-kpi-grid">
+                <article className="admin-kpi-card">
+                  <p className="admin-kpi-card__label">
+                    {attendanceText.todayAttendance}
+                  </p>
+                  <p className="admin-kpi-card__value">
+                    {attendanceTodayStats.attendanceCount}
+                  </p>
+                </article>
+                <article className="admin-kpi-card">
+                  <p className="admin-kpi-card__label">
+                    {attendanceText.todayAbsence}
+                  </p>
+                  <p className="admin-kpi-card__value">
+                    {attendanceTodayStats.absentCount}
+                  </p>
+                </article>
+                <article className="admin-kpi-card">
+                  <p className="admin-kpi-card__label">
+                    {attendanceText.openShifts}
+                  </p>
+                  <p className="admin-kpi-card__value">
+                    {attendanceTodayStats.openShiftCount}
+                  </p>
+                </article>
+                <article className="admin-kpi-card">
+                  <p className="admin-kpi-card__label">
+                    {attendanceText.lateCases}
+                  </p>
+                  <p className="admin-kpi-card__value">
+                    {attendanceTodayStats.lateCount}
+                  </p>
+                </article>
+              </div>
+              <h3>{attendanceText.recentAttendances}</h3>
               <TableShell>
                 <TableBase className="admin-table">
                   <thead>
                     <tr>
+                      <th>{copy.admin.id}</th>
                       <th>{copy.admin.name}</th>
                       <th>{copy.admin.role}</th>
-                      <th>Month</th>
-                      <th>{payrollText.totalPayout}</th>
+                      <th>{attendanceText.shift}</th>
+                      <th>{attendanceText.checkIn}</th>
+                      <th>{attendanceText.checkOut}</th>
+                      <th>{attendanceText.status}</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {payrollRecords.slice(0, 30).map((item) => (
-                      <tr key={item.id}>
+                    {attendanceRecords.slice(0, 60).map((record) => (
+                      <tr key={record.id}>
+                        <td>{record.id}</td>
                         <td>
-                          {item.user?.fullName || item.user?.username || "-"}
+                          {record.user?.fullName ||
+                            record.user?.username ||
+                            "-"}
                         </td>
-                        <td>{item.user?.role || "-"}</td>
-                        <td>{item.month}</td>
-                        <td>{item.totalSalary.toLocaleString()}</td>
+                        <td>{record.user?.role || "-"}</td>
+                        <td>{record.shift?.name || "-"}</td>
+                        <td>{new Date(record.checkIn).toLocaleString()}</td>
+                        <td>
+                          {record.checkOut
+                            ? new Date(record.checkOut).toLocaleString()
+                            : "-"}
+                        </td>
+                        <td>
+                          {record.checkOut
+                            ? attendanceText.checkedOut
+                            : attendanceText.checkedIn}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
                 </TableBase>
               </TableShell>
-            </article>
-          </div>
-          {!payrollLoading && payrollRecords.length === 0 ? (
-            <EmptyState title={payrollText.noData} />
-          ) : null}
-        </section>
+              {!attendanceLoading && attendanceRecords.length === 0 ? (
+                <EmptyState title={attendanceText.noData} />
+              ) : null}
+            </section>
 
-        <section className="admin-section" id="shifts">
-          <div className="admin-section__head">
-            <h2>{copy.admin.shiftsTab}</h2>
-            <button
-              type="button"
-              className="auth-button"
-              onClick={() => void loadShifts()}
-            >
-              {copy.refresh}
-            </button>
-          </div>
-          {shiftsLoading ? <p>{copy.admin.loadingShifts}</p> : null}
-          {shiftsError ? (
-            <div className="auth-alert auth-alert--error">{shiftsError}</div>
-          ) : null}
-          {!shiftsLoading && shifts.length === 0 ? (
-            <p className="admin-muted">{copy.admin.noShifts}</p>
-          ) : null}
-          {shifts.length > 0 ? (
-            <TableShell>
-              <TableBase className="admin-table">
-                <thead>
-                  <tr>
-                    <th>{copy.admin.id}</th>
-                    <th>{copy.admin.name}</th>
-                    <th>{copy.admin.shiftStart}</th>
-                    <th>{copy.admin.shiftEnd}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {shifts.map((item) => (
-                    <tr key={item.id}>
-                      <td>{item.id}</td>
-                      <td>{item.name}</td>
-                      <td>
-                        {new Date(item.startTime).toLocaleTimeString([], {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
-                      </td>
-                      <td>
-                        {new Date(item.endTime).toLocaleTimeString([], {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </TableBase>
-            </TableShell>
-          ) : null}
-        </section>
+            <section className="admin-section" id="payroll">
+              <div className="admin-section__head">
+                <h2>{payrollText.title}</h2>
+                <button
+                  type="button"
+                  className="auth-button"
+                  onClick={() => void loadPayrollData()}
+                >
+                  {copy.refresh}
+                </button>
+              </div>
+              {payrollLoading ? <p>{payrollText.loading}</p> : null}
+              {payrollError ? (
+                <div className="auth-alert auth-alert--error">
+                  {payrollError}
+                </div>
+              ) : null}
+              <div className="admin-kpi-grid">
+                <article className="admin-kpi-card">
+                  <p className="admin-kpi-card__label">
+                    {payrollText.totalPayrolls}
+                  </p>
+                  <p className="admin-kpi-card__value">
+                    {payrollOverview?.totals.payrollCount ??
+                      payrollRecords.length}
+                  </p>
+                </article>
+                <article className="admin-kpi-card">
+                  <p className="admin-kpi-card__label">
+                    {payrollText.totalBaseSalary}
+                  </p>
+                  <p className="admin-kpi-card__value admin-kpi-card__value--small">
+                    {(
+                      payrollOverview?.totals.totalBaseSalary ?? 0
+                    ).toLocaleString()}
+                  </p>
+                </article>
+                <article className="admin-kpi-card">
+                  <p className="admin-kpi-card__label">
+                    {payrollText.totalOvertimeSalary}
+                  </p>
+                  <p className="admin-kpi-card__value admin-kpi-card__value--small">
+                    {(
+                      payrollOverview?.totals.totalOvertimeSalary ?? 0
+                    ).toLocaleString()}
+                  </p>
+                </article>
+                <article className="admin-kpi-card">
+                  <p className="admin-kpi-card__label">
+                    {payrollText.totalPayout}
+                  </p>
+                  <p className="admin-kpi-card__value admin-kpi-card__value--small">
+                    {(
+                      payrollOverview?.totals.totalPayout ?? 0
+                    ).toLocaleString()}
+                  </p>
+                </article>
+              </div>
+              <div className="admin-grid">
+                <article className="admin-panel">
+                  <h3>{payrollText.byRole}</h3>
+                  <TableShell>
+                    <TableBase className="admin-table">
+                      <thead>
+                        <tr>
+                          <th>{copy.admin.role}</th>
+                          <th>{payrollText.totalPayrolls}</th>
+                          <th>{payrollText.totalPayout}</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {(payrollOverview?.byRole ?? []).map((item) => (
+                          <tr key={item.role}>
+                            <td>{item.role}</td>
+                            <td>{item.payrollCount}</td>
+                            <td>{item.totalPayout.toLocaleString()}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </TableBase>
+                  </TableShell>
+                </article>
+                <article className="admin-panel">
+                  <h3>{payrollText.recentPayrolls}</h3>
+                  <TableShell>
+                    <TableBase className="admin-table">
+                      <thead>
+                        <tr>
+                          <th>{copy.admin.name}</th>
+                          <th>{copy.admin.role}</th>
+                          <th>Month</th>
+                          <th>{payrollText.totalPayout}</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {payrollRecords.slice(0, 30).map((item) => (
+                          <tr key={item.id}>
+                            <td>
+                              {item.user?.fullName ||
+                                item.user?.username ||
+                                "-"}
+                            </td>
+                            <td>{item.user?.role || "-"}</td>
+                            <td>{item.month}</td>
+                            <td>{item.totalSalary.toLocaleString()}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </TableBase>
+                  </TableShell>
+                </article>
+              </div>
+              {!payrollLoading && payrollRecords.length === 0 ? (
+                <EmptyState title={payrollText.noData} />
+              ) : null}
+            </section>
 
-        <section className="admin-section" id="machines">
-          <div className="admin-section__head">
-            <h2>{copy.admin.machinesTab}</h2>
-            <button
-              type="button"
-              className="auth-button"
-              onClick={() => void loadMachines()}
-            >
-              {copy.refresh}
-            </button>
-          </div>
-          {machinesLoading ? <p>{copy.admin.loadingMachines}</p> : null}
-          {machinesError ? (
-            <div className="auth-alert auth-alert--error">{machinesError}</div>
-          ) : null}
-          {!machinesLoading && machines.length === 0 ? (
-            <p className="admin-muted">{copy.admin.noMachines}</p>
-          ) : null}
-          {machines.length > 0 ? (
-            <TableShell>
-              <TableBase className="admin-table">
-                <thead>
-                  <tr>
-                    <th>{copy.admin.id}</th>
-                    <th>{copy.admin.name}</th>
-                    <th>{copy.admin.machineType}</th>
-                    <th>{copy.admin.machineStatus}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {machines.map((item) => (
-                    <tr key={item.id}>
-                      <td>{item.id}</td>
-                      <td>{item.name}</td>
-                      <td>{item.type}</td>
-                      <td>{item.status}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </TableBase>
-            </TableShell>
-          ) : null}
-        </section>
+            <section className="admin-section" id="shifts">
+              <div className="admin-section__head">
+                <h2>{copy.admin.shiftsTab}</h2>
+                <button
+                  type="button"
+                  className="auth-button"
+                  onClick={() => void loadShifts()}
+                >
+                  {copy.refresh}
+                </button>
+              </div>
+              {shiftsLoading ? <p>{copy.admin.loadingShifts}</p> : null}
+              {shiftsError ? (
+                <div className="auth-alert auth-alert--error">
+                  {shiftsError}
+                </div>
+              ) : null}
+              {!shiftsLoading && shifts.length === 0 ? (
+                <p className="admin-muted">{copy.admin.noShifts}</p>
+              ) : null}
+              {shifts.length > 0 ? (
+                <TableShell>
+                  <TableBase className="admin-table">
+                    <thead>
+                      <tr>
+                        <th>{copy.admin.id}</th>
+                        <th>{copy.admin.name}</th>
+                        <th>{copy.admin.shiftStart}</th>
+                        <th>{copy.admin.shiftEnd}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {shifts.map((item) => (
+                        <tr key={item.id}>
+                          <td>{item.id}</td>
+                          <td>{item.name}</td>
+                          <td>
+                            {new Date(item.startTime).toLocaleTimeString([], {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
+                          </td>
+                          <td>
+                            {new Date(item.endTime).toLocaleTimeString([], {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </TableBase>
+                </TableShell>
+              ) : null}
+            </section>
 
-        <section className="admin-section" id="audit-logs">
-          <div className="admin-section__head">
-            <h2>{copy.admin.auditLogsTab}</h2>
-            <button
-              type="button"
-              className="auth-button"
-              onClick={() => void loadAuditLogs()}
-            >
-              {copy.refresh}
-            </button>
-          </div>
-          {auditLogsLoading ? <p>{copy.admin.loadingAuditLogs}</p> : null}
-          {auditLogsError ? (
-            <div className="auth-alert auth-alert--error">{auditLogsError}</div>
-          ) : null}
-          {!auditLogsLoading && auditLogs.length === 0 ? (
-            <p className="admin-muted">{copy.admin.noAuditLogs}</p>
-          ) : null}
-          {auditLogs.length > 0 ? (
-            <TableShell>
-              <TableBase className="admin-table">
-                <thead>
-                  <tr>
-                    <th>{copy.admin.id}</th>
-                    <th>{copy.admin.name}</th>
-                    <th>{copy.admin.auditEntity}</th>
-                    <th>{copy.admin.auditAction}</th>
-                    <th>{copy.admin.calculatedAt}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {auditLogs.map((item) => (
-                    <tr key={item.id}>
-                      <td>{item.id}</td>
-                      <td>
-                        {item.user
-                          ? `${item.user.fullName} (@${item.user.username})`
-                          : "-"}
-                      </td>
-                      <td>{item.entityType}</td>
-                      <td>{item.action}</td>
-                      <td>{new Date(item.createdAt).toLocaleString()}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </TableBase>
-            </TableShell>
-          ) : null}
-        </section>
+            <section className="admin-section" id="machines">
+              <div className="admin-section__head">
+                <h2>{copy.admin.machinesTab}</h2>
+                <button
+                  type="button"
+                  className="auth-button"
+                  onClick={() => void loadMachines()}
+                >
+                  {copy.refresh}
+                </button>
+              </div>
+              {machinesLoading ? <p>{copy.admin.loadingMachines}</p> : null}
+              {machinesError ? (
+                <div className="auth-alert auth-alert--error">
+                  {machinesError}
+                </div>
+              ) : null}
+              {!machinesLoading && machines.length === 0 ? (
+                <p className="admin-muted">{copy.admin.noMachines}</p>
+              ) : null}
+              {machines.length > 0 ? (
+                <TableShell>
+                  <TableBase className="admin-table">
+                    <thead>
+                      <tr>
+                        <th>{copy.admin.id}</th>
+                        <th>{copy.admin.name}</th>
+                        <th>{copy.admin.machineType}</th>
+                        <th>{copy.admin.machineStatus}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {machines.map((item) => (
+                        <tr key={item.id}>
+                          <td>{item.id}</td>
+                          <td>{item.name}</td>
+                          <td>{item.type}</td>
+                          <td>{item.status}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </TableBase>
+                </TableShell>
+              ) : null}
+            </section>
+
+            <section className="admin-section" id="audit-logs">
+              <div className="admin-section__head">
+                <h2>{copy.admin.auditLogsTab}</h2>
+                <button
+                  type="button"
+                  className="auth-button"
+                  onClick={() => void loadAuditLogs()}
+                >
+                  {copy.refresh}
+                </button>
+              </div>
+              {auditLogsLoading ? <p>{copy.admin.loadingAuditLogs}</p> : null}
+              {auditLogsError ? (
+                <div className="auth-alert auth-alert--error">
+                  {auditLogsError}
+                </div>
+              ) : null}
+              {!auditLogsLoading && auditLogs.length === 0 ? (
+                <p className="admin-muted">{copy.admin.noAuditLogs}</p>
+              ) : null}
+              {auditLogs.length > 0 ? (
+                <TableShell>
+                  <TableBase className="admin-table">
+                    <thead>
+                      <tr>
+                        <th>{copy.admin.id}</th>
+                        <th>{copy.admin.name}</th>
+                        <th>{copy.admin.auditEntity}</th>
+                        <th>{copy.admin.auditAction}</th>
+                        <th>{copy.admin.calculatedAt}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {auditLogs.map((item) => (
+                        <tr key={item.id}>
+                          <td>{item.id}</td>
+                          <td>
+                            {item.user
+                              ? `${item.user.fullName} (@${item.user.username})`
+                              : "-"}
+                          </td>
+                          <td>{item.entityType}</td>
+                          <td>{item.action}</td>
+                          <td>{new Date(item.createdAt).toLocaleString()}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </TableBase>
+                </TableShell>
+              ) : null}
+            </section>
+          </>
+        ) : null}
 
         <section className="admin-section" id="worker-tools">
           <div className="admin-section__head">
@@ -1491,21 +1548,6 @@ export function AdminPage() {
                 : "Worker Tools (Database)"}
             </h2>
             <div className="admin-section__actions">
-              <button
-                type="button"
-                className="auth-button"
-                onClick={() =>
-                  setShowWorkerToolsPanel((prev) => !prev)
-                }
-              >
-                {showWorkerToolsPanel
-                  ? isArabic
-                    ? "إخفاء"
-                    : "Hide"
-                  : isArabic
-                    ? "عرض"
-                    : "Show"}
-              </button>
               <button
                 type="button"
                 className="auth-button"
@@ -1523,43 +1565,130 @@ export function AdminPage() {
               </button>
             </div>
           </div>
-          {showWorkerToolsPanel ? (
-            <>
-              <div className="admin-section__actions" style={{ flexWrap: "wrap", gap: "8px" }}>
-                {([
-                  ["all", isArabic ? "الكل" : "All"],
-                  ["stops", isArabic ? "توقفات" : "Stops"],
-                  ["checklist", isArabic ? "فحص" : "Checklist"],
-                  ["waste", isArabic ? "مخلفات" : "Waste"],
-                  ["target", isArabic ? "أهداف" : "Targets"],
-                  ["kaizen", "Kaizen"],
-                  ["quality", isArabic ? "جودة" : "Quality"],
-                  ["micro", isArabic ? "توقفات صغيرة" : "Micro"],
-                  ["anomaly", isArabic ? "كهرباء" : "Anomaly"],
-                ] as Array<[WorkerToolsTab, string]>).map(([tab, label]) => (
-                  <button
-                    key={tab}
-                    type="button"
-                    className={`auth-button ${workerToolsTab === tab ? "" : "auth-button--ghost"}`}
-                    onClick={() => {
-                      setWorkerToolsTab(tab);
-                      const nextFilters: WorkerToolsFilters = {
-                        ...workerToolsFilters,
-                        feature: tab === "all" ? "" : tab,
-                      };
-                      setWorkerToolsFilters((prev) => ({
-                        ...prev,
-                        feature: tab === "all" ? "" : tab,
-                      }));
-                      void loadWorkerToolsOverview(nextFilters);
-                    }}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
-            </>
-          ) : null}
+          <div
+            className="admin-tabs"
+            role="tablist"
+            aria-label="Worker tool filters"
+          >
+            {[
+              { value: "", label: isArabic ? "الكل" : "All" },
+              { value: "stops", label: isArabic ? "توقفات" : "Stops" },
+              {
+                value: "checklist",
+                label: isArabic ? "فحص" : "Checklist",
+              },
+              { value: "waste", label: isArabic ? "مخلفات" : "Waste" },
+              { value: "target", label: isArabic ? "أهداف" : "Targets" },
+              { value: "kaizen", label: "Kaizen" },
+              { value: "quality", label: isArabic ? "جودة" : "Quality" },
+              {
+                value: "micro",
+                label: isArabic ? "توقفات صغيرة" : "Micro",
+              },
+              {
+                value: "anomaly",
+                label: isArabic ? "كهرباء" : "Anomaly",
+              },
+            ].map((tab) => (
+              <button
+                key={tab.value || "all"}
+                type="button"
+                className={
+                  workerToolsFilters.feature === tab.value ? "is-active" : ""
+                }
+                onClick={() => {
+                  setWorkerToolsOverview(null);
+                  setWorkerToolsFilters((prev) => ({
+                    ...prev,
+                    feature: tab.value,
+                  }));
+                  setWorkerToolsAppliedFilters((prev) => ({
+                    ...prev,
+                    feature: tab.value,
+                  }));
+                }}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+          <div className="admin-form-grid">
+            <label>
+              {isArabic ? "اسم العامل" : "Worker name"}
+              <input
+                type="text"
+                value={workerToolsFilters.workerName}
+                onChange={(event) =>
+                  setWorkerToolsFilters((prev) => ({
+                    ...prev,
+                    workerName: event.target.value,
+                  }))
+                }
+                placeholder={isArabic ? "ابحث بالاسم" : "Search by name"}
+              />
+            </label>
+
+            <label>
+              {isArabic ? "من تاريخ" : "From date"}
+              <input
+                type="date"
+                value={workerToolsFilters.fromDate}
+                onChange={(event) =>
+                  setWorkerToolsFilters((prev) => ({
+                    ...prev,
+                    fromDate: event.target.value,
+                  }))
+                }
+              />
+            </label>
+
+            <label>
+              {isArabic ? "إلى تاريخ" : "To date"}
+              <input
+                type="date"
+                value={workerToolsFilters.toDate}
+                onChange={(event) =>
+                  setWorkerToolsFilters((prev) => ({
+                    ...prev,
+                    toDate: event.target.value,
+                  }))
+                }
+              />
+            </label>
+          </div>
+          <div className="admin-section__actions">
+            <button
+              type="button"
+              className="auth-button"
+              onClick={() => {
+                setWorkerToolsOverview(null);
+                setWorkerToolsAppliedFilters(workerToolsFilters);
+              }}
+            >
+              {isArabic ? "تطبيق الفلاتر" : "Apply filters"}
+            </button>
+            <button
+              type="button"
+              className="auth-button auth-button--ghost"
+              onClick={() => {
+                setWorkerToolsOverview(null);
+                setWorkerToolsFilters({
+                  feature: "",
+                  workerName: "",
+                  fromDate: "",
+                  toDate: "",
+                });
+                setWorkerToolsAppliedFilters({
+                  feature: "",
+                  workerName: "",
+                  fromDate: "",
+                  toDate: "",
+                });
+              }}
+            >
+              {isArabic ? "مسح الفلاتر" : "Clear filters"}
+            </button>
+          </div>
           {workerToolsLoading ? (
             <p>
               {isArabic
@@ -1572,7 +1701,7 @@ export function AdminPage() {
               {workerToolsError}
             </div>
           ) : null}
-          {showWorkerToolsPanel && workerToolsOverview ? (
+          {!workerToolsLoading && workerToolsOverview ? (
             <>
               <div className="admin-kpi-grid">
                 <article className="admin-kpi-card">
@@ -1680,403 +1809,415 @@ export function AdminPage() {
           ) : null}
         </section>
 
-        <section className="admin-section" id="dashboard-analytics">
-          <div className="admin-section__head">
-            <h2>{copy.admin.dashboardTab}</h2>
-            <button
-              type="button"
-              className="auth-button"
-              onClick={() => void loadDashboard()}
-            >
-              {copy.refresh}
-            </button>
-          </div>
-          {dashboardLoading ? <p>{copy.admin.loadingDashboard}</p> : null}
-          {dashboardError ? (
-            <div className="auth-alert auth-alert--error">{dashboardError}</div>
-          ) : null}
-          {dashboardAnalytics ? (
-            <div className="admin-kpi-grid">
-              <article className="admin-kpi-card">
-                <p className="admin-kpi-card__label">{copy.admin.totalUsers}</p>
-                <p className="admin-kpi-card__value">
-                  {dashboardAnalytics.totalUsers}
-                </p>
-              </article>
-              <article className="admin-kpi-card">
-                <p className="admin-kpi-card__label">
-                  {copy.admin.activeUsers}
-                </p>
-                <p className="admin-kpi-card__value">
-                  {dashboardAnalytics.activeUsers}
-                </p>
-              </article>
-              <article className="admin-kpi-card">
-                <p className="admin-kpi-card__label">
-                  {copy.admin.totalMachines}
-                </p>
-                <p className="admin-kpi-card__value">
-                  {dashboardAnalytics.totalMachines}
-                </p>
-              </article>
-              <article className="admin-kpi-card">
-                <p className="admin-kpi-card__label">
-                  {copy.admin.operationalMachines}
-                </p>
-                <p className="admin-kpi-card__value">
-                  {dashboardAnalytics.operationalMachines}
-                </p>
-              </article>
-              <article className="admin-kpi-card">
-                <p className="admin-kpi-card__label">
-                  {copy.admin.totalShifts}
-                </p>
-                <p className="admin-kpi-card__value">
-                  {dashboardAnalytics.totalShifts}
-                </p>
-              </article>
-              <article className="admin-kpi-card">
-                <p className="admin-kpi-card__label">
-                  {copy.admin.todayTotalHours}
-                </p>
-                <p className="admin-kpi-card__value">
-                  {dashboardAnalytics.todayTotalHours.toLocaleString()}
-                </p>
-              </article>
-              <article className="admin-kpi-card">
-                <p className="admin-kpi-card__label">
-                  {copy.admin.thisMonthPayroll}
-                </p>
-                <p className="admin-kpi-card__value">
-                  {dashboardAnalytics.thisMonthPayroll.toLocaleString()}
-                </p>
-              </article>
-              <article className="admin-kpi-card">
-                <p className="admin-kpi-card__label">
-                  {copy.admin.productionToday}
-                </p>
-                <p className="admin-kpi-card__value">
-                  {dashboardAnalytics.productionToday.toLocaleString()}
-                </p>
-              </article>
-              <article className="admin-kpi-card">
-                <p className="admin-kpi-card__label">
-                  {copy.admin.inventoryItems}
-                </p>
-                <p className="admin-kpi-card__value">
-                  {dashboardAnalytics.inventoryItems}
-                </p>
-              </article>
-              <article className="admin-kpi-card">
-                <p className="admin-kpi-card__label">
-                  {copy.admin.lowStockItems}
-                </p>
-                <p className="admin-kpi-card__value">
-                  {dashboardAnalytics.lowStockItems}
-                </p>
-              </article>
-            </div>
-          ) : null}
-        </section>
+        {!isWorkerToolsOnlyView ? (
+          <>
+            <section className="admin-section" id="dashboard-analytics">
+              <div className="admin-section__head">
+                <h2>{copy.admin.dashboardTab}</h2>
+                <button
+                  type="button"
+                  className="auth-button"
+                  onClick={() => void loadDashboard()}
+                >
+                  {copy.refresh}
+                </button>
+              </div>
+              {dashboardLoading ? <p>{copy.admin.loadingDashboard}</p> : null}
+              {dashboardError ? (
+                <div className="auth-alert auth-alert--error">
+                  {dashboardError}
+                </div>
+              ) : null}
+              {dashboardAnalytics ? (
+                <div className="admin-kpi-grid">
+                  <article className="admin-kpi-card">
+                    <p className="admin-kpi-card__label">
+                      {copy.admin.totalUsers}
+                    </p>
+                    <p className="admin-kpi-card__value">
+                      {dashboardAnalytics.totalUsers}
+                    </p>
+                  </article>
+                  <article className="admin-kpi-card">
+                    <p className="admin-kpi-card__label">
+                      {copy.admin.activeUsers}
+                    </p>
+                    <p className="admin-kpi-card__value">
+                      {dashboardAnalytics.activeUsers}
+                    </p>
+                  </article>
+                  <article className="admin-kpi-card">
+                    <p className="admin-kpi-card__label">
+                      {copy.admin.totalMachines}
+                    </p>
+                    <p className="admin-kpi-card__value">
+                      {dashboardAnalytics.totalMachines}
+                    </p>
+                  </article>
+                  <article className="admin-kpi-card">
+                    <p className="admin-kpi-card__label">
+                      {copy.admin.operationalMachines}
+                    </p>
+                    <p className="admin-kpi-card__value">
+                      {dashboardAnalytics.operationalMachines}
+                    </p>
+                  </article>
+                  <article className="admin-kpi-card">
+                    <p className="admin-kpi-card__label">
+                      {copy.admin.totalShifts}
+                    </p>
+                    <p className="admin-kpi-card__value">
+                      {dashboardAnalytics.totalShifts}
+                    </p>
+                  </article>
+                  <article className="admin-kpi-card">
+                    <p className="admin-kpi-card__label">
+                      {copy.admin.todayTotalHours}
+                    </p>
+                    <p className="admin-kpi-card__value">
+                      {dashboardAnalytics.todayTotalHours.toLocaleString()}
+                    </p>
+                  </article>
+                  <article className="admin-kpi-card">
+                    <p className="admin-kpi-card__label">
+                      {copy.admin.thisMonthPayroll}
+                    </p>
+                    <p className="admin-kpi-card__value">
+                      {dashboardAnalytics.thisMonthPayroll.toLocaleString()}
+                    </p>
+                  </article>
+                  <article className="admin-kpi-card">
+                    <p className="admin-kpi-card__label">
+                      {copy.admin.productionToday}
+                    </p>
+                    <p className="admin-kpi-card__value">
+                      {dashboardAnalytics.productionToday.toLocaleString()}
+                    </p>
+                  </article>
+                  <article className="admin-kpi-card">
+                    <p className="admin-kpi-card__label">
+                      {copy.admin.inventoryItems}
+                    </p>
+                    <p className="admin-kpi-card__value">
+                      {dashboardAnalytics.inventoryItems}
+                    </p>
+                  </article>
+                  <article className="admin-kpi-card">
+                    <p className="admin-kpi-card__label">
+                      {copy.admin.lowStockItems}
+                    </p>
+                    <p className="admin-kpi-card__value">
+                      {dashboardAnalytics.lowStockItems}
+                    </p>
+                  </article>
+                </div>
+              ) : null}
+            </section>
 
-        <section className="admin-section" id="settings-overview">
-          <div className="admin-section__head">
-            <h2>{copy.admin.settingsOverviewTab}</h2>
-            <button
-              type="button"
-              className="auth-button"
-              onClick={() => void loadSettingsOverview()}
-            >
-              {copy.refresh}
-            </button>
-          </div>
-          {settingsOverviewLoading ? (
-            <p>{adminSettingsText.loadingOverview}</p>
-          ) : null}
-          {settingsOverviewError ? (
-            <div className="auth-alert auth-alert--error">
-              {settingsOverviewError}
-            </div>
-          ) : null}
-          {settingsOverview ? (
-            <div className="admin-kpi-grid">
-              <article className="admin-kpi-card">
-                <p className="admin-kpi-card__label">
-                  {adminSettingsText.productionSettingsCount}
-                </p>
-                <p className="admin-kpi-card__value">
-                  {settingsOverview.productionSettingsCount}
-                </p>
-              </article>
-              <article className="admin-kpi-card">
-                <p className="admin-kpi-card__label">
-                  {adminSettingsText.missingProductTypes}
-                </p>
-                <p className="admin-kpi-card__value">
-                  {settingsOverview.summary.missingProductTypes.length}
-                </p>
-              </article>
-              <article className="admin-kpi-card">
-                <p className="admin-kpi-card__label">
-                  {adminSettingsText.hasSystemSetting}
-                </p>
-                <p className="admin-kpi-card__value">
-                  {settingsOverview.hasSystemSetting ? "1" : "0"}
-                </p>
-              </article>
-              <article className="admin-kpi-card">
-                <p className="admin-kpi-card__label">
-                  {adminSettingsText.latestSystemUpdatedAt}
-                </p>
-                <p className="admin-kpi-card__value admin-kpi-card__value--small">
-                  {settingsOverview.latestSystemSetting?.updatedAt
-                    ? new Date(
-                        settingsOverview.latestSystemSetting.updatedAt,
-                      ).toLocaleString()
-                    : adminSettingsText.notAvailable}
-                </p>
-              </article>
-            </div>
-          ) : null}
-          <div className="admin-grid">
-            <article className="admin-panel">
-              <h3>{adminSettingsText.missingProductTypes}</h3>
-              <p>
-                {settingsOverview?.summary.missingProductTypes.length
-                  ? settingsOverview.summary.missingProductTypes
-                      .map((type) => getProductTypeLabel(type))
-                      .join(", ")
-                  : adminSettingsText.noMissing}
-              </p>
-            </article>
-            <article className="admin-panel">
-              <h3>{adminSettingsText.latestSystemUpdater}</h3>
-              <p>
-                {settingsOverview?.latestSystemSetting?.updatedBy
-                  ? `${settingsOverview.latestSystemSetting.updatedBy.fullName} (@${settingsOverview.latestSystemSetting.updatedBy.username})`
-                  : adminSettingsText.notAvailable}
-              </p>
-            </article>
-          </div>
-        </section>
+            <section className="admin-section" id="settings-overview">
+              <div className="admin-section__head">
+                <h2>{copy.admin.settingsOverviewTab}</h2>
+                <button
+                  type="button"
+                  className="auth-button"
+                  onClick={() => void loadSettingsOverview()}
+                >
+                  {copy.refresh}
+                </button>
+              </div>
+              {settingsOverviewLoading ? (
+                <p>{adminSettingsText.loadingOverview}</p>
+              ) : null}
+              {settingsOverviewError ? (
+                <div className="auth-alert auth-alert--error">
+                  {settingsOverviewError}
+                </div>
+              ) : null}
+              {settingsOverview ? (
+                <div className="admin-kpi-grid">
+                  <article className="admin-kpi-card">
+                    <p className="admin-kpi-card__label">
+                      {adminSettingsText.productionSettingsCount}
+                    </p>
+                    <p className="admin-kpi-card__value">
+                      {settingsOverview.productionSettingsCount}
+                    </p>
+                  </article>
+                  <article className="admin-kpi-card">
+                    <p className="admin-kpi-card__label">
+                      {adminSettingsText.missingProductTypes}
+                    </p>
+                    <p className="admin-kpi-card__value">
+                      {settingsOverview.summary.missingProductTypes.length}
+                    </p>
+                  </article>
+                  <article className="admin-kpi-card">
+                    <p className="admin-kpi-card__label">
+                      {adminSettingsText.hasSystemSetting}
+                    </p>
+                    <p className="admin-kpi-card__value">
+                      {settingsOverview.hasSystemSetting ? "1" : "0"}
+                    </p>
+                  </article>
+                  <article className="admin-kpi-card">
+                    <p className="admin-kpi-card__label">
+                      {adminSettingsText.latestSystemUpdatedAt}
+                    </p>
+                    <p className="admin-kpi-card__value admin-kpi-card__value--small">
+                      {settingsOverview.latestSystemSetting?.updatedAt
+                        ? new Date(
+                            settingsOverview.latestSystemSetting.updatedAt,
+                          ).toLocaleString()
+                        : adminSettingsText.notAvailable}
+                    </p>
+                  </article>
+                </div>
+              ) : null}
+              <div className="admin-grid">
+                <article className="admin-panel">
+                  <h3>{adminSettingsText.missingProductTypes}</h3>
+                  <p>
+                    {settingsOverview?.summary.missingProductTypes.length
+                      ? settingsOverview.summary.missingProductTypes
+                          .map((type) => getProductTypeLabel(type))
+                          .join(", ")
+                      : adminSettingsText.noMissing}
+                  </p>
+                </article>
+                <article className="admin-panel">
+                  <h3>{adminSettingsText.latestSystemUpdater}</h3>
+                  <p>
+                    {settingsOverview?.latestSystemSetting?.updatedBy
+                      ? `${settingsOverview.latestSystemSetting.updatedBy.fullName} (@${settingsOverview.latestSystemSetting.updatedBy.username})`
+                      : adminSettingsText.notAvailable}
+                  </p>
+                </article>
+              </div>
+            </section>
 
-        <section className="admin-section" id="production">
-          <div className="admin-section__head">
-            <h2>{copy.admin.productionTab}</h2>
-            <button
-              type="button"
-              className="auth-button"
-              onClick={() => {
-                void loadProductionSettings();
-                void loadSettingsOverview();
-              }}
-            >
-              {copy.refresh}
-            </button>
-          </div>
-          {productionLoading ? <p>{copy.admin.loadingProduction}</p> : null}
-          {productionError ? (
-            <div className="auth-alert auth-alert--error">
-              {productionError}
-            </div>
-          ) : null}
-          <div className="admin-grid">
-            {productionSettings.map((setting) => (
-              <article className="admin-panel" key={setting.id}>
-                <h3>{getProductTypeLabel(setting.productType)}</h3>
-                <label>
-                  {copy.admin.productionPiecesPerCarton}
-                  <input
-                    type="number"
-                    min={1}
-                    defaultValue={setting.piecesPerCarton}
-                    id={`pieces-${setting.productType}`}
-                  />
-                </label>
+            <section className="admin-section" id="production">
+              <div className="admin-section__head">
+                <h2>{copy.admin.productionTab}</h2>
                 <button
                   type="button"
                   className="auth-button"
                   onClick={() => {
-                    const input = document.getElementById(
-                      `pieces-${setting.productType}`,
-                    ) as HTMLInputElement | null;
-                    void handleUpdateProductionSetting(
-                      setting.productType,
-                      input?.value ?? String(setting.piecesPerCarton),
-                    );
+                    void loadProductionSettings();
+                    void loadSettingsOverview();
                   }}
                 >
-                  {copy.admin.saveChanges}
+                  {copy.refresh}
                 </button>
-              </article>
-            ))}
-          </div>
-        </section>
+              </div>
+              {productionLoading ? <p>{copy.admin.loadingProduction}</p> : null}
+              {productionError ? (
+                <div className="auth-alert auth-alert--error">
+                  {productionError}
+                </div>
+              ) : null}
+              <div className="admin-grid">
+                {productionSettings.map((setting) => (
+                  <article className="admin-panel" key={setting.id}>
+                    <h3>{getProductTypeLabel(setting.productType)}</h3>
+                    <label>
+                      {copy.admin.productionPiecesPerCarton}
+                      <input
+                        type="number"
+                        min={1}
+                        defaultValue={setting.piecesPerCarton}
+                        id={`pieces-${setting.productType}`}
+                      />
+                    </label>
+                    <button
+                      type="button"
+                      className="auth-button"
+                      onClick={() => {
+                        const input = document.getElementById(
+                          `pieces-${setting.productType}`,
+                        ) as HTMLInputElement | null;
+                        void handleUpdateProductionSetting(
+                          setting.productType,
+                          input?.value ?? String(setting.piecesPerCarton),
+                        );
+                      }}
+                    >
+                      {copy.admin.saveChanges}
+                    </button>
+                  </article>
+                ))}
+              </div>
+            </section>
 
-        <section className="admin-section" id="system">
-          <div className="admin-section__head">
-            <h2>{copy.admin.systemTab}</h2>
-            <button
-              type="button"
-              className="auth-button"
-              onClick={() => void loadSystemSettings()}
-            >
-              {copy.refresh}
-            </button>
-          </div>
-          {systemLoading ? <p>{copy.admin.loadingSystem}</p> : null}
-          {systemError ? (
-            <div className="auth-alert auth-alert--error">{systemError}</div>
-          ) : null}
-          <div className="admin-form-grid">
-            <label>
-              {copy.admin.qualityCheckIntervalMinutes}
-              <input
-                type="number"
-                min={1}
-                value={systemForm.qualityCheckIntervalMinutes}
-                onChange={(event) =>
-                  setSystemForm((prev) => ({
-                    ...prev,
-                    qualityCheckIntervalMinutes: event.target.value,
-                  }))
-                }
-              />
-            </label>
-            <label>
-              {copy.admin.qualityCheckReminderMinutes}
-              <input
-                type="number"
-                min={0}
-                value={systemForm.qualityCheckReminderMinutes}
-                onChange={(event) =>
-                  setSystemForm((prev) => ({
-                    ...prev,
-                    qualityCheckReminderMinutes: event.target.value,
-                  }))
-                }
-              />
-            </label>
-            <label>
-              {copy.admin.inventoryAuditFrequency}
-              <select
-                value={systemForm.inventoryAuditFrequency}
-                onChange={(event) =>
-                  setSystemForm((prev) => ({
-                    ...prev,
-                    inventoryAuditFrequency: event.target.value,
-                  }))
-                }
-              >
-                <option value="DAILY">{getAuditFrequencyLabel("DAILY")}</option>
-                <option value="WEEKLY">
-                  {getAuditFrequencyLabel("WEEKLY")}
-                </option>
-                <option value="MONTHLY">
-                  {getAuditFrequencyLabel("MONTHLY")}
-                </option>
-              </select>
-            </label>
-            <label>
-              {copy.admin.shiftEndReminderMinutes}
-              <input
-                type="number"
-                min={1}
-                value={systemForm.shiftEndReminderMinutes}
-                onChange={(event) =>
-                  setSystemForm((prev) => ({
-                    ...prev,
-                    shiftEndReminderMinutes: event.target.value,
-                  }))
-                }
-              />
-            </label>
-            <label>
-              {copy.admin.weeklyReportDayOfWeek}
-              <input
-                type="number"
-                min={1}
-                max={7}
-                value={systemForm.weeklyReportDayOfWeek}
-                onChange={(event) =>
-                  setSystemForm((prev) => ({
-                    ...prev,
-                    weeklyReportDayOfWeek: event.target.value,
-                  }))
-                }
-              />
-            </label>
-            <label>
-              {copy.admin.weeklyReportTime}
-              <input
-                type="time"
-                value={systemForm.weeklyReportTime}
-                onChange={(event) =>
-                  setSystemForm((prev) => ({
-                    ...prev,
-                    weeklyReportTime: event.target.value,
-                  }))
-                }
-              />
-            </label>
-            <label>
-              {copy.admin.monthlyReportDayOfMonth}
-              <input
-                type="number"
-                min={1}
-                max={31}
-                value={systemForm.monthlyReportDayOfMonth}
-                onChange={(event) =>
-                  setSystemForm((prev) => ({
-                    ...prev,
-                    monthlyReportDayOfMonth: event.target.value,
-                  }))
-                }
-              />
-            </label>
-            <label>
-              {copy.admin.monthlyReportTime}
-              <input
-                type="time"
-                value={systemForm.monthlyReportTime}
-                onChange={(event) =>
-                  setSystemForm((prev) => ({
-                    ...prev,
-                    monthlyReportTime: event.target.value,
-                  }))
-                }
-              />
-            </label>
-          </div>
-          <div className="admin-section__actions">
-            <button
-              type="button"
-              className="auth-button"
-              onClick={() => void handleSaveSystemSettings()}
-            >
-              {copy.save}
-            </button>
-          </div>
-          {systemSetting ? (
-            <p className="admin-muted">
-              {copy.admin.systemSettingLoaded}: {systemSetting.id}
-            </p>
-          ) : null}
-        </section>
+            <section className="admin-section" id="system">
+              <div className="admin-section__head">
+                <h2>{copy.admin.systemTab}</h2>
+                <button
+                  type="button"
+                  className="auth-button"
+                  onClick={() => void loadSystemSettings()}
+                >
+                  {copy.refresh}
+                </button>
+              </div>
+              {systemLoading ? <p>{copy.admin.loadingSystem}</p> : null}
+              {systemError ? (
+                <div className="auth-alert auth-alert--error">
+                  {systemError}
+                </div>
+              ) : null}
+              <div className="admin-form-grid">
+                <label>
+                  {copy.admin.qualityCheckIntervalMinutes}
+                  <input
+                    type="number"
+                    min={1}
+                    value={systemForm.qualityCheckIntervalMinutes}
+                    onChange={(event) =>
+                      setSystemForm((prev) => ({
+                        ...prev,
+                        qualityCheckIntervalMinutes: event.target.value,
+                      }))
+                    }
+                  />
+                </label>
+                <label>
+                  {copy.admin.qualityCheckReminderMinutes}
+                  <input
+                    type="number"
+                    min={0}
+                    value={systemForm.qualityCheckReminderMinutes}
+                    onChange={(event) =>
+                      setSystemForm((prev) => ({
+                        ...prev,
+                        qualityCheckReminderMinutes: event.target.value,
+                      }))
+                    }
+                  />
+                </label>
+                <label>
+                  {copy.admin.inventoryAuditFrequency}
+                  <select
+                    value={systemForm.inventoryAuditFrequency}
+                    onChange={(event) =>
+                      setSystemForm((prev) => ({
+                        ...prev,
+                        inventoryAuditFrequency: event.target.value,
+                      }))
+                    }
+                  >
+                    <option value="DAILY">
+                      {getAuditFrequencyLabel("DAILY")}
+                    </option>
+                    <option value="WEEKLY">
+                      {getAuditFrequencyLabel("WEEKLY")}
+                    </option>
+                    <option value="MONTHLY">
+                      {getAuditFrequencyLabel("MONTHLY")}
+                    </option>
+                  </select>
+                </label>
+                <label>
+                  {copy.admin.shiftEndReminderMinutes}
+                  <input
+                    type="number"
+                    min={1}
+                    value={systemForm.shiftEndReminderMinutes}
+                    onChange={(event) =>
+                      setSystemForm((prev) => ({
+                        ...prev,
+                        shiftEndReminderMinutes: event.target.value,
+                      }))
+                    }
+                  />
+                </label>
+                <label>
+                  {copy.admin.weeklyReportDayOfWeek}
+                  <input
+                    type="number"
+                    min={1}
+                    max={7}
+                    value={systemForm.weeklyReportDayOfWeek}
+                    onChange={(event) =>
+                      setSystemForm((prev) => ({
+                        ...prev,
+                        weeklyReportDayOfWeek: event.target.value,
+                      }))
+                    }
+                  />
+                </label>
+                <label>
+                  {copy.admin.weeklyReportTime}
+                  <input
+                    type="time"
+                    value={systemForm.weeklyReportTime}
+                    onChange={(event) =>
+                      setSystemForm((prev) => ({
+                        ...prev,
+                        weeklyReportTime: event.target.value,
+                      }))
+                    }
+                  />
+                </label>
+                <label>
+                  {copy.admin.monthlyReportDayOfMonth}
+                  <input
+                    type="number"
+                    min={1}
+                    max={31}
+                    value={systemForm.monthlyReportDayOfMonth}
+                    onChange={(event) =>
+                      setSystemForm((prev) => ({
+                        ...prev,
+                        monthlyReportDayOfMonth: event.target.value,
+                      }))
+                    }
+                  />
+                </label>
+                <label>
+                  {copy.admin.monthlyReportTime}
+                  <input
+                    type="time"
+                    value={systemForm.monthlyReportTime}
+                    onChange={(event) =>
+                      setSystemForm((prev) => ({
+                        ...prev,
+                        monthlyReportTime: event.target.value,
+                      }))
+                    }
+                  />
+                </label>
+              </div>
+              <div className="admin-section__actions">
+                <button
+                  type="button"
+                  className="auth-button"
+                  onClick={() => void handleSaveSystemSettings()}
+                >
+                  {copy.save}
+                </button>
+              </div>
+              {systemSetting ? (
+                <p className="admin-muted">
+                  {copy.admin.systemSettingLoaded}: {systemSetting.id}
+                </p>
+              ) : null}
+            </section>
 
-        <section className="admin-section" id="chat">
-          <div className="admin-section__head">
-            <h2>{copy.admin.chatTab}</h2>
-            <button
-              type="button"
-              className="auth-button"
-              onClick={() => navigate("/chat")}
-            >
-              {copy.admin.openChat}
-            </button>
-          </div>
-          <p className="admin-muted">{copy.admin.chatTabDescription}</p>
-        </section>
+            <section className="admin-section" id="chat">
+              <div className="admin-section__head">
+                <h2>{copy.admin.chatTab}</h2>
+                <button
+                  type="button"
+                  className="auth-button"
+                  onClick={() => navigate("/chat")}
+                >
+                  {copy.admin.openChat}
+                </button>
+              </div>
+              <p className="admin-muted">{copy.admin.chatTabDescription}</p>
+            </section>
+          </>
+        ) : null}
       </section>
     </main>
   );
