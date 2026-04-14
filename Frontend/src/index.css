@@ -1,26 +1,27 @@
-@import url("https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Poppins:wght@500;600;700&display=swap");
+@import "tailwindcss";
 
 :root {
   color-scheme: light;
-  font-family: "Cairo", sans-serif;
+  font-family: "Inter", "Poppins", "Segoe UI", sans-serif;
   font-size: 16px;
   line-height: 1.5;
   font-weight: 400;
-  background: #fefefa;
-  color: #0b3a8a;
+  background: #FAF9EE;
+  color: #000000;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  --brand-primary: #0b3a8a;
-  --brand-secondary: #f26b1d;
-  --brand-accent: #1f9d8f;
+  --brand-primary: #A2AF9B;
+  --brand-secondary: #DCCFC0;
+  --brand-accent: #DCCFC0;
   --navy: var(--brand-primary);
   --orange: var(--brand-secondary);
-  --paper: #fefefa;
-  --ink: #0b1b3a;
-  --muted: rgba(11, 58, 138, 0.68);
-  --line: rgba(11, 58, 138, 0.14);
+  --paper: #FAF9EE;
+  --ink: #000000;
+  --muted: #6F7D73;
+  --line: #EEEEEE;
 }
 
 * {
@@ -29,13 +30,16 @@
 
 html {
   min-height: 100%;
-  background: #fefefa;
+  background: #FAF9EE;
+  overflow-y: scroll;
+  scrollbar-gutter: stable;
 }
 
 body {
   margin: 0;
   min-height: 100vh;
-  background: #fefefa;
+  background: #FAF9EE;
+  overflow-x: hidden;
 }
 
 body,
@@ -58,3 +62,5 @@ img {
 #root {
   min-height: 100svh;
 }
+
+

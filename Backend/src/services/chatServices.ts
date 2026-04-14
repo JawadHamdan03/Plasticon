@@ -112,6 +112,15 @@ export const createChatGroup = async (
   userId: number,
   payload: CreateGroupPayload = {},
 ): Promise<ServiceResult<unknown>> => {
+  const requester = await getUserBasicRole(userId);
+  if (!requester || !requester.isActive || requester.deletedAt) {
+    return { status: 401, message: "Not authorized" };
+  }
+
+  if (requester.role !== UserRole.ADMIN) {
+    return { status: 403, message: "Only admin can create chat groups" };
+  }
+
   const name = payload.name?.trim();
   if (!name) {
     return { status: 400, message: "name is required" };
@@ -342,6 +351,15 @@ export const addGroupMember = async (
   groupIdInput: unknown,
   payload: AddMemberPayload = {},
 ): Promise<ServiceResult<unknown>> => {
+  const requester = await getUserBasicRole(requesterId);
+  if (!requester || !requester.isActive || requester.deletedAt) {
+    return { status: 401, message: "Not authorized" };
+  }
+
+  if (requester.role !== UserRole.ADMIN) {
+    return { status: 403, message: "Only admin can manage chat groups" };
+  }
+
   const groupId = toPositiveInt(groupIdInput);
   if (!groupId) {
     return { status: 400, message: "groupId must be a positive integer" };
@@ -429,6 +447,15 @@ export const removeGroupMember = async (
   groupIdInput: unknown,
   targetUserIdInput: unknown,
 ): Promise<ServiceResult<unknown>> => {
+  const requester = await getUserBasicRole(requesterId);
+  if (!requester || !requester.isActive || requester.deletedAt) {
+    return { status: 401, message: "Not authorized" };
+  }
+
+  if (requester.role !== UserRole.ADMIN) {
+    return { status: 403, message: "Only admin can manage chat groups" };
+  }
+
   const groupId = toPositiveInt(groupIdInput);
   if (!groupId) {
     return { status: 400, message: "groupId must be a positive integer" };

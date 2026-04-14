@@ -1,11 +1,7 @@
 import type { ReactNode } from "react";
-import { Link } from "react-router-dom";
 import { appCopy } from "../content/appCopy";
 import { useLocale } from "../context/LocaleContext";
-import { LocaleSwitch } from "./LocaleSwitch";
-import { DateTimeBadge } from "./DateTimeBadge";
-import { UserAvatarBadge } from "./UserAvatarBadge";
-import logo from "../assets/plasticon.png";
+import { Card } from "./ui/card";
 
 type ModulePageShellProps = {
   title: string;
@@ -24,51 +20,24 @@ export function ModulePageShell({
   const copy = appCopy[locale];
 
   return (
-    <main className="module-shell" dir={locale === "ar" ? "rtl" : "ltr"}>
-      <section className="module-card">
-        <div className="module-shell__bar">
-          <div className="dashboard-brand">
-            <img
-              className="dashboard-brand__logo"
-              src={logo}
-              alt="Plasticon logo"
-            />
-            <div>
-              <h1 className="dashboard-brand__name">{copy.appName}</h1>
-              <span className="dashboard-brand__tag">
-                {copy.commandCenterLabel}
-              </span>
-            </div>
-          </div>
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "12px",
-              flexWrap: "wrap",
-              justifyContent: "flex-end",
-            }}
-          >
-            <DateTimeBadge />
-            <LocaleSwitch />
-            <UserAvatarBadge size="sm" />
-          </div>
+    <Card className="module-card p-5 max-md:p-4">
+      <header className="module-header flex flex-wrap items-center justify-between gap-4 border-b border-[var(--ui-border)] pb-5">
+        <div className="min-w-0">
+          <p className="auth-eyebrow text-xs font-semibold uppercase tracking-[0.18em] text-[var(--ui-text-muted)]">
+            {copy.appName}
+          </p>
+          <h1 className="mt-2 text-3xl font-extrabold tracking-[-0.04em] text-[var(--ui-text)]">
+            {title}
+          </h1>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--ui-text-muted)]">
+            {subtitle}
+          </p>
         </div>
-        <header className="module-header">
-          <div>
-            <p className="auth-eyebrow">{copy.appName}</p>
-            <h1>{title}</h1>
-            <p>{subtitle}</p>
-          </div>
-          <div className="module-header__actions">
-            <Link className="module-back-link" to="/dashboard">
-              {copy.backToDashboard}
-            </Link>
-            {actions}
-          </div>
-        </header>
-        {children}
-      </section>
-    </main>
+        <div className="module-header__actions flex flex-wrap items-center gap-2">
+          {actions}
+        </div>
+      </header>
+      <div className="pt-5">{children}</div>
+    </Card>
   );
 }

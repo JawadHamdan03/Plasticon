@@ -1,6 +1,12 @@
+import { FileType, NotificationType } from "../config/generated/prisma/client";
 import { prisma } from "../config/lib/prisma";
+import {
+  emitNotificationToUser,
+  emitNotificationUnreadCountUpdate,
+} from "../config/socket";
 import { auditAsync } from "./auditHelper";
 import { AuditAction, AuditEntityType } from "./auditServices";
+import { dispatchAutoNotification } from "./notificationServices";
 
 type ServiceResult<T> = {
   status: number;
@@ -21,6 +27,112 @@ type CreateSalePayload = {
   date?: string;
   totalAmount?: number;
   items?: SaleItemPayload[];
+  invoiceFile?: {
+    fileName: string;
+    filePath: string;
+    fileSize: number;
+    mimeType: string;
+  };
+};
+
+type UpdateSalePayload = {
+  customerId?: number;
+  invoiceImage?: string;
+  date?: string;
+  totalAmount?: number;
+  items?: SaleItemPayload[];
+  invoiceFile?: {
+    fileName: string;
+    filePath: string;
+    fileSize: number;
+    mimeType: string;
+  };
+};
+
+const prepareSaleItems = (items: SaleItemPayload[]) => {
+  const preparedItems: {
+    machineType: string;
+    size: string;
+    quantity: number;
+    pricePerUnit: number;
+  }[] = [];
+
+  for (const item of items) {
+    const machineType = item.machineType?.trim();
+    const size = item.size?.trim();
+    const quantity = Number(item.quantity);
+    const pricePerUnit = Number(item.pricePerUnit);
+
+    if (!machineType) {
+      return { message: "Each item machineType is required" };
+    }
+
+    if (!size) {
+      return { message: "Each item size is required" };
+    }
+
+    if (!Number.isFinite(quantity) || quantity <= 0) {
+      return {
+        message: "Each item quantity must be a positive number",
+      };
+    }
+
+    if (!Number.isFinite(pricePerUnit) || pricePerUnit < 0) {
+      return {
+        message: "Each item pricePerUnit must be zero or a positive number",
+      };
+    }
+
+    preparedItems.push({ machineType, size, quantity, pricePerUnit });
+  }
+
+  return { items: preparedItems };
+};
+
+const notifyAdminsForAccountantSaleAction = async (
+  actorUserId: number,
+  title: string,
+  message: string,
+) => {
+  const actor = await prisma.user.findUnique({
+    where: { id: actorUserId },
+    select: { id: true, role: true },
+  });
+
+  if (!actor || actor.role !== "ACCOUNTANT") {
+    return;
+  }
+
+  const admins = await prisma.user.findMany({
+    where: {
+      role: "ADMIN",
+      isActive: true,
+      deletedAt: null,
+    },
+    select: { id: true },
+  });
+
+  if (admins.length === 0) {
+    return;
+  }
+
+  const notifications = await prisma.$transaction(
+    admins.map((admin) =>
+      prisma.notification.create({
+        data: {
+          userId: admin.id,
+          title,
+          message,
+          type: NotificationType.SYSTEM_MESSAGE,
+        },
+      }),
+    ),
+  );
+
+  notifications.forEach((notification) => {
+    emitNotificationToUser(notification.userId, notification);
+    emitNotificationUnreadCountUpdate(notification.userId, { refresh: true });
+  });
 };
 
 export const createSale = async (
@@ -51,43 +163,11 @@ export const createSale = async (
     return { status: 404, message: "Customer not found" };
   }
 
-  const preparedItems: {
-    machineType: string;
-    size: string;
-    quantity: number;
-    pricePerUnit: number;
-  }[] = [];
-
-  for (const item of payload.items) {
-    const machineType = item.machineType?.trim();
-    const size = item.size?.trim();
-    const quantity = Number(item.quantity);
-    const pricePerUnit = Number(item.pricePerUnit);
-
-    if (!machineType) {
-      return { status: 400, message: "Each item machineType is required" };
-    }
-
-    if (!size) {
-      return { status: 400, message: "Each item size is required" };
-    }
-
-    if (!Number.isFinite(quantity) || quantity <= 0) {
-      return {
-        status: 400,
-        message: "Each item quantity must be a positive number",
-      };
-    }
-
-    if (!Number.isFinite(pricePerUnit) || pricePerUnit < 0) {
-      return {
-        status: 400,
-        message: "Each item pricePerUnit must be zero or a positive number",
-      };
-    }
-
-    preparedItems.push({ machineType, size, quantity, pricePerUnit });
+  const prepared = prepareSaleItems(payload.items);
+  if (!prepared.items) {
+    return { status: 400, message: prepared.message };
   }
+  const preparedItems = prepared.items;
 
   const computedTotalAmount = preparedItems.reduce(
     (sum, item) => sum + item.quantity * item.pricePerUnit,
@@ -134,6 +214,20 @@ export const createSale = async (
       });
     }
 
+    if (payload.invoiceFile) {
+      await tx.fileAttachment.create({
+        data: {
+          fileName: payload.invoiceFile.fileName,
+          filePath: payload.invoiceFile.filePath,
+          fileSize: payload.invoiceFile.fileSize,
+          mimeType: payload.invoiceFile.mimeType,
+          fileType: FileType.INVOICE,
+          userId,
+          saleId: sale.id,
+        },
+      });
+    }
+
     return tx.sale.findUnique({
       where: { id: sale.id },
       include: {
@@ -142,6 +236,7 @@ export const createSale = async (
           select: { id: true, fullName: true, username: true, role: true },
         },
         items: true,
+        fileAttachments: true,
       },
     });
   });
@@ -158,7 +253,190 @@ export const createSale = async (
     },
   );
 
+  await dispatchAutoNotification({
+    event: "SALE_CREATED",
+    actorUserId: userId,
+    saleId: result?.id,
+    totalAmount,
+  });
+
   return { status: 201, data: result };
+};
+
+export const updateSale = async (
+  userId: number,
+  saleId: number,
+  payload: UpdateSalePayload = {},
+): Promise<ServiceResult<unknown>> => {
+  const existingSale = await prisma.sale.findUnique({
+    where: { id: saleId },
+    include: { items: true },
+  });
+
+  if (!existingSale) {
+    return { status: 404, message: "Sale not found" };
+  }
+
+  const customerId =
+    payload.customerId !== undefined
+      ? Number(payload.customerId)
+      : existingSale.customerId;
+  if (!Number.isInteger(customerId) || customerId <= 0) {
+    return {
+      status: 400,
+      message: "customerId must be a positive integer",
+    };
+  }
+
+  const customer = await prisma.customer.findUnique({
+    where: { id: customerId },
+  });
+  if (!customer) {
+    return { status: 404, message: "Customer not found" };
+  }
+
+  let nextItems = existingSale.items.map((item) => ({
+    machineType: item.machineType,
+    size: item.size,
+    quantity: item.quantity,
+    pricePerUnit: item.pricePerUnit,
+  }));
+
+  if (payload.items !== undefined) {
+    if (!Array.isArray(payload.items) || payload.items.length === 0) {
+      return { status: 400, message: "items must be a non-empty array" };
+    }
+
+    const prepared = prepareSaleItems(payload.items);
+    if (!prepared.items) {
+      return { status: 400, message: prepared.message };
+    }
+    nextItems = prepared.items;
+  }
+
+  const saleDate = payload.date ? new Date(payload.date) : existingSale.date;
+  if (Number.isNaN(saleDate.getTime())) {
+    return { status: 400, message: "Invalid sale date" };
+  }
+
+  const computedTotalAmount = nextItems.reduce(
+    (sum, item) => sum + item.quantity * item.pricePerUnit,
+    0,
+  );
+  const totalAmount =
+    payload.totalAmount !== undefined
+      ? Number(payload.totalAmount)
+      : computedTotalAmount;
+
+  if (!Number.isFinite(totalAmount) || totalAmount < 0) {
+    return {
+      status: 400,
+      message: "totalAmount must be zero or a positive number",
+    };
+  }
+
+  const invoiceImage =
+    payload.invoiceImage?.trim() || existingSale.invoiceImage;
+
+  const result = await prisma.$transaction(async (tx) => {
+    await tx.sale.update({
+      where: { id: saleId },
+      data: {
+        customerId,
+        totalAmount,
+        invoiceImage,
+        date: saleDate,
+      },
+    });
+
+    if (payload.items !== undefined) {
+      await tx.saleItem.deleteMany({ where: { saleId } });
+      for (const item of nextItems) {
+        await tx.saleItem.create({
+          data: {
+            saleId,
+            machineType: item.machineType,
+            size: item.size,
+            quantity: item.quantity,
+            pricePerUnit: item.pricePerUnit,
+          },
+        });
+      }
+    }
+
+    if (payload.invoiceFile) {
+      await tx.fileAttachment.create({
+        data: {
+          fileName: payload.invoiceFile.fileName,
+          filePath: payload.invoiceFile.filePath,
+          fileSize: payload.invoiceFile.fileSize,
+          mimeType: payload.invoiceFile.mimeType,
+          fileType: FileType.INVOICE,
+          userId,
+          saleId,
+        },
+      });
+    }
+
+    return tx.sale.findUnique({
+      where: { id: saleId },
+      include: {
+        customer: true,
+        soldBy: {
+          select: { id: true, fullName: true, username: true, role: true },
+        },
+        items: true,
+        fileAttachments: true,
+      },
+    });
+  });
+
+  auditAsync(userId, AuditAction.SALE_UPDATED, AuditEntityType.SALE, saleId, {
+    customerId,
+    totalAmount,
+    itemCount: nextItems.length,
+  });
+
+  await notifyAdminsForAccountantSaleAction(
+    userId,
+    "Sale updated by accountant",
+    `Sale #${saleId} was updated by accountant #${userId}.`,
+  );
+
+  return { status: 200, data: result };
+};
+
+export const deleteSale = async (
+  userId: number,
+  saleId: number,
+): Promise<ServiceResult<{ message: string }>> => {
+  const existingSale = await prisma.sale.findUnique({
+    where: { id: saleId },
+    include: { items: true },
+  });
+
+  if (!existingSale) {
+    return { status: 404, message: "Sale not found" };
+  }
+
+  await prisma.$transaction(async (tx) => {
+    await tx.fileAttachment.deleteMany({ where: { saleId } });
+    await tx.saleItem.deleteMany({ where: { saleId } });
+    await tx.sale.delete({ where: { id: saleId } });
+  });
+
+  auditAsync(userId, AuditAction.SALE_DELETED, AuditEntityType.SALE, saleId, {
+    totalAmount: existingSale.totalAmount,
+    itemCount: existingSale.items.length,
+  });
+
+  await notifyAdminsForAccountantSaleAction(
+    userId,
+    "Sale deleted by accountant",
+    `Sale #${saleId} was deleted by accountant #${userId}.`,
+  );
+
+  return { status: 200, data: { message: "Sale deleted" } };
 };
 
 export const getAllSales = async (): Promise<ServiceResult<unknown>> => {
@@ -170,6 +448,7 @@ export const getAllSales = async (): Promise<ServiceResult<unknown>> => {
       },
       items: true,
       aiAnalysis: true,
+      fileAttachments: true,
     },
     orderBy: { date: "desc" },
   });
@@ -186,6 +465,7 @@ export const getMySales = async (
       customer: true,
       items: true,
       aiAnalysis: true,
+      fileAttachments: true,
     },
     orderBy: { date: "desc" },
   });
@@ -205,6 +485,7 @@ export const getSalesAdminOverview = async (): Promise<
         select: { id: true, name: true },
       },
       items: true,
+      fileAttachments: true,
     },
     orderBy: { date: "desc" },
   });
@@ -253,4 +534,18 @@ export const getSalesAdminOverview = async (): Promise<
       recentSales: sales.slice(0, 25),
     },
   };
+};
+
+export const getCustomerOptions = async (): Promise<ServiceResult<unknown>> => {
+  const customers = await prisma.customer.findMany({
+    select: {
+      id: true,
+      name: true,
+    },
+    orderBy: {
+      name: "asc",
+    },
+  });
+
+  return { status: 200, data: customers };
 };

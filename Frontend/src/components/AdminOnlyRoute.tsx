@@ -1,6 +1,7 @@
 import { Navigate } from "react-router-dom";
 import type { ReactNode } from "react";
 import { useAuth } from "../context/AuthContext";
+import { AppScaffold } from "./AppScaffold";
 
 type AdminOnlyRouteProps = {
   children: ReactNode;
@@ -21,5 +22,9 @@ export function AdminOnlyRoute({ children }: AdminOnlyRouteProps) {
     return <Navigate to="/dashboard" replace />;
   }
 
-  return <>{children}</>;
+  return <AppScaffold>{children}</AppScaffold>;
 }
+
+
+
+

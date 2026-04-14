@@ -376,7 +376,9 @@ export function WorkerSnapshotsPage({
 
     return () => {
       socket.off("notification:new", refreshData);
-      socket.disconnect();
+      if (socket.connected) {
+        socket.disconnect();
+      }
     };
   }, [loadHistory, loadWorkerTools, showSnapshots, showTools]);
 

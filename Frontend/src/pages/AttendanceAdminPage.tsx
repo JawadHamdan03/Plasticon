@@ -2,8 +2,6 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useLocale } from "../context/LocaleContext";
-import { LocaleSwitch } from "../components/LocaleSwitch";
-import { DateTimeBadge } from "../components/DateTimeBadge";
 import { appCopy } from "../content/appCopy";
 import { API_BASE_URL, readApiError } from "../lib/api";
 
@@ -13,12 +11,13 @@ type AttendanceRecord = {
   checkIn: string;
   checkOut?: string | null;
   lateMinutes?: number;
+  overtimeMinutes?: number;
   user?: {
     fullName: string;
     username: string;
     role: string;
   };
-  shift?: { name: string } | null;
+  shift?: { id: number; name: string } | null;
 };
 
 type AdminUser = {
@@ -44,7 +43,7 @@ async function fetchWithAdminAuth(path: string, options?: RequestInit) {
 
 export function AttendanceAdminPage() {
   const navigate = useNavigate();
-  const { signOut } = useAuth();
+  const { user } = useAuth();
   const { locale } = useLocale();
   const copy = appCopy[locale];
 
@@ -59,6 +58,9 @@ export function AttendanceAdminPage() {
     checkIn: "",
     checkOut: "",
   });
+  const [filterDate, setFilterDate] = useState("");
+  const [filterShiftId, setFilterShiftId] = useState("");
+  const [filterUserId, setFilterUserId] = useState("");
 
   const text = useMemo(
     () =>
@@ -77,6 +79,13 @@ export function AttendanceAdminPage() {
             status: "الحالة",
             checkedIn: "داخل المناوبة",
             checkedOut: "تم تسجيل الخروج",
+            durationMinutes: "مدة الدوام (دقيقة)",
+            lateMinutes: "دقائق التأخير",
+            overtimeMinutes: "دقائق الإضافي",
+            filters: "فلترة",
+            allShifts: "كل الشفتات",
+            allEmployees: "كل الموظفين",
+            delete: "حذف",
           }
         : {
             title: "Attendance & Absence",
@@ -92,6 +101,13 @@ export function AttendanceAdminPage() {
             status: "Status",
             checkedIn: "Checked in",
             checkedOut: "Checked out",
+            durationMinutes: "Worked minutes",
+            lateMinutes: "Late minutes",
+            overtimeMinutes: "Overtime minutes",
+            filters: "Filters",
+            allShifts: "All shifts",
+            allEmployees: "All employees",
+            delete: "Delete",
           },
     [locale],
   );
@@ -100,17 +116,27 @@ export function AttendanceAdminPage() {
     setLoading(true);
     setError("");
     try {
-      const [usersResponse, attendanceResponse] = await Promise.all([
-        fetchWithAdminAuth("/users/all"),
-        fetchWithAdminAuth("/attendance/all"),
-      ]);
-      if (!usersResponse.ok) {
-        throw new Error(await readApiError(usersResponse));
-      }
+      const query = new URLSearchParams();
+      if (filterDate) query.set("date", filterDate);
+      if (filterShiftId) query.set("shiftId", filterShiftId);
+      if (filterUserId) query.set("userId", filterUserId);
+
+      const attendancePath = query.toString()
+        ? `/attendance/all?${query.toString()}`
+        : "/attendance/all";
+
+      const attendanceResponse = await fetchWithAdminAuth(attendancePath);
       if (!attendanceResponse.ok) {
         throw new Error(await readApiError(attendanceResponse));
       }
-      setUsers((await usersResponse.json()) as AdminUser[]);
+
+      if (user?.role === "ADMIN") {
+        const usersResponse = await fetchWithAdminAuth("/users/all");
+        if (usersResponse.ok) {
+          setUsers((await usersResponse.json()) as AdminUser[]);
+        }
+      }
+
       setRecords(
         ((await attendanceResponse.json()) as AttendanceRecord[]) ?? [],
       );
@@ -119,7 +145,7 @@ export function AttendanceAdminPage() {
     } finally {
       setLoading(false);
     }
-  }, [text.loading]);
+  }, [filterDate, filterShiftId, filterUserId, text.loading, user?.role]);
 
   const toLocalDateTimeValue = (value?: string | null) => {
     if (!value) return "";
@@ -167,9 +193,72 @@ export function AttendanceAdminPage() {
     }
   };
 
+  const deleteAttendanceRecord = async (id: number) => {
+    const confirmed = window.confirm(
+      locale === "ar"
+        ? "هل أنت متأكد من حذف سجل الحضور؟"
+        : "Are you sure you want to delete this attendance record?",
+    );
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      const response = await fetchWithAdminAuth(`/attendance/${id}`, {
+        method: "DELETE",
+      });
+      if (!response.ok) {
+        throw new Error(await readApiError(response));
+      }
+      await loadData();
+    } catch (deleteError) {
+      window.alert(
+        deleteError instanceof Error
+          ? deleteError.message
+          : "Failed to delete attendance",
+      );
+    }
+  };
+
   useEffect(() => {
     void loadData();
   }, [loadData]);
+
+  const durationMinutesForRecord = (record: AttendanceRecord) => {
+    if (!record.checkOut) {
+      return 0;
+    }
+    const checkIn = new Date(record.checkIn).getTime();
+    const checkOut = new Date(record.checkOut).getTime();
+    if (Number.isNaN(checkIn) || Number.isNaN(checkOut) || checkOut < checkIn) {
+      return 0;
+    }
+    return Math.floor((checkOut - checkIn) / 60000);
+  };
+
+  const shiftOptions = useMemo(() => {
+    const map = new Map<number, string>();
+    for (const record of records) {
+      if (record.shift?.id && record.shift?.name) {
+        map.set(record.shift.id, record.shift.name);
+      }
+    }
+    return Array.from(map.entries()).map(([id, name]) => ({ id, name }));
+  }, [records]);
+
+  const employeeOptions = useMemo(() => {
+    const map = new Map<number, string>();
+    for (const record of records) {
+      if (!record.userId) {
+        continue;
+      }
+      const label = record.user
+        ? `${record.user.fullName || record.user.username} (${record.user.role})`
+        : `#${record.userId}`;
+      map.set(record.userId, label);
+    }
+    return Array.from(map.entries()).map(([id, label]) => ({ id, label }));
+  }, [records]);
 
   const stats = useMemo(() => {
     const start = new Date();
@@ -214,31 +303,14 @@ export function AttendanceAdminPage() {
             <h1>{text.title}</h1>
           </div>
           <div className="admin-header__actions">
-            <DateTimeBadge />
-            <LocaleSwitch />
             <button
               type="button"
               className="auth-button auth-button--ghost"
-              onClick={() => navigate("/dashboard")}
+              onClick={() =>
+                navigate(user?.role === "ADMIN" ? "/admin" : "/dashboard")
+              }
             >
-              {copy.backToDashboard}
-            </button>
-            <button
-              type="button"
-              className="auth-button auth-button--ghost"
-              onClick={() => navigate("/admin")}
-            >
-              {locale === "ar" ? "لوحة الإدارة" : "Admin"}
-            </button>
-            <button
-              type="button"
-              className="auth-button"
-              onClick={() => {
-                signOut();
-                navigate("/login");
-              }}
-            >
-              {copy.signOut}
+              {locale === "ar" ? "الرجوع" : "Back"}
             </button>
           </div>
         </header>
@@ -253,6 +325,52 @@ export function AttendanceAdminPage() {
             >
               {copy.refresh}
             </button>
+          </div>
+
+          <div className="admin-grid" style={{ marginBottom: 12 }}>
+            <article className="admin-panel">
+              <h3>{text.filters}</h3>
+              <div style={{ display: "grid", gap: 8 }}>
+                <input
+                  type="date"
+                  value={filterDate}
+                  onChange={(event) => setFilterDate(event.target.value)}
+                />
+                <select
+                  value={filterShiftId}
+                  onChange={(event) => setFilterShiftId(event.target.value)}
+                >
+                  <option value="">{text.allShifts}</option>
+                  {shiftOptions.map((shiftItem) => (
+                    <option key={shiftItem.id} value={shiftItem.id}>
+                      {shiftItem.name}
+                    </option>
+                  ))}
+                </select>
+                <select
+                  value={filterUserId}
+                  onChange={(event) => setFilterUserId(event.target.value)}
+                >
+                  <option value="">{text.allEmployees}</option>
+                  {employeeOptions.map((userItem) => (
+                    <option key={userItem.id} value={userItem.id}>
+                      {userItem.label}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  className="auth-button auth-button--ghost"
+                  onClick={() => {
+                    setFilterDate("");
+                    setFilterShiftId("");
+                    setFilterUserId("");
+                  }}
+                >
+                  {locale === "ar" ? "إعادة تعيين" : "Reset"}
+                </button>
+              </div>
+            </article>
           </div>
 
           {loading ? <p>{text.loading}</p> : null}
@@ -289,6 +407,9 @@ export function AttendanceAdminPage() {
                   <th>{text.shift}</th>
                   <th>{text.checkIn}</th>
                   <th>{text.checkOut}</th>
+                  <th>{text.durationMinutes}</th>
+                  <th>{text.lateMinutes}</th>
+                  <th>{text.overtimeMinutes}</th>
                   <th>{text.status}</th>
                   <th>{copy.admin.actions}</th>
                 </tr>
@@ -336,12 +457,15 @@ export function AttendanceAdminPage() {
                         "-"
                       )}
                     </td>
+                    <td>{durationMinutesForRecord(record)}</td>
+                    <td>{record.lateMinutes ?? 0}</td>
+                    <td>{record.overtimeMinutes ?? 0}</td>
                     <td>
                       {record.checkOut ? text.checkedOut : text.checkedIn}
                     </td>
                     <td>
                       {editingAttendanceId === record.id ? (
-                        <>
+                        <div className="attendance-row-actions">
                           <button
                             type="button"
                             className="auth-button"
@@ -356,15 +480,26 @@ export function AttendanceAdminPage() {
                           >
                             {copy.admin.cancel}
                           </button>
-                        </>
+                        </div>
                       ) : (
-                        <button
-                          type="button"
-                          className="auth-button"
-                          onClick={() => startEditAttendance(record)}
-                        >
-                          {copy.admin.edit}
-                        </button>
+                        <div className="attendance-row-actions">
+                          <button
+                            type="button"
+                            className="auth-button"
+                            onClick={() => startEditAttendance(record)}
+                          >
+                            {copy.admin.edit}
+                          </button>
+                          <button
+                            type="button"
+                            className="auth-button auth-button--ghost"
+                            onClick={() =>
+                              void deleteAttendanceRecord(record.id)
+                            }
+                          >
+                            {text.delete}
+                          </button>
+                        </div>
                       )}
                     </td>
                   </tr>

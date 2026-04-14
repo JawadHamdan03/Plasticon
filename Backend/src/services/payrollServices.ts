@@ -18,7 +18,18 @@ type CalculatePayrollPayload = {
   month?: string; // "YYYY-MM"
   hourlyRate?: number;
   overtimeRate?: number;
+  annualIncreasePct?: number;
+  bonusAmount?: number;
 };
+
+const ROLE_BASE_MONTHLY_SALARY: Record<string, number> = {
+  WORKER: 2500,
+  ENGINEER: 3000,
+  ACCOUNTANT: 2800,
+};
+
+const WORK_DAYS_PER_MONTH = 26;
+const HOURS_PER_WORK_DAY = 8;
 
 const parseMonthRange = (month: string): { start: Date; end: Date } | null => {
   const match = /^(\d{4})-(\d{2})$/.exec(month);
@@ -58,25 +69,25 @@ export const calculatePayroll = async (
     };
   }
 
-  const hourlyRate = Number(payload.hourlyRate);
-  if (!Number.isFinite(hourlyRate) || hourlyRate < 0) {
+  const annualIncreasePct = Number(payload.annualIncreasePct ?? 0);
+  if (!Number.isFinite(annualIncreasePct) || annualIncreasePct < 0) {
     return {
       status: 400,
-      message: "hourlyRate must be zero or a positive number",
+      message: "annualIncreasePct must be zero or a positive number",
     };
   }
 
-  const overtimeRate = Number(payload.overtimeRate);
-  if (!Number.isFinite(overtimeRate) || overtimeRate < 0) {
+  const bonusAmount = Number(payload.bonusAmount ?? 0);
+  if (!Number.isFinite(bonusAmount) || bonusAmount < 0) {
     return {
       status: 400,
-      message: "overtimeRate must be zero or a positive number",
+      message: "bonusAmount must be zero or a positive number",
     };
   }
 
   const user = await prisma.user.findUnique({
     where: { id: targetUserId },
-    select: { id: true, fullName: true, username: true },
+    select: { id: true, fullName: true, username: true, role: true },
   });
 
   if (!user) {
@@ -109,8 +120,37 @@ export const calculatePayroll = async (
     };
   }
 
+  const hasHourlyRateInput = payload.hourlyRate !== undefined;
+  const hasOvertimeRateInput = payload.overtimeRate !== undefined;
+
+  const baseMonthlySalary = ROLE_BASE_MONTHLY_SALARY[user.role] ?? 0;
+  const roleDailyRate =
+    baseMonthlySalary > 0 ? baseMonthlySalary / WORK_DAYS_PER_MONTH : 0;
+  const roleHourlyRate = roleDailyRate / HOURS_PER_WORK_DAY;
+
+  const hourlyRate = hasHourlyRateInput
+    ? Number(payload.hourlyRate)
+    : roleHourlyRate;
+  if (!Number.isFinite(hourlyRate) || hourlyRate < 0) {
+    return {
+      status: 400,
+      message: "hourlyRate must be zero or a positive number",
+    };
+  }
+
+  const overtimeRate = hasOvertimeRateInput
+    ? Number(payload.overtimeRate)
+    : hourlyRate * 1.5;
+  if (!Number.isFinite(overtimeRate) || overtimeRate < 0) {
+    return {
+      status: 400,
+      message: "overtimeRate must be zero or a positive number",
+    };
+  }
+
   let totalMinutes = 0;
   let totalOvertimeMinutes = 0;
+  let weightedWorkedDays = 0;
 
   for (const att of attendances) {
     const checkOut = att.checkOut as Date;
@@ -119,15 +159,30 @@ export const calculatePayroll = async (
     );
     totalMinutes += durationMinutes;
     totalOvertimeMinutes += att.overtimeMinutes;
+
+    const checkInDay = new Date(att.checkIn).getDay();
+    weightedWorkedDays += checkInDay === 5 ? 1.5 : 1;
   }
 
   const totalHours = parseFloat((totalMinutes / 60).toFixed(4));
   const overtimeHours = parseFloat((totalOvertimeMinutes / 60).toFixed(4));
   const regularHours = parseFloat((totalHours - overtimeHours).toFixed(4));
 
-  const baseSalary = parseFloat((regularHours * hourlyRate).toFixed(2));
+  const roleBasedSalary = parseFloat(
+    (weightedWorkedDays * roleDailyRate).toFixed(2),
+  );
+  const hourlyBasedSalary = parseFloat((regularHours * hourlyRate).toFixed(2));
+  const baseSalaryBeforeIncrease =
+    baseMonthlySalary > 0 && !hasHourlyRateInput
+      ? roleBasedSalary
+      : hourlyBasedSalary;
+  const baseSalary = parseFloat(
+    (baseSalaryBeforeIncrease * (1 + annualIncreasePct / 100)).toFixed(2),
+  );
   const overtimeSalary = parseFloat((overtimeHours * overtimeRate).toFixed(2));
-  const totalSalary = parseFloat((baseSalary + overtimeSalary).toFixed(2));
+  const totalSalary = parseFloat(
+    (baseSalary + overtimeSalary + bonusAmount).toFixed(2),
+  );
 
   const payroll = await prisma.payroll.create({
     data: {
@@ -156,6 +211,8 @@ export const calculatePayroll = async (
       month,
       totalHours,
       totalSalary,
+      annualIncreasePct,
+      bonusAmount,
     },
   );
 

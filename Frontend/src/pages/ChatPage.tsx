@@ -122,6 +122,7 @@ const copy = {
     roleFilter: "Role filter",
     allRoles: "All roles",
     choosePerson: "Choose person",
+    directRecipient: "Recipient",
     chooseShift: "Choose shift",
     chooseAudience: "Choose audience",
     chooseRecipient: "Choose recipient target",
@@ -176,6 +177,7 @@ const copy = {
     roleFilter: "فلترة الدور",
     allRoles: "كل الأدوار",
     choosePerson: "اختر شخص",
+    directRecipient: "المستلم",
     chooseShift: "اختر شفت",
     chooseAudience: "اختر مجموعة",
     chooseRecipient: "اختر هدف الإرسال",
@@ -253,6 +255,8 @@ export function ChatPage() {
   const [selectedAudienceKey, setSelectedAudienceKey] = useState<
     "" | AudienceTarget["key"]
   >("");
+  const [selectedDirectRecipientId, setSelectedDirectRecipientId] =
+    useState<string>("");
   const [directMessageText, setDirectMessageText] = useState("");
   const [sendingDirect, setSendingDirect] = useState(false);
   const [createGroupForm, setCreateGroupForm] = useState({
@@ -342,6 +346,13 @@ export function ChatPage() {
     t.allEmployees,
   ]);
 
+  const selectedDirectRecipient = useMemo(() => {
+    const userId = Number(selectedDirectRecipientId);
+    if (!Number.isInteger(userId) || userId <= 0) return null;
+    const member = flattenedMembers.find((item) => item.id === userId);
+    return member ?? null;
+  }, [selectedDirectRecipientId, flattenedMembers]);
+
   const loadGroups = async () => {
     setLoadingGroups(true);
     setErrorMessage("");
@@ -399,10 +410,20 @@ export function ChatPage() {
   };
 
   const loadMembersDirectory = async () => {
-    if (!isAdmin) return;
-
     setLoadingMembers(true);
     try {
+      if (!isAdmin) {
+        const response = await fetchWithAuth(`/chat/members-by-shift`);
+        if (!response.ok) {
+          throw new Error(await readApiError(response));
+        }
+
+        setMembersByShift((await response.json()) as ShiftMembersBucket[]);
+        setShiftTargets([]);
+        setAudienceTargets([]);
+        return;
+      }
+
       const response = await fetchWithAuth(`/chat/admin/targets`);
       if (!response.ok) {
         if (response.status !== 404) {
@@ -485,7 +506,6 @@ export function ChatPage() {
   }, [selectedGroupId]);
 
   useEffect(() => {
-    if (!isAdmin) return;
     void loadMembersDirectory();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAdmin]);
@@ -674,6 +694,54 @@ export function ChatPage() {
       setDirectMessageText("");
       await loadGroups();
       await loadMembersDirectory();
+      if (typeof data.groupId === "number") {
+        setSelectedGroupId(data.groupId);
+      }
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : t.sendFailed);
+    } finally {
+      setSendingDirect(false);
+    }
+  };
+
+  const handleSendPrivateMessage = async (
+    event: FormEvent<HTMLFormElement>,
+  ) => {
+    event.preventDefault();
+
+    if (!selectedDirectRecipient) {
+      setErrorMessage(t.chooseRecipient);
+      return;
+    }
+
+    const content = directMessageText.trim();
+    if (!content) {
+      setErrorMessage(t.messageRequired);
+      return;
+    }
+
+    setSendingDirect(true);
+    setErrorMessage("");
+    try {
+      const response = await fetchWithAuth("/chat/direct", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          targetUserId: selectedDirectRecipient.id,
+          content,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(await readApiError(response));
+      }
+
+      const data = (await response.json()) as DirectMessageResponse;
+      setDirectMessageText("");
+      setSelectedDirectRecipientId("");
+      await loadGroups();
       if (typeof data.groupId === "number") {
         setSelectedGroupId(data.groupId);
       }
@@ -950,143 +1018,194 @@ export function ChatPage() {
         </section>
       ) : null}
 
-      <section className="module-grid">
-        <article className="module-panel">
-          <h2>{t.createGroup}</h2>
-          <form className="module-form" onSubmit={handleCreateGroup}>
-            <label>
-              {t.groupName}
-              <input
-                type="text"
-                value={createGroupForm.name}
-                onChange={(event) =>
-                  setCreateGroupForm((prev) => ({
-                    ...prev,
-                    name: event.target.value,
-                  }))
-                }
-                required
-              />
-            </label>
-            <label>
-              {t.groupDescription}
-              <input
-                type="text"
-                value={createGroupForm.description}
-                onChange={(event) =>
-                  setCreateGroupForm((prev) => ({
-                    ...prev,
-                    description: event.target.value,
-                  }))
-                }
-              />
-            </label>
-            <label>
-              {t.initialMembers}
-              <input
-                type="text"
-                value={createGroupForm.memberIds}
-                onChange={(event) =>
-                  setCreateGroupForm((prev) => ({
-                    ...prev,
-                    memberIds: event.target.value,
-                  }))
-                }
-                placeholder="12, 25, 31"
-              />
-            </label>
-            <button
-              type="submit"
-              className="auth-button"
-              disabled={creatingGroup}
-            >
-              {creatingGroup ? t.creating : t.create}
-            </button>
-          </form>
-        </article>
+      {!isAdmin ? (
+        <section className="module-grid">
+          <article className="module-panel">
+            <h2>{t.directMessage}</h2>
+            <p>
+              {t.selectedRecipient}:{" "}
+              {selectedDirectRecipient?.displayLabel || "-"}
+            </p>
 
-        <article className="module-panel">
-          <h2>{t.members}</h2>
-          {!selectedGroupId ? (
-            <p className="module-empty">{t.selectGroup}</p>
-          ) : null}
-          {loadingGroupDetail ? <p>{t.groupDetailsLoading}</p> : null}
-
-          {selectedGroupId ? (
-            <form
-              className="module-form module-form--inline"
-              onSubmit={handleAddMember}
-            >
+            <form className="module-form" onSubmit={handleSendPrivateMessage}>
               <label>
-                {t.userId}
-                <input
-                  type="number"
-                  min={1}
-                  value={addMemberForm.userId}
+                {t.directRecipient}
+                <select
+                  value={selectedDirectRecipientId}
                   onChange={(event) =>
-                    setAddMemberForm((prev) => ({
+                    setSelectedDirectRecipientId(event.target.value)
+                  }
+                >
+                  <option value="">{t.chooseRecipient}</option>
+                  {flattenedMembers.map((member) => (
+                    <option key={member.id} value={member.id}>
+                      {member.displayLabel}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label>
+                {t.directMessage}
+                <input
+                  type="text"
+                  placeholder={t.directMessagePlaceholder}
+                  value={directMessageText}
+                  onChange={(event) => setDirectMessageText(event.target.value)}
+                />
+              </label>
+
+              <button
+                type="submit"
+                className="auth-button"
+                disabled={sendingDirect}
+              >
+                {sendingDirect ? t.sending : t.sendDirect}
+              </button>
+            </form>
+          </article>
+        </section>
+      ) : null}
+
+      {isAdmin ? (
+        <section className="module-grid">
+          <article className="module-panel">
+            <h2>{t.createGroup}</h2>
+            <form className="module-form" onSubmit={handleCreateGroup}>
+              <label>
+                {t.groupName}
+                <input
+                  type="text"
+                  value={createGroupForm.name}
+                  onChange={(event) =>
+                    setCreateGroupForm((prev) => ({
                       ...prev,
-                      userId: event.target.value,
+                      name: event.target.value,
                     }))
                   }
                   required
                 />
               </label>
               <label>
-                {t.memberRole}
-                <select
-                  value={addMemberForm.role}
+                {t.groupDescription}
+                <input
+                  type="text"
+                  value={createGroupForm.description}
                   onChange={(event) =>
-                    setAddMemberForm((prev) => ({
+                    setCreateGroupForm((prev) => ({
                       ...prev,
-                      role: event.target.value as GroupRole,
+                      description: event.target.value,
                     }))
                   }
-                >
-                  <option value="MEMBER">{t.member}</option>
-                  <option value="ADMIN">ADMIN</option>
-                </select>
+                />
               </label>
-              <button type="submit" className="auth-button">
-                {t.addMember}
+              <label>
+                {t.initialMembers}
+                <input
+                  type="text"
+                  value={createGroupForm.memberIds}
+                  onChange={(event) =>
+                    setCreateGroupForm((prev) => ({
+                      ...prev,
+                      memberIds: event.target.value,
+                    }))
+                  }
+                  placeholder="12, 25, 31"
+                />
+              </label>
+              <button
+                type="submit"
+                className="auth-button"
+                disabled={creatingGroup}
+              >
+                {creatingGroup ? t.creating : t.create}
               </button>
             </form>
-          ) : null}
+          </article>
 
-          <div className="module-list">
-            {!loadingGroupDetail &&
-            selectedGroupId &&
-            (selectedGroupDetail?.members?.length ?? 0) === 0 ? (
-              <p className="module-empty">{t.noMembers}</p>
+          <article className="module-panel">
+            <h2>{t.members}</h2>
+            {!selectedGroupId ? (
+              <p className="module-empty">{t.selectGroup}</p>
+            ) : null}
+            {loadingGroupDetail ? <p>{t.groupDetailsLoading}</p> : null}
+
+            {selectedGroupId ? (
+              <form
+                className="module-form module-form--inline"
+                onSubmit={handleAddMember}
+              >
+                <label>
+                  {t.userId}
+                  <input
+                    type="number"
+                    min={1}
+                    value={addMemberForm.userId}
+                    onChange={(event) =>
+                      setAddMemberForm((prev) => ({
+                        ...prev,
+                        userId: event.target.value,
+                      }))
+                    }
+                    required
+                  />
+                </label>
+                <label>
+                  {t.memberRole}
+                  <select
+                    value={addMemberForm.role}
+                    onChange={(event) =>
+                      setAddMemberForm((prev) => ({
+                        ...prev,
+                        role: event.target.value as GroupRole,
+                      }))
+                    }
+                  >
+                    <option value="MEMBER">{t.member}</option>
+                    <option value="ADMIN">ADMIN</option>
+                  </select>
+                </label>
+                <button type="submit" className="auth-button">
+                  {t.addMember}
+                </button>
+              </form>
             ) : null}
 
-            {selectedGroupDetail?.members?.map((member) => (
-              <div key={member.id} className="module-row">
-                <strong>
-                  {member.user.fullName ||
-                    member.user.username ||
-                    `#${member.user.id}`}
-                </strong>
-                <span>
-                  {member.role} • {member.user.role || "-"}
-                </span>
-                <div
-                  className="admin-section__actions"
-                  style={{ justifyContent: "flex-start" }}
-                >
-                  <button
-                    type="button"
-                    className="auth-button auth-button--ghost"
-                    onClick={() => void handleRemoveMember(member.user.id)}
+            <div className="module-list">
+              {!loadingGroupDetail &&
+              selectedGroupId &&
+              (selectedGroupDetail?.members?.length ?? 0) === 0 ? (
+                <p className="module-empty">{t.noMembers}</p>
+              ) : null}
+
+              {selectedGroupDetail?.members?.map((member) => (
+                <div key={member.id} className="module-row">
+                  <strong>
+                    {member.user.fullName ||
+                      member.user.username ||
+                      `#${member.user.id}`}
+                  </strong>
+                  <span>
+                    {member.role} • {member.user.role || "-"}
+                  </span>
+                  <div
+                    className="admin-section__actions"
+                    style={{ justifyContent: "flex-start" }}
                   >
-                    {t.remove}
-                  </button>
+                    <button
+                      type="button"
+                      className="auth-button auth-button--ghost"
+                      onClick={() => void handleRemoveMember(member.user.id)}
+                    >
+                      {t.remove}
+                    </button>
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        </article>
-      </section>
+              ))}
+            </div>
+          </article>
+        </section>
+      ) : null}
 
       {errorMessage ? (
         <div className="auth-alert auth-alert--error">{errorMessage}</div>

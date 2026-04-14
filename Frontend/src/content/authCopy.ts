@@ -336,3 +336,6 @@ export const authCopy: Record<Locale, AuthCopy> = {
     verifyBackAction: "الذهاب لتسجيل الدخول",
   },
 };
+
+
+

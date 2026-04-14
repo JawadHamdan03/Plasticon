@@ -6,6 +6,7 @@ import {
 } from "../config/socket";
 import { auditAsync } from "./auditHelper";
 import { AuditEntityType } from "./auditServices";
+import { getNotificationRuleForEvent } from "./notificationRuleSettings";
 
 type ServiceResult<T> = {
   status: number;
@@ -24,12 +25,43 @@ type CreateNotificationPayload = {
   title?: string;
   message?: string;
   type?: NotificationType;
+  targetType?: "USER" | "SHIFT" | "ALL";
+  shiftId?: number;
   userId?: number;
   userIds?: number[];
   chatGroupId?: number;
   machineId?: number;
   productionId?: number;
 };
+
+type AutoNotificationEvent =
+  | {
+      event: "PRODUCTION_CREATED";
+      actorUserId: number;
+      shiftId?: number | null;
+      productionId?: number;
+      totalPieces?: number;
+    }
+  | {
+      event: "PURCHASE_CREATED";
+      actorUserId: number;
+      purchaseId?: number;
+      totalAmount?: number;
+    }
+  | {
+      event: "SALE_CREATED";
+      actorUserId: number;
+      saleId?: number;
+      totalAmount?: number;
+    }
+  | {
+      event: "INVENTORY_TRANSACTION_CREATED";
+      actorUserId: number;
+      inventoryTransactionId?: number;
+      materialName?: string;
+      quantity?: number;
+      operationType?: string;
+    };
 
 const NOTIFICATION_CREATED = "NOTIFICATION_CREATED";
 const NOTIFICATION_READ = "NOTIFICATION_READ";
@@ -202,28 +234,76 @@ export const createNotification = async (
     return { status: 400, message: "Valid notification type is required" };
   }
 
-  const idsFromArray = Array.isArray(payload.userIds)
-    ? payload.userIds
-        .map((id) => Number(id))
-        .filter((id) => Number.isInteger(id) && id > 0)
-    : [];
-  const idsFromSingle = payload.userId ? [Number(payload.userId)] : [];
-  const targetUserIds = [...new Set([...idsFromArray, ...idsFromSingle])];
+  const targetType = payload.targetType ?? "USER";
+
+  let targetUserIds: number[] = [];
+
+  if (targetType === "ALL") {
+    const allActiveUsers = await prisma.user.findMany({
+      where: {
+        isActive: true,
+        deletedAt: null,
+      },
+      select: { id: true },
+    });
+
+    targetUserIds = allActiveUsers.map((user) => user.id);
+  } else if (targetType === "SHIFT") {
+    const shiftId = Number(payload.shiftId);
+    if (!Number.isInteger(shiftId) || shiftId <= 0) {
+      return { status: 400, message: "shiftId is required for SHIFT target" };
+    }
+
+    const shift = await prisma.shift.findUnique({
+      where: { id: shiftId },
+      select: { id: true },
+    });
+    if (!shift) {
+      return { status: 404, message: "Shift not found" };
+    }
+
+    const shiftUsers = await prisma.user.findMany({
+      where: {
+        shiftId,
+        isActive: true,
+        deletedAt: null,
+      },
+      select: { id: true },
+    });
+
+    targetUserIds = shiftUsers.map((user) => user.id);
+  } else {
+    const idsFromArray = Array.isArray(payload.userIds)
+      ? payload.userIds
+          .map((id) => Number(id))
+          .filter((id) => Number.isInteger(id) && id > 0)
+      : [];
+    const idsFromSingle = payload.userId ? [Number(payload.userId)] : [];
+    targetUserIds = [...new Set([...idsFromArray, ...idsFromSingle])];
+  }
 
   if (targetUserIds.length === 0) {
     return {
       status: 400,
-      message: "At least one target user is required (userId or userIds)",
+      message:
+        targetType === "USER"
+          ? "At least one target user is required (userId or userIds)"
+          : "No target users found for the selected target",
     };
   }
 
-  const users = await prisma.user.findMany({
-    where: { id: { in: targetUserIds } },
-    select: { id: true },
-  });
+  if (targetType === "USER") {
+    const users = await prisma.user.findMany({
+      where: { id: { in: targetUserIds } },
+      select: { id: true },
+    });
 
-  if (users.length !== targetUserIds.length) {
-    return { status: 404, message: "One or more target users were not found" };
+    if (users.length !== targetUserIds.length) {
+      return {
+        status: 404,
+        message: "One or more target users were not found",
+      };
+    }
   }
 
   const created = await prisma.$transaction(
@@ -250,6 +330,8 @@ export const createNotification = async (
     {
       type: notificationType,
       targetCount: created.length,
+      targetType,
+      shiftId: payload.shiftId ?? null,
       targetUserIds,
     },
   );
@@ -260,4 +342,99 @@ export const createNotification = async (
   });
 
   return { status: 201, data: created };
+};
+
+export const dispatchAutoNotification = async (
+  payload: AutoNotificationEvent,
+): Promise<void> => {
+  const actor = await prisma.user.findUnique({
+    where: { id: payload.actorUserId },
+    select: {
+      id: true,
+      fullName: true,
+      username: true,
+      shiftId: true,
+    },
+  });
+
+  if (!actor) {
+    return;
+  }
+
+  const admins = await prisma.user.findMany({
+    where: {
+      role: "ADMIN",
+      isActive: true,
+      deletedAt: null,
+    },
+    select: { id: true },
+  });
+
+  const recipientIds = new Set<number>(admins.map((admin) => admin.id));
+  const rule = await getNotificationRuleForEvent(payload.event);
+
+  if (!rule.enabled) {
+    return;
+  }
+
+  let title = "";
+  let message = "";
+  let type: NotificationType = NotificationType.SYSTEM_MESSAGE;
+  let productionId: number | undefined;
+
+  if (payload.event === "PRODUCTION_CREATED") {
+    type = NotificationType.PRODUCTION_ALERT;
+    title = "New production record";
+    message = `${actor.fullName || actor.username} added a production record${payload.totalPieces ? ` (${payload.totalPieces} pieces)` : ""}.`;
+    productionId = payload.productionId;
+  }
+
+  if (payload.event === "PURCHASE_CREATED") {
+    title = "New purchase created";
+    message = `${actor.fullName || actor.username} created purchase #${payload.purchaseId ?? "-"}${payload.totalAmount ? ` with total ${payload.totalAmount}` : ""}.`;
+  }
+
+  if (payload.event === "SALE_CREATED") {
+    title = "New sale created";
+    message = `${actor.fullName || actor.username} created sale #${payload.saleId ?? "-"}${payload.totalAmount ? ` with total ${payload.totalAmount}` : ""}.`;
+  }
+
+  if (payload.event === "INVENTORY_TRANSACTION_CREATED") {
+    title = "New inventory transaction";
+    message = `${actor.fullName || actor.username} added inventory ${payload.operationType ?? "transaction"}${payload.materialName ? ` for ${payload.materialName}` : ""}${payload.quantity ? ` (${payload.quantity})` : ""}.`;
+  }
+
+  if (rule.delivery === "ADMIN_AND_SHIFT") {
+    const shiftId =
+      payload.event === "PRODUCTION_CREATED"
+        ? (payload.shiftId ?? actor.shiftId)
+        : actor.shiftId;
+
+    if (shiftId) {
+      const shiftUsers = await prisma.user.findMany({
+        where: {
+          shiftId,
+          isActive: true,
+          deletedAt: null,
+        },
+        select: { id: true },
+      });
+
+      shiftUsers.forEach((user) => recipientIds.add(user.id));
+    }
+  }
+
+  recipientIds.delete(payload.actorUserId);
+
+  if (!title || !message || recipientIds.size === 0) {
+    return;
+  }
+
+  await createNotification(payload.actorUserId, {
+    title,
+    message,
+    type,
+    userIds: Array.from(recipientIds),
+    ...(productionId ? { productionId } : {}),
+  });
 };

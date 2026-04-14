@@ -1,12 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { Download } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
 import { useLocale } from "../context/LocaleContext";
-import { LocaleSwitch } from "../components/LocaleSwitch";
-import { DateTimeBadge } from "../components/DateTimeBadge";
 import { UserAvatarBadge } from "../components/UserAvatarBadge";
 import { TruckLoader } from "../components/TruckLoader";
-import { appCopy } from "../content/appCopy";
 import { API_BASE_URL, readApiError } from "../lib/api";
 
 type ShiftConsumptionRow = {
@@ -82,9 +79,7 @@ async function fetchWithAdminAuth(path: string, options?: RequestInit) {
 
 export function SettingsElectricityPage() {
   const navigate = useNavigate();
-  const { signOut } = useAuth();
   const { locale } = useLocale();
-  const copy = appCopy[locale];
 
   const text = useMemo(
     () =>
@@ -110,15 +105,15 @@ export function SettingsElectricityPage() {
             reportCost: "تكلفة الشفت",
             reportRecordedAt: "وقت التسجيل",
             exportCostReportCsv: "تصدير CSV",
+            back: "رجوع",
             noData: "لا توجد بيانات ضمن الفترة الحالية.",
             tariff: "التسعيرة الحالية",
-            electricityTabBack: "العودة إلى تبويبات الإعدادات",
             noReading: "غير مسجل",
             shiftDetails: "تفاصيل استهلاك الشفتات",
             dailyTotals: "إجمالي كل يوم",
           }
         : {
-            title: "electry",
+            title: "Electricity",
             subtitle:
               "Shared meter report by shift with daily total consumption and cost.",
             fromDate: "From date",
@@ -138,9 +133,9 @@ export function SettingsElectricityPage() {
             reportCost: "Shift cost",
             reportRecordedAt: "Recorded at",
             exportCostReportCsv: "Export CSV",
+            back: "Back",
             noData: "No data in the selected range.",
             tariff: "Current tariff",
-            electricityTabBack: "Back to Settings tabs",
             noReading: "Missing",
             shiftDetails: "Shift consumption details",
             dailyTotals: "Daily totals",
@@ -247,32 +242,13 @@ export function SettingsElectricityPage() {
             <h1>{text.title}</h1>
           </div>
           <div className="admin-header__actions">
-            <DateTimeBadge />
-            <LocaleSwitch />
             <UserAvatarBadge size="sm" />
             <button
               type="button"
               className="auth-button auth-button--ghost"
               onClick={() => navigate("/admin/settings")}
             >
-              {text.electricityTabBack}
-            </button>
-            <button
-              type="button"
-              className="auth-button auth-button--ghost"
-              onClick={() => navigate("/dashboard")}
-            >
-              {copy.backToDashboard}
-            </button>
-            <button
-              type="button"
-              className="auth-button"
-              onClick={() => {
-                signOut();
-                navigate("/login");
-              }}
-            >
-              {copy.signOut}
+              {text.back}
             </button>
           </div>
         </header>
@@ -307,7 +283,7 @@ export function SettingsElectricityPage() {
                 onChange={(event) => setToDate(event.target.value)}
               />
             </label>
-            <div className="settings-filter-actions">
+            <div className="settings-filter-actions settings-filter-actions--compact">
               <button
                 type="button"
                 className="auth-button"
@@ -327,6 +303,15 @@ export function SettingsElectricityPage() {
               >
                 {text.clearFilter}
               </button>
+              <button
+                type="button"
+                className="auth-button auth-button--ghost settings-export-button"
+                onClick={exportCsv}
+                disabled={!view.shiftRows.length}
+              >
+                <Download className="h-4 w-4" aria-hidden="true" />
+                {text.exportCostReportCsv}
+              </button>
             </div>
           </div>
 
@@ -341,14 +326,6 @@ export function SettingsElectricityPage() {
                   : `${view.totalRows} ${text.totalRows.toLowerCase()}`}
               </p>
             </div>
-            <button
-              type="button"
-              className="auth-button auth-button--ghost"
-              onClick={exportCsv}
-              disabled={!view.shiftRows.length}
-            >
-              {text.exportCostReportCsv}
-            </button>
           </div>
 
           {error ? (
@@ -380,7 +357,7 @@ export function SettingsElectricityPage() {
             </article>
           </div>
 
-          <div className="settings-system-layout">
+          <div className="settings-electricity-report-layout">
             <div className="settings-electricity-table-wrap">
               <h3>{text.shiftDetails}</h3>
               <table className="settings-electricity-table">

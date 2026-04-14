@@ -43,11 +43,7 @@ router.get(
   authorizeRoles(allChatRoles),
   getChatGroupByIdHandler,
 );
-router.post(
-  "/direct",
-  authorizeRoles([UserRole.ADMIN]),
-  sendDirectMessageHandler,
-);
+router.post("/direct", authorizeRoles(allChatRoles), sendDirectMessageHandler);
 router.get(
   "/admin/targets",
   authorizeRoles([UserRole.ADMIN]),
@@ -61,12 +57,12 @@ router.post(
 
 router.post(
   "/groups/:groupId/members",
-  authorizeRoles(allChatRoles),
+  authorizeRoles([UserRole.ADMIN]),
   addGroupMemberHandler,
 );
 router.delete(
   "/groups/:groupId/members/:userId",
-  authorizeRoles(allChatRoles),
+  authorizeRoles([UserRole.ADMIN]),
   removeGroupMemberHandler,
 );
 

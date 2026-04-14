@@ -1,9 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
 import { useLocale } from "../context/LocaleContext";
-import { LocaleSwitch } from "../components/LocaleSwitch";
-import { DateTimeBadge } from "../components/DateTimeBadge";
 import { appCopy } from "../content/appCopy";
 import { API_BASE_URL, readApiError } from "../lib/api";
 
@@ -40,8 +36,6 @@ async function fetchWithAdminAuth(path: string, options?: RequestInit) {
 }
 
 export function DashboardAnalyticsPage() {
-  const navigate = useNavigate();
-  const { signOut } = useAuth();
   const { locale } = useLocale();
   const copy = appCopy[locale];
 
@@ -171,34 +165,6 @@ export function DashboardAnalyticsPage() {
             <p className="auth-eyebrow">Plasticon</p>
             <h1>{pageText.title}</h1>
           </div>
-          <div className="admin-header__actions">
-            <DateTimeBadge />
-            <LocaleSwitch />
-            <button
-              type="button"
-              className="auth-button auth-button--ghost"
-              onClick={() => navigate("/dashboard")}
-            >
-              {copy.backToDashboard}
-            </button>
-            <button
-              type="button"
-              className="auth-button auth-button--ghost"
-              onClick={() => navigate("/admin")}
-            >
-              {locale === "ar" ? "لوحة الإدارة" : "Admin"}
-            </button>
-            <button
-              type="button"
-              className="auth-button"
-              onClick={() => {
-                signOut();
-                navigate("/login");
-              }}
-            >
-              {copy.signOut}
-            </button>
-          </div>
         </header>
 
         <section className="admin-section">
@@ -326,7 +292,7 @@ export function DashboardAnalyticsPage() {
                             style={{
                               height: "10px",
                               borderRadius: "999px",
-                              background: "rgba(15, 23, 42, 0.12)",
+                              background: "rgba(220, 207, 192, 0.22)",
                               overflow: "hidden",
                             }}
                           >
@@ -335,7 +301,7 @@ export function DashboardAnalyticsPage() {
                                 width: `${(item.value / chartData.maxValue) * 100}%`,
                                 height: "100%",
                                 background:
-                                  "linear-gradient(90deg, #0ea5e9, #22c55e)",
+                                  "linear-gradient(90deg, #A2AF9B, #DCCFC0)",
                               }}
                             />
                           </div>
@@ -360,7 +326,7 @@ export function DashboardAnalyticsPage() {
                           width: "150px",
                           height: "150px",
                           borderRadius: "50%",
-                          background: `conic-gradient(#22c55e ${chartData.operationalShare}%, #f97316 ${chartData.operationalShare}% 100%)`,
+                          background: `conic-gradient(#DCCFC0 ${chartData.operationalShare}%, #EEEEEE ${chartData.operationalShare}% 100%)`,
                           position: "relative",
                         }}
                       >
@@ -368,7 +334,7 @@ export function DashboardAnalyticsPage() {
                           style={{
                             position: "absolute",
                             inset: "22px",
-                            background: "#fff",
+                            background: "#FAF9EE",
                             borderRadius: "50%",
                             display: "grid",
                             placeItems: "center",
@@ -411,7 +377,7 @@ export function DashboardAnalyticsPage() {
                             style={{
                               height: "10px",
                               borderRadius: "999px",
-                              background: "rgba(15, 23, 42, 0.12)",
+                              background: "rgba(220, 207, 192, 0.22)",
                               overflow: "hidden",
                             }}
                           >
@@ -420,7 +386,7 @@ export function DashboardAnalyticsPage() {
                                 width: `${(item.count / quickStatsCharts.machineMax) * 100}%`,
                                 height: "100%",
                                 background:
-                                  "linear-gradient(90deg, #f97316, #ef4444)",
+                                  "linear-gradient(90deg, #DCCFC0, #EEEEEE)",
                               }}
                             />
                           </div>
@@ -450,7 +416,7 @@ export function DashboardAnalyticsPage() {
                             style={{
                               height: "10px",
                               borderRadius: "999px",
-                              background: "rgba(15, 23, 42, 0.12)",
+                              background: "rgba(220, 207, 192, 0.22)",
                               overflow: "hidden",
                             }}
                           >
@@ -459,7 +425,7 @@ export function DashboardAnalyticsPage() {
                                 width: `${(item.count / quickStatsCharts.roleMax) * 100}%`,
                                 height: "100%",
                                 background:
-                                  "linear-gradient(90deg, #0ea5e9, #8b5cf6)",
+                                  "linear-gradient(90deg, #A2AF9B, #DCCFC0)",
                               }}
                             />
                           </div>

@@ -3,6 +3,7 @@ import { authCopy, type Locale } from "../content/authCopy";
 import { useLocale } from "../context/LocaleContext";
 import { LocaleSwitch } from "./LocaleSwitch";
 import { DateTimeBadge } from "./DateTimeBadge";
+import { ThemeToggle } from "./ThemeToggle";
 import logo from "../assets/plasticon.png";
 
 type AuthLayoutProps = {
@@ -112,6 +113,7 @@ export function AuthLayout({ children }: AuthLayoutProps) {
           >
             <DateTimeBadge />
             <LocaleSwitch />
+            <ThemeToggle />
           </div>
         </header>
 
@@ -120,3 +122,7 @@ export function AuthLayout({ children }: AuthLayoutProps) {
     </main>
   );
 }
+
+
+
+

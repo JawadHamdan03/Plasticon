@@ -248,10 +248,15 @@ type AppCopy = {
     unreadStatus: string;
     markRead: string;
     createNotification: string;
+    targetType: string;
+    targetUser: string;
+    targetShift: string;
+    targetAll: string;
     type: string;
     titleLabel: string;
     messageLabel: string;
     targetUserId: string;
+    targetShiftId: string;
     createButton: string;
     success: string;
     totalNotifications: string;
@@ -512,10 +517,15 @@ export const appCopy: Record<Locale, AppCopy> = {
       unreadStatus: "Unread",
       markRead: "Mark read",
       createNotification: "Create notification",
+      targetType: "Target",
+      targetUser: "Specific user",
+      targetShift: "Full shift",
+      targetAll: "All users",
       type: "Type",
       titleLabel: "Title",
       messageLabel: "Message",
       targetUserId: "Target user ID (optional)",
+      targetShiftId: "Target shift ID",
       createButton: "Create notification",
       success: "Notification created successfully.",
       totalNotifications: "Notifications",
@@ -772,10 +782,15 @@ export const appCopy: Record<Locale, AppCopy> = {
       unreadStatus: "غير مقروء",
       markRead: "تعيين كمقروء",
       createNotification: "إنشاء إشعار",
+      targetType: "الهدف",
+      targetUser: "مستخدم محدد",
+      targetShift: "شفت كامل",
+      targetAll: "كل المستخدمين",
       type: "النوع",
       titleLabel: "العنوان",
       messageLabel: "الرسالة",
-      targetUserId: "معرّف المستخدم المستهدف (اختياري)",
+      targetUserId: "معرّف المستخدم المستهدف",
+      targetShiftId: "معرّف الشفت المستهدف",
       createButton: "إنشاء الإشعار",
       success: "تم إنشاء الإشعار بنجاح.",
       totalNotifications: "الإشعارات",

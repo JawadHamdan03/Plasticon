@@ -1,9 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
 import { useLocale } from "../context/LocaleContext";
-import { LocaleSwitch } from "../components/LocaleSwitch";
-import { DateTimeBadge } from "../components/DateTimeBadge";
 import { appCopy } from "../content/appCopy";
 import { API_BASE_URL, readApiError } from "../lib/api";
 
@@ -32,8 +28,6 @@ async function fetchWithAdminAuth(path: string, options?: RequestInit) {
 }
 
 export function AuditLogsPage() {
-  const navigate = useNavigate();
-  const { signOut } = useAuth();
   const { locale } = useLocale();
   const copy = appCopy[locale];
 
@@ -90,34 +84,6 @@ export function AuditLogsPage() {
             <p className="auth-eyebrow">Plasticon</p>
             <h1>{pageText.title}</h1>
           </div>
-          <div className="admin-header__actions">
-            <DateTimeBadge />
-            <LocaleSwitch />
-            <button
-              type="button"
-              className="auth-button auth-button--ghost"
-              onClick={() => navigate("/dashboard")}
-            >
-              {copy.backToDashboard}
-            </button>
-            <button
-              type="button"
-              className="auth-button auth-button--ghost"
-              onClick={() => navigate("/admin")}
-            >
-              {locale === "ar" ? "لوحة الإدارة" : "Admin"}
-            </button>
-            <button
-              type="button"
-              className="auth-button"
-              onClick={() => {
-                signOut();
-                navigate("/login");
-              }}
-            >
-              {copy.signOut}
-            </button>
-          </div>
         </header>
 
         <section className="admin-section">
@@ -149,7 +115,7 @@ export function AuditLogsPage() {
                     <th>{copy.admin.name}</th>
                     <th>{copy.admin.auditEntity}</th>
                     <th>{copy.admin.auditAction}</th>
-                    <th>{copy.admin.calculatedAt}</th>
+                    <th>{locale === "ar" ? "الوقت" : "Time"}</th>
                   </tr>
                 </thead>
                 <tbody>

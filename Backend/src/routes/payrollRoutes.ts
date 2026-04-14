@@ -35,7 +35,7 @@ router.get("/", authorizeRoles(accountingRoles), getAllPayrollsHandler);
 // Admin payroll overview
 router.get(
   "/admin/overview",
-  authorizeRoles([UserRole.ADMIN]),
+  authorizeRoles(accountingRoles),
   getPayrollAdminOverviewHandler,
 );
 
@@ -49,6 +49,6 @@ router.get("/:id", authorizeRoles(accountingRoles), getPayrollByIdHandler);
 router.put("/:id", authorizeRoles(accountingRoles), updatePayrollHandler);
 
 // Delete payroll — ADMIN only
-router.delete("/:id", authorizeRoles([UserRole.ADMIN]), deletePayrollHandler);
+router.delete("/:id", authorizeRoles(accountingRoles), deletePayrollHandler);
 
 export default router;
