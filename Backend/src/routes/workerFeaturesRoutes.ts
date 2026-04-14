@@ -12,6 +12,7 @@ import {
   deleteMyWorkerFeatureEntryHandler,
   getMyDailyTargetsHandler,
   getAdminKaizenSuggestionsHandler,
+  getAdminWorkerToolsOverviewHandler,
   getMyElectricityAnomalyAlertsHandler,
   getMyKaizenSuggestionsHandler,
   getMyMachineStopAlertsHandler,
@@ -53,6 +54,7 @@ router.get("/daily-targets/mine", workerOnly, getMyDailyTargetsHandler);
 router.post("/kaizen", workerOnly, createKaizenSuggestionHandler);
 router.get("/kaizen/mine", workerOnly, getMyKaizenSuggestionsHandler);
 router.get("/admin/kaizen", adminOnly, getAdminKaizenSuggestionsHandler);
+router.get("/admin/overview", adminOnly, getAdminWorkerToolsOverviewHandler);
 router.patch(
   "/admin/kaizen/:id/review",
   adminOnly,

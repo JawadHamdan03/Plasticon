@@ -25,7 +25,7 @@ export function ThemeToggle() {
       </button>
       <button
         type="button"
-        className={`inline-flex min-h-10 items-center gap-2 border-l border-[#EEEEEE] px-3 text-sm font-semibold transition ${isDark ? "bg-[#1F2933] text-[#FFFFFF]" : "bg-[#FFFFFF] text-[#000000] hover:bg-[#EEEEEE]"}`}
+        className={`inline-flex min-h-10 items-center gap-2 border-l border-[#EEEEEE] px-3 text-sm font-semibold  transition ${isDark ? "bg-[#101418] text-[#FFFFFF]" : "bg-[#FFFFFF] text-[#ffffff] hover:bg-[#EEEEEE]"}`}
         onClick={() => setTheme("dark")}
         aria-pressed={isDark}
         aria-label={darkLabel}

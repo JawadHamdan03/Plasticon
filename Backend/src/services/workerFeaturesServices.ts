@@ -868,6 +868,215 @@ export const getMyElectricityAnomalyAlerts = async (userId: number) => {
   return { status: 200, data: rows } as ServiceResult<unknown>;
 };
 
+export const getAdminWorkerToolsOverview = async (filters?: {
+  limit?: number;
+  feature?: string;
+  workerName?: string;
+  fromDate?: string;
+  toDate?: string;
+}): Promise<ServiceResult<unknown>> => {
+  await ensureWorkerFeaturesTables();
+
+  const safeLimit = Number.isFinite(filters?.limit)
+    ? Math.max(20, Math.min(500, Math.floor(Number(filters?.limit))))
+    : 200;
+
+  const featureFilter = asText(filters?.feature).toLowerCase();
+  const workerNameFilter = asText(filters?.workerName);
+  const fromDateFilter = asText(filters?.fromDate);
+  const toDateFilter = asText(filters?.toDate);
+
+  const allowedFeatures = new Set([
+    "stops",
+    "checklist",
+    "waste",
+    "target",
+    "kaizen",
+    "quality",
+    "micro",
+    "anomaly",
+  ]);
+
+  const whereParts: string[] = [];
+  const whereValues: unknown[] = [];
+  const pushValue = (value: unknown) => {
+    whereValues.push(value);
+    return `$${whereValues.length}`;
+  };
+
+  if (featureFilter && allowedFeatures.has(featureFilter)) {
+    whereParts.push(`logs.feature = ${pushValue(featureFilter)}`);
+  }
+
+  if (workerNameFilter) {
+    whereParts.push(
+      `LOWER(logs.worker_name) LIKE LOWER(${pushValue(`%${workerNameFilter}%`)})`,
+    );
+  }
+
+  if (fromDateFilter) {
+    whereParts.push(
+      `logs.created_at >= ${pushValue(fromDateFilter)}::timestamp`,
+    );
+  }
+
+  if (toDateFilter) {
+    whereParts.push(`logs.created_at <= ${pushValue(toDateFilter)}::timestamp`);
+  }
+
+  const whereSql = whereParts.length ? `WHERE ${whereParts.join(" AND ")}` : "";
+
+  const baseLogsSql = `
+    SELECT 'stops'::text AS feature,
+           s.id,
+           s.user_id,
+           u."fullName" AS worker_name,
+           s.created_at,
+           s.machine_label AS title,
+           CONCAT(s.priority, ' - ', s.reason) AS details
+    FROM worker_machine_stop_alerts s
+    JOIN "User" u ON u.id = s.user_id
+
+    UNION ALL
+
+    SELECT 'checklist'::text AS feature,
+           c.id,
+           c.user_id,
+           u."fullName" AS worker_name,
+           c.created_at,
+           c.shift_phase AS title,
+           c.digital_signature AS details
+    FROM worker_shift_checklists c
+    JOIN "User" u ON u.id = c.user_id
+
+    UNION ALL
+
+    SELECT 'waste'::text AS feature,
+           w.id,
+           w.user_id,
+           u."fullName" AS worker_name,
+           w.created_at,
+           w.machine_label AS title,
+           CONCAT(w.material_type, ' / ', ROUND(w.waste_kg::numeric, 2), ' kg') AS details
+    FROM worker_material_waste_logs w
+    JOIN "User" u ON u.id = w.user_id
+
+    UNION ALL
+
+    SELECT 'target'::text AS feature,
+           t.id,
+           t.user_id,
+           u."fullName" AS worker_name,
+           t.created_at,
+           t.target_date::text AS title,
+           CONCAT(t.actual_units, ' / ', t.target_units) AS details
+    FROM worker_daily_targets t
+    JOIN "User" u ON u.id = t.user_id
+
+    UNION ALL
+
+    SELECT 'kaizen'::text AS feature,
+           k.id,
+           k.user_id,
+           u."fullName" AS worker_name,
+           k.created_at,
+           k.title,
+           CONCAT(k.review_status, COALESCE(CONCAT(' - ', k.review_note), '')) AS details
+    FROM worker_kaizen_suggestions k
+    JOIN "User" u ON u.id = k.user_id
+
+    UNION ALL
+
+    SELECT 'quality'::text AS feature,
+           q.id,
+           q.user_id,
+           u."fullName" AS worker_name,
+           q.created_at,
+           q.batch_code AS title,
+           CONCAT(q.machine_label, ' - ', q.issue_type) AS details
+    FROM worker_quality_issue_reports q
+    JOIN "User" u ON u.id = q.user_id
+
+    UNION ALL
+
+    SELECT 'micro'::text AS feature,
+           m.id,
+           m.user_id,
+           u."fullName" AS worker_name,
+           m.created_at,
+           m.machine_label AS title,
+           CONCAT(ROUND(m.duration_minutes::numeric, 1), ' min - ', m.reason) AS details
+    FROM worker_micro_stops m
+    JOIN "User" u ON u.id = m.user_id
+
+    UNION ALL
+
+    SELECT 'anomaly'::text AS feature,
+           e.id,
+           e.user_id,
+           u."fullName" AS worker_name,
+           e.created_at,
+           e.machine_label AS title,
+           CONCAT(e.severity, ' - ', ROUND(e.current_kwh::numeric, 2), ' kWh') AS details
+    FROM worker_electricity_anomaly_alerts e
+    JOIN "User" u ON u.id = e.user_id
+  `;
+
+  const summaryRows = (await prisma.$queryRawUnsafe(
+    `SELECT
+      COALESCE(SUM(CASE WHEN logs.feature = 'stops' THEN 1 ELSE 0 END), 0) AS stops_count,
+      COALESCE(SUM(CASE WHEN logs.feature = 'checklist' THEN 1 ELSE 0 END), 0) AS checklist_count,
+      COALESCE(SUM(CASE WHEN logs.feature = 'waste' THEN 1 ELSE 0 END), 0) AS waste_count,
+      COALESCE(SUM(CASE WHEN logs.feature = 'target' THEN 1 ELSE 0 END), 0) AS target_count,
+      COALESCE(SUM(CASE WHEN logs.feature = 'kaizen' THEN 1 ELSE 0 END), 0) AS kaizen_count,
+      COALESCE(SUM(CASE WHEN logs.feature = 'quality' THEN 1 ELSE 0 END), 0) AS quality_count,
+      COALESCE(SUM(CASE WHEN logs.feature = 'micro' THEN 1 ELSE 0 END), 0) AS micro_count,
+      COALESCE(SUM(CASE WHEN logs.feature = 'anomaly' THEN 1 ELSE 0 END), 0) AS anomaly_count
+     FROM (${baseLogsSql}) logs
+     ${whereSql}`,
+    ...whereValues,
+  )) as Array<Record<string, unknown>>;
+
+  const summary = summaryRows[0] ?? {};
+
+  const items = (await prisma.$queryRawUnsafe(
+    `SELECT * FROM (${baseLogsSql}) logs
+      ${whereSql}
+    ORDER BY logs.created_at DESC
+      LIMIT $${whereValues.length + 1}`,
+    ...whereValues,
+    safeLimit,
+  )) as Array<Record<string, unknown>>;
+
+  const total =
+    Number(summary.stops_count ?? 0) +
+    Number(summary.checklist_count ?? 0) +
+    Number(summary.waste_count ?? 0) +
+    Number(summary.target_count ?? 0) +
+    Number(summary.kaizen_count ?? 0) +
+    Number(summary.quality_count ?? 0) +
+    Number(summary.micro_count ?? 0) +
+    Number(summary.anomaly_count ?? 0);
+
+  return {
+    status: 200,
+    data: {
+      summary: {
+        stops: Number(summary.stops_count ?? 0),
+        checklist: Number(summary.checklist_count ?? 0),
+        waste: Number(summary.waste_count ?? 0),
+        target: Number(summary.target_count ?? 0),
+        kaizen: Number(summary.kaizen_count ?? 0),
+        quality: Number(summary.quality_count ?? 0),
+        micro: Number(summary.micro_count ?? 0),
+        anomaly: Number(summary.anomaly_count ?? 0),
+        total,
+      },
+      items,
+    },
+  };
+};
+
 export const deleteMyWorkerFeatureEntry = async (
   userId: number,
   feature: string,
