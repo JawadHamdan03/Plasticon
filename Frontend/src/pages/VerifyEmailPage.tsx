@@ -84,3 +84,7 @@ export function VerifyEmailPage({ locale }: VerifyEmailPageProps) {
     </section>
   );
 }
+
+
+
+

@@ -10,3 +10,6 @@ export async function readApiError(response: Response) {
   const payload = (await response.json().catch(() => ({}))) as ApiErrorPayload;
   return payload.error ?? payload.message ?? "Something went wrong.";
 }
+
+
+

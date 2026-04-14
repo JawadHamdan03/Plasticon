@@ -98,3 +98,7 @@ export function ForgotPasswordPage({ locale }: ForgotPasswordPageProps) {
     </section>
   );
 }
+
+
+
+

@@ -2,8 +2,6 @@ import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useLocale } from "../context/LocaleContext";
-import { LocaleSwitch } from "../components/LocaleSwitch";
-import { DateTimeBadge } from "../components/DateTimeBadge";
 import { appCopy } from "../content/appCopy";
 import { API_BASE_URL, readApiError } from "../lib/api";
 
@@ -76,15 +74,6 @@ export function UsersAdminPage() {
             <h1>{copy.admin.usersTitle}</h1>
           </div>
           <div className="admin-header__actions">
-            <DateTimeBadge />
-            <LocaleSwitch />
-            <button
-              type="button"
-              className="auth-button auth-button--ghost"
-              onClick={() => navigate("/dashboard")}
-            >
-              {copy.backToDashboard}
-            </button>
             <button
               type="button"
               className="auth-button auth-button--ghost"
@@ -161,3 +150,7 @@ export function UsersAdminPage() {
     </main>
   );
 }
+
+
+
+

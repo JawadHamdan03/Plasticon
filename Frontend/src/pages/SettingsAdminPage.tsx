@@ -1,9 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
+import { Download } from "lucide-react";
+import { useSearchParams } from "react-router-dom";
 import { useLocale } from "../context/LocaleContext";
-import { LocaleSwitch } from "../components/LocaleSwitch";
-import { DateTimeBadge } from "../components/DateTimeBadge";
 import { UserAvatarBadge } from "../components/UserAvatarBadge";
 import { appCopy } from "../content/appCopy";
 import { API_BASE_URL, readApiError } from "../lib/api";
@@ -52,6 +50,23 @@ type SystemFormState = {
   monthlyReportTime: string;
 };
 
+type NotificationRuleKey =
+  | "PRODUCTION_CREATED"
+  | "PURCHASE_CREATED"
+  | "SALE_CREATED"
+  | "INVENTORY_TRANSACTION_CREATED";
+
+type NotificationRuleDelivery = "ADMIN_ONLY" | "ADMIN_AND_SHIFT";
+
+type NotificationRulesSettings = {
+  rules: Record<
+    NotificationRuleKey,
+    { enabled: boolean; delivery: NotificationRuleDelivery }
+  >;
+  updatedAt?: string;
+  updatedById?: number | null;
+};
+
 type FrequencyValue = SystemFormState["inventoryAuditFrequency"];
 
 type SettingsTab =
@@ -61,6 +76,17 @@ type SettingsTab =
   | "production"
   | "system"
   | "kaizen";
+
+const settingsTabValues: SettingsTab[] = [
+  "overview",
+  "trend",
+  "production",
+  "system",
+  "kaizen",
+];
+
+const isSettingsTab = (value: string | null): value is SettingsTab =>
+  value !== null && settingsTabValues.includes(value as SettingsTab);
 
 type AdminKaizenSuggestion = {
   id: number;
@@ -116,6 +142,15 @@ const defaultSystemForm: SystemFormState = {
   weeklyReportTime: "09:00",
   monthlyReportDayOfMonth: "1",
   monthlyReportTime: "09:00",
+};
+
+const defaultNotificationRules: NotificationRulesSettings = {
+  rules: {
+    PRODUCTION_CREATED: { enabled: true, delivery: "ADMIN_AND_SHIFT" },
+    PURCHASE_CREATED: { enabled: true, delivery: "ADMIN_ONLY" },
+    SALE_CREATED: { enabled: true, delivery: "ADMIN_ONLY" },
+    INVENTORY_TRANSACTION_CREATED: { enabled: true, delivery: "ADMIN_ONLY" },
+  },
 };
 
 const tokenKey = "plasticon_token";
@@ -215,8 +250,7 @@ async function fetchWithAdminAuth(path: string, options?: RequestInit) {
 }
 
 export function SettingsAdminPage() {
-  const navigate = useNavigate();
-  const { signOut } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { locale } = useLocale();
   const copy = appCopy[locale];
 
@@ -239,6 +273,11 @@ export function SettingsAdminPage() {
   const [statusTone, setStatusTone] = useState<"success" | "error" | "">("");
   const [systemForm, setSystemForm] =
     useState<SystemFormState>(defaultSystemForm);
+  const [notificationRules, setNotificationRules] =
+    useState<NotificationRulesSettings>(defaultNotificationRules);
+  const [initialNotificationRules, setInitialNotificationRules] =
+    useState<NotificationRulesSettings>(defaultNotificationRules);
+  const [savingNotificationRules, setSavingNotificationRules] = useState(false);
   const [snapshots, setSnapshots] = useState<OpsSnapshot[]>([]);
   const [snapshotMessage, setSnapshotMessage] = useState("");
   const [loadingSnapshots, setLoadingSnapshots] = useState(false);
@@ -261,6 +300,21 @@ export function SettingsAdminPage() {
     "ALL" | "PENDING" | "APPROVED" | "REJECTED"
   >("PENDING");
   const [loadingKaizen, setLoadingKaizen] = useState(false);
+
+  useEffect(() => {
+    const tabParam = searchParams.get("tab");
+
+    if (!isSettingsTab(tabParam)) {
+      if (activeTab !== "overview") {
+        setActiveTab("overview");
+      }
+      return;
+    }
+
+    if (tabParam !== activeTab) {
+      setActiveTab(tabParam);
+    }
+  }, [activeTab, searchParams]);
 
   const text = useMemo(
     () =>
@@ -471,7 +525,6 @@ export function SettingsAdminPage() {
 
   const settingsTabs: Array<{ id: SettingsTab; label: string }> = [
     { id: "overview", label: text.tabOverview },
-    { id: "snapshots", label: text.tabSnapshots },
     { id: "trend", label: text.tabTrend },
     { id: "production", label: text.tabProduction },
     { id: "system", label: text.tabSystem },
@@ -539,6 +592,16 @@ export function SettingsAdminPage() {
         buildProductionDrafts(overviewData.productionSettings ?? []),
       );
       setSystemForm(buildSystemForm(overviewData.latestSystemSetting));
+
+      const notificationRulesResponse = await fetchWithAdminAuth(
+        "/settings/notification-rules",
+      );
+      if (notificationRulesResponse.ok) {
+        const notificationRulesData =
+          (await notificationRulesResponse.json()) as NotificationRulesSettings;
+        setNotificationRules(notificationRulesData);
+        setInitialNotificationRules(notificationRulesData);
+      }
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : text.loading);
     } finally {
@@ -704,7 +767,9 @@ export function SettingsAdminPage() {
 
     return () => {
       socket.off("notification:new", refreshKaizen);
-      socket.disconnect();
+      if (socket.connected) {
+        socket.disconnect();
+      }
     };
   }, [activeTab, loadKaizenSuggestions]);
 
@@ -937,6 +1002,68 @@ export function SettingsAdminPage() {
     setStatusMessage("");
   };
 
+  const notificationRulesChanged =
+    JSON.stringify(notificationRules.rules) !==
+    JSON.stringify(initialNotificationRules.rules);
+
+  const updateNotificationRule = (
+    key: NotificationRuleKey,
+    updates: Partial<{ enabled: boolean; delivery: NotificationRuleDelivery }>,
+  ) => {
+    setNotificationRules((prev) => ({
+      ...prev,
+      rules: {
+        ...prev.rules,
+        [key]: {
+          ...prev.rules[key],
+          ...updates,
+        },
+      },
+    }));
+  };
+
+  const handleSaveNotificationRules = async () => {
+    setSavingNotificationRules(true);
+    setStatusTone("");
+    setStatusMessage("");
+
+    try {
+      const response = await fetchWithAdminAuth(
+        "/settings/notification-rules",
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ rules: notificationRules.rules }),
+        },
+      );
+
+      if (!response.ok) {
+        throw new Error(await readApiError(response));
+      }
+
+      const saved = (await response.json()) as NotificationRulesSettings;
+      setNotificationRules(saved);
+      setInitialNotificationRules(saved);
+      setStatusTone("success");
+      setStatusMessage(
+        locale === "ar"
+          ? "تم حفظ قواعد الإشعارات بنجاح"
+          : "Notification rules saved successfully",
+      );
+    } catch (saveError) {
+      setStatusTone("error");
+      setStatusMessage(
+        saveError instanceof Error
+          ? saveError.message
+          : locale === "ar"
+            ? "فشل حفظ قواعد الإشعارات"
+            : "Failed to save notification rules",
+      );
+    } finally {
+      setSavingNotificationRules(false);
+    }
+  };
+
   const applySystemPreset = (preset: "BALANCED" | "STRICT" | "RELAXED") => {
     const next: SystemFormState =
       preset === "STRICT"
@@ -1104,33 +1231,7 @@ export function SettingsAdminPage() {
             <h1>{text.title}</h1>
           </div>
           <div className="admin-header__actions">
-            <DateTimeBadge />
-            <LocaleSwitch />
             <UserAvatarBadge size="sm" />
-            <button
-              type="button"
-              className="auth-button auth-button--ghost"
-              onClick={() => navigate("/dashboard")}
-            >
-              {copy.backToDashboard}
-            </button>
-            <button
-              type="button"
-              className="auth-button auth-button--ghost"
-              onClick={() => navigate("/admin")}
-            >
-              {locale === "ar" ? "لوحة الإدارة" : "Admin"}
-            </button>
-            <button
-              type="button"
-              className="auth-button"
-              onClick={() => {
-                signOut();
-                navigate("/login");
-              }}
-            >
-              {copy.signOut}
-            </button>
           </div>
         </header>
 
@@ -1165,7 +1266,15 @@ export function SettingsAdminPage() {
                   className={`auth-button settings-tab-btn ${
                     activeTab === tab.id ? "" : "auth-button--ghost"
                   }`}
-                  onClick={() => setActiveTab(tab.id)}
+                  onClick={() => {
+                    setActiveTab(tab.id);
+                    if (tab.id === "overview") {
+                      setSearchParams({}, { replace: true });
+                      return;
+                    }
+
+                    setSearchParams({ tab: tab.id }, { replace: true });
+                  }}
                 >
                   {tab.label}
                 </button>
@@ -1285,17 +1394,21 @@ export function SettingsAdminPage() {
                 <button
                   type="button"
                   className="auth-button auth-button--ghost"
+                  dir="ltr"
                   onClick={exportLatestSnapshot}
                   disabled={!latestSnapshot}
                 >
+                  <Download className="h-4 w-4" aria-hidden="true" />
                   {text.exportLatest}
                 </button>
                 <button
                   type="button"
                   className="auth-button auth-button--ghost"
+                  dir="ltr"
                   onClick={exportReadingsCsv}
                   disabled={!snapshots.length}
                 >
+                  <Download className="h-4 w-4" aria-hidden="true" />
                   {text.exportReadingsCsv}
                 </button>
               </div>
@@ -1468,9 +1581,11 @@ export function SettingsAdminPage() {
                 <button
                   type="button"
                   className="auth-button auth-button--ghost"
+                  dir="ltr"
                   onClick={exportTrendCsv}
                   disabled={!snapshotTrend.length}
                 >
+                  <Download className="h-4 w-4" aria-hidden="true" />
                   {text.exportTrendCsv}
                 </button>
               </div>
@@ -1783,6 +1898,91 @@ export function SettingsAdminPage() {
                     />
                   </label>
                 </div>
+
+                <div className="settings-group-title">
+                  {locale === "ar"
+                    ? "قواعد الإشعارات الأوتوماتيكية"
+                    : "Automatic Notification Rules"}
+                </div>
+                <div className="admin-table-wrap">
+                  <table className="admin-table">
+                    <thead>
+                      <tr>
+                        <th>{locale === "ar" ? "القاعدة" : "Rule"}</th>
+                        <th>{locale === "ar" ? "مفعلة" : "Enabled"}</th>
+                        <th>{locale === "ar" ? "الوصول" : "Delivery"}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(
+                        [
+                          [
+                            "PRODUCTION_CREATED",
+                            locale === "ar"
+                              ? "عند إضافة إنتاج"
+                              : "On production create",
+                          ],
+                          [
+                            "PURCHASE_CREATED",
+                            locale === "ar"
+                              ? "عند إضافة شراء"
+                              : "On purchase create",
+                          ],
+                          [
+                            "SALE_CREATED",
+                            locale === "ar"
+                              ? "عند إضافة بيع"
+                              : "On sale create",
+                          ],
+                          [
+                            "INVENTORY_TRANSACTION_CREATED",
+                            locale === "ar"
+                              ? "عند حركة مخزون"
+                              : "On inventory transaction",
+                          ],
+                        ] as Array<[NotificationRuleKey, string]>
+                      ).map(([ruleKey, label]) => (
+                        <tr key={ruleKey}>
+                          <td>{label}</td>
+                          <td>
+                            <input
+                              type="checkbox"
+                              checked={notificationRules.rules[ruleKey].enabled}
+                              onChange={(event) =>
+                                updateNotificationRule(ruleKey, {
+                                  enabled: event.target.checked,
+                                })
+                              }
+                            />
+                          </td>
+                          <td>
+                            <select
+                              value={notificationRules.rules[ruleKey].delivery}
+                              onChange={(event) =>
+                                updateNotificationRule(ruleKey, {
+                                  delivery: event.target
+                                    .value as NotificationRuleDelivery,
+                                })
+                              }
+                              disabled={
+                                !notificationRules.rules[ruleKey].enabled
+                              }
+                            >
+                              <option value="ADMIN_ONLY">
+                                {locale === "ar" ? "الأدمن فقط" : "Admin only"}
+                              </option>
+                              <option value="ADMIN_AND_SHIFT">
+                                {locale === "ar"
+                                  ? "الأدمن + الشفت"
+                                  : "Admin + shift"}
+                              </option>
+                            </select>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
 
               <aside className="admin-panel settings-side-panel">
@@ -1822,6 +2022,18 @@ export function SettingsAdminPage() {
                 onClick={() => void handleSaveSystemSettings()}
               >
                 {savingSystem ? text.saving : copy.save}
+              </button>
+              <button
+                type="button"
+                className="auth-button auth-button--ghost"
+                disabled={savingNotificationRules || !notificationRulesChanged}
+                onClick={() => void handleSaveNotificationRules()}
+              >
+                {savingNotificationRules
+                  ? text.saving
+                  : locale === "ar"
+                    ? "حفظ قواعد الإشعارات"
+                    : "Save notification rules"}
               </button>
             </div>
             {!systemHasChanges ? (

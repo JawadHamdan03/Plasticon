@@ -11,6 +11,8 @@ import {
   updateSettingsSnapshot,
   upsertProductionSetting,
   upsertSystemSettings,
+  getNotificationRules,
+  upsertNotificationRules,
 } from "../controllers/settingsController";
 import { authorizeRoles } from "../middleware/authMiddleware";
 import { UserRole } from "../config/generated/prisma/client";
@@ -30,6 +32,16 @@ router.put(
 );
 router.get("/system", authorizeRoles([UserRole.ADMIN]), getSystemSettings);
 router.put("/system", authorizeRoles([UserRole.ADMIN]), upsertSystemSettings);
+router.get(
+  "/notification-rules",
+  authorizeRoles([UserRole.ADMIN]),
+  getNotificationRules,
+);
+router.put(
+  "/notification-rules",
+  authorizeRoles([UserRole.ADMIN]),
+  upsertNotificationRules,
+);
 router.get(
   "/admin/overview",
   authorizeRoles([UserRole.ADMIN]),

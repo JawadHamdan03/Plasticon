@@ -2,6 +2,7 @@ import { Router } from "express";
 import {
   checkInHandler,
   checkOutHandler,
+  deleteAttendance,
   getAllAttendances,
   getMyAttendances,
   updateAttendance,
@@ -44,8 +45,22 @@ router.get(
   getMyAttendances,
 );
 
-router.get("/all", authorizeRoles([UserRole.ADMIN]), getAllAttendances);
+router.get(
+  "/all",
+  authorizeRoles([UserRole.ADMIN, UserRole.ACCOUNTANT]),
+  getAllAttendances,
+);
 
-router.put("/:id", authorizeRoles([UserRole.ADMIN]), updateAttendance);
+router.put(
+  "/:id",
+  authorizeRoles([UserRole.ADMIN, UserRole.ACCOUNTANT]),
+  updateAttendance,
+);
+
+router.delete(
+  "/:id",
+  authorizeRoles([UserRole.ADMIN, UserRole.ACCOUNTANT]),
+  deleteAttendance,
+);
 
 export default router;

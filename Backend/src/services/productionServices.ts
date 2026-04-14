@@ -11,6 +11,7 @@ import {
 } from "../config/socket";
 import { auditAsync } from "./auditHelper";
 import { AuditAction, AuditEntityType } from "./auditServices";
+import { dispatchAutoNotification } from "./notificationServices";
 
 type ServiceResult<T> = {
   status: number;
@@ -332,12 +333,7 @@ const getMaterialUsageEntries = (payload: CreateProductionPayload) => {
   ] as const;
 
   for (const [field, original, parsed] of numericFields) {
-    if (
-      original !== undefined &&
-      original !== null &&
-      original !== "" &&
-      parsed === null
-    ) {
+    if (original !== undefined && original !== null && parsed === null) {
       return {
         error: {
           status: 400,
@@ -462,7 +458,6 @@ export const createProductionRecord = async (
   if (
     payload.downtimeMinutes !== undefined &&
     payload.downtimeMinutes !== null &&
-    payload.downtimeMinutes !== "" &&
     downtimeMinutes === null
   ) {
     return {
@@ -591,6 +586,14 @@ export const createProductionRecord = async (
       totalPieces,
     },
   );
+
+  await dispatchAutoNotification({
+    event: "PRODUCTION_CREATED",
+    actorUserId: userId,
+    shiftId: Number(resolvedShiftId),
+    productionId: production.id,
+    totalPieces,
+  });
 
   return { status: 201, data: production };
 };

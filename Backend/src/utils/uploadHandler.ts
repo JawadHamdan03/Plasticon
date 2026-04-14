@@ -31,8 +31,29 @@ const fileFilter = (_req: any, file: Express.Multer.File, cb: any) => {
   }
 };
 
+const invoiceFileFilter = (_req: any, file: Express.Multer.File, cb: any) => {
+  const allowedMimes = [
+    "image/jpeg",
+    "image/png",
+    "image/gif",
+    "image/webp",
+    "application/pdf",
+  ];
+  if (allowedMimes.includes(file.mimetype)) {
+    cb(null, true);
+  } else {
+    cb(new Error("Only image and PDF files are allowed"));
+  }
+};
+
 export const upload = multer({
   storage,
   fileFilter,
   limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+});
+
+export const uploadInvoice = multer({
+  storage,
+  fileFilter: invoiceFileFilter,
+  limits: { fileSize: 10 * 1024 * 1024 },
 });

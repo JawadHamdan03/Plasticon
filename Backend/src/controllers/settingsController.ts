@@ -14,6 +14,10 @@ import {
   upsertProductionSetting as upsertProductionSettingService,
   upsertSystemSettings as upsertSystemSettingsService,
 } from "../services/settingsServices";
+import {
+  getNotificationRulesSettings,
+  upsertNotificationRulesSettings,
+} from "../services/notificationRuleSettings";
 
 export const getProductionSettings = async (_req: Request, res: Response) => {
   const result = await getProductionSettingsService();
@@ -224,4 +228,17 @@ export const getElectricityShiftConsumptionReport = async (
   }
 
   res.status(result.status).json(result.data);
+};
+
+export const getNotificationRules = async (_req: Request, res: Response) => {
+  const data = await getNotificationRulesSettings();
+  res.status(200).json(data);
+};
+
+export const upsertNotificationRules = async (
+  req: AuthenticatedRequest,
+  res: Response,
+) => {
+  const data = await upsertNotificationRulesSettings(req.body, req.user?.id);
+  res.status(200).json(data);
 };

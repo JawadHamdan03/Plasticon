@@ -102,6 +102,40 @@ export function MyAttendancePage() {
     [records],
   );
 
+  const attendanceSummary = useMemo(() => {
+    const daySet = new Set<string>();
+    const currentMonthDaySet = new Set<string>();
+    let fridayCount = 0;
+
+    const now = new Date();
+    const month = now.getMonth();
+    const year = now.getFullYear();
+
+    for (const record of records) {
+      const date = new Date(record.checkIn);
+      if (Number.isNaN(date.getTime())) {
+        continue;
+      }
+
+      const dayKey = `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`;
+      if (!daySet.has(dayKey) && date.getDay() === 5) {
+        fridayCount += 1;
+      }
+
+      daySet.add(dayKey);
+
+      if (date.getMonth() === month && date.getFullYear() === year) {
+        currentMonthDaySet.add(dayKey);
+      }
+    }
+
+    return {
+      totalWorkedDays: daySet.size,
+      currentMonthWorkedDays: currentMonthDaySet.size,
+      fridayDays: fridayCount,
+    };
+  }, [records]);
+
   const runAction = async (action: "check-in" | "check-out") => {
     setActionLoading(action);
     setErrorMessage("");
@@ -151,6 +185,10 @@ export function MyAttendancePage() {
         <strong>{records.length}</strong>
         <span>{copy.admin.status}</span>
         <strong>{hasOpenAttendance ? t.statusOpen : t.statusClosed}</strong>
+        <span>{locale === "ar" ? "أيام الدوام" : "Worked days"}</span>
+        <strong>{attendanceSummary.totalWorkedDays}</strong>
+        <span>{locale === "ar" ? "أيام الجمعة" : "Friday days"}</span>
+        <strong>{attendanceSummary.fridayDays}</strong>
       </div>
 
       <section className="module-grid">

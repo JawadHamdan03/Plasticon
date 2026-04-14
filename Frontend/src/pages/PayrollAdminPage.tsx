@@ -2,8 +2,6 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useLocale } from "../context/LocaleContext";
-import { LocaleSwitch } from "../components/LocaleSwitch";
-import { DateTimeBadge } from "../components/DateTimeBadge";
 import { appCopy } from "../content/appCopy";
 import { API_BASE_URL, readApiError } from "../lib/api";
 
@@ -48,7 +46,7 @@ async function fetchWithAdminAuth(path: string, options?: RequestInit) {
 
 export function PayrollAdminPage() {
   const navigate = useNavigate();
-  const { signOut } = useAuth();
+  const { user } = useAuth();
   const { locale } = useLocale();
   const copy = appCopy[locale];
 
@@ -173,6 +171,35 @@ export function PayrollAdminPage() {
     }
   };
 
+  const deletePayrollRecord = async (id: number) => {
+    const confirmed = window.confirm(
+      locale === "ar"
+        ? "هل أنت متأكد من حذف سجل الراتب؟"
+        : "Are you sure you want to delete this payroll record?",
+    );
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      const response = await fetchWithAdminAuth(`/payroll/${id}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        throw new Error(await readApiError(response));
+      }
+
+      await loadData();
+    } catch (deleteError) {
+      window.alert(
+        deleteError instanceof Error
+          ? deleteError.message
+          : "Failed to delete payroll",
+      );
+    }
+  };
+
   useEffect(() => {
     void loadData();
   }, [loadData]);
@@ -186,31 +213,14 @@ export function PayrollAdminPage() {
             <h1>{text.title}</h1>
           </div>
           <div className="admin-header__actions">
-            <DateTimeBadge />
-            <LocaleSwitch />
             <button
               type="button"
               className="auth-button auth-button--ghost"
-              onClick={() => navigate("/dashboard")}
+              onClick={() =>
+                navigate(user?.role === "ADMIN" ? "/admin" : "/dashboard")
+              }
             >
-              {copy.backToDashboard}
-            </button>
-            <button
-              type="button"
-              className="auth-button auth-button--ghost"
-              onClick={() => navigate("/admin")}
-            >
-              {locale === "ar" ? "لوحة الإدارة" : "Admin"}
-            </button>
-            <button
-              type="button"
-              className="auth-button"
-              onClick={() => {
-                signOut();
-                navigate("/login");
-              }}
-            >
-              {copy.signOut}
+              {locale === "ar" ? "الرجوع" : "Back"}
             </button>
           </div>
         </header>
@@ -263,11 +273,11 @@ export function PayrollAdminPage() {
             </article>
           </div>
 
-          <div className="admin-grid">
+          <div className="admin-grid payroll-admin-stack">
             <article className="admin-panel">
               <h3>{text.byRole}</h3>
-              <div className="admin-table-wrap">
-                <table className="admin-table">
+              <div className="admin-table-wrap payroll-admin-table-wrap">
+                <table className="admin-table payroll-admin-table">
                   <thead>
                     <tr>
                       <th>{copy.admin.role}</th>
@@ -290,8 +300,8 @@ export function PayrollAdminPage() {
 
             <article className="admin-panel">
               <h3>{text.recent}</h3>
-              <div className="admin-table-wrap">
-                <table className="admin-table">
+              <div className="admin-table-wrap payroll-admin-table-wrap">
+                <table className="admin-table payroll-admin-table">
                   <thead>
                     <tr>
                       <th>{copy.admin.name}</th>
@@ -409,13 +419,24 @@ export function PayrollAdminPage() {
                               </button>
                             </>
                           ) : (
-                            <button
-                              type="button"
-                              className="auth-button"
-                              onClick={() => startEditPayroll(item)}
-                            >
-                              {copy.admin.edit}
-                            </button>
+                            <>
+                              <button
+                                type="button"
+                                className="auth-button"
+                                onClick={() => startEditPayroll(item)}
+                              >
+                                {copy.admin.edit}
+                              </button>
+                              <button
+                                type="button"
+                                className="auth-button auth-button--ghost"
+                                onClick={() =>
+                                  void deletePayrollRecord(item.id)
+                                }
+                              >
+                                {locale === "ar" ? "حذف" : "Delete"}
+                              </button>
+                            </>
                           )}
                         </td>
                       </tr>

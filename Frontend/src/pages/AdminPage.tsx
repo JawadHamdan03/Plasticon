@@ -2,10 +2,12 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useLocale } from "../context/LocaleContext";
-import { LocaleSwitch } from "../components/LocaleSwitch";
-import { DateTimeBadge } from "../components/DateTimeBadge";
 import { appCopy } from "../content/appCopy";
 import { API_BASE_URL, readApiError } from "../lib/api";
+import { Button } from "../components/ui/button";
+import { EmptyState } from "../components/ui/empty-state";
+import { PageHeader } from "../components/ui/page-header";
+import { TableBase, TableShell } from "../components/ui/table-shell";
 
 type AdminUser = {
   id: number;
@@ -163,7 +165,7 @@ async function fetchWithAdminAuth(path: string, options?: RequestInit) {
 
 export function AdminPage() {
   const navigate = useNavigate();
-  const { user, signOut } = useAuth();
+  const { user } = useAuth();
   const { locale } = useLocale();
   const copy = appCopy[locale];
 
@@ -807,42 +809,21 @@ export function AdminPage() {
     }
   };
 
-  const handleSignOut = () => {
-    signOut();
-    navigate("/login");
-  };
-
   return (
     <main className="admin-shell" dir={locale === "ar" ? "rtl" : "ltr"}>
       <section className="admin-card">
         <header className="admin-header">
-          <div>
-            <p className="auth-eyebrow">Plasticon</p>
-            <h1>{copy.admin.title}</h1>
-            <p>{copy.admin.subtitle}</p>
-          </div>
+          <PageHeader
+            eyebrow="Plasticon"
+            title={copy.admin.title}
+            subtitle={copy.admin.subtitle}
+          />
           <div className="admin-header__actions">
             <span className="admin-role-badge">
               {roleBadge === "UNKNOWN"
                 ? roleBadge
                 : getRoleLabel(roleBadge as AdminUser["role"])}
             </span>
-            <DateTimeBadge />
-            <LocaleSwitch />
-            <button
-              type="button"
-              className="auth-button auth-button--ghost"
-              onClick={() => navigate("/dashboard")}
-            >
-              {copy.backToDashboard}
-            </button>
-            <button
-              type="button"
-              className="auth-button"
-              onClick={handleSignOut}
-            >
-              {copy.signOut}
-            </button>
           </div>
         </header>
 
@@ -850,28 +831,18 @@ export function AdminPage() {
           <div className="admin-section__head">
             <h2>{copy.admin.usersTitle}</h2>
             <div style={{ display: "flex", gap: "8px" }}>
-              <button
-                type="button"
-                className="auth-button"
-                onClick={() => navigate("/register")}
-              >
+              <Button onClick={() => navigate("/register")}>
                 {copy.admin.addNewUser}
-              </button>
-              <button
-                type="button"
-                className="auth-button"
-                onClick={() => void loadUsers()}
-              >
-                {copy.refresh}
-              </button>
+              </Button>
+              <Button onClick={() => void loadUsers()}>{copy.refresh}</Button>
             </div>
           </div>
           {usersLoading ? <p>{copy.admin.loadingUsers}</p> : null}
           {usersError ? (
             <div className="auth-alert auth-alert--error">{usersError}</div>
           ) : null}
-          <div className="admin-table-wrap">
-            <table className="admin-table">
+          <TableShell>
+            <TableBase className="admin-table">
               <thead>
                 <tr>
                   <th>{copy.admin.id}</th>
@@ -1017,8 +988,8 @@ export function AdminPage() {
                   </tr>
                 ))}
               </tbody>
-            </table>
-          </div>
+            </TableBase>
+          </TableShell>
         </section>
 
         <section className="admin-section" id="attendance">
@@ -1076,8 +1047,8 @@ export function AdminPage() {
             </article>
           </div>
           <h3>{attendanceText.recentAttendances}</h3>
-          <div className="admin-table-wrap">
-            <table className="admin-table">
+          <TableShell>
+            <TableBase className="admin-table">
               <thead>
                 <tr>
                   <th>{copy.admin.id}</th>
@@ -1112,10 +1083,10 @@ export function AdminPage() {
                   </tr>
                 ))}
               </tbody>
-            </table>
-          </div>
+            </TableBase>
+          </TableShell>
           {!attendanceLoading && attendanceRecords.length === 0 ? (
-            <p className="admin-muted">{attendanceText.noData}</p>
+            <EmptyState title={attendanceText.noData} />
           ) : null}
         </section>
 
@@ -1173,8 +1144,8 @@ export function AdminPage() {
           <div className="admin-grid">
             <article className="admin-panel">
               <h3>{payrollText.byRole}</h3>
-              <div className="admin-table-wrap">
-                <table className="admin-table">
+              <TableShell>
+                <TableBase className="admin-table">
                   <thead>
                     <tr>
                       <th>{copy.admin.role}</th>
@@ -1191,13 +1162,13 @@ export function AdminPage() {
                       </tr>
                     ))}
                   </tbody>
-                </table>
-              </div>
+                </TableBase>
+              </TableShell>
             </article>
             <article className="admin-panel">
               <h3>{payrollText.recentPayrolls}</h3>
-              <div className="admin-table-wrap">
-                <table className="admin-table">
+              <TableShell>
+                <TableBase className="admin-table">
                   <thead>
                     <tr>
                       <th>{copy.admin.name}</th>
@@ -1218,12 +1189,12 @@ export function AdminPage() {
                       </tr>
                     ))}
                   </tbody>
-                </table>
-              </div>
+                </TableBase>
+              </TableShell>
             </article>
           </div>
           {!payrollLoading && payrollRecords.length === 0 ? (
-            <p className="admin-muted">{payrollText.noData}</p>
+            <EmptyState title={payrollText.noData} />
           ) : null}
         </section>
 
@@ -1246,8 +1217,8 @@ export function AdminPage() {
             <p className="admin-muted">{copy.admin.noShifts}</p>
           ) : null}
           {shifts.length > 0 ? (
-            <div className="admin-table-wrap">
-              <table className="admin-table">
+            <TableShell>
+              <TableBase className="admin-table">
                 <thead>
                   <tr>
                     <th>{copy.admin.id}</th>
@@ -1276,8 +1247,8 @@ export function AdminPage() {
                     </tr>
                   ))}
                 </tbody>
-              </table>
-            </div>
+              </TableBase>
+            </TableShell>
           ) : null}
         </section>
 
@@ -1300,8 +1271,8 @@ export function AdminPage() {
             <p className="admin-muted">{copy.admin.noMachines}</p>
           ) : null}
           {machines.length > 0 ? (
-            <div className="admin-table-wrap">
-              <table className="admin-table">
+            <TableShell>
+              <TableBase className="admin-table">
                 <thead>
                   <tr>
                     <th>{copy.admin.id}</th>
@@ -1320,8 +1291,8 @@ export function AdminPage() {
                     </tr>
                   ))}
                 </tbody>
-              </table>
-            </div>
+              </TableBase>
+            </TableShell>
           ) : null}
         </section>
 
@@ -1344,8 +1315,8 @@ export function AdminPage() {
             <p className="admin-muted">{copy.admin.noAuditLogs}</p>
           ) : null}
           {auditLogs.length > 0 ? (
-            <div className="admin-table-wrap">
-              <table className="admin-table">
+            <TableShell>
+              <TableBase className="admin-table">
                 <thead>
                   <tr>
                     <th>{copy.admin.id}</th>
@@ -1370,8 +1341,8 @@ export function AdminPage() {
                     </tr>
                   ))}
                 </tbody>
-              </table>
-            </div>
+              </TableBase>
+            </TableShell>
           ) : null}
         </section>
 

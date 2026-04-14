@@ -1,6 +1,7 @@
 import { Navigate } from "react-router-dom";
 import type { ReactNode } from "react";
 import { useAuth } from "../context/AuthContext";
+import { AppScaffold } from "./AppScaffold";
 
 type RoleProtectedRouteProps = {
   allowedRoles: Array<string>;
@@ -27,5 +28,9 @@ export function RoleProtectedRoute({
     return <Navigate to="/dashboard" replace />;
   }
 
-  return <>{children}</>;
+  return <AppScaffold>{children}</AppScaffold>;
 }
+
+
+
+

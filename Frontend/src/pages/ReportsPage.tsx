@@ -1,4 +1,11 @@
-import { useState, type FormEvent } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  type FormEvent,
+} from "react";
+import { Download } from "lucide-react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { useAuth } from "../context/AuthContext";
@@ -6,6 +13,9 @@ import { useLocale } from "../context/LocaleContext";
 import { appCopy } from "../content/appCopy";
 import { API_BASE_URL, readApiError } from "../lib/api";
 import { ModulePageShell } from "../components/ModulePageShell";
+import { Button } from "../components/ui/button";
+import { EmptyState } from "../components/ui/empty-state";
+import { TableBase, TableShell } from "../components/ui/table-shell";
 
 type ReportBlock = Record<string, unknown>;
 
@@ -132,6 +142,28 @@ type PayrollActivityReport = {
   }>;
 };
 
+type PurchaseRecord = {
+  id: number;
+  supplierId: number;
+  totalAmount: number;
+  date: string;
+  supplier?: {
+    id: number;
+    name: string;
+  };
+};
+
+type SaleRecord = {
+  id: number;
+  customerId: number;
+  totalAmount: number;
+  date: string;
+  customer?: {
+    id: number;
+    name: string;
+  };
+};
+
 async function fetchWithAuth(path: string, options?: RequestInit) {
   const token = window.localStorage.getItem("plasticon_token");
   return fetch(`${API_BASE_URL}${path}`, {
@@ -185,6 +217,12 @@ export function ReportsPage() {
     useState<PayrollActivityReport | null>(null);
   const [inventorySnapshot, setInventorySnapshot] =
     useState<ReportBlock | null>(null);
+  const [purchases, setPurchases] = useState<PurchaseRecord[]>([]);
+  const [sales, setSales] = useState<SaleRecord[]>([]);
+  const [supplierFromDate, setSupplierFromDate] = useState("");
+  const [supplierToDate, setSupplierToDate] = useState("");
+  const [customerFromDate, setCustomerFromDate] = useState("");
+  const [customerToDate, setCustomerToDate] = useState("");
   const [inventoryThreshold, setInventoryThreshold] = useState("");
   const [productionFilters, setProductionFilters] = useState<PeriodFilters>({
     period: "daily",
@@ -210,8 +248,42 @@ export function ReportsPage() {
     month: "",
     year: "",
   });
+  const [payrollScopeMode, setPayrollScopeMode] = useState<"ALL" | "PERSON">(
+    "ALL",
+  );
+  const [payrollScopeUser, setPayrollScopeUser] = useState("");
   const [loadingSection, setLoadingSection] = useState<string>("");
+  const [loadingCommerce, setLoadingCommerce] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+
+  const loadCommerceReports = useCallback(async () => {
+    setLoadingCommerce(true);
+    try {
+      const [purchasesResponse, salesResponse] = await Promise.all([
+        fetchWithAuth("/purchases/all"),
+        fetchWithAuth("/sales/all"),
+      ]);
+
+      if (!purchasesResponse.ok) {
+        throw new Error(await readApiError(purchasesResponse));
+      }
+
+      if (!salesResponse.ok) {
+        throw new Error(await readApiError(salesResponse));
+      }
+
+      setPurchases((await purchasesResponse.json()) as PurchaseRecord[]);
+      setSales((await salesResponse.json()) as SaleRecord[]);
+    } catch (error) {
+      setErrorMessage(
+        error instanceof Error
+          ? error.message
+          : "Failed to load commerce reports",
+      );
+    } finally {
+      setLoadingCommerce(false);
+    }
+  }, []);
 
   const buildPeriodParams = (filters: PeriodFilters) => {
     const params = new URLSearchParams({ period: filters.period });
@@ -284,6 +356,135 @@ export function ReportsPage() {
     }
   };
 
+  useEffect(() => {
+    void loadCommerceReports();
+  }, [loadCommerceReports]);
+
+  const filteredPurchases = useMemo(() => {
+    const fromTime = supplierFromDate
+      ? new Date(`${supplierFromDate}T00:00:00`).getTime()
+      : null;
+    const toTime = supplierToDate
+      ? new Date(`${supplierToDate}T23:59:59.999`).getTime()
+      : null;
+
+    return purchases.filter((purchase) => {
+      const purchaseTime = new Date(purchase.date).getTime();
+      if (Number.isNaN(purchaseTime)) {
+        return false;
+      }
+      if (fromTime !== null && purchaseTime < fromTime) {
+        return false;
+      }
+      if (toTime !== null && purchaseTime > toTime) {
+        return false;
+      }
+      return true;
+    });
+  }, [purchases, supplierFromDate, supplierToDate]);
+
+  const filteredSales = useMemo(() => {
+    const fromTime = customerFromDate
+      ? new Date(`${customerFromDate}T00:00:00`).getTime()
+      : null;
+    const toTime = customerToDate
+      ? new Date(`${customerToDate}T23:59:59.999`).getTime()
+      : null;
+
+    return sales.filter((sale) => {
+      const saleTime = new Date(sale.date).getTime();
+      if (Number.isNaN(saleTime)) {
+        return false;
+      }
+      if (fromTime !== null && saleTime < fromTime) {
+        return false;
+      }
+      if (toTime !== null && saleTime > toTime) {
+        return false;
+      }
+      return true;
+    });
+  }, [customerFromDate, customerToDate, sales]);
+
+  const supplierReportRows = useMemo(() => {
+    const map = new Map<
+      number,
+      {
+        supplierId: number;
+        supplierName: string;
+        purchasesCount: number;
+        totalAmount: number;
+        lastPurchaseDate: string | null;
+      }
+    >();
+
+    for (const purchase of filteredPurchases) {
+      const supplierId = purchase.supplier?.id ?? purchase.supplierId;
+      const current = map.get(supplierId) ?? {
+        supplierId,
+        supplierName: purchase.supplier?.name ?? `#${supplierId}`,
+        purchasesCount: 0,
+        totalAmount: 0,
+        lastPurchaseDate: null,
+      };
+
+      current.purchasesCount += 1;
+      current.totalAmount += purchase.totalAmount ?? 0;
+      if (
+        !current.lastPurchaseDate ||
+        new Date(purchase.date).getTime() >
+          new Date(current.lastPurchaseDate).getTime()
+      ) {
+        current.lastPurchaseDate = purchase.date;
+      }
+
+      map.set(supplierId, current);
+    }
+
+    return Array.from(map.values()).sort(
+      (a, b) => b.totalAmount - a.totalAmount,
+    );
+  }, [filteredPurchases]);
+
+  const customerReportRows = useMemo(() => {
+    const map = new Map<
+      number,
+      {
+        customerId: number;
+        customerName: string;
+        salesCount: number;
+        totalAmount: number;
+        lastSaleDate: string | null;
+      }
+    >();
+
+    for (const sale of filteredSales) {
+      const customerId = sale.customer?.id ?? sale.customerId;
+      const current = map.get(customerId) ?? {
+        customerId,
+        customerName: sale.customer?.name ?? `#${customerId}`,
+        salesCount: 0,
+        totalAmount: 0,
+        lastSaleDate: null,
+      };
+
+      current.salesCount += 1;
+      current.totalAmount += sale.totalAmount ?? 0;
+      if (
+        !current.lastSaleDate ||
+        new Date(sale.date).getTime() > new Date(current.lastSaleDate).getTime()
+      ) {
+        current.lastSaleDate = sale.date;
+      }
+
+      map.set(customerId, current);
+    }
+
+    return Array.from(map.values()).sort(
+      (a, b) => b.totalAmount - a.totalAmount,
+    );
+  }, [filteredSales]);
+
   const exportPdfTable = (
     title: string,
     metaLines: string[],
@@ -339,20 +540,103 @@ export function ReportsPage() {
     doc.save(fileName);
   };
 
+  const payrollUsers = useMemo(() => {
+    if (!payrollActivity) {
+      return [] as Array<{ username: string; name: string }>;
+    }
+
+    return Array.from(
+      new Map(
+        payrollActivity.records.map((row) => [
+          row.username,
+          {
+            username: row.username,
+            name: row.userName,
+          },
+        ]),
+      ).values(),
+    ).sort((a, b) => a.name.localeCompare(b.name));
+  }, [payrollActivity]);
+
+  useEffect(() => {
+    if (!payrollUsers.length) {
+      if (payrollScopeUser) {
+        setPayrollScopeUser("");
+      }
+      return;
+    }
+
+    if (payrollScopeMode === "PERSON") {
+      const exists = payrollUsers.some((userRow) => userRow.username === payrollScopeUser);
+      if (!exists) {
+        setPayrollScopeUser(payrollUsers[0]?.username ?? "");
+      }
+    }
+  }, [payrollScopeMode, payrollScopeUser, payrollUsers]);
+
+  const filteredPayrollRows = useMemo(() => {
+    if (!payrollActivity) {
+      return [] as PayrollActivityReport["records"];
+    }
+
+    if (payrollScopeMode === "ALL") {
+      return payrollActivity.records;
+    }
+
+    return payrollActivity.records.filter(
+      (row) => row.username === payrollScopeUser,
+    );
+  }, [payrollActivity, payrollScopeMode, payrollScopeUser]);
+
+  const payrollScopeLabel = useMemo(() => {
+    if (payrollScopeMode === "ALL") {
+      return isArabic ? "الكل" : "All";
+    }
+
+    const selected = payrollUsers.find(
+      (userRow) => userRow.username === payrollScopeUser,
+    );
+    return selected?.name ?? payrollScopeUser;
+  }, [isArabic, payrollScopeMode, payrollScopeUser, payrollUsers]);
+
+  const filteredPayrollTotals = useMemo(() => {
+    const peopleCount = new Set(filteredPayrollRows.map((row) => row.username)).size;
+    const totalBaseSalary = filteredPayrollRows.reduce(
+      (sum, row) => sum + row.baseSalary,
+      0,
+    );
+    const totalOvertimeSalary = filteredPayrollRows.reduce(
+      (sum, row) => sum + row.overtimeSalary,
+      0,
+    );
+    const totalPayout = filteredPayrollRows.reduce(
+      (sum, row) => sum + row.totalSalary,
+      0,
+    );
+
+    return {
+      peopleCount,
+      recordsCount: filteredPayrollRows.length,
+      totalBaseSalary,
+      totalOvertimeSalary,
+      totalPayout,
+    };
+  }, [filteredPayrollRows]);
+
   return (
     <ModulePageShell
       title={copy.reports.title}
       subtitle={copy.reports.subtitle}
       actions={
-        <button
-          type="button"
-          className="auth-button auth-button--ghost"
+        <Button
+          variant="outline"
           onClick={() => {
+            void loadCommerceReports();
             void loadInventorySnapshot();
           }}
         >
           {copy.refreshAll}
-        </button>
+        </Button>
       }
     >
       {user?.role === "ADMIN" || user?.role === "ACCOUNTANT" ? null : (
@@ -367,6 +651,267 @@ export function ReportsPage() {
       </div>
 
       <section className="module-grid module-grid--reports">
+        <article className="module-panel module-panel--full module-panel--reports-supplier">
+          <h2>{isArabic ? "تقارير الموردين" : "Supplier reports"}</h2>
+          <div className="module-form module-form--inline module-form--commerce-range">
+            <label>
+              {isArabic ? "من تاريخ" : "From date"}
+              <input
+                type="date"
+                value={supplierFromDate}
+                onChange={(event) => setSupplierFromDate(event.target.value)}
+              />
+            </label>
+            <label>
+              {isArabic ? "إلى تاريخ" : "To date"}
+              <input
+                type="date"
+                value={supplierToDate}
+                onChange={(event) => setSupplierToDate(event.target.value)}
+              />
+            </label>
+            <div className="module-form-controls">
+              <button
+                type="button"
+                className="auth-button auth-button--ghost"
+                onClick={() => {
+                  setSupplierFromDate("");
+                  setSupplierToDate("");
+                }}
+              >
+                {isArabic ? "إعادة تعيين" : "Reset"}
+              </button>
+              <button
+                type="button"
+                className="auth-button auth-button--ghost reports-download-button"
+                dir="ltr"
+                onClick={() => {
+                  if (!supplierReportRows.length) {
+                    window.alert(copy.reports.pdfNoData);
+                    return;
+                  }
+
+                  const supplierRangeText =
+                    supplierFromDate || supplierToDate
+                      ? `${supplierFromDate || "-"} ${isArabic ? "إلى" : "to"} ${supplierToDate || "-"}`
+                      : isArabic
+                        ? "كل الفترات"
+                        : "All dates";
+
+                  exportPdfTable(
+                    isArabic ? "تقرير الموردين" : "Supplier report",
+                    [
+                      `${reportText.period}: ${supplierRangeText}`,
+                      `${isArabic ? "عدد الموردين" : "Suppliers"}: ${supplierReportRows.length}`,
+                      `${isArabic ? "عدد عمليات الشراء" : "Purchases"}: ${filteredPurchases.length}`,
+                      `${isArabic ? "إجمالي الشراء" : "Total spent"}: ${supplierReportRows
+                        .reduce((sum, row) => sum + row.totalAmount, 0)
+                        .toLocaleString()}`,
+                    ],
+                    [
+                      isArabic ? "المورد" : "Supplier",
+                      isArabic ? "العمليات" : "Purchases",
+                      isArabic ? "الإجمالي" : "Total",
+                      isArabic ? "آخر استلام" : "Last purchase",
+                    ],
+                    supplierReportRows.map((row) => [
+                      row.supplierName,
+                      String(row.purchasesCount),
+                      row.totalAmount.toLocaleString(),
+                      row.lastPurchaseDate
+                        ? row.lastPurchaseDate.slice(0, 10)
+                        : "-",
+                    ]),
+                    `supplier-report-${new Date().toISOString().slice(0, 10)}.pdf`,
+                  );
+                }}
+              >
+                <Download
+                  className="reports-download-icon"
+                  aria-hidden="true"
+                />
+                {copy.reports.downloadPdf}
+              </button>
+            </div>
+          </div>
+          {loadingCommerce ? (
+            <p>
+              {isArabic
+                ? "جارٍ تحميل بيانات الموردين والزباين..."
+                : "Loading supplier and customer data..."}
+            </p>
+          ) : null}
+          <div className="module-report-grid">
+            <div className="module-report-card">
+              <span>{isArabic ? "عدد الموردين" : "Suppliers"}</span>
+              <strong>{supplierReportRows.length}</strong>
+            </div>
+            <div className="module-report-card">
+              <span>{isArabic ? "إجمالي الشراء" : "Total spent"}</span>
+              <strong>
+                {supplierReportRows
+                  .reduce((sum, row) => sum + row.totalAmount, 0)
+                  .toLocaleString()}
+              </strong>
+            </div>
+            <div className="module-report-card">
+              <span>{isArabic ? "عدد عمليات الشراء" : "Purchases"}</span>
+              <strong>{filteredPurchases.length}</strong>
+            </div>
+          </div>
+          <TableShell className="mt-4">
+            <TableBase className="admin-table">
+              <thead>
+                <tr>
+                  <th>{isArabic ? "المورد" : "Supplier"}</th>
+                  <th>{isArabic ? "العمليات" : "Purchases"}</th>
+                  <th>{isArabic ? "الإجمالي" : "Total"}</th>
+                  <th>{isArabic ? "آخر استلام" : "Last purchase"}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {supplierReportRows.map((row) => (
+                  <tr key={row.supplierId}>
+                    <td>{row.supplierName}</td>
+                    <td>{row.purchasesCount}</td>
+                    <td>{row.totalAmount.toLocaleString()}</td>
+                    <td>
+                      {row.lastPurchaseDate
+                        ? row.lastPurchaseDate.slice(0, 10)
+                        : "-"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </TableBase>
+          </TableShell>
+        </article>
+
+        <article className="module-panel module-panel--full module-panel--reports-customer">
+          <h2>{isArabic ? "تقارير الزباين" : "Customer reports"}</h2>
+          <div className="module-form module-form--inline module-form--commerce-range">
+            <label>
+              {isArabic ? "من تاريخ" : "From date"}
+              <input
+                type="date"
+                value={customerFromDate}
+                onChange={(event) => setCustomerFromDate(event.target.value)}
+              />
+            </label>
+            <label>
+              {isArabic ? "إلى تاريخ" : "To date"}
+              <input
+                type="date"
+                value={customerToDate}
+                onChange={(event) => setCustomerToDate(event.target.value)}
+              />
+            </label>
+            <div className="module-form-controls">
+              <button
+                type="button"
+                className="auth-button auth-button--ghost"
+                onClick={() => {
+                  setCustomerFromDate("");
+                  setCustomerToDate("");
+                }}
+              >
+                {isArabic ? "إعادة تعيين" : "Reset"}
+              </button>
+              <button
+                type="button"
+                className="auth-button auth-button--ghost reports-download-button"
+                dir="ltr"
+                onClick={() => {
+                  if (!customerReportRows.length) {
+                    window.alert(copy.reports.pdfNoData);
+                    return;
+                  }
+
+                  const customerRangeText =
+                    customerFromDate || customerToDate
+                      ? `${customerFromDate || "-"} ${isArabic ? "إلى" : "to"} ${customerToDate || "-"}`
+                      : isArabic
+                        ? "كل الفترات"
+                        : "All dates";
+
+                  exportPdfTable(
+                    isArabic ? "تقرير الزباين" : "Customer report",
+                    [
+                      `${reportText.period}: ${customerRangeText}`,
+                      `${isArabic ? "عدد الزباين" : "Customers"}: ${customerReportRows.length}`,
+                      `${isArabic ? "عدد عمليات البيع" : "Sales"}: ${filteredSales.length}`,
+                      `${isArabic ? "إجمالي المبيعات" : "Total sales"}: ${customerReportRows
+                        .reduce((sum, row) => sum + row.totalAmount, 0)
+                        .toLocaleString()}`,
+                    ],
+                    [
+                      isArabic ? "الزبون" : "Customer",
+                      isArabic ? "العمليات" : "Sales",
+                      isArabic ? "الإجمالي" : "Total",
+                      isArabic ? "آخر بيع" : "Last sale",
+                    ],
+                    customerReportRows.map((row) => [
+                      row.customerName,
+                      String(row.salesCount),
+                      row.totalAmount.toLocaleString(),
+                      row.lastSaleDate ? row.lastSaleDate.slice(0, 10) : "-",
+                    ]),
+                    `customer-report-${new Date().toISOString().slice(0, 10)}.pdf`,
+                  );
+                }}
+              >
+                <Download
+                  className="reports-download-icon"
+                  aria-hidden="true"
+                />
+                {copy.reports.downloadPdf}
+              </button>
+            </div>
+          </div>
+          <div className="module-report-grid">
+            <div className="module-report-card">
+              <span>{isArabic ? "عدد الزباين" : "Customers"}</span>
+              <strong>{customerReportRows.length}</strong>
+            </div>
+            <div className="module-report-card">
+              <span>{isArabic ? "إجمالي المبيعات" : "Total sales"}</span>
+              <strong>
+                {customerReportRows
+                  .reduce((sum, row) => sum + row.totalAmount, 0)
+                  .toLocaleString()}
+              </strong>
+            </div>
+            <div className="module-report-card">
+              <span>{isArabic ? "عدد عمليات البيع" : "Sales"}</span>
+              <strong>{filteredSales.length}</strong>
+            </div>
+          </div>
+          <TableShell className="mt-4">
+            <TableBase className="admin-table">
+              <thead>
+                <tr>
+                  <th>{isArabic ? "الزبون" : "Customer"}</th>
+                  <th>{isArabic ? "العمليات" : "Sales"}</th>
+                  <th>{isArabic ? "الإجمالي" : "Total"}</th>
+                  <th>{isArabic ? "آخر بيع" : "Last sale"}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {customerReportRows.map((row) => (
+                  <tr key={row.customerId}>
+                    <td>{row.customerName}</td>
+                    <td>{row.salesCount}</td>
+                    <td>{row.totalAmount.toLocaleString()}</td>
+                    <td>
+                      {row.lastSaleDate ? row.lastSaleDate.slice(0, 10) : "-"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </TableBase>
+          </TableShell>
+        </article>
+
         <article className="module-panel module-panel--full">
           <h2>{copy.reports.dailyProduction}</h2>
           <div className="module-form module-form--inline">
@@ -452,7 +997,8 @@ export function ReportsPage() {
             </button>
             <button
               type="button"
-              className="auth-button auth-button--ghost"
+              className="auth-button auth-button--ghost reports-download-button"
+              dir="ltr"
               onClick={() => {
                 if (!productionActivity) {
                   window.alert(copy.reports.pdfNoData);
@@ -488,6 +1034,7 @@ export function ReportsPage() {
                 );
               }}
             >
+              <Download className="reports-download-icon" aria-hidden="true" />
               {copy.reports.downloadPdf}
             </button>
           </div>
@@ -495,8 +1042,8 @@ export function ReportsPage() {
             <p>{copy.reports.loadingDaily}</p>
           ) : null}
           {productionActivity ? (
-            <div className="admin-table-wrap">
-              <table className="admin-table">
+            <TableShell>
+              <TableBase className="admin-table">
                 <thead>
                   <tr>
                     <th>Date</th>
@@ -519,8 +1066,8 @@ export function ReportsPage() {
                     </tr>
                   ))}
                 </tbody>
-              </table>
-            </div>
+              </TableBase>
+            </TableShell>
           ) : null}
         </article>
 
@@ -609,7 +1156,8 @@ export function ReportsPage() {
             </button>
             <button
               type="button"
-              className="auth-button auth-button--ghost"
+              className="auth-button auth-button--ghost reports-download-button"
+              dir="ltr"
               onClick={() => {
                 if (!inventoryActivity) {
                   window.alert(copy.reports.pdfNoData);
@@ -642,6 +1190,7 @@ export function ReportsPage() {
                 );
               }}
             >
+              <Download className="reports-download-icon" aria-hidden="true" />
               {copy.reports.downloadPdf}
             </button>
           </div>
@@ -649,8 +1198,8 @@ export function ReportsPage() {
             <p>{copy.reports.loadingInventoryActivity}</p>
           ) : null}
           {inventoryActivity ? (
-            <div className="admin-table-wrap">
-              <table className="admin-table">
+            <TableShell>
+              <TableBase className="admin-table">
                 <thead>
                   <tr>
                     <th>Date</th>
@@ -671,8 +1220,8 @@ export function ReportsPage() {
                     </tr>
                   ))}
                 </tbody>
-              </table>
-            </div>
+              </TableBase>
+            </TableShell>
           ) : null}
         </article>
 
@@ -761,7 +1310,8 @@ export function ReportsPage() {
             </button>
             <button
               type="button"
-              className="auth-button auth-button--ghost"
+              className="auth-button auth-button--ghost reports-download-button"
+              dir="ltr"
               onClick={() => {
                 if (!attendanceActivity) {
                   window.alert(copy.reports.pdfNoData);
@@ -799,6 +1349,7 @@ export function ReportsPage() {
                 );
               }}
             >
+              <Download className="reports-download-icon" aria-hidden="true" />
               {copy.reports.downloadPdf}
             </button>
           </div>
@@ -806,8 +1357,8 @@ export function ReportsPage() {
             <p>{copy.reports.loadingAttendanceActivity}</p>
           ) : null}
           {attendanceActivity ? (
-            <div className="admin-table-wrap">
-              <table className="admin-table">
+            <TableShell>
+              <TableBase className="admin-table">
                 <thead>
                   <tr>
                     <th>User</th>
@@ -834,8 +1385,8 @@ export function ReportsPage() {
                     </tr>
                   ))}
                 </tbody>
-              </table>
-            </div>
+              </TableBase>
+            </TableShell>
           ) : null}
         </article>
 
@@ -907,6 +1458,35 @@ export function ReportsPage() {
                 />
               </label>
             )}
+            <label>
+              {isArabic ? "نطاق التقرير" : "Report scope"}
+              <select
+                value={payrollScopeMode}
+                onChange={(event) =>
+                  setPayrollScopeMode(event.target.value as "ALL" | "PERSON")
+                }
+              >
+                <option value="ALL">{isArabic ? "الكل" : "All"}</option>
+                <option value="PERSON">
+                  {isArabic ? "شخص معيّن" : "Specific person"}
+                </option>
+              </select>
+            </label>
+            {payrollScopeMode === "PERSON" ? (
+              <label>
+                {isArabic ? "الموظف" : "Employee"}
+                <select
+                  value={payrollScopeUser}
+                  onChange={(event) => setPayrollScopeUser(event.target.value)}
+                >
+                  {payrollUsers.map((person) => (
+                    <option key={person.username} value={person.username}>
+                      {person.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            ) : null}
             <button
               type="button"
               className="auth-button"
@@ -924,9 +1504,15 @@ export function ReportsPage() {
             </button>
             <button
               type="button"
-              className="auth-button auth-button--ghost"
+              className="auth-button auth-button--ghost reports-download-button"
+              dir="ltr"
               onClick={() => {
                 if (!payrollActivity) {
+                  window.alert(copy.reports.pdfNoData);
+                  return;
+                }
+
+                if (!filteredPayrollRows.length) {
                   window.alert(copy.reports.pdfNoData);
                   return;
                 }
@@ -935,10 +1521,12 @@ export function ReportsPage() {
                   copy.reports.payrollActivity,
                   [
                     `${reportText.period}: ${payrollActivity.rangeStart.slice(0, 10)} ${isArabic ? "إلى" : "to"} ${payrollActivity.rangeEnd.slice(0, 10)} (${payrollActivity.period})`,
-                    `${reportText.records}: ${payrollActivity.totals.recordsCount}`,
-                    `${isArabic ? "الراتب الأساسي" : "Base salary"}: ${payrollActivity.totals.totalBaseSalary.toLocaleString()}`,
-                    `${isArabic ? "بدل الإضافي" : "Overtime salary"}: ${payrollActivity.totals.totalOvertimeSalary.toLocaleString()}`,
-                    `${isArabic ? "إجمالي المدفوع" : "Total payout"}: ${payrollActivity.totals.totalPayout.toLocaleString()}`,
+                    `${isArabic ? "نطاق التقرير" : "Report scope"}: ${payrollScopeLabel}`,
+                    `${isArabic ? "عدد الأشخاص" : "People"}: ${filteredPayrollTotals.peopleCount}`,
+                    `${reportText.records}: ${filteredPayrollTotals.recordsCount}`,
+                    `${isArabic ? "الراتب الأساسي" : "Base salary"}: ${filteredPayrollTotals.totalBaseSalary.toLocaleString()}`,
+                    `${isArabic ? "بدل الإضافي" : "Overtime salary"}: ${filteredPayrollTotals.totalOvertimeSalary.toLocaleString()}`,
+                    `${isArabic ? "إجمالي المدفوع" : "Total payout"}: ${filteredPayrollTotals.totalPayout.toLocaleString()}`,
                   ],
                   [
                     reportText.user,
@@ -947,17 +1535,18 @@ export function ReportsPage() {
                     reportText.overtimeHours,
                     reportText.total,
                   ],
-                  payrollActivity.records.map((row) => [
+                  filteredPayrollRows.map((row) => [
                     row.userName,
                     row.month,
                     String(row.totalHours),
                     String(row.overtimeHours),
                     row.totalSalary.toLocaleString(),
                   ]),
-                  `payroll-${payrollActivity.label}.pdf`,
+                  `payroll-${payrollActivity.label}-${payrollScopeMode === "ALL" ? "all" : "person"}.pdf`,
                 );
               }}
             >
+              <Download className="reports-download-icon" aria-hidden="true" />
               {copy.reports.downloadPdf}
             </button>
           </div>
@@ -965,8 +1554,28 @@ export function ReportsPage() {
             <p>{copy.reports.loadingPayrollActivity}</p>
           ) : null}
           {payrollActivity ? (
-            <div className="admin-table-wrap">
-              <table className="admin-table">
+            <div className="module-report-grid">
+              <div className="module-report-card">
+                <span>{isArabic ? "نطاق التقرير" : "Report scope"}</span>
+                <strong>{payrollScopeLabel}</strong>
+              </div>
+              <div className="module-report-card">
+                <span>{isArabic ? "عدد الأشخاص" : "People"}</span>
+                <strong>{filteredPayrollTotals.peopleCount}</strong>
+              </div>
+              <div className="module-report-card">
+                <span>{reportText.records}</span>
+                <strong>{filteredPayrollTotals.recordsCount}</strong>
+              </div>
+              <div className="module-report-card">
+                <span>{isArabic ? "إجمالي المدفوع" : "Total payout"}</span>
+                <strong>{filteredPayrollTotals.totalPayout.toLocaleString()}</strong>
+              </div>
+            </div>
+          ) : null}
+          {payrollActivity ? (
+            <TableShell>
+              <TableBase className="admin-table">
                 <thead>
                   <tr>
                     <th>User</th>
@@ -977,7 +1586,7 @@ export function ReportsPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {payrollActivity.records.map((row) => (
+                  {filteredPayrollRows.map((row) => (
                     <tr key={row.id}>
                       <td>{row.userName}</td>
                       <td>{row.month}</td>
@@ -987,8 +1596,8 @@ export function ReportsPage() {
                     </tr>
                   ))}
                 </tbody>
-              </table>
-            </div>
+              </TableBase>
+            </TableShell>
           ) : null}
         </article>
 
@@ -1034,7 +1643,7 @@ function ReportView({
   copy: (typeof appCopy)["en"];
 }) {
   if (!data) {
-    return <p className="module-empty">{copy.reports.noReport}</p>;
+    return <EmptyState title={copy.reports.noReport} />;
   }
 
   const entries = Object.entries(data);

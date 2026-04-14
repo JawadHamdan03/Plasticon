@@ -219,8 +219,42 @@ export const getMyAttendances = async (
   return { status: 200, data: attendances };
 };
 
-export const getAllAttendances = async (): Promise<ServiceResult<unknown>> => {
+export const getAllAttendances = async (filters?: {
+  date?: string;
+  shiftId?: number;
+  userId?: number;
+}): Promise<ServiceResult<unknown>> => {
+  const where: {
+    userId?: number;
+    shiftId?: number;
+    checkIn?: {
+      gte: Date;
+      lte: Date;
+    };
+  } = {};
+
+  if (filters?.userId) {
+    where.userId = filters.userId;
+  }
+
+  if (filters?.shiftId) {
+    where.shiftId = filters.shiftId;
+  }
+
+  if (filters?.date) {
+    const baseDate = new Date(filters.date);
+    const start = new Date(baseDate);
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(baseDate);
+    end.setHours(23, 59, 59, 999);
+    where.checkIn = {
+      gte: start,
+      lte: end,
+    };
+  }
+
   const attendances = await prisma.attendance.findMany({
+    where,
     include: {
       user: {
         select: {
@@ -236,6 +270,45 @@ export const getAllAttendances = async (): Promise<ServiceResult<unknown>> => {
   });
 
   return { status: 200, data: attendances };
+};
+
+export const deleteAttendance = async (
+  attendanceId: number,
+  deletedById: number,
+): Promise<ServiceResult<{ message: string }>> => {
+  const attendance = await prisma.attendance.findUnique({
+    where: { id: attendanceId },
+    select: {
+      id: true,
+      userId: true,
+      checkIn: true,
+      checkOut: true,
+      lateMinutes: true,
+      overtimeMinutes: true,
+    },
+  });
+
+  if (!attendance) {
+    return { status: 404, message: "Attendance record not found" };
+  }
+
+  await prisma.attendance.delete({ where: { id: attendanceId } });
+
+  auditAsync(
+    deletedById,
+    AuditAction.ATTENDANCE_UPDATED,
+    AuditEntityType.ATTENDANCE,
+    attendanceId,
+    {
+      deleted: true,
+      deletedAttendance: attendance,
+    },
+  );
+
+  return {
+    status: 200,
+    data: { message: "Attendance record deleted" },
+  };
 };
 
 export const updateAttendance = async (

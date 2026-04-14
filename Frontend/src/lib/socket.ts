@@ -3,7 +3,7 @@ import { API_BASE_URL } from "./api";
 
 export const createUserSocket = (): Socket | null => {
   const token = window.localStorage.getItem("plasticon_token");
-  if (!token) {
+  if (!token || !window.navigator.onLine) {
     return null;
   }
 

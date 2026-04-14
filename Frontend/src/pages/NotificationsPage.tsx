@@ -55,9 +55,11 @@ export function NotificationsPage() {
   const [successMessage, setSuccessMessage] = useState("");
   const [form, setForm] = useState({
     type: "SYSTEM_MESSAGE",
+    targetType: "USER" as "USER" | "SHIFT" | "ALL",
     title: "",
     message: "",
     userId: "",
+    shiftId: "",
   });
 
   const loadNotifications = async () => {
@@ -146,9 +148,15 @@ export function NotificationsPage() {
     try {
       const payload = {
         type: form.type,
+        targetType: form.targetType,
         title: form.title,
         message: form.message,
-        ...(form.userId ? { userId: Number(form.userId) } : {}),
+        ...(form.targetType === "USER" && form.userId
+          ? { userId: Number(form.userId) }
+          : {}),
+        ...(form.targetType === "SHIFT" && form.shiftId
+          ? { shiftId: Number(form.shiftId) }
+          : {}),
       };
 
       const response = await fetchWithAuth("/notifications", {
@@ -163,8 +171,15 @@ export function NotificationsPage() {
         throw new Error(await readApiError(response));
       }
 
-      setSuccessMessage("Notification created successfully.");
-      setForm({ type: "SYSTEM_MESSAGE", title: "", message: "", userId: "" });
+      setSuccessMessage(copy.notifications.success);
+      setForm({
+        type: "SYSTEM_MESSAGE",
+        targetType: "USER",
+        title: "",
+        message: "",
+        userId: "",
+        shiftId: "",
+      });
       await loadNotifications();
     } catch (error) {
       setErrorMessage(
@@ -249,6 +264,28 @@ export function NotificationsPage() {
             <h2>{copy.notifications.createNotification}</h2>
             <form className="module-form" onSubmit={handleCreateNotification}>
               <label>
+                {copy.notifications.targetType}
+                <select
+                  value={form.targetType}
+                  onChange={(event) =>
+                    setForm((prev) => ({
+                      ...prev,
+                      targetType: event.target.value as
+                        | "USER"
+                        | "SHIFT"
+                        | "ALL",
+                    }))
+                  }
+                >
+                  <option value="USER">{copy.notifications.targetUser}</option>
+                  <option value="SHIFT">
+                    {copy.notifications.targetShift}
+                  </option>
+                  <option value="ALL">{copy.notifications.targetAll}</option>
+                </select>
+              </label>
+
+              <label>
                 {copy.notifications.type}
                 <select
                   value={form.type}
@@ -293,17 +330,41 @@ export function NotificationsPage() {
                 />
               </label>
 
-              <label>
-                {copy.notifications.targetUserId}
-                <input
-                  type="number"
-                  min={1}
-                  value={form.userId}
-                  onChange={(event) =>
-                    setForm((prev) => ({ ...prev, userId: event.target.value }))
-                  }
-                />
-              </label>
+              {form.targetType === "USER" ? (
+                <label>
+                  {copy.notifications.targetUserId}
+                  <input
+                    type="number"
+                    min={1}
+                    value={form.userId}
+                    onChange={(event) =>
+                      setForm((prev) => ({
+                        ...prev,
+                        userId: event.target.value,
+                      }))
+                    }
+                    required
+                  />
+                </label>
+              ) : null}
+
+              {form.targetType === "SHIFT" ? (
+                <label>
+                  {copy.notifications.targetShiftId}
+                  <input
+                    type="number"
+                    min={1}
+                    value={form.shiftId}
+                    onChange={(event) =>
+                      setForm((prev) => ({
+                        ...prev,
+                        shiftId: event.target.value,
+                      }))
+                    }
+                    required
+                  />
+                </label>
+              ) : null}
 
               <button type="submit" className="auth-button">
                 {copy.notifications.createButton}
