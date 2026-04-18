@@ -2,8 +2,7 @@ import { io, type Socket } from "socket.io-client";
 import { API_BASE_URL } from "./api";
 
 export const createUserSocket = (): Socket | null => {
-  const token = window.localStorage.getItem("plasticon_token");
-  if (!token || !window.navigator.onLine) {
+  if (!window.navigator.onLine) {
     return null;
   }
 
@@ -13,10 +12,7 @@ export const createUserSocket = (): Socket | null => {
     reconnection: true,
     reconnectionAttempts: 2,
     reconnectionDelay: 1200,
-    auth: { token },
-    extraHeaders: {
-      Authorization: `Bearer ${token}`,
-    },
+    withCredentials: true,
   });
 
   return socket;

@@ -165,12 +165,10 @@ type SaleRecord = {
 };
 
 async function fetchWithAuth(path: string, options?: RequestInit) {
-  const token = window.localStorage.getItem("plasticon_token");
   return fetch(`${API_BASE_URL}${path}`, {
     ...options,
     headers: {
       ...(options?.headers ?? {}),
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
     credentials: "include",
   });
@@ -567,7 +565,9 @@ export function ReportsPage() {
     }
 
     if (payrollScopeMode === "PERSON") {
-      const exists = payrollUsers.some((userRow) => userRow.username === payrollScopeUser);
+      const exists = payrollUsers.some(
+        (userRow) => userRow.username === payrollScopeUser,
+      );
       if (!exists) {
         setPayrollScopeUser(payrollUsers[0]?.username ?? "");
       }
@@ -600,7 +600,8 @@ export function ReportsPage() {
   }, [isArabic, payrollScopeMode, payrollScopeUser, payrollUsers]);
 
   const filteredPayrollTotals = useMemo(() => {
-    const peopleCount = new Set(filteredPayrollRows.map((row) => row.username)).size;
+    const peopleCount = new Set(filteredPayrollRows.map((row) => row.username))
+      .size;
     const totalBaseSalary = filteredPayrollRows.reduce(
       (sum, row) => sum + row.baseSalary,
       0,
@@ -1569,7 +1570,9 @@ export function ReportsPage() {
               </div>
               <div className="module-report-card">
                 <span>{isArabic ? "إجمالي المدفوع" : "Total payout"}</span>
-                <strong>{filteredPayrollTotals.totalPayout.toLocaleString()}</strong>
+                <strong>
+                  {filteredPayrollTotals.totalPayout.toLocaleString()}
+                </strong>
               </div>
             </div>
           ) : null}

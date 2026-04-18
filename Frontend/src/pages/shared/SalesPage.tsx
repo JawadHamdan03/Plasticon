@@ -58,12 +58,10 @@ type SaleRecord = {
 };
 
 async function fetchWithAuth(path: string, options?: RequestInit) {
-  const token = window.localStorage.getItem("plasticon_token");
   return fetch(`${API_BASE_URL}${path}`, {
     ...options,
     headers: {
       ...(options?.headers ?? {}),
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
     credentials: "include",
   });
