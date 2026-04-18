@@ -3,7 +3,7 @@ import { cloneElement, isValidElement } from "react";
 import { motion } from "framer-motion";
 import { cn } from "../../lib/utils";
 
-type ButtonVariant = "default" | "secondary" | "ghost" | "outline";
+type ButtonVariant = "default" | "secondary" | "ghost" | "outline" | "orange" | "danger";
 
 type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   variant?: ButtonVariant;
@@ -13,13 +13,17 @@ type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
 
 const variantStyles: Record<ButtonVariant, string> = {
   default:
-    "border-[#A2AF9B] bg-[#A2AF9B] text-[#FFFFFF] shadow-[0_10px_20px_rgba(162,175,155,0.28)] hover:bg-[#8E9A88]",
+    "border-(--orange-500) bg-(--orange-500) text-white shadow-[0_4px_14px_rgba(249,115,22,0.3)] hover:bg-(--orange-600) hover:border-(--orange-600)",
+  orange:
+    "border-(--orange-500) bg-(--orange-500) text-white shadow-[0_4px_14px_rgba(249,115,22,0.3)] hover:bg-(--orange-600) hover:border-(--orange-600)",
   secondary:
-    "border-[#EEEEEE] bg-[#EEEEEE] text-[#000000] hover:bg-[#DCCFC0]",
+    "border-(--border-default) bg-(--gray-100) text-(--text-primary) hover:bg-(--gray-200)",
   ghost:
-    "border-transparent bg-transparent text-[#000000] hover:bg-[#EEEEEE]",
+    "border-transparent bg-transparent text-(--text-secondary) hover:bg-(--gray-100) hover:text-(--text-primary)",
   outline:
-    "border-[#EEEEEE] bg-[#FFFFFF] text-[#000000] hover:border-[#A2AF9B] hover:bg-[#EEEEEE]",
+    "border-(--border-default) bg-(--bg-card) text-(--text-primary) hover:border-(--orange-400) hover:text-(--orange-600)",
+  danger:
+    "border-red-600 bg-red-600 text-white shadow-[0_4px_14px_rgba(220,38,38,0.25)] hover:bg-red-700 hover:border-red-700",
 };
 
 export function Button({
@@ -31,7 +35,7 @@ export function Button({
   ...props
 }: ButtonProps) {
   const buttonClassName = cn(
-    "inline-flex min-h-10 items-center justify-center gap-2 rounded-2xl border px-4 py-2 text-sm font-semibold outline-none transition focus-visible:ring-2 focus-visible:ring-[#A2AF9B]/40 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent disabled:pointer-events-none disabled:opacity-50",
+    "inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border px-4 py-2 text-sm font-semibold outline-none transition focus-visible:ring-2 focus-visible:ring-(--orange-400)/50 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent disabled:pointer-events-none disabled:opacity-50",
     variantStyles[variant],
     className,
   );
@@ -48,7 +52,7 @@ export function Button({
       type={type}
       whileHover={{ y: -1 }}
       whileTap={{ scale: 0.97 }}
-      transition={{ duration: 0.22, ease: "easeOut" }}
+      transition={{ duration: 0.18, ease: "easeOut" }}
       className={buttonClassName}
       {...(props as unknown as Record<string, unknown>)}
     >
@@ -56,5 +60,3 @@ export function Button({
     </motion.button>
   );
 }
-
-

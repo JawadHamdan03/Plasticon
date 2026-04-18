@@ -19,21 +19,21 @@ export function PageHeader({
   return (
     <header
       className={cn(
-        "flex flex-wrap items-start justify-between gap-4 border-b border-[#EEEEEE] pb-5",
+        "flex flex-wrap items-start justify-between gap-4 border-b border-(--border-default) pb-5",
         className,
       )}
     >
       <div className="min-w-0">
         {eyebrow ? (
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#000000]">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-(--text-secondary)">
             {eyebrow}
           </p>
         ) : null}
-        <h2 className="mt-2 text-2xl font-extrabold tracking-[-0.03em] text-[#000000]">
+        <h2 className="mt-2 text-2xl font-extrabold tracking-[-0.03em] text-(--text-primary)">
           {title}
         </h2>
         {subtitle ? (
-          <p className="mt-2 max-w-3xl text-sm leading-6 text-[#000000]">
+          <p className="mt-2 max-w-3xl text-sm leading-6 text-(--text-secondary)">
             {subtitle}
           </p>
         ) : null}
@@ -44,6 +44,3 @@ export function PageHeader({
     </header>
   );
 }
-
-
-

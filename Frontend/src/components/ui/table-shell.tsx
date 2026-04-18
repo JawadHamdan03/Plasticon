@@ -10,7 +10,7 @@ export function TableShell({ children, className }: TableShellProps) {
   return (
     <div
       className={cn(
-        "w-full rounded-2xl border border-[var(--ui-border)] bg-[var(--ui-surface)]",
+        "w-full rounded-2xl border border-(--border-default) bg-(--bg-card) overflow-hidden",
         className,
       )}
     >
@@ -22,7 +22,7 @@ export function TableShell({ children, className }: TableShellProps) {
 export function TableBase({ children, className }: TableShellProps) {
   return (
     <table
-      className={cn("w-full border-collapse text-sm text-[#000000]", className)}
+      className={cn("w-full border-collapse text-sm text-(--text-primary)", className)}
     >
       {children}
     </table>

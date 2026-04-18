@@ -14,6 +14,8 @@ type UserProfile = {
   email: string;
   role?: string | null;
   profileImage?: string | null;
+  username?: string | null;
+  createdAt?: string | null;
 };
 
 type LoginValues = {

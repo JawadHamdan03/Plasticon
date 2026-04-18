@@ -76,6 +76,13 @@ enum NotificationType {
   SYSTEM_MESSAGE
   PAYROLL_READY
   INVENTORY_LOW
+  ENGINEER_INVENTORY
+}
+
+enum EngineerInventoryStatus {
+  DRAFT
+  SUBMITTED
+  REVIEWED
 }
 
 enum FileType {
@@ -113,12 +120,33 @@ model User {
   maintenances  Maintenance[]
   qualityChecks QualityCheck[]
   payrolls      Payroll[]
+  dailyPayrolls        DailyPayroll[] @relation("UserDailyPayrolls")
+  confirmedDailyPayrolls DailyPayroll[] @relation("ConfirmedPayrolls")
+  salaryConfigUpdates  SalaryConfig[] @relation("SalaryConfigUpdater")
   notifications Notification[]
 
   electricityReadings   ElectricityReading[]
   inventoryTransactions InventoryTransaction[]
   purchases             Purchase[]
   sales                 Sale[]
+
+  // Engineer features
+  machineHealthRecords     MachineHealthRecord[] @relation("MachineHealthRecorder")
+  assignedMaintenance      MaintenanceSchedule[] @relation("AssignedMaintenance")
+  maintenanceSchedules     MaintenanceSchedule[] @relation("MaintenanceScheduleCreator")
+
+  // Accountant features - Phase 1
+  expensesCreated     Expense[] @relation("ExpenseCreator")
+  expensesApproved    Expense[] @relation("ExpenseApprover")
+  invoicesCreated     Invoice[] @relation("InvoiceCreator")
+  financialSettings   FinancialSetting[] @relation("FinancialSettingUpdater")
+
+  // Accountant features - Phase 2
+  financialReports       FinancialReport[] @relation("FinancialReportGenerator")
+  budgetPlans            BudgetPlan[] @relation("BudgetPlanCreator")
+  taxFilings             TaxFiling[] @relation("TaxFilingFiler")
+  bankReconciliations    BankReconciliation[] @relation("BankReconciliationReconciler")
+  approvalWorkflows      ApprovalWorkflow[] @relation("ApprovalWorkflowCreator")
 
   // 🔥 CHAT RELATIONS
   createdGroups    ChatGroup[]    @relation("GroupCreator")
@@ -133,6 +161,10 @@ model User {
   auditLogs          AuditLog[]
   fileAttachments    FileAttachment[]
   machineStatusChanges Machine[] @relation("StatusChangedBy")
+
+  engineerInventories  EngineerInventory[]
+  inventoryReviews     EngineerInventory[]     @relation("InventoryReviewer")
+  inventoryItemPricing EngineerInventoryItem[] @relation("ItemPricer")
 }
 
 model Shift {
@@ -159,8 +191,9 @@ model Attendance {
   lateMinutes     Int       @default(0)
   overtimeMinutes Int       @default(0)
 
-  user  User   @relation(fields: [userId], references: [id])
-  shift Shift? @relation(fields: [shiftId], references: [id])
+  user         User         @relation(fields: [userId], references: [id])
+  shift        Shift?       @relation(fields: [shiftId], references: [id])
+  dailyPayroll DailyPayroll?
 
   createdAt DateTime @default(now())
 }
@@ -183,6 +216,9 @@ model Machine {
   qualityChecks QualityCheck[]
   readings      MachineReading[]
   notifications Notification[]
+  machineHealthRecords  MachineHealthRecord[]
+  maintenanceSchedules  MaintenanceSchedule[]
+  spareParts           SparePart[]
 
   statusChangedByUser User? @relation("StatusChangedBy", fields: [statusChangedBy], references: [id])
 
@@ -288,14 +324,15 @@ model QualityCheck {
   id             Int @id @default(autoincrement())
   machineId      Int
   engineerId     Int
-  shiftId        Int
-  capsStatus     QualityStatus @default(PENDING_REVIEW)
-  preformStatus  QualityStatus @default(PENDING_REVIEW)
-  notes          String?
+  shiftId        Int?
+  issueType      String // "DIMENSIONAL", "SURFACE_DEFECT", "MATERIAL_FAULT", etc.
+  severity       String // "LOW", "MEDIUM", "HIGH", "CRITICAL"
+  description    String?
+  resolvedAt     DateTime?
 
   machine  Machine @relation(fields: [machineId], references: [id])
   engineer User    @relation(fields: [engineerId], references: [id])
-  shift    Shift   @relation(fields: [shiftId], references: [id])
+  shift    Shift?  @relation(fields: [shiftId], references: [id])
 
   fileAttachments FileAttachment[]
 
@@ -344,6 +381,7 @@ model Supplier {
   address String?
 
   purchases Purchase[]
+  payables  SupplierPayable[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -389,7 +427,9 @@ model Customer {
   email   String?
   address String?
 
-  sales Sale[]
+  sales       Sale[]
+  invoices    Invoice[]
+  receivables CustomerReceivable[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -447,6 +487,36 @@ model InvoiceAnalysis {
 // PAYROLL
 //////////////////////
 
+model SalaryConfig {
+  id            Int      @id @default(autoincrement())
+  role          UserRole @unique
+  monthlySalary Float
+  updatedById   Int?
+  updatedBy     User?    @relation("SalaryConfigUpdater", fields: [updatedById], references: [id])
+  updatedAt     DateTime @updatedAt
+  createdAt     DateTime @default(now())
+}
+
+model DailyPayroll {
+  id               Int       @id @default(autoincrement())
+  userId           Int
+  attendanceId     Int?      @unique
+  date             DateTime
+  hoursWorked      Float
+  dailyRate        Float
+  totalDailyPay    Float
+  isConfirmed      Boolean   @default(false)
+  confirmedById    Int?
+  confirmedAt      DateTime?
+  notificationSent Boolean   @default(false)
+
+  user        User        @relation("UserDailyPayrolls", fields: [userId], references: [id])
+  confirmedBy User?       @relation("ConfirmedPayrolls", fields: [confirmedById], references: [id])
+  attendance  Attendance? @relation(fields: [attendanceId], references: [id])
+
+  createdAt DateTime @default(now())
+}
+
 model Payroll {
   id             Int    @id @default(autoincrement())
   userId         Int
@@ -460,6 +530,239 @@ model Payroll {
   user User @relation(fields: [userId], references: [id])
 
   calculatedAt DateTime @default(now())
+}
+
+//////////////////////
+// ENGINEER FEATURES
+//////////////////////
+
+model MachineHealthRecord {
+  id                   Int     @id @default(autoincrement())
+  machineId            Int
+  recordedById         Int
+
+  operationalStatus    String  // "OPERATIONAL", "MAINTENANCE", "BROKEN", "OFFLINE"
+  downtimePercentage   Float
+  maintenanceHours     Int
+  efficiencyRating     Int     // 0-100
+  notes                String?
+
+  machine              Machine @relation(fields: [machineId], references: [id])
+  recordedBy           User    @relation("MachineHealthRecorder", fields: [recordedById], references: [id])
+
+  recordedAt           DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+}
+
+model MaintenanceSchedule {
+  id                   Int     @id @default(autoincrement())
+  machineId            Int
+  assignedEngineerId   Int?
+  createdById          Int
+
+  scheduleType         String  // "PREVENTIVE", "CORRECTIVE", "PREDICTIVE"
+  frequency            String  // "DAILY", "WEEKLY", "MONTHLY", "QUARTERLY", "YEARLY"
+  lastScheduledDate    DateTime?
+  nextScheduledDate    DateTime
+  status               String  @default("PENDING") // "PENDING", "IN_PROGRESS", "COMPLETED", "OVERDUE"
+  description          String?
+
+  machine              Machine @relation(fields: [machineId], references: [id])
+  assignedEngineer     User?   @relation("AssignedMaintenance", fields: [assignedEngineerId], references: [id])
+  createdBy            User    @relation("MaintenanceScheduleCreator", fields: [createdById], references: [id])
+
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+}
+
+model SparePart {
+  id                   Int     @id @default(autoincrement())
+  machineId            Int
+
+  name                 String
+  quantity             Int
+  minQuantity          Int
+  unitPrice            Float
+  supplier             String?
+  lastRestockedDate    DateTime?
+  expiryDate           DateTime?
+  notes                String?
+
+  machine              Machine @relation(fields: [machineId], references: [id])
+
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+}
+
+//////////////////////
+// ACCOUNTANT FEATURES
+//////////////////////
+
+model Expense {
+  id                   Int     @id @default(autoincrement())
+  submittedById        Int
+  approvedById         Int?
+
+  category             String  // "MATERIALS", "UTILITIES", "MAINTENANCE", "TRAVEL", "OTHER"
+  amount               Float
+  description          String?
+  receiptPath          String?
+  paymentStatus        String  @default("PENDING") // "PENDING", "APPROVED", "REJECTED", "PAID"
+
+  submittedAt          DateTime @default(now())
+  approvedAt           DateTime?
+
+  submittedBy          User    @relation("ExpenseCreator", fields: [submittedById], references: [id])
+  approvedBy           User?   @relation("ExpenseApprover", fields: [approvedById], references: [id])
+
+  updatedAt            DateTime @updatedAt
+}
+
+model Invoice {
+  id                   Int     @id @default(autoincrement())
+  customerId           Int
+  createdById          Int
+
+  invoiceNumber        String  @unique
+  totalAmount          Float
+  dueDate              DateTime
+  paymentStatus        String  @default("PENDING") // "PENDING", "PAID", "OVERDUE", "CANCELLED"
+  invoicePath          String?
+
+  paymentRecordedAt    DateTime?
+
+  customer             Customer @relation(fields: [customerId], references: [id])
+  createdBy            User    @relation("InvoiceCreator", fields: [createdById], references: [id])
+
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+}
+
+model FinancialSetting {
+  id                   Int     @id @default(autoincrement())
+  updatedById          Int?
+
+  revenueTarget        Float   @default(0)
+  expenseLimit         Float   @default(0)
+  profitMarginTarget   Float   @default(0) // 0-100
+
+  updatedBy            User?   @relation("FinancialSettingUpdater", fields: [updatedById], references: [id])
+
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+}
+
+// ── Phase 2 Financial Features ──
+
+model FinancialReport {
+  id              Int     @id @default(autoincrement())
+  title           String
+  reportType      String  // P&L, BalanceSheet, CashFlow, etc
+  period          String  // "March 2026", "Q1 2026", etc
+  generatedById   Int
+  pdfPath         String?
+
+  generatedBy     User    @relation("FinancialReportGenerator", fields: [generatedById], references: [id])
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model SupplierPayable {
+  id              Int     @id @default(autoincrement())
+  supplierId      Int
+  amount          Float
+  dueDate         DateTime
+  paymentStatus   String  @default("PENDING") // PENDING, PAID, OVERDUE
+  notes           String?
+
+  supplier        Supplier @relation(fields: [supplierId], references: [id])
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model CustomerReceivable {
+  id              Int     @id @default(autoincrement())
+  customerId      Int
+  amount          Float
+  dueDate         DateTime
+  status          String  @default("PENDING") // PENDING, PAID, OVERDUE
+  notes           String?
+
+  customer        Customer @relation(fields: [customerId], references: [id])
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model BudgetPlan {
+  id              Int     @id @default(autoincrement())
+  month           String  // "2026-04"
+  category        String
+  allocated       Float
+  spent           Float   @default(0)
+  createdById     Int
+
+  createdBy       User    @relation("BudgetPlanCreator", fields: [createdById], references: [id])
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model TaxFiling {
+  id              Int     @id @default(autoincrement())
+  filingType      String  // VAT, Income, Payroll, etc
+  dueDate         DateTime
+  amount          Float
+  status          String  @default("PENDING") // PENDING, FILED, PAID
+  filedById       Int?
+
+  filedBy         User?   @relation("TaxFilingFiler", fields: [filedById], references: [id])
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model BankReconciliation {
+  id              Int     @id @default(autoincrement())
+  accountName     String
+  bankBalance     Float
+  bookBalance     Float
+  reconciled      Boolean @default(false)
+  reconciledById  Int?
+  notes           String?
+
+  reconciledBy    User?   @relation("BankReconciliationReconciler", fields: [reconciledById], references: [id])
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model CostAnalysis {
+  id              Int     @id @default(autoincrement())
+  category        String
+  cost            Float
+  percentage      Float   // % of total
+  period          String  // "2026-04"
+  notes           String?
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model ApprovalWorkflow {
+  id              Int     @id @default(autoincrement())
+  workflowName    String
+  status          String  @default("ACTIVE") // ACTIVE, DRAFT, INACTIVE
+  itemsCount      Int     @default(0)
+  approverCount   Int     @default(0)
+  createdById     Int
+
+  createdBy       User    @relation("ApprovalWorkflowCreator", fields: [createdById], references: [id])
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 }
 
 //////////////////////
@@ -596,6 +899,49 @@ model AuditLog {
   user User? @relation(fields: [userId], references: [id])
 
   createdAt DateTime @default(now())
+}
+
+//////////////////////
+// ENGINEER INVENTORY
+//////////////////////
+
+model EngineerInventory {
+  id           Int                     @id @default(autoincrement())
+  engineerId   Int
+  month        Int
+  year         Int
+  status       EngineerInventoryStatus @default(DRAFT)
+  notes        String?
+
+  engineer     User                    @relation(fields: [engineerId], references: [id])
+  items        EngineerInventoryItem[]
+
+  submittedAt  DateTime?
+  reviewedAt   DateTime?
+  reviewedById Int?
+  reviewedBy   User?                   @relation("InventoryReviewer", fields: [reviewedById], references: [id])
+
+  createdAt    DateTime                @default(now())
+  updatedAt    DateTime                @updatedAt
+
+  @@unique([engineerId, month, year])
+}
+
+model EngineerInventoryItem {
+  id          Int               @id @default(autoincrement())
+  inventoryId Int
+  partName    String
+  imagePath   String?
+  quantity    Int
+  unitPrice   Float?
+  pricedById  Int?
+  pricedAt    DateTime?
+
+  inventory   EngineerInventory @relation(fields: [inventoryId], references: [id])
+  pricedBy    User?             @relation("ItemPricer", fields: [pricedById], references: [id])
+
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
 }
 
 model FileAttachment {

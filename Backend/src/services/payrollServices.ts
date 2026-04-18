@@ -511,3 +511,197 @@ export const getPayrollAdminOverview = async (): Promise<
     },
   };
 };
+
+/* ─── Salary Config ─────────────────────────────────────── */
+
+export const getSalaryConfigs = async (): Promise<ServiceResult<unknown>> => {
+  const configs = await prisma.salaryConfig.findMany({
+    include: { updatedBy: { select: { id: true, fullName: true } } },
+    orderBy: { role: "asc" },
+  });
+  return { status: 200, data: configs };
+};
+
+export const updateSalaryConfig = async (
+  role: string,
+  monthlySalary: number,
+  updatedById: number,
+): Promise<ServiceResult<unknown>> => {
+  const validRoles = ["WORKER", "ENGINEER", "ACCOUNTANT", "ADMIN"];
+  if (!validRoles.includes(role)) {
+    return { status: 400, message: "Invalid role. Must be WORKER, ENGINEER, ACCOUNTANT, or ADMIN" };
+  }
+  if (!Number.isFinite(monthlySalary) || monthlySalary < 0) {
+    return { status: 400, message: "monthlySalary must be a non-negative number" };
+  }
+
+  const config = await prisma.salaryConfig.upsert({
+    where: { role: role as any },
+    update: { monthlySalary, updatedById },
+    create: { role: role as any, monthlySalary, updatedById },
+  });
+
+  return { status: 200, data: config };
+};
+
+/* ─── Daily Payroll ─────────────────────────────────────── */
+
+const DAYS_IN_MONTH = 30;
+
+async function getSalaryForRole(role: string): Promise<number> {
+  const config = await prisma.salaryConfig.findUnique({ where: { role: role as any } });
+  if (config) return config.monthlySalary;
+  const fallback: Record<string, number> = { WORKER: 2500, ENGINEER: 3500, ACCOUNTANT: 3000, ADMIN: 5000 };
+  return fallback[role] ?? 2500;
+}
+
+export const calculateDailyPayroll = async (
+  attendanceId: number,
+  calculatedById: number,
+): Promise<ServiceResult<unknown>> => {
+  const attendance = await prisma.attendance.findUnique({
+    where: { id: attendanceId },
+    include: {
+      user: { select: { id: true, fullName: true, role: true } },
+      shift: { select: { startTime: true, endTime: true } },
+    },
+  });
+
+  if (!attendance) return { status: 404, message: "Attendance record not found" };
+  if (!attendance.checkOut) return { status: 400, message: "Employee has not checked out yet" };
+
+  const existing = await prisma.dailyPayroll.findUnique({ where: { attendanceId } });
+  if (existing) return { status: 409, message: "Daily payroll already calculated for this attendance" };
+
+  const monthlySalary = await getSalaryForRole(attendance.user.role);
+  const dailyRate = monthlySalary / DAYS_IN_MONTH;
+
+  const durationMs = attendance.checkOut.getTime() - attendance.checkIn.getTime();
+  const hoursWorked = parseFloat((durationMs / 3600000).toFixed(4));
+
+  let shiftHours = 8;
+  if (attendance.shift) {
+    const s = attendance.shift.startTime;
+    const e = attendance.shift.endTime;
+    const diff = (e.getTime() - s.getTime()) / 3600000;
+    if (diff > 0) shiftHours = diff;
+  }
+
+  const hourlyRate = dailyRate / shiftHours;
+  const totalDailyPay = parseFloat((hoursWorked * hourlyRate).toFixed(2));
+
+  const record = await prisma.dailyPayroll.create({
+    data: {
+      userId: attendance.user.id,
+      attendanceId,
+      date: attendance.checkIn,
+      hoursWorked,
+      dailyRate,
+      totalDailyPay,
+    },
+    include: {
+      user: { select: { id: true, fullName: true, role: true } },
+      attendance: { select: { id: true, checkIn: true, checkOut: true } },
+    },
+  });
+
+  return { status: 201, data: record };
+};
+
+export const confirmDailyPayroll = async (
+  id: number,
+  confirmedById: number,
+): Promise<ServiceResult<unknown>> => {
+  const record = await prisma.dailyPayroll.findUnique({
+    where: { id },
+    include: { user: { select: { id: true, fullName: true, role: true } } },
+  });
+
+  if (!record) return { status: 404, message: "Daily payroll record not found" };
+  if (record.isConfirmed) return { status: 409, message: "Already confirmed" };
+
+  const updated = await prisma.dailyPayroll.update({
+    where: { id },
+    data: { isConfirmed: true, confirmedById, confirmedAt: new Date() },
+    include: {
+      user: { select: { id: true, fullName: true, role: true } },
+      attendance: { select: { id: true, checkIn: true, checkOut: true } },
+    },
+  });
+
+  // Notify the worker
+  const dateLabel = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" })
+    .format(record.date);
+  const notification = await prisma.notification.create({
+    data: {
+      userId: record.userId,
+      title: "Daily salary confirmed",
+      message: `Your salary for ${dateLabel} has been confirmed: ${record.totalDailyPay.toFixed(2)} NIS`,
+      type: NotificationType.PAYROLL_READY,
+    },
+  });
+
+  emitNotificationToUser(record.userId, notification);
+  emitNotificationUnreadCountUpdate(record.userId, { refresh: true });
+
+  await prisma.dailyPayroll.update({ where: { id }, data: { notificationSent: true } });
+
+  auditAsync(confirmedById, AuditAction.PAYROLL_UPDATED, AuditEntityType.PAYROLL, id, {
+    action: "CONFIRM_DAILY",
+    targetUserId: record.userId,
+    date: record.date,
+    totalDailyPay: record.totalDailyPay,
+  });
+
+  return { status: 200, data: updated };
+};
+
+export const getDailyPayrollsForAccountant = async (
+  dateStr?: string,
+): Promise<ServiceResult<unknown>> => {
+  const whereDate: any = {};
+  if (dateStr) {
+    const d = new Date(dateStr);
+    if (!isNaN(d.getTime())) {
+      const start = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+      const end = new Date(start.getTime() + 86400000);
+      whereDate.date = { gte: start, lt: end };
+    }
+  }
+
+  const records = await prisma.dailyPayroll.findMany({
+    where: whereDate,
+    include: {
+      user: { select: { id: true, fullName: true, role: true } },
+      attendance: { select: { id: true, checkIn: true, checkOut: true } },
+      confirmedBy: { select: { id: true, fullName: true } },
+    },
+    orderBy: [{ date: "desc" }, { userId: "asc" }],
+  });
+
+  return { status: 200, data: records };
+};
+
+export const getMyDailyPayrolls = async (
+  userId: number,
+  month?: string,
+): Promise<ServiceResult<unknown>> => {
+  const where: any = { userId };
+
+  if (month) {
+    const range = parseMonthRange(month);
+    if (range) where.date = { gte: range.start, lt: range.end };
+  }
+
+  const records = await prisma.dailyPayroll.findMany({
+    where,
+    include: {
+      attendance: { select: { id: true, checkIn: true, checkOut: true } },
+    },
+    orderBy: { date: "desc" },
+  });
+
+  const total = records.filter(r => r.isConfirmed).reduce((s, r) => s + r.totalDailyPay, 0);
+
+  return { status: 200, data: { records, confirmedTotal: parseFloat(total.toFixed(2)) } };
+};
