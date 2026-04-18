@@ -8,6 +8,12 @@ import {
   getPayrollByIdHandler,
   updatePayrollHandler,
   deletePayrollHandler,
+  getSalaryConfigsHandler,
+  updateSalaryConfigHandler,
+  calculateDailyPayrollHandler,
+  confirmDailyPayrollHandler,
+  getDailyPayrollsHandler,
+  getMyDailyPayrollsHandler,
 } from "../controllers/payrollController";
 import { authorizeRoles } from "../middleware/authMiddleware";
 
@@ -50,5 +56,19 @@ router.put("/:id", authorizeRoles(accountingRoles), updatePayrollHandler);
 
 // Delete payroll — ADMIN only
 router.delete("/:id", authorizeRoles(accountingRoles), deletePayrollHandler);
+
+// ── Salary Config ──
+router.get("/salary-config", authorizeRoles(accountingRoles), getSalaryConfigsHandler);
+router.put("/salary-config", authorizeRoles([UserRole.ADMIN]), updateSalaryConfigHandler);
+
+// ── Daily Payroll ──
+// Get all daily payrolls (optionally filtered by ?date=YYYY-MM-DD) — ACCOUNTANT/ADMIN
+router.get("/daily", authorizeRoles(accountingRoles), getDailyPayrollsHandler);
+// Get my daily payrolls (optionally ?month=YYYY-MM) — all roles
+router.get("/daily/me", authorizeRoles(allRoles), getMyDailyPayrollsHandler);
+// Calculate daily payroll for one attendance record — ACCOUNTANT/ADMIN
+router.post("/daily/calculate", authorizeRoles(accountingRoles), calculateDailyPayrollHandler);
+// Confirm a daily payroll record — ACCOUNTANT/ADMIN
+router.post("/daily/:id/confirm", authorizeRoles(accountingRoles), confirmDailyPayrollHandler);
 
 export default router;

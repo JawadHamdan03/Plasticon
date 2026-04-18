@@ -8,6 +8,12 @@ import {
   getPayrollById,
   updatePayroll,
   deletePayroll,
+  getSalaryConfigs,
+  updateSalaryConfig,
+  calculateDailyPayroll,
+  confirmDailyPayroll,
+  getDailyPayrollsForAccountant,
+  getMyDailyPayrolls,
 } from "../services/payrollServices";
 
 export const calculatePayrollHandler = async (
@@ -164,5 +170,85 @@ export const getPayrollAdminOverviewHandler = async (
   } catch (error) {
     console.error("Get payroll admin overview error:", error);
     res.status(500).json({ message: "Failed to fetch payroll overview" });
+  }
+};
+
+export const getSalaryConfigsHandler = async (_req: AuthenticatedRequest, res: Response) => {
+  try {
+    const result = await getSalaryConfigs();
+    res.status(result.status).json(result.data);
+  } catch (error) {
+    console.error("Get salary configs error:", error);
+    res.status(500).json({ message: "Failed to fetch salary configs" });
+  }
+};
+
+export const updateSalaryConfigHandler = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const updatedById = req.user?.id;
+    if (!updatedById) { res.status(401).json({ message: "Not authorized" }); return; }
+    const { role, monthlySalary } = req.body;
+    const result = await updateSalaryConfig(role, Number(monthlySalary), updatedById);
+    if (result.message && result.status !== 200) { res.status(result.status).json({ message: result.message }); return; }
+    res.status(result.status).json(result.data);
+  } catch (error) {
+    console.error("Update salary config error:", error);
+    res.status(500).json({ message: "Failed to update salary config" });
+  }
+};
+
+export const calculateDailyPayrollHandler = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const calculatedById = req.user?.id;
+    if (!calculatedById) { res.status(401).json({ message: "Not authorized" }); return; }
+    const attendanceId = Number(req.body.attendanceId);
+    if (!Number.isInteger(attendanceId) || attendanceId <= 0) {
+      res.status(400).json({ message: "attendanceId must be a positive integer" }); return;
+    }
+    const result = await calculateDailyPayroll(attendanceId, calculatedById);
+    if (result.message && result.status !== 201) { res.status(result.status).json({ message: result.message }); return; }
+    res.status(result.status).json(result.data);
+  } catch (error) {
+    console.error("Calculate daily payroll error:", error);
+    res.status(500).json({ message: "Failed to calculate daily payroll" });
+  }
+};
+
+export const confirmDailyPayrollHandler = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const confirmedById = req.user?.id;
+    if (!confirmedById) { res.status(401).json({ message: "Not authorized" }); return; }
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id) || id <= 0) { res.status(400).json({ message: "id must be a positive integer" }); return; }
+    const result = await confirmDailyPayroll(id, confirmedById);
+    if (result.message && result.status !== 200) { res.status(result.status).json({ message: result.message }); return; }
+    res.status(result.status).json(result.data);
+  } catch (error) {
+    console.error("Confirm daily payroll error:", error);
+    res.status(500).json({ message: "Failed to confirm daily payroll" });
+  }
+};
+
+export const getDailyPayrollsHandler = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const dateStr = req.query.date as string | undefined;
+    const result = await getDailyPayrollsForAccountant(dateStr);
+    res.status(result.status).json(result.data);
+  } catch (error) {
+    console.error("Get daily payrolls error:", error);
+    res.status(500).json({ message: "Failed to fetch daily payrolls" });
+  }
+};
+
+export const getMyDailyPayrollsHandler = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) { res.status(401).json({ message: "Not authorized" }); return; }
+    const month = req.query.month as string | undefined;
+    const result = await getMyDailyPayrolls(userId, month);
+    res.status(result.status).json(result.data);
+  } catch (error) {
+    console.error("Get my daily payrolls error:", error);
+    res.status(500).json({ message: "Failed to fetch daily payrolls" });
   }
 };

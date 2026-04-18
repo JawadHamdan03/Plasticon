@@ -9,12 +9,12 @@ type EmptyStateProps = {
 
 export function EmptyState({ title, description, action }: EmptyStateProps) {
   return (
-    <Card className="rounded-2xl border-dashed p-5 text-center">
-      <p className="text-base font-semibold text-[#000000]">
+    <Card className="rounded-2xl border-dashed p-8 text-center">
+      <p className="text-base font-semibold text-(--text-primary)">
         {title}
       </p>
       {description ? (
-        <p className="mt-2 text-sm text-[#000000]">
+        <p className="mt-2 text-sm text-(--text-secondary)">
           {description}
         </p>
       ) : null}
@@ -22,6 +22,3 @@ export function EmptyState({ title, description, action }: EmptyStateProps) {
     </Card>
   );
 }
-
-
-

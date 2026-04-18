@@ -1,18 +1,71 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
-import { Bell } from "lucide-react";
+import {
+  LayoutDashboard, Users, ClipboardList, DollarSign, Settings,
+  Camera, Zap, Cpu, BarChart3, FileText, ShoppingCart, TrendingUp,
+  Bell, MessageSquare, LogOut, Menu, X, ChevronRight,
+  Wrench, CheckSquare, AlertTriangle, Lightbulb, Activity, Target,
+  Factory, Shield, Calendar, Boxes, Receipt, ClipboardCheck,
+  UserCheck, Layers, Search, Package, PieChart, CreditCard, Percent, Wallet, CheckCircle,
+} from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useLocale } from "../context/LocaleContext";
-import { GlobalCommandSearch } from "./GlobalCommandSearch";
-import { DateTimeBadge } from "./DateTimeBadge";
-import { LocaleSwitch } from "./LocaleSwitch";
 import { ThemeToggle } from "./ThemeToggle";
-import { UserAvatarBadge } from "./UserAvatarBadge";
-import { Button } from "./ui/button";
 import { API_BASE_URL } from "../lib/api";
 import logo from "../assets/plasticon.png";
 
+type SearchItem = { labelAr: string; labelEn: string; to: string };
+
+const ALL_SEARCH_ITEMS: SearchItem[] = [
+  { labelAr: "لوحة التحكم", labelEn: "Dashboard", to: "/dashboard" },
+  { labelAr: "الإنتاج", labelEn: "Production", to: "/production" },
+  { labelAr: "الإشعارات", labelEn: "Notifications", to: "/notifications" },
+  { labelAr: "الدردشة", labelEn: "Chat", to: "/chat" },
+  { labelAr: "المخزون", labelEn: "Inventory", to: "/inventory" },
+  { labelAr: "المشتريات", labelEn: "Purchases", to: "/purchases" },
+  { labelAr: "المبيعات", labelEn: "Sales", to: "/sales" },
+  { labelAr: "التقارير", labelEn: "Reports", to: "/reports" },
+  { labelAr: "الحضور", labelEn: "My Attendance", to: "/attendance" },
+  { labelAr: "الرواتب", labelEn: "My Payroll", to: "/my-payroll" },
+  { labelAr: "المستخدمون", labelEn: "Users", to: "/admin/users" },
+  { labelAr: "حضور الموظفين", labelEn: "Attendance Admin", to: "/admin/attendance" },
+  { labelAr: "رواتب الموظفين", labelEn: "Payroll Admin", to: "/admin/payroll" },
+  { labelAr: "الورديات", labelEn: "Shifts", to: "/admin/shifts" },
+  { labelAr: "الآلات", labelEn: "Machines", to: "/admin/machines" },
+  { labelAr: "سجلات التدقيق", labelEn: "Audit Logs", to: "/admin/audit-logs" },
+  { labelAr: "الإعدادات", labelEn: "Settings", to: "/admin/settings" },
+  { labelAr: "الكهرباء", labelEn: "Electricity", to: "/admin/settings/electricity" },
+  { labelAr: "قراءات العامل", labelEn: "Worker Snapshots", to: "/worker/snapshots" },
+  { labelAr: "أدوات العامل", labelEn: "Worker Tools", to: "/worker/tools" },
+  { labelAr: "التحليلات", labelEn: "Analytics", to: "/admin/dashboard-analytics" },
+  // Engineer Phase 1 Features
+  { labelAr: "صحة الآلات", labelEn: "Machine Health", to: "/engineer/machines" },
+  { labelAr: "جدول الصيانة", labelEn: "Maintenance Schedule", to: "/engineer/maintenance-schedule" },
+  { labelAr: "القطع الغيار", labelEn: "Spare Parts", to: "/engineer/spare-parts" },
+  // Engineer Phase 2 Features
+  { labelAr: "دورة حياة المعدات", labelEn: "Equipment Lifecycle", to: "/engineer/equipment-lifecycle" },
+  { labelAr: "تحليل الإنتاج", labelEn: "Production Analytics", to: "/engineer/production-analytics" },
+  { labelAr: "اتجاهات الجودة", labelEn: "Quality Trends", to: "/engineer/quality-trends" },
+  { labelAr: "الوثائق التقنية", labelEn: "Technical Documentation", to: "/engineer/documentation" },
+  { labelAr: "معايرة المعدات", labelEn: "Equipment Calibration", to: "/engineer/calibration" },
+  { labelAr: "أوامر العمل", labelEn: "Work Orders", to: "/engineer/work-orders" },
+  { labelAr: "سجل نقل المعدات", labelEn: "Equipment Transfer", to: "/engineer/equipment-transfer" },
+  // Accountant Phase 1 Features
+  { labelAr: "لوحة المالية", labelEn: "Financial Dashboard", to: "/accountant/financial-dashboard" },
+  { labelAr: "المصروفات", labelEn: "Expenses", to: "/accountant/expenses" },
+  { labelAr: "الفواتير", labelEn: "Invoices", to: "/accountant/invoices" },
+  // Accountant Phase 2 Features
+  { labelAr: "التقارير المالية", labelEn: "Financial Reports", to: "/accountant/financial-reports" },
+  { labelAr: "مستحقات الموردين", labelEn: "Supplier Payables", to: "/accountant/payables" },
+  { labelAr: "المستقبلات من الزبائن", labelEn: "Customer Receivables", to: "/accountant/receivables" },
+  { labelAr: "خطة الميزانية", labelEn: "Budget Planning", to: "/accountant/budgets" },
+  { labelAr: "الامتثال الضريبي", labelEn: "Tax Compliance", to: "/accountant/tax" },
+  { labelAr: "التوفيق البنكي", labelEn: "Bank Reconciliation", to: "/accountant/reconciliation" },
+  { labelAr: "تحليل التكاليف", labelEn: "Cost Analysis", to: "/accountant/cost-analysis" },
+  { labelAr: "سير العمل للموافقة", labelEn: "Approval Workflows", to: "/accountant/approvals" },
+];
+
+/* ── Types ─────────────────────────────────────────────────── */
 type NotificationItem = {
   id: number;
   title: string;
@@ -22,481 +75,606 @@ type NotificationItem = {
   createdAt: string;
 };
 
-type NotificationListResponse = {
-  items: NotificationItem[];
-};
+/* ── Nav label helpers ─────────────────────────────────────── */
+type BiLabel = { en: string; ar: string };
+type NavSectionBi = { label: BiLabel; items: NavItemBi[] };
+type NavItemBi = { to: string; icon: ReactNode; label: BiLabel };
 
-type NavItem = {
-  to: string;
-  labelAr: string;
-  labelEn: string;
-};
+function nav(en: string, ar: string): BiLabel { return { en, ar }; }
 
-type AppScaffoldProps = {
-  children: ReactNode;
-};
+function getNavSectionsBi(role: string): NavSectionBi[] {
+  if (role === "ADMIN") {
+    return [
+      {
+        label: nav("Overview", "نظرة عامة"),
+        items: [
+          { to: "/dashboard", icon: <LayoutDashboard size={17} />, label: nav("Dashboard", "لوحة التحكم") },
+          { to: "/admin/dashboard-analytics", icon: <BarChart3 size={17} />, label: nav("Analytics", "التحليلات") },
+        ],
+      },
+      {
+        label: nav("Management", "الإدارة"),
+        items: [
+          { to: "/admin/users", icon: <Users size={17} />, label: nav("Users", "المستخدمون") },
+          { to: "/admin/shifts", icon: <Calendar size={17} />, label: nav("Shifts", "الشفتات") },
+          { to: "/admin/machines", icon: <Cpu size={17} />, label: nav("Machines", "الماكينات") },
+        ],
+      },
+      {
+        label: nav("Operations", "العمليات"),
+        items: [
+          { to: "/production", icon: <Factory size={17} />, label: nav("Production", "الإنتاج") },
+          { to: "/admin/attendance", icon: <UserCheck size={17} />, label: nav("Attendance", "الحضور") },
+          { to: "/admin/payroll", icon: <DollarSign size={17} />, label: nav("Payroll", "الرواتب") },
+          { to: "/admin/snapshots", icon: <Camera size={17} />, label: nav("Snapshots", "القراءات") },
+          { to: "/admin/settings/electricity", icon: <Zap size={17} />, label: nav("Electricity", "الكهرباء") },
+        ],
+      },
+      {
+        label: nav("Finance", "المالية"),
+        items: [
+          { to: "/accountant/financial-dashboard", icon: <PieChart size={17} />, label: nav("Fin. Dashboard", "لوحة المالية") },
+          { to: "/accountant/invoices", icon: <FileText size={17} />, label: nav("Invoices", "الفواتير") },
+          { to: "/accountant/expenses", icon: <DollarSign size={17} />, label: nav("Expenses", "المصروفات") },
+          { to: "/accountant/financial-reports", icon: <BarChart3 size={17} />, label: nav("Fin. Reports", "تقارير مالية") },
+          { to: "/accountant/payables", icon: <CreditCard size={17} />, label: nav("Payables", "مستحقات") },
+          { to: "/accountant/receivables", icon: <Wallet size={17} />, label: nav("Receivables", "مستقبلات") },
+          { to: "/accountant/budgets", icon: <Target size={17} />, label: nav("Budgets", "ميزانيات") },
+          { to: "/accountant/tax", icon: <Shield size={17} />, label: nav("Tax", "ضريبة") },
+          { to: "/accountant/reconciliation", icon: <CheckCircle size={17} />, label: nav("Reconciliation", "توفيق") },
+          { to: "/accountant/cost-analysis", icon: <Percent size={17} />, label: nav("Cost Analysis", "التكاليف") },
+          { to: "/accountant/approvals", icon: <Zap size={17} />, label: nav("Approvals", "موافقات") },
+          { to: "/inventory", icon: <Boxes size={17} />, label: nav("Inventory", "المخزون") },
+          { to: "/purchases", icon: <ShoppingCart size={17} />, label: nav("Purchases", "المشتريات") },
+          { to: "/sales", icon: <TrendingUp size={17} />, label: nav("Sales", "المبيعات") },
+          { to: "/reports", icon: <FileText size={17} />, label: nav("Reports", "التقارير") },
+        ],
+      },
+      {
+        label: nav("Engineering", "الهندسة"),
+        items: [
+          { to: "/quality-checks", icon: <CheckSquare size={17} />, label: nav("Quality Checks", "فحص الجودة") },
+          { to: "/maintenance", icon: <Wrench size={17} />, label: nav("Maintenance", "الصيانة") },
+          { to: "/engineer/machines", icon: <Activity size={17} />, label: nav("Machine Health", "صحة الآلات") },
+          { to: "/engineer/maintenance-schedule", icon: <Calendar size={17} />, label: nav("Maint. Schedule", "جدول الصيانة") },
+          { to: "/engineer/spare-parts", icon: <Package size={17} />, label: nav("Spare Parts", "القطع الغيار") },
+          { to: "/engineer/equipment-lifecycle", icon: <Zap size={17} />, label: nav("Equipment Lifecycle", "دورة المعدات") },
+          { to: "/engineer/production-analytics", icon: <BarChart3 size={17} />, label: nav("Prod. Analytics", "تحليل الإنتاج") },
+          { to: "/engineer/quality-trends", icon: <TrendingUp size={17} />, label: nav("Quality Trends", "اتجاهات الجودة") },
+          { to: "/engineer/documentation", icon: <FileText size={17} />, label: nav("Tech. Docs", "وثائق تقنية") },
+          { to: "/engineer/calibration", icon: <Settings size={17} />, label: nav("Calibration", "معايرة") },
+          { to: "/engineer/work-orders", icon: <ClipboardCheck size={17} />, label: nav("Work Orders", "أوامر عمل") },
+          { to: "/engineer/equipment-transfer", icon: <Layers size={17} />, label: nav("Equip. Transfer", "نقل معدات") },
+        ],
+      },
+      {
+        label: nav("System", "النظام"),
+        items: [
+          { to: "/admin/audit-logs", icon: <Shield size={17} />, label: nav("Audit Logs", "سجل التدقيق") },
+          { to: "/admin/settings", icon: <Settings size={17} />, label: nav("Settings", "الإعدادات") },
+          { to: "/notifications", icon: <Bell size={17} />, label: nav("Notifications", "الإشعارات") },
+          { to: "/chat", icon: <MessageSquare size={17} />, label: nav("Chat", "الدردشة") },
+        ],
+      },
+    ];
+  }
 
-export function AppScaffold({ children }: AppScaffoldProps) {
+  if (role === "ENGINEER") {
+    return [
+      {
+        label: nav("Overview", "نظرة عامة"),
+        items: [
+          { to: "/dashboard", icon: <LayoutDashboard size={17} />, label: nav("Dashboard", "لوحة التحكم") },
+        ],
+      },
+      {
+        label: nav("Engineering", "الهندسة"),
+        items: [
+          { to: "/production", icon: <Factory size={17} />, label: nav("Production", "الإنتاج") },
+          { to: "/quality-checks", icon: <CheckSquare size={17} />, label: nav("Quality Checks", "فحص الجودة") },
+          { to: "/maintenance", icon: <Wrench size={17} />, label: nav("Maintenance", "الصيانة") },
+          { to: "/engineer/inventory", icon: <ClipboardList size={17} />, label: nav("Parts Inventory", "مخزون القطع") },
+          { to: "/engineer/machines", icon: <Activity size={17} />, label: nav("Machine Health", "صحة الآلات") },
+          { to: "/engineer/maintenance-schedule", icon: <Calendar size={17} />, label: nav("Maint. Schedule", "جدول الصيانة") },
+          { to: "/engineer/spare-parts", icon: <Package size={17} />, label: nav("Spare Parts", "القطع الغيار") },
+          { to: "/engineer/equipment-lifecycle", icon: <Zap size={17} />, label: nav("Equipment Lifecycle", "دورة المعدات") },
+          { to: "/engineer/production-analytics", icon: <BarChart3 size={17} />, label: nav("Prod. Analytics", "تحليل الإنتاج") },
+          { to: "/engineer/quality-trends", icon: <TrendingUp size={17} />, label: nav("Quality Trends", "اتجاهات الجودة") },
+          { to: "/engineer/documentation", icon: <FileText size={17} />, label: nav("Tech. Docs", "وثائق تقنية") },
+          { to: "/engineer/calibration", icon: <Settings size={17} />, label: nav("Calibration", "معايرة") },
+          { to: "/engineer/work-orders", icon: <ClipboardCheck size={17} />, label: nav("Work Orders", "أوامر عمل") },
+          { to: "/engineer/equipment-transfer", icon: <Layers size={17} />, label: nav("Equip. Transfer", "نقل معدات") },
+        ],
+      },
+      {
+        label: nav("Personal", "الشخصية"),
+        items: [
+          { to: "/attendance", icon: <UserCheck size={17} />, label: nav("My Attendance", "حضوري") },
+          { to: "/my-payroll", icon: <DollarSign size={17} />, label: nav("My Payroll", "راتبي") },
+          { to: "/notifications", icon: <Bell size={17} />, label: nav("Notifications", "الإشعارات") },
+          { to: "/chat", icon: <MessageSquare size={17} />, label: nav("Chat", "الدردشة") },
+        ],
+      },
+    ];
+  }
+
+  if (role === "ACCOUNTANT") {
+    return [
+      {
+        label: nav("Overview", "نظرة عامة"),
+        items: [
+          { to: "/dashboard", icon: <LayoutDashboard size={17} />, label: nav("Dashboard", "لوحة التحكم") },
+          { to: "/reports", icon: <BarChart3 size={17} />, label: nav("Reports", "التقارير") },
+        ],
+      },
+      {
+        label: nav("Finance", "المالية"),
+        items: [
+          { to: "/accountant/financial-dashboard", icon: <PieChart size={17} />, label: nav("Fin. Dashboard", "لوحة المالية") },
+          { to: "/accountant/invoices", icon: <FileText size={17} />, label: nav("Invoices", "الفواتير") },
+          { to: "/accountant/expenses", icon: <DollarSign size={17} />, label: nav("Expenses", "المصروفات") },
+          { to: "/accountant/financial-reports", icon: <BarChart3 size={17} />, label: nav("Fin. Reports", "تقارير مالية") },
+          { to: "/accountant/payables", icon: <CreditCard size={17} />, label: nav("Payables", "مستحقات") },
+          { to: "/accountant/receivables", icon: <Wallet size={17} />, label: nav("Receivables", "مستقبلات") },
+          { to: "/accountant/budgets", icon: <Target size={17} />, label: nav("Budgets", "ميزانيات") },
+          { to: "/accountant/tax", icon: <Shield size={17} />, label: nav("Tax Compliance", "ضريبة") },
+          { to: "/accountant/reconciliation", icon: <CheckCircle size={17} />, label: nav("Reconciliation", "توفيق") },
+          { to: "/accountant/cost-analysis", icon: <Percent size={17} />, label: nav("Cost Analysis", "تحليل التكاليف") },
+          { to: "/accountant/approvals", icon: <Zap size={17} />, label: nav("Approvals", "موافقات") },
+          { to: "/inventory", icon: <Boxes size={17} />, label: nav("Inventory", "المخزون") },
+          { to: "/purchases", icon: <ShoppingCart size={17} />, label: nav("Purchases", "المشتريات") },
+          { to: "/sales", icon: <TrendingUp size={17} />, label: nav("Sales", "المبيعات") },
+          { to: "/accountant/parts-pricing", icon: <Receipt size={17} />, label: nav("Parts Pricing", "تسعير القطع") },
+        ],
+      },
+      {
+        label: nav("HR", "الموارد البشرية"),
+        items: [
+          { to: "/admin/attendance", icon: <UserCheck size={17} />, label: nav("Attendance", "الحضور") },
+          { to: "/admin/payroll", icon: <DollarSign size={17} />, label: nav("Payroll", "الرواتب") },
+        ],
+      },
+      {
+        label: nav("Personal", "الشخصية"),
+        items: [
+          { to: "/attendance", icon: <ClipboardCheck size={17} />, label: nav("My Attendance", "حضوري") },
+          { to: "/my-payroll", icon: <Receipt size={17} />, label: nav("My Payroll", "راتبي") },
+          { to: "/notifications", icon: <Bell size={17} />, label: nav("Notifications", "الإشعارات") },
+          { to: "/chat", icon: <MessageSquare size={17} />, label: nav("Chat", "الدردشة") },
+        ],
+      },
+    ];
+  }
+
+  // WORKER
+  return [
+    {
+      label: nav("Overview", "نظرة عامة"),
+      items: [
+        { to: "/dashboard", icon: <LayoutDashboard size={17} />, label: nav("Dashboard", "لوحة التحكم") },
+      ],
+    },
+    {
+      label: nav("Work", "العمل"),
+      items: [
+        { to: "/production", icon: <Factory size={17} />, label: nav("Production", "الإنتاج") },
+        { to: "/worker/snapshots", icon: <Camera size={17} />, label: nav("Readings", "القراءات") },
+        { to: "/worker/tools?tab=stops", icon: <AlertTriangle size={17} />, label: nav("Machine Stops", "توقف الماكينات") },
+        { to: "/worker/tools?tab=checklist", icon: <CheckSquare size={17} />, label: nav("Daily Checklist", "قائمة اليوم") },
+        { to: "/worker/tools?tab=waste", icon: <Layers size={17} />, label: nav("Material Waste", "هدر المواد") },
+        { to: "/worker/tools?tab=target", icon: <Target size={17} />, label: nav("Daily Targets", "الأهداف اليومية") },
+        { to: "/worker/tools?tab=kaizen", icon: <Lightbulb size={17} />, label: nav("Kaizen Ideas", "أفكار كايزن") },
+        { to: "/worker/tools?tab=quality", icon: <Activity size={17} />, label: nav("Quality Issues", "مشاكل الجودة") },
+        { to: "/worker/tools?tab=micro", icon: <Cpu size={17} />, label: nav("Micro Stops", "توقفات مايكرو") },
+        { to: "/worker/tools?tab=anomaly", icon: <Zap size={17} />, label: nav("Electricity Alerts", "تنبيهات الكهرباء") },
+      ],
+    },
+    {
+      label: nav("Personal", "الشخصية"),
+      items: [
+        { to: "/attendance", icon: <UserCheck size={17} />, label: nav("My Attendance", "حضوري") },
+        { to: "/my-payroll", icon: <DollarSign size={17} />, label: nav("My Payroll", "راتبي") },
+        { to: "/notifications", icon: <Bell size={17} />, label: nav("Notifications", "الإشعارات") },
+        { to: "/chat", icon: <MessageSquare size={17} />, label: nav("Chat", "الدردشة") },
+      ],
+    },
+  ];
+}
+
+function roleLabel(role: string, locale: string) {
+  const map: Record<string, { en: string; ar: string }> = {
+    ADMIN: { en: "Administrator", ar: "مدير" },
+    ENGINEER: { en: "Engineer", ar: "مهندس" },
+    ACCOUNTANT: { en: "Accountant", ar: "محاسب" },
+    WORKER: { en: "Worker", ar: "عامل" },
+  };
+  const entry = map[role];
+  if (!entry) return role;
+  return locale === "ar" ? entry.ar : entry.en;
+}
+
+function initials(name: string) {
+  return name
+    .split(" ")
+    .slice(0, 2)
+    .map((n) => n[0]?.toUpperCase() ?? "")
+    .join("");
+}
+
+/* ── Component ─────────────────────────────────────────────── */
+export function AppScaffold({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
   const location = useLocation();
-  const { locale } = useLocale();
   const { user, signOut } = useAuth();
-  const [unreadNotifications, setUnreadNotifications] = useState(0);
-  const [recentNotifications, setRecentNotifications] = useState<
-    NotificationItem[]
-  >([]);
-  const [notificationsOpen, setNotificationsOpen] = useState(false);
-  const [notificationsLoading, setNotificationsLoading] = useState(false);
-  const notificationsMenuRef = useRef<HTMLDivElement>(null);
-  const isRtl = locale === "ar";
+  const { locale, setLocale } = useLocale();
 
-  const role = String(user?.role ?? "").toUpperCase();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [unread, setUnread] = useState(0);
+  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+  const [notifOpen, setNotifOpen] = useState(false);
+  const [notifLoading, setNotifLoading] = useState(false);
+  const notifRef = useRef<HTMLDivElement>(null);
 
-  const fetchNotifications = async () => {
-    setNotificationsLoading(true);
+  /* search state */
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchOpen, setSearchOpen] = useState(false);
+  const searchRef = useRef<HTMLDivElement>(null);
 
+  const role = String(user?.role ?? "WORKER").toUpperCase();
+  const isAr = locale === "ar";
+
+  const filteredSearch = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    const allowed = ALL_SEARCH_ITEMS.filter((item) => {
+      if (item.to.startsWith("/admin")) return role === "ADMIN" || role === "ACCOUNTANT";
+      if (["/inventory", "/purchases", "/sales", "/reports"].includes(item.to))
+        return role === "ADMIN" || role === "ACCOUNTANT";
+      if (item.to.startsWith("/worker/")) return role === "WORKER";
+      return true;
+    });
+    if (!q) return allowed.slice(0, 6);
+    return allowed.filter((i) =>
+      `${i.labelAr} ${i.labelEn}`.toLowerCase().includes(q)
+    ).slice(0, 8);
+  }, [searchQuery, role]);
+
+  const sectionsBi = getNavSectionsBi(role);
+
+  /* fetch notifications */
+  const fetchNotif = async () => {
+    setNotifLoading(true);
     try {
-      const token = window.localStorage.getItem("plasticon_token");
-      const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
-
-      const [itemsResponse, countResponse] = await Promise.all([
-        fetch(`${API_BASE_URL}/notifications?limit=10&page=1`, {
-          credentials: "include",
-          headers,
-        }),
-        fetch(`${API_BASE_URL}/notifications/unread-count`, {
-          credentials: "include",
-          headers,
-        }),
+      const token = localStorage.getItem("plasticon_token");
+      const h = token ? { Authorization: `Bearer ${token}` } : undefined;
+      const [r1, r2] = await Promise.all([
+        fetch(`${API_BASE_URL}/notifications?limit=10&page=1`, { credentials: "include", headers: h }),
+        fetch(`${API_BASE_URL}/notifications/unread-count`, { credentials: "include", headers: h }),
       ]);
-
-      if (itemsResponse.ok) {
-        const itemsData =
-          (await itemsResponse.json()) as NotificationListResponse;
-        setRecentNotifications(itemsData.items ?? []);
-      }
-
-      if (countResponse.ok) {
-        const countData = (await countResponse.json()) as {
-          unreadCount?: number;
-          count?: number;
-        };
-        setUnreadNotifications(countData.unreadCount ?? countData.count ?? 0);
+      if (r1.ok) setNotifications(((await r1.json()) as any).items ?? []);
+      if (r2.ok) {
+        const d = (await r2.json()) as any;
+        setUnread(d.unreadCount ?? d.count ?? 0);
       }
     } catch {
-      setRecentNotifications([]);
-      setUnreadNotifications(0);
+      /* ignore */
     } finally {
-      setNotificationsLoading(false);
+      setNotifLoading(false);
     }
   };
 
-  useEffect(() => {
-    void fetchNotifications();
-  }, [role, user?.role]);
+  useEffect(() => { void fetchNotif(); }, [role]);
+  useEffect(() => { if (notifOpen) void fetchNotif(); }, [notifOpen]);
+  useEffect(() => { setNotifOpen(false); setSidebarOpen(false); setSearchOpen(false); setSearchQuery(""); }, [location.pathname]);
 
   useEffect(() => {
-    if (!notificationsOpen) {
-      return;
-    }
-
-    void fetchNotifications();
-  }, [notificationsOpen]);
-
-  useEffect(() => {
-    setNotificationsOpen(false);
-  }, [location.pathname]);
-
-  useEffect(() => {
-    const handlePointerDown = (event: PointerEvent) => {
-      if (
-        notificationsMenuRef.current &&
-        !notificationsMenuRef.current.contains(event.target as Node)
-      ) {
-        setNotificationsOpen(false);
-      }
+    const onDown = (e: PointerEvent) => {
+      if (notifRef.current && !notifRef.current.contains(e.target as Node))
+        setNotifOpen(false);
+      if (searchRef.current && !searchRef.current.contains(e.target as Node))
+        setSearchOpen(false);
     };
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        setNotificationsOpen(false);
-      }
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") { setNotifOpen(false); setSearchOpen(false); }
     };
-
-    document.addEventListener("pointerdown", handlePointerDown);
-    document.addEventListener("keydown", handleKeyDown);
-
+    document.addEventListener("pointerdown", onDown);
+    document.addEventListener("keydown", onKey);
     return () => {
-      document.removeEventListener("pointerdown", handlePointerDown);
-      document.removeEventListener("keydown", handleKeyDown);
+      document.removeEventListener("pointerdown", onDown);
+      document.removeEventListener("keydown", onKey);
     };
   }, []);
 
-  const formatNotificationTime = (value: string) =>
-    new Intl.DateTimeFormat(locale === "ar" ? "ar-EG" : "en-US", {
-      month: "short",
-      day: "numeric",
-      hour: "numeric",
-      minute: "2-digit",
-    }).format(new Date(value));
+  const isActive = (to: string) => {
+    const path = to.split("?")[0].split("#")[0];
+    return (
+      location.pathname === path ||
+      (path !== "/dashboard" && location.pathname.startsWith(path))
+    );
+  };
 
-  const navItems: NavItem[] = [
-    { to: "/dashboard", labelAr: "الرئيسية", labelEn: "Home" },
-    { to: "/production", labelAr: "الإنتاج", labelEn: "Production" },
-    { to: "/notifications", labelAr: "الإشعارات", labelEn: "Notifications" },
-    { to: "/attendance", labelAr: "الحضور", labelEn: "Attendance" },
-    { to: "/chat", labelAr: "الدردشة", labelEn: "Chat" },
-  ];
-
-  if (role === "ACCOUNTANT" || role === "ADMIN") {
-    navItems.splice(2, 0, {
-      to: "/inventory",
-      labelAr: "المخزون",
-      labelEn: "Inventory",
-    });
-    navItems.splice(3, 0, {
-      to: "/purchases",
-      labelAr: "المشتريات",
-      labelEn: "Purchases",
-    });
-    navItems.splice(4, 0, {
-      to: "/sales",
-      labelAr: "المبيعات",
-      labelEn: "Sales",
-    });
-    navItems.splice(5, 0, {
-      to: "/reports",
-      labelAr: "التقارير",
-      labelEn: "Reports",
-    });
-    navItems.push({
-      to: "/my-payroll",
-      labelAr: "الرواتب",
-      labelEn: "Payroll",
-    });
-    navItems.push({
-      to: "/admin/attendance",
-      labelAr: "إدارة الحضور",
-      labelEn: "Attendance Admin",
-    });
-    navItems.push({
-      to: "/admin/payroll",
-      labelAr: "إدارة الرواتب",
-      labelEn: "Payroll Admin",
-    });
-  }
-
-  if (role === "WORKER") {
-    navItems.push({
-      to: "/worker/snapshots",
-      labelAr: "القراءات",
-      labelEn: "Readings",
-    });
-    navItems.push({
-      to: "/worker/tools?tab=stops",
-      labelAr: "توقفات الماكنة",
-      labelEn: "Machine Stops",
-    });
-    navItems.push({
-      to: "/worker/tools?tab=checklist",
-      labelAr: "الفحص اليومي",
-      labelEn: "Daily Checklist",
-    });
-    navItems.push({
-      to: "/worker/tools?tab=waste",
-      labelAr: "مخلفات المواد",
-      labelEn: "Material Waste",
-    });
-    navItems.push({
-      to: "/worker/tools?tab=target",
-      labelAr: "الأهداف اليومية",
-      labelEn: "Daily Targets",
-    });
-    navItems.push({
-      to: "/worker/tools?tab=kaizen",
-      labelAr: "مقترحات التحسين",
-      labelEn: "Kaizen Ideas",
-    });
-    navItems.push({
-      to: "/worker/tools?tab=quality",
-      labelAr: "مشاكل الجودة",
-      labelEn: "Quality Issues",
-    });
-    navItems.push({
-      to: "/worker/tools?tab=micro",
-      labelAr: "التوقفات الصغيرة",
-      labelEn: "Micro Stops",
-    });
-    navItems.push({
-      to: "/worker/tools?tab=anomaly",
-      labelAr: "تنبيهات الكهرباء",
-      labelEn: "Electricity Alerts",
-    });
-    navItems.push({
-      to: "/worker/tools",
-      labelAr: "أدوات العامل",
-      labelEn: "Worker Tools",
-    });
-  }
-
-  if (role === "ADMIN") {
-    const chatIndex = navItems.findIndex((item) => item.to === "/chat");
-    const workerToolsNavItem: NavItem = {
-      to: "/admin#worker-tools",
-      labelAr: "أدوات العامل",
-      labelEn: "Worker Tools",
-    };
-
-    if (chatIndex >= 0) {
-      navItems.splice(chatIndex + 1, 0, workerToolsNavItem);
-    } else {
-      navItems.push(workerToolsNavItem);
-    }
-
-    navItems.push({
-      to: "/admin/snapshots",
-      labelAr: "اللقطات",
-      labelEn: "Snapshots",
-    });
-    navItems.push({
-      to: "/admin/shifts",
-      labelAr: "الشفتات",
-      labelEn: "Shifts",
-    });
-    navItems.push({
-      to: "/admin/machines",
-      labelAr: "الماكينات",
-      labelEn: "Machines",
-    });
-    navItems.push({
-      to: "/admin/audit-logs",
-      labelAr: "سجل التدقيق",
-      labelEn: "Audit Logs",
-    });
-    navItems.push({
-      to: "/admin/dashboard-analytics",
-      labelAr: "لوحة التحليلات",
-      labelEn: "Dashboard Analytics",
-    });
-    navItems.push({
-      to: "/admin/settings/electricity",
-      labelAr: "الكهرباء",
-      labelEn: "Electricity",
-    });
-    navItems.push({
-      to: "/admin/users",
-      labelAr: "المستخدمون",
-      labelEn: "Users",
-    });
-    navItems.push({
-      to: "/admin/settings",
-      labelAr: "الإعدادات",
-      labelEn: "Settings",
-    });
-  }
+  const fmt = (v: string) =>
+    new Intl.DateTimeFormat("en-US", {
+      month: "short", day: "numeric",
+      hour: "numeric", minute: "2-digit",
+    }).format(new Date(v));
 
   return (
-    <main
-      className={`app-shell-modern ${isRtl ? "is-rtl" : "is-ltr"} grid min-h-svh grid-cols-[292px_minmax(0,1fr)] gap-4 p-4 max-xl:grid-cols-1 max-xl:p-3`}
-      data-locale={locale}
-    >
-      <aside className="app-sidebar-modern sticky top-4 z-30 grid h-[calc(100svh-2rem)] grid-rows-[auto_1fr_auto] gap-3 rounded-[1.875rem] border border-[#EEEEEE] bg-[#A2AF9B] p-4 text-[#000000] shadow-[0_20px_44px_rgba(162, 175, 155,0.34)] max-xl:h-auto max-xl:rounded-[1.4rem]">
-        <div className="app-sidebar-modern__brand flex items-center gap-3 border-b border-[#EEEEEE] pb-4">
-          <img src={logo} alt="Plasticon" />
-          <div>
-            <strong>Plasticon</strong>
-            <small>{locale === "ar" ? "إدارة المصنع" : "Factory Ops"}</small>
+    <div className="app-root">
+      {/* ── Sidebar overlay (mobile) ── */}
+      <div
+        className={`sidebar-overlay${sidebarOpen ? " sidebar-overlay--visible" : ""}`}
+        onClick={() => setSidebarOpen(false)}
+      />
+
+      {/* ── SIDEBAR ── */}
+      <aside className={`app-sidebar${sidebarOpen ? " app-sidebar--mobile-open" : ""}`}>
+        {/* Brand */}
+        <div className="app-sidebar__brand">
+          <img src={logo} alt="Plasticon" className="app-sidebar__logo" />
+          <div className="app-sidebar__brand-text">
+            <span className="app-sidebar__brand-name">Plasticon</span>
+            <span className="app-sidebar__brand-sub">Factory Management</span>
           </div>
         </div>
 
-        <nav className="app-sidebar-modern__nav grid content-start gap-2 overflow-auto pr-1 max-xl:grid-cols-2 max-md:grid-cols-1">
-          {navItems.map((item) => {
-            const itemPath = item.to.split("?")[0].split("#")[0];
-            const isActive =
-              location.pathname === itemPath ||
-              (itemPath !== "/dashboard" &&
-                location.pathname.startsWith(itemPath));
-
-            return (
-              <motion.div
-                key={item.to}
-                whileHover={{ x: 3 }}
-                whileTap={{ scale: 0.97 }}
-                transition={{ duration: 0.22, ease: "easeOut" }}
-              >
+        {/* Nav */}
+        <nav className="app-sidebar__nav">
+          {sectionsBi.map((section) => (
+            <div key={section.label.en}>
+              <p className="app-sidebar__section-label">
+                {isAr ? section.label.ar : section.label.en}
+              </p>
+              {section.items.map((item) => (
                 <Link
+                  key={item.to}
                   to={item.to}
-                  className={`app-sidebar-modern__link flex items-center gap-3 rounded-2xl border px-3 py-3 text-sm font-semibold transition ${isActive ? "border-[#EEEEEE] bg-[#FFFFFF] text-[#000000] shadow-[0_10px_22px_rgba(162, 175, 155,0.2)]" : "border-transparent text-[#000000] hover:border-[#EEEEEE] hover:bg-[#DCCFC0]"}`}
+                  className={`app-sidebar__link${isActive(item.to) ? " app-sidebar__link--active" : ""}`}
                 >
-                  <span
-                    className={`h-2 w-2 rounded-full ${isActive ? "bg-[#DCCFC0] shadow-[0_0_0_3px_rgba(220, 207, 192,0.36)]" : "bg-[#EEEEEE] shadow-[0_0_0_2px_rgba(238, 238, 238,0.4)]"}`}
-                    aria-hidden="true"
-                  />
-                  <span>{locale === "ar" ? item.labelAr : item.labelEn}</span>
+                  <span className="app-sidebar__link-icon">{item.icon}</span>
+                  <span className="app-sidebar__link-label">
+                    {isAr ? item.label.ar : item.label.en}
+                  </span>
+                  {isActive(item.to) && (
+                    <ChevronRight size={14} style={{ marginInlineStart: "auto", opacity: 0.5 }} />
+                  )}
                 </Link>
-              </motion.div>
-            );
-          })}
+              ))}
+            </div>
+          ))}
         </nav>
 
-        <div className="app-sidebar-modern__footer border-t border-[#EEEEEE] pt-4">
-          <p className="mb-3 text-sm font-semibold text-[#000000]">
-            {user?.name ?? "-"}
-          </p>
-          <Button
-            variant="secondary"
-            className="w-full border-[#EEEEEE] bg-[#EEEEEE] text-[#000000] shadow-none hover:bg-[#DCCFC0]"
-            onClick={() => {
-              signOut();
-              navigate("/login");
-            }}
+        {/* Footer */}
+        <div className="app-sidebar__footer">
+          <div className="app-sidebar__user">
+            <div className="app-sidebar__user-avatar">
+              {initials(user?.name ?? "U")}
+            </div>
+            <div className="app-sidebar__user-info">
+              <p className="app-sidebar__user-name">{user?.name ?? "User"}</p>
+              <p className="app-sidebar__user-role">{roleLabel(role, locale)}</p>
+            </div>
+          </div>
+          <button
+            className="app-sidebar__signout"
+            onClick={() => { signOut(); navigate("/login"); }}
           >
-            {locale === "ar" ? "تسجيل الخروج" : "Log Out"}
-          </Button>
+            <LogOut size={15} />
+            <span>{isAr ? "تسجيل الخروج" : "Sign Out"}</span>
+          </button>
         </div>
       </aside>
 
-      <section className="app-main-modern grid min-w-0 grid-rows-[auto_1fr] gap-4">
-        <header className="app-topbar-modern sticky top-4 z-20 flex flex-wrap items-center justify-between gap-3 rounded-[1.4rem] border border-[#EEEEEE] bg-[#FFFFFF] p-3 shadow-[0_6px_16px_rgba(162, 175, 155,0.16)] backdrop-blur">
-          <div className="app-topbar-modern__search min-w-0 flex-1">
-            <GlobalCommandSearch />
-          </div>
-          <div className="app-topbar-modern__actions flex flex-wrap items-center justify-end gap-2">
-            <div className="app-topbar-modern__meta flex items-center gap-2">
-              <DateTimeBadge className="app-topbar-modern__clock" />
-              <LocaleSwitch />
-            </div>
-            <ThemeToggle />
-            <div className="relative" ref={notificationsMenuRef}>
-              <Button
-                variant="outline"
-                className="relative border-[#EEEEEE] bg-[#FFFFFF] text-[#000000] hover:bg-[#DCCFC0]"
-                onClick={() => setNotificationsOpen((value) => !value)}
-                aria-expanded={notificationsOpen}
-                aria-label={locale === "ar" ? "الإشعارات" : "Notifications"}
-                title={locale === "ar" ? "الإشعارات" : "Notifications"}
-              >
-                <Bell className="h-4 w-4" aria-hidden="true" />
-                <span className="text-sm font-semibold">
-                  {unreadNotifications}
-                </span>
-                {unreadNotifications > 0 ? (
-                  <span className="absolute -right-1 -top-1 inline-flex min-w-5 items-center justify-center rounded-full bg-[#A2AF9B] px-1 text-[11px] font-bold text-[#FFFFFF]">
-                    {unreadNotifications > 9 ? "9+" : unreadNotifications}
-                  </span>
-                ) : null}
-              </Button>
+      {/* ── MAIN CONTENT ── */}
+      <div className="app-content">
+        {/* Topbar */}
+        <header className="app-topbar">
+          {/* Mobile menu toggle */}
+          <button
+            className="btn btn--ghost btn--icon"
+            style={{ display: "none" }}
+            id="sidebar-toggle"
+            onClick={() => setSidebarOpen((v) => !v)}
+            aria-label="Toggle sidebar"
+          >
+            {sidebarOpen ? <X size={20} /> : <Menu size={20} />}
+          </button>
 
-              {notificationsOpen ? (
+          {/* Search */}
+          <div className="topbar-search" ref={searchRef}>
+            <Search size={15} className="topbar-search__icon" />
+            <input
+              className="topbar-search__input"
+              placeholder={locale === "ar" ? "بحث سريع..." : "Quick search..."}
+              value={searchQuery}
+              onChange={(e) => { setSearchQuery(e.target.value); setSearchOpen(true); }}
+              onFocus={() => setSearchOpen(true)}
+              aria-label="Search"
+            />
+            {searchOpen && (
+              <div className="topbar-search__dropdown">
+                {filteredSearch.length > 0 ? filteredSearch.map((item) => (
+                  <button
+                    key={item.to}
+                    className="topbar-search__item"
+                    type="button"
+                    onClick={() => { navigate(item.to); setSearchQuery(""); setSearchOpen(false); }}
+                  >
+                    <span>{locale === "ar" ? item.labelAr : item.labelEn}</span>
+                    <span style={{ fontSize: ".72rem", color: "var(--text-secondary)", opacity: .7 }}>{item.to}</span>
+                  </button>
+                )) : (
+                  <div style={{ padding: ".75rem 1rem", fontSize: ".84rem", color: "var(--text-secondary)" }}>
+                    {locale === "ar" ? "لا نتائج" : "No results"}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Actions */}
+          <div className="app-topbar__actions">
+            {/* Dark mode toggle */}
+            <ThemeToggle />
+            {/* Locale switch */}
+            <div className="locale-switch-topbar">
+              <button
+                type="button"
+                className={`locale-switch-topbar__btn${locale === "en" ? " locale-switch-topbar__btn--active" : ""}`}
+                onClick={() => setLocale("en")}
+              >EN</button>
+              <button
+                type="button"
+                className={`locale-switch-topbar__btn${locale === "ar" ? " locale-switch-topbar__btn--active" : ""}`}
+                onClick={() => setLocale("ar")}
+              >ع</button>
+            </div>
+            {/* Notifications */}
+            <div style={{ position: "relative" }} ref={notifRef}>
+              <button
+                className="btn btn--ghost btn--icon"
+                style={{ position: "relative" }}
+                onClick={() => setNotifOpen((v) => !v)}
+                aria-label="Notifications"
+              >
+                <Bell size={19} />
+                {unread > 0 && (
+                  <span
+                    style={{
+                      position: "absolute",
+                      top: "-2px",
+                      right: "-2px",
+                      background: "var(--orange-500)",
+                      color: "#fff",
+                      fontSize: ".62rem",
+                      fontWeight: 700,
+                      borderRadius: "999px",
+                      minWidth: "16px",
+                      height: "16px",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      padding: "0 3px",
+                    }}
+                  >
+                    {unread > 9 ? "9+" : unread}
+                  </span>
+                )}
+              </button>
+
+              {notifOpen && (
                 <div
-                  className={`absolute top-full z-40 mt-3 w-88 max-w-[calc(100vw-1.5rem)] rounded-[1.35rem] border border-[#EEEEEE] bg-[#FFFFFF] p-3 shadow-[0_24px_48px_rgba(162,175,155,0.24)] ${isRtl ? "left-0" : "right-0"}`}
+                  style={{
+                    position: "absolute",
+                    right: 0,
+                    top: "calc(100% + 8px)",
+                    width: "340px",
+                    maxWidth: "calc(100vw - 1rem)",
+                    background: "var(--bg-card)",
+                    border: "1px solid var(--border-default)",
+                    borderRadius: "var(--radius-xl)",
+                    boxShadow: "var(--shadow-lg)",
+                    zIndex: 50,
+                  }}
                 >
-                  <div className="mb-3 flex items-center justify-between gap-2 border-b border-[#EEEEEE] pb-3">
+                  <div
+                    style={{
+                      padding: ".875rem 1rem",
+                      borderBottom: "1px solid var(--border-default)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                    }}
+                  >
                     <div>
-                      <p className="text-sm font-semibold text-[#000000]">
-                        {locale === "ar"
-                          ? `آخر الإشعارات (${unreadNotifications})`
-                          : `Latest notifications (${unreadNotifications})`}
+                      <p style={{ margin: 0, fontSize: ".88rem", fontWeight: 700, color: "var(--text-primary)" }}>
+                        Notifications
                       </p>
-                      <p className="text-xs text-[#5F6659]">
-                        {unreadNotifications > 0
-                          ? locale === "ar"
-                            ? `${unreadNotifications} غير مقروءة`
-                            : `${unreadNotifications} unread`
-                          : locale === "ar"
-                            ? "كل الإشعارات مقروءة"
-                            : "All caught up"}
+                      <p style={{ margin: 0, fontSize: ".75rem", color: "var(--text-secondary)" }}>
+                        {unread > 0 ? `${unread} unread` : "All caught up"}
                       </p>
                     </div>
-                    <Button
-                      variant="ghost"
-                      className="h-9 px-3 text-xs"
-                      onClick={() => {
-                        setNotificationsOpen(false);
-                        navigate("/notifications");
-                      }}
+                    <button
+                      className="btn btn--ghost btn--sm"
+                      onClick={() => { setNotifOpen(false); navigate("/notifications"); }}
                     >
-                      {locale === "ar" ? "عرض الكل" : "View all"}
-                    </Button>
+                      View all
+                    </button>
                   </div>
 
-                  <div className="pr-1">
-                    {notificationsLoading ? (
-                      <div className="rounded-2xl border border-dashed border-[#DCCFC0] px-4 py-6 text-sm text-[#5F6659]">
-                        {locale === "ar"
-                          ? "جاري تحميل الإشعارات..."
-                          : "Loading notifications..."}
+                  <div style={{ padding: ".75rem", display: "flex", flexDirection: "column", gap: ".5rem", maxHeight: "380px", overflowY: "auto" }}>
+                    {notifLoading ? (
+                      <div style={{ padding: "1.5rem", textAlign: "center" }}>
+                        <div className="spinner" style={{ margin: "0 auto" }} />
                       </div>
-                    ) : recentNotifications.length > 0 ? (
-                      <div className="grid gap-2">
-                        {recentNotifications.slice(0, 6).map((notification) => (
-                          <button
-                            key={notification.id}
-                            type="button"
-                            onClick={() => {
-                              setNotificationsOpen(false);
-                              navigate("/notifications");
-                            }}
-                            className={`w-full rounded-2xl border px-3 py-3 text-start transition hover:border-[#A2AF9B] hover:bg-[#F7F7F2] ${
-                              notification.isRead
-                                ? "border-[#EEEEEE] bg-[#FFFFFF]"
-                                : "border-[#DCCFC0] bg-[#FAF9EE]"
-                            }`}
-                          >
-                            <div className="flex items-start gap-3">
-                              <span
-                                className={`mt-1 h-2.5 w-2.5 rounded-full ${
-                                  notification.isRead
-                                    ? "bg-[#DCCFC0]"
-                                    : "bg-[#A2AF9B]"
-                                }`}
-                                aria-hidden="true"
-                              />
-                              <div className="min-w-0 flex-1">
-                                <div className="flex items-center justify-between gap-2">
-                                  <p className="truncate text-sm font-semibold text-[#000000]">
-                                    {notification.title}
-                                  </p>
-                                  <span className="shrink-0 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#5F6659]">
-                                    {notification.type.replaceAll("_", " ")}
-                                  </span>
-                                </div>
-                                <p className="mt-1 line-clamp-2 text-sm text-[#5F6659]">
-                                  {notification.message}
-                                </p>
-                                <p className="mt-2 text-[11px] font-medium text-[#5F6659]">
-                                  {formatNotificationTime(
-                                    notification.createdAt,
-                                  )}
-                                </p>
-                              </div>
-                            </div>
-                          </button>
-                        ))}
-                        {recentNotifications.length > 6 ? (
-                          <p className="px-3 pb-1 text-[11px] font-medium text-[#5F6659]">
-                            {locale === "ar"
-                              ? "اعرض بقية الإشعارات من صفحة الإشعارات"
-                              : "Open the notifications page to see the rest"}
-                          </p>
-                        ) : null}
-                      </div>
+                    ) : notifications.length > 0 ? (
+                      notifications.slice(0, 6).map((n) => (
+                        <button
+                          key={n.id}
+                          type="button"
+                          className={`notif-item${!n.isRead ? " notif-item--unread" : ""}`}
+                          onClick={() => { setNotifOpen(false); navigate("/notifications"); }}
+                        >
+                          <span className="notif-dot" style={{ marginTop: "4px", flexShrink: 0 }} />
+                          <div style={{ flex: 1, minWidth: 0, textAlign: "left" }}>
+                            <p style={{ margin: 0, fontSize: ".82rem", fontWeight: 600, color: "var(--text-primary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                              {n.title}
+                            </p>
+                            <p style={{ margin: "2px 0 0", fontSize: ".77rem", color: "var(--text-secondary)", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
+                              {n.message}
+                            </p>
+                            <p style={{ margin: "4px 0 0", fontSize: ".7rem", color: "var(--gray-400)" }}>
+                              {fmt(n.createdAt)}
+                            </p>
+                          </div>
+                        </button>
+                      ))
                     ) : (
-                      <div className="rounded-2xl border border-dashed border-[#DCCFC0] px-4 py-6 text-sm text-[#5F6659]">
-                        {locale === "ar"
-                          ? "لا توجد إشعارات بعد."
-                          : "No notifications yet."}
+                      <div className="empty-state" style={{ padding: "1.5rem" }}>
+                        <Bell size={28} style={{ color: "var(--gray-300)" }} />
+                        <p className="empty-state__title" style={{ fontSize: ".88rem" }}>No notifications</p>
                       </div>
                     )}
                   </div>
                 </div>
-              ) : null}
+              )}
             </div>
-            <UserAvatarBadge size="sm" />
+
+            {/* User avatar → profile */}
+            <Link
+              to="/profile"
+              title={isAr ? "الملف الشخصي" : "My Profile"}
+              style={{
+                width: "34px",
+                height: "34px",
+                borderRadius: "50%",
+                background: "var(--blue-800)",
+                color: "#fff",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: ".72rem",
+                fontWeight: 700,
+                border: "2px solid var(--border-default)",
+                textDecoration: "none",
+                flexShrink: 0,
+                cursor: "pointer",
+              }}
+            >
+              {initials(user?.name ?? "U")}
+            </Link>
           </div>
         </header>
-        <div className="app-main-modern__content min-w-0">{children}</div>
-      </section>
-    </main>
+
+        {/* Page content */}
+        <main className="app-page">{children}</main>
+      </div>
+
+      {/* Mobile sidebar toggle (always visible on small screens via CSS) */}
+      <style>{`
+        @media (max-width: 1024px) {
+          #sidebar-toggle { display: flex !important; }
+        }
+      `}</style>
+    </div>
   );
 }

@@ -1,7 +1,6 @@
 import type { ReactNode } from "react";
 import { appCopy } from "../content/appCopy";
 import { useLocale } from "../context/LocaleContext";
-import { Card } from "./ui/card";
 
 type ModulePageShellProps = {
   title: string;
@@ -20,24 +19,62 @@ export function ModulePageShell({
   const copy = appCopy[locale];
 
   return (
-    <Card className="module-card p-5 max-md:p-4">
-      <header className="module-header flex flex-wrap items-center justify-between gap-4 border-b border-[var(--ui-border)] pb-5">
-        <div className="min-w-0">
-          <p className="auth-eyebrow text-xs font-semibold uppercase tracking-[0.18em] text-[var(--ui-text-muted)]">
+    <div
+      style={{
+        background: "var(--bg-card)",
+        border: "1px solid var(--border-default)",
+        borderRadius: "var(--radius-xl)",
+        boxShadow: "var(--shadow-card)",
+        padding: "1.5rem",
+      }}
+    >
+      <header
+        style={{
+          display: "flex",
+          flexWrap: "wrap",
+          alignItems: "flex-start",
+          justifyContent: "space-between",
+          gap: "1rem",
+          borderBottom: "1px solid var(--border-default)",
+          paddingBottom: "1.25rem",
+          marginBottom: "1.25rem",
+        }}
+      >
+        <div style={{ minWidth: 0 }}>
+          <p
+            style={{
+              margin: 0,
+              fontSize: ".7rem",
+              fontWeight: 700,
+              textTransform: "uppercase",
+              letterSpacing: ".14em",
+              color: "var(--text-secondary)",
+            }}
+          >
             {copy.appName}
           </p>
-          <h1 className="mt-2 text-3xl font-extrabold tracking-[-0.04em] text-[var(--ui-text)]">
+          <h1
+            style={{
+              margin: ".375rem 0 0",
+              fontSize: "1.5rem",
+              fontWeight: 800,
+              letterSpacing: "-.025em",
+              color: "var(--text-primary)",
+            }}
+          >
             {title}
           </h1>
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--ui-text-muted)]">
+          <p style={{ margin: ".375rem 0 0", fontSize: ".875rem", color: "var(--text-secondary)", lineHeight: 1.6 }}>
             {subtitle}
           </p>
         </div>
-        <div className="module-header__actions flex flex-wrap items-center gap-2">
-          {actions}
-        </div>
+        {actions && (
+          <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: ".5rem" }}>
+            {actions}
+          </div>
+        )}
       </header>
-      <div className="pt-5">{children}</div>
-    </Card>
+      <div>{children}</div>
+    </div>
   );
 }
