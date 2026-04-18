@@ -1,6 +1,7 @@
 import { prisma } from "../config/lib/prisma";
 import { auditAsync } from "./auditHelper";
 import { AuditAction, AuditEntityType } from "./auditServices";
+import { calculateDailyPayroll } from "./payrollServices";
 
 const LATE_GRACE_MINUTES = 30;
 const OVERTIME_GRACE_MINUTES = 30;
@@ -184,6 +185,10 @@ export const checkOut = async (
       attendance.id,
     );
 
+    calculateDailyPayroll(attendance.id, userId).catch((err) =>
+      console.error("Auto daily-payroll calculation failed:", err),
+    );
+
     return { status: 200, data: attendance };
   }
 
@@ -200,6 +205,10 @@ export const checkOut = async (
     AuditAction.ATTENDANCE_CHECKED_OUT,
     AuditEntityType.ATTENDANCE,
     attendance.id,
+  );
+
+  calculateDailyPayroll(attendance.id, userId).catch((err) =>
+    console.error("Auto daily-payroll calculation failed:", err),
   );
 
   return { status: 200, data: attendance };

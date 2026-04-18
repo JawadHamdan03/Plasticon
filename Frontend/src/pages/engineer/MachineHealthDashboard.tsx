@@ -5,6 +5,7 @@ import { Button } from "../../components/ui/button";
 import { Card } from "../../components/ui/card";
 import { useLocale } from "../../context/LocaleContext";
 import { API_BASE_URL } from "../../lib/api";
+import { useAuth } from "../../context/AuthContext";
 
 
 interface Machine { id: number; name: string; type: string; }
@@ -27,8 +28,15 @@ const STATUS_COLORS: Record<string, string> = {
   DOWNTIME: "bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300",
 };
 
+function authHeaders(): Record<string, string> {
+  const token = localStorage.getItem("plasticon_token");
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
 export default function MachineHealthDashboard() {
   const { locale } = useLocale();
+  const { user } = useAuth();
+  const isAdmin = user?.role === "ADMIN";
   const nav = (en: string, ar: string) => locale === "ar" ? ar : en;
   const [records, setRecords] = useState<HealthRecord[]>([]);
   const [machines, setMachines] = useState<Machine[]>([]);
@@ -82,7 +90,7 @@ export default function MachineHealthDashboard() {
     try {
       const res = await fetch(`${API_BASE_URL}/machine-health`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...authHeaders() },
         credentials: "include",
         body: JSON.stringify({
           machineId: parseInt(form.machineId),
@@ -139,14 +147,16 @@ export default function MachineHealthDashboard() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold">{nav("Health Records", "سجلات الصحة")}</h2>
-          <Button onClick={() => { setShowForm(!showForm); setError(""); }} className="gap-2">
-            <Plus size={16} />
-            {nav("Add Record", "إضافة سجل")}
-          </Button>
+          {!isAdmin && (
+            <Button onClick={() => { setShowForm(!showForm); setError(""); }} className="gap-2">
+              <Plus size={16} />
+              {nav("Add Record", "إضافة سجل")}
+            </Button>
+          )}
         </div>
 
         {/* Form */}
-        {showForm && (
+        {!isAdmin && showForm && (
           <Card className="p-5 border border-slate-200 dark:border-slate-700">
             <h3 className="font-semibold mb-4 text-slate-800 dark:text-slate-200">{nav("New Health Record", "سجل صحة جديد")}</h3>
             {error && <p className="text-sm text-red-600 mb-3 p-2 bg-red-50 rounded">{error}</p>}

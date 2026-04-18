@@ -4,6 +4,7 @@ import {
   getAllInvoices,
   createInvoice,
   recordInvoicePayment,
+  deleteInvoice,
 } from "../services/invoiceServices";
 
 export const getAllInvoicesHandler = async (
@@ -39,6 +40,25 @@ export const createInvoiceHandler = async (
   } catch (error) {
     console.error("Create invoice error:", error);
     res.status(500).json({ message: "Failed to create invoice" });
+  }
+};
+
+export const deleteInvoiceHandler = async (
+  req: AuthenticatedRequest,
+  res: Response,
+) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id) || id <= 0) {
+      res.status(400).json({ message: "id must be a positive integer" });
+      return;
+    }
+
+    const result = await deleteInvoice(id);
+    res.status(result.status).json({ message: result.message });
+  } catch (error) {
+    console.error("Delete invoice error:", error);
+    res.status(500).json({ message: "Failed to delete invoice" });
   }
 };
 

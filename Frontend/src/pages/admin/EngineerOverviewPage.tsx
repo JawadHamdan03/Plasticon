@@ -103,6 +103,11 @@ const TABS: {
   },
 ];
 
+function authHeaders(): Record<string, string> {
+  const token = localStorage.getItem("plasticon_token");
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
 export default function EngineerOverviewPage() {
   const { locale } = useLocale();
   const nav = (en: string, ar: string) => (locale === "ar" ? ar : en);
@@ -116,17 +121,18 @@ export default function EngineerOverviewPage() {
 
   const fetchAll = async () => {
     setLoading(true);
+    const headers = { ...authHeaders() };
     const [h, p, s, q] = await Promise.allSettled([
-      fetch(`${API_BASE_URL}/machine-health`, { credentials: "include" }).then(
+      fetch(`${API_BASE_URL}/machine-health`, { headers, credentials: "include" }).then(
         (r) => (r.ok ? r.json() : null),
       ),
-      fetch(`${API_BASE_URL}/spare-parts`, { credentials: "include" }).then(
+      fetch(`${API_BASE_URL}/spare-parts`, { headers, credentials: "include" }).then(
         (r) => (r.ok ? r.json() : null),
       ),
-      fetch(`${API_BASE_URL}/maintenance-schedule`, {
+      fetch(`${API_BASE_URL}/maintenance-schedule`, { headers,
         credentials: "include",
       }).then((r) => (r.ok ? r.json() : null)),
-      fetch(`${API_BASE_URL}/quality-checks/all`, {
+      fetch(`${API_BASE_URL}/quality-checks/all`, { headers,
         credentials: "include",
       }).then((r) => (r.ok ? r.json() : null)),
     ]);

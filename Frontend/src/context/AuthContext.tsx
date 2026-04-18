@@ -9,6 +9,28 @@ import {
 } from "react";
 import { API_BASE_URL, readApiError } from "../lib/api";
 
+// Global fetch interceptor to add Authorization header
+const originalFetch = window.fetch;
+window.fetch = function (...args: any[]) {
+  const [url, options] = args;
+  const token = localStorage.getItem("plasticon_token");
+
+  const modifiedOptions = {
+    ...(options || {}),
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json",
+      ...(options?.headers || {}),
+    },
+  };
+
+  if (token) {
+    modifiedOptions.headers["Authorization"] = `Bearer ${token}`;
+  }
+
+  return originalFetch.call(this, url, modifiedOptions);
+} as any;
+
 type UserProfile = {
   name: string;
   email: string;
@@ -56,18 +78,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Only restore user from localStorage, not token
-    // Token is now stored in HTTP-only cookie by backend
+    // Restore token and user from localStorage on app startup
     const storedUser = window.localStorage.getItem(USER_KEY);
+    const storedToken = window.localStorage.getItem("plasticon_token");
 
-    if (storedUser) {
+    if (storedUser && storedToken) {
       try {
         setUser(JSON.parse(storedUser) as UserProfile);
-        // Set token to a placeholder to indicate user is logged in
-        // Real token is in HTTP-only cookie
-        setToken("authenticated");
+        setToken(storedToken);
       } catch {
         window.localStorage.removeItem(USER_KEY);
+        window.localStorage.removeItem("plasticon_token");
       }
     }
 
@@ -75,12 +96,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const persistSession = useCallback(
-    (_nextToken: string, nextUser: UserProfile) => {
-      // Token is stored in HTTP-only cookie by backend, not in localStorage
-      // Set a placeholder token to indicate user is authenticated
-      setToken("authenticated");
+    (nextToken: string, nextUser: UserProfile) => {
+      // Store actual token in localStorage for Authorization header
+      window.localStorage.setItem("plasticon_token", nextToken);
+      setToken(nextToken);
       setUser(nextUser);
-      // Only store user profile in localStorage (for UX, not security)
+      // Store user profile in localStorage (for UX, not security)
       window.localStorage.setItem(USER_KEY, JSON.stringify(nextUser));
     },
     [],
@@ -162,8 +183,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signOut = useCallback(() => {
     setToken(null);
     setUser(null);
-    // Only clear user from localStorage (token is in HTTP-only cookie)
+    // Clear both user and token from localStorage
     window.localStorage.removeItem(USER_KEY);
+    window.localStorage.removeItem("plasticon_token");
   }, []);
 
   const value = useMemo<AuthContextValue>(

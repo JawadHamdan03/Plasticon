@@ -33,7 +33,7 @@ export const createAnalysis = async (
         category,
         cost,
         percentage: percentage || 0,
-        period: new Date(period),
+        period,
         notes: notes || null,
       },
     });

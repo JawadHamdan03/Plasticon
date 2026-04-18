@@ -6,6 +6,10 @@ import { Button } from "../../components/ui/button";
 import { useLocale } from "../../context/LocaleContext";
 import { API_BASE_URL } from "../../lib/api";
 
+function authHeaders(): Record<string, string> {
+  const token = localStorage.getItem("plasticon_token");
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
 
 interface DashboardData {
   revenue: number;
@@ -45,6 +49,7 @@ export default function FinancialDashboard() {
     else setLoading(true);
     try {
       const res = await fetch(`${API_BASE_URL}/financial/dashboard`, {
+        headers: { ...authHeaders() },
         credentials: "include",
       });
       if (res.ok) {

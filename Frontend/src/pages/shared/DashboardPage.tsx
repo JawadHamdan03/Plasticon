@@ -27,9 +27,15 @@ import { useAuth } from "../../context/AuthContext";
 import { API_BASE_URL } from "../../lib/api";
 
 /* ── helpers ─────────────────────────────────────────────── */
+function authHeaders(): Record<string, string> {
+  const token = localStorage.getItem("plasticon_token");
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
 async function fetchAuth<T>(path: string): Promise<T | null> {
   try {
     const res = await fetch(`${API_BASE_URL}${path}`, {
+      headers: authHeaders(),
       credentials: "include",
     });
     if (!res.ok) return null;
