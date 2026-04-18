@@ -16,12 +16,10 @@ type AuditLog = {
 const tokenKey = "plasticon_token";
 
 async function fetchWithAdminAuth(path: string, options?: RequestInit) {
-  const token = window.localStorage.getItem(tokenKey);
   return fetch(`${API_BASE_URL}${path}`, {
     ...options,
     headers: {
       ...(options?.headers ?? {}),
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
     credentials: "include",
   });

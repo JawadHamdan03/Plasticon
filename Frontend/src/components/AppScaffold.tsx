@@ -344,11 +344,9 @@ export function AppScaffold({ children }: { children: ReactNode }) {
   const fetchNotif = async () => {
     setNotifLoading(true);
     try {
-      const token = localStorage.getItem("plasticon_token");
-      const h = token ? { Authorization: `Bearer ${token}` } : undefined;
       const [r1, r2] = await Promise.all([
-        fetch(`${API_BASE_URL}/notifications?limit=10&page=1`, { credentials: "include", headers: h }),
-        fetch(`${API_BASE_URL}/notifications/unread-count`, { credentials: "include", headers: h }),
+        fetch(`${API_BASE_URL}/notifications?limit=10&page=1`, { credentials: "include" }),
+        fetch(`${API_BASE_URL}/notifications/unread-count`, { credentials: "include" }),
       ]);
       if (r1.ok) setNotifications(((await r1.json()) as any).items ?? []);
       if (r2.ok) {

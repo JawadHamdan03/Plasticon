@@ -1,7 +1,15 @@
 import { useState, useCallback, useEffect, type FormEvent } from "react";
 import {
-  DollarSign, Package, ChevronDown, ChevronUp,
-  CheckCircle, Clock, Image, AlertCircle, X, Filter,
+  DollarSign,
+  Package,
+  ChevronDown,
+  ChevronUp,
+  CheckCircle,
+  Clock,
+  Image,
+  AlertCircle,
+  X,
+  Filter,
 } from "lucide-react";
 import { API_BASE_URL } from "../../lib/api";
 
@@ -30,10 +38,8 @@ type Inventory = {
 
 /* ── helpers ─────────────────────────────────────────────── */
 async function api<T>(method: string, path: string, body?: object): Promise<T> {
-  const token = localStorage.getItem("plasticon_token");
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
   };
   const res = await fetch(`${API_BASE_URL}${path}`, {
     method,
@@ -47,13 +53,25 @@ async function api<T>(method: string, path: string, body?: object): Promise<T> {
 }
 
 const MONTHS = [
-  "January","February","March","April","May","June",
-  "July","August","September","October","November","December",
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
 ];
 
 function statusBadge(status: Inventory["status"]) {
-  if (status === "SUBMITTED") return <span className="badge badge--orange">Submitted</span>;
-  if (status === "REVIEWED") return <span className="badge badge--green">Reviewed</span>;
+  if (status === "SUBMITTED")
+    return <span className="badge badge--orange">Submitted</span>;
+  if (status === "REVIEWED")
+    return <span className="badge badge--green">Reviewed</span>;
   return <span className="badge badge--gray">Draft</span>;
 }
 
@@ -63,7 +81,9 @@ export function AccountantPartsPricingPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [expandedId, setExpandedId] = useState<number | null>(null);
-  const [filter, setFilter] = useState<"ALL" | "SUBMITTED" | "REVIEWED">("SUBMITTED");
+  const [filter, setFilter] = useState<"ALL" | "SUBMITTED" | "REVIEWED">(
+    "SUBMITTED",
+  );
 
   /* pricing state per item */
   const [priceInputs, setPriceInputs] = useState<Record<number, string>>({});
@@ -86,9 +106,13 @@ export function AccountantPartsPricingPage() {
     }
   }, []);
 
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => {
+    void load();
+  }, [load]);
 
-  const filtered = inventories.filter((inv) => filter === "ALL" ? true : inv.status === filter);
+  const filtered = inventories.filter((inv) =>
+    filter === "ALL" ? true : inv.status === filter,
+  );
 
   const handleSetPrice = async (itemId: number, inventoryId: number) => {
     const raw = priceInputs[itemId];
@@ -99,7 +123,9 @@ export function AccountantPartsPricingPage() {
     }
     setSavingItem(itemId);
     try {
-      await api("PATCH", `/engineer-inventory/items/${itemId}/price`, { unitPrice: price });
+      await api("PATCH", `/engineer-inventory/items/${itemId}/price`, {
+        unitPrice: price,
+      });
       setSavedItems((s) => new Set([...s, itemId]));
       await load();
     } catch (e) {
@@ -112,7 +138,12 @@ export function AccountantPartsPricingPage() {
   const handleReview = async (inventoryId: number) => {
     const inv = inventories.find((i) => i.id === inventoryId);
     if (!inv) return;
-    if (!confirm(`Mark inventory for ${MONTHS[inv.month - 1]} ${inv.year} as Reviewed?`)) return;
+    if (
+      !confirm(
+        `Mark inventory for ${MONTHS[inv.month - 1]} ${inv.year} as Reviewed?`,
+      )
+    )
+      return;
     setReviewingId(inventoryId);
     try {
       await api("PATCH", `/engineer-inventory/${inventoryId}/review`, {});
@@ -136,7 +167,9 @@ export function AccountantPartsPricingPage() {
       <div className="page-header">
         <div>
           <h1 className="page-header__title">Parts Pricing</h1>
-          <p className="page-header__sub">Review engineer inventory reports and set unit prices for each part</p>
+          <p className="page-header__sub">
+            Review engineer inventory reports and set unit prices for each part
+          </p>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: ".5rem" }}>
           <Filter size={14} style={{ color: "var(--text-secondary)" }} />
@@ -147,16 +180,32 @@ export function AccountantPartsPricingPage() {
               style={{ border: "1px solid var(--border-default)" }}
               onClick={() => setFilter(f)}
             >
-              {f === "ALL" ? "All" : f === "SUBMITTED" ? "Awaiting Pricing" : "Reviewed"}
+              {f === "ALL"
+                ? "All"
+                : f === "SUBMITTED"
+                  ? "Awaiting Pricing"
+                  : "Reviewed"}
             </button>
           ))}
         </div>
       </div>
 
       {error && (
-        <div className="auth-alert auth-alert--error" style={{ display: "flex", alignItems: "center", gap: ".5rem" }}>
+        <div
+          className="auth-alert auth-alert--error"
+          style={{ display: "flex", alignItems: "center", gap: ".5rem" }}
+        >
           <AlertCircle size={16} /> {error}
-          <button type="button" style={{ marginLeft: "auto", background: "none", border: "none", cursor: "pointer" }} onClick={() => setError("")}>
+          <button
+            type="button"
+            style={{
+              marginLeft: "auto",
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+            }}
+            onClick={() => setError("")}
+          >
             <X size={16} />
           </button>
         </div>
@@ -170,9 +219,13 @@ export function AccountantPartsPricingPage() {
       ) : filtered.length === 0 ? (
         <div className="card">
           <div className="empty-state" style={{ padding: "3rem" }}>
-            <div className="empty-state__icon"><Package size={28} /></div>
+            <div className="empty-state__icon">
+              <Package size={28} />
+            </div>
             <h3 className="empty-state__title">
-              {filter === "SUBMITTED" ? "No reports awaiting pricing" : "No reports found"}
+              {filter === "SUBMITTED"
+                ? "No reports awaiting pricing"
+                : "No reports found"}
             </h3>
             <p className="empty-state__desc">
               {filter === "SUBMITTED"
@@ -195,15 +248,35 @@ export function AccountantPartsPricingPage() {
                   style={{ cursor: "pointer" }}
                   onClick={() => setExpandedId(isExpanded ? null : inv.id)}
                 >
-                  <div style={{ display: "flex", alignItems: "center", gap: ".75rem" }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: ".75rem",
+                    }}
+                  >
                     <Package size={18} style={{ color: "var(--blue-700)" }} />
                     <div>
-                      <p style={{ margin: 0, fontWeight: 700, fontSize: ".95rem" }}>
+                      <p
+                        style={{
+                          margin: 0,
+                          fontWeight: 700,
+                          fontSize: ".95rem",
+                        }}
+                      >
                         {MONTHS[inv.month - 1]} {inv.year}
                       </p>
-                      <p style={{ margin: 0, fontSize: ".75rem", color: "var(--text-secondary)" }}>
+                      <p
+                        style={{
+                          margin: 0,
+                          fontSize: ".75rem",
+                          color: "var(--text-secondary)",
+                        }}
+                      >
                         By {inv.engineer.fullName} · {inv.items.length} parts
-                        {inv.submittedAt ? ` · Submitted ${new Date(inv.submittedAt).toLocaleDateString()}` : ""}
+                        {inv.submittedAt
+                          ? ` · Submitted ${new Date(inv.submittedAt).toLocaleDateString()}`
+                          : ""}
                       </p>
                     </div>
                     {statusBadge(inv.status)}
@@ -211,37 +284,78 @@ export function AccountantPartsPricingPage() {
                       <span className="badge badge--blue">All Priced</span>
                     )}
                   </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: ".75rem" }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: ".75rem",
+                    }}
+                  >
                     {total > 0 && (
-                      <span style={{ fontSize: ".88rem", fontWeight: 700, color: "var(--green-600)" }}>
+                      <span
+                        style={{
+                          fontSize: ".88rem",
+                          fontWeight: 700,
+                          color: "var(--green-600)",
+                        }}
+                      >
                         Total: ${total.toFixed(2)}
                       </span>
                     )}
                     {inv.status === "SUBMITTED" && done && (
                       <button
                         className="btn btn--primary btn--sm"
-                        onClick={(e) => { e.stopPropagation(); void handleReview(inv.id); }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          void handleReview(inv.id);
+                        }}
                         disabled={reviewingId === inv.id}
                       >
                         <CheckCircle size={13} />
-                        {reviewingId === inv.id ? "Reviewing…" : "Mark Reviewed"}
+                        {reviewingId === inv.id
+                          ? "Reviewing…"
+                          : "Mark Reviewed"}
                       </button>
                     )}
-                    {isExpanded ? <ChevronUp size={18} style={{ color: "var(--text-secondary)" }} /> : <ChevronDown size={18} style={{ color: "var(--text-secondary)" }} />}
+                    {isExpanded ? (
+                      <ChevronUp
+                        size={18}
+                        style={{ color: "var(--text-secondary)" }}
+                      />
+                    ) : (
+                      <ChevronDown
+                        size={18}
+                        style={{ color: "var(--text-secondary)" }}
+                      />
+                    )}
                   </div>
                 </div>
 
                 {isExpanded && (
                   <div className="card-body">
                     {inv.notes && (
-                      <div style={{ marginBottom: "1rem", padding: ".75rem", borderRadius: "var(--radius-md)", background: "var(--blue-50)", fontSize: ".84rem", color: "var(--blue-800)" }}>
+                      <div
+                        style={{
+                          marginBottom: "1rem",
+                          padding: ".75rem",
+                          borderRadius: "var(--radius-md)",
+                          background: "var(--blue-50)",
+                          fontSize: ".84rem",
+                          color: "var(--blue-800)",
+                        }}
+                      >
                         <strong>Note:</strong> {inv.notes}
                       </div>
                     )}
 
                     {inv.items.length === 0 ? (
-                      <div className="empty-state" style={{ padding: "1.5rem" }}>
-                        <p className="empty-state__desc">No parts in this inventory.</p>
+                      <div
+                        className="empty-state"
+                        style={{ padding: "1.5rem" }}
+                      >
+                        <p className="empty-state__desc">
+                          No parts in this inventory.
+                        </p>
                       </div>
                     ) : (
                       <div className="table-wrapper">
@@ -260,10 +374,21 @@ export function AccountantPartsPricingPage() {
                           <tbody>
                             {inv.items.map((item, idx) => (
                               <tr key={item.id}>
-                                <td style={{ color: "var(--text-secondary)", fontSize: ".8rem" }}>{idx + 1}</td>
-                                <td style={{ fontWeight: 600 }}>{item.partName}</td>
+                                <td
+                                  style={{
+                                    color: "var(--text-secondary)",
+                                    fontSize: ".8rem",
+                                  }}
+                                >
+                                  {idx + 1}
+                                </td>
+                                <td style={{ fontWeight: 600 }}>
+                                  {item.partName}
+                                </td>
                                 <td>
-                                  <span className="badge badge--blue">{item.quantity}</span>
+                                  <span className="badge badge--blue">
+                                    {item.quantity}
+                                  </span>
                                 </td>
                                 <td>
                                   {item.imagePath ? (
@@ -277,48 +402,98 @@ export function AccountantPartsPricingPage() {
                                       <Image size={15} />
                                     </a>
                                   ) : (
-                                    <span style={{ color: "var(--gray-300)", fontSize: ".75rem" }}>—</span>
+                                    <span
+                                      style={{
+                                        color: "var(--gray-300)",
+                                        fontSize: ".75rem",
+                                      }}
+                                    >
+                                      —
+                                    </span>
                                   )}
                                 </td>
                                 <td>
                                   {inv.status === "SUBMITTED" ? (
-                                    <div style={{ display: "flex", alignItems: "center", gap: ".5rem" }}>
+                                    <div
+                                      style={{
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: ".5rem",
+                                      }}
+                                    >
                                       <input
                                         type="number"
                                         min={0}
                                         step={0.01}
                                         className="form-input"
-                                        style={{ width: 90, padding: ".35rem .5rem", fontSize: ".82rem" }}
-                                        placeholder={item.unitPrice !== null ? String(item.unitPrice) : "0.00"}
-                                        value={priceInputs[item.id] ?? (item.unitPrice !== null ? String(item.unitPrice) : "")}
+                                        style={{
+                                          width: 90,
+                                          padding: ".35rem .5rem",
+                                          fontSize: ".82rem",
+                                        }}
+                                        placeholder={
+                                          item.unitPrice !== null
+                                            ? String(item.unitPrice)
+                                            : "0.00"
+                                        }
+                                        value={
+                                          priceInputs[item.id] ??
+                                          (item.unitPrice !== null
+                                            ? String(item.unitPrice)
+                                            : "")
+                                        }
                                         onChange={(e) =>
-                                          setPriceInputs((p) => ({ ...p, [item.id]: e.target.value }))
+                                          setPriceInputs((p) => ({
+                                            ...p,
+                                            [item.id]: e.target.value,
+                                          }))
                                         }
                                       />
                                       <button
                                         className="btn btn--primary btn--sm"
-                                        onClick={() => void handleSetPrice(item.id, inv.id)}
+                                        onClick={() =>
+                                          void handleSetPrice(item.id, inv.id)
+                                        }
                                         disabled={savingItem === item.id}
                                       >
-                                        {savingItem === item.id ? "…" : savedItems.has(item.id) ? "✓" : "Set"}
+                                        {savingItem === item.id
+                                          ? "…"
+                                          : savedItems.has(item.id)
+                                            ? "✓"
+                                            : "Set"}
                                       </button>
                                     </div>
                                   ) : (
-                                    <span style={{ fontWeight: 700, color: "var(--green-600)" }}>
-                                      {item.unitPrice !== null ? `$${item.unitPrice.toFixed(2)}` : "—"}
+                                    <span
+                                      style={{
+                                        fontWeight: 700,
+                                        color: "var(--green-600)",
+                                      }}
+                                    >
+                                      {item.unitPrice !== null
+                                        ? `$${item.unitPrice.toFixed(2)}`
+                                        : "—"}
                                     </span>
                                   )}
                                 </td>
                                 <td style={{ fontWeight: 700 }}>
-                                  {item.unitPrice !== null
-                                    ? `$${(item.unitPrice * item.quantity).toFixed(2)}`
-                                    : <span style={{ color: "var(--gray-300)" }}>—</span>}
+                                  {item.unitPrice !== null ? (
+                                    `$${(item.unitPrice * item.quantity).toFixed(2)}`
+                                  ) : (
+                                    <span style={{ color: "var(--gray-300)" }}>
+                                      —
+                                    </span>
+                                  )}
                                 </td>
                                 <td>
                                   {item.unitPrice !== null ? (
-                                    <span className="badge badge--green">Priced</span>
+                                    <span className="badge badge--green">
+                                      Priced
+                                    </span>
                                   ) : (
-                                    <span className="badge badge--gray">Pending</span>
+                                    <span className="badge badge--gray">
+                                      Pending
+                                    </span>
                                   )}
                                 </td>
                               </tr>
@@ -329,17 +504,48 @@ export function AccountantPartsPricingPage() {
                     )}
 
                     {inv.status === "REVIEWED" && inv.reviewedAt && (
-                      <div style={{ marginTop: "1rem", padding: ".75rem", borderRadius: "var(--radius-md)", background: "var(--green-50)", border: "1px solid var(--green-100)", display: "flex", alignItems: "center", gap: ".625rem", fontSize: ".82rem", color: "var(--green-600)" }}>
+                      <div
+                        style={{
+                          marginTop: "1rem",
+                          padding: ".75rem",
+                          borderRadius: "var(--radius-md)",
+                          background: "var(--green-50)",
+                          border: "1px solid var(--green-100)",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: ".625rem",
+                          fontSize: ".82rem",
+                          color: "var(--green-600)",
+                        }}
+                      >
                         <CheckCircle size={16} />
-                        Reviewed on {new Date(inv.reviewedAt).toLocaleDateString()} ·
-                        Total value: <strong>${total.toFixed(2)}</strong>
+                        Reviewed on{" "}
+                        {new Date(inv.reviewedAt).toLocaleDateString()} · Total
+                        value: <strong>${total.toFixed(2)}</strong>
                       </div>
                     )}
 
                     {inv.status === "SUBMITTED" && !done && (
-                      <div style={{ marginTop: "1rem", padding: ".75rem", borderRadius: "var(--radius-md)", background: "var(--orange-50)", border: "1px solid var(--orange-100)", display: "flex", alignItems: "center", gap: ".625rem", fontSize: ".82rem", color: "var(--orange-700)" }}>
+                      <div
+                        style={{
+                          marginTop: "1rem",
+                          padding: ".75rem",
+                          borderRadius: "var(--radius-md)",
+                          background: "var(--orange-50)",
+                          border: "1px solid var(--orange-100)",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: ".625rem",
+                          fontSize: ".82rem",
+                          color: "var(--orange-700)",
+                        }}
+                      >
                         <Clock size={16} />
-                        Set prices for all {inv.items.filter((i) => i.unitPrice === null).length} remaining part(s) to complete pricing.
+                        Set prices for all{" "}
+                        {
+                          inv.items.filter((i) => i.unitPrice === null).length
+                        }{" "}
+                        remaining part(s) to complete pricing.
                       </div>
                     )}
                   </div>

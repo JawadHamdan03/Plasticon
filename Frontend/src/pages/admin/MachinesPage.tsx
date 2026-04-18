@@ -14,12 +14,10 @@ type Machine = {
 const tokenKey = "plasticon_token";
 
 async function fetchWithAdminAuth(path: string, options?: RequestInit) {
-  const token = window.localStorage.getItem(tokenKey);
   return fetch(`${API_BASE_URL}${path}`, {
     ...options,
     headers: {
       ...(options?.headers ?? {}),
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
     credentials: "include",
   });
@@ -211,14 +209,16 @@ export function MachinesPage() {
         </header>
 
         <section className="admin-section">
-
           {loading ? <p>{pageText.loading}</p> : null}
           {error ? (
             <div className="auth-alert auth-alert--error">{error}</div>
           ) : null}
           <div className="admin-panel" style={{ marginBottom: "16px" }}>
             <h3>{copy.admin.addNewMachine}</h3>
-            <div className="admin-panel-body" style={{ display: "grid", gap: ".875rem" }}>
+            <div
+              className="admin-panel-body"
+              style={{ display: "grid", gap: ".875rem" }}
+            >
               <div className="admin-form-grid">
                 <label>
                   {copy.admin.name}

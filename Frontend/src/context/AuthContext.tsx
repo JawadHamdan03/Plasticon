@@ -46,7 +46,6 @@ type AuthContextValue = {
   register: (values: RegisterValues) => Promise<void>;
 };
 
-const TOKEN_KEY = "plasticon_token";
 const USER_KEY = "plasticon_user";
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -57,16 +56,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const storedToken = window.localStorage.getItem(TOKEN_KEY);
+    // Only restore user from localStorage, not token
+    // Token is now stored in HTTP-only cookie by backend
     const storedUser = window.localStorage.getItem(USER_KEY);
-
-    if (storedToken) {
-      setToken(storedToken);
-    }
 
     if (storedUser) {
       try {
         setUser(JSON.parse(storedUser) as UserProfile);
+        // Set token to a placeholder to indicate user is logged in
+        // Real token is in HTTP-only cookie
+        setToken("authenticated");
       } catch {
         window.localStorage.removeItem(USER_KEY);
       }
@@ -76,10 +75,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const persistSession = useCallback(
-    (nextToken: string, nextUser: UserProfile) => {
-      setToken(nextToken);
+    (_nextToken: string, nextUser: UserProfile) => {
+      // Token is stored in HTTP-only cookie by backend, not in localStorage
+      // Set a placeholder token to indicate user is authenticated
+      setToken("authenticated");
       setUser(nextUser);
-      window.localStorage.setItem(TOKEN_KEY, nextToken);
+      // Only store user profile in localStorage (for UX, not security)
       window.localStorage.setItem(USER_KEY, JSON.stringify(nextUser));
     },
     [],
@@ -147,15 +148,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       formData.append("profileImage", values.profileImage);
     }
 
-    const storedToken = window.localStorage.getItem(TOKEN_KEY);
-
     const response = await fetch(`${API_BASE_URL}/auth/register`, {
       method: "POST",
-      headers: storedToken
-        ? {
-            Authorization: `Bearer ${storedToken}`,
-          }
-        : undefined,
       credentials: "include",
       body: formData,
     });
@@ -168,7 +162,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signOut = useCallback(() => {
     setToken(null);
     setUser(null);
-    window.localStorage.removeItem(TOKEN_KEY);
+    // Only clear user from localStorage (token is in HTTP-only cookie)
     window.localStorage.removeItem(USER_KEY);
   }, []);
 
@@ -197,7 +191,3 @@ export function useAuth() {
 
   return context;
 }
-
-
-
-

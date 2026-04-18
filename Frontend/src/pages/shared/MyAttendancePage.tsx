@@ -16,12 +16,10 @@ type AttendanceRecord = {
 };
 
 async function fetchWithAuth(path: string, options?: RequestInit) {
-  const token = window.localStorage.getItem("plasticon_token");
   return fetch(`${API_BASE_URL}${path}`, {
     ...options,
     headers: {
       ...(options?.headers ?? {}),
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
     credentials: "include",
   });
@@ -34,7 +32,9 @@ export function MyAttendancePage() {
 
   const [records, setRecords] = useState<AttendanceRecord[]>([]);
   const [loading, setLoading] = useState(false);
-  const [actionLoading, setActionLoading] = useState<"check-in" | "check-out" | "">("");
+  const [actionLoading, setActionLoading] = useState<
+    "check-in" | "check-out" | ""
+  >("");
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
 
@@ -65,7 +65,8 @@ export function MyAttendancePage() {
           }
         : {
             title: "My Attendance",
-            subtitle: "Check in, check out, and review your attendance history.",
+            subtitle:
+              "Check in, check out, and review your attendance history.",
             checkIn: "Check In",
             checkOut: "Check Out",
             loading: "Loading attendance records...",
@@ -96,13 +97,17 @@ export function MyAttendancePage() {
       if (!response.ok) throw new Error(await readApiError(response));
       setRecords(((await response.json()) as AttendanceRecord[]) ?? []);
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "Failed to load attendance");
+      setErrorMessage(
+        error instanceof Error ? error.message : "Failed to load attendance",
+      );
     } finally {
       setLoading(false);
     }
   }, []);
 
-  useEffect(() => { void loadAttendance(); }, [loadAttendance]);
+  useEffect(() => {
+    void loadAttendance();
+  }, [loadAttendance]);
 
   const hasOpenAttendance = useMemo(
     () => records.some((r) => r.checkOut === null),
@@ -121,7 +126,10 @@ export function MyAttendancePage() {
       const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
       if (!daySet.has(key) && d.getDay() === 5) fridays++;
       daySet.add(key);
-      if (d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear())
+      if (
+        d.getMonth() === now.getMonth() &&
+        d.getFullYear() === now.getFullYear()
+      )
         monthSet.add(key);
     }
 
@@ -134,14 +142,18 @@ export function MyAttendancePage() {
     setSuccessMessage("");
     try {
       const response = await fetchWithAuth(
-        action === "check-in" ? "/attendance/check-in" : "/attendance/check-out",
+        action === "check-in"
+          ? "/attendance/check-in"
+          : "/attendance/check-out",
         { method: "POST" },
       );
       if (!response.ok) throw new Error(await readApiError(response));
       setSuccessMessage(action === "check-in" ? t.checkedIn : t.checkedOut);
       await loadAttendance();
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "Attendance action failed");
+      setErrorMessage(
+        error instanceof Error ? error.message : "Attendance action failed",
+      );
     } finally {
       setActionLoading("");
     }
@@ -164,7 +176,9 @@ export function MyAttendancePage() {
       {/* ── Action card ── */}
       <div className="attendance-action-card">
         <div className="attendance-action-card__status">
-          <span className={`attendance-status-dot${hasOpenAttendance ? " attendance-status-dot--open" : ""}`} />
+          <span
+            className={`attendance-status-dot${hasOpenAttendance ? " attendance-status-dot--open" : ""}`}
+          />
           <span className="attendance-action-card__status-label">
             {hasOpenAttendance ? t.statusOpen : t.statusClosed}
           </span>
@@ -227,7 +241,9 @@ export function MyAttendancePage() {
       <div className="attendance-history-card">
         <div className="attendance-history-card__head">
           <h2>{t.history}</h2>
-          <span className="attendance-history-card__count">{records.length}</span>
+          <span className="attendance-history-card__count">
+            {records.length}
+          </span>
         </div>
 
         {loading ? <TruckLoader /> : null}
@@ -238,21 +254,37 @@ export function MyAttendancePage() {
         <div className="attendance-history-list">
           {records.map((rec) => {
             const isOpen = rec.checkOut === null;
-            const duration =
-              rec.checkOut
-                ? Math.floor(
-                    (new Date(rec.checkOut).getTime() - new Date(rec.checkIn).getTime()) / 60000,
-                  )
-                : null;
+            const duration = rec.checkOut
+              ? Math.floor(
+                  (new Date(rec.checkOut).getTime() -
+                    new Date(rec.checkIn).getTime()) /
+                    60000,
+                )
+              : null;
 
             return (
-              <div key={rec.id} className={`attendance-history-row${isOpen ? " attendance-history-row--open" : ""}`}>
+              <div
+                key={rec.id}
+                className={`attendance-history-row${isOpen ? " attendance-history-row--open" : ""}`}
+              >
                 <div className="attendance-history-row__indicator" />
 
                 <div className="attendance-history-row__body">
                   <div className="attendance-history-row__top">
-                    <strong>{new Date(rec.checkIn).toLocaleDateString(isAr ? "ar-EG" : "en-US", { weekday: "short", year: "numeric", month: "short", day: "numeric" })}</strong>
-                    <span className={`attendance-history-badge${isOpen ? " attendance-history-badge--open" : ""}`}>
+                    <strong>
+                      {new Date(rec.checkIn).toLocaleDateString(
+                        isAr ? "ar-EG" : "en-US",
+                        {
+                          weekday: "short",
+                          year: "numeric",
+                          month: "short",
+                          day: "numeric",
+                        },
+                      )}
+                    </strong>
+                    <span
+                      className={`attendance-history-badge${isOpen ? " attendance-history-badge--open" : ""}`}
+                    >
                       {isOpen ? t.statusOpen : t.statusClosed}
                     </span>
                   </div>
@@ -260,12 +292,18 @@ export function MyAttendancePage() {
                   <div className="attendance-history-row__times">
                     <div className="attendance-time-chip">
                       <LogIn size={13} />
-                      {new Date(rec.checkIn).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                      {new Date(rec.checkIn).toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
                     </div>
                     {rec.checkOut ? (
                       <div className="attendance-time-chip attendance-time-chip--out">
                         <LogOut size={13} />
-                        {new Date(rec.checkOut).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                        {new Date(rec.checkOut).toLocaleTimeString([], {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
                       </div>
                     ) : null}
                     {duration !== null ? (

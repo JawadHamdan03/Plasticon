@@ -4,7 +4,11 @@
       "Bash(grep -v \"^$\")",
       "Bash(npx postcss *)",
       "Bash(node -e ' *)",
-      "Bash(node_modules/.bin/vite build *)"
+      "Bash(node_modules/.bin/vite build *)",
+      "Bash(grep -E \"\\\\.\\(ts|tsx\\)$\")",
+      "Bash(xargs grep *)",
+      "Bash(grep -E \"\\\\.\\(ts\\)$\")",
+      "Bash(xargs sed *)"
     ]
   }
 }

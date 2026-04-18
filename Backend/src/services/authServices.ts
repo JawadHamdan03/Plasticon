@@ -392,7 +392,7 @@ export const logoutUser = (
   res: Response,
   userId?: number,
 ): ServiceResult<{ message: string }> => {
-  res.cookie("jwt", "", {
+  res.cookie("authToken", "", {
     httpOnly: true,
     expires: new Date(0),
   });

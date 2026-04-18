@@ -29,12 +29,10 @@ type AdminUser = {
 const tokenKey = "plasticon_token";
 
 async function fetchWithAdminAuth(path: string, options?: RequestInit) {
-  const token = window.localStorage.getItem(tokenKey);
   return fetch(`${API_BASE_URL}${path}`, {
     ...options,
     headers: {
       ...(options?.headers ?? {}),
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
     credentials: "include",
   });
@@ -315,7 +313,10 @@ export function AttendanceAdminPage() {
           <div className="admin-grid" style={{ marginBottom: 12 }}>
             <article className="admin-panel">
               <h3>{text.filters}</h3>
-              <div className="admin-panel-body" style={{ display: "grid", gap: ".625rem" }}>
+              <div
+                className="admin-panel-body"
+                style={{ display: "grid", gap: ".625rem" }}
+              >
                 <input
                   type="date"
                   value={filterDate}
