@@ -53,6 +53,27 @@ export const createExpense = async (
   }
 };
 
+export const deleteExpense = async (
+  id: number,
+): Promise<ServiceResult<unknown>> => {
+  try {
+    const expense = await prisma.expense.findUnique({
+      where: { id },
+      select: { id: true },
+    });
+
+    if (!expense) {
+      return { status: 404, message: "Expense not found" };
+    }
+
+    await prisma.expense.delete({ where: { id } });
+    return { status: 200, message: "Expense deleted successfully" };
+  } catch (error) {
+    console.error("Delete expense error:", error);
+    return { status: 500, message: "Failed to delete expense" };
+  }
+};
+
 export const approveExpense = async (
   id: number,
   approvedById: number,

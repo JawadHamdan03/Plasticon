@@ -11,6 +11,7 @@ import { appCopy } from "../../content/appCopy";
 import { API_BASE_URL, readApiError } from "../../lib/api";
 import { ModulePageShell } from "../../components/ModulePageShell";
 import { TruckLoader } from "../../components/TruckLoader";
+import { Card } from "../../components/ui/card";
 
 type ProductionItem = {
   id: number;
@@ -108,10 +109,16 @@ type AdminRawDeductionsResponse = {
   };
 };
 
+function authHeaders(): Record<string, string> {
+  const token = localStorage.getItem("plasticon_token");
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
 async function fetchWithAuth(path: string, options?: RequestInit) {
   return fetch(`${API_BASE_URL}${path}`, {
     ...options,
     headers: {
+      ...authHeaders(),
       ...(options?.headers ?? {}),
     },
     credentials: "include",
@@ -313,6 +320,32 @@ export function ProductionPage() {
         ) : null}
       </div>
 
+      {/* PREFORM / CAPS KPI boxes */}
+      {canSeeAllProductions && adminOverview ? (
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 my-4">
+          <Card className="p-4 bg-linear-to-br from-blue-50 to-blue-100 dark:from-blue-900/30 dark:to-blue-800/30 border border-blue-200 dark:border-blue-800">
+            <p className="text-xs text-slate-500 mb-1">Total Cartons</p>
+            <p className="text-2xl font-bold text-blue-700 dark:text-blue-300">{adminOverview.totals.cartons.toLocaleString()}</p>
+          </Card>
+          <Card className="p-4 bg-linear-to-br from-green-50 to-green-100 dark:from-green-900/30 dark:to-green-800/30 border border-green-200 dark:border-green-800">
+            <p className="text-xs text-slate-500 mb-1">Caps Cartons</p>
+            <p className="text-2xl font-bold text-green-700 dark:text-green-300">
+              {(adminOverview.dailyByProduct ?? []).reduce((s, d) => s + d.capsCartons, 0).toLocaleString()}
+            </p>
+          </Card>
+          <Card className="p-4 bg-linear-to-br from-purple-50 to-purple-100 dark:from-purple-900/30 dark:to-purple-800/30 border border-purple-200 dark:border-purple-800">
+            <p className="text-xs text-slate-500 mb-1">Preform Cartons</p>
+            <p className="text-2xl font-bold text-purple-700 dark:text-purple-300">
+              {(adminOverview.dailyByProduct ?? []).reduce((s, d) => s + d.preformCartons, 0).toLocaleString()}
+            </p>
+          </Card>
+          <Card className="p-4 bg-linear-to-br from-orange-50 to-orange-100 dark:from-orange-900/30 dark:to-orange-800/30 border border-orange-200 dark:border-orange-800">
+            <p className="text-xs text-slate-500 mb-1">Total Pieces</p>
+            <p className="text-2xl font-bold text-orange-700 dark:text-orange-300">{adminOverview.totals.pieces.toLocaleString()}</p>
+          </Card>
+        </div>
+      ) : null}
+
       <section className="module-grid">
         {canCreateProduction ? (
           <article className="module-panel">
@@ -487,6 +520,23 @@ export function ProductionPage() {
         <article className="module-panel">
           <h2>{copy.production.myRecords}</h2>
           {loading ? <TruckLoader /> : null}
+
+          {/* Preform / Caps count boxes */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", marginBottom: "16px" }}>
+            <div style={{ background: "linear-gradient(to bottom right, #f0fdf4, #dcfce7)", border: "1px solid #bbf7d0", borderRadius: "8px", padding: "12px" }}>
+              <p style={{ fontSize: "11px", color: "#6b7280", marginBottom: "4px" }}>Caps Cartons (Mine)</p>
+              <p style={{ fontSize: "22px", fontWeight: "bold", color: "#15803d" }}>
+                {myProductions.reduce((s, p) => s + (p.cartonsCount ?? 0), 0)}
+              </p>
+            </div>
+            <div style={{ background: "linear-gradient(to bottom right, #faf5ff, #f3e8ff)", border: "1px solid #e9d5ff", borderRadius: "8px", padding: "12px" }}>
+              <p style={{ fontSize: "11px", color: "#6b7280", marginBottom: "4px" }}>Total Pieces (Mine)</p>
+              <p style={{ fontSize: "22px", fontWeight: "bold", color: "#7e22ce" }}>
+                {myProductions.reduce((s, p) => s + (p.totalPieces ?? 0), 0).toLocaleString()}
+              </p>
+            </div>
+          </div>
+
           <div className="module-list">
             {myProductions.map((production) => (
               <div className="module-row" key={production.id}>
@@ -500,8 +550,7 @@ export function ProductionPage() {
                 </span>
                 <small>
                   {production.cartonsCount ?? 0} cartons •{" "}
-                  {production.totalPieces ?? 0}
-                  pieces
+                  {production.totalPieces ?? 0} pieces
                 </small>
               </div>
             ))}

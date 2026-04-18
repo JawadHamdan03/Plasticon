@@ -5,7 +5,12 @@ import { Button } from "../../components/ui/button";
 import { Card } from "../../components/ui/card";
 import { useLocale } from "../../context/LocaleContext";
 import { API_BASE_URL } from "../../lib/api";
+import { useAuth } from "../../context/AuthContext";
 
+function authHeaders(): Record<string, string> {
+  const token = localStorage.getItem("plasticon_token");
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
 
 interface ApprovalWorkflow {
   id: number;
@@ -25,6 +30,8 @@ const STATUS_STYLES: Record<string, string> = {
 
 export default function ApprovalWorkflows() {
   const { locale } = useLocale();
+  const { user } = useAuth();
+  const isAdmin = user?.role === "ADMIN";
   const nav = (en: string, ar: string) => locale === "ar" ? ar : en;
   const [workflows, setWorkflows] = useState<ApprovalWorkflow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -37,6 +44,7 @@ export default function ApprovalWorkflows() {
   const fetchWorkflows = async () => {
     try {
       const res = await fetch(`${API_BASE_URL}/approval-workflows`, {
+        headers: { ...authHeaders() },
         credentials: "include",
       });
       if (res.ok) {
@@ -52,7 +60,7 @@ export default function ApprovalWorkflows() {
       const url = editingId ? `${API_BASE_URL}/approval-workflows/${editingId}` : `${API_BASE_URL}/approval-workflows`;
       const res = await fetch(url, {
         method: editingId ? "PATCH" : "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...authHeaders() },
         credentials: "include",
         body: JSON.stringify({ ...form, itemsCount: parseInt(String(form.itemsCount)), approverCount: parseInt(String(form.approverCount)) }),
       });
@@ -74,7 +82,7 @@ export default function ApprovalWorkflows() {
   const handleDelete = async (id: number) => {
     if (!confirm(nav("Delete this workflow?", "حذف سير العمل هذا؟"))) return;
     await fetch(`${API_BASE_URL}/approval-workflows/${id}`, {
-      method: "DELETE", credentials: "include",
+      method: "DELETE", headers: { ...authHeaders() }, credentials: "include",
     });
     fetchWorkflows();
   };
@@ -117,14 +125,16 @@ export default function ApprovalWorkflows() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold">{nav("Workflows", "سير العمل")}</h2>
-          <Button onClick={() => { setShowForm(!showForm); setEditingId(null); }} className="gap-2">
-            <Plus size={16} />
-            {nav("Add Workflow", "إضافة سير عمل")}
-          </Button>
+          {!isAdmin && (
+            <Button onClick={() => { setShowForm(!showForm); setEditingId(null); }} className="gap-2">
+              <Plus size={16} />
+              {nav("Add Workflow", "إضافة سير عمل")}
+            </Button>
+          )}
         </div>
 
         {/* Form */}
-        {showForm && (
+        {!isAdmin && showForm && (
           <Card className="p-5 border border-slate-200 dark:border-slate-700">
             <h3 className="font-semibold mb-4 text-slate-800 dark:text-slate-200">
               {editingId ? nav("Edit Workflow", "تعديل سير العمل") : nav("New Workflow", "سير عمل جديد")}
@@ -207,16 +217,18 @@ export default function ApprovalWorkflows() {
                       <td className="py-3 px-4 text-slate-600 dark:text-slate-400">{w.approverCount}</td>
                       <td className="py-3 px-4 text-xs text-slate-500">{w.createdBy?.fullName ?? "—"}</td>
                       <td className="py-3 px-4">
-                        <div className="flex items-center gap-1 justify-end">
-                          <button onClick={() => handleEdit(w)}
-                            className="p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-500">
-                            <Edit size={14} />
-                          </button>
-                          <button onClick={() => handleDelete(w.id)}
-                            className="p-1.5 rounded hover:bg-red-100 dark:hover:bg-red-900/30 text-red-500">
-                            <Trash2 size={14} />
-                          </button>
-                        </div>
+                        {!isAdmin && (
+                          <div className="flex items-center gap-1 justify-end">
+                            <button onClick={() => handleEdit(w)}
+                              className="p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-500">
+                              <Edit size={14} />
+                            </button>
+                            <button onClick={() => handleDelete(w.id)}
+                              className="p-1.5 rounded hover:bg-red-100 dark:hover:bg-red-900/30 text-red-500">
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
+                        )}
                       </td>
                     </tr>
                   ))}

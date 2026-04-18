@@ -47,12 +47,18 @@ type Overview = {
   byRole: { role: string; payrollCount: number; totalPayout: number }[];
 };
 
+function authHeaders(): Record<string, string> {
+  const token = localStorage.getItem("plasticon_token");
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
 async function api(path: string, options?: RequestInit) {
   return fetch(`${API_BASE_URL}${path}`, {
     ...options,
     credentials: "include",
     headers: {
       ...(options?.headers ?? {}),
+      ...authHeaders(),
     },
   });
 }

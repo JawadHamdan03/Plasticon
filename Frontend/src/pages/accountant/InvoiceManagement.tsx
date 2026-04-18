@@ -5,7 +5,12 @@ import { Button } from "../../components/ui/button";
 import { Card } from "../../components/ui/card";
 import { useLocale } from "../../context/LocaleContext";
 import { API_BASE_URL } from "../../lib/api";
+import { useAuth } from "../../context/AuthContext";
 
+function authHeaders(): Record<string, string> {
+  const token = localStorage.getItem("plasticon_token");
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
 
 interface Invoice {
   id: number;
@@ -28,6 +33,8 @@ const STATUS_STYLES: Record<string, string> = {
 
 export default function InvoiceManagement() {
   const { locale } = useLocale();
+  const { user } = useAuth();
+  const isAdmin = user?.role === "ADMIN";
   const nav = (en: string, ar: string) => locale === "ar" ? ar : en;
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
@@ -40,6 +47,7 @@ export default function InvoiceManagement() {
   const fetchInvoices = async () => {
     try {
       const res = await fetch(`${API_BASE_URL}/invoices`, {
+        headers: { ...authHeaders() },
         credentials: "include",
       });
       if (res.ok) {
@@ -54,7 +62,7 @@ export default function InvoiceManagement() {
     try {
       const res = await fetch(`${API_BASE_URL}/invoices`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...authHeaders() },
         credentials: "include",
         body: JSON.stringify({
           ...form,
@@ -73,7 +81,7 @@ export default function InvoiceManagement() {
   const handleRecordPayment = async (id: number) => {
     await fetch(`${API_BASE_URL}/invoices/${id}/payment`, {
       method: "PATCH",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...authHeaders() },
       credentials: "include",
       body: JSON.stringify({ paymentStatus: "PAID" }),
     });
@@ -84,6 +92,7 @@ export default function InvoiceManagement() {
     if (!confirm(nav("Delete this invoice?", "حذف هذه الفاتورة؟"))) return;
     await fetch(`${API_BASE_URL}/invoices/${id}`, {
       method: "DELETE",
+      headers: { ...authHeaders() },
       credentials: "include",
     });
     fetchInvoices();
@@ -136,15 +145,17 @@ export default function InvoiceManagement() {
                 onChange={e => setSearch(e.target.value)}
                 className="pl-8 pr-3 py-2 text-sm border rounded-lg bg-white border-slate-200 dark:border-slate-700 w-full sm:w-48" />
             </div>
-            <Button onClick={() => setShowForm(!showForm)} className="gap-2 shrink-0">
-              <Plus size={16} />
-              {nav("Create Invoice", "إنشاء فاتورة")}
-            </Button>
+            {!isAdmin && (
+              <Button onClick={() => setShowForm(!showForm)} className="gap-2 shrink-0">
+                <Plus size={16} />
+                {nav("Create Invoice", "إنشاء فاتورة")}
+              </Button>
+            )}
           </div>
         </div>
 
         {/* Form */}
-        {showForm && (
+        {!isAdmin && showForm && (
           <Card className="p-5 border border-slate-200 dark:border-slate-700">
             <h3 className="font-semibold mb-4 text-slate-800 dark:text-slate-200">{nav("New Invoice", "فاتورة جديدة")}</h3>
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -230,6 +241,7 @@ export default function InvoiceManagement() {
                           </span>
                         </td>
                         <td className="py-3 px-4">
+                          {!isAdmin && (
                           <div className="flex items-center gap-1 justify-end">
                             {invoice.paymentStatus !== "PAID" && (
                               <button onClick={() => handleRecordPayment(invoice.id)}
@@ -242,6 +254,7 @@ export default function InvoiceManagement() {
                               <Trash2 size={14} />
                             </button>
                           </div>
+                        )}
                         </td>
                       </tr>
                     );

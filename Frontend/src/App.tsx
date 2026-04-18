@@ -40,6 +40,7 @@ import { ShiftsPage } from "./pages/admin/ShiftsPage";
 import { MachinesPage } from "./pages/admin/MachinesPage";
 import { AuditLogsPage } from "./pages/admin/AuditLogsPage";
 import { DashboardAnalyticsPage } from "./pages/admin/DashboardAnalyticsPage";
+import EngineerOverviewPage from "./pages/admin/EngineerOverviewPage";
 
 // Worker pages
 import { WorkerSnapshotsPage } from "./pages/worker/WorkerSnapshotsPage";
@@ -143,6 +144,7 @@ function App() {
             <Route path="/admin/machines" element={<AdminOnlyRoute><MachinesPage /></AdminOnlyRoute>} />
             <Route path="/admin/audit-logs" element={<AdminOnlyRoute><AuditLogsPage /></AdminOnlyRoute>} />
             <Route path="/admin/dashboard-analytics" element={<AdminOnlyRoute><DashboardAnalyticsPage /></AdminOnlyRoute>} />
+            <Route path="/admin/engineer" element={<AdminOnlyRoute><EngineerOverviewPage /></AdminOnlyRoute>} />
 
             {/* ── Admin + Accountant ── */}
             <Route

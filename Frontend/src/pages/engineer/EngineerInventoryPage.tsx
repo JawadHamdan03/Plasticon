@@ -53,6 +53,9 @@ async function api<T>(
   const isForm = body instanceof FormData;
   if (!isForm && body) headers["Content-Type"] = "application/json";
 
+  const token = localStorage.getItem("plasticon_token");
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+
   const res = await fetch(`${API_BASE_URL}${path}`, {
     method,
     credentials: "include",
@@ -92,6 +95,7 @@ function statusBadge(status: Inventory["status"]) {
 /* ── Component ─────────────────────────────────────────────── */
 export function EngineerInventoryPage() {
   const { user } = useAuth();
+  const isAdmin = user?.role === "ADMIN";
 
   const [inventories, setInventories] = useState<Inventory[]>([]);
   const [loading, setLoading] = useState(true);
@@ -239,12 +243,14 @@ export function EngineerInventoryPage() {
             notified
           </p>
         </div>
-        <button
-          className="btn btn--primary"
-          onClick={() => setShowNewForm((v) => !v)}
-        >
-          <Plus size={16} /> New Report
-        </button>
+        {!isAdmin && (
+          <button
+            className="btn btn--primary"
+            onClick={() => setShowNewForm((v) => !v)}
+          >
+            <Plus size={16} /> New Report
+          </button>
+        )}
       </div>
 
       {/* Error banner */}
@@ -270,7 +276,7 @@ export function EngineerInventoryPage() {
       )}
 
       {/* New report form */}
-      {showNewForm && (
+      {!isAdmin && showNewForm && (
         <div className="card">
           <div className="card-header">
             <h2 style={{ margin: 0, fontSize: "1rem", fontWeight: 700 }}>

@@ -34,7 +34,7 @@ export const createBudget = async (
 
     const budget = await prisma.budgetPlan.create({
       data: {
-        month: new Date(month),
+        month,
         category,
         allocated,
         spent: spent || 0,

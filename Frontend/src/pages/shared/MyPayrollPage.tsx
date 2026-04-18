@@ -22,10 +22,15 @@ type DailyRecord = {
   attendance: { checkIn: string; checkOut: string | null } | null;
 };
 
+function authHeaders(): Record<string, string> {
+  const token = localStorage.getItem("plasticon_token");
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
 async function fetchAuth(path: string) {
   return fetch(`${API_BASE_URL}${path}`, {
     credentials: "include",
-    headers: {},
+    headers: { ...authHeaders() },
   });
 }
 

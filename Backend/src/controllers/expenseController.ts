@@ -4,6 +4,7 @@ import {
   getAllExpenses,
   createExpense,
   approveExpense,
+  deleteExpense,
 } from "../services/expenseServices";
 
 export const getAllExpensesHandler = async (
@@ -39,6 +40,29 @@ export const createExpenseHandler = async (
   } catch (error) {
     console.error("Create expense error:", error);
     res.status(500).json({ message: "Failed to create expense" });
+  }
+};
+
+export const deleteExpenseHandler = async (
+  req: AuthenticatedRequest,
+  res: Response,
+) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id) || id <= 0) {
+      res.status(400).json({ message: "id must be a positive integer" });
+      return;
+    }
+
+    const result = await deleteExpense(id);
+    if (result.message) {
+      res.status(result.status).json({ message: result.message });
+      return;
+    }
+    res.status(200).json({ message: "Expense deleted successfully" });
+  } catch (error) {
+    console.error("Delete expense error:", error);
+    res.status(500).json({ message: "Failed to delete expense" });
   }
 };
 

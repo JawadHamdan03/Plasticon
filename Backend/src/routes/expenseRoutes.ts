@@ -4,6 +4,7 @@ import {
   getAllExpensesHandler,
   createExpenseHandler,
   approveExpenseHandler,
+  deleteExpenseHandler,
 } from "../controllers/expenseController";
 import { authorizeRoles } from "../middleware/authMiddleware";
 
@@ -19,5 +20,8 @@ router.post("/", authorizeRoles(accountingRoles), createExpenseHandler);
 
 // Approve expense — ACCOUNTANT/ADMIN
 router.patch("/:id/approve", authorizeRoles(accountingRoles), approveExpenseHandler);
+
+// Delete expense — ACCOUNTANT/ADMIN
+router.delete("/:id", authorizeRoles(accountingRoles), deleteExpenseHandler);
 
 export default router;

@@ -4,7 +4,13 @@ import { ModulePageShell } from "../../components/ModulePageShell";
 import { Button } from "../../components/ui/button";
 import { Card } from "../../components/ui/card";
 import { useLocale } from "../../context/LocaleContext";
+import { useAuth } from "../../context/AuthContext";
 import { API_BASE_URL } from "../../lib/api";
+
+function authHeaders(): Record<string, string> {
+  const token = localStorage.getItem("plasticon_token");
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
 
 
 interface Machine { id: number; name: string; type: string; }
@@ -24,6 +30,8 @@ interface Schedule {
 
 export default function PreventiveMaintenanceSchedule() {
   const { locale } = useLocale();
+  const { user } = useAuth();
+  const isAdmin = user?.role === "ADMIN";
   const nav = (en: string, ar: string) => locale === "ar" ? ar : en;
   const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [machines, setMachines] = useState<Machine[]>([]);
@@ -78,7 +86,7 @@ export default function PreventiveMaintenanceSchedule() {
     try {
       const res = await fetch(`${API_BASE_URL}/maintenance-schedule`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...authHeaders() },
         credentials: "include",
         body: JSON.stringify({
           machineId: parseInt(form.machineId),
@@ -135,14 +143,16 @@ export default function PreventiveMaintenanceSchedule() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold">{nav("Maintenance Schedules", "جداول الصيانة")}</h2>
-          <Button onClick={() => { setShowForm(!showForm); setError(""); }} className="gap-2">
-            <Plus size={16} />
-            {nav("Create Schedule", "إنشاء جدول")}
-          </Button>
+          {!isAdmin && (
+            <Button onClick={() => { setShowForm(!showForm); setError(""); }} className="gap-2">
+              <Plus size={16} />
+              {nav("Create Schedule", "إنشاء جدول")}
+            </Button>
+          )}
         </div>
 
         {/* Form */}
-        {showForm && (
+        {!isAdmin && showForm && (
           <Card className="p-5 border border-slate-200 dark:border-slate-700">
             <h3 className="font-semibold mb-4 text-slate-800 dark:text-slate-200">{nav("New Maintenance Schedule", "جدول صيانة جديد")}</h3>
             {error && <p className="text-sm text-red-600 mb-3 p-2 bg-red-50 rounded">{error}</p>}

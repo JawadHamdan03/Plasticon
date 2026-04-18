@@ -64,6 +64,27 @@ export const createInvoice = async (
   }
 };
 
+export const deleteInvoice = async (
+  id: number,
+): Promise<ServiceResult<unknown>> => {
+  try {
+    const invoice = await prisma.invoice.findUnique({
+      where: { id },
+      select: { id: true },
+    });
+
+    if (!invoice) {
+      return { status: 404, message: "Invoice not found" };
+    }
+
+    await prisma.invoice.delete({ where: { id } });
+    return { status: 200, message: "Invoice deleted successfully" };
+  } catch (error) {
+    console.error("Delete invoice error:", error);
+    return { status: 500, message: "Failed to delete invoice" };
+  }
+};
+
 export const recordInvoicePayment = async (
   id: number,
   payload: any,
