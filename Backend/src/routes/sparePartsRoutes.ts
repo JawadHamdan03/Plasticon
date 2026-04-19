@@ -4,6 +4,7 @@ import {
   getAllSparePartsHandler,
   createSparePartHandler,
   updateSparePartQuantityHandler,
+  deleteSparePartHandler,
 } from "../controllers/sparePartsController";
 import { authorizeRoles } from "../middleware/authMiddleware";
 
@@ -17,7 +18,10 @@ router.get("/", authorizeRoles(engineerRoles), getAllSparePartsHandler);
 // Create new spare part — ENGINEER/ADMIN
 router.post("/", authorizeRoles(engineerRoles), createSparePartHandler);
 
-// Update spare part quantity — ENGINEER/ADMIN
+// Update spare part — ENGINEER/ADMIN
 router.patch("/:id", authorizeRoles(engineerRoles), updateSparePartQuantityHandler);
+
+// Delete spare part — ENGINEER/ADMIN
+router.delete("/:id", authorizeRoles(engineerRoles), deleteSparePartHandler);
 
 export default router;

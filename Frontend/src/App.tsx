@@ -59,6 +59,8 @@ import TechnicalDocumentation from "./pages/engineer/TechnicalDocumentation";
 import EquipmentCalibration from "./pages/engineer/EquipmentCalibration";
 import WorkOrders from "./pages/engineer/WorkOrders";
 import EquipmentTransferLog from "./pages/engineer/EquipmentTransferLog";
+import RawMaterialAlerts from "./pages/engineer/RawMaterialAlerts";
+import MaintenanceCosts from "./pages/engineer/MaintenanceCosts";
 
 // Accountant pages
 import { AccountantPartsPricingPage } from "./pages/accountant/AccountantPartsPricingPage";
@@ -73,6 +75,8 @@ import TaxCompliance from "./pages/accountant/TaxCompliance";
 import BankReconciliation from "./pages/accountant/BankReconciliation";
 import CostAnalysis from "./pages/accountant/CostAnalysis";
 import ApprovalWorkflows from "./pages/accountant/ApprovalWorkflows";
+import SupplierManagement from "./pages/accountant/SupplierManagement";
+import EmployeePerformance from "./pages/accountant/EmployeePerformance";
 
 function App() {
   return (
@@ -139,7 +143,7 @@ function App() {
             <Route path="/admin/users" element={<AdminOnlyRoute><UsersAdminPage /></AdminOnlyRoute>} />
             <Route path="/admin/settings" element={<AdminOnlyRoute><SettingsAdminPage /></AdminOnlyRoute>} />
             <Route path="/admin/snapshots" element={<AdminOnlyRoute><AdminSnapshotsPage /></AdminOnlyRoute>} />
-            <Route path="/admin/settings/electricity" element={<AdminOnlyRoute><SettingsElectricityPage /></AdminOnlyRoute>} />
+            <Route path="/admin/settings/electricity" element={<RoleProtectedRoute allowedRoles={["ADMIN", "ENGINEER"]}><SettingsElectricityPage /></RoleProtectedRoute>} />
             <Route path="/admin/shifts" element={<AdminOnlyRoute><ShiftsPage /></AdminOnlyRoute>} />
             <Route path="/admin/machines" element={<AdminOnlyRoute><MachinesPage /></AdminOnlyRoute>} />
             <Route path="/admin/audit-logs" element={<AdminOnlyRoute><AuditLogsPage /></AdminOnlyRoute>} />
@@ -445,6 +449,38 @@ function App() {
                 </RoleProtectedRoute>
               }
             />
+            <Route
+              path="/engineer/raw-material-alerts"
+              element={
+                <RoleProtectedRoute allowedRoles={["ENGINEER", "ADMIN"]}>
+                  <RawMaterialAlerts />
+                </RoleProtectedRoute>
+              }
+            />
+            <Route
+              path="/engineer/maintenance-costs"
+              element={
+                <RoleProtectedRoute allowedRoles={["ENGINEER", "ADMIN", "ACCOUNTANT"]}>
+                  <MaintenanceCosts />
+                </RoleProtectedRoute>
+              }
+            />
+            <Route
+              path="/accountant/suppliers"
+              element={
+                <RoleProtectedRoute allowedRoles={["ACCOUNTANT", "ADMIN"]}>
+                  <SupplierManagement />
+                </RoleProtectedRoute>
+              }
+            />
+            <Route
+              path="/accountant/performance"
+              element={
+                <RoleProtectedRoute allowedRoles={["ADMIN", "ACCOUNTANT"]}>
+                  <EmployeePerformance />
+                </RoleProtectedRoute>
+              }
+            />
 
             {/* ── Worker only ── */}
             <Route
@@ -465,7 +501,7 @@ function App() {
             />
 
             {/* ── Redirects ── */}
-            <Route path="/suppliers" element={<Navigate to="/purchases" replace />} />
+            <Route path="/suppliers" element={<Navigate to="/accountant/suppliers" replace />} />
             <Route path="/customers" element={<Navigate to="/sales" replace />} />
             <Route path="/worker/readings" element={<Navigate to="/worker/snapshots" replace />} />
             <Route path="/worker/production" element={<Navigate to="/worker/tools" replace />} />

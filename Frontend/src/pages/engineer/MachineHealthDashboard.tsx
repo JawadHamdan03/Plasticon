@@ -1,12 +1,11 @@
 import { useEffect, useState } from "react";
-import { Plus, Activity, TrendingDown, Zap } from "lucide-react";
+import { Plus, Activity, TrendingDown, Zap, Pencil, Trash2 } from "lucide-react";
 import { ModulePageShell } from "../../components/ModulePageShell";
 import { Button } from "../../components/ui/button";
 import { Card } from "../../components/ui/card";
 import { useLocale } from "../../context/LocaleContext";
 import { API_BASE_URL } from "../../lib/api";
 import { useAuth } from "../../context/AuthContext";
-
 
 interface Machine { id: number; name: string; type: string; }
 interface HealthRecord {
@@ -28,6 +27,15 @@ const STATUS_COLORS: Record<string, string> = {
   DOWNTIME: "bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300",
 };
 
+const emptyForm = {
+  machineId: "",
+  operationalStatus: "OPERATIONAL",
+  downtimePercentage: 0,
+  maintenanceHours: 0,
+  efficiencyRating: 100,
+  notes: "",
+};
+
 function authHeaders(): Record<string, string> {
   const token = localStorage.getItem("plasticon_token");
   return token ? { Authorization: `Bearer ${token}` } : {};
@@ -42,16 +50,11 @@ export default function MachineHealthDashboard() {
   const [machines, setMachines] = useState<Machine[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
   const [error, setError] = useState("");
-  const [form, setForm] = useState({
-    machineId: "",
-    operationalStatus: "OPERATIONAL",
-    downtimePercentage: 0,
-    maintenanceHours: 0,
-    efficiencyRating: 100,
-    notes: "",
-  });
+  const [form, setForm] = useState(emptyForm);
 
   useEffect(() => {
     fetchRecords();
@@ -60,9 +63,7 @@ export default function MachineHealthDashboard() {
 
   const fetchMachines = async () => {
     try {
-      const res = await fetch(`${API_BASE_URL}/machines`, {
-        credentials: "include",
-      });
+      const res = await fetch(`${API_BASE_URL}/machines`, { credentials: "include" });
       if (res.ok) {
         const data = await res.json();
         setMachines(Array.isArray(data) ? data : (data.items ?? data.data ?? []));
@@ -72,9 +73,7 @@ export default function MachineHealthDashboard() {
 
   const fetchRecords = async () => {
     try {
-      const res = await fetch(`${API_BASE_URL}/machine-health`, {
-        credentials: "include",
-      });
+      const res = await fetch(`${API_BASE_URL}/machine-health`, { credentials: "include" });
       if (res.ok) {
         const data = await res.json();
         setRecords(data.data || []);
@@ -82,28 +81,68 @@ export default function MachineHealthDashboard() {
     } catch { } finally { setLoading(false); }
   };
 
+  const handleEdit = (r: HealthRecord) => {
+    setForm({
+      machineId: String(r.machineId),
+      operationalStatus: r.operationalStatus,
+      downtimePercentage: r.downtimePercentage,
+      maintenanceHours: r.maintenanceHours,
+      efficiencyRating: r.efficiencyRating,
+      notes: r.notes || "",
+    });
+    setEditingId(r.id);
+    setShowForm(true);
+    setError("");
+  };
+
+  const handleDelete = async (id: number) => {
+    if (!confirm(nav("Delete this record?", "حذف هذا السجل؟"))) return;
+    setDeletingId(id);
+    try {
+      const res = await fetch(`${API_BASE_URL}/machine-health/${id}`, {
+        method: "DELETE",
+        headers: authHeaders(),
+        credentials: "include",
+      });
+      if (res.ok) {
+        fetchRecords();
+      } else {
+        const err = await res.json();
+        alert(err.message || nav("Failed to delete", "فشل الحذف"));
+      }
+    } catch { alert(nav("Network error", "خطأ في الاتصال")); }
+    finally { setDeletingId(null); }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.machineId) { setError(nav("Please select a machine", "الرجاء اختيار آلة")); return; }
+    if (!form.machineId && !editingId) { setError(nav("Please select a machine", "الرجاء اختيار آلة")); return; }
     setError("");
     setSaving(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/machine-health`, {
-        method: "POST",
+      const url = editingId
+        ? `${API_BASE_URL}/machine-health/${editingId}`
+        : `${API_BASE_URL}/machine-health`;
+      const method = editingId ? "PATCH" : "POST";
+      const body: Record<string, unknown> = {
+        operationalStatus: form.operationalStatus,
+        downtimePercentage: parseFloat(String(form.downtimePercentage)),
+        maintenanceHours: parseFloat(String(form.maintenanceHours)),
+        efficiencyRating: parseFloat(String(form.efficiencyRating)),
+        notes: form.notes || undefined,
+      };
+      if (!editingId) body.machineId = parseInt(form.machineId);
+
+      const res = await fetch(url, {
+        method,
         headers: { "Content-Type": "application/json", ...authHeaders() },
         credentials: "include",
-        body: JSON.stringify({
-          machineId: parseInt(form.machineId),
-          operationalStatus: form.operationalStatus,
-          downtimePercentage: parseFloat(String(form.downtimePercentage)),
-          maintenanceHours: parseFloat(String(form.maintenanceHours)),
-          efficiencyRating: parseFloat(String(form.efficiencyRating)),
-          notes: form.notes || undefined,
-        }),
+        body: JSON.stringify(body),
       });
       if (res.ok) {
-        setForm({ machineId: "", operationalStatus: "OPERATIONAL", downtimePercentage: 0, maintenanceHours: 0, efficiencyRating: 100, notes: "" });
+        setForm(emptyForm);
         setShowForm(false);
+        setEditingId(null);
         fetchRecords();
       } else {
         const err = await res.json();
@@ -148,7 +187,7 @@ export default function MachineHealthDashboard() {
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold">{nav("Health Records", "سجلات الصحة")}</h2>
           {!isAdmin && (
-            <Button onClick={() => { setShowForm(!showForm); setError(""); }} className="gap-2">
+            <Button onClick={() => { setShowForm(!showForm); setEditingId(null); setForm(emptyForm); setError(""); }} className="gap-2">
               <Plus size={16} />
               {nav("Add Record", "إضافة سجل")}
             </Button>
@@ -158,18 +197,22 @@ export default function MachineHealthDashboard() {
         {/* Form */}
         {!isAdmin && showForm && (
           <Card className="p-5 border border-slate-200 dark:border-slate-700">
-            <h3 className="font-semibold mb-4 text-slate-800 dark:text-slate-200">{nav("New Health Record", "سجل صحة جديد")}</h3>
+            <h3 className="font-semibold mb-4 text-slate-800 dark:text-slate-200">
+              {editingId ? nav("Edit Health Record", "تعديل سجل الصحة") : nav("New Health Record", "سجل صحة جديد")}
+            </h3>
             {error && <p className="text-sm text-red-600 mb-3 p-2 bg-red-50 rounded">{error}</p>}
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">{nav("Machine", "الآلة")} *</label>
-                  <select value={form.machineId} onChange={e => setForm({ ...form, machineId: e.target.value })}
-                    className="w-full px-3 py-2 border rounded-lg bg-white border-slate-300 dark:border-slate-600 text-sm" required>
-                    <option value="">{nav("Select machine...", "اختر آلة...")}</option>
-                    {machines.map(m => <option key={m.id} value={m.id}>{m.name} ({m.type})</option>)}
-                  </select>
-                </div>
+                {!editingId && (
+                  <div>
+                    <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">{nav("Machine", "الآلة")} *</label>
+                    <select value={form.machineId} onChange={e => setForm({ ...form, machineId: e.target.value })}
+                      className="w-full px-3 py-2 border rounded-lg bg-white border-slate-300 dark:border-slate-600 text-sm" required>
+                      <option value="">{nav("Select machine...", "اختر آلة...")}</option>
+                      {machines.map(m => <option key={m.id} value={m.id}>{m.name} ({m.type})</option>)}
+                    </select>
+                  </div>
+                )}
                 <div>
                   <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">{nav("Operational Status", "الحالة التشغيلية")}</label>
                   <select value={form.operationalStatus} onChange={e => setForm({ ...form, operationalStatus: e.target.value })}
@@ -191,7 +234,7 @@ export default function MachineHealthDashboard() {
                     onChange={e => setForm({ ...form, maintenanceHours: parseFloat(e.target.value) || 0 })}
                     className="w-full px-3 py-2 border rounded-lg bg-white border-slate-300 dark:border-slate-600 text-sm" />
                 </div>
-                <div className="md:col-span-2">
+                <div className={editingId ? "" : "md:col-span-2"}>
                   <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">{nav("Efficiency Rating %", "تقييم الكفاءة %")}</label>
                   <input type="number" min={0} max={100} step={0.1} value={form.efficiencyRating}
                     onChange={e => setForm({ ...form, efficiencyRating: parseFloat(e.target.value) || 100 })}
@@ -205,7 +248,7 @@ export default function MachineHealthDashboard() {
               </div>
               <div className="flex gap-2">
                 <Button type="submit" disabled={saving}>{saving ? nav("Saving...", "جاري الحفظ...") : nav("Save", "حفظ")}</Button>
-                <button type="button" onClick={() => setShowForm(false)}
+                <button type="button" onClick={() => { setShowForm(false); setEditingId(null); setForm(emptyForm); }}
                   className="px-4 py-2 text-sm border rounded-lg bg-white hover:bg-slate-50 dark:hover:bg-slate-600">
                   {nav("Cancel", "إلغاء")}
                 </button>
@@ -233,6 +276,7 @@ export default function MachineHealthDashboard() {
                     <th className="text-left py-3 px-4 font-semibold text-slate-600 dark:text-slate-300">{nav("Downtime %", "توقف")}</th>
                     <th className="text-left py-3 px-4 font-semibold text-slate-600 dark:text-slate-300">{nav("Efficiency", "الكفاءة")}</th>
                     <th className="text-left py-3 px-4 font-semibold text-slate-600 dark:text-slate-300">{nav("Recorded At", "مسجل في")}</th>
+                    {!isAdmin && <th className="text-right py-3 px-4 font-semibold text-slate-600 dark:text-slate-300">{nav("Actions", "إجراءات")}</th>}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
@@ -262,6 +306,22 @@ export default function MachineHealthDashboard() {
                         </div>
                       </td>
                       <td className="py-3 px-4 text-xs text-slate-500">{new Date(r.recordedAt).toLocaleDateString()}</td>
+                      {!isAdmin && (
+                        <td className="py-3 px-4">
+                          <div className="flex items-center gap-1 justify-end">
+                            <button onClick={() => handleEdit(r)}
+                              className="p-1.5 rounded hover:bg-slate-100 dark:hover:bg-slate-600 text-slate-500 hover:text-blue-600 transition-colors"
+                              title={nav("Edit", "تعديل")}>
+                              <Pencil size={14} />
+                            </button>
+                            <button onClick={() => handleDelete(r.id)} disabled={deletingId === r.id}
+                              className="p-1.5 rounded hover:bg-slate-100 dark:hover:bg-slate-600 text-slate-500 hover:text-red-600 transition-colors"
+                              title={nav("Delete", "حذف")}>
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
+                        </td>
+                      )}
                     </tr>
                   ))}
                 </tbody>

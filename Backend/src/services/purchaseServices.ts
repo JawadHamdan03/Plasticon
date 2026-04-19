@@ -27,6 +27,7 @@ type PurchaseItemPayload = {
 
 type CreatePurchasePayload = {
   supplierId?: number;
+  supplierName?: string;
   invoiceImage?: string;
   date?: string;
   totalAmount?: number;
@@ -41,6 +42,7 @@ type CreatePurchasePayload = {
 
 type UpdatePurchasePayload = {
   supplierId?: number;
+  supplierName?: string;
   invoiceImage?: string;
   date?: string;
   totalAmount?: number;
@@ -135,28 +137,29 @@ export const createPurchase = async (
   userId: number,
   payload: CreatePurchasePayload = {},
 ): Promise<ServiceResult<unknown>> => {
-  const supplierId = Number(payload.supplierId);
-
-  if (!Number.isInteger(supplierId) || supplierId <= 0) {
-    return {
-      status: 400,
-      message: "supplierId is required and must be a positive integer",
-    };
-  }
-
-  if (!payload.invoiceImage || !payload.invoiceImage.trim()) {
-    return { status: 400, message: "invoiceImage is required" };
-  }
-
   if (!Array.isArray(payload.items) || payload.items.length === 0) {
     return { status: 400, message: "items are required" };
   }
 
-  const supplier = await prisma.supplier.findUnique({
-    where: { id: supplierId },
-  });
-  if (!supplier) {
-    return { status: 404, message: "Supplier not found" };
+  // Resolve supplier: accept free-text name (find or create) or legacy supplierId
+  let resolvedSupplierId: number;
+  const supplierNameRaw = (payload.supplierName ?? "").toString().trim();
+  if (supplierNameRaw) {
+    let supplier = await prisma.supplier.findFirst({
+      where: { name: { equals: supplierNameRaw, mode: "insensitive" }, deletedAt: null },
+    });
+    if (!supplier) {
+      supplier = await prisma.supplier.create({ data: { name: supplierNameRaw } });
+    }
+    resolvedSupplierId = supplier.id;
+  } else {
+    const sid = Number(payload.supplierId);
+    if (!Number.isInteger(sid) || sid <= 0) {
+      return { status: 400, message: "supplierName or supplierId is required" };
+    }
+    const supplier = await prisma.supplier.findUnique({ where: { id: sid } });
+    if (!supplier) return { status: 404, message: "Supplier not found" };
+    resolvedSupplierId = sid;
   }
 
   const prepared = preparePurchaseItems(payload.items);
@@ -203,10 +206,10 @@ export const createPurchase = async (
   const result = await prisma.$transaction(async (tx) => {
     const purchase = await tx.purchase.create({
       data: {
-        supplierId,
+        supplierId: resolvedSupplierId,
         receivedById: userId,
         totalAmount,
-        invoiceImage: payload.invoiceImage!.trim(),
+        invoiceImage: payload.invoiceImage?.trim() ?? "",
         date: purchaseDate,
       },
     });
@@ -278,7 +281,7 @@ export const createPurchase = async (
     AuditEntityType.PURCHASE,
     result?.id ?? undefined,
     {
-      supplierId,
+      supplierId: resolvedSupplierId,
       totalAmount,
       itemCount: preparedItems.length,
     },
@@ -373,22 +376,27 @@ export const updatePurchase = async (
     }
   }
 
-  const supplierId =
-    payload.supplierId !== undefined
-      ? Number(payload.supplierId)
-      : existingPurchase.supplierId;
-  if (!Number.isInteger(supplierId) || supplierId <= 0) {
-    return {
-      status: 400,
-      message: "supplierId must be a positive integer",
-    };
-  }
-
-  const supplier = await prisma.supplier.findUnique({
-    where: { id: supplierId },
-  });
-  if (!supplier) {
-    return { status: 404, message: "Supplier not found" };
+  // Resolve supplier for update: accept free-text name, id, or keep existing
+  let resolvedSupplierId: number;
+  const supplierNameRaw = (payload.supplierName ?? "").toString().trim();
+  if (supplierNameRaw) {
+    let supplier = await prisma.supplier.findFirst({
+      where: { name: { equals: supplierNameRaw, mode: "insensitive" }, deletedAt: null },
+    });
+    if (!supplier) {
+      supplier = await prisma.supplier.create({ data: { name: supplierNameRaw } });
+    }
+    resolvedSupplierId = supplier.id;
+  } else if (payload.supplierId !== undefined) {
+    const sid = Number(payload.supplierId);
+    if (!Number.isInteger(sid) || sid <= 0) {
+      return { status: 400, message: "supplierId must be a positive integer" };
+    }
+    const supplier = await prisma.supplier.findUnique({ where: { id: sid } });
+    if (!supplier) return { status: 404, message: "Supplier not found" };
+    resolvedSupplierId = sid;
+  } else {
+    resolvedSupplierId = existingPurchase.supplierId;
   }
 
   const purchaseDate = payload.date
@@ -433,7 +441,7 @@ export const updatePurchase = async (
     await tx.purchase.update({
       where: { id: purchaseId },
       data: {
-        supplierId,
+        supplierId: resolvedSupplierId,
         totalAmount,
         invoiceImage,
         date: purchaseDate,

@@ -77,6 +77,7 @@ enum NotificationType {
   PAYROLL_READY
   INVENTORY_LOW
   ENGINEER_INVENTORY
+  RAW_MATERIAL_ALERT
 }
 
 enum EngineerInventoryStatus {
@@ -165,6 +166,10 @@ model User {
   engineerInventories  EngineerInventory[]
   inventoryReviews     EngineerInventory[]     @relation("InventoryReviewer")
   inventoryItemPricing EngineerInventoryItem[] @relation("ItemPricer")
+
+  performanceRecords         EmployeePerformance[] @relation("PerformanceUser")
+  calculatedPerformances     EmployeePerformance[] @relation("PerformanceCalculator")
+  maintenanceCostsCreated    MaintenanceCost[]     @relation("MaintenanceCostCreator")
 }
 
 model Shift {
@@ -273,6 +278,7 @@ model ProductionRecord {
   cartonsCount    Int
   piecesPerCarton Int
   totalPieces     Int
+  workingCavities Int?
 
   rawHdpeUsed   Float?
   rawLdpeUsed   Float?
@@ -315,6 +321,7 @@ model Maintenance {
   shift    Shift   @relation(fields: [shiftId], references: [id])
 
   fileAttachments FileAttachment[]
+  costs MaintenanceCost[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -352,6 +359,8 @@ model RawMaterial {
 
   transactions  InventoryTransaction[]
   purchaseItems PurchaseItem[]
+  minQuantity   Float   @default(0)
+  alerts        RawMaterialAlert[]
 }
 
 model InventoryTransaction {
@@ -382,6 +391,13 @@ model Supplier {
 
   purchases Purchase[]
   payables  SupplierPayable[]
+
+  contactPerson String?
+  website       String?
+  category      String? // "RAW_MATERIALS", "SPARE_PARTS", "EQUIPMENT", "SERVICES", "OTHER"
+  leadTimeDays  Int?
+  rating        Float?  // 1.0 - 5.0
+  notes         String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -968,4 +984,56 @@ model FileAttachment {
 
   uploadedAt DateTime @default(now())
   deletedAt  DateTime?
+}
+
+//////////////////////
+// NEW FEATURES
+//////////////////////
+
+model RawMaterialAlert {
+  id           Int      @id @default(autoincrement())
+  materialId   Int
+  material     RawMaterial @relation(fields: [materialId], references: [id])
+  minQuantity  Float    @default(0)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model EmployeePerformance {
+  id              Int      @id @default(autoincrement())
+  userId          Int
+  periodType      String   // "DAILY" | "WEEKLY"
+  periodDate      DateTime // start of the period
+  productionScore Float    @default(0) // 0-100
+  qualityScore    Float    @default(0) // 0-100
+  attendanceScore Float    @default(0) // 0-100
+  kaizenScore     Float    @default(0) // 0-100
+  totalScore      Float    @default(0) // average of above
+  notes           String?
+  calculatedById  Int?
+
+  user         User  @relation("PerformanceUser", fields: [userId], references: [id])
+  calculatedBy User? @relation("PerformanceCalculator", fields: [calculatedById], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model MaintenanceCost {
+  id             Int      @id @default(autoincrement())
+  maintenanceId  Int
+  laborHours     Float    @default(0)
+  laborCostPerHour Float  @default(0)
+  sparesTotal    Float    @default(0)
+  laborTotal     Float    @default(0)
+  totalCost      Float    @default(0)
+  notes          String?
+  createdById    Int?
+
+  maintenance Maintenance @relation(fields: [maintenanceId], references: [id])
+  createdBy   User?       @relation("MaintenanceCostCreator", fields: [createdById], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

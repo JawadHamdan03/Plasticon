@@ -103,3 +103,15 @@ export const updateMaintenanceSchedule = async (
     return { status: 500, message: "Failed to update maintenance schedule" };
   }
 };
+
+export const deleteMaintenanceSchedule = async (id: number): Promise<ServiceResult<unknown>> => {
+  try {
+    const schedule = await prisma.maintenanceSchedule.findUnique({ where: { id }, select: { id: true } });
+    if (!schedule) return { status: 404, message: "Maintenance schedule not found" };
+    await prisma.maintenanceSchedule.delete({ where: { id } });
+    return { status: 200, data: { message: "Deleted successfully" } };
+  } catch (error) {
+    console.error("Delete maintenance schedule error:", error);
+    return { status: 500, message: "Failed to delete maintenance schedule" };
+  }
+};

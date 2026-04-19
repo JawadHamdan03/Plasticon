@@ -255,7 +255,7 @@ img { display: block; max-width: 100%; }
   z-index: 40;
   overflow: hidden;
   transition: width .22s ease, transform .22s ease;
-  border-right: 1px solid rgba(255,255,255,.06);
+  border-inline-end: 1px solid rgba(255,255,255,.06);
 }
 
 .app-sidebar--collapsed { width: 64px; }
@@ -459,29 +459,20 @@ img { display: block; max-width: 100%; }
 }
 .sidebar-overlay--visible { display: block; }
 
-/* Mobile sidebar behavior */
-@media (max-width: 1024px) {
-  .app-sidebar {
-    transform: translateX(-100%);
-    transition: transform .25s ease, width .22s ease;
-    width: 256px !important;
-  }
-  [dir="rtl"] .app-sidebar { transform: translateX(100%); }
-  .app-sidebar--mobile-open { transform: translateX(0) !important; }
-}
+/* Mobile sidebar behavior — handled in responsive section below */
 
 /* ── MAIN CONTENT ── */
 .app-content {
-  margin-left: 256px;
+  margin-inline-start: 256px;
   flex: 1;
   display: flex;
   flex-direction: column;
   min-height: 100vh;
-  transition: margin-left .22s ease;
+  transition: margin-inline-start .22s ease;
 }
 
 @media (max-width: 1024px) {
-  .app-content { margin-left: 0 !important; }
+  .app-content { margin-inline-start: 0 !important; }
 }
 
 /* ── TOPBAR ── */
@@ -499,7 +490,7 @@ img { display: block; max-width: 100%; }
   box-shadow: var(--shadow-xs);
 }
 .app-topbar__actions {
-  margin-left: auto;
+  margin-inline-start: auto;
   display: flex;
   align-items: center;
   gap: .5rem;
@@ -531,7 +522,9 @@ img { display: block; max-width: 100%; }
 .topbar-search__input {
   width: 100%;
   height: 36px;
-  padding: 0 .875rem 0 2.25rem;
+  padding-block: 0;
+  padding-inline-start: 2.25rem;
+  padding-inline-end: .875rem;
   border-radius: var(--radius-lg);
   border: 1.5px solid var(--border-default);
   background: var(--bg-app);
@@ -1800,11 +1793,12 @@ tbody td {
     width: 256px !important;
     box-shadow: none;
   }
+  [dir="rtl"] .app-sidebar { transform: translateX(100%); }
   .app-sidebar--mobile-open {
-    transform: translateX(0);
+    transform: translateX(0) !important;
     box-shadow: var(--shadow-xl);
   }
-  .app-content { margin-left: 0 !important; }
+  .app-content { margin-inline-start: 0 !important; }
   .app-page { padding: 1rem; gap: 1rem; }
   .dashboard-side-layout { grid-template-columns: 1fr; }
   .grid-cols-3 { grid-template-columns: repeat(2,1fr); }

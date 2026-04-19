@@ -4,6 +4,8 @@ import {
   getAllMachineHealthHandler,
   getMachineHealthHistoryHandler,
   createMachineHealthRecordHandler,
+  updateMachineHealthRecordHandler,
+  deleteMachineHealthRecordHandler,
 } from "../controllers/machineHealthController";
 import { authorizeRoles } from "../middleware/authMiddleware";
 
@@ -19,5 +21,11 @@ router.get("/:machineId", authorizeRoles(engineerRoles), getMachineHealthHistory
 
 // Create new health record — ENGINEER/ADMIN
 router.post("/", authorizeRoles(engineerRoles), createMachineHealthRecordHandler);
+
+// Update health record — ENGINEER/ADMIN
+router.patch("/:id", authorizeRoles(engineerRoles), updateMachineHealthRecordHandler);
+
+// Delete health record — ENGINEER/ADMIN
+router.delete("/:id", authorizeRoles(engineerRoles), deleteMachineHealthRecordHandler);
 
 export default router;
