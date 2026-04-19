@@ -7,6 +7,7 @@ import {
   Wrench, CheckSquare, AlertTriangle, Lightbulb, Activity, Target,
   Factory, Shield, Calendar, Boxes, Receipt, ClipboardCheck,
   UserCheck, Layers, Search, Package, PieChart, CreditCard, Percent, Wallet, CheckCircle,
+  Truck, Award,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useLocale } from "../context/LocaleContext";
@@ -63,6 +64,11 @@ const ALL_SEARCH_ITEMS: SearchItem[] = [
   { labelAr: "التوفيق البنكي", labelEn: "Bank Reconciliation", to: "/accountant/reconciliation" },
   { labelAr: "تحليل التكاليف", labelEn: "Cost Analysis", to: "/accountant/cost-analysis" },
   { labelAr: "سير العمل للموافقة", labelEn: "Approval Workflows", to: "/accountant/approvals" },
+  // New Phase 3 Features
+  { labelAr: "تنبيهات المواد الخام", labelEn: "Raw Material Alerts", to: "/engineer/raw-material-alerts" },
+  { labelAr: "تكاليف الصيانة", labelEn: "Maintenance Costs", to: "/engineer/maintenance-costs" },
+  { labelAr: "إدارة الموردين", labelEn: "Supplier Management", to: "/accountant/suppliers" },
+  { labelAr: "أداء الموظفين", labelEn: "Employee Performance", to: "/accountant/performance" },
 ];
 
 /* ── Types ─────────────────────────────────────────────────── */
@@ -128,6 +134,8 @@ function getNavSectionsBi(role: string): NavSectionBi[] {
           { to: "/purchases", icon: <ShoppingCart size={17} />, label: nav("Purchases", "المشتريات") },
           { to: "/sales", icon: <TrendingUp size={17} />, label: nav("Sales", "المبيعات") },
           { to: "/reports", icon: <FileText size={17} />, label: nav("Reports", "التقارير") },
+          { to: "/accountant/suppliers", icon: <Truck size={17} />, label: nav("Suppliers", "الموردون") },
+          { to: "/accountant/performance", icon: <Award size={17} />, label: nav("Performance", "الأداء") },
         ],
       },
       {
@@ -145,6 +153,9 @@ function getNavSectionsBi(role: string): NavSectionBi[] {
           { to: "/engineer/calibration", icon: <Settings size={17} />, label: nav("Calibration", "معايرة") },
           { to: "/engineer/work-orders", icon: <ClipboardCheck size={17} />, label: nav("Work Orders", "أوامر عمل") },
           { to: "/engineer/equipment-transfer", icon: <Layers size={17} />, label: nav("Equip. Transfer", "نقل معدات") },
+          { to: "/engineer/raw-material-alerts", icon: <AlertTriangle size={17} />, label: nav("Raw Mat. Alerts", "تنبيهات المواد") },
+          { to: "/engineer/maintenance-costs", icon: <DollarSign size={17} />, label: nav("Maint. Costs", "تكاليف الصيانة") },
+          { to: "/admin/settings/electricity", icon: <Zap size={17} />, label: nav("Electricity", "الكهرباء") },
         ],
       },
       {
@@ -184,6 +195,9 @@ function getNavSectionsBi(role: string): NavSectionBi[] {
           { to: "/engineer/calibration", icon: <Settings size={17} />, label: nav("Calibration", "معايرة") },
           { to: "/engineer/work-orders", icon: <ClipboardCheck size={17} />, label: nav("Work Orders", "أوامر عمل") },
           { to: "/engineer/equipment-transfer", icon: <Layers size={17} />, label: nav("Equip. Transfer", "نقل معدات") },
+          { to: "/engineer/raw-material-alerts", icon: <AlertTriangle size={17} />, label: nav("Raw Mat. Alerts", "تنبيهات المواد") },
+          { to: "/engineer/maintenance-costs", icon: <DollarSign size={17} />, label: nav("Maint. Costs", "تكاليف الصيانة") },
+          { to: "/admin/settings/electricity", icon: <Zap size={17} />, label: nav("Electricity", "الكهرباء") },
         ],
       },
       {
@@ -225,6 +239,9 @@ function getNavSectionsBi(role: string): NavSectionBi[] {
           { to: "/purchases", icon: <ShoppingCart size={17} />, label: nav("Purchases", "المشتريات") },
           { to: "/sales", icon: <TrendingUp size={17} />, label: nav("Sales", "المبيعات") },
           { to: "/accountant/parts-pricing", icon: <Receipt size={17} />, label: nav("Parts Pricing", "تسعير القطع") },
+          { to: "/accountant/suppliers", icon: <Truck size={17} />, label: nav("Suppliers", "الموردون") },
+          { to: "/accountant/performance", icon: <Award size={17} />, label: nav("Performance", "الأداء") },
+          { to: "/engineer/maintenance-costs", icon: <DollarSign size={17} />, label: nav("Maint. Costs", "تكاليف الصيانة") },
         ],
       },
       {

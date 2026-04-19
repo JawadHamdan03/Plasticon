@@ -181,7 +181,7 @@ export function SalesPage() {
   const [query, setQuery] = useState("");
 
   const [saleForm, setSaleForm] = useState({
-    customerId: "",
+    customerName: "",
     date: "",
     totalAmount: "",
     items: [{ machineType: "", size: "", quantity: "", pricePerUnit: "" }],
@@ -207,7 +207,7 @@ export function SalesPage() {
 
   const resetForm = () => {
     setSaleForm({
-      customerId: "",
+      customerName: "",
       date: "",
       totalAmount: "",
       items: [{ machineType: "", size: "", quantity: "", pricePerUnit: "" }],
@@ -242,11 +242,11 @@ export function SalesPage() {
 
     return sales.filter((sale) => {
       const haystack = [
-        sale.customer?.name ?? "",
+        sale.customer?.name ?? `#${sale.customerId}`,
         sale.customer?.phone ?? "",
         sale.customer?.email ?? "",
         sale.items.map((item) => `${item.machineType} ${item.size}`).join(" "),
-        sale.invoiceImage,
+        sale.invoiceImage ?? "",
         sale.invoiceUrl ?? "",
       ]
         .join(" ")
@@ -341,7 +341,7 @@ export function SalesPage() {
 
     try {
       const body = new FormData();
-      body.append("customerId", saleForm.customerId);
+      body.append("customerName", saleForm.customerName.trim());
       if (saleForm.date) body.append("date", saleForm.date);
       if (saleForm.totalAmount)
         body.append("totalAmount", saleForm.totalAmount);
@@ -431,7 +431,7 @@ export function SalesPage() {
 
     setEditingSaleId(sale.id);
     setSaleForm({
-      customerId: String(sale.customerId),
+      customerName: sale.customer?.name ?? "",
       date: toDateInput(sale.date),
       totalAmount:
         Number.isFinite(sale.totalAmount) && sale.totalAmount >= 0
@@ -493,24 +493,24 @@ export function SalesPage() {
             >
               <label>
                 {text.customer}
-                <select
+                <input
+                  list="customers-datalist"
                   className="mt-1 h-11 w-full rounded-2xl border border-[#EEEEEE] bg-[#FFFFFF] px-4 text-sm text-[#000000]"
-                  value={saleForm.customerId}
+                  value={saleForm.customerName}
                   onChange={(event) =>
                     setSaleForm((prev) => ({
                       ...prev,
-                      customerId: event.target.value,
+                      customerName: event.target.value,
                     }))
                   }
+                  placeholder={isArabic ? "اكتب اسم الزبون..." : "Type customer name..."}
                   required
-                >
-                  <option value="">{text.selectCustomer}</option>
+                />
+                <datalist id="customers-datalist">
                   {customers.map((customer) => (
-                    <option key={customer.id} value={customer.id}>
-                      {customer.name}
-                    </option>
+                    <option key={customer.id} value={customer.name} />
                   ))}
-                </select>
+                </datalist>
               </label>
 
               <label>

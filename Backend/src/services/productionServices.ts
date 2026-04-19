@@ -24,6 +24,7 @@ type CreateProductionPayload = {
   shiftId?: number;
   hourSlot?: string;
   cartonsCount?: number;
+  workingCavities?: number;
   rawHdpeUsed?: number;
   rawLdpeUsed?: number;
   rawPetUsed?: number;
@@ -526,6 +527,9 @@ export const createProductionRecord = async (
         cartonsCount,
         piecesPerCarton,
         totalPieces,
+        workingCavities: payload.workingCavities
+          ? Math.min(Math.max(1, Number(payload.workingCavities)), 72)
+          : null,
         rawHdpeUsed: asNonNegativeNumber(payload.rawHdpeUsed),
         rawLdpeUsed: asNonNegativeNumber(payload.rawLdpeUsed),
         rawPetUsed: asNonNegativeNumber(payload.rawPetUsed),

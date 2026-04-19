@@ -209,7 +209,7 @@ export function SuppliersPage() {
   const [query, setQuery] = useState("");
 
   const [purchaseForm, setPurchaseForm] = useState({
-    supplierId: "",
+    supplierName: "",
     date: "",
     totalAmount: "",
     items: [{ materialId: "", quantity: "", pricePerUnit: "" }],
@@ -247,7 +247,7 @@ export function SuppliersPage() {
 
   const resetForm = () => {
     setPurchaseForm({
-      supplierId: "",
+      supplierName: "",
       date: "",
       totalAmount: "",
       items: [{ materialId: "", quantity: "", pricePerUnit: "" }],
@@ -333,7 +333,7 @@ export function SuppliersPage() {
           purchase.items
             .map((item) => item.material?.name ?? `#${item.materialId}`)
             .join(" "),
-          purchase.invoiceImage,
+          purchase.invoiceImage ?? "",
           purchase.invoiceUrl ?? "",
         ]),
       ]
@@ -366,7 +366,7 @@ export function SuppliersPage() {
 
     try {
       const body = new FormData();
-      body.append("supplierId", purchaseForm.supplierId);
+      body.append("supplierName", purchaseForm.supplierName.trim());
       if (purchaseForm.date) {
         body.append("date", purchaseForm.date);
       }
@@ -455,7 +455,7 @@ export function SuppliersPage() {
 
     setEditingPurchaseId(purchase.id);
     setPurchaseForm({
-      supplierId: String(purchase.supplierId),
+      supplierName: purchase.supplier?.name ?? "",
       date: toDateInput(purchase.date),
       totalAmount:
         Number.isFinite(purchase.totalAmount) && purchase.totalAmount >= 0
@@ -523,24 +523,24 @@ export function SuppliersPage() {
             >
               <label>
                 {text.supplier}
-                <select
+                <input
+                  list="suppliers-datalist"
                   className="mt-1 h-11 w-full rounded-2xl border border-[#EEEEEE] bg-[#FFFFFF] px-4 text-sm text-[#000000]"
-                  value={purchaseForm.supplierId}
+                  value={purchaseForm.supplierName}
                   onChange={(event) =>
                     setPurchaseForm((prev) => ({
                       ...prev,
-                      supplierId: event.target.value,
+                      supplierName: event.target.value,
                     }))
                   }
+                  placeholder={isArabic ? "اكتب اسم المورد..." : "Type supplier name..."}
                   required
-                >
-                  <option value="">{text.selectSupplier}</option>
+                />
+                <datalist id="suppliers-datalist">
                   {suppliers.map((supplier) => (
-                    <option key={supplier.id} value={supplier.id}>
-                      {supplier.name}
-                    </option>
+                    <option key={supplier.id} value={supplier.name} />
                   ))}
-                </select>
+                </datalist>
               </label>
 
               <label>

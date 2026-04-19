@@ -23,6 +23,7 @@ type SaleItemPayload = {
 
 type CreateSalePayload = {
   customerId?: number;
+  customerName?: string;
   invoiceImage?: string;
   date?: string;
   totalAmount?: number;
@@ -37,6 +38,7 @@ type CreateSalePayload = {
 
 type UpdateSalePayload = {
   customerId?: number;
+  customerName?: string;
   invoiceImage?: string;
   date?: string;
   totalAmount?: number;
@@ -139,28 +141,29 @@ export const createSale = async (
   userId: number,
   payload: CreateSalePayload = {},
 ): Promise<ServiceResult<unknown>> => {
-  const customerId = Number(payload.customerId);
-
-  if (!Number.isInteger(customerId) || customerId <= 0) {
-    return {
-      status: 400,
-      message: "customerId is required and must be a positive integer",
-    };
-  }
-
-  if (!payload.invoiceImage || !payload.invoiceImage.trim()) {
-    return { status: 400, message: "invoiceImage is required" };
-  }
-
   if (!Array.isArray(payload.items) || payload.items.length === 0) {
     return { status: 400, message: "items are required" };
   }
 
-  const customer = await prisma.customer.findUnique({
-    where: { id: customerId },
-  });
-  if (!customer) {
-    return { status: 404, message: "Customer not found" };
+  // Resolve customer: accept free-text name (find or create) or legacy customerId
+  let resolvedCustomerId: number;
+  const customerNameRaw = (payload.customerName ?? "").toString().trim();
+  if (customerNameRaw) {
+    let customer = await prisma.customer.findFirst({
+      where: { name: { equals: customerNameRaw, mode: "insensitive" }, deletedAt: null },
+    });
+    if (!customer) {
+      customer = await prisma.customer.create({ data: { name: customerNameRaw } });
+    }
+    resolvedCustomerId = customer.id;
+  } else {
+    const cid = Number(payload.customerId);
+    if (!Number.isInteger(cid) || cid <= 0) {
+      return { status: 400, message: "customerName or customerId is required" };
+    }
+    const customer = await prisma.customer.findUnique({ where: { id: cid } });
+    if (!customer) return { status: 404, message: "Customer not found" };
+    resolvedCustomerId = cid;
   }
 
   const prepared = prepareSaleItems(payload.items);
@@ -194,10 +197,10 @@ export const createSale = async (
   const result = await prisma.$transaction(async (tx) => {
     const sale = await tx.sale.create({
       data: {
-        customerId,
+        customerId: resolvedCustomerId,
         soldById: userId,
         totalAmount,
-        invoiceImage: payload.invoiceImage!.trim(),
+        invoiceImage: payload.invoiceImage?.trim() ?? "",
         date: saleDate,
       },
     });
@@ -277,22 +280,27 @@ export const updateSale = async (
     return { status: 404, message: "Sale not found" };
   }
 
-  const customerId =
-    payload.customerId !== undefined
-      ? Number(payload.customerId)
-      : existingSale.customerId;
-  if (!Number.isInteger(customerId) || customerId <= 0) {
-    return {
-      status: 400,
-      message: "customerId must be a positive integer",
-    };
-  }
-
-  const customer = await prisma.customer.findUnique({
-    where: { id: customerId },
-  });
-  if (!customer) {
-    return { status: 404, message: "Customer not found" };
+  // Resolve customer for update: accept free-text name, id, or keep existing
+  let resolvedCustomerId: number;
+  const customerNameRaw = (payload.customerName ?? "").toString().trim();
+  if (customerNameRaw) {
+    let customer = await prisma.customer.findFirst({
+      where: { name: { equals: customerNameRaw, mode: "insensitive" }, deletedAt: null },
+    });
+    if (!customer) {
+      customer = await prisma.customer.create({ data: { name: customerNameRaw } });
+    }
+    resolvedCustomerId = customer.id;
+  } else if (payload.customerId !== undefined) {
+    const cid = Number(payload.customerId);
+    if (!Number.isInteger(cid) || cid <= 0) {
+      return { status: 400, message: "customerId must be a positive integer" };
+    }
+    const customer = await prisma.customer.findUnique({ where: { id: cid } });
+    if (!customer) return { status: 404, message: "Customer not found" };
+    resolvedCustomerId = cid;
+  } else {
+    resolvedCustomerId = existingSale.customerId;
   }
 
   let nextItems = existingSale.items.map((item) => ({
@@ -342,7 +350,7 @@ export const updateSale = async (
     await tx.sale.update({
       where: { id: saleId },
       data: {
-        customerId,
+        customerId: resolvedCustomerId,
         totalAmount,
         invoiceImage,
         date: saleDate,

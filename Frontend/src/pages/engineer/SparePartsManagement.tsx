@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Plus, AlertTriangle, Package } from "lucide-react";
+import { Plus, AlertTriangle, Package, Pencil, Trash2 } from "lucide-react";
 import { ModulePageShell } from "../../components/ModulePageShell";
 import { Button } from "../../components/ui/button";
 import { Card } from "../../components/ui/card";
@@ -22,10 +22,12 @@ interface SparePart {
   minQuantity: number;
   unitPrice: number;
   supplier?: string;
-  lastRestockedDate?: string;
-  expiryDate?: string;
   notes?: string;
 }
+
+const emptyForm = {
+  machineId: "", name: "", quantity: 0, minQuantity: 0, unitPrice: 0, supplier: "", notes: "",
+};
 
 export default function SparePartsManagement() {
   const { locale } = useLocale();
@@ -36,11 +38,11 @@ export default function SparePartsManagement() {
   const [machines, setMachines] = useState<Machine[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
   const [error, setError] = useState("");
-  const [form, setForm] = useState({
-    machineId: "", name: "", quantity: 0, minQuantity: 0, unitPrice: 0, supplier: "", notes: "",
-  });
+  const [form, setForm] = useState(emptyForm);
 
   useEffect(() => {
     fetchParts();
@@ -49,9 +51,7 @@ export default function SparePartsManagement() {
 
   const fetchMachines = async () => {
     try {
-      const res = await fetch(`${API_BASE_URL}/machines`, {
-        credentials: "include",
-      });
+      const res = await fetch(`${API_BASE_URL}/machines`, { credentials: "include" });
       if (res.ok) {
         const data = await res.json();
         setMachines(Array.isArray(data) ? data : (data.items ?? data.data ?? []));
@@ -61,9 +61,7 @@ export default function SparePartsManagement() {
 
   const fetchParts = async () => {
     try {
-      const res = await fetch(`${API_BASE_URL}/spare-parts`, {
-        credentials: "include",
-      });
+      const res = await fetch(`${API_BASE_URL}/spare-parts`, { credentials: "include" });
       if (res.ok) {
         const data = await res.json();
         setParts(data.data || []);
@@ -71,30 +69,71 @@ export default function SparePartsManagement() {
     } catch { } finally { setLoading(false); }
   };
 
+  const handleEdit = (part: SparePart) => {
+    setForm({
+      machineId: String(part.machineId),
+      name: part.name,
+      quantity: part.quantity,
+      minQuantity: part.minQuantity,
+      unitPrice: part.unitPrice,
+      supplier: part.supplier || "",
+      notes: part.notes || "",
+    });
+    setEditingId(part.id);
+    setShowForm(true);
+    setError("");
+  };
+
+  const handleDelete = async (id: number) => {
+    if (!confirm(nav("Delete this spare part?", "حذف قطعة الغيار هذه؟"))) return;
+    setDeletingId(id);
+    try {
+      const res = await fetch(`${API_BASE_URL}/spare-parts/${id}`, {
+        method: "DELETE",
+        headers: authHeaders(),
+        credentials: "include",
+      });
+      if (res.ok) {
+        fetchParts();
+      } else {
+        const err = await res.json();
+        alert(err.message || nav("Failed to delete", "فشل الحذف"));
+      }
+    } catch { alert(nav("Network error", "خطأ في الاتصال")); }
+    finally { setDeletingId(null); }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.machineId) { setError(nav("Please select a machine", "الرجاء اختيار آلة")); return; }
+    if (!form.machineId && !editingId) { setError(nav("Please select a machine", "الرجاء اختيار آلة")); return; }
     if (!form.name.trim()) { setError(nav("Please enter part name", "الرجاء إدخال اسم القطعة")); return; }
     setError("");
     setSaving(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/spare-parts`, {
-        method: "POST",
+      const url = editingId
+        ? `${API_BASE_URL}/spare-parts/${editingId}`
+        : `${API_BASE_URL}/spare-parts`;
+      const method = editingId ? "PATCH" : "POST";
+      const body: Record<string, unknown> = {
+        name: form.name,
+        quantity: parseInt(String(form.quantity)),
+        minQuantity: parseInt(String(form.minQuantity)),
+        unitPrice: parseFloat(String(form.unitPrice)),
+        supplier: form.supplier || undefined,
+        notes: form.notes || undefined,
+      };
+      if (!editingId) body.machineId = parseInt(form.machineId);
+
+      const res = await fetch(url, {
+        method,
         headers: { "Content-Type": "application/json", ...authHeaders() },
         credentials: "include",
-        body: JSON.stringify({
-          machineId: parseInt(form.machineId),
-          name: form.name,
-          quantity: parseInt(String(form.quantity)),
-          minQuantity: parseInt(String(form.minQuantity)),
-          unitPrice: parseFloat(String(form.unitPrice)),
-          supplier: form.supplier || undefined,
-          notes: form.notes || undefined,
-        }),
+        body: JSON.stringify(body),
       });
       if (res.ok) {
-        setForm({ machineId: "", name: "", quantity: 0, minQuantity: 0, unitPrice: 0, supplier: "", notes: "" });
+        setForm(emptyForm);
         setShowForm(false);
+        setEditingId(null);
         fetchParts();
       } else {
         const err = await res.json();
@@ -140,7 +179,7 @@ export default function SparePartsManagement() {
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold">{nav("Spare Parts List", "قائمة قطع الغيار")}</h2>
           {!isAdmin && (
-            <Button onClick={() => { setShowForm(!showForm); setError(""); }} className="gap-2">
+            <Button onClick={() => { setShowForm(!showForm); setEditingId(null); setForm(emptyForm); setError(""); }} className="gap-2">
               <Plus size={16} />
               {nav("Add Part", "إضافة قطعة")}
             </Button>
@@ -150,18 +189,22 @@ export default function SparePartsManagement() {
         {/* Form */}
         {!isAdmin && showForm && (
           <Card className="p-5 border border-slate-200 dark:border-slate-700">
-            <h3 className="font-semibold mb-4 text-slate-800 dark:text-slate-200">{nav("New Spare Part", "قطعة غيار جديدة")}</h3>
+            <h3 className="font-semibold mb-4 text-slate-800 dark:text-slate-200">
+              {editingId ? nav("Edit Spare Part", "تعديل قطعة الغيار") : nav("New Spare Part", "قطعة غيار جديدة")}
+            </h3>
             {error && <p className="text-sm text-red-600 mb-3 p-2 bg-red-50 rounded">{error}</p>}
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">{nav("Machine", "الآلة")} *</label>
-                  <select value={form.machineId} onChange={e => setForm({ ...form, machineId: e.target.value })}
-                    className="w-full px-3 py-2 border rounded-lg bg-white border-slate-300 dark:border-slate-600 text-sm" required>
-                    <option value="">{nav("Select machine...", "اختر آلة...")}</option>
-                    {machines.map(m => <option key={m.id} value={m.id}>{m.name} ({m.type})</option>)}
-                  </select>
-                </div>
+                {!editingId && (
+                  <div>
+                    <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">{nav("Machine", "الآلة")} *</label>
+                    <select value={form.machineId} onChange={e => setForm({ ...form, machineId: e.target.value })}
+                      className="w-full px-3 py-2 border rounded-lg bg-white border-slate-300 dark:border-slate-600 text-sm" required>
+                      <option value="">{nav("Select machine...", "اختر آلة...")}</option>
+                      {machines.map(m => <option key={m.id} value={m.id}>{m.name} ({m.type})</option>)}
+                    </select>
+                  </div>
+                )}
                 <div>
                   <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">{nav("Part Name", "اسم القطعة")} *</label>
                   <input type="text" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })}
@@ -198,7 +241,7 @@ export default function SparePartsManagement() {
               </div>
               <div className="flex gap-2">
                 <Button type="submit" disabled={saving}>{saving ? nav("Saving...", "جاري الحفظ...") : nav("Save", "حفظ")}</Button>
-                <button type="button" onClick={() => setShowForm(false)}
+                <button type="button" onClick={() => { setShowForm(false); setEditingId(null); setForm(emptyForm); }}
                   className="px-4 py-2 text-sm border rounded-lg bg-white hover:bg-slate-50 dark:hover:bg-slate-600">
                   {nav("Cancel", "إلغاء")}
                 </button>
@@ -228,6 +271,7 @@ export default function SparePartsManagement() {
                     <th className="text-left py-3 px-4 font-semibold text-slate-600 dark:text-slate-300">{nav("Unit Price", "السعر")}</th>
                     <th className="text-left py-3 px-4 font-semibold text-slate-600 dark:text-slate-300">{nav("Value", "القيمة")}</th>
                     <th className="text-left py-3 px-4 font-semibold text-slate-600 dark:text-slate-300">{nav("Supplier", "المورد")}</th>
+                    {!isAdmin && <th className="text-right py-3 px-4 font-semibold text-slate-600 dark:text-slate-300">{nav("Actions", "إجراءات")}</th>}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
@@ -245,6 +289,22 @@ export default function SparePartsManagement() {
                       <td className="py-3 px-4 text-slate-700 dark:text-slate-300">${part.unitPrice.toFixed(2)}</td>
                       <td className="py-3 px-4 font-semibold text-slate-800 dark:text-slate-200">${(part.quantity * part.unitPrice).toFixed(2)}</td>
                       <td className="py-3 px-4 text-xs text-slate-500">{part.supplier || "—"}</td>
+                      {!isAdmin && (
+                        <td className="py-3 px-4">
+                          <div className="flex items-center gap-1 justify-end">
+                            <button onClick={() => handleEdit(part)}
+                              className="p-1.5 rounded hover:bg-slate-100 dark:hover:bg-slate-600 text-slate-500 hover:text-blue-600 transition-colors"
+                              title={nav("Edit", "تعديل")}>
+                              <Pencil size={14} />
+                            </button>
+                            <button onClick={() => handleDelete(part.id)} disabled={deletingId === part.id}
+                              className="p-1.5 rounded hover:bg-slate-100 dark:hover:bg-slate-600 text-slate-500 hover:text-red-600 transition-colors"
+                              title={nav("Delete", "حذف")}>
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
+                        </td>
+                      )}
                     </tr>
                   ))}
                 </tbody>

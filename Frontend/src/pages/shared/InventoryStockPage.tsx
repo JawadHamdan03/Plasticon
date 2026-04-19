@@ -8,8 +8,6 @@ import { Badge } from "../../components/ui/badge";
 import { Button } from "../../components/ui/button";
 import { Card } from "../../components/ui/card";
 import { EmptyState } from "../../components/ui/empty-state";
-import { PageHeader } from "../../components/ui/page-header";
-import { TableBase, TableShell } from "../../components/ui/table-shell";
 
 type RawMaterial = {
   id: number;
@@ -330,10 +328,12 @@ export function InventoryStockPage() {
     void loadAll();
   }, [loadMaterials, loadTransactions, loadFinishedGoods]);
 
+  const loc = (en: string, ar: string) => (isArabic ? ar : en);
+
   return (
     <ModulePageShell
       title={copy.inventory.title}
-      subtitle=""
+      subtitle={loc("Raw materials, finished goods, and stock movements.", "المواد الخام والبضاعة الجاهزة وحركات المخزون.")}
       actions={
         <Button
           variant="outline"
@@ -347,165 +347,94 @@ export function InventoryStockPage() {
         </Button>
       }
     >
-      <div className="inventory-kpi-grid">
-        <article className="inventory-kpi-card">
-          <span>{isArabic ? "عدد المواد الخام" : "Raw materials"}</span>
-          <strong>
-            {inventoryKpis.materialsCount.toLocaleString(
-              locale === "ar" ? "ar-EG" : "en-US",
-            )}
-          </strong>
-        </article>
-        <article className="inventory-kpi-card">
-          <span>{isArabic ? "إجمالي كمية الخام" : "Total raw quantity"}</span>
-          <strong>
-            {inventoryKpis.totalRawQuantity.toLocaleString(
-              locale === "ar" ? "ar-EG" : "en-US",
-            )}
-          </strong>
-        </article>
-        <article className="inventory-kpi-card">
-          <span>
-            {isArabic ? "المخزون الجاهز (صناديق)" : "Ready stock (boxes)"}
-          </span>
-          <strong>
-            {inventoryKpis.stockBoxes.toLocaleString(
-              locale === "ar" ? "ar-EG" : "en-US",
-            )}
-          </strong>
-        </article>
-        <article className="inventory-kpi-card">
-          <span>
-            {isArabic ? "المخزون الجاهز (قطع)" : "Ready stock (pieces)"}
-          </span>
-          <strong>
-            {inventoryKpis.stockPieces.toLocaleString(
-              locale === "ar" ? "ar-EG" : "en-US",
-            )}
-          </strong>
-          <small>
-            {isArabic
-              ? `حركات المخزون: ${inventoryKpis.movementsCount}`
-              : `Stock movements: ${inventoryKpis.movementsCount}`}
-          </small>
-        </article>
+      {errorMessage ? (
+        <div className="auth-alert auth-alert--error mb-4">{errorMessage}</div>
+      ) : null}
+
+      {/* Top KPI cards */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))", gap: "1rem", marginBottom: "1.5rem" }}>
+        {[
+          { label: loc("Raw Materials", "عدد المواد الخام"), value: inventoryKpis.materialsCount.toLocaleString(), sub: null, gradient: "bg-linear-to-br from-blue-500 to-blue-700" },
+          { label: loc("Total Raw Qty", "إجمالي كمية الخام"), value: inventoryKpis.totalRawQuantity.toLocaleString(), sub: null, gradient: "bg-linear-to-br from-purple-500 to-purple-700" },
+          { label: loc("Ready Stock (boxes)", "المخزون الجاهز (صناديق)"), value: inventoryKpis.stockBoxes.toLocaleString(), sub: null, gradient: "bg-linear-to-br from-orange-500 to-orange-700" },
+          { label: loc("Ready Stock (pieces)", "المخزون الجاهز (قطع)"), value: inventoryKpis.stockPieces.toLocaleString(), sub: loc(`${inventoryKpis.movementsCount} movements`, `${inventoryKpis.movementsCount} حركة`), gradient: "bg-linear-to-br from-green-500 to-emerald-700" },
+        ].map((kpi) => (
+          <Card key={kpi.label} className={`${kpi.gradient} p-4 text-white`}>
+            <p style={{ margin: "0 0 .5rem", fontSize: ".8rem", fontWeight: 600, opacity: .85 }}>{kpi.label}</p>
+            <p style={{ margin: 0, fontSize: "1.75rem", fontWeight: 800, letterSpacing: "-.03em" }}>{kpi.value}</p>
+            {kpi.sub ? <p style={{ margin: ".25rem 0 0", fontSize: ".75rem", opacity: .75 }}>{kpi.sub}</p> : null}
+          </Card>
+        ))}
       </div>
 
-      <Card className="module-panel p-5">
-        <PageHeader
-          title={isArabic ? "مخزون البضاعة الجاهزة" : "Finished goods stock"}
-          subtitle={
-            isArabic
-              ? "دينمك حسب سير العمل: العامل يسجل الإنتاج، والمحاسب يرفعه على النظام، ثم يظهر للإدمن."
-              : "Dynamic workflow: worker records production, accountant uploads to system, then admin sees it."
-          }
-        />
-        {loadingFinishedGoods ? (
-          <p>
-            {isArabic
-              ? "جارٍ تحميل البضاعة الجاهزة..."
-              : "Loading finished goods..."}
+      {/* Finished goods section */}
+      <Card className="p-5 mb-5">
+        <div style={{ borderBottom: "1px solid var(--border-default)", paddingBottom: ".75rem", marginBottom: "1.25rem" }}>
+          <h2 style={{ margin: 0, fontSize: "1rem", fontWeight: 700 }}>{loc("Finished Goods Stock", "مخزون البضاعة الجاهزة")}</h2>
+          <p style={{ margin: ".25rem 0 0", fontSize: ".825rem", color: "var(--text-secondary)" }}>
+            {loc("Dynamic: worker records → accountant uploads → admin sees.", "العامل يسجل → المحاسب يرفع → الإدمن يرى.")}
           </p>
-        ) : null}
-
-        <div className="inventory-finished-grid mt-4">
-          <article className="inventory-finished-card">
-            <span>{isArabic ? "بريفورم" : "Preform"}</span>
-            <strong>
-              {stockCards.preform.boxes.toLocaleString(
-                locale === "ar" ? "ar-EG" : "en-US",
-              )}{" "}
-              {isArabic ? "صندوق" : "boxes"}
-            </strong>
-            <small>
-              {isArabic
-                ? `القطعة/صندوق: ${stockCards.preform.piecesPerCarton.toLocaleString("ar-EG")}`
-                : `Pieces/box: ${stockCards.preform.piecesPerCarton.toLocaleString("en-US")}`}
-            </small>
-            <small>
-              {isArabic
-                ? `المجموع: ${stockCards.preform.totalPieces.toLocaleString("ar-EG")} قطعة`
-                : `Total: ${stockCards.preform.totalPieces.toLocaleString("en-US")} pieces`}
-            </small>
-          </article>
-
-          <article className="inventory-finished-card">
-            <span>{isArabic ? "أغطية" : "Caps"}</span>
-            <strong>
-              {stockCards.caps.boxes.toLocaleString(
-                locale === "ar" ? "ar-EG" : "en-US",
-              )}{" "}
-              {isArabic ? "صندوق" : "boxes"}
-            </strong>
-            <small>
-              {isArabic
-                ? `القطعة/صندوق: ${stockCards.caps.piecesPerCarton.toLocaleString("ar-EG")}`
-                : `Pieces/box: ${stockCards.caps.piecesPerCarton.toLocaleString("en-US")}`}
-            </small>
-            <small>
-              {isArabic
-                ? `المجموع: ${stockCards.caps.totalPieces.toLocaleString("ar-EG")} قطعة`
-                : `Total: ${stockCards.caps.totalPieces.toLocaleString("en-US")} pieces`}
-            </small>
-          </article>
-
-          <article className="inventory-finished-card">
-            <span>{isArabic ? "الإجمالي" : "Total"}</span>
-            <strong>
-              {stockCards.total.boxes.toLocaleString(
-                locale === "ar" ? "ar-EG" : "en-US",
-              )}{" "}
-              {isArabic ? "صندوق" : "boxes"}
-            </strong>
-            <small>
-              {isArabic
-                ? `إجمالي القطع: ${stockCards.total.totalPieces.toLocaleString("ar-EG")} قطعة`
-                : `Total pieces: ${stockCards.total.totalPieces.toLocaleString("en-US")} pieces`}
-            </small>
-            <small>
-              {isArabic
-                ? `مرجع الحساب: بريفورم ${piecesPerCartonByType.PREFORM} • أغطية ${piecesPerCartonByType.CAPS}`
-                : `Reference: Preform ${piecesPerCartonByType.PREFORM} • Caps ${piecesPerCartonByType.CAPS}`}
-            </small>
-          </article>
         </div>
 
-        <div className="inventory-workflow-strip mt-4">
-          <Badge tone="soft">
-            {isArabic
-              ? `العامل سجّل: ${workflowStats.workerRecordedCount}`
-              : `Worker recorded: ${workflowStats.workerRecordedCount}`}
-          </Badge>
-          <Badge tone="soft">
-            {isArabic
-              ? `المحاسب رفع: ${workflowStats.accountantUploadedCount}`
-              : `Accountant uploaded: ${workflowStats.accountantUploadedCount}`}
-          </Badge>
-          <Badge tone="soft">
-            {isArabic
-              ? `ظاهر للإدمن: ${workflowStats.adminVisibleCount}`
-              : `Visible to admin: ${workflowStats.adminVisibleCount}`}
-          </Badge>
+        {loadingFinishedGoods ? <p style={{ color: "var(--text-secondary)" }}>{loc("Loading…", "جارٍ التحميل…")}</p> : null}
+
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))", gap: "1rem", marginBottom: "1.25rem" }}>
+          {[
+            { label: loc("Preform", "بريفورم"), boxes: stockCards.preform.boxes, ppc: stockCards.preform.piecesPerCarton, total: stockCards.preform.totalPieces, color: "#3b82f6" },
+            { label: loc("Caps", "أغطية"), boxes: stockCards.caps.boxes, ppc: stockCards.caps.piecesPerCarton, total: stockCards.caps.totalPieces, color: "#f97316" },
+            { label: loc("Total", "الإجمالي"), boxes: stockCards.total.boxes, ppc: null, total: stockCards.total.totalPieces, color: "#22c55e" },
+          ].map((item) => (
+            <div key={item.label} style={{ padding: "1rem", borderRadius: "var(--radius-lg)", border: "1px solid var(--border-default)", background: "var(--bg-subtle)" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: ".5rem", marginBottom: ".5rem" }}>
+                <span style={{ width: 10, height: 10, borderRadius: "50%", background: item.color, flexShrink: 0 }} />
+                <span style={{ fontWeight: 700, fontSize: ".9rem" }}>{item.label}</span>
+              </div>
+              <p style={{ margin: 0, fontSize: "1.5rem", fontWeight: 800 }}>{item.boxes.toLocaleString()} <span style={{ fontSize: ".8rem", fontWeight: 500, color: "var(--text-secondary)" }}>{loc("boxes", "صندوق")}</span></p>
+              {item.ppc ? <p style={{ margin: ".2rem 0 0", fontSize: ".78rem", color: "var(--text-secondary)" }}>{loc("Pieces/box", "قطعة/صندوق")}: {item.ppc.toLocaleString()}</p> : null}
+              <p style={{ margin: ".2rem 0 0", fontSize: ".78rem", color: "var(--text-secondary)" }}>{loc("Total pieces", "إجمالي القطع")}: {item.total.toLocaleString()}</p>
+            </div>
+          ))}
+        </div>
+
+        <div style={{ display: "flex", flexWrap: "wrap", gap: ".5rem" }}>
+          {[
+            { label: loc(`Worker recorded: ${workflowStats.workerRecordedCount}`, `العامل سجّل: ${workflowStats.workerRecordedCount}`) },
+            { label: loc(`Accountant uploaded: ${workflowStats.accountantUploadedCount}`, `المحاسب رفع: ${workflowStats.accountantUploadedCount}`) },
+            { label: loc(`Visible to admin: ${workflowStats.adminVisibleCount}`, `ظاهر للإدمن: ${workflowStats.adminVisibleCount}`) },
+          ].map((b) => (
+            <Badge key={b.label} tone="soft">{b.label}</Badge>
+          ))}
         </div>
       </Card>
 
-      <Card className="module-panel p-5">
-        <PageHeader title={copy.inventory.rawMaterialsStock} />
-        {loadingMaterials ? <p>{copy.inventory.loadingMaterials}</p> : null}
-        <div className="module-list inventory-stock-row mt-4">
-          {!loadingMaterials && materials.length === 0 ? (
-            <EmptyState title={copy.inventory.noTransactions} />
-          ) : null}
+      {/* Raw materials cards */}
+      <Card className="p-5 mb-5">
+        <div style={{ borderBottom: "1px solid var(--border-default)", paddingBottom: ".75rem", marginBottom: "1.25rem" }}>
+          <h2 style={{ margin: 0, fontSize: "1rem", fontWeight: 700 }}>{copy.inventory.rawMaterialsStock}</h2>
+        </div>
+        {loadingMaterials ? <p style={{ color: "var(--text-secondary)" }}>{copy.inventory.loadingMaterials}</p> : null}
+        {!loadingMaterials && materials.length === 0 ? (
+          <EmptyState title={copy.inventory.noTransactions} />
+        ) : null}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(200px,1fr))", gap: ".75rem" }}>
           {materials.map((material) => (
             <div
-              className="module-row inventory-stock-chip rounded-2xl border border-[#EEEEEE] bg-[#FFFFFF] p-3"
               key={material.id}
+              style={{
+                padding: "1rem",
+                borderRadius: "var(--radius-lg)",
+                border: "1px solid var(--border-default)",
+                background: "var(--bg-card)",
+                display: "flex",
+                flexDirection: "column",
+                gap: ".3rem",
+              }}
             >
-              <strong>{material.name}</strong>
-              <span>
-                {material.currentQuantity} {material.unit}
+              <strong style={{ fontSize: ".9rem" }}>{material.name}</strong>
+              <span style={{ fontSize: "1.3rem", fontWeight: 800, color: "var(--text-primary)" }}>
+                {material.currentQuantity} <span style={{ fontSize: ".75rem", fontWeight: 500, color: "var(--text-secondary)" }}>{material.unit}</span>
               </span>
-              <small>
+              <small style={{ color: "var(--text-secondary)", fontSize: ".75rem" }}>
                 {copy.inventory.lastTransaction}:{" "}
                 {material.lastTransaction
                   ? `${getTransactionTypeLabel(material.lastTransaction.type as "IN" | "OUT")} ${material.lastTransaction.quantity}`
@@ -516,71 +445,60 @@ export function InventoryStockPage() {
         </div>
       </Card>
 
-      <Card className="module-panel module-panel--full p-5">
-        <PageHeader
-          title={
-            canSeeAllTransactions
-              ? copy.inventory.allTransactions
-              : copy.inventory.myTransactions
-          }
-        />
-        {loadingTransactions ? (
-          <p>{copy.inventory.loadingTransactions}</p>
-        ) : null}
+      {/* Transactions table */}
+      <Card className="overflow-hidden">
+        <div style={{ padding: "1rem 1.25rem .75rem", borderBottom: "1px solid var(--border-default)" }}>
+          <h2 style={{ margin: 0, fontSize: "1rem", fontWeight: 700 }}>
+            {canSeeAllTransactions ? copy.inventory.allTransactions : copy.inventory.myTransactions}
+          </h2>
+        </div>
+        {loadingTransactions ? <p style={{ padding: "1rem 1.25rem", color: "var(--text-secondary)" }}>{copy.inventory.loadingTransactions}</p> : null}
         {!loadingTransactions && transactions.length === 0 ? (
-          <EmptyState title={copy.inventory.noTransactions} />
+          <div style={{ padding: "2rem 1.25rem" }}><EmptyState title={copy.inventory.noTransactions} /></div>
         ) : null}
-        <TableShell className="mt-4">
-          <TableBase className="admin-table">
+        <div style={{ overflowX: "auto" }}>
+          <table className="admin-table">
             <thead>
               <tr>
-                <th className="px-3 py-2 text-left">
-                  {isArabic ? "المادة" : "Material"}
-                </th>
-                <th className="px-3 py-2 text-left">
-                  {isArabic ? "النوع" : "Type"}
-                </th>
-                <th className="px-3 py-2 text-left">
-                  {isArabic ? "الكمية" : "Qty"}
-                </th>
-                <th className="px-3 py-2 text-left">
-                  {isArabic ? "المرجع" : "Reference"}
-                </th>
+                <th>{isArabic ? "المادة" : "Material"}</th>
+                <th>{isArabic ? "النوع" : "Type"}</th>
+                <th>{isArabic ? "الكمية" : "Qty"}</th>
+                <th>{isArabic ? "المرجع" : "Reference"}</th>
+                <th>{isArabic ? "التاريخ" : "Date"}</th>
               </tr>
             </thead>
             <tbody>
               {transactions.map((transaction) => (
                 <tr key={transaction.id}>
-                  <td className="px-3 py-2">
-                    {transaction.material?.name ??
-                      `Material #${transaction.material?.id ?? transaction.id}`}
+                  <td style={{ fontWeight: 600 }}>
+                    {transaction.material?.name ?? `Material #${transaction.id}`}
                   </td>
-                  <td className="px-3 py-2">
-                    {getTransactionTypeLabel(transaction.type as "IN" | "OUT")}
+                  <td>
+                    <span style={{
+                      padding: ".2rem .6rem",
+                      borderRadius: 999,
+                      fontSize: ".78rem",
+                      fontWeight: 700,
+                      background: transaction.type === "IN" ? "rgba(34,197,94,.12)" : "rgba(239,68,68,.12)",
+                      color: transaction.type === "IN" ? "#16a34a" : "#dc2626",
+                    }}>
+                      {getTransactionTypeLabel(transaction.type as "IN" | "OUT")}
+                    </span>
                   </td>
-                  <td className="px-3 py-2">{transaction.quantity}</td>
-                  <td className="px-3 py-2">
-                    {getReferenceTypeLabel(
-                      transaction.referenceType as
-                        | "PRODUCTION"
-                        | "ADJUSTMENT"
-                        | "MANUAL"
-                        | "OTHER",
-                    )}{" "}
-                    {transaction.referenceId
-                      ? `#${transaction.referenceId}`
-                      : ""}
+                  <td><strong>{transaction.quantity}</strong> {transaction.material?.unit ?? ""}</td>
+                  <td style={{ color: "var(--text-secondary)", fontSize: ".85rem" }}>
+                    {getReferenceTypeLabel(transaction.referenceType as "PRODUCTION" | "ADJUSTMENT" | "MANUAL" | "OTHER")}
+                    {transaction.referenceId ? ` #${transaction.referenceId}` : ""}
+                  </td>
+                  <td style={{ color: "var(--text-secondary)", fontSize: ".82rem" }}>
+                    {new Date(transaction.createdAt).toLocaleString()}
                   </td>
                 </tr>
               ))}
             </tbody>
-          </TableBase>
-        </TableShell>
+          </table>
+        </div>
       </Card>
-
-      {errorMessage ? (
-        <div className="auth-alert auth-alert--error">{errorMessage}</div>
-      ) : null}
     </ModulePageShell>
   );
 }

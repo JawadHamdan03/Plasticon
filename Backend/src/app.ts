@@ -39,6 +39,10 @@ import taxFilingRoutes from "./routes/taxFilingRoutes";
 import bankReconciliationRoutes from "./routes/bankReconciliationRoutes";
 import costAnalysisRoutes from "./routes/costAnalysisRoutes";
 import approvalWorkflowRoutes from "./routes/approvalWorkflowRoutes";
+import rawMaterialAlertRoutes from "./routes/rawMaterialAlertRoutes";
+import supplierRoutes from "./routes/supplierRoutes";
+import performanceRoutes from "./routes/performanceRoutes";
+import maintenanceCostRoutes from "./routes/maintenanceCostRoutes";
 import { initializeEmailService } from "./utils/emailService";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -119,6 +123,10 @@ app.use("/tax-filings", taxFilingRoutes);
 app.use("/bank-reconciliations", bankReconciliationRoutes);
 app.use("/cost-analysis", costAnalysisRoutes);
 app.use("/approval-workflows", approvalWorkflowRoutes);
+app.use("/raw-material-alerts", rawMaterialAlertRoutes);
+app.use("/suppliers", supplierRoutes);
+app.use("/performance", performanceRoutes);
+app.use("/maintenance-costs", maintenanceCostRoutes);
 
 initializeSocketServer(server);
 

@@ -94,3 +94,15 @@ export const updateSparePartQuantity = async (
     return { status: 500, message: "Failed to update spare part" };
   }
 };
+
+export const deleteSparePart = async (id: number): Promise<ServiceResult<unknown>> => {
+  try {
+    const part = await prisma.sparePart.findUnique({ where: { id }, select: { id: true } });
+    if (!part) return { status: 404, message: "Spare part not found" };
+    await prisma.sparePart.delete({ where: { id } });
+    return { status: 200, data: { message: "Deleted successfully" } };
+  } catch (error) {
+    console.error("Delete spare part error:", error);
+    return { status: 500, message: "Failed to delete spare part" };
+  }
+};
