@@ -43,6 +43,8 @@ import rawMaterialAlertRoutes from "./routes/rawMaterialAlertRoutes";
 import supplierRoutes from "./routes/supplierRoutes";
 import performanceRoutes from "./routes/performanceRoutes";
 import maintenanceCostRoutes from "./routes/maintenanceCostRoutes";
+import profileRoutes from "./routes/profileRoutes";
+import registrationRequestRoutes from "./routes/registrationRequestRoutes";
 import { initializeEmailService } from "./utils/emailService";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -90,6 +92,8 @@ app.use(
 );
 
 app.use("/auth", authRoutes);
+app.use("/registration-requests", registrationRequestRoutes);
+app.use("/profile", profileRoutes);
 app.use("/users", userRoutes);
 app.use("/settings", settingsRoutes);
 app.use("/attendance", attendanceRoutes);

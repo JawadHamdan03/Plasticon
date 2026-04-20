@@ -7,7 +7,7 @@ import {
   Wrench, CheckSquare, AlertTriangle, Lightbulb, Activity, Target,
   Factory, Shield, Calendar, Boxes, Receipt, ClipboardCheck,
   UserCheck, Layers, Search, Package, PieChart, CreditCard, Percent, Wallet, CheckCircle,
-  Truck, Award,
+  Truck, Award, UserPlus,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useLocale } from "../context/LocaleContext";
@@ -29,6 +29,7 @@ const ALL_SEARCH_ITEMS: SearchItem[] = [
   { labelAr: "الحضور", labelEn: "My Attendance", to: "/attendance" },
   { labelAr: "الرواتب", labelEn: "My Payroll", to: "/my-payroll" },
   { labelAr: "المستخدمون", labelEn: "Users", to: "/admin/users" },
+  { labelAr: "طلبات التسجيل", labelEn: "Registration Requests", to: "/admin/registration-requests" },
   { labelAr: "حضور الموظفين", labelEn: "Attendance Admin", to: "/admin/attendance" },
   { labelAr: "رواتب الموظفين", labelEn: "Payroll Admin", to: "/admin/payroll" },
   { labelAr: "الورديات", labelEn: "Shifts", to: "/admin/shifts" },
@@ -102,6 +103,7 @@ function getNavSectionsBi(role: string): NavSectionBi[] {
         label: nav("Management", "الإدارة"),
         items: [
           { to: "/admin/users", icon: <Users size={17} />, label: nav("Users", "المستخدمون") },
+          { to: "/admin/registration-requests", icon: <UserPlus size={17} />, label: nav("Requests", "الطلبات") },
           { to: "/admin/shifts", icon: <Calendar size={17} />, label: nav("Shifts", "الشفتات") },
           { to: "/admin/machines", icon: <Cpu size={17} />, label: nav("Machines", "الماكينات") },
         ],
@@ -326,6 +328,7 @@ export function AppScaffold({ children }: { children: ReactNode }) {
   const { locale, setLocale } = useLocale();
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [pendingRequests, setPendingRequests] = useState(0);
   const [unread, setUnread] = useState(0);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [notifOpen, setNotifOpen] = useState(false);
@@ -376,6 +379,14 @@ export function AppScaffold({ children }: { children: ReactNode }) {
       setNotifLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (role !== "ADMIN") return;
+    fetch(`${API_BASE_URL}/registration-requests?status=PENDING`, { credentials: "include" })
+      .then((r) => r.ok ? r.json() : [])
+      .then((data: unknown[]) => setPendingRequests(Array.isArray(data) ? data.length : 0))
+      .catch(() => { /* ignore */ });
+  }, [role]);
 
   useEffect(() => { void fetchNotif(); }, [role]);
   useEffect(() => { if (notifOpen) void fetchNotif(); }, [notifOpen]);
@@ -449,8 +460,13 @@ export function AppScaffold({ children }: { children: ReactNode }) {
                   <span className="app-sidebar__link-label">
                     {isAr ? item.label.ar : item.label.en}
                   </span>
+                  {item.to === "/admin/registration-requests" && pendingRequests > 0 && (
+                    <span style={{ marginInlineStart: "auto", background: "var(--orange-500,#f97316)", color: "#fff", fontSize: ".6rem", fontWeight: 800, borderRadius: 999, minWidth: 16, height: 16, display: "flex", alignItems: "center", justifyContent: "center", padding: "0 4px" }}>
+                      {pendingRequests > 9 ? "9+" : pendingRequests}
+                    </span>
+                  )}
                   {isActive(item.to) && (
-                    <ChevronRight size={14} style={{ marginInlineStart: "auto", opacity: 0.5 }} />
+                    <ChevronRight size={14} style={{ marginInlineStart: item.to === "/admin/registration-requests" ? ".25rem" : "auto", opacity: 0.5 }} />
                   )}
                 </Link>
               ))}
@@ -673,12 +689,43 @@ export function AppScaffold({ children }: { children: ReactNode }) {
                 textDecoration: "none",
                 flexShrink: 0,
                 cursor: "pointer",
+                overflow: "hidden",
               }}
             >
-              {initials(user?.name ?? "U")}
+              {user?.profileImage
+                ? <img src={`${API_BASE_URL.replace("/api", "")}/pictures/${user.profileImage}`} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                : initials(user?.name ?? "U")}
             </Link>
           </div>
         </header>
+
+        {/* Profile completion banner */}
+        {user && !user.profileCompleted && (
+          <div style={{
+            display: "flex", alignItems: "center", justifyContent: "space-between",
+            padding: ".65rem 1.25rem",
+            background: "linear-gradient(90deg, rgba(249,115,22,.12), rgba(251,191,36,.1))",
+            borderBottom: "1px solid rgba(249,115,22,.2)",
+            gap: "1rem", flexWrap: "wrap",
+          }}>
+            <div style={{ display: "flex", alignItems: "center", gap: ".6rem", fontSize: ".84rem" }}>
+              <span style={{ fontSize: "1rem" }}>👋</span>
+              <span style={{ fontWeight: 600, color: "var(--text-primary)" }}>Complete your profile</span>
+              <span style={{ color: "var(--text-secondary)" }}>— Add your personal info, photo, and documents to help your team know you better.</span>
+            </div>
+            <Link
+              to="/profile"
+              style={{
+                padding: ".35rem .9rem", borderRadius: 8,
+                background: "var(--orange-500, #f97316)", color: "#fff",
+                textDecoration: "none", fontSize: ".8rem", fontWeight: 700,
+                whiteSpace: "nowrap", flexShrink: 0,
+              }}
+            >
+              Complete Now →
+            </Link>
+          </div>
+        )}
 
         {/* Page content */}
         <main className="app-page">{children}</main>

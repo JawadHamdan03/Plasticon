@@ -3204,7 +3204,7 @@ tbody td {
   border-color: rgba(220,38,38,.25) !important;
 }
 [data-theme="dark"] .worker-snapshot-row-actions__danger:hover:not(:disabled) {
-  background: rgba(220,38,38,.1) !important;
+  background: #fed7aa !important;
   border-color: rgba(220,38,38,.4) !important;
 }
 

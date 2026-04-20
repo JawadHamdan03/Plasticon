@@ -6,6 +6,12 @@ import { UserRole } from "../config/generated/prisma/client";
 const router = Router();
 
 router.get(
+  "/overview",
+  authorizeRoles([UserRole.ADMIN]),
+  dashboardController.getOverviewHandler,
+);
+
+router.get(
   "/analytics",
   authorizeRoles([UserRole.ADMIN]),
   dashboardController.getAnalyticsHandler,

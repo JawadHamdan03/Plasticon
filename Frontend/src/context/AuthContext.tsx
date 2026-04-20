@@ -2,7 +2,6 @@ import {
   createContext,
   useCallback,
   useContext,
-  useEffect,
   useMemo,
   useState,
   type ReactNode,
@@ -10,34 +9,56 @@ import {
 import { API_BASE_URL, readApiError } from "../lib/api";
 
 // Global fetch interceptor to add Authorization header
-const originalFetch = window.fetch;
-window.fetch = function (...args: any[]) {
-  const [url, options] = args;
+const originalFetch = window.fetch.bind(window);
+window.fetch = (input: RequestInfo | URL, init?: RequestInit) => {
   const token = localStorage.getItem("plasticon_token");
+  // Don't set Content-Type for FormData — browser must set it with the multipart boundary
+  const isFormData = init?.body instanceof FormData;
 
-  const modifiedOptions = {
-    ...(options || {}),
+  const modifiedInit: RequestInit = {
+    ...(init ?? {}),
     credentials: "include",
     headers: {
-      "Content-Type": "application/json",
-      ...(options?.headers || {}),
+      ...(isFormData ? {} : { "Content-Type": "application/json" }),
+      ...(init?.headers ?? {}),
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
   };
 
-  if (token) {
-    modifiedOptions.headers["Authorization"] = `Bearer ${token}`;
-  }
+  return originalFetch(input, modifiedInit);
+};
 
-  return originalFetch.call(this, url, modifiedOptions);
-} as any;
+export type UserDocument = {
+  id: number;
+  fileName: string;
+  filePath: string;
+  fileSize: number;
+  mimeType: string;
+  documentType: string;
+  title: string;
+  createdAt: string;
+};
 
-type UserProfile = {
+export type UserProfile = {
+  id?: number;
   name: string;
   email: string;
   role?: string | null;
   profileImage?: string | null;
   username?: string | null;
   createdAt?: string | null;
+  phone?: string | null;
+  // Extended profile fields
+  bio?: string | null;
+  jobTitle?: string | null;
+  department?: string | null;
+  dateOfBirth?: string | null;
+  address?: string | null;
+  linkedIn?: string | null;
+  skills?: string | null;
+  profileCompleted?: boolean;
+  userDocuments?: UserDocument[];
+  isActive?: boolean;
 };
 
 type LoginValues = {
@@ -66,6 +87,8 @@ type AuthContextValue = {
   signIn: (values: LoginValues) => Promise<void>;
   signOut: () => void;
   register: (values: RegisterValues) => Promise<void>;
+  refreshUser: () => Promise<void>;
+  setUser: (user: UserProfile) => void;
 };
 
 const USER_KEY = "plasticon_user";
@@ -73,47 +96,76 @@ const USER_KEY = "plasticon_user";
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [token, setToken] = useState<string | null>(null);
-  const [user, setUser] = useState<UserProfile | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    // Restore token and user from localStorage on app startup
-    const storedUser = window.localStorage.getItem(USER_KEY);
-    const storedToken = window.localStorage.getItem("plasticon_token");
-
-    if (storedUser && storedToken) {
-      try {
-        setUser(JSON.parse(storedUser) as UserProfile);
-        setToken(storedToken);
-      } catch {
-        window.localStorage.removeItem(USER_KEY);
-        window.localStorage.removeItem("plasticon_token");
-      }
+  const [token, setToken] = useState<string | null>(() => {
+    return window.localStorage.getItem("plasticon_token");
+  });
+  const [user, setUserState] = useState<UserProfile | null>(() => {
+    try {
+      const stored = window.localStorage.getItem(USER_KEY);
+      return stored ? (JSON.parse(stored) as UserProfile) : null;
+    } catch {
+      window.localStorage.removeItem(USER_KEY);
+      return null;
     }
-
-    setLoading(false);
-  }, []);
+  });
+  const [loading] = useState(false);
 
   const persistSession = useCallback(
     (nextToken: string, nextUser: UserProfile) => {
-      // Store actual token in localStorage for Authorization header
       window.localStorage.setItem("plasticon_token", nextToken);
       setToken(nextToken);
-      setUser(nextUser);
-      // Store user profile in localStorage (for UX, not security)
+      setUserState(nextUser);
       window.localStorage.setItem(USER_KEY, JSON.stringify(nextUser));
     },
     [],
   );
 
+  const setUser = useCallback((nextUser: UserProfile) => {
+    setUserState(nextUser);
+    window.localStorage.setItem(USER_KEY, JSON.stringify(nextUser));
+  }, []);
+
+  const refreshUser = useCallback(async () => {
+    const storedToken = window.localStorage.getItem("plasticon_token");
+    if (!storedToken) return;
+    try {
+      const res = await fetch(`${API_BASE_URL}/profile/me`, {
+        headers: { Authorization: `Bearer ${storedToken}` },
+        credentials: "include",
+      });
+      if (!res.ok) return;
+      const data = (await res.json()) as any;
+      const next: UserProfile = {
+        id: data.id,
+        name: data.fullName ?? "",
+        email: data.email ?? "",
+        role: data.role ?? null,
+        profileImage: data.profileImage ?? null,
+        username: data.username ?? null,
+        createdAt: data.createdAt ?? null,
+        phone: data.phone ?? null,
+        bio: data.bio ?? null,
+        jobTitle: data.jobTitle ?? null,
+        department: data.department ?? null,
+        dateOfBirth: data.dateOfBirth ?? null,
+        address: data.address ?? null,
+        linkedIn: data.linkedIn ?? null,
+        skills: data.skills ?? null,
+        profileCompleted: data.profileCompleted ?? false,
+        userDocuments: data.userDocuments ?? [],
+        isActive: data.isActive ?? true,
+      };
+      setUser(next);
+    } catch {
+      // silent
+    }
+  }, [setUser]);
+
   const signIn = useCallback(
     async (values: LoginValues) => {
       const response = await fetch(`${API_BASE_URL}/auth/login`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         credentials: "include",
         body: JSON.stringify(values),
       });
@@ -128,6 +180,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         token?: string;
         role?: string;
         profileImage?: string | null;
+        id?: number;
+        username?: string;
+        profileCompleted?: boolean;
       };
 
       if (!data.token || !data.email) {
@@ -135,13 +190,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       persistSession(data.token, {
+        id: data.id,
         name: data.name ?? values.email,
         email: data.email,
         role: data.role ?? "WORKER",
         profileImage: data.profileImage ?? null,
+        username: data.username ?? null,
+        profileCompleted: data.profileCompleted ?? false,
       });
+
+      // Pull full profile in background after login
+      setTimeout(() => void refreshUser(), 300);
     },
-    [persistSession],
+    [persistSession, refreshUser],
   );
 
   const register = useCallback(async (values: RegisterValues) => {
@@ -157,17 +218,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     formData.append("password", values.password);
     formData.append("role", values.role);
 
-    if (values.phone) {
-      formData.append("phone", values.phone);
-    }
-
-    if (values.shiftId) {
-      formData.append("shiftId", values.shiftId);
-    }
-
-    if (values.profileImage) {
-      formData.append("profileImage", values.profileImage);
-    }
+    if (values.phone) formData.append("phone", values.phone);
+    if (values.shiftId) formData.append("shiftId", values.shiftId);
+    if (values.profileImage) formData.append("profileImage", values.profileImage);
 
     const response = await fetch(`${API_BASE_URL}/auth/register`, {
       method: "POST",
@@ -182,8 +235,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = useCallback(() => {
     setToken(null);
-    setUser(null);
-    // Clear both user and token from localStorage
+    setUserState(null);
     window.localStorage.removeItem(USER_KEY);
     window.localStorage.removeItem("plasticon_token");
   }, []);
@@ -197,8 +249,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       signIn,
       signOut,
       register,
+      refreshUser,
+      setUser,
     }),
-    [loading, token, user],
+    [loading, token, user, signIn, signOut, register, refreshUser, setUser],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
@@ -206,10 +260,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 export function useAuth() {
   const context = useContext(AuthContext);
-
-  if (!context) {
-    throw new Error("useAuth must be used inside AuthProvider.");
-  }
-
+  if (!context) throw new Error("useAuth must be used inside AuthProvider.");
   return context;
 }

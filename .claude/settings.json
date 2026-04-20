@@ -8,7 +8,16 @@
       "Bash(grep -E \"\\\\.\\(ts|tsx\\)$\")",
       "Bash(xargs grep *)",
       "Bash(grep -E \"\\\\.\\(ts\\)$\")",
-      "Bash(xargs sed *)"
+      "Bash(xargs sed *)",
+      "Bash(node -e \"const l = require\\('c:/Users/JC/OneDrive/Documents/Plasticon/Frontend/node_modules/lucide-react'\\); console.log\\(Object.keys\\(l\\).filter\\(k => k.toLowerCase\\(\\).includes\\('linkedin'\\)\\)\\)\")",
+      "Bash(node -e \"const l = require\\('c:/Users/JC/OneDrive/Documents/Plasticon/Frontend/node_modules/lucide-react'\\); const keys = Object.keys\\(l\\); console.log\\(keys.filter\\(k => k.toLowerCase\\(\\).includes\\('link'\\) || k.toLowerCase\\(\\).includes\\('social'\\) || k.toLowerCase\\(\\).includes\\('share'\\)\\)\\)\")",
+      "Bash(npx ts-node *)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:8080/registration-requests)",
+      "Bash(curl -s -X POST http://localhost:8080/registration-requests -H \"Content-Type: application/json\" -d '{\"fullName\":\"Test User\",\"email\":\"test@example.com\"}')",
+      "Bash(curl -s -o /dev/null -w \"GET /registration-requests -> %{http_code}\\\\n\" http://localhost:8080/registration-requests)",
+      "Bash(curl -s -o /dev/null -w \"POST /registration-requests -> %{http_code}\\\\n\" -X POST http://localhost:8080/registration-requests -H \"Content-Type: application/json\" -d '{\"fullName\":\"John\",\"email\":\"john99@test.com\"}')",
+      "Bash(curl -s -o /dev/null -w \"GET /dashboard/overview -> %{http_code}\\\\n\" http://localhost:8080/dashboard/overview)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:8080/dashboard/overview)"
     ]
   }
 }

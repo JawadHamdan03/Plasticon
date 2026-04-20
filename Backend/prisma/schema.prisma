@@ -78,6 +78,13 @@ enum NotificationType {
   INVENTORY_LOW
   ENGINEER_INVENTORY
   RAW_MATERIAL_ALERT
+  REGISTRATION_REQUEST
+}
+
+enum RegistrationRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
 }
 
 enum EngineerInventoryStatus {
@@ -108,9 +115,19 @@ model User {
   email        String?  @unique
   password     String
   idImage      String?
-  profileImage String?
-  role         UserRole
-  isActive     Boolean  @default(true)
+  profileImage     String?
+  role             UserRole
+  isActive         Boolean  @default(true)
+
+  // Extended profile
+  bio              String?
+  jobTitle         String?
+  department       String?
+  dateOfBirth      DateTime?
+  address          String?
+  linkedIn         String?
+  skills           String?   // JSON array stored as string
+  profileCompleted Boolean   @default(false)
 
   shiftId Int?
   shift   Shift? @relation(fields: [shiftId], references: [id])
@@ -170,6 +187,21 @@ model User {
   performanceRecords         EmployeePerformance[] @relation("PerformanceUser")
   calculatedPerformances     EmployeePerformance[] @relation("PerformanceCalculator")
   maintenanceCostsCreated    MaintenanceCost[]     @relation("MaintenanceCostCreator")
+  userDocuments              UserDocument[]
+  reviewedRegistrationRequests RegistrationRequest[] @relation("RegistrationReviewer")
+}
+
+model UserDocument {
+  id           Int      @id @default(autoincrement())
+  userId       Int
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  fileName     String
+  filePath     String
+  fileSize     Int
+  mimeType     String
+  documentType String   // CV, CERTIFICATE, OTHER
+  title        String
+  createdAt    DateTime @default(now())
 }
 
 model Shift {
@@ -1036,4 +1068,19 @@ model MaintenanceCost {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model RegistrationRequest {
+  id           Int                        @id @default(autoincrement())
+  fullName     String
+  email        String
+  phone        String?
+  message      String?
+  status       RegistrationRequestStatus  @default(PENDING)
+  role         UserRole?
+  reviewNote   String?
+  reviewedAt   DateTime?
+  reviewedById Int?
+  reviewedBy   User?                      @relation("RegistrationReviewer", fields: [reviewedById], references: [id])
+  createdAt    DateTime                   @default(now())
 }
