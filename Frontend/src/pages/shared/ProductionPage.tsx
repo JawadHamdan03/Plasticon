@@ -10,7 +10,6 @@ import { useLocale } from "../../context/LocaleContext";
 import { API_BASE_URL, readApiError } from "../../lib/api";
 import { ModulePageShell } from "../../components/ModulePageShell";
 import { TruckLoader } from "../../components/TruckLoader";
-import { Card } from "../../components/ui/card";
 
 /* ─── Constants ─────────────────────────────────────────── */
 const PREFORM_MACHINE_ID = 430;
@@ -40,7 +39,23 @@ type ProductionItem = {
 };
 
 type AdminOverviewResponse = {
-  totals: { records: number; cartons: number; pieces: number };
+  totals: { totalRecords: number; totalCartons: number; totalPieces: number };
+  byUser?: Array<{
+    userId: number;
+    fullName: string;
+    username: string;
+    role: string;
+    recordsCount: number;
+    cartonsCount: number;
+    totalPieces: number;
+  }>;
+  byShift?: Array<{
+    shiftId: number | null;
+    shiftName: string;
+    recordsCount: number;
+    cartonsCount: number;
+    totalPieces: number;
+  }>;
   byShiftProduct?: Array<{
     date: string;
     shiftId: number | null;
@@ -67,6 +82,7 @@ type AdminOverviewResponse = {
     color: number;
     totalRawUsed: number;
   }>;
+  recentRecords?: ProductionItem[];
 };
 
 /* ─── Auth helper ───────────────────────────────────────── */
@@ -155,6 +171,9 @@ export function ProductionPage() {
   /* Date filters */
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
+
+  /* Admin tab */
+  const [adminTab, setAdminTab] = useState<"overview" | "daily" | "shifts" | "raw" | "records" | "workers">("overview");
 
   /* Forms */
   const [preformForm, setPreformForm] = useState(emptyPreformForm());
@@ -781,28 +800,18 @@ export function ProductionPage() {
             marginBottom: "1.5rem",
           }}
         >
-          <Card className="p-4 bg-linear-to-br from-blue-50 to-blue-100 dark:from-blue-900/30 dark:to-blue-800/30 border border-blue-200 dark:border-blue-800">
-            <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">
-              {isAr ? "سجلاتي - البريفورم" : "My Preform Records"}
-            </p>
-            <p className="text-2xl font-bold text-blue-700 dark:text-blue-300">
-              {myPreforms.length}
-            </p>
-            <p className="text-xs text-slate-500 mt-1">
-              {fmt(myPreformPcs)} {isAr ? "قطعة" : "pcs"}
-            </p>
-          </Card>
-          <Card className="p-4 bg-linear-to-br from-orange-50 to-orange-100 dark:from-orange-900/30 dark:to-orange-800/30 border border-orange-200 dark:border-orange-800">
-            <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">
-              {isAr ? "سجلاتي - الكابس" : "My Caps Records"}
-            </p>
-            <p className="text-2xl font-bold text-orange-700 dark:text-orange-300">
-              {myCaps.length}
-            </p>
-            <p className="text-xs text-slate-500 mt-1">
-              {fmt(myCapsPcs)} {isAr ? "قطعة" : "pcs"}
-            </p>
-          </Card>
+          <div style={{ background: "linear-gradient(135deg,#3b82f6,#1d4ed8)", borderRadius: "var(--radius-xl)", padding: "1.1rem 1.25rem", color: "#fff", display: "flex", flexDirection: "column", gap: ".3rem", boxShadow: "0 4px 14px rgba(0,0,0,.12)" }}>
+            <span style={{ fontSize: "1.2rem" }}>🏭</span>
+            <p style={{ margin: 0, fontSize: ".75rem", opacity: .85, fontWeight: 500 }}>{isAr ? "سجلاتي - البريفورم" : "My Preform Records"}</p>
+            <p style={{ margin: 0, fontSize: "1.6rem", fontWeight: 800, lineHeight: 1 }}>{myPreforms.length}</p>
+            <p style={{ margin: 0, fontSize: ".75rem", opacity: .8 }}>{fmt(myPreformPcs)} {isAr ? "قطعة" : "pcs"}</p>
+          </div>
+          <div style={{ background: "linear-gradient(135deg,#f97316,#ea580c)", borderRadius: "var(--radius-xl)", padding: "1.1rem 1.25rem", color: "#fff", display: "flex", flexDirection: "column", gap: ".3rem", boxShadow: "0 4px 14px rgba(0,0,0,.12)" }}>
+            <span style={{ fontSize: "1.2rem" }}>🧢</span>
+            <p style={{ margin: 0, fontSize: ".75rem", opacity: .85, fontWeight: 500 }}>{isAr ? "سجلاتي - الكابس" : "My Caps Records"}</p>
+            <p style={{ margin: 0, fontSize: "1.6rem", fontWeight: 800, lineHeight: 1 }}>{myCaps.length}</p>
+            <p style={{ margin: 0, fontSize: ".75rem", opacity: .8 }}>{fmt(myCapsPcs)} {isAr ? "قطعة" : "pcs"}</p>
+          </div>
         </div>
       )}
 
@@ -860,407 +869,322 @@ export function ProductionPage() {
         </div>
       )}
 
-      {/* ── ADMIN: Date Filters + Daily Report ───────────── */}
+      {/* ── ADMIN DASHBOARD ───────────────────────────────── */}
       {isAdmin && (
         <>
-          {/* Date filter row */}
-          <div
-            style={{
-              display: "flex",
-              gap: "1rem",
-              alignItems: "flex-end",
-              flexWrap: "wrap",
-              padding: "1rem 1.25rem",
-              background: "var(--bg-surface)",
-              border: "1px solid var(--border-default)",
-              borderRadius: "var(--radius-xl)",
-              marginBottom: "1.5rem",
-            }}
-          >
+          {/* ── Filter bar ── */}
+          <div style={{ display: "flex", gap: "1rem", alignItems: "flex-end", flexWrap: "wrap", padding: "1rem 1.25rem", background: "var(--bg-surface)", border: "1px solid var(--border-default)", borderRadius: "var(--radius-xl)", marginBottom: "1.25rem" }}>
             <label style={{ display: "flex", flexDirection: "column", gap: ".3rem", fontSize: ".82rem", fontWeight: 600, color: "var(--text-secondary)" }}>
               {isAr ? "من تاريخ" : "From Date"}
-              <input
-                type="date"
-                value={fromDate}
-                onChange={(e) => setFromDate(e.target.value)}
-                style={{ padding: ".4rem .75rem", border: "1px solid var(--border-default)", borderRadius: "var(--radius-md)", background: "var(--bg-card)", fontSize: ".875rem" }}
-              />
+              <input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} style={{ padding: ".4rem .75rem", border: "1px solid var(--border-default)", borderRadius: "var(--radius-md)", background: "var(--bg-card)", fontSize: ".875rem" }} />
             </label>
             <label style={{ display: "flex", flexDirection: "column", gap: ".3rem", fontSize: ".82rem", fontWeight: 600, color: "var(--text-secondary)" }}>
               {isAr ? "إلى تاريخ" : "To Date"}
-              <input
-                type="date"
-                value={toDate}
-                onChange={(e) => setToDate(e.target.value)}
-                style={{ padding: ".4rem .75rem", border: "1px solid var(--border-default)", borderRadius: "var(--radius-md)", background: "var(--bg-card)", fontSize: ".875rem" }}
-              />
+              <input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} style={{ padding: ".4rem .75rem", border: "1px solid var(--border-default)", borderRadius: "var(--radius-md)", background: "var(--bg-card)", fontSize: ".875rem" }} />
             </label>
-            <button
-              type="button"
-              className="auth-button auth-button--ghost"
-              onClick={() => { setFromDate(""); setToDate(""); }}
-            >
+            <button type="button" className="auth-button auth-button--ghost" onClick={() => { setFromDate(""); setToDate(""); }}>
               {isAr ? "إعادة ضبط" : "Clear"}
             </button>
+            {(fromDate || toDate) && (
+              <span style={{ fontSize: ".8rem", color: "var(--orange-600,#ea580c)", fontWeight: 600, alignSelf: "center" }}>
+                {isAr ? "🔍 فلترة نشطة" : "🔍 Filtered"}
+              </span>
+            )}
           </div>
 
-          {/* Admin KPIs */}
-          {adminOverview && (
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-                gap: "1rem",
-                marginBottom: "1.5rem",
-              }}
-            >
-              <Card className="p-4 bg-linear-to-br from-blue-50 to-blue-100 dark:from-blue-900/30 dark:to-blue-800/30 border border-blue-200 dark:border-blue-800">
-                <p className="text-xs text-slate-500 mb-1">{isAr ? "إجمالي السجلات" : "Total Records"}</p>
-                <p className="text-2xl font-bold text-blue-700 dark:text-blue-300">{adminOverview.totals.records}</p>
-              </Card>
-              <Card className="p-4 bg-linear-to-br from-purple-50 to-purple-100 dark:from-purple-900/30 dark:to-purple-800/30 border border-purple-200 dark:border-purple-800">
-                <p className="text-xs text-slate-500 mb-1">{isAr ? "كراتين/صناديق" : "Cartons / Boxes"}</p>
-                <p className="text-2xl font-bold text-purple-700 dark:text-purple-300">{fmt(adminOverview.totals.cartons)}</p>
-              </Card>
-              <Card className="p-4 bg-linear-to-br from-orange-50 to-orange-100 dark:from-orange-900/30 dark:to-orange-800/30 border border-orange-200 dark:border-orange-800">
-                <p className="text-xs text-slate-500 mb-1">{isAr ? "إجمالي القطع" : "Total Pieces"}</p>
-                <p className="text-2xl font-bold text-orange-700 dark:text-orange-300">{fmt(adminOverview.totals.pieces)}</p>
-              </Card>
-              <Card className="p-4 bg-linear-to-br from-slate-50 to-slate-100 dark:from-slate-800/30 dark:to-slate-700/30 border border-slate-200 dark:border-slate-700">
-                <p className="text-xs text-slate-500 mb-1">{isAr ? "كراتين الكابس" : "Caps Cartons"}</p>
-                <p className="text-2xl font-bold text-slate-700 dark:text-slate-300">
-                  {fmt(dailyData.reduce((s, d) => s + d.capsCartons, 0))}
-                </p>
-              </Card>
-              <Card className="p-4 bg-linear-to-br from-slate-50 to-slate-100 dark:from-slate-800/30 dark:to-slate-700/30 border border-slate-200 dark:border-slate-700">
-                <p className="text-xs text-slate-500 mb-1">{isAr ? "صناديق البريفورم" : "Preform Boxes"}</p>
-                <p className="text-2xl font-bold text-slate-700 dark:text-slate-300">
-                  {fmt(dailyData.reduce((s, d) => s + d.preformCartons, 0))}
-                </p>
-              </Card>
-            </div>
-          )}
-
-          {/* ── Daily Production Table ── */}
-          {dailyData.length > 0 && (
-            <div
-              style={{
-                background: "var(--bg-card)",
-                border: "1px solid var(--border-default)",
-                borderRadius: "var(--radius-xl)",
-                overflow: "hidden",
-                marginBottom: "1.5rem",
-              }}
-            >
-              <div
+          {/* ── Tab bar ── */}
+          <div style={{ display: "flex", gap: ".5rem", flexWrap: "wrap", marginBottom: "1.25rem" }}>
+            {([
+              ["overview", isAr ? "نظرة عامة" : "Overview"],
+              ["daily",    isAr ? "التقرير اليومي" : "Daily Report"],
+              ["shifts",   isAr ? "الشفتات" : "Shifts"],
+              ["raw",      isAr ? "المواد الخام" : "Raw Materials"],
+              ["records",  isAr ? "جميع السجلات" : "All Records"],
+              ["workers",  isAr ? "العمال" : "By Worker"],
+            ] as const).map(([key, label]) => (
+              <button
+                key={key}
+                type="button"
+                onClick={() => setAdminTab(key)}
                 style={{
-                  padding: ".875rem 1.25rem",
-                  borderBottom: "1px solid var(--border-default)",
-                  background: "var(--bg-surface)",
-                  fontWeight: 700,
-                  fontSize: ".9rem",
+                  padding: ".45rem 1rem",
+                  borderRadius: 8,
+                  border: "1px solid var(--border-default)",
+                  background: adminTab === key ? "var(--orange-500,#f97316)" : "var(--bg-surface)",
+                  color: adminTab === key ? "#fff" : "var(--text-secondary)",
+                  fontWeight: 600,
+                  fontSize: ".83rem",
+                  cursor: "pointer",
+                  transition: "all .15s",
                 }}
               >
-                {isAr ? "التقرير اليومي للإنتاج" : "Daily Production Report"}
+                {label}
+              </button>
+            ))}
+          </div>
+
+          {/* ── OVERVIEW TAB ── */}
+          {adminTab === "overview" && adminOverview && (
+            <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+              {/* KPI cards */}
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))", gap: "1rem" }}>
+                {[
+                  { label: isAr ? "إجمالي السجلات" : "Total Records",    value: adminOverview.totals.totalRecords,                                      gradient: "linear-gradient(135deg,#3b82f6,#1d4ed8)", icon: "📋" },
+                  { label: isAr ? "كراتين/صناديق" : "Total Cartons",     value: fmt(adminOverview.totals.totalCartons),                                  gradient: "linear-gradient(135deg,#8b5cf6,#6d28d9)", icon: "📦" },
+                  { label: isAr ? "إجمالي القطع" : "Total Pieces",        value: fmt(adminOverview.totals.totalPieces),                                   gradient: "linear-gradient(135deg,#f97316,#ea580c)", icon: "🔢" },
+                  { label: isAr ? "كراتين الكابس" : "Caps Cartons",       value: fmt(dailyData.reduce((s, d) => s + d.capsCartons, 0)),                   gradient: "linear-gradient(135deg,#06b6d4,#0284c7)", icon: "🧢" },
+                  { label: isAr ? "صناديق البريفورم" : "Preform Boxes",   value: fmt(dailyData.reduce((s, d) => s + d.preformCartons, 0)),                gradient: "linear-gradient(135deg,#10b981,#059669)", icon: "🏭" },
+                ].map((kpi) => (
+                  <div key={kpi.label} style={{ background: kpi.gradient, borderRadius: "var(--radius-xl)", padding: "1.1rem 1.25rem", color: "#fff", display: "flex", flexDirection: "column", gap: ".35rem", boxShadow: "0 4px 14px rgba(0,0,0,.12)" }}>
+                    <span style={{ fontSize: "1.3rem" }}>{kpi.icon}</span>
+                    <p style={{ margin: 0, fontSize: ".75rem", opacity: .85, fontWeight: 500 }}>{kpi.label}</p>
+                    <p style={{ margin: 0, fontSize: "1.6rem", fontWeight: 800, lineHeight: 1 }}>{kpi.value}</p>
+                  </div>
+                ))}
               </div>
-              <div style={{ overflowX: "auto" }}>
-                <table style={{ width: "100%", fontSize: ".82rem", borderCollapse: "collapse" }}>
-                  <thead>
-                    <tr style={{ background: "var(--bg-surface)", borderBottom: "1px solid var(--border-default)" }}>
-                      {[
-                        isAr ? "التاريخ" : "Date",
-                        isAr ? "كراتين الكابس" : "Caps Cartons",
-                        isAr ? "قطع الكابس" : "Caps Pcs",
-                        isAr ? "صناديق البريفورم" : "Preform Boxes",
-                        isAr ? "قطع البريفورم" : "Preform Pcs",
-                        isAr ? "الإجمالي" : "Total Pcs",
-                      ].map((h) => (
-                        <th
-                          key={h}
-                          style={{
-                            padding: ".6rem 1rem",
-                            textAlign: "left",
-                            fontWeight: 600,
-                            color: "var(--text-secondary)",
-                            whiteSpace: "nowrap",
-                          }}
-                        >
-                          {h}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {dailyData.map((row, i) => {
-                      const capsPcs = row.capsCartons * 6000;
-                      const preformPcs = row.totalPieces - capsPcs;
-                      return (
-                        <tr
-                          key={row.date}
-                          style={{
-                            borderBottom: "1px solid var(--border-default)",
-                            background: i % 2 === 0 ? "transparent" : "var(--bg-surface)",
-                          }}
-                        >
-                          <td style={{ padding: ".6rem 1rem", fontWeight: 700, color: "var(--text-primary)" }}>
-                            {row.date}
-                          </td>
-                          <td style={{ padding: ".6rem 1rem", color: "var(--text-secondary)" }}>
-                            {fmt(row.capsCartons)}
-                          </td>
-                          <td style={{ padding: ".6rem 1rem", color: "var(--text-secondary)" }}>
-                            {fmt(capsPcs)}
-                          </td>
-                          <td style={{ padding: ".6rem 1rem", color: "var(--text-secondary)" }}>
-                            {fmt(row.preformCartons)}
-                          </td>
-                          <td style={{ padding: ".6rem 1rem", color: "var(--text-secondary)" }}>
-                            {fmt(preformPcs > 0 ? preformPcs : 0)}
-                          </td>
-                          <td style={{ padding: ".6rem 1rem", fontWeight: 700, color: "var(--text-primary)" }}>
-                            {fmt(row.totalPieces)}
-                          </td>
+
+              {/* Shift summary table */}
+              {(adminOverview.byShift ?? []).length > 0 && (
+                <div style={{ background: "var(--bg-card)", border: "1px solid var(--border-default)", borderRadius: "var(--radius-xl)", overflow: "hidden" }}>
+                  <div style={{ padding: ".875rem 1.25rem", borderBottom: "1px solid var(--border-default)", background: "var(--bg-surface)", fontWeight: 700, fontSize: ".9rem" }}>
+                    {isAr ? "ملخص حسب الشفت" : "Summary by Shift"}
+                  </div>
+                  <div style={{ overflowX: "auto" }}>
+                    <table className="admin-table">
+                      <thead>
+                        <tr>
+                          <th>{isAr ? "الشفت" : "Shift"}</th>
+                          <th>{isAr ? "السجلات" : "Records"}</th>
+                          <th>{isAr ? "الكراتين" : "Cartons"}</th>
+                          <th>{isAr ? "القطع" : "Pieces"}</th>
                         </tr>
-                      );
-                    })}
-                  </tbody>
-                  <tfoot>
-                    <tr style={{ background: "var(--bg-surface)", borderTop: "2px solid var(--border-default)" }}>
-                      <td style={{ padding: ".6rem 1rem", fontWeight: 700 }}>{isAr ? "الإجمالي" : "Total"}</td>
-                      <td style={{ padding: ".6rem 1rem", fontWeight: 700 }}>{fmt(dailyData.reduce((s, d) => s + d.capsCartons, 0))}</td>
-                      <td style={{ padding: ".6rem 1rem", fontWeight: 700 }}>{fmt(dailyData.reduce((s, d) => s + d.capsCartons * 6000, 0))}</td>
-                      <td style={{ padding: ".6rem 1rem", fontWeight: 700 }}>{fmt(dailyData.reduce((s, d) => s + d.preformCartons, 0))}</td>
-                      <td style={{ padding: ".6rem 1rem", fontWeight: 700 }}>—</td>
-                      <td style={{ padding: ".6rem 1rem", fontWeight: 700 }}>{fmt(dailyData.reduce((s, d) => s + d.totalPieces, 0))}</td>
-                    </tr>
-                  </tfoot>
-                </table>
-              </div>
+                      </thead>
+                      <tbody>
+                        {(adminOverview.byShift ?? []).map((row) => (
+                          <tr key={row.shiftId ?? "none"}>
+                            <td style={{ fontWeight: 600 }}>{row.shiftName}</td>
+                            <td>{row.recordsCount}</td>
+                            <td>{fmt(row.cartonsCount)}</td>
+                            <td style={{ fontWeight: 700 }}>{fmt(row.totalPieces)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
-          {/* ── Shift Breakdown Table ── */}
-          {shiftData.length > 0 && (
-            <div
-              style={{
-                background: "var(--bg-card)",
-                border: "1px solid var(--border-default)",
-                borderRadius: "var(--radius-xl)",
-                overflow: "hidden",
-                marginBottom: "1.5rem",
-              }}
-            >
-              <div
-                style={{
-                  padding: ".875rem 1.25rem",
-                  borderBottom: "1px solid var(--border-default)",
-                  background: "var(--bg-surface)",
-                  fontWeight: 700,
-                  fontSize: ".9rem",
-                }}
-              >
-                {isAr ? "إنتاج الشفتات" : "Shift Production Breakdown"}
+          {/* ── DAILY REPORT TAB ── */}
+          {adminTab === "daily" && (
+            <div style={{ background: "var(--bg-card)", border: "1px solid var(--border-default)", borderRadius: "var(--radius-xl)", overflow: "hidden" }}>
+              <div style={{ padding: ".875rem 1.25rem", borderBottom: "1px solid var(--border-default)", background: "var(--bg-surface)", fontWeight: 700, fontSize: ".9rem" }}>
+                {isAr ? "التقرير اليومي للإنتاج" : "Daily Production Report"}
+                <span style={{ marginLeft: ".75rem", fontSize: ".78rem", fontWeight: 500, color: "var(--text-secondary)" }}>({dailyData.length} {isAr ? "يوم" : "days"})</span>
               </div>
-              <div style={{ overflowX: "auto" }}>
-                <table style={{ width: "100%", fontSize: ".82rem", borderCollapse: "collapse" }}>
-                  <thead>
-                    <tr style={{ background: "var(--bg-surface)", borderBottom: "1px solid var(--border-default)" }}>
-                      {[
-                        isAr ? "التاريخ" : "Date",
-                        isAr ? "الشفت" : "Shift",
-                        isAr ? "كراتين الكابس" : "Caps Cartons",
-                        isAr ? "صناديق البريفورم" : "Preform Boxes",
-                        isAr ? "الإجمالي (قطع)" : "Total (pcs)",
-                      ].map((h) => (
-                        <th key={h} style={{ padding: ".6rem 1rem", textAlign: "left", fontWeight: 600, color: "var(--text-secondary)", whiteSpace: "nowrap" }}>
-                          {h}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {shiftData.slice(0, 30).map((row, i) => (
-                      <tr
-                        key={`${row.date}-${row.shiftId}`}
-                        style={{
-                          borderBottom: "1px solid var(--border-default)",
-                          background: i % 2 === 0 ? "transparent" : "var(--bg-surface)",
-                        }}
-                      >
-                        <td style={{ padding: ".6rem 1rem", fontWeight: 600, color: "var(--text-primary)" }}>{row.date}</td>
-                        <td style={{ padding: ".6rem 1rem", color: "var(--text-secondary)" }}>{row.shiftName}</td>
-                        <td style={{ padding: ".6rem 1rem", color: "var(--text-secondary)" }}>{fmt(row.capsCartons)}</td>
-                        <td style={{ padding: ".6rem 1rem", color: "var(--text-secondary)" }}>{fmt(row.preformCartons)}</td>
-                        <td style={{ padding: ".6rem 1rem", fontWeight: 700 }}>{fmt(row.totalPieces)}</td>
+              {dailyData.length === 0 ? (
+                <div style={{ padding: "2rem", textAlign: "center", color: "var(--text-secondary)" }}>{isAr ? "لا توجد بيانات" : "No data for this period"}</div>
+              ) : (
+                <div style={{ overflowX: "auto" }}>
+                  <table className="admin-table">
+                    <thead>
+                      <tr>
+                        {[isAr ? "التاريخ" : "Date", isAr ? "كراتين الكابس" : "Caps Cartons", isAr ? "قطع الكابس" : "Caps Pcs", isAr ? "صناديق البريفورم" : "Preform Boxes", isAr ? "قطع البريفورم" : "Preform Pcs", isAr ? "الإجمالي" : "Total Pcs"].map((h) => <th key={h}>{h}</th>)}
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                    </thead>
+                    <tbody>
+                      {dailyData.map((row) => {
+                        const capsPcs = row.capsCartons * 6000;
+                        const preformPcs = row.totalPieces - capsPcs;
+                        return (
+                          <tr key={row.date}>
+                            <td style={{ fontWeight: 700 }}>{row.date}</td>
+                            <td>{fmt(row.capsCartons)}</td>
+                            <td>{fmt(capsPcs)}</td>
+                            <td>{fmt(row.preformCartons)}</td>
+                            <td>{fmt(preformPcs > 0 ? preformPcs : 0)}</td>
+                            <td style={{ fontWeight: 700 }}>{fmt(row.totalPieces)}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                    <tfoot>
+                      <tr style={{ background: "var(--bg-surface)", borderTop: "2px solid var(--border-default)" }}>
+                        <td style={{ fontWeight: 700 }}>{isAr ? "الإجمالي" : "Total"}</td>
+                        <td style={{ fontWeight: 700 }}>{fmt(dailyData.reduce((s, d) => s + d.capsCartons, 0))}</td>
+                        <td style={{ fontWeight: 700 }}>{fmt(dailyData.reduce((s, d) => s + d.capsCartons * 6000, 0))}</td>
+                        <td style={{ fontWeight: 700 }}>{fmt(dailyData.reduce((s, d) => s + d.preformCartons, 0))}</td>
+                        <td style={{ fontWeight: 700 }}>—</td>
+                        <td style={{ fontWeight: 700 }}>{fmt(dailyData.reduce((s, d) => s + d.totalPieces, 0))}</td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+              )}
             </div>
           )}
 
-          {/* ── Daily Raw Materials Table ── */}
-          {rawDaily.length > 0 && (
-            <div
-              style={{
-                background: "var(--bg-card)",
-                border: "1px solid var(--border-default)",
-                borderRadius: "var(--radius-xl)",
-                overflow: "hidden",
-                marginBottom: "1.5rem",
-              }}
-            >
-              <div
-                style={{
-                  padding: ".875rem 1.25rem",
-                  borderBottom: "1px solid var(--border-default)",
-                  background: "var(--bg-surface)",
-                  fontWeight: 700,
-                  fontSize: ".9rem",
-                }}
-              >
+          {/* ── SHIFTS TAB ── */}
+          {adminTab === "shifts" && (
+            <div style={{ background: "var(--bg-card)", border: "1px solid var(--border-default)", borderRadius: "var(--radius-xl)", overflow: "hidden" }}>
+              <div style={{ padding: ".875rem 1.25rem", borderBottom: "1px solid var(--border-default)", background: "var(--bg-surface)", fontWeight: 700, fontSize: ".9rem" }}>
+                {isAr ? "إنتاج الشفتات يومياً" : "Shift Production Breakdown"}
+              </div>
+              {shiftData.length === 0 ? (
+                <div style={{ padding: "2rem", textAlign: "center", color: "var(--text-secondary)" }}>{isAr ? "لا توجد بيانات" : "No data"}</div>
+              ) : (
+                <div style={{ overflowX: "auto" }}>
+                  <table className="admin-table">
+                    <thead>
+                      <tr>
+                        {[isAr ? "التاريخ" : "Date", isAr ? "الشفت" : "Shift", isAr ? "كراتين الكابس" : "Caps Cartons", isAr ? "صناديق البريفورم" : "Preform Boxes", isAr ? "الإجمالي (قطع)" : "Total (pcs)"].map((h) => <th key={h}>{h}</th>)}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {shiftData.map((row) => (
+                        <tr key={`${row.date}-${row.shiftId}`}>
+                          <td style={{ fontWeight: 600 }}>{row.date}</td>
+                          <td>{row.shiftName}</td>
+                          <td>{fmt(row.capsCartons)}</td>
+                          <td>{fmt(row.preformCartons)}</td>
+                          <td style={{ fontWeight: 700 }}>{fmt(row.totalPieces)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ── RAW MATERIALS TAB ── */}
+          {adminTab === "raw" && (
+            <div style={{ background: "var(--bg-card)", border: "1px solid var(--border-default)", borderRadius: "var(--radius-xl)", overflow: "hidden" }}>
+              <div style={{ padding: ".875rem 1.25rem", borderBottom: "1px solid var(--border-default)", background: "var(--bg-surface)", fontWeight: 700, fontSize: ".9rem" }}>
                 {isAr ? "استهلاك المواد الخام اليومي" : "Daily Raw Material Usage"}
               </div>
-              <div style={{ overflowX: "auto" }}>
-                <table style={{ width: "100%", fontSize: ".82rem", borderCollapse: "collapse" }}>
-                  <thead>
-                    <tr style={{ background: "var(--bg-surface)", borderBottom: "1px solid var(--border-default)" }}>
-                      {[
-                        isAr ? "التاريخ" : "Date",
-                        "HDPE (kg)",
-                        "LDPE (kg)",
-                        "PET (kg)",
-                        isAr ? "لاصق" : "Adhesive",
-                        isAr ? "أكياس" : "Bags",
-                        isAr ? "لون" : "Color",
-                        isAr ? "الإجمالي" : "Total",
-                      ].map((h) => (
-                        <th key={h} style={{ padding: ".6rem 1rem", textAlign: "left", fontWeight: 600, color: "var(--text-secondary)", whiteSpace: "nowrap" }}>
-                          {h}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {rawDaily.map((row, i) => (
-                      <tr
-                        key={row.date}
-                        style={{
-                          borderBottom: "1px solid var(--border-default)",
-                          background: i % 2 === 0 ? "transparent" : "var(--bg-surface)",
-                        }}
-                      >
-                        <td style={{ padding: ".6rem 1rem", fontWeight: 700, color: "var(--text-primary)" }}>{row.date}</td>
-                        <td style={{ padding: ".6rem 1rem", color: "var(--text-secondary)" }}>{row.hdpe > 0 ? row.hdpe : "—"}</td>
-                        <td style={{ padding: ".6rem 1rem", color: "var(--text-secondary)" }}>{row.ldpe > 0 ? row.ldpe : "—"}</td>
-                        <td style={{ padding: ".6rem 1rem", color: "var(--text-secondary)" }}>{row.pet > 0 ? row.pet : "—"}</td>
-                        <td style={{ padding: ".6rem 1rem", color: "var(--text-secondary)" }}>{row.adhesive > 0 ? row.adhesive : "—"}</td>
-                        <td style={{ padding: ".6rem 1rem", color: "var(--text-secondary)" }}>{row.emptyBags > 0 ? row.emptyBags : "—"}</td>
-                        <td style={{ padding: ".6rem 1rem", color: "var(--text-secondary)" }}>{row.color > 0 ? row.color : "—"}</td>
-                        <td style={{ padding: ".6rem 1rem", fontWeight: 700 }}>{fmt(row.totalRawUsed)}</td>
+              {rawDaily.length === 0 ? (
+                <div style={{ padding: "2rem", textAlign: "center", color: "var(--text-secondary)" }}>{isAr ? "لا توجد بيانات" : "No data"}</div>
+              ) : (
+                <div style={{ overflowX: "auto" }}>
+                  <table className="admin-table">
+                    <thead>
+                      <tr>
+                        {[isAr ? "التاريخ" : "Date", "HDPE (kg)", "LDPE (kg)", "PET (kg)", isAr ? "لاصق" : "Adhesive", isAr ? "أكياس" : "Bags", isAr ? "لون" : "Color", isAr ? "الإجمالي" : "Total"].map((h) => <th key={h}>{h}</th>)}
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                    </thead>
+                    <tbody>
+                      {rawDaily.map((row) => (
+                        <tr key={row.date}>
+                          <td style={{ fontWeight: 700 }}>{row.date}</td>
+                          <td>{row.hdpe > 0 ? row.hdpe : "—"}</td>
+                          <td>{row.ldpe > 0 ? row.ldpe : "—"}</td>
+                          <td>{row.pet > 0 ? row.pet : "—"}</td>
+                          <td>{row.adhesive > 0 ? row.adhesive : "—"}</td>
+                          <td>{row.emptyBags > 0 ? row.emptyBags : "—"}</td>
+                          <td>{row.color > 0 ? row.color : "—"}</td>
+                          <td style={{ fontWeight: 700 }}>{fmt(row.totalRawUsed)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
           )}
 
-          {/* ── All Records Table ── */}
-          {allRecords.length > 0 && (
-            <div
-              style={{
-                background: "var(--bg-card)",
-                border: "1px solid var(--border-default)",
-                borderRadius: "var(--radius-xl)",
-                overflow: "hidden",
-              }}
-            >
-              <div
-                style={{
-                  padding: ".875rem 1.25rem",
-                  borderBottom: "1px solid var(--border-default)",
-                  background: "var(--bg-surface)",
-                  fontWeight: 700,
-                  fontSize: ".9rem",
-                }}
-              >
-                {isAr ? `جميع السجلات (${allRecords.length})` : `All Records (${allRecords.length})`}
+          {/* ── ALL RECORDS TAB ── */}
+          {adminTab === "records" && (() => {
+            const records = adminOverview?.recentRecords ?? allRecords.slice(0, 50);
+            return (
+              <div style={{ background: "var(--bg-card)", border: "1px solid var(--border-default)", borderRadius: "var(--radius-xl)", overflow: "hidden" }}>
+                <div style={{ padding: ".875rem 1.25rem", borderBottom: "1px solid var(--border-default)", background: "var(--bg-surface)", fontWeight: 700, fontSize: ".9rem" }}>
+                  {isAr ? `السجلات الأخيرة (${records.length})` : `Recent Records (${records.length})`}
+                  {(fromDate || toDate) && <span style={{ marginLeft: ".5rem", fontSize: ".78rem", color: "var(--orange-600,#ea580c)" }}>— {isAr ? "مفلترة" : "filtered"}</span>}
+                </div>
+                {records.length === 0 ? (
+                  <div style={{ padding: "2rem", textAlign: "center", color: "var(--text-secondary)" }}>{isAr ? "لا توجد سجلات" : "No records"}</div>
+                ) : (
+                  <div style={{ overflowX: "auto" }}>
+                    <table className="admin-table">
+                      <thead>
+                        <tr>
+                          {[isAr ? "التاريخ" : "Date", isAr ? "العامل" : "Worker", isAr ? "الآلة / النوع" : "Machine / Type", isAr ? "الشفت" : "Shift", isAr ? "الكمية" : "Count", isAr ? "الكافيتي" : "Cavities", isAr ? "القطع" : "Pieces", isAr ? "المادة (كغ)" : "Material (kg)", isAr ? "لون (كغ)" : "Color (kg)"].map((h) => <th key={h}>{h}</th>)}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {records.map((r) => {
+                          const isPreform = isPreformMachine(r.machine?.type);
+                          return (
+                            <tr key={r.id}>
+                              <td style={{ whiteSpace: "nowrap" }}>{new Date(r.createdAt).toLocaleDateString()}</td>
+                              <td style={{ fontWeight: 600 }}>{r.user?.fullName ?? "—"}</td>
+                              <td>
+                                {r.machine?.name ?? "—"}
+                                <span style={{ marginLeft: ".4rem", fontSize: ".7rem", padding: ".1rem .4rem", borderRadius: "999px", background: isPreform ? "rgba(59,130,246,.12)" : "rgba(249,115,22,.12)", color: isPreform ? "#1d4ed8" : "#ea580c" }}>
+                                  {isPreform ? "PREFORM" : "CAPS"}
+                                </span>
+                              </td>
+                              <td>{r.shift?.name ?? "—"}</td>
+                              <td>{isPreform ? `${r.cartonsCount ?? 0} ${isAr ? "دورة" : "cycles"}` : `${r.cartonsCount ?? 0} ${isAr ? "كرتون" : "cartons"}`}</td>
+                              <td>{isPreform ? (r.workingCavities ? `${r.workingCavities}/72` : "72/72") : "—"}</td>
+                              <td style={{ fontWeight: 700 }}>{fmt(r.totalPieces ?? 0)}</td>
+                              <td>{isPreform ? (r.rawPetUsed ? `PET: ${r.rawPetUsed}` : "—") : (r.rawHdpeUsed || r.rawLdpeUsed ? `H:${r.rawHdpeUsed ?? 0} L:${r.rawLdpeUsed ?? 0}` : "—")}</td>
+                              <td>{r.colorUsed ?? "—"}</td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </div>
-              <div style={{ overflowX: "auto" }}>
-                <table style={{ width: "100%", fontSize: ".82rem", borderCollapse: "collapse" }}>
-                  <thead>
-                    <tr style={{ background: "var(--bg-surface)", borderBottom: "1px solid var(--border-default)" }}>
-                      {[
-                        isAr ? "التاريخ" : "Date",
-                        isAr ? "العامل" : "Worker",
-                        isAr ? "الآلة / النوع" : "Machine / Type",
-                        isAr ? "الشفت" : "Shift",
-                        isAr ? "الكمية" : "Count",
-                        isAr ? "الكافيتي" : "Cavities",
-                        isAr ? "القطع" : "Pieces",
-                        isAr ? "المادة (كغ)" : "Material (kg)",
-                        isAr ? "لون (كغ)" : "Color (kg)",
-                      ].map((h) => (
-                        <th key={h} style={{ padding: ".6rem .875rem", textAlign: "left", fontWeight: 600, color: "var(--text-secondary)", whiteSpace: "nowrap" }}>
-                          {h}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {allRecords.slice(0, 50).map((r, i) => {
-                      const isPreform = isPreformMachine(r.machine?.type);
-                      return (
-                        <tr
-                          key={r.id}
-                          style={{
-                            borderBottom: "1px solid var(--border-default)",
-                            background: i % 2 === 0 ? "transparent" : "var(--bg-surface)",
-                          }}
-                        >
-                          <td style={{ padding: ".5rem .875rem", color: "var(--text-secondary)", whiteSpace: "nowrap" }}>
-                            {new Date(r.createdAt).toLocaleDateString()}
-                          </td>
-                          <td style={{ padding: ".5rem .875rem", fontWeight: 600 }}>{r.user?.fullName ?? "—"}</td>
-                          <td style={{ padding: ".5rem .875rem" }}>
-                            {r.machine?.name ?? "—"}
-                            <span
-                              style={{
-                                marginLeft: ".4rem",
-                                fontSize: ".7rem",
-                                padding: ".1rem .4rem",
-                                borderRadius: "999px",
-                                background: isPreform ? "var(--blue-100)" : "var(--orange-100)",
-                                color: isPreform ? "var(--blue-700)" : "var(--orange-700)",
-                              }}
-                            >
-                              {isPreform ? "PREFORM" : "CAPS"}
+            );
+          })()}
+
+          {/* ── BY WORKER TAB ── */}
+          {adminTab === "workers" && (
+            <div style={{ background: "var(--bg-card)", border: "1px solid var(--border-default)", borderRadius: "var(--radius-xl)", overflow: "hidden" }}>
+              <div style={{ padding: ".875rem 1.25rem", borderBottom: "1px solid var(--border-default)", background: "var(--bg-surface)", fontWeight: 700, fontSize: ".9rem" }}>
+                {isAr ? "الإنتاج حسب العامل" : "Production by Worker"}
+              </div>
+              {(adminOverview?.byUser ?? []).length === 0 ? (
+                <div style={{ padding: "2rem", textAlign: "center", color: "var(--text-secondary)" }}>{isAr ? "لا توجد بيانات" : "No data"}</div>
+              ) : (
+                <div style={{ overflowX: "auto" }}>
+                  <table className="admin-table">
+                    <thead>
+                      <tr>
+                        <th>#</th>
+                        <th>{isAr ? "الاسم" : "Name"}</th>
+                        <th>{isAr ? "اسم المستخدم" : "Username"}</th>
+                        <th>{isAr ? "الدور" : "Role"}</th>
+                        <th>{isAr ? "السجلات" : "Records"}</th>
+                        <th>{isAr ? "الكراتين" : "Cartons"}</th>
+                        <th>{isAr ? "إجمالي القطع" : "Total Pieces"}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(adminOverview?.byUser ?? []).map((w, i) => (
+                        <tr key={w.userId}>
+                          <td style={{ color: "var(--text-secondary)", fontWeight: 600 }}>{i + 1}</td>
+                          <td style={{ fontWeight: 700 }}>{w.fullName}</td>
+                          <td style={{ color: "var(--text-secondary)" }}>{w.username}</td>
+                          <td>
+                            <span style={{ padding: ".2rem .6rem", borderRadius: "999px", fontSize: ".72rem", fontWeight: 600, background: "rgba(249,115,22,.1)", color: "#ea580c" }}>
+                              {w.role}
                             </span>
                           </td>
-                          <td style={{ padding: ".5rem .875rem", color: "var(--text-secondary)" }}>{r.shift?.name ?? "—"}</td>
-                          <td style={{ padding: ".5rem .875rem" }}>
-                            {isPreform
-                              ? `${r.cartonsCount ?? 0} ${isAr ? "دورة" : "cycles"}`
-                              : `${r.cartonsCount ?? 0} ${isAr ? "كرتون" : "cartons"}`}
-                          </td>
-                          <td style={{ padding: ".5rem .875rem", color: "var(--text-secondary)" }}>
-                            {isPreform ? (r.workingCavities ? `${r.workingCavities}/72` : "72/72") : "—"}
-                          </td>
-                          <td style={{ padding: ".5rem .875rem", fontWeight: 700 }}>{fmt(r.totalPieces ?? 0)}</td>
-                          <td style={{ padding: ".5rem .875rem", color: "var(--text-secondary)" }}>
-                            {isPreform
-                              ? (r.rawPetUsed ? `PET: ${r.rawPetUsed}` : "—")
-                              : (r.rawHdpeUsed || r.rawLdpeUsed ? `H:${r.rawHdpeUsed ?? 0} L:${r.rawLdpeUsed ?? 0}` : "—")}
-                          </td>
-                          <td style={{ padding: ".5rem .875rem", color: "var(--text-secondary)" }}>{r.colorUsed ?? "—"}</td>
+                          <td>{w.recordsCount}</td>
+                          <td>{fmt(w.cartonsCount)}</td>
+                          <td style={{ fontWeight: 800, color: "var(--brand-primary)" }}>{fmt(w.totalPieces)}</td>
                         </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
           )}
         </>
@@ -1278,22 +1202,18 @@ export function ProductionPage() {
               marginBottom: "1.5rem",
             }}
           >
-            <Card className="p-4 bg-linear-to-br from-blue-50 to-blue-100 dark:from-blue-900/30 dark:to-blue-800/30 border border-blue-200 dark:border-blue-800">
-              <p className="text-xs text-slate-500 mb-1">{isAr ? "إجمالي السجلات" : "Total Records"}</p>
-              <p className="text-2xl font-bold text-blue-700 dark:text-blue-300">{allRecords.length}</p>
-            </Card>
-            <Card className="p-4 bg-linear-to-br from-blue-50 to-blue-100 dark:from-blue-900/30 dark:to-blue-800/30 border border-blue-200 dark:border-blue-800">
-              <p className="text-xs text-slate-500 mb-1">{isAr ? "سجلات البريفورم" : "Preform Records"}</p>
-              <p className="text-2xl font-bold text-blue-700 dark:text-blue-300">{allRecords.filter((r) => isPreformMachine(r.machine?.type)).length}</p>
-            </Card>
-            <Card className="p-4 bg-linear-to-br from-orange-50 to-orange-100 dark:from-orange-900/30 dark:to-orange-800/30 border border-orange-200 dark:border-orange-800">
-              <p className="text-xs text-slate-500 mb-1">{isAr ? "سجلات الكابس" : "Caps Records"}</p>
-              <p className="text-2xl font-bold text-orange-700 dark:text-orange-300">{allRecords.filter((r) => isCapsMachine(r.machine?.type)).length}</p>
-            </Card>
-            <Card className="p-4 bg-linear-to-br from-green-50 to-green-100 dark:from-green-900/30 dark:to-green-800/30 border border-green-200 dark:border-green-800">
-              <p className="text-xs text-slate-500 mb-1">{isAr ? "إجمالي القطع" : "Total Pieces"}</p>
-              <p className="text-2xl font-bold text-green-700 dark:text-green-300">{fmt(allRecords.reduce((s, r) => s + (r.totalPieces ?? 0), 0))}</p>
-            </Card>
+            {[
+              { label: isAr ? "إجمالي السجلات" : "Total Records", value: allRecords.length, gradient: "linear-gradient(135deg,#3b82f6,#1d4ed8)", icon: "📋" },
+              { label: isAr ? "سجلات البريفورم" : "Preform Records", value: allRecords.filter((r) => isPreformMachine(r.machine?.type)).length, gradient: "linear-gradient(135deg,#06b6d4,#0284c7)", icon: "🏭" },
+              { label: isAr ? "سجلات الكابس" : "Caps Records", value: allRecords.filter((r) => isCapsMachine(r.machine?.type)).length, gradient: "linear-gradient(135deg,#f97316,#ea580c)", icon: "🧢" },
+              { label: isAr ? "إجمالي القطع" : "Total Pieces", value: fmt(allRecords.reduce((s, r) => s + (r.totalPieces ?? 0), 0)), gradient: "linear-gradient(135deg,#10b981,#059669)", icon: "🔢" },
+            ].map((kpi) => (
+              <div key={kpi.label} style={{ background: kpi.gradient, borderRadius: "var(--radius-xl)", padding: "1.1rem 1.25rem", color: "#fff", display: "flex", flexDirection: "column", gap: ".35rem", boxShadow: "0 4px 14px rgba(0,0,0,.12)" }}>
+                <span style={{ fontSize: "1.3rem" }}>{kpi.icon}</span>
+                <p style={{ margin: 0, fontSize: ".75rem", opacity: .85, fontWeight: 500 }}>{kpi.label}</p>
+                <p style={{ margin: 0, fontSize: "1.6rem", fontWeight: 800, lineHeight: 1 }}>{kpi.value}</p>
+              </div>
+            ))}
           </div>
 
           {/* Records Table */}

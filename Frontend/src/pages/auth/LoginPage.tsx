@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Mail, Lock, Eye, EyeOff, Factory, ArrowRight, AlertCircle } from "lucide-react";
@@ -8,6 +8,8 @@ import { loginSchema, type LoginInput } from "../../lib/validations";
 
 export function LoginPage() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const isWelcome = new URLSearchParams(location.search).get("welcome") === "1";
   const { signIn } = useAuth();
   const [showPass, setShowPass] = useState(false);
   const [serverError, setServerError] = useState("");
@@ -27,7 +29,7 @@ export function LoginPage() {
       await signIn({ email: data.email.trim(), password: data.password });
       if (data.rememberMe) localStorage.setItem("plasticon_remember_me", "true");
       else localStorage.removeItem("plasticon_remember_me");
-      navigate("/dashboard");
+      navigate(isWelcome ? "/profile" : "/dashboard");
     } catch (err) {
       setServerError(err instanceof Error ? err.message : "Invalid email or password");
     }
@@ -101,9 +103,18 @@ export function LoginPage() {
 
           {/* Heading */}
           <div className="auth-card__heading">
-            <h1 style={{ margin: "0 0 .4rem", fontSize: "1.8rem", fontWeight: 800 }}>Welcome back</h1>
-            <p style={{ margin: 0, color: "var(--text-secondary)" }}>Sign in to your account to continue</p>
+            <h1 style={{ margin: "0 0 .4rem", fontSize: "1.8rem", fontWeight: 800 }}>
+              {isWelcome ? "Account Ready!" : "Welcome back"}
+            </h1>
+            <p style={{ margin: 0, color: "var(--text-secondary)" }}>
+              {isWelcome ? "Sign in with your new password to complete your profile." : "Sign in to your account to continue"}
+            </p>
           </div>
+          {isWelcome && (
+            <div style={{ padding: ".7rem 1rem", borderRadius: 8, background: "rgba(34,197,94,.08)", border: "1px solid rgba(34,197,94,.2)", color: "#16a34a", fontWeight: 600, fontSize: ".84rem", display: "flex", alignItems: "center", gap: ".5rem" }}>
+              ✓ Password set successfully — sign in to finish your setup.
+            </div>
+          )}
 
           {/* Form */}
           <form className="auth-form" onSubmit={handleSubmit(onSubmit)} noValidate>
@@ -193,9 +204,11 @@ export function LoginPage() {
             </button>
           </form>
 
-          <p className="auth-footer-link">
+          <p className="auth-footer-link" style={{ color: "var(--text-secondary)" }}>
             Don't have an account?{" "}
-            <Link to="/register">Contact your admin</Link>
+            <Link to="/request-access" style={{ color: "var(--orange-600)", fontWeight: 600, textDecoration: "none" }}>
+              Request access
+            </Link>
           </p>
         </div>
       </div>

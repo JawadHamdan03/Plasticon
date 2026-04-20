@@ -13,6 +13,7 @@ import { RegisterPage } from "./pages/auth/RegisterPage";
 import { ForgotPasswordPage } from "./pages/auth/ForgotPasswordPage";
 import { ResetPasswordPage } from "./pages/auth/ResetPasswordPage";
 import { VerifyEmailPage } from "./pages/auth/VerifyEmailPage";
+import { RequestAccessPage } from "./pages/auth/RequestAccessPage";
 import { AuthLayout } from "./components/AuthLayout";
 
 // Shared pages
@@ -30,6 +31,7 @@ import { ProfilePage } from "./pages/shared/ProfilePage";
 
 // Admin pages
 import { AdminPage } from "./pages/admin/AdminPage";
+import { RegistrationRequestsPage } from "./pages/admin/RegistrationRequestsPage";
 import { UsersAdminPage } from "./pages/admin/UsersAdminPage";
 import { AttendanceAdminPage } from "./pages/admin/AttendanceAdminPage";
 import { PayrollAdminPage } from "./pages/admin/PayrollAdminPage";
@@ -97,7 +99,7 @@ function App() {
               path="/forgot-password"
               element={
                 <AuthLayout>
-                  {(locale) => <ForgotPasswordPage locale={locale} />}
+                  {() => <ForgotPasswordPage />}
                 </AuthLayout>
               }
             />
@@ -114,6 +116,14 @@ function App() {
               element={
                 <AuthLayout>
                   {(locale) => <VerifyEmailPage locale={locale} />}
+                </AuthLayout>
+              }
+            />
+            <Route
+              path="/request-access"
+              element={
+                <AuthLayout>
+                  {() => <RequestAccessPage />}
                 </AuthLayout>
               }
             />
@@ -149,6 +159,7 @@ function App() {
             <Route path="/admin/audit-logs" element={<AdminOnlyRoute><AuditLogsPage /></AdminOnlyRoute>} />
             <Route path="/admin/dashboard-analytics" element={<AdminOnlyRoute><DashboardAnalyticsPage /></AdminOnlyRoute>} />
             <Route path="/admin/engineer" element={<AdminOnlyRoute><EngineerOverviewPage /></AdminOnlyRoute>} />
+            <Route path="/admin/registration-requests" element={<AdminOnlyRoute><RegistrationRequestsPage /></AdminOnlyRoute>} />
 
             {/* ── Admin + Accountant ── */}
             <Route

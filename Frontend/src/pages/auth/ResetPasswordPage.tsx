@@ -91,7 +91,8 @@ export function ResetPasswordPage({ locale }: ResetPasswordPageProps) {
 
       const data = (await response.json()) as { message?: string };
       setMessage(data.message || copy.resetSuccessDefault);
-      setTimeout(() => navigate("/login"), 1500);
+      const isSetup = new URLSearchParams(location.search).get("setup") === "1";
+      setTimeout(() => navigate(isSetup ? "/login?welcome=1" : "/login"), 1500);
     } catch (error) {
       setErrorMessage(
         error instanceof Error ? error.message : "Reset failed",
