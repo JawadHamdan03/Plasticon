@@ -7,11 +7,11 @@ import {
   Wrench, CheckSquare, AlertTriangle, Lightbulb, Activity, Target,
   Factory, Shield, Calendar, Boxes, Receipt, ClipboardCheck,
   UserCheck, Layers, Search, Package, PieChart, CreditCard, Percent, Wallet, CheckCircle,
-  Truck, Award, UserPlus,
+  Truck, Award, UserPlus, Sun, Moon,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useLocale } from "../context/LocaleContext";
-import { ThemeToggle } from "./ThemeToggle";
+import { useTheme } from "../context/ThemeContext";
 import { API_BASE_URL } from "../lib/api";
 import logo from "../assets/plasticon.png";
 
@@ -157,7 +157,6 @@ function getNavSectionsBi(role: string): NavSectionBi[] {
           { to: "/engineer/equipment-transfer", icon: <Layers size={17} />, label: nav("Equip. Transfer", "نقل معدات") },
           { to: "/engineer/raw-material-alerts", icon: <AlertTriangle size={17} />, label: nav("Raw Mat. Alerts", "تنبيهات المواد") },
           { to: "/engineer/maintenance-costs", icon: <DollarSign size={17} />, label: nav("Maint. Costs", "تكاليف الصيانة") },
-          { to: "/admin/settings/electricity", icon: <Zap size={17} />, label: nav("Electricity", "الكهرباء") },
         ],
       },
       {
@@ -326,6 +325,7 @@ export function AppScaffold({ children }: { children: ReactNode }) {
   const location = useLocation();
   const { user, signOut } = useAuth();
   const { locale, setLocale } = useLocale();
+  const { theme, setTheme } = useTheme();
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [pendingRequests, setPendingRequests] = useState(0);
@@ -544,8 +544,6 @@ export function AppScaffold({ children }: { children: ReactNode }) {
 
           {/* Actions */}
           <div className="app-topbar__actions">
-            {/* Dark mode toggle */}
-            <ThemeToggle />
             {/* Locale switch */}
             <div className="locale-switch-topbar">
               <button
@@ -559,6 +557,17 @@ export function AppScaffold({ children }: { children: ReactNode }) {
                 onClick={() => setLocale("ar")}
               >ع</button>
             </div>
+
+            {/* Dark mode toggle */}
+            <button
+              type="button"
+              className="btn btn--ghost btn--icon"
+              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+              aria-label="Toggle dark mode"
+              title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+            >
+              {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
+            </button>
             {/* Notifications */}
             <div style={{ position: "relative" }} ref={notifRef}>
               <button

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import { ModulePageShell } from "../../components/ModulePageShell";
 import { useAuth } from "../../context/AuthContext";
@@ -239,6 +239,7 @@ export function ChatPage() {
   const [loadingGroupDetail, setLoadingGroupDetail] = useState(false);
   const [creatingGroup, setCreatingGroup] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [groupSearch, setGroupSearch] = useState("");
   const [messageText, setMessageText] = useState("");
   const [membersByShift, setMembersByShift] = useState<ShiftMembersBucket[]>(
     [],
@@ -266,11 +267,30 @@ export function ChatPage() {
     userId: "",
     role: "MEMBER" as GroupRole,
   });
+  const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
   const selectedGroup = useMemo(
     () => groups.find((group) => group.id === selectedGroupId) ?? null,
     [groups, selectedGroupId],
   );
+
+  const filteredGroups = useMemo(() => {
+    const query = groupSearch.trim().toLowerCase();
+    if (!query) {
+      return groups;
+    }
+
+    return groups.filter((group) => {
+      const name = group.name?.toLowerCase() ?? "";
+      const description = group.description?.toLowerCase() ?? "";
+      const last = group.lastMessage?.content?.toLowerCase() ?? "";
+      return (
+        name.includes(query) ||
+        description.includes(query) ||
+        last.includes(query)
+      );
+    });
+  }, [groups, groupSearch]);
 
   const flattenedMembers = useMemo(
     () =>
@@ -350,6 +370,8 @@ export function ChatPage() {
     const member = flattenedMembers.find((item) => item.id === userId);
     return member ?? null;
   }, [selectedDirectRecipientId, flattenedMembers]);
+
+  const currentUserId = user?.id ?? null;
 
   const loadGroups = async () => {
     setLoadingGroups(true);
@@ -502,6 +524,13 @@ export function ChatPage() {
     void markAsRead(selectedGroupId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedGroupId]);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "end",
+    });
+  }, [messages, selectedGroupId]);
 
   useEffect(() => {
     void loadMembersDirectory();
@@ -764,93 +793,137 @@ export function ChatPage() {
         </button>
       }
     >
-      <section className="module-grid">
-        <article className="module-panel">
-          <h2>{t.groups}</h2>
-          {loadingGroups ? <p>{t.loadingGroups}</p> : null}
-          <div className="module-list">
-            {groups.length === 0 && !loadingGroups ? (
+      <section className="chat-messenger">
+        <aside className="chat-messenger__sidebar">
+          <div className="chat-messenger__sidebar-head">
+            <h2>{t.groups}</h2>
+            <input
+              type="search"
+              className="chat-messenger__search"
+              placeholder={
+                locale === "ar"
+                  ? "ابحث في المحادثات..."
+                  : "Search conversations..."
+              }
+              value={groupSearch}
+              onChange={(event) => setGroupSearch(event.target.value)}
+            />
+          </div>
+
+          <div className="chat-messenger__conversations">
+            {loadingGroups ? (
+              <p className="module-empty">{t.loadingGroups}</p>
+            ) : null}
+            {!loadingGroups && filteredGroups.length === 0 ? (
               <p className="module-empty">{t.noGroups}</p>
             ) : null}
-            {groups.map((group) => (
-              <button
-                key={group.id}
-                type="button"
-                className="module-row"
-                onClick={() => setSelectedGroupId(group.id)}
-                style={{ textAlign: locale === "ar" ? "right" : "left" }}
-              >
-                <strong>{group.name}</strong>
-                <span>{group.description || "-"}</span>
-                <small>
-                  {group.unreadCount ? `${group.unreadCount} unread` : " "}
-                </small>
-              </button>
-            ))}
+
+            {filteredGroups.map((group) => {
+              const isActive = group.id === selectedGroupId;
+              return (
+                <button
+                  key={group.id}
+                  type="button"
+                  className={`chat-messenger__conversation ${isActive ? "is-active" : ""}`}
+                  onClick={() => setSelectedGroupId(group.id)}
+                  style={{ textAlign: locale === "ar" ? "right" : "left" }}
+                >
+                  <div className="chat-messenger__conversation-top">
+                    <strong>{group.name}</strong>
+                    {group.unreadCount ? (
+                      <span className="chat-messenger__badge">
+                        {group.unreadCount}
+                      </span>
+                    ) : null}
+                  </div>
+                  <p>
+                    {group.lastMessage?.content || group.description || "-"}
+                  </p>
+                  <small>
+                    {group.lastMessage?.createdAt
+                      ? new Date(group.lastMessage.createdAt).toLocaleString()
+                      : ""}
+                  </small>
+                </button>
+              );
+            })}
           </div>
-        </article>
+        </aside>
 
-        <article className="module-panel">
-          <h2>
-            {t.messages}
-            {selectedGroup ? ` - ${selectedGroup.name}` : ""}
-          </h2>
+        <article className="chat-messenger__thread">
+          <header className="chat-messenger__thread-head">
+            <div>
+              <h2>{selectedGroup?.name || t.messages}</h2>
+              <p>{selectedGroup?.description || t.selectGroup}</p>
+            </div>
+            {selectedGroupId ? (
+              <button
+                type="button"
+                className="auth-button auth-button--ghost"
+                onClick={() => void markAsRead(selectedGroupId)}
+              >
+                {t.markAsRead}
+              </button>
+            ) : null}
+          </header>
 
-          {!selectedGroupId ? (
-            <p className="module-empty">{t.selectGroup}</p>
-          ) : null}
-          {loadingMessages ? <p>{t.loadingMessages}</p> : null}
-
-          <div className="module-list">
+          <div className="chat-messenger__messages">
+            {!selectedGroupId ? (
+              <p className="module-empty">{t.selectGroup}</p>
+            ) : null}
+            {loadingMessages ? (
+              <p className="module-empty">{t.loadingMessages}</p>
+            ) : null}
             {!loadingMessages && selectedGroupId && messages.length === 0 ? (
               <p className="module-empty">{t.noMessages}</p>
             ) : null}
 
-            {messages.map((message) => (
-              <div key={message.id} className="module-row">
-                <strong>
-                  {message.sender?.fullName ||
-                    message.sender?.username ||
-                    `#${message.id}`}
-                </strong>
-                <span>{message.content}</span>
-                <small>{new Date(message.createdAt).toLocaleString()}</small>
-              </div>
-            ))}
+            {messages.map((message) => {
+              const isMine =
+                currentUserId !== null && message.sender?.id === currentUserId;
+              return (
+                <div
+                  key={message.id}
+                  className={`chat-messenger__bubble-wrap ${isMine ? "is-mine" : ""}`}
+                >
+                  <div
+                    className={`chat-messenger__bubble ${isMine ? "is-mine" : ""}`}
+                  >
+                    <strong>
+                      {isMine
+                        ? locale === "ar"
+                          ? "أنت"
+                          : "You"
+                        : message.sender?.fullName ||
+                          message.sender?.username ||
+                          `#${message.id}`}
+                    </strong>
+                    <p>{message.content}</p>
+                    <small>
+                      {new Date(message.createdAt).toLocaleString()}
+                    </small>
+                  </div>
+                </div>
+              );
+            })}
+            <div ref={messagesEndRef} />
           </div>
 
           {selectedGroupId ? (
-            <>
-              <div
-                className="admin-section__actions"
-                style={{ justifyContent: "flex-start" }}
-              >
-                <button
-                  type="button"
-                  className="auth-button auth-button--ghost"
-                  onClick={() => void markAsRead(selectedGroupId)}
-                >
-                  {t.markAsRead}
-                </button>
-              </div>
-
-              <form
-                className="module-form module-form--inline"
-                onSubmit={handleSendMessage}
-              >
-                <label>
-                  <input
-                    type="text"
-                    placeholder={t.messagePlaceholder}
-                    value={messageText}
-                    onChange={(event) => setMessageText(event.target.value)}
-                  />
-                </label>
-                <button type="submit" className="auth-button">
-                  {t.send}
-                </button>
-              </form>
-            </>
+            <form
+              className="chat-messenger__composer"
+              onSubmit={handleSendMessage}
+            >
+              <input
+                type="text"
+                placeholder={t.messagePlaceholder}
+                value={messageText}
+                onChange={(event) => setMessageText(event.target.value)}
+              />
+              <button type="submit" className="auth-button">
+                {t.send}
+              </button>
+            </form>
           ) : null}
         </article>
       </section>

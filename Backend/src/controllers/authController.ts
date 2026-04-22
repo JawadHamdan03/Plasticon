@@ -56,6 +56,18 @@ export const loginHandler = async (req: Request, res: Response) => {
     res.status(result.status).json(result.data);
   } catch (error) {
     console.error("Login error:", error);
+    const maybePrismaError = error as { code?: string };
+    if (
+      maybePrismaError?.code === "P1000" ||
+      maybePrismaError?.code === "P1001"
+    ) {
+      res.status(503).json({
+        message:
+          "Database connection is unavailable. Check DATABASE_URL credentials and retry.",
+      });
+      return;
+    }
+
     res.status(500).json({ message: "Failed to login" });
   }
 };

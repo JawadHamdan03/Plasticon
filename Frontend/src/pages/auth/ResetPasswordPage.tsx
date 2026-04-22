@@ -30,12 +30,14 @@ const getStrength = (password: string): 0 | 1 | 2 | 3 => {
   return score as 0 | 1 | 2 | 3;
 };
 
-const strengthColors: Record<1 | 2 | 3, string> = {
+const strengthColors: Record<0 | 1 | 2 | 3, string> = {
+  0: "#d1d5db",
   1: "#ef4444",
   2: "#f97316",
   3: "#22c55e",
 };
-const strengthLabels: Record<1 | 2 | 3, { en: string; ar: string }> = {
+const strengthLabels: Record<0 | 1 | 2 | 3, { en: string; ar: string }> = {
+  0: { en: "None", ar: "بدون" },
   1: { en: "Weak", ar: "ضعيف" },
   2: { en: "Fair", ar: "متوسط" },
   3: { en: "Strong", ar: "قوي" },
