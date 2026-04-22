@@ -17,7 +17,8 @@
       "Bash(curl -s -o /dev/null -w \"GET /registration-requests -> %{http_code}\\\\n\" http://localhost:8080/registration-requests)",
       "Bash(curl -s -o /dev/null -w \"POST /registration-requests -> %{http_code}\\\\n\" -X POST http://localhost:8080/registration-requests -H \"Content-Type: application/json\" -d '{\"fullName\":\"John\",\"email\":\"john99@test.com\"}')",
       "Bash(curl -s -o /dev/null -w \"GET /dashboard/overview -> %{http_code}\\\\n\" http://localhost:8080/dashboard/overview)",
-      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:8080/dashboard/overview)"
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:8080/dashboard/overview)",
+      "Bash(npm install *)"
     ]
   }
 }

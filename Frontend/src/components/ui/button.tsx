@@ -4,9 +4,11 @@ import { motion } from "framer-motion";
 import { cn } from "../../lib/utils";
 
 type ButtonVariant = "default" | "secondary" | "ghost" | "outline" | "orange" | "danger";
+type ButtonSize = "sm" | "md" | "lg";
 
 type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   variant?: ButtonVariant;
+  size?: ButtonSize;
   children: ReactNode;
   asChild?: boolean;
 };
@@ -26,9 +28,16 @@ const variantStyles: Record<ButtonVariant, string> = {
     "border-red-600 bg-red-600 text-white shadow-[0_4px_14px_rgba(220,38,38,0.25)] hover:bg-red-700 hover:border-red-700",
 };
 
+const sizeStyles: Record<ButtonSize, string> = {
+  sm: "px-2 py-1 text-xs",
+  md: "px-4 py-2 text-sm",
+  lg: "px-6 py-3 text-base",
+};
+
 export function Button({
   className,
   variant = "default",
+  size = "md",
   type = "button",
   children,
   asChild = false,
@@ -37,6 +46,7 @@ export function Button({
   const buttonClassName = cn(
     "inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border px-4 py-2 text-sm font-semibold outline-none transition focus-visible:ring-2 focus-visible:ring-(--orange-400)/50 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent disabled:pointer-events-none disabled:opacity-50",
     variantStyles[variant],
+    sizeStyles[size],
     className,
   );
 

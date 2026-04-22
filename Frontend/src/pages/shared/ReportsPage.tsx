@@ -5,9 +5,10 @@ import {
   useState,
   type FormEvent,
 } from "react";
-import { Download } from "lucide-react";
+import { Download, FileSpreadsheet } from "lucide-react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import * as XLSX from "xlsx";
 import { useAuth } from "../../context/AuthContext";
 import { useLocale } from "../../context/LocaleContext";
 import { appCopy } from "../../content/appCopy";
@@ -538,6 +539,17 @@ export function ReportsPage() {
     doc.save(fileName);
   };
 
+  const exportExcelTable = (
+    headers: string[],
+    rows: string[][],
+    fileName: string,
+  ) => {
+    const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Report");
+    XLSX.writeFile(wb, fileName);
+  };
+
   const payrollUsers = useMemo(() => {
     if (!payrollActivity) {
       return [] as Array<{ username: string; name: string }>;
@@ -733,6 +745,25 @@ export function ReportsPage() {
                 />
                 {copy.reports.downloadPdf}
               </button>
+              <button
+                type="button"
+                className="auth-button auth-button--ghost reports-download-button"
+                dir="ltr"
+                onClick={() => {
+                  if (!supplierReportRows.length) {
+                    window.alert(copy.reports.pdfNoData);
+                    return;
+                  }
+                  exportExcelTable(
+                    [isArabic ? "المورد" : "Supplier", isArabic ? "العمليات" : "Purchases", isArabic ? "الإجمالي" : "Total", isArabic ? "آخر استلام" : "Last purchase"],
+                    supplierReportRows.map((row) => [row.supplierName, String(row.purchasesCount), row.totalAmount.toLocaleString(), row.lastPurchaseDate ? row.lastPurchaseDate.slice(0, 10) : "-"]),
+                    `supplier-report-${new Date().toISOString().slice(0, 10)}.xlsx`,
+                  );
+                }}
+              >
+                <FileSpreadsheet className="reports-download-icon" aria-hidden="true" />
+                {isArabic ? "Excel تنزيل" : "Download Excel"}
+              </button>
             </div>
           </div>
           {loadingCommerce ? (
@@ -866,6 +897,25 @@ export function ReportsPage() {
                   aria-hidden="true"
                 />
                 {copy.reports.downloadPdf}
+              </button>
+              <button
+                type="button"
+                className="auth-button auth-button--ghost reports-download-button"
+                dir="ltr"
+                onClick={() => {
+                  if (!customerReportRows.length) {
+                    window.alert(copy.reports.pdfNoData);
+                    return;
+                  }
+                  exportExcelTable(
+                    [isArabic ? "الزبون" : "Customer", isArabic ? "العمليات" : "Sales", isArabic ? "الإجمالي" : "Total", isArabic ? "آخر بيع" : "Last sale"],
+                    customerReportRows.map((row) => [row.customerName, String(row.salesCount), row.totalAmount.toLocaleString(), row.lastSaleDate ? row.lastSaleDate.slice(0, 10) : "-"]),
+                    `customer-report-${new Date().toISOString().slice(0, 10)}.xlsx`,
+                  );
+                }}
+              >
+                <FileSpreadsheet className="reports-download-icon" aria-hidden="true" />
+                {isArabic ? "Excel تنزيل" : "Download Excel"}
               </button>
             </div>
           </div>
@@ -1038,6 +1088,25 @@ export function ReportsPage() {
               <Download className="reports-download-icon" aria-hidden="true" />
               {copy.reports.downloadPdf}
             </button>
+            <button
+              type="button"
+              className="auth-button auth-button--ghost reports-download-button"
+              dir="ltr"
+              onClick={() => {
+                if (!productionActivity) {
+                  window.alert(copy.reports.pdfNoData);
+                  return;
+                }
+                exportExcelTable(
+                  [reportText.date, reportText.machine, reportText.shift, reportText.user, reportText.cartons, reportText.pieces],
+                  productionActivity.records.map((row) => [row.createdAt.slice(0, 10), row.machineName, row.shiftName, row.userName, String(row.cartonsCount), String(row.totalPieces)]),
+                  `production-${productionActivity.label}.xlsx`,
+                );
+              }}
+            >
+              <FileSpreadsheet className="reports-download-icon" aria-hidden="true" />
+              {isArabic ? "Excel تنزيل" : "Download Excel"}
+            </button>
           </div>
           {loadingSection === "productionActivity" ? (
             <p>{copy.reports.loadingDaily}</p>
@@ -1193,6 +1262,25 @@ export function ReportsPage() {
             >
               <Download className="reports-download-icon" aria-hidden="true" />
               {copy.reports.downloadPdf}
+            </button>
+            <button
+              type="button"
+              className="auth-button auth-button--ghost reports-download-button"
+              dir="ltr"
+              onClick={() => {
+                if (!inventoryActivity) {
+                  window.alert(copy.reports.pdfNoData);
+                  return;
+                }
+                exportExcelTable(
+                  [reportText.date, reportText.material, reportText.type, reportText.qty, reportText.reference],
+                  inventoryActivity.records.map((row) => [row.createdAt.slice(0, 10), row.materialName, row.type, `${row.quantity} ${row.materialUnit}`, row.referenceType]),
+                  `inventory-${inventoryActivity.label}.xlsx`,
+                );
+              }}
+            >
+              <FileSpreadsheet className="reports-download-icon" aria-hidden="true" />
+              {isArabic ? "Excel تنزيل" : "Download Excel"}
             </button>
           </div>
           {loadingSection === "inventoryActivity" ? (
@@ -1352,6 +1440,25 @@ export function ReportsPage() {
             >
               <Download className="reports-download-icon" aria-hidden="true" />
               {copy.reports.downloadPdf}
+            </button>
+            <button
+              type="button"
+              className="auth-button auth-button--ghost reports-download-button"
+              dir="ltr"
+              onClick={() => {
+                if (!attendanceActivity) {
+                  window.alert(copy.reports.pdfNoData);
+                  return;
+                }
+                exportExcelTable(
+                  [reportText.user, reportText.shift, reportText.checkIn, reportText.checkOut, reportText.late, reportText.overtime],
+                  attendanceActivity.records.map((row) => [row.userName, row.shiftName ?? "-", row.checkIn.replace("T", " ").slice(0, 16), row.checkOut ? row.checkOut.replace("T", " ").slice(0, 16) : "-", String(row.lateMinutes), String(row.overtimeMinutes)]),
+                  `attendance-${attendanceActivity.label}.xlsx`,
+                );
+              }}
+            >
+              <FileSpreadsheet className="reports-download-icon" aria-hidden="true" />
+              {isArabic ? "Excel تنزيل" : "Download Excel"}
             </button>
           </div>
           {loadingSection === "attendanceActivity" ? (
@@ -1549,6 +1656,25 @@ export function ReportsPage() {
             >
               <Download className="reports-download-icon" aria-hidden="true" />
               {copy.reports.downloadPdf}
+            </button>
+            <button
+              type="button"
+              className="auth-button auth-button--ghost reports-download-button"
+              dir="ltr"
+              onClick={() => {
+                if (!payrollActivity || !filteredPayrollRows.length) {
+                  window.alert(copy.reports.pdfNoData);
+                  return;
+                }
+                exportExcelTable(
+                  [reportText.user, reportText.month, reportText.hours, reportText.overtimeHours, reportText.total],
+                  filteredPayrollRows.map((row) => [row.userName, row.month, String(row.totalHours), String(row.overtimeHours), row.totalSalary.toLocaleString()]),
+                  `payroll-${payrollActivity.label}-${payrollScopeMode === "ALL" ? "all" : "person"}.xlsx`,
+                );
+              }}
+            >
+              <FileSpreadsheet className="reports-download-icon" aria-hidden="true" />
+              {isArabic ? "Excel تنزيل" : "Download Excel"}
             </button>
           </div>
           {loadingSection === "payrollActivity" ? (

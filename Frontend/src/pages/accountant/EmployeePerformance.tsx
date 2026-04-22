@@ -66,7 +66,7 @@ export default function EmployeePerformance() {
     try {
       const [r1, r2] = await Promise.all([
         fetch(`${API_BASE_URL}/performance`, { headers: { ...authHeaders() }, credentials: "include" }),
-        fetch(`${API_BASE_URL}/admin/users`, { headers: { ...authHeaders() }, credentials: "include" }),
+        fetch(`${API_BASE_URL}/users/all`, { headers: { ...authHeaders() }, credentials: "include" }),
       ]);
       if (r1.ok) {
         const d = await r1.json();

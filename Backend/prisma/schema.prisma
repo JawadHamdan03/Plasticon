@@ -189,6 +189,10 @@ model User {
   maintenanceCostsCreated    MaintenanceCost[]     @relation("MaintenanceCostCreator")
   userDocuments              UserDocument[]
   reviewedRegistrationRequests RegistrationRequest[] @relation("RegistrationReviewer")
+
+  // Indices for common queries
+  @@index([email])
+  @@index([username])
 }
 
 model UserDocument {
@@ -331,6 +335,8 @@ model ProductionRecord {
   notifications Notification[]
 
   createdAt DateTime @default(now())
+
+  @@index([createdAt])
 }
 
 //////////////////////
@@ -408,6 +414,9 @@ model InventoryTransaction {
   createdBy User?       @relation(fields: [createdById], references: [id])
 
   createdAt DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([materialId])
 }
 
 //////////////////////
@@ -500,6 +509,8 @@ model Sale {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([date])
 }
 
 model SaleItem {
@@ -897,6 +908,8 @@ model ChatGroup {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([createdById])
 }
 
 model GroupMember {

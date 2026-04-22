@@ -1681,7 +1681,7 @@ export function SettingsAdminPage() {
             </div>
             <div style={{ display: "flex", gap: ".5rem" }}>
               {(["daily", "weekly"] as const).map((r) => (
-                <button key={r} type="button" onClick={() => setTrendRange(r)} style={{ padding: ".45rem 1rem", borderRadius: 8, border: "none", cursor: "pointer", fontWeight: 700, fontSize: ".82rem", background: trendRange === r ? "var(--orange-500,#f97316)" : "var(--bg-card,#fff)", color: trendRange === r ? "#fff" : "var(--text-secondary)", border: trendRange === r ? "none" : "1px solid var(--border-default,#e5e7eb)" }}>
+                <button key={r} type="button" onClick={() => setTrendRange(r)} style={{ padding: ".45rem 1rem", borderRadius: 8, cursor: "pointer", fontWeight: 700, fontSize: ".82rem", background: trendRange === r ? "var(--orange-500,#f97316)" : "var(--bg-card,#fff)", color: trendRange === r ? "#fff" : "var(--text-secondary)", border: trendRange === r ? "none" : "1px solid var(--border-default,#e5e7eb)" }}>
                   {r === "daily" ? text.dailyTrend : text.weeklyTrend}
                 </button>
               ))}

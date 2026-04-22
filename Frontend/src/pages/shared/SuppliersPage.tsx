@@ -9,7 +9,6 @@ import { useAuth } from "../../context/AuthContext";
 import { useLocale } from "../../context/LocaleContext";
 import { API_BASE_URL, readApiError } from "../../lib/api";
 import { ModulePageShell } from "../../components/ModulePageShell";
-import { Badge } from "../../components/ui/badge";
 import { Button } from "../../components/ui/button";
 import { Card } from "../../components/ui/card";
 import { EmptyState } from "../../components/ui/empty-state";
@@ -490,13 +489,19 @@ export function SuppliersPage() {
         </Button>
       }
     >
-      <div className="module-summary-bar flex flex-wrap items-center gap-2 rounded-2xl border border-[#EEEEEE] bg-[#FFFFFF] p-3">
-        <Badge tone="soft">{text.summarySuppliers}</Badge>
-        <Badge>{totals.suppliers}</Badge>
-        <Badge tone="soft">{text.summaryPurchases}</Badge>
-        <Badge>{totals.purchases}</Badge>
-        <Badge tone="soft">{text.summaryAmount}</Badge>
-        <Badge>{formatMoney(locale, totals.amount)}</Badge>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "1rem", marginBottom: "0.5rem" }}>
+        <div style={{ background: "linear-gradient(135deg, #1d4ed8 0%, #3b82f6 100%)", borderRadius: 14, padding: "1.25rem 1.5rem", color: "#fff", boxShadow: "0 4px 14px rgba(59,130,246,.35)" }}>
+          <p style={{ margin: 0, fontSize: ".75rem", fontWeight: 600, opacity: .8, textTransform: "uppercase", letterSpacing: ".05em" }}>{text.summarySuppliers}</p>
+          <p style={{ margin: "6px 0 0", fontSize: "2rem", fontWeight: 800, lineHeight: 1 }}>{totals.suppliers}</p>
+        </div>
+        <div style={{ background: "linear-gradient(135deg, #b45309 0%, #f59e0b 100%)", borderRadius: 14, padding: "1.25rem 1.5rem", color: "#fff", boxShadow: "0 4px 14px rgba(245,158,11,.35)" }}>
+          <p style={{ margin: 0, fontSize: ".75rem", fontWeight: 600, opacity: .8, textTransform: "uppercase", letterSpacing: ".05em" }}>{text.summaryPurchases}</p>
+          <p style={{ margin: "6px 0 0", fontSize: "2rem", fontWeight: 800, lineHeight: 1 }}>{totals.purchases}</p>
+        </div>
+        <div style={{ background: "linear-gradient(135deg, #065f46 0%, #10b981 100%)", borderRadius: 14, padding: "1.25rem 1.5rem", color: "#fff", boxShadow: "0 4px 14px rgba(16,185,129,.35)" }}>
+          <p style={{ margin: 0, fontSize: ".75rem", fontWeight: 600, opacity: .8, textTransform: "uppercase", letterSpacing: ".05em" }}>{text.summaryAmount}</p>
+          <p style={{ margin: "6px 0 0", fontSize: "1.6rem", fontWeight: 800, lineHeight: 1 }}>{formatMoney(locale, totals.amount)}</p>
+        </div>
       </div>
 
       <Card className="module-panel p-5">

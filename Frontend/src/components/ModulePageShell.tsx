@@ -7,6 +7,7 @@ type ModulePageShellProps = {
   subtitle: string;
   children: ReactNode;
   actions?: ReactNode;
+  icon?: ReactNode;
 };
 
 export function ModulePageShell({
@@ -14,6 +15,7 @@ export function ModulePageShell({
   subtitle,
   children,
   actions,
+  icon,
 }: ModulePageShellProps) {
   const { locale } = useLocale();
   const copy = appCopy[locale];
@@ -40,33 +42,40 @@ export function ModulePageShell({
           marginBottom: "1.25rem",
         }}
       >
-        <div style={{ minWidth: 0 }}>
-          <p
-            style={{
-              margin: 0,
-              fontSize: ".7rem",
-              fontWeight: 700,
-              textTransform: "uppercase",
-              letterSpacing: ".14em",
-              color: "var(--text-secondary)",
-            }}
-          >
-            {copy.appName}
-          </p>
-          <h1
-            style={{
-              margin: ".375rem 0 0",
-              fontSize: "1.5rem",
-              fontWeight: 800,
-              letterSpacing: "-.025em",
-              color: "var(--text-primary)",
-            }}
-          >
-            {title}
-          </h1>
-          <p style={{ margin: ".375rem 0 0", fontSize: ".875rem", color: "var(--text-secondary)", lineHeight: 1.6 }}>
-            {subtitle}
-          </p>
+        <div style={{ display: "flex", gap: "1rem", alignItems: "flex-start", minWidth: 0 }}>
+          {icon && (
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", marginTop: ".375rem" }}>
+              {icon}
+            </div>
+          )}
+          <div style={{ minWidth: 0 }}>
+            <p
+              style={{
+                margin: 0,
+                fontSize: ".7rem",
+                fontWeight: 700,
+                textTransform: "uppercase",
+                letterSpacing: ".14em",
+                color: "var(--text-secondary)",
+              }}
+            >
+              {copy.appName}
+            </p>
+            <h1
+              style={{
+                margin: ".375rem 0 0",
+                fontSize: "1.5rem",
+                fontWeight: 800,
+                letterSpacing: "-.025em",
+                color: "var(--text-primary)",
+              }}
+            >
+              {title}
+            </h1>
+            <p style={{ margin: ".375rem 0 0", fontSize: ".875rem", color: "var(--text-secondary)", lineHeight: 1.6 }}>
+              {subtitle}
+            </p>
+          </div>
         </div>
         {actions && (
           <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: ".5rem" }}>
