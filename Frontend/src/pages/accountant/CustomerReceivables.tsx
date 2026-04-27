@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
+import { confirmDialog } from "../../lib/dialog";
 import { Plus, Edit, Trash2, CheckCircle, Clock, AlertTriangle, Users } from "lucide-react";
 import { ModulePageShell } from "../../components/ModulePageShell";
 import { Button } from "../../components/ui/button";
@@ -81,7 +82,7 @@ export default function CustomerReceivables() {
   };
 
   const handleDelete = async (id: number) => {
-    if (!confirm(nav("Delete this receivable?", "حذف هذا الحساب المدين؟"))) return;
+    if (!(await confirmDialog(nav("Delete this receivable?", "حذف هذا الحساب المدين؟"), { danger: true }))) return;
     await fetch(`${API_BASE_URL}/customer-receivables/${id}`, {
       method: "DELETE", headers: { ...authHeaders() }, credentials: "include",
     });

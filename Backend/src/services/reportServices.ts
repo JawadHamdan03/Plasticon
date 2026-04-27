@@ -302,9 +302,9 @@ export const getWeeklyProductionSummary = async (
   const byMachine = new Map<
     string,
     {
-      machineId: number;
+      machineId: number | null;
       machineName: string;
-      machineType: string;
+      machineType: string | null;
       totalCartons: number;
       totalPieces: number;
       recordsCount: number;
@@ -349,11 +349,11 @@ export const getWeeklyProductionSummary = async (
     shiftCurrent.recordsCount += 1;
     byShift.set(shiftKey, shiftCurrent);
 
-    const machineKey = String(record.machine.id);
+    const machineKey = String(record.machine?.id ?? "none");
     const machineCurrent = byMachine.get(machineKey) ?? {
-      machineId: record.machine.id,
-      machineName: record.machine.name,
-      machineType: record.machine.type,
+      machineId: record.machine?.id ?? null,
+      machineName: record.machine?.name ?? "—",
+      machineType: record.machine?.type ?? null,
       totalCartons: 0,
       totalPieces: 0,
       recordsCount: 0,
@@ -542,8 +542,8 @@ export const getProductionActivityReport = async (
       records: records.map((record) => ({
         id: record.id,
         createdAt: record.createdAt.toISOString(),
-        machineName: record.machine.name,
-        machineType: record.machine.type,
+        machineName: record.machine?.name ?? "—",
+        machineType: record.machine?.type ?? null,
         shiftName: record.shift.name,
         userName: record.user.fullName,
         username: record.user.username,

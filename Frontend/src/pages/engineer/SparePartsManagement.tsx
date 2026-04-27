@@ -5,6 +5,8 @@ import { Button } from "../../components/ui/button";
 import { Card } from "../../components/ui/card";
 import { useLocale } from "../../context/LocaleContext";
 import { API_BASE_URL } from "../../lib/api";
+import { toast } from "../../lib/toast";
+import { confirmDialog } from "../../lib/dialog";
 import { useAuth } from "../../context/AuthContext";
 
 function authHeaders(): Record<string, string> {
@@ -85,7 +87,7 @@ export default function SparePartsManagement() {
   };
 
   const handleDelete = async (id: number) => {
-    if (!confirm(nav("Delete this spare part?", "حذف قطعة الغيار هذه؟"))) return;
+    if (!(await confirmDialog(nav("Delete this spare part?", "حذف قطعة الغيار هذه؟"), { danger: true, confirmText: nav("Delete", "حذف") }))) return;
     setDeletingId(id);
     try {
       const res = await fetch(`${API_BASE_URL}/spare-parts/${id}`, {
@@ -96,10 +98,10 @@ export default function SparePartsManagement() {
       if (res.ok) {
         fetchParts();
       } else {
-        const err = await res.json();
-        alert(err.message || nav("Failed to delete", "فشل الحذف"));
+        const err = await res.json() as { message?: string };
+        toast.error(err.message || nav("Failed to delete", "فشل الحذف"));
       }
-    } catch { alert(nav("Network error", "خطأ في الاتصال")); }
+    } catch { toast.error(nav("Network error", "خطأ في الاتصال")); }
     finally { setDeletingId(null); }
   };
 

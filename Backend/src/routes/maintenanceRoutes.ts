@@ -11,13 +11,13 @@ const router = Router();
 
 router.post(
   "/",
-  authorizeRoles([UserRole.WORKER, UserRole.ENGINEER, UserRole.ADMIN]),
+  authorizeRoles([UserRole.WORKER, UserRole.ENGINEER]),
   createMaintenanceHandler,
 );
 
 router.get(
   "/me",
-  authorizeRoles([UserRole.WORKER, UserRole.ENGINEER, UserRole.ADMIN]),
+  authorizeRoles([UserRole.WORKER, UserRole.ENGINEER]),
   getMyMaintenancesHandler,
 );
 

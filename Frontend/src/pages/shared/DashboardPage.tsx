@@ -335,14 +335,7 @@ function AdminDashboard() {
         />
       </div>
 
-      <div
-        className="dashboard-side-layout"
-        style={{
-          display: "grid",
-          gridTemplateColumns: "minmax(0,1fr) 300px",
-          gap: "1.5rem",
-        }}
-      >
+      <div className="dashboard-side-layout">
         {/* Machine status breakdown */}
         <div className="card">
           <div className="card-header">
@@ -558,13 +551,7 @@ function EngineerDashboard() {
         />
       </div>
 
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "1fr 300px",
-          gap: "1.5rem",
-        }}
-      >
+      <div className="dashboard-side-layout">
         <div className="card">
           <div className="card-header">
             <h2 style={{ margin: 0, fontSize: "1rem", fontWeight: 700 }}>
@@ -575,7 +562,7 @@ function EngineerDashboard() {
             className="card-body"
             style={{
               display: "grid",
-              gridTemplateColumns: "1fr 1fr",
+              gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))",
               gap: ".75rem",
             }}
           >
@@ -767,13 +754,7 @@ function AccountantDashboard() {
         />
       </div>
 
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "1fr 300px",
-          gap: "1.5rem",
-        }}
-      >
+      <div className="dashboard-side-layout">
         <div className="card">
           <div className="card-header">
             <h2 style={{ margin: 0, fontSize: "1rem", fontWeight: 700 }}>
@@ -784,7 +765,7 @@ function AccountantDashboard() {
             className="card-body"
             style={{
               display: "grid",
-              gridTemplateColumns: "1fr 1fr",
+              gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))",
               gap: ".75rem",
             }}
           >
@@ -1015,14 +996,7 @@ function WorkerDashboard() {
         />
       </div>
 
-      <div
-        className="dashboard-side-layout"
-        style={{
-          display: "grid",
-          gridTemplateColumns: "1fr 1fr",
-          gap: "1.5rem",
-        }}
-      >
+      <div className="dashboard-side-layout">
         <div className="card">
           <div className="card-header">
             <h2 style={{ margin: 0, fontSize: "1rem", fontWeight: 700 }}>

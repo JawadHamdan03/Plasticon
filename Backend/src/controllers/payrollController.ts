@@ -11,6 +11,7 @@ import {
   getSalaryConfigs,
   updateSalaryConfig,
   calculateDailyPayroll,
+  calculateDailyPayrollsForDate,
   confirmDailyPayroll,
   getDailyPayrollsForAccountant,
   getMyDailyPayrolls,
@@ -237,6 +238,20 @@ export const getDailyPayrollsHandler = async (req: AuthenticatedRequest, res: Re
   } catch (error) {
     console.error("Get daily payrolls error:", error);
     res.status(500).json({ message: "Failed to fetch daily payrolls" });
+  }
+};
+
+export const calculateDailyPayrollsForDateHandler = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const calculatedById = req.user?.id;
+    if (!calculatedById) { res.status(401).json({ message: "Not authorized" }); return; }
+    const dateStr = req.body.date as string | undefined;
+    if (!dateStr) { res.status(400).json({ message: "date is required (format: YYYY-MM-DD)" }); return; }
+    const result = await calculateDailyPayrollsForDate(dateStr, calculatedById);
+    res.status(result.status).json(result.data);
+  } catch (error) {
+    console.error("Calculate daily payrolls for date error:", error);
+    res.status(500).json({ message: "Failed to calculate payrolls" });
   }
 };
 

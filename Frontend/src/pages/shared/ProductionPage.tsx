@@ -1,23 +1,21 @@
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-  type FormEvent,
-} from "react";
+import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { useLocale } from "../../context/LocaleContext";
 import { API_BASE_URL, readApiError } from "../../lib/api";
 import { ModulePageShell } from "../../components/ModulePageShell";
 import { TruckLoader } from "../../components/TruckLoader";
 
-/* ─── Constants ─────────────────────────────────────────── */
-const PREFORM_MACHINE_ID = 430;
-const CAPS_MACHINE_ID = 428;
-
-/* ─── Types ────────────────────────────────────────────── */
+/* ─── Types ─────────────────────────────────────────────── */
 type Machine = { id: number; name: string; type: string | null };
 type Shift = { id: number; name: string; startTime?: string | null; endTime?: string | null };
+type BoxEntry = { cavities: string; cycles: string; numberOfBoxes: string };
+type MachineForm = {
+  cartonsCount: string;
+  showCalculator: boolean;
+  boxes: BoxEntry[];
+  notes: string;
+  saving: boolean; error: string; success: string;
+};
 
 type ProductionItem = {
   id: number;
@@ -34,63 +32,24 @@ type ProductionItem = {
   notes?: string | null;
   createdAt: string;
   user?: { id: number; fullName: string; role: string };
-  machine?: { id: number; name: string; type?: string | null };
+  machine?: { id: number; name: string; type?: string | null } | null;
   shift?: { id: number; name: string };
 };
 
 type AdminOverviewResponse = {
   totals: { totalRecords: number; totalCartons: number; totalPieces: number };
-  byUser?: Array<{
-    userId: number;
-    fullName: string;
-    username: string;
-    role: string;
-    recordsCount: number;
-    cartonsCount: number;
-    totalPieces: number;
-  }>;
-  byShift?: Array<{
-    shiftId: number | null;
-    shiftName: string;
-    recordsCount: number;
-    cartonsCount: number;
-    totalPieces: number;
-  }>;
-  byShiftProduct?: Array<{
-    date: string;
-    shiftId: number | null;
-    shiftName: string;
-    capsCartons: number;
-    preformCartons: number;
-    totalCartons: number;
-    totalPieces: number;
-  }>;
-  dailyByProduct?: Array<{
-    date: string;
-    capsCartons: number;
-    preformCartons: number;
-    totalCartons: number;
-    totalPieces: number;
-  }>;
-  dailyRawMaterialUsage?: Array<{
-    date: string;
-    hdpe: number;
-    ldpe: number;
-    pet: number;
-    adhesive: number;
-    emptyBags: number;
-    color: number;
-    totalRawUsed: number;
-  }>;
+  byUser?: Array<{ userId: number; fullName: string; username: string; role: string; recordsCount: number; cartonsCount: number; totalPieces: number }>;
+  byShift?: Array<{ shiftId: number | null; shiftName: string; recordsCount: number; cartonsCount: number; totalPieces: number }>;
+  byShiftProduct?: Array<{ date: string; shiftId: number | null; shiftName: string; capsCartons: number; preformCartons: number; totalCartons: number; totalPieces: number }>;
+  dailyByProduct?: Array<{ date: string; capsCartons: number; preformCartons: number; totalCartons: number; totalPieces: number }>;
   recentRecords?: ProductionItem[];
 };
 
-/* ─── Auth helper ───────────────────────────────────────── */
+/* ─── Auth ──────────────────────────────────────────────── */
 function authHeaders(): Record<string, string> {
   const token = localStorage.getItem("plasticon_token");
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
-
 async function fetchWithAuth(path: string, options?: RequestInit) {
   return fetch(`${API_BASE_URL}${path}`, {
     ...options,
@@ -99,54 +58,66 @@ async function fetchWithAuth(path: string, options?: RequestInit) {
   });
 }
 
-/* ─── Empty form state ──────────────────────────────────── */
-const emptyPreformForm = () => ({
-  workingCavities: "72",
-  cyclesCount: "",
-  rawPetUsed: "",
-  colorUsed: "",
-  notes: "",
-});
-
-const emptyCapsForm = () => ({
-  cartonsCount: "",
-  rawHdpeUsed: "",
-  rawLdpeUsed: "",
-  colorUsed: "",
-  notes: "",
-});
-
 /* ─── Helpers ───────────────────────────────────────────── */
 const fmt = (n: number) => n.toLocaleString();
+
+const defaultBox = (type: string | null): BoxEntry => ({
+  cavities: isPreformMachine(type) ? "72" : "48",
+  cycles: "",
+  numberOfBoxes: "1",
+});
+
+const emptyForm = (type: string | null): MachineForm => ({
+  cartonsCount: "",
+  showCalculator: isPreformMachine(type), // preform always uses calculator
+  boxes: [defaultBox(type)],
+  notes: "",
+  saving: false, error: "", success: "",
+});
+
+const boxTotal = (b: BoxEntry) =>
+  (parseInt(b.cavities) || 0) * (parseInt(b.cycles) || 0) * (parseInt(b.numberOfBoxes) || 0);
+
+/* Shift times are stored as "1970-01-01THH:MM:00.000Z" where HH:MM is what
+   the admin typed (treated as UTC). Use UTC accessors so the extracted hour
+   matches exactly what was entered, regardless of the browser's timezone. */
+function minutesInDay(timeStr: string): number {
+  const d = new Date(timeStr);
+  if (!isNaN(d.getTime())) return d.getUTCHours() * 60 + d.getUTCMinutes();
+  const [h, m] = timeStr.split(":").map(Number);
+  return (h || 0) * 60 + (m || 0);
+}
+
+function formatShiftTime(timeStr: string): string {
+  const d = new Date(timeStr);
+  if (!isNaN(d.getTime()))
+    return `${String(d.getUTCHours()).padStart(2, "0")}:${String(d.getUTCMinutes()).padStart(2, "0")}`;
+  return timeStr;
+}
 
 function isPreformMachine(type: string | null | undefined) {
   if (!type) return false;
   const t = type.toUpperCase();
   return t.includes("PREFORM") || t.includes("PET");
 }
-
 function isCapsMachine(type: string | null | undefined) {
   if (!type) return false;
-  const t = type.toUpperCase();
-  return t.includes("CAP");
+  return type.toUpperCase().includes("CAP");
 }
-
-function getCurrentShift(shifts: Shift[]): Shift | null {
-  const now = new Date();
-  const cur = now.getHours() * 60 + now.getMinutes();
+function getCurrentShift(shifts: Shift[], nowMinutes: number): Shift | null {
   for (const s of shifts) {
     if (!s.startTime || !s.endTime) continue;
-    const [sh, sm] = s.startTime.split(":").map(Number);
-    const [eh, em] = s.endTime.split(":").map(Number);
-    const start = sh * 60 + sm;
-    const end = eh * 60 + em;
-    if (end > start) {
-      if (cur >= start && cur < end) return s;
+    const start = minutesInDay(s.startTime);
+    const end = minutesInDay(s.endTime);
+    if (isNaN(start) || isNaN(end)) continue;
+    // overnight shift: end < start (e.g. 22:00–06:00)
+    if (end <= start) {
+      if (nowMinutes >= start || nowMinutes < end) return s;
     } else {
-      if (cur >= start || cur < end) return s;
+      if (nowMinutes >= start && nowMinutes < end) return s;
     }
   }
-  return shifts[0] ?? null;
+  return null;
 }
 
 /* ─── Component ─────────────────────────────────────────── */
@@ -157,62 +128,42 @@ export function ProductionPage() {
 
   const isAdmin = user?.role === "ADMIN";
   const isAccountant = user?.role === "ACCOUNTANT";
-  const canCreate = user?.role === "WORKER";
-  const canSeeAll = isAdmin || isAccountant;
+  const canCreate = ["WORKER", "ENGINEER"].includes(user?.role ?? "");
+  const canSeeAll = isAdmin || isAccountant || user?.role === "ENGINEER";
 
-  /* Data */
   const [machines, setMachines] = useState<Machine[]>([]);
   const [shifts, setShifts] = useState<Shift[]>([]);
   const [myRecords, setMyRecords] = useState<ProductionItem[]>([]);
   const [allRecords, setAllRecords] = useState<ProductionItem[]>([]);
   const [adminOverview, setAdminOverview] = useState<AdminOverviewResponse | null>(null);
   const [loading, setLoading] = useState(false);
-
-  /* Date filters */
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
+  const [adminTab, setAdminTab] = useState<"overview" | "daily" | "shifts" | "records" | "workers">("overview");
+  const [forms, setForms] = useState<Record<number, MachineForm>>({});
+  const [nowMinutes, setNowMinutes] = useState(() => {
+    const d = new Date();
+    return d.getUTCHours() * 60 + d.getUTCMinutes();
+  });
 
-  /* Admin tab */
-  const [adminTab, setAdminTab] = useState<"overview" | "daily" | "shifts" | "raw" | "records" | "workers">("overview");
+  // refresh every minute so the active-shift badge stays accurate
+  useEffect(() => {
+    const id = setInterval(() => {
+      const d = new Date();
+      setNowMinutes(d.getUTCHours() * 60 + d.getUTCMinutes());
+    }, 60_000);
+    return () => clearInterval(id);
+  }, []);
 
-  /* Forms */
-  const [preformForm, setPreformForm] = useState(emptyPreformForm());
-  const [capsForm, setCapsForm] = useState(emptyCapsForm());
-  const [preformError, setPreformError] = useState("");
-  const [capsError, setCapsError] = useState("");
-  const [preformSuccess, setPreformSuccess] = useState("");
-  const [capsSuccess, setCapsSuccess] = useState("");
-  const [savingPreform, setSavingPreform] = useState(false);
-  const [savingCaps, setSavingCaps] = useState(false);
+  const getForm = (m: Machine) => forms[m.id] ?? emptyForm(m.type);
+  const patchForm = (machineId: number, patch: Partial<MachineForm>) =>
+    setForms((prev) => {
+      const cur = prev[machineId] ?? emptyForm(null);
+      return { ...prev, [machineId]: { ...cur, ...patch } };
+    });
 
-  /* Derived machine lists (used in admin/accountant view) */
-  const preformMachines = useMemo(
-    () => machines.filter((m) => isPreformMachine(m.type)),
-    [machines],
-  );
-  const capsMachines = useMemo(
-    () => machines.filter((m) => isCapsMachine(m.type)),
-    [machines],
-  );
+  const currentShift = useMemo(() => getCurrentShift(shifts, nowMinutes), [shifts, nowMinutes]);
 
-  /* Fixed machines and auto-shift for worker form */
-  const preformMachine = machines.find((m) => m.id === PREFORM_MACHINE_ID);
-  const capsMachine = machines.find((m) => m.id === CAPS_MACHINE_ID);
-  const currentShift = getCurrentShift(shifts);
-
-  /* Live totals */
-  const preformTotal = useMemo(() => {
-    const cycles = parseInt(preformForm.cyclesCount) || 0;
-    const cavities = parseInt(preformForm.workingCavities) || 72;
-    return cycles * cavities;
-  }, [preformForm.cyclesCount, preformForm.workingCavities]);
-
-  const capsTotal = useMemo(() => {
-    const cartons = parseInt(capsForm.cartonsCount) || 0;
-    return cartons * 6000;
-  }, [capsForm.cartonsCount]);
-
-  /* ── Fetch ──────────────────────────────────────────────── */
   const loadAll = useCallback(async () => {
     setLoading(true);
     try {
@@ -229,13 +180,17 @@ export function ProductionPage() {
         const d = await shiftRes.json();
         setShifts(Array.isArray(d) ? d : (d.data ?? []));
       }
-      if (mineRes.ok) setMyRecords((await mineRes.json()) as ProductionItem[]);
-
+      if (mineRes.ok) {
+        const all = (await mineRes.json()) as ProductionItem[];
+        setMyRecords(all.filter((r) => (r.cartonsCount ?? 0) > 0 || r.machine != null));
+      }
       if (canSeeAll) {
         const allRes = await fetchWithAuth("/production/all");
-        if (allRes.ok) setAllRecords((await allRes.json()) as ProductionItem[]);
+        if (allRes.ok) {
+          const all = (await allRes.json()) as ProductionItem[];
+          setAllRecords(all.filter((r) => (r.cartonsCount ?? 0) > 0 || r.machine != null));
+        }
       }
-
       if (isAdmin) {
         const qs = new URLSearchParams();
         if (fromDate) qs.set("fromDate", fromDate);
@@ -244,635 +199,366 @@ export function ProductionPage() {
         const ovRes = await fetchWithAuth(`/production/admin/overview${q ? `?${q}` : ""}`);
         if (ovRes.ok) setAdminOverview((await ovRes.json()) as AdminOverviewResponse);
       }
-    } catch {
-      /* silent */
-    } finally {
-      setLoading(false);
-    }
+    } catch { /* silent */ }
+    finally { setLoading(false); }
   }, [canSeeAll, isAdmin, fromDate, toDate]);
 
   useEffect(() => { void loadAll(); }, [loadAll]);
 
-  /* ── Submit Preform ─────────────────────────────────────── */
-  const submitPreform = async (e: FormEvent) => {
+  const submitProduction = async (e: FormEvent, machine: Machine) => {
     e.preventDefault();
-    setPreformError("");
-    setPreformSuccess("");
-    setSavingPreform(true);
+    patchForm(machine.id, { saving: true, error: "", success: "" });
     try {
-      const autoShift = getCurrentShift(shifts);
+      const autoShift = getCurrentShift(shifts, nowMinutes);
+      const f = getForm(machine);
+      const isPreform = isPreformMachine(machine.type);
+
+      const body: Record<string, unknown> = {
+        machineId: machine.id,
+        shiftId: autoShift?.id,
+        notes: f.notes || undefined,
+      };
+
+      if (isPreform) {
+        // Preform: must use the cavities × cycles × boxes calculator
+        const calcTotal = f.boxes.reduce((s, b) =>
+          s + (parseInt(b.cavities) || 0) * (parseInt(b.cycles) || 0) * (parseInt(b.numberOfBoxes) || 0), 0);
+        if (calcTotal <= 0) {
+          patchForm(machine.id, { saving: false, error: isAr ? "أدخل القيم في الحاسبة (كافيتي × دورات × صناديق)" : "Enter values in the calculator (cavities × cycles × boxes)" });
+          return;
+        }
+        body.boxes = f.boxes.map((b) => ({
+          cavities: parseInt(b.cavities) || 72,
+          cycles: parseInt(b.cycles) || 0,
+          numberOfBoxes: parseInt(b.numberOfBoxes) || 1,
+        }));
+      } else {
+        // Caps / other: simple carton count
+        const n = parseInt(f.cartonsCount);
+        if (!n || n <= 0) {
+          patchForm(machine.id, { saving: false, error: isAr ? "أدخل عدد الكراتين" : "Enter cartons count" });
+          return;
+        }
+        body.cartonsCount = n;
+      }
+
       const res = await fetchWithAuth("/production", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          machineId: PREFORM_MACHINE_ID,
-          shiftId: autoShift?.id,
-          cartonsCount: parseInt(preformForm.cyclesCount) || 0,
-          workingCavities: parseInt(preformForm.workingCavities) || 72,
-          rawPetUsed: preformForm.rawPetUsed ? Number(preformForm.rawPetUsed) : undefined,
-          colorUsed: preformForm.colorUsed ? Number(preformForm.colorUsed) : undefined,
-          notes: preformForm.notes || undefined,
-        }),
+        body: JSON.stringify(body),
       });
       if (!res.ok) throw new Error(await readApiError(res));
-      setPreformSuccess(isAr ? "تم حفظ سجل البريفورم بنجاح" : "Preform record saved successfully");
-      setPreformForm(emptyPreformForm());
+      patchForm(machine.id, { ...emptyForm(machine.type), success: isAr ? "تم الحفظ ✓" : "Saved ✓" });
       void loadAll();
     } catch (err) {
-      setPreformError(err instanceof Error ? err.message : "Failed to save");
-    } finally {
-      setSavingPreform(false);
+      patchForm(machine.id, { saving: false, error: err instanceof Error ? err.message : "Failed to save" });
     }
   };
 
-  /* ── Submit Caps ────────────────────────────────────────── */
-  const submitCaps = async (e: FormEvent) => {
-    e.preventDefault();
-    setCapsError("");
-    setCapsSuccess("");
-    setSavingCaps(true);
-    try {
-      const autoShift = getCurrentShift(shifts);
-      const res = await fetchWithAuth("/production", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          machineId: CAPS_MACHINE_ID,
-          shiftId: autoShift?.id,
-          cartonsCount: parseInt(capsForm.cartonsCount) || 0,
-          rawHdpeUsed: capsForm.rawHdpeUsed ? Number(capsForm.rawHdpeUsed) : undefined,
-          rawLdpeUsed: capsForm.rawLdpeUsed ? Number(capsForm.rawLdpeUsed) : undefined,
-          colorUsed: capsForm.colorUsed ? Number(capsForm.colorUsed) : undefined,
-          notes: capsForm.notes || undefined,
-        }),
-      });
-      if (!res.ok) throw new Error(await readApiError(res));
-      setCapsSuccess(isAr ? "تم حفظ سجل الكابس بنجاح" : "Caps record saved successfully");
-      setCapsForm(emptyCapsForm());
-      void loadAll();
-    } catch (err) {
-      setCapsError(err instanceof Error ? err.message : "Failed to save");
-    } finally {
-      setSavingCaps(false);
-    }
-  };
-
-  /* ── KPIs from my records ───────────────────────────────── */
   const myPreforms = myRecords.filter((r) => isPreformMachine(r.machine?.type));
   const myCaps = myRecords.filter((r) => isCapsMachine(r.machine?.type));
-  const myPreformPcs = myPreforms.reduce((s, r) => s + (r.totalPieces ?? 0), 0);
-  const myCapsPcs = myCaps.reduce((s, r) => s + (r.totalPieces ?? 0), 0);
-
-  /* ── Admin daily data ───────────────────────────────────── */
   const dailyData = adminOverview?.dailyByProduct ?? [];
-  const rawDaily = adminOverview?.dailyRawMaterialUsage ?? [];
   const shiftData = adminOverview?.byShiftProduct ?? [];
 
-  /* ─────────────────────────────────────────────────────── */
   return (
     <ModulePageShell
       title={isAr ? "الإنتاج" : "Production"}
-      subtitle={isAr ? "تسجيل ومتابعة الإنتاج اليومي" : "Record and track daily production"}
+      subtitle={isAr ? "تسجيل إنتاج البريفورم والكابس" : "Record Preform & CAPS piece production"}
       actions={
-        <button
-          type="button"
-          className="auth-button auth-button--ghost"
-          onClick={() => void loadAll()}
-        >
+        <button type="button" className="auth-button auth-button--ghost" onClick={() => void loadAll()}>
           {isAr ? "تحديث" : "Refresh"}
         </button>
       }
     >
       {loading && <TruckLoader />}
 
-      {/* ── WORKER: Two Production Cards ─────────────────── */}
-      {canCreate && (
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
-            gap: "1.25rem",
-            marginBottom: "1.5rem",
-          }}
-        >
-          {/* ── PREFORM Card ── */}
-          <div
-            style={{
-              background: "var(--bg-card)",
-              border: "1px solid var(--border-default)",
-              borderRadius: "var(--radius-xl)",
-              overflow: "hidden",
-            }}
-          >
-            {/* Card header */}
-            <div
-              style={{
-                padding: "1rem 1.25rem",
-                borderBottom: "1px solid var(--border-default)",
-                background: "var(--bg-surface)",
-                display: "flex",
-                alignItems: "center",
-                gap: ".6rem",
-              }}
-            >
-              <div
-                style={{
-                  width: 10,
-                  height: 10,
-                  borderRadius: "50%",
-                  background: "var(--brand-primary)",
-                }}
-              />
-              <h3
-                style={{
-                  margin: 0,
-                  fontSize: "1rem",
-                  fontWeight: 700,
-                  color: "var(--text-primary)",
-                }}
-              >
-                {isAr ? "إنتاج البريفورم" : "Preform Production"}
-              </h3>
-            </div>
-
-            <div style={{ padding: "1.25rem" }}>
-              {/* Live total preview */}
-              {preformTotal > 0 && (
-                <div
-                  style={{
-                    padding: ".75rem 1rem",
-                    background: "var(--bg-surface)",
-                    border: "1px solid var(--border-default)",
-                    borderRadius: "var(--radius-lg)",
-                    marginBottom: "1rem",
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                  }}
-                >
-                  <span
-                    style={{
-                      fontSize: ".82rem",
-                      color: "var(--text-secondary)",
-                      fontWeight: 600,
-                    }}
-                  >
-                    {isAr ? "الإجمالي المحسوب" : "Calculated Total"}
-                  </span>
-                  <span
-                    style={{
-                      fontSize: "1.1rem",
-                      fontWeight: 800,
-                      color: "var(--brand-primary)",
-                    }}
-                  >
-                    {fmt(preformTotal)} {isAr ? "قطعة" : "pcs"}
-                  </span>
-                </div>
-              )}
-
-              {preformError && (
-                <div
-                  className="auth-alert auth-alert--error"
-                  style={{ marginBottom: ".75rem", fontSize: ".82rem" }}
-                >
-                  {preformError}
-                </div>
-              )}
-              {preformSuccess && (
-                <div
-                  className="auth-alert"
-                  style={{ marginBottom: ".75rem", fontSize: ".82rem" }}
-                >
-                  {preformSuccess}
-                </div>
-              )}
-
-              <form
-                className="module-form"
-                onSubmit={(e) => void submitPreform(e)}
-              >
-                {/* Machine + Shift info badges */}
-                <div style={{ display: "flex", gap: ".6rem", flexWrap: "wrap", marginBottom: ".25rem" }}>
-                  <span style={{ display: "inline-flex", alignItems: "center", gap: ".35rem", padding: ".3rem .75rem", background: "var(--bg-surface)", border: "1px solid var(--border-default)", borderRadius: "999px", fontSize: ".8rem", fontWeight: 600, color: "var(--text-primary)" }}>
-                    <span style={{ width: 7, height: 7, borderRadius: "50%", background: "var(--brand-primary)", display: "inline-block" }} />
-                    {preformMachine?.name ?? `#${PREFORM_MACHINE_ID}`}
-                  </span>
-                  <span style={{ display: "inline-flex", alignItems: "center", gap: ".35rem", padding: ".3rem .75rem", background: "var(--bg-surface)", border: "1px solid var(--border-default)", borderRadius: "999px", fontSize: ".8rem", fontWeight: 600, color: "var(--text-secondary)" }}>
-                    ⏱ {currentShift ? currentShift.name : (isAr ? "لا يوجد شفت" : "No active shift")}
-                  </span>
-                </div>
-
-                <div
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "1fr 1fr",
-                    gap: ".75rem",
-                  }}
-                >
-                  <label>
-                    {isAr ? "عدد الكافيتي الشغّالة (من 72)" : "Working Cavities (of 72)"}
-                    <input
-                      type="number"
-                      min={1}
-                      max={72}
-                      value={preformForm.workingCavities}
-                      onChange={(e) =>
-                        setPreformForm((p) => ({
-                          ...p,
-                          workingCavities: e.target.value,
-                        }))
-                      }
-                      placeholder="72"
-                    />
-                  </label>
-
-                  <label>
-                    {isAr ? "عدد الدورات (Cycles)" : "Cycles Count"} *
-                    <input
-                      type="number"
-                      min={0}
-                      value={preformForm.cyclesCount}
-                      onChange={(e) =>
-                        setPreformForm((p) => ({
-                          ...p,
-                          cyclesCount: e.target.value,
-                        }))
-                      }
-                      required
-                      placeholder="0"
-                    />
-                  </label>
-                </div>
-
-                <div
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "1fr 1fr",
-                    gap: ".75rem",
-                  }}
-                >
-                  <label>
-                    {isAr ? "PET المستخدم (كغ)" : "PET Used (kg)"}
-                    <input
-                      type="number"
-                      min={0}
-                      step="0.01"
-                      value={preformForm.rawPetUsed}
-                      onChange={(e) =>
-                        setPreformForm((p) => ({
-                          ...p,
-                          rawPetUsed: e.target.value,
-                        }))
-                      }
-                      placeholder="0"
-                    />
-                  </label>
-                  <label>
-                    {isAr ? "اللون (كغ)" : "Color (kg)"}
-                    <input
-                      type="number"
-                      min={0}
-                      step="0.01"
-                      value={preformForm.colorUsed}
-                      onChange={(e) =>
-                        setPreformForm((p) => ({
-                          ...p,
-                          colorUsed: e.target.value,
-                        }))
-                      }
-                      placeholder="0"
-                    />
-                  </label>
-                </div>
-
-                <label>
-                  {isAr ? "ملاحظات" : "Notes"}
-                  <textarea
-                    rows={2}
-                    value={preformForm.notes}
-                    onChange={(e) =>
-                      setPreformForm((p) => ({ ...p, notes: e.target.value }))
-                    }
-                    placeholder={isAr ? "ملاحظات اختيارية..." : "Optional notes..."}
-                  />
-                </label>
-
-                <button
-                  type="submit"
-                  className="auth-button"
-                  disabled={savingPreform}
-                  style={{ width: "100%" }}
-                >
-                  {savingPreform
-                    ? isAr
-                      ? "جاري الحفظ..."
-                      : "Saving..."
-                    : isAr
-                      ? "حفظ إنتاج البريفورم"
-                      : "Save Preform Production"}
-                </button>
-              </form>
-            </div>
-          </div>
-
-          {/* ── CAPS Card ── */}
-          <div
-            style={{
-              background: "var(--bg-card)",
-              border: "1px solid var(--border-default)",
-              borderRadius: "var(--radius-xl)",
-              overflow: "hidden",
-            }}
-          >
-            {/* Card header */}
-            <div
-              style={{
-                padding: "1rem 1.25rem",
-                borderBottom: "1px solid var(--border-default)",
-                background: "var(--bg-surface)",
-                display: "flex",
-                alignItems: "center",
-                gap: ".6rem",
-              }}
-            >
-              <div
-                style={{
-                  width: 10,
-                  height: 10,
-                  borderRadius: "50%",
-                  background: "var(--brand-accent, #f97316)",
-                }}
-              />
-              <h3
-                style={{
-                  margin: 0,
-                  fontSize: "1rem",
-                  fontWeight: 700,
-                  color: "var(--text-primary)",
-                }}
-              >
-                {isAr ? "إنتاج الكابس" : "Caps Production"}
-              </h3>
-            </div>
-
-            <div style={{ padding: "1.25rem" }}>
-              {/* Live total preview */}
-              {capsTotal > 0 && (
-                <div
-                  style={{
-                    padding: ".75rem 1rem",
-                    background: "var(--bg-surface)",
-                    border: "1px solid var(--border-default)",
-                    borderRadius: "var(--radius-lg)",
-                    marginBottom: "1rem",
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                  }}
-                >
-                  <span
-                    style={{
-                      fontSize: ".82rem",
-                      color: "var(--text-secondary)",
-                      fontWeight: 600,
-                    }}
-                  >
-                    {isAr ? "الإجمالي المحسوب" : "Calculated Total"}
-                  </span>
-                  <span
-                    style={{
-                      fontSize: "1.1rem",
-                      fontWeight: 800,
-                      color: "var(--brand-accent, #f97316)",
-                    }}
-                  >
-                    {fmt(capsTotal)} {isAr ? "قطعة" : "pcs"}
-                  </span>
-                </div>
-              )}
-
-              {capsError && (
-                <div
-                  className="auth-alert auth-alert--error"
-                  style={{ marginBottom: ".75rem", fontSize: ".82rem" }}
-                >
-                  {capsError}
-                </div>
-              )}
-              {capsSuccess && (
-                <div
-                  className="auth-alert"
-                  style={{ marginBottom: ".75rem", fontSize: ".82rem" }}
-                >
-                  {capsSuccess}
-                </div>
-              )}
-
-              <form
-                className="module-form"
-                onSubmit={(e) => void submitCaps(e)}
-              >
-                {/* Machine + Shift info badges */}
-                <div style={{ display: "flex", gap: ".6rem", flexWrap: "wrap", marginBottom: ".25rem" }}>
-                  <span style={{ display: "inline-flex", alignItems: "center", gap: ".35rem", padding: ".3rem .75rem", background: "var(--bg-surface)", border: "1px solid var(--border-default)", borderRadius: "999px", fontSize: ".8rem", fontWeight: 600, color: "var(--text-primary)" }}>
-                    <span style={{ width: 7, height: 7, borderRadius: "50%", background: "var(--brand-accent, #f97316)", display: "inline-block" }} />
-                    {capsMachine?.name ?? `#${CAPS_MACHINE_ID}`}
-                  </span>
-                  <span style={{ display: "inline-flex", alignItems: "center", gap: ".35rem", padding: ".3rem .75rem", background: "var(--bg-surface)", border: "1px solid var(--border-default)", borderRadius: "999px", fontSize: ".8rem", fontWeight: 600, color: "var(--text-secondary)" }}>
-                    ⏱ {currentShift ? currentShift.name : (isAr ? "لا يوجد شفت" : "No active shift")}
-                  </span>
-                </div>
-
-                <label>
-                  {isAr ? "عدد الكراتين (6000 قطعة/كرتون)" : "Cartons Count (6,000 pcs/carton)"} *
-                  <input
-                    type="number"
-                    min={0}
-                    value={capsForm.cartonsCount}
-                    onChange={(e) =>
-                      setCapsForm((p) => ({
-                        ...p,
-                        cartonsCount: e.target.value,
-                      }))
-                    }
-                    required
-                    placeholder="0"
-                  />
-                </label>
-
-                <div
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "1fr 1fr 1fr",
-                    gap: ".75rem",
-                  }}
-                >
-                  <label>
-                    {isAr ? "HDPE (كغ)" : "HDPE (kg)"}
-                    <input
-                      type="number"
-                      min={0}
-                      step="0.01"
-                      value={capsForm.rawHdpeUsed}
-                      onChange={(e) =>
-                        setCapsForm((p) => ({
-                          ...p,
-                          rawHdpeUsed: e.target.value,
-                        }))
-                      }
-                      placeholder="0"
-                    />
-                  </label>
-                  <label>
-                    {isAr ? "LDPE (كغ)" : "LDPE (kg)"}
-                    <input
-                      type="number"
-                      min={0}
-                      step="0.01"
-                      value={capsForm.rawLdpeUsed}
-                      onChange={(e) =>
-                        setCapsForm((p) => ({
-                          ...p,
-                          rawLdpeUsed: e.target.value,
-                        }))
-                      }
-                      placeholder="0"
-                    />
-                  </label>
-                  <label>
-                    {isAr ? "اللون (كغ)" : "Color (kg)"}
-                    <input
-                      type="number"
-                      min={0}
-                      step="0.01"
-                      value={capsForm.colorUsed}
-                      onChange={(e) =>
-                        setCapsForm((p) => ({
-                          ...p,
-                          colorUsed: e.target.value,
-                        }))
-                      }
-                      placeholder="0"
-                    />
-                  </label>
-                </div>
-
-                <label>
-                  {isAr ? "ملاحظات" : "Notes"}
-                  <textarea
-                    rows={2}
-                    value={capsForm.notes}
-                    onChange={(e) =>
-                      setCapsForm((p) => ({ ...p, notes: e.target.value }))
-                    }
-                    placeholder={isAr ? "ملاحظات اختيارية..." : "Optional notes..."}
-                  />
-                </label>
-
-                <button
-                  type="submit"
-                  className="auth-button"
-                  disabled={savingCaps}
-                  style={{ width: "100%" }}
-                >
-                  {savingCaps
-                    ? isAr
-                      ? "جاري الحفظ..."
-                      : "Saving..."
-                    : isAr
-                      ? "حفظ إنتاج الكابس"
-                      : "Save Caps Production"}
-                </button>
-              </form>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ── My Production Summary (non-admin workers) ─────── */}
-      {!isAdmin && (
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-            gap: "1rem",
-            marginBottom: "1.5rem",
-          }}
-        >
-          <div style={{ background: "linear-gradient(135deg,#3b82f6,#1d4ed8)", borderRadius: "var(--radius-xl)", padding: "1.1rem 1.25rem", color: "#fff", display: "flex", flexDirection: "column", gap: ".3rem", boxShadow: "0 4px 14px rgba(0,0,0,.12)" }}>
-            <span style={{ fontSize: "1.2rem" }}>🏭</span>
-            <p style={{ margin: 0, fontSize: ".75rem", opacity: .85, fontWeight: 500 }}>{isAr ? "سجلاتي - البريفورم" : "My Preform Records"}</p>
-            <p style={{ margin: 0, fontSize: "1.6rem", fontWeight: 800, lineHeight: 1 }}>{myPreforms.length}</p>
-            <p style={{ margin: 0, fontSize: ".75rem", opacity: .8 }}>{fmt(myPreformPcs)} {isAr ? "قطعة" : "pcs"}</p>
-          </div>
-          <div style={{ background: "linear-gradient(135deg,#f97316,#ea580c)", borderRadius: "var(--radius-xl)", padding: "1.1rem 1.25rem", color: "#fff", display: "flex", flexDirection: "column", gap: ".3rem", boxShadow: "0 4px 14px rgba(0,0,0,.12)" }}>
-            <span style={{ fontSize: "1.2rem" }}>🧢</span>
-            <p style={{ margin: 0, fontSize: ".75rem", opacity: .85, fontWeight: 500 }}>{isAr ? "سجلاتي - الكابس" : "My Caps Records"}</p>
-            <p style={{ margin: 0, fontSize: "1.6rem", fontWeight: 800, lineHeight: 1 }}>{myCaps.length}</p>
-            <p style={{ margin: 0, fontSize: ".75rem", opacity: .8 }}>{fmt(myCapsPcs)} {isAr ? "قطعة" : "pcs"}</p>
-          </div>
-        </div>
-      )}
-
-      {/* ── My Recent Records list ────────────────────────── */}
-      {!isAdmin && myRecords.length > 0 && (
-        <div className="module-panel" style={{ marginBottom: "1.5rem" }}>
-          <h2 style={{ marginBottom: ".75rem" }}>
-            {isAr ? "آخر سجلاتي" : "My Recent Records"}
-          </h2>
-          <div className="module-list">
-            {myRecords.slice(0, 10).map((r) => (
-              <div className="module-row" key={r.id}>
-                <strong>
-                  {new Date(r.createdAt).toLocaleString()}{" "}
-                  <span
-                    style={{
-                      fontSize: ".72rem",
-                      padding: ".15rem .45rem",
-                      borderRadius: "999px",
-                      background: isPreformMachine(r.machine?.type)
-                        ? "var(--blue-100)"
-                        : "var(--orange-100)",
-                      color: isPreformMachine(r.machine?.type)
-                        ? "var(--blue-700)"
-                        : "var(--orange-700)",
-                    }}
-                  >
-                    {isPreformMachine(r.machine?.type)
-                      ? isAr
-                        ? "بريفورم"
-                        : "PREFORM"
-                      : isAr
-                        ? "كابس"
-                        : "CAPS"}
-                  </span>
-                </strong>
-                <span>
-                  {r.machine?.name ?? "-"} •{" "}
-                  {isAr ? "الشفت" : "Shift"}: {r.shift?.name ?? "-"}
-                  {r.workingCavities
-                    ? ` • ${isAr ? "كافيتي" : "Cavities"}: ${r.workingCavities}/72`
-                    : ""}
+      {/* ── Active shift banner ─────────────────────────────── */}
+      {shifts.length > 0 && (
+        <div style={{
+          display: "flex", alignItems: "center", gap: ".875rem",
+          padding: "1rem 1.25rem", marginBottom: "1.25rem",
+          background: currentShift ? "linear-gradient(135deg,rgba(16,185,129,.12),rgba(5,150,105,.06))" : "var(--bg-surface)",
+          border: `1.5px solid ${currentShift ? "rgba(16,185,129,.4)" : "var(--border-default)"}`,
+          borderRadius: "var(--radius-xl)",
+        }}>
+          <div style={{
+            width: 12, height: 12, borderRadius: "50%", flexShrink: 0,
+            background: currentShift ? "#10b981" : "var(--text-secondary)",
+            boxShadow: currentShift ? "0 0 0 4px rgba(16,185,129,.2)" : "none",
+          }} />
+          <div style={{ flex: 1 }}>
+            {currentShift ? (
+              <>
+                <span style={{ fontSize: ".75rem", fontWeight: 600, color: "#10b981", textTransform: "uppercase", letterSpacing: ".04em" }}>
+                  {isAr ? "الشفت الحالي" : "Current Shift"}
                 </span>
-                <small>
-                  {isPreformMachine(r.machine?.type)
-                    ? `${r.cartonsCount ?? 0} ${isAr ? "دورة" : "cycles"} × ${r.workingCavities ?? 72} ${isAr ? "كافيتي" : "cavities"}`
-                    : `${r.cartonsCount ?? 0} ${isAr ? "كرتون" : "cartons"}`}{" "}
-                  •{" "}
-                  {fmt(r.totalPieces ?? 0)} {isAr ? "قطعة" : "pcs"}
-                  {isPreformMachine(r.machine?.type) && r.rawPetUsed ? ` • PET: ${r.rawPetUsed}kg` : ""}
-                </small>
-              </div>
-            ))}
+                <div style={{ fontWeight: 800, fontSize: "1.05rem", color: "var(--text-primary)", marginTop: ".1rem" }}>
+                  {currentShift.name}
+                  {currentShift.startTime && currentShift.endTime && (
+                    <span style={{ fontSize: ".82rem", fontWeight: 500, color: "var(--text-secondary)", marginInlineStart: ".6rem" }}>
+                      {formatShiftTime(currentShift.startTime)} – {formatShiftTime(currentShift.endTime)}
+                    </span>
+                  )}
+                </div>
+              </>
+            ) : (
+              <>
+                <span style={{ fontSize: ".75rem", fontWeight: 600, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: ".04em" }}>
+                  {isAr ? "حالة الشفت" : "Shift Status"}
+                </span>
+                <div style={{ fontWeight: 700, fontSize: "1rem", color: "var(--text-secondary)", marginTop: ".1rem" }}>
+                  {isAr ? "لا يوجد شفت نشط حالياً" : "No active shift right now"}
+                </div>
+              </>
+            )}
           </div>
+          {shifts.map((s) => s.startTime && s.endTime && (
+            <div key={s.id} style={{
+              padding: ".3rem .75rem", borderRadius: "999px", fontSize: ".75rem", fontWeight: 600,
+              background: currentShift?.id === s.id ? "rgba(16,185,129,.15)" : "var(--bg-card)",
+              color: currentShift?.id === s.id ? "#059669" : "var(--text-secondary)",
+              border: `1px solid ${currentShift?.id === s.id ? "rgba(16,185,129,.35)" : "var(--border-default)"}`,
+            }}>
+              {s.name} {formatShiftTime(s.startTime)}–{formatShiftTime(s.endTime)}
+            </div>
+          ))}
         </div>
       )}
 
-      {/* ── ADMIN DASHBOARD ───────────────────────────────── */}
+      {/* ── Machine recording form (WORKER / ENGINEER / ADMIN) ── */}
+      {canCreate && (
+        <div style={{ marginBottom: "1.5rem" }}>
+          {machines.length === 0 ? (
+            <div style={{ padding: "2.5rem", textAlign: "center", background: "var(--bg-card)", border: "1px dashed var(--border-default)", borderRadius: "var(--radius-xl)" }}>
+              <div style={{ fontSize: "2.5rem", marginBottom: ".5rem" }}>🏭</div>
+              <p style={{ color: "var(--text-secondary)", fontWeight: 600, marginBottom: ".25rem" }}>
+                {isAr ? "لا توجد ماكينات متاحة" : "No machines available"}
+              </p>
+              <p style={{ color: "var(--text-secondary)", fontSize: ".82rem" }}>
+                {isAr ? "اطلب من المدير إضافة ماكينات، أو سجّل المواد في صفحة الاستهلاك" : "Ask your admin to add machines, or record materials on the Consumption page"}
+              </p>
+            </div>
+          ) : (
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(340px, 1fr))", gap: "1.25rem" }}>
+              {machines.map((machine) => {
+                const f = getForm(machine);
+                const isPreform = isPreformMachine(machine.type);
+                const isCaps = isCapsMachine(machine.type);
+                const accent = isPreform ? "var(--brand-primary)" : isCaps ? "#f97316" : "#8b5cf6";
+
+                const calcTotal = f.showCalculator
+                  ? f.boxes.reduce((s, b) => s + boxTotal(b), 0)
+                  : 0;
+
+                return (
+                  <div key={machine.id} style={{ background: "var(--bg-card)", border: "1px solid var(--border-default)", borderRadius: "var(--radius-xl)", overflow: "hidden" }}>
+                    {/* Header */}
+                    <div style={{ padding: "1rem 1.25rem", borderBottom: "1px solid var(--border-default)", background: "var(--bg-surface)", display: "flex", alignItems: "center", gap: ".6rem" }}>
+                      <div style={{ width: 10, height: 10, borderRadius: "50%", background: accent, flexShrink: 0 }} />
+                      <h3 style={{ margin: 0, fontSize: "1rem", fontWeight: 700, color: "var(--text-primary)", flex: 1 }}>{machine.name}</h3>
+                      {machine.type && (
+                        <span style={{ fontSize: ".7rem", padding: ".2rem .5rem", borderRadius: "999px", background: isPreform ? "rgba(59,130,246,.12)" : "rgba(249,115,22,.12)", color: accent, fontWeight: 700 }}>
+                          {machine.type.toUpperCase()}
+                        </span>
+                      )}
+                    </div>
+
+                    <div style={{ padding: "1.25rem" }}>
+                      {/* Shift badge */}
+                      <div style={{ marginBottom: "1rem" }}>
+                        <span style={{
+                          display: "inline-flex", alignItems: "center", gap: ".35rem",
+                          padding: ".3rem .75rem",
+                          background: currentShift ? "rgba(16,185,129,.1)" : "var(--bg-surface)",
+                          border: `1px solid ${currentShift ? "rgba(16,185,129,.35)" : "var(--border-default)"}`,
+                          borderRadius: "999px", fontSize: ".8rem", fontWeight: 600,
+                          color: currentShift ? "#059669" : "var(--text-secondary)",
+                        }}>
+                          <span style={{ width: 7, height: 7, borderRadius: "50%", background: currentShift ? "#10b981" : "var(--text-secondary)", flexShrink: 0 }} />
+                          {currentShift
+                            ? `${currentShift.name}${currentShift.startTime && currentShift.endTime ? ` (${formatShiftTime(currentShift.startTime)} – ${formatShiftTime(currentShift.endTime)})` : ""}`
+                            : (isAr ? "لا يوجد شفت" : "No shift")}
+                        </span>
+                      </div>
+
+                      {f.error && <div className="auth-alert auth-alert--error" style={{ marginBottom: ".75rem", fontSize: ".82rem" }}>{f.error}</div>}
+                      {f.success && <div className="auth-alert" style={{ marginBottom: ".75rem", fontSize: ".82rem" }}>{f.success}</div>}
+
+                      <form className="module-form" onSubmit={(e) => void submitProduction(e, machine)}>
+
+                        {/* ── PREFORM: cavities × cycles × boxes calculator ── */}
+                        {isPreform && (
+                          <div style={{ background: "var(--bg-surface)", border: `1px solid ${accent}22`, borderRadius: "var(--radius-lg)", padding: ".875rem" }}>
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: ".75rem" }}>
+                              <span style={{ fontSize: ".82rem", fontWeight: 700, color: "var(--text-primary)" }}>
+                                {isAr ? "كافيتي × دورات × صناديق" : "Cavities × Cycles × Boxes"}
+                              </span>
+                              {calcTotal > 0 && (
+                                <span style={{ fontSize: "1rem", fontWeight: 800, color: accent }}>
+                                  = {fmt(calcTotal)} {isAr ? "قطعة" : "pcs"}
+                                </span>
+                              )}
+                            </div>
+
+                            <div style={{ overflowX: "auto", marginInline: "-.1rem" }}>
+                            {/* column headers */}
+                            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr auto", gap: ".4rem", fontSize: ".72rem", fontWeight: 700, color: "var(--text-secondary)", marginBottom: ".35rem", padding: "0 .1rem", minWidth: "360px" }}>
+                              <span>{isAr ? "كافيتي" : "Cavities"}</span>
+                              <span>{isAr ? "دورات" : "Cycles"}</span>
+                              <span>{isAr ? "صناديق" : "Boxes"}</span>
+                              <span>{isAr ? "إجمالي" : "Total pcs"}</span>
+                              <span />
+                            </div>
+
+                            {f.boxes.map((box, idx) => {
+                              const t = boxTotal(box);
+                              return (
+                                <div key={idx} style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr auto", gap: ".4rem", alignItems: "center", marginBottom: ".4rem", minWidth: "360px" }}>
+                                  <input type="number" min={1} max={96} value={box.cavities} placeholder="72"
+                                    onChange={(e) => patchForm(machine.id, { boxes: f.boxes.map((b, i) => i === idx ? { ...b, cavities: e.target.value } : b) })}
+                                    style={{ padding: ".4rem .5rem", border: "1px solid var(--border-default)", borderRadius: "var(--radius-md)", background: "var(--bg-card)", fontSize: ".85rem", width: "100%" }} />
+                                  <input type="number" min={0} value={box.cycles} placeholder="0"
+                                    onChange={(e) => patchForm(machine.id, { boxes: f.boxes.map((b, i) => i === idx ? { ...b, cycles: e.target.value } : b) })}
+                                    style={{ padding: ".4rem .5rem", border: "1px solid var(--border-default)", borderRadius: "var(--radius-md)", background: "var(--bg-card)", fontSize: ".85rem", width: "100%" }} />
+                                  <input type="number" min={1} value={box.numberOfBoxes} placeholder="1"
+                                    onChange={(e) => patchForm(machine.id, { boxes: f.boxes.map((b, i) => i === idx ? { ...b, numberOfBoxes: e.target.value } : b) })}
+                                    style={{ padding: ".4rem .5rem", border: "1px solid var(--border-default)", borderRadius: "var(--radius-md)", background: "var(--bg-card)", fontSize: ".85rem", width: "100%" }} />
+                                  <span style={{ fontSize: ".82rem", fontWeight: 800, color: t > 0 ? accent : "var(--text-secondary)", whiteSpace: "nowrap" }}>
+                                    {t > 0 ? fmt(t) : "—"}
+                                  </span>
+                                  {f.boxes.length > 1
+                                    ? <button type="button" onClick={() => patchForm(machine.id, { boxes: f.boxes.filter((_, i) => i !== idx) })} style={{ background: "none", border: "none", cursor: "pointer", color: "#ef4444", fontSize: "1rem", padding: "0 .2rem" }}>✕</button>
+                                    : <span />}
+                                </div>
+                              );
+                            })}
+
+                            </div>{/* end overflow-x scroll wrapper */}
+
+                            <button type="button" onClick={() => patchForm(machine.id, { boxes: [...f.boxes, defaultBox(machine.type)] })}
+                              style={{ marginTop: ".25rem", background: "none", border: "1px dashed var(--border-default)", borderRadius: "var(--radius-md)", padding: ".3rem .65rem", fontSize: ".78rem", color: "var(--text-secondary)", cursor: "pointer" }}>
+                              + {isAr ? "إضافة صف" : "Add row"}
+                            </button>
+
+                            {calcTotal > 0 && (
+                              <div style={{ marginTop: ".75rem", padding: ".6rem .875rem", background: `${accent}14`, border: `1px solid ${accent}33`, borderRadius: "var(--radius-md)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                                <span style={{ fontSize: ".82rem", fontWeight: 600, color: "var(--text-secondary)" }}>{isAr ? "الإجمالي الكلي" : "Grand Total"}</span>
+                                <span style={{ fontSize: "1.15rem", fontWeight: 900, color: accent }}>{fmt(calcTotal)} {isAr ? "قطعة" : "pcs"}</span>
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        {/* ── CAPS: cartons × 6,000 ── */}
+                        {isCaps && (
+                          <div style={{ display: "flex", flexDirection: "column", gap: ".625rem" }}>
+                            <label style={{ display: "flex", flexDirection: "column", gap: ".4rem", fontWeight: 700, fontSize: ".9rem", color: "var(--text-primary)" }}>
+                              {isAr ? "عدد الكراتين المنتجة" : "Cartons Produced"}
+                              <input
+                                type="number"
+                                min={1}
+                                value={f.cartonsCount}
+                                onChange={(e) => patchForm(machine.id, { cartonsCount: e.target.value })}
+                                placeholder={isAr ? "مثال: 50" : "e.g. 50"}
+                                style={{
+                                  padding: ".65rem .85rem",
+                                  border: `2px solid ${accent}`,
+                                  borderRadius: "var(--radius-lg)",
+                                  background: "var(--bg-card)",
+                                  fontSize: "1.15rem",
+                                  fontWeight: 700,
+                                  color: "var(--text-primary)",
+                                  width: "100%",
+                                }}
+                              />
+                            </label>
+                            {f.cartonsCount && parseInt(f.cartonsCount) > 0 && (
+                              <div style={{ padding: ".65rem .875rem", background: `${accent}14`, border: `1px solid ${accent}33`, borderRadius: "var(--radius-md)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                                <span style={{ fontSize: ".82rem", color: "var(--text-secondary)", fontWeight: 600 }}>
+                                  {parseInt(f.cartonsCount).toLocaleString()} {isAr ? "كرتون × 6,000" : "cartons × 6,000"}
+                                </span>
+                                <span style={{ fontSize: "1.15rem", fontWeight: 900, color: accent }}>
+                                  = {fmt(parseInt(f.cartonsCount) * 6000)} {isAr ? "قطعة" : "pcs"}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        {/* ── Unknown machine type: simple carton input ── */}
+                        {!isPreform && !isCaps && (
+                          <label style={{ display: "flex", flexDirection: "column", gap: ".4rem", fontWeight: 700, fontSize: ".9rem", color: "var(--text-primary)" }}>
+                            {isAr ? "عدد الكراتين / الصناديق" : "Cartons / Boxes"}
+                            <input
+                              type="number" min={1} value={f.cartonsCount}
+                              onChange={(e) => patchForm(machine.id, { cartonsCount: e.target.value })}
+                              placeholder={isAr ? "مثال: 50" : "e.g. 50"}
+                              style={{ padding: ".6rem .75rem", border: `2px solid ${accent}`, borderRadius: "var(--radius-lg)", background: "var(--bg-card)", fontSize: "1.1rem", fontWeight: 700, width: "100%" }}
+                            />
+                          </label>
+                        )}
+
+                        {/* ── Materials ── */}
+                        <label>{isAr ? "ملاحظات" : "Notes"}
+                          <textarea rows={2} value={f.notes} onChange={(e) => patchForm(machine.id, { notes: e.target.value })}
+                            placeholder={isAr ? "ملاحظات اختيارية..." : "Optional notes..."} />
+                        </label>
+
+                        <button type="submit" className="auth-button" disabled={f.saving} style={{ width: "100%" }}>
+                          {f.saving
+                            ? (isAr ? "جاري الحفظ..." : "Saving...")
+                            : (isAr ? `حفظ إنتاج ${machine.name}` : `Save ${machine.name} Production`)}
+                        </button>
+                      </form>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── My recent records (non-admin who can create) ─────── */}
+      {canCreate && !isAdmin && myRecords.length > 0 && (
+        <>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "1rem", marginBottom: "1.5rem" }}>
+            <div style={{ background: "linear-gradient(135deg,#3b82f6,#1d4ed8)", borderRadius: "var(--radius-xl)", padding: "1.1rem 1.25rem", color: "#fff" }}>
+              <span style={{ fontSize: "1.2rem" }}>🏭</span>
+              <p style={{ margin: ".3rem 0 0", fontSize: ".75rem", opacity: .85 }}>{isAr ? "سجلات البريفورم" : "Preform Records"}</p>
+              <p style={{ margin: ".2rem 0 0", fontSize: "1.6rem", fontWeight: 800 }}>{myPreforms.length}</p>
+              <p style={{ margin: 0, fontSize: ".75rem", opacity: .8 }}>{fmt(myPreforms.reduce((s, r) => s + (r.totalPieces ?? 0), 0))} {isAr ? "قطعة" : "pcs"}</p>
+            </div>
+            <div style={{ background: "linear-gradient(135deg,#f97316,#ea580c)", borderRadius: "var(--radius-xl)", padding: "1.1rem 1.25rem", color: "#fff" }}>
+              <span style={{ fontSize: "1.2rem" }}>🧢</span>
+              <p style={{ margin: ".3rem 0 0", fontSize: ".75rem", opacity: .85 }}>{isAr ? "سجلات الكابس" : "Caps Records"}</p>
+              <p style={{ margin: ".2rem 0 0", fontSize: "1.6rem", fontWeight: 800 }}>{myCaps.length}</p>
+              <p style={{ margin: 0, fontSize: ".75rem", opacity: .8 }}>{fmt(myCaps.reduce((s, r) => s + (r.totalPieces ?? 0), 0))} {isAr ? "قطعة" : "pcs"}</p>
+            </div>
+          </div>
+          <div className="module-panel" style={{ marginBottom: "1.5rem" }}>
+            <h2 style={{ marginBottom: ".75rem" }}>{isAr ? "آخر سجلاتي" : "My Recent Records"}</h2>
+            <div className="module-list">
+              {myRecords.slice(0, 8).map((r) => (
+                <div className="module-row" key={r.id}>
+                  <strong>
+                    {new Date(r.createdAt).toLocaleString()}{" "}
+                    <span style={{ fontSize: ".72rem", padding: ".15rem .45rem", borderRadius: "999px", background: isPreformMachine(r.machine?.type) ? "rgba(59,130,246,.12)" : "rgba(249,115,22,.12)", color: isPreformMachine(r.machine?.type) ? "#1d4ed8" : "#ea580c", fontWeight: 700 }}>
+                      {isPreformMachine(r.machine?.type) ? "PREFORM" : "CAPS"}
+                    </span>
+                  </strong>
+                  <span>{r.machine?.name ?? "—"} • {isAr ? "الشفت" : "Shift"}: {r.shift?.name ?? "—"}</span>
+                  <small>{r.cartonsCount ?? 0} {isAr ? "كرتون" : "cartons"} • {fmt(r.totalPieces ?? 0)} {isAr ? "قطعة" : "pcs"}</small>
+                </div>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* ── ADMIN analytics tabs ─────────────────────────────── */}
       {isAdmin && (
         <>
-          {/* ── Filter bar ── */}
           <div style={{ display: "flex", gap: "1rem", alignItems: "flex-end", flexWrap: "wrap", padding: "1rem 1.25rem", background: "var(--bg-surface)", border: "1px solid var(--border-default)", borderRadius: "var(--radius-xl)", marginBottom: "1.25rem" }}>
             <label style={{ display: "flex", flexDirection: "column", gap: ".3rem", fontSize: ".82rem", fontWeight: 600, color: "var(--text-secondary)" }}>
               {isAr ? "من تاريخ" : "From Date"}
@@ -882,83 +568,41 @@ export function ProductionPage() {
               {isAr ? "إلى تاريخ" : "To Date"}
               <input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} style={{ padding: ".4rem .75rem", border: "1px solid var(--border-default)", borderRadius: "var(--radius-md)", background: "var(--bg-card)", fontSize: ".875rem" }} />
             </label>
-            <button type="button" className="auth-button auth-button--ghost" onClick={() => { setFromDate(""); setToDate(""); }}>
-              {isAr ? "إعادة ضبط" : "Clear"}
-            </button>
-            {(fromDate || toDate) && (
-              <span style={{ fontSize: ".8rem", color: "var(--orange-600,#ea580c)", fontWeight: 600, alignSelf: "center" }}>
-                {isAr ? "🔍 فلترة نشطة" : "🔍 Filtered"}
-              </span>
-            )}
+            <button type="button" className="auth-button auth-button--ghost" onClick={() => { setFromDate(""); setToDate(""); }}>{isAr ? "مسح" : "Clear"}</button>
           </div>
 
-          {/* ── Tab bar ── */}
           <div style={{ display: "flex", gap: ".5rem", flexWrap: "wrap", marginBottom: "1.25rem" }}>
-            {([
-              ["overview", isAr ? "نظرة عامة" : "Overview"],
-              ["daily",    isAr ? "التقرير اليومي" : "Daily Report"],
-              ["shifts",   isAr ? "الشفتات" : "Shifts"],
-              ["raw",      isAr ? "المواد الخام" : "Raw Materials"],
-              ["records",  isAr ? "جميع السجلات" : "All Records"],
-              ["workers",  isAr ? "العمال" : "By Worker"],
-            ] as const).map(([key, label]) => (
-              <button
-                key={key}
-                type="button"
-                onClick={() => setAdminTab(key)}
-                style={{
-                  padding: ".45rem 1rem",
-                  borderRadius: 8,
-                  border: "1px solid var(--border-default)",
-                  background: adminTab === key ? "var(--orange-500,#f97316)" : "var(--bg-surface)",
-                  color: adminTab === key ? "#fff" : "var(--text-secondary)",
-                  fontWeight: 600,
-                  fontSize: ".83rem",
-                  cursor: "pointer",
-                  transition: "all .15s",
-                }}
-              >
+            {([ ["overview", isAr ? "نظرة عامة" : "Overview"], ["daily", isAr ? "يومي" : "Daily"], ["shifts", isAr ? "الشفتات" : "Shifts"], ["records", isAr ? "السجلات" : "Records"], ["workers", isAr ? "العمال" : "Workers"] ] as const).map(([key, label]) => (
+              <button key={key} type="button" onClick={() => setAdminTab(key)}
+                style={{ padding: ".45rem 1rem", borderRadius: 8, border: "1px solid var(--border-default)", background: adminTab === key ? "var(--orange-500,#f97316)" : "var(--bg-surface)", color: adminTab === key ? "#fff" : "var(--text-secondary)", fontWeight: 600, fontSize: ".83rem", cursor: "pointer" }}>
                 {label}
               </button>
             ))}
           </div>
 
-          {/* ── OVERVIEW TAB ── */}
           {adminTab === "overview" && adminOverview && (
             <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
-              {/* KPI cards */}
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))", gap: "1rem" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: "1rem" }}>
                 {[
-                  { label: isAr ? "إجمالي السجلات" : "Total Records",    value: adminOverview.totals.totalRecords,                                      gradient: "linear-gradient(135deg,#3b82f6,#1d4ed8)", icon: "📋" },
-                  { label: isAr ? "كراتين/صناديق" : "Total Cartons",     value: fmt(adminOverview.totals.totalCartons),                                  gradient: "linear-gradient(135deg,#8b5cf6,#6d28d9)", icon: "📦" },
-                  { label: isAr ? "إجمالي القطع" : "Total Pieces",        value: fmt(adminOverview.totals.totalPieces),                                   gradient: "linear-gradient(135deg,#f97316,#ea580c)", icon: "🔢" },
-                  { label: isAr ? "كراتين الكابس" : "Caps Cartons",       value: fmt(dailyData.reduce((s, d) => s + d.capsCartons, 0)),                   gradient: "linear-gradient(135deg,#06b6d4,#0284c7)", icon: "🧢" },
-                  { label: isAr ? "صناديق البريفورم" : "Preform Boxes",   value: fmt(dailyData.reduce((s, d) => s + d.preformCartons, 0)),                gradient: "linear-gradient(135deg,#10b981,#059669)", icon: "🏭" },
+                  { label: isAr ? "إجمالي السجلات" : "Total Records", value: adminOverview.totals.totalRecords, gradient: "linear-gradient(135deg,#3b82f6,#1d4ed8)", icon: "📋" },
+                  { label: isAr ? "إجمالي الكراتين" : "Total Cartons", value: fmt(adminOverview.totals.totalCartons), gradient: "linear-gradient(135deg,#10b981,#059669)", icon: "📦" },
+                  { label: isAr ? "إجمالي القطع" : "Total Pieces", value: fmt(adminOverview.totals.totalPieces), gradient: "linear-gradient(135deg,#f97316,#ea580c)", icon: "🔢" },
+                  { label: isAr ? "كراتين الكابس" : "Caps Cartons", value: fmt(dailyData.reduce((s, d) => s + d.capsCartons, 0)), gradient: "linear-gradient(135deg,#06b6d4,#0284c7)", icon: "🧢" },
+                  { label: isAr ? "صناديق البريفورم" : "Preform Boxes", value: fmt(dailyData.reduce((s, d) => s + d.preformCartons, 0)), gradient: "linear-gradient(135deg,#8b5cf6,#7c3aed)", icon: "🏭" },
                 ].map((kpi) => (
                   <div key={kpi.label} style={{ background: kpi.gradient, borderRadius: "var(--radius-xl)", padding: "1.1rem 1.25rem", color: "#fff", display: "flex", flexDirection: "column", gap: ".35rem", boxShadow: "0 4px 14px rgba(0,0,0,.12)" }}>
                     <span style={{ fontSize: "1.3rem" }}>{kpi.icon}</span>
                     <p style={{ margin: 0, fontSize: ".75rem", opacity: .85, fontWeight: 500 }}>{kpi.label}</p>
-                    <p style={{ margin: 0, fontSize: "1.6rem", fontWeight: 800, lineHeight: 1 }}>{kpi.value}</p>
+                    <p style={{ margin: 0, fontSize: "1.5rem", fontWeight: 800, lineHeight: 1 }}>{kpi.value}</p>
                   </div>
                 ))}
               </div>
-
-              {/* Shift summary table */}
               {(adminOverview.byShift ?? []).length > 0 && (
                 <div style={{ background: "var(--bg-card)", border: "1px solid var(--border-default)", borderRadius: "var(--radius-xl)", overflow: "hidden" }}>
-                  <div style={{ padding: ".875rem 1.25rem", borderBottom: "1px solid var(--border-default)", background: "var(--bg-surface)", fontWeight: 700, fontSize: ".9rem" }}>
-                    {isAr ? "ملخص حسب الشفت" : "Summary by Shift"}
-                  </div>
+                  <div style={{ padding: ".875rem 1.25rem", borderBottom: "1px solid var(--border-default)", background: "var(--bg-surface)", fontWeight: 700, fontSize: ".9rem" }}>{isAr ? "ملخص حسب الشفت" : "Summary by Shift"}</div>
                   <div style={{ overflowX: "auto" }}>
                     <table className="admin-table">
-                      <thead>
-                        <tr>
-                          <th>{isAr ? "الشفت" : "Shift"}</th>
-                          <th>{isAr ? "السجلات" : "Records"}</th>
-                          <th>{isAr ? "الكراتين" : "Cartons"}</th>
-                          <th>{isAr ? "القطع" : "Pieces"}</th>
-                        </tr>
-                      </thead>
+                      <thead><tr><th>{isAr ? "الشفت" : "Shift"}</th><th>{isAr ? "السجلات" : "Records"}</th><th>{isAr ? "الكراتين" : "Cartons"}</th><th>{isAr ? "القطع" : "Pieces"}</th></tr></thead>
                       <tbody>
                         {(adminOverview.byShift ?? []).map((row) => (
                           <tr key={row.shiftId ?? "none"}>
@@ -976,165 +620,54 @@ export function ProductionPage() {
             </div>
           )}
 
-          {/* ── DAILY REPORT TAB ── */}
           {adminTab === "daily" && (
             <div style={{ background: "var(--bg-card)", border: "1px solid var(--border-default)", borderRadius: "var(--radius-xl)", overflow: "hidden" }}>
-              <div style={{ padding: ".875rem 1.25rem", borderBottom: "1px solid var(--border-default)", background: "var(--bg-surface)", fontWeight: 700, fontSize: ".9rem" }}>
-                {isAr ? "التقرير اليومي للإنتاج" : "Daily Production Report"}
-                <span style={{ marginLeft: ".75rem", fontSize: ".78rem", fontWeight: 500, color: "var(--text-secondary)" }}>({dailyData.length} {isAr ? "يوم" : "days"})</span>
-              </div>
-              {dailyData.length === 0 ? (
-                <div style={{ padding: "2rem", textAlign: "center", color: "var(--text-secondary)" }}>{isAr ? "لا توجد بيانات" : "No data for this period"}</div>
-              ) : (
+              <div style={{ padding: ".875rem 1.25rem", borderBottom: "1px solid var(--border-default)", background: "var(--bg-surface)", fontWeight: 700, fontSize: ".9rem" }}>{isAr ? "التقرير اليومي" : "Daily Production Report"}</div>
+              {dailyData.length === 0 ? <div style={{ padding: "2rem", textAlign: "center", color: "var(--text-secondary)" }}>{isAr ? "لا توجد بيانات" : "No data"}</div> : (
                 <div style={{ overflowX: "auto" }}>
                   <table className="admin-table">
-                    <thead>
-                      <tr>
-                        {[isAr ? "التاريخ" : "Date", isAr ? "كراتين الكابس" : "Caps Cartons", isAr ? "قطع الكابس" : "Caps Pcs", isAr ? "صناديق البريفورم" : "Preform Boxes", isAr ? "قطع البريفورم" : "Preform Pcs", isAr ? "الإجمالي" : "Total Pcs"].map((h) => <th key={h}>{h}</th>)}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {dailyData.map((row) => {
-                        const capsPcs = row.capsCartons * 6000;
-                        const preformPcs = row.totalPieces - capsPcs;
-                        return (
-                          <tr key={row.date}>
-                            <td style={{ fontWeight: 700 }}>{row.date}</td>
-                            <td>{fmt(row.capsCartons)}</td>
-                            <td>{fmt(capsPcs)}</td>
-                            <td>{fmt(row.preformCartons)}</td>
-                            <td>{fmt(preformPcs > 0 ? preformPcs : 0)}</td>
-                            <td style={{ fontWeight: 700 }}>{fmt(row.totalPieces)}</td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                    <tfoot>
-                      <tr style={{ background: "var(--bg-surface)", borderTop: "2px solid var(--border-default)" }}>
-                        <td style={{ fontWeight: 700 }}>{isAr ? "الإجمالي" : "Total"}</td>
-                        <td style={{ fontWeight: 700 }}>{fmt(dailyData.reduce((s, d) => s + d.capsCartons, 0))}</td>
-                        <td style={{ fontWeight: 700 }}>{fmt(dailyData.reduce((s, d) => s + d.capsCartons * 6000, 0))}</td>
-                        <td style={{ fontWeight: 700 }}>{fmt(dailyData.reduce((s, d) => s + d.preformCartons, 0))}</td>
-                        <td style={{ fontWeight: 700 }}>—</td>
-                        <td style={{ fontWeight: 700 }}>{fmt(dailyData.reduce((s, d) => s + d.totalPieces, 0))}</td>
-                      </tr>
-                    </tfoot>
+                    <thead><tr>{[isAr ? "التاريخ" : "Date", isAr ? "كراتين الكابس" : "Caps Cartons", isAr ? "صناديق البريفورم" : "Preform Boxes", isAr ? "إجمالي القطع" : "Total Pcs"].map((h) => <th key={h}>{h}</th>)}</tr></thead>
+                    <tbody>{dailyData.map((row) => <tr key={row.date}><td style={{ fontWeight: 700 }}>{row.date}</td><td>{fmt(row.capsCartons)}</td><td>{fmt(row.preformCartons)}</td><td style={{ fontWeight: 700 }}>{fmt(row.totalPieces)}</td></tr>)}</tbody>
                   </table>
                 </div>
               )}
             </div>
           )}
 
-          {/* ── SHIFTS TAB ── */}
           {adminTab === "shifts" && (
             <div style={{ background: "var(--bg-card)", border: "1px solid var(--border-default)", borderRadius: "var(--radius-xl)", overflow: "hidden" }}>
-              <div style={{ padding: ".875rem 1.25rem", borderBottom: "1px solid var(--border-default)", background: "var(--bg-surface)", fontWeight: 700, fontSize: ".9rem" }}>
-                {isAr ? "إنتاج الشفتات يومياً" : "Shift Production Breakdown"}
-              </div>
-              {shiftData.length === 0 ? (
-                <div style={{ padding: "2rem", textAlign: "center", color: "var(--text-secondary)" }}>{isAr ? "لا توجد بيانات" : "No data"}</div>
-              ) : (
+              <div style={{ padding: ".875rem 1.25rem", borderBottom: "1px solid var(--border-default)", background: "var(--bg-surface)", fontWeight: 700, fontSize: ".9rem" }}>{isAr ? "إنتاج الشفتات يومياً" : "Shift Production Breakdown"}</div>
+              {shiftData.length === 0 ? <div style={{ padding: "2rem", textAlign: "center", color: "var(--text-secondary)" }}>{isAr ? "لا توجد بيانات" : "No data"}</div> : (
                 <div style={{ overflowX: "auto" }}>
                   <table className="admin-table">
-                    <thead>
-                      <tr>
-                        {[isAr ? "التاريخ" : "Date", isAr ? "الشفت" : "Shift", isAr ? "كراتين الكابس" : "Caps Cartons", isAr ? "صناديق البريفورم" : "Preform Boxes", isAr ? "الإجمالي (قطع)" : "Total (pcs)"].map((h) => <th key={h}>{h}</th>)}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {shiftData.map((row) => (
-                        <tr key={`${row.date}-${row.shiftId}`}>
-                          <td style={{ fontWeight: 600 }}>{row.date}</td>
-                          <td>{row.shiftName}</td>
-                          <td>{fmt(row.capsCartons)}</td>
-                          <td>{fmt(row.preformCartons)}</td>
-                          <td style={{ fontWeight: 700 }}>{fmt(row.totalPieces)}</td>
-                        </tr>
-                      ))}
-                    </tbody>
+                    <thead><tr>{[isAr ? "التاريخ" : "Date", isAr ? "الشفت" : "Shift", isAr ? "كراتين الكابس" : "Caps", isAr ? "صناديق البريفورم" : "Preform", isAr ? "القطع" : "Pcs"].map((h) => <th key={h}>{h}</th>)}</tr></thead>
+                    <tbody>{shiftData.map((row) => <tr key={`${row.date}-${row.shiftId}`}><td style={{ fontWeight: 600 }}>{row.date}</td><td>{row.shiftName}</td><td>{fmt(row.capsCartons)}</td><td>{fmt(row.preformCartons)}</td><td style={{ fontWeight: 700 }}>{fmt(row.totalPieces)}</td></tr>)}</tbody>
                   </table>
                 </div>
               )}
             </div>
           )}
 
-          {/* ── RAW MATERIALS TAB ── */}
-          {adminTab === "raw" && (
-            <div style={{ background: "var(--bg-card)", border: "1px solid var(--border-default)", borderRadius: "var(--radius-xl)", overflow: "hidden" }}>
-              <div style={{ padding: ".875rem 1.25rem", borderBottom: "1px solid var(--border-default)", background: "var(--bg-surface)", fontWeight: 700, fontSize: ".9rem" }}>
-                {isAr ? "استهلاك المواد الخام اليومي" : "Daily Raw Material Usage"}
-              </div>
-              {rawDaily.length === 0 ? (
-                <div style={{ padding: "2rem", textAlign: "center", color: "var(--text-secondary)" }}>{isAr ? "لا توجد بيانات" : "No data"}</div>
-              ) : (
-                <div style={{ overflowX: "auto" }}>
-                  <table className="admin-table">
-                    <thead>
-                      <tr>
-                        {[isAr ? "التاريخ" : "Date", "HDPE (kg)", "LDPE (kg)", "PET (kg)", isAr ? "لاصق" : "Adhesive", isAr ? "أكياس" : "Bags", isAr ? "لون" : "Color", isAr ? "الإجمالي" : "Total"].map((h) => <th key={h}>{h}</th>)}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {rawDaily.map((row) => (
-                        <tr key={row.date}>
-                          <td style={{ fontWeight: 700 }}>{row.date}</td>
-                          <td>{row.hdpe > 0 ? row.hdpe : "—"}</td>
-                          <td>{row.ldpe > 0 ? row.ldpe : "—"}</td>
-                          <td>{row.pet > 0 ? row.pet : "—"}</td>
-                          <td>{row.adhesive > 0 ? row.adhesive : "—"}</td>
-                          <td>{row.emptyBags > 0 ? row.emptyBags : "—"}</td>
-                          <td>{row.color > 0 ? row.color : "—"}</td>
-                          <td style={{ fontWeight: 700 }}>{fmt(row.totalRawUsed)}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* ── ALL RECORDS TAB ── */}
           {adminTab === "records" && (() => {
-            const records = adminOverview?.recentRecords ?? allRecords.slice(0, 50);
+            const records = (adminOverview?.recentRecords ?? allRecords).filter((r) => (r.cartonsCount ?? 0) > 0 || r.machine != null);
             return (
               <div style={{ background: "var(--bg-card)", border: "1px solid var(--border-default)", borderRadius: "var(--radius-xl)", overflow: "hidden" }}>
-                <div style={{ padding: ".875rem 1.25rem", borderBottom: "1px solid var(--border-default)", background: "var(--bg-surface)", fontWeight: 700, fontSize: ".9rem" }}>
-                  {isAr ? `السجلات الأخيرة (${records.length})` : `Recent Records (${records.length})`}
-                  {(fromDate || toDate) && <span style={{ marginLeft: ".5rem", fontSize: ".78rem", color: "var(--orange-600,#ea580c)" }}>— {isAr ? "مفلترة" : "filtered"}</span>}
-                </div>
-                {records.length === 0 ? (
-                  <div style={{ padding: "2rem", textAlign: "center", color: "var(--text-secondary)" }}>{isAr ? "لا توجد سجلات" : "No records"}</div>
-                ) : (
+                <div style={{ padding: ".875rem 1.25rem", borderBottom: "1px solid var(--border-default)", background: "var(--bg-surface)", fontWeight: 700, fontSize: ".9rem" }}>{isAr ? `السجلات (${records.length})` : `Records (${records.length})`}</div>
+                {records.length === 0 ? <div style={{ padding: "2rem", textAlign: "center", color: "var(--text-secondary)" }}>{isAr ? "لا توجد سجلات" : "No records"}</div> : (
                   <div style={{ overflowX: "auto" }}>
                     <table className="admin-table">
-                      <thead>
-                        <tr>
-                          {[isAr ? "التاريخ" : "Date", isAr ? "العامل" : "Worker", isAr ? "الآلة / النوع" : "Machine / Type", isAr ? "الشفت" : "Shift", isAr ? "الكمية" : "Count", isAr ? "الكافيتي" : "Cavities", isAr ? "القطع" : "Pieces", isAr ? "المادة (كغ)" : "Material (kg)", isAr ? "لون (كغ)" : "Color (kg)"].map((h) => <th key={h}>{h}</th>)}
-                        </tr>
-                      </thead>
+                      <thead><tr>{[isAr ? "التاريخ" : "Date", isAr ? "العامل" : "Worker", isAr ? "الآلة" : "Machine", isAr ? "الشفت" : "Shift", isAr ? "كراتين" : "Cartons", isAr ? "القطع" : "Pieces"].map((h) => <th key={h}>{h}</th>)}</tr></thead>
                       <tbody>
-                        {records.map((r) => {
-                          const isPreform = isPreformMachine(r.machine?.type);
-                          return (
-                            <tr key={r.id}>
-                              <td style={{ whiteSpace: "nowrap" }}>{new Date(r.createdAt).toLocaleDateString()}</td>
-                              <td style={{ fontWeight: 600 }}>{r.user?.fullName ?? "—"}</td>
-                              <td>
-                                {r.machine?.name ?? "—"}
-                                <span style={{ marginLeft: ".4rem", fontSize: ".7rem", padding: ".1rem .4rem", borderRadius: "999px", background: isPreform ? "rgba(59,130,246,.12)" : "rgba(249,115,22,.12)", color: isPreform ? "#1d4ed8" : "#ea580c" }}>
-                                  {isPreform ? "PREFORM" : "CAPS"}
-                                </span>
-                              </td>
-                              <td>{r.shift?.name ?? "—"}</td>
-                              <td>{isPreform ? `${r.cartonsCount ?? 0} ${isAr ? "دورة" : "cycles"}` : `${r.cartonsCount ?? 0} ${isAr ? "كرتون" : "cartons"}`}</td>
-                              <td>{isPreform ? (r.workingCavities ? `${r.workingCavities}/72` : "72/72") : "—"}</td>
-                              <td style={{ fontWeight: 700 }}>{fmt(r.totalPieces ?? 0)}</td>
-                              <td>{isPreform ? (r.rawPetUsed ? `PET: ${r.rawPetUsed}` : "—") : (r.rawHdpeUsed || r.rawLdpeUsed ? `H:${r.rawHdpeUsed ?? 0} L:${r.rawLdpeUsed ?? 0}` : "—")}</td>
-                              <td>{r.colorUsed ?? "—"}</td>
-                            </tr>
-                          );
-                        })}
+                        {records.slice(0, 50).map((r) => (
+                          <tr key={r.id}>
+                            <td style={{ whiteSpace: "nowrap" }}>{new Date(r.createdAt).toLocaleDateString()}</td>
+                            <td style={{ fontWeight: 600 }}>{r.user?.fullName ?? "—"}</td>
+                            <td>{r.machine?.name ?? "—"} <span style={{ fontSize: ".7rem", padding: ".1rem .3rem", borderRadius: "4px", background: "rgba(249,115,22,.1)", color: "#ea580c" }}>{isPreformMachine(r.machine?.type) ? "PRE" : "CAPS"}</span></td>
+                            <td>{r.shift?.name ?? "—"}</td>
+                            <td>{r.cartonsCount ?? 0}</td>
+                            <td style={{ fontWeight: 700 }}>{fmt(r.totalPieces ?? 0)}</td>
+                          </tr>
+                        ))}
                       </tbody>
                     </table>
                   </div>
@@ -1143,39 +676,18 @@ export function ProductionPage() {
             );
           })()}
 
-          {/* ── BY WORKER TAB ── */}
           {adminTab === "workers" && (
             <div style={{ background: "var(--bg-card)", border: "1px solid var(--border-default)", borderRadius: "var(--radius-xl)", overflow: "hidden" }}>
-              <div style={{ padding: ".875rem 1.25rem", borderBottom: "1px solid var(--border-default)", background: "var(--bg-surface)", fontWeight: 700, fontSize: ".9rem" }}>
-                {isAr ? "الإنتاج حسب العامل" : "Production by Worker"}
-              </div>
-              {(adminOverview?.byUser ?? []).length === 0 ? (
-                <div style={{ padding: "2rem", textAlign: "center", color: "var(--text-secondary)" }}>{isAr ? "لا توجد بيانات" : "No data"}</div>
-              ) : (
+              <div style={{ padding: ".875rem 1.25rem", borderBottom: "1px solid var(--border-default)", background: "var(--bg-surface)", fontWeight: 700, fontSize: ".9rem" }}>{isAr ? "الإنتاج حسب العامل" : "Production by Worker"}</div>
+              {(adminOverview?.byUser ?? []).length === 0 ? <div style={{ padding: "2rem", textAlign: "center", color: "var(--text-secondary)" }}>{isAr ? "لا توجد بيانات" : "No data"}</div> : (
                 <div style={{ overflowX: "auto" }}>
                   <table className="admin-table">
-                    <thead>
-                      <tr>
-                        <th>#</th>
-                        <th>{isAr ? "الاسم" : "Name"}</th>
-                        <th>{isAr ? "اسم المستخدم" : "Username"}</th>
-                        <th>{isAr ? "الدور" : "Role"}</th>
-                        <th>{isAr ? "السجلات" : "Records"}</th>
-                        <th>{isAr ? "الكراتين" : "Cartons"}</th>
-                        <th>{isAr ? "إجمالي القطع" : "Total Pieces"}</th>
-                      </tr>
-                    </thead>
+                    <thead><tr><th>#</th><th>{isAr ? "الاسم" : "Name"}</th><th>{isAr ? "السجلات" : "Records"}</th><th>{isAr ? "الكراتين" : "Cartons"}</th><th>{isAr ? "القطع" : "Pieces"}</th></tr></thead>
                     <tbody>
                       {(adminOverview?.byUser ?? []).map((w, i) => (
                         <tr key={w.userId}>
                           <td style={{ color: "var(--text-secondary)", fontWeight: 600 }}>{i + 1}</td>
                           <td style={{ fontWeight: 700 }}>{w.fullName}</td>
-                          <td style={{ color: "var(--text-secondary)" }}>{w.username}</td>
-                          <td>
-                            <span style={{ padding: ".2rem .6rem", borderRadius: "999px", fontSize: ".72rem", fontWeight: 600, background: "rgba(249,115,22,.1)", color: "#ea580c" }}>
-                              {w.role}
-                            </span>
-                          </td>
                           <td>{w.recordsCount}</td>
                           <td>{fmt(w.cartonsCount)}</td>
                           <td style={{ fontWeight: 800, color: "var(--brand-primary)" }}>{fmt(w.totalPieces)}</td>
@@ -1190,115 +702,28 @@ export function ProductionPage() {
         </>
       )}
 
-      {/* ── Accountant view ── */}
-      {isAccountant && (
-        <>
-          {/* KPI Cards */}
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-              gap: "1rem",
-              marginBottom: "1.5rem",
-            }}
-          >
-            {[
-              { label: isAr ? "إجمالي السجلات" : "Total Records", value: allRecords.length, gradient: "linear-gradient(135deg,#3b82f6,#1d4ed8)", icon: "📋" },
-              { label: isAr ? "سجلات البريفورم" : "Preform Records", value: allRecords.filter((r) => isPreformMachine(r.machine?.type)).length, gradient: "linear-gradient(135deg,#06b6d4,#0284c7)", icon: "🏭" },
-              { label: isAr ? "سجلات الكابس" : "Caps Records", value: allRecords.filter((r) => isCapsMachine(r.machine?.type)).length, gradient: "linear-gradient(135deg,#f97316,#ea580c)", icon: "🧢" },
-              { label: isAr ? "إجمالي القطع" : "Total Pieces", value: fmt(allRecords.reduce((s, r) => s + (r.totalPieces ?? 0), 0)), gradient: "linear-gradient(135deg,#10b981,#059669)", icon: "🔢" },
-            ].map((kpi) => (
-              <div key={kpi.label} style={{ background: kpi.gradient, borderRadius: "var(--radius-xl)", padding: "1.1rem 1.25rem", color: "#fff", display: "flex", flexDirection: "column", gap: ".35rem", boxShadow: "0 4px 14px rgba(0,0,0,.12)" }}>
-                <span style={{ fontSize: "1.3rem" }}>{kpi.icon}</span>
-                <p style={{ margin: 0, fontSize: ".75rem", opacity: .85, fontWeight: 500 }}>{kpi.label}</p>
-                <p style={{ margin: 0, fontSize: "1.6rem", fontWeight: 800, lineHeight: 1 }}>{kpi.value}</p>
-              </div>
-            ))}
+      {/* ── ACCOUNTANT / ENGINEER: read-only table ─────────── */}
+      {(isAccountant || (!isAdmin && canSeeAll)) && (
+        <div style={{ background: "var(--bg-card)", border: "1px solid var(--border-default)", borderRadius: "var(--radius-xl)", overflow: "hidden", marginTop: isAccountant ? 0 : "1.5rem" }}>
+          <div style={{ padding: ".875rem 1.25rem", borderBottom: "1px solid var(--border-default)", background: "var(--bg-surface)", fontWeight: 700, fontSize: ".9rem" }}>{isAr ? `سجلات الإنتاج (${allRecords.length})` : `Production Records (${allRecords.length})`}</div>
+          <div style={{ overflowX: "auto" }}>
+            <table className="admin-table">
+              <thead><tr>{[isAr ? "التاريخ" : "Date", isAr ? "العامل" : "Worker", isAr ? "الآلة" : "Machine", isAr ? "الشفت" : "Shift", isAr ? "كراتين" : "Cartons", isAr ? "القطع" : "Pieces"].map((h) => <th key={h}>{h}</th>)}</tr></thead>
+              <tbody>
+                {allRecords.slice(0, 50).map((r, i) => (
+                  <tr key={r.id} style={{ background: i % 2 === 0 ? "transparent" : "var(--bg-surface)" }}>
+                    <td style={{ padding: ".5rem .875rem", whiteSpace: "nowrap" }}>{new Date(r.createdAt).toLocaleDateString()}</td>
+                    <td style={{ padding: ".5rem .875rem", fontWeight: 600 }}>{r.user?.fullName ?? "—"}</td>
+                    <td style={{ padding: ".5rem .875rem" }}>{r.machine?.name ?? "—"}</td>
+                    <td style={{ padding: ".5rem .875rem" }}>{r.shift?.name ?? "—"}</td>
+                    <td style={{ padding: ".5rem .875rem" }}>{r.cartonsCount ?? 0}</td>
+                    <td style={{ padding: ".5rem .875rem", fontWeight: 700 }}>{fmt(r.totalPieces ?? 0)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
-
-          {/* Records Table */}
-          {allRecords.length > 0 && (
-            <div
-              style={{
-                background: "var(--bg-card)",
-                border: "1px solid var(--border-default)",
-                borderRadius: "var(--radius-xl)",
-                overflow: "hidden",
-              }}
-            >
-              <div style={{ padding: ".875rem 1.25rem", borderBottom: "1px solid var(--border-default)", background: "var(--bg-surface)", fontWeight: 700, fontSize: ".9rem" }}>
-                {isAr ? `جميع السجلات (${allRecords.length})` : `All Records (${allRecords.length})`}
-              </div>
-              <div style={{ overflowX: "auto" }}>
-                <table style={{ width: "100%", fontSize: ".82rem", borderCollapse: "collapse" }}>
-                  <thead>
-                    <tr style={{ background: "var(--bg-surface)", borderBottom: "1px solid var(--border-default)" }}>
-                      {[
-                        isAr ? "التاريخ" : "Date",
-                        isAr ? "العامل" : "Worker",
-                        isAr ? "الآلة / النوع" : "Machine / Type",
-                        isAr ? "الشفت" : "Shift",
-                        isAr ? "الكمية" : "Count",
-                        isAr ? "القطع" : "Pieces",
-                        isAr ? "المادة (كغ)" : "Material (kg)",
-                      ].map((h) => (
-                        <th key={h} style={{ padding: ".6rem .875rem", textAlign: "left", fontWeight: 600, color: "var(--text-secondary)", whiteSpace: "nowrap" }}>
-                          {h}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {allRecords.slice(0, 50).map((r, i) => {
-                      const isPreform = isPreformMachine(r.machine?.type);
-                      return (
-                        <tr
-                          key={r.id}
-                          style={{
-                            borderBottom: "1px solid var(--border-default)",
-                            background: i % 2 === 0 ? "transparent" : "var(--bg-surface)",
-                          }}
-                        >
-                          <td style={{ padding: ".5rem .875rem", color: "var(--text-secondary)", whiteSpace: "nowrap" }}>
-                            {new Date(r.createdAt).toLocaleDateString()}
-                          </td>
-                          <td style={{ padding: ".5rem .875rem", fontWeight: 600 }}>{r.user?.fullName ?? "—"}</td>
-                          <td style={{ padding: ".5rem .875rem" }}>
-                            {r.machine?.name ?? "—"}
-                            <span
-                              style={{
-                                marginLeft: ".4rem",
-                                fontSize: ".7rem",
-                                padding: ".1rem .4rem",
-                                borderRadius: "999px",
-                                background: isPreform ? "var(--blue-100)" : "var(--orange-100)",
-                                color: isPreform ? "var(--blue-700)" : "var(--orange-700)",
-                              }}
-                            >
-                              {isPreform ? "PREFORM" : "CAPS"}
-                            </span>
-                          </td>
-                          <td style={{ padding: ".5rem .875rem", color: "var(--text-secondary)" }}>{r.shift?.name ?? "—"}</td>
-                          <td style={{ padding: ".5rem .875rem" }}>
-                            {isPreform
-                              ? `${r.cartonsCount ?? 0} ${isAr ? "دورة" : "cycles"} × ${r.workingCavities ?? 72}`
-                              : `${r.cartonsCount ?? 0} ${isAr ? "كرتون" : "cartons"}`}
-                          </td>
-                          <td style={{ padding: ".5rem .875rem", fontWeight: 700 }}>{fmt(r.totalPieces ?? 0)}</td>
-                          <td style={{ padding: ".5rem .875rem", color: "var(--text-secondary)" }}>
-                            {isPreform
-                              ? (r.rawPetUsed ? `PET: ${r.rawPetUsed}kg` : "—")
-                              : (r.rawHdpeUsed || r.rawLdpeUsed ? `H:${r.rawHdpeUsed ?? 0} L:${r.rawLdpeUsed ?? 0}` : "—")}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
-        </>
+        </div>
       )}
     </ModulePageShell>
   );

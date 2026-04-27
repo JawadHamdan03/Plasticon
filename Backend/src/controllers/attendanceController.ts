@@ -3,11 +3,54 @@ import { AuthenticatedRequest } from "../middleware/authMiddleware";
 import {
   checkIn,
   checkOut,
+  createAttendanceForUser as createAttendanceForUserService,
   deleteAttendance as deleteAttendanceService,
   getAllAttendances as getAllAttendancesService,
   getMyAttendances as getMyAttendancesService,
   updateAttendance as updateAttendanceService,
 } from "../services/attendanceServices";
+
+export const createAttendanceForUserHandler = async (
+  req: AuthenticatedRequest,
+  res: Response,
+) => {
+  try {
+    const adminId = req.user?.id;
+    if (!adminId) {
+      res.status(401).json({ message: "Not authorized" });
+      return;
+    }
+
+    const userId = Number(req.body.userId);
+    if (!Number.isInteger(userId) || userId <= 0) {
+      res.status(400).json({ message: "userId must be a positive integer" });
+      return;
+    }
+
+    const { checkIn: checkInRaw, checkOut: checkOutRaw, shiftId } = req.body as {
+      checkIn?: string;
+      checkOut?: string | null;
+      shiftId?: number | null;
+    };
+
+    const result = await createAttendanceForUserService(adminId, {
+      userId,
+      checkIn: checkInRaw ?? "",
+      checkOut: checkOutRaw,
+      shiftId: shiftId !== undefined ? (shiftId === null ? null : Number(shiftId)) : undefined,
+    });
+
+    if (result.message && result.status !== 201) {
+      res.status(result.status).json({ message: result.message });
+      return;
+    }
+
+    res.status(result.status).json(result.data);
+  } catch (error) {
+    console.error("Create attendance for user error:", error);
+    res.status(500).json({ message: "Failed to create attendance record" });
+  }
+};
 
 export const checkInHandler = async (
   req: AuthenticatedRequest,

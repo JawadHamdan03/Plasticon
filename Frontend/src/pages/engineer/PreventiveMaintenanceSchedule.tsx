@@ -6,6 +6,8 @@ import { Card } from "../../components/ui/card";
 import { useLocale } from "../../context/LocaleContext";
 import { useAuth } from "../../context/AuthContext";
 import { API_BASE_URL } from "../../lib/api";
+import { toast } from "../../lib/toast";
+import { confirmDialog } from "../../lib/dialog";
 
 function authHeaders(): Record<string, string> {
   const token = localStorage.getItem("plasticon_token");
@@ -93,7 +95,7 @@ export default function PreventiveMaintenanceSchedule() {
   };
 
   const handleDelete = async (id: number) => {
-    if (!confirm(nav("Delete this schedule?", "حذف هذا الجدول؟"))) return;
+    if (!(await confirmDialog(nav("Delete this schedule?", "حذف هذا الجدول؟"), { danger: true, confirmText: nav("Delete", "حذف") }))) return;
     setDeletingId(id);
     try {
       const res = await fetch(`${API_BASE_URL}/maintenance-schedule/${id}`, {
@@ -104,10 +106,10 @@ export default function PreventiveMaintenanceSchedule() {
       if (res.ok) {
         fetchSchedules();
       } else {
-        const err = await res.json();
-        alert(err.message || nav("Failed to delete", "فشل الحذف"));
+        const err = await res.json() as { message?: string };
+        toast.error(err.message || nav("Failed to delete", "فشل الحذف"));
       }
-    } catch { alert(nav("Network error", "خطأ في الاتصال")); }
+    } catch { toast.error(nav("Network error", "خطأ في الاتصال")); }
     finally { setDeletingId(null); }
   };
 

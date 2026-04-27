@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLocale } from "../../context/LocaleContext";
 import { appCopy } from "../../content/appCopy";
 import { API_BASE_URL, readApiError } from "../../lib/api";
+import { toast } from "../../lib/toast";
 
 type Machine = {
   id: number;
@@ -32,6 +33,8 @@ export function MachinesPage() {
   const [error, setError] = useState("");
   const [creating, setCreating] = useState(false);
   const [editingMachineId, setEditingMachineId] = useState<number | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
   const [newMachineForm, setNewMachineForm] = useState<{
     name: string;
     type: string;
@@ -117,9 +120,7 @@ export function MachinesPage() {
     const trimmedName = newMachineForm.name.trim();
     const trimmedType = newMachineForm.type.trim();
     if (!trimmedName || !trimmedType) {
-      window.alert(
-        locale === "ar" ? "الاسم والنوع مطلوبان" : "Name and type are required",
-      );
+      toast.warning(locale === "ar" ? "الاسم والنوع مطلوبان" : "Name and type are required");
       return;
     }
 
@@ -138,13 +139,29 @@ export function MachinesPage() {
       await loadMachines();
       setNewMachineForm({ name: "", type: "" });
     } catch (createError) {
-      window.alert(
-        createError instanceof Error
-          ? createError.message
-          : "Failed to create machine",
-      );
+      toast.error(createError instanceof Error ? createError.message : "Failed to create machine");
     } finally {
       setCreating(false);
+    }
+  };
+
+  const deleteMachine = async (id: number) => {
+    setDeletingId(id);
+    try {
+      const token = localStorage.getItem("plasticon_token");
+      const response = await fetch(`${API_BASE_URL}/machines/${id}`, {
+        method: "DELETE",
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        credentials: "include",
+      });
+      if (!response.ok) throw new Error(await readApiError(response));
+      setMachines((prev) => prev.filter((m) => m.id !== id));
+      setConfirmDeleteId(null);
+      toast.success(locale === "ar" ? "تم حذف الماكينة" : "Machine deleted");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to delete machine");
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -183,9 +200,7 @@ export function MachinesPage() {
       );
       cancelEditMachine();
     } catch (saveError) {
-      window.alert(
-        saveError instanceof Error ? saveError.message : "Failed to update",
-      );
+      toast.error(saveError instanceof Error ? saveError.message : "Failed to update");
     }
   };
 
@@ -270,6 +285,7 @@ export function MachinesPage() {
                     <th>{copy.admin.name}</th>
                     <th>{copy.admin.machineType}</th>
                     <th>{copy.admin.machineStatus}</th>
+                    <th>{locale === "ar" ? "إجراءات" : "Actions"}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -345,14 +361,48 @@ export function MachinesPage() {
                               {copy.admin.cancel}
                             </button>
                           </div>
+                        ) : confirmDeleteId === item.id ? (
+                          <div style={{ display: "flex", gap: ".375rem", alignItems: "center" }}>
+                            <span style={{ fontSize: ".78rem", color: "#ef4444", fontWeight: 600 }}>
+                              {locale === "ar" ? "تأكيد الحذف؟" : "Delete?"}
+                            </span>
+                            <button
+                              type="button"
+                              className="btn btn--sm"
+                              style={{ background: "#ef4444", color: "#fff", border: "none" }}
+                              disabled={deletingId === item.id}
+                              onClick={() => void deleteMachine(item.id)}
+                            >
+                              {deletingId === item.id
+                                ? (locale === "ar" ? "..." : "...")
+                                : (locale === "ar" ? "نعم" : "Yes")}
+                            </button>
+                            <button
+                              type="button"
+                              className="btn btn--ghost btn--sm"
+                              onClick={() => setConfirmDeleteId(null)}
+                            >
+                              {locale === "ar" ? "لا" : "No"}
+                            </button>
+                          </div>
                         ) : (
-                          <button
-                            type="button"
-                            className="btn btn--outline btn--sm"
-                            onClick={() => startEditMachine(item)}
-                          >
-                            {copy.admin.edit}
-                          </button>
+                          <div style={{ display: "flex", gap: ".375rem" }}>
+                            <button
+                              type="button"
+                              className="btn btn--outline btn--sm"
+                              onClick={() => startEditMachine(item)}
+                            >
+                              {copy.admin.edit}
+                            </button>
+                            <button
+                              type="button"
+                              className="btn btn--sm"
+                              style={{ background: "rgba(239,68,68,.1)", color: "#ef4444", border: "1px solid rgba(239,68,68,.3)" }}
+                              onClick={() => setConfirmDeleteId(item.id)}
+                            >
+                              {locale === "ar" ? "حذف" : "Delete"}
+                            </button>
+                          </div>
                         )}
                       </td>
                     </tr>

@@ -19,12 +19,19 @@ type ServiceResult<T> = {
   data?: T;
 };
 
+type BoxEntry = {
+  cavities: number;
+  cycles: number;
+  numberOfBoxes: number;
+};
+
 type CreateProductionPayload = {
   machineId?: number;
   shiftId?: number;
   hourSlot?: string;
   cartonsCount?: number;
   workingCavities?: number;
+  boxes?: BoxEntry[];
   rawHdpeUsed?: number;
   rawLdpeUsed?: number;
   rawPetUsed?: number;
@@ -361,112 +368,120 @@ export const createProductionRecord = async (
   userId: number,
   payload: CreateProductionPayload,
 ): Promise<ServiceResult<unknown>> => {
-  const machineId = Number(payload.machineId);
-  const cartonsCount = Number(payload.cartonsCount);
-
-  if (!Number.isInteger(machineId) || machineId <= 0) {
-    return {
-      status: 400,
-      message: "machineId is required and must be a positive integer",
-    };
-  }
-
-  if (!Number.isInteger(cartonsCount) || cartonsCount < 0) {
-    return {
-      status: 400,
-      message:
-        "cartonsCount is required and must be zero or a positive integer",
-    };
+  // machineId is optional — omit it for material-only consumption records
+  const machineIdRaw = payload.machineId ? Number(payload.machineId) : null;
+  if (machineIdRaw !== null && (!Number.isInteger(machineIdRaw) || machineIdRaw <= 0)) {
+    return { status: 400, message: "machineId must be a positive integer" };
   }
 
   const user = await prisma.user.findUnique({
     where: { id: userId },
     select: { id: true, shiftId: true },
   });
+  if (!user) return { status: 404, message: "User not found" };
 
-  if (!user) {
-    return { status: 404, message: "User not found" };
-  }
-
-  const machine = await prisma.machine.findUnique({
-    where: { id: machineId },
-    select: { id: true, type: true, name: true },
-  });
-
-  if (!machine) {
-    return { status: 404, message: "Machine not found" };
-  }
-
-  const productType = getProductTypeFromMachineType(machine.type);
-  if (!productType) {
-    return {
-      status: 400,
-      message:
-        "Machine type is not mapped to a product type. Use CAPS/PREFORM machine type.",
-    };
-  }
-
-  const setting = await prisma.productionSetting.findUnique({
-    where: { productType },
-    select: { piecesPerCarton: true },
-  });
-
-  if (!setting) {
-    return {
-      status: 400,
-      message: `Missing ProductionSetting for ${productType}`,
-    };
-  }
-
+  // Resolve shift
   const resolvedShiftId = payload.shiftId ?? user.shiftId;
   if (!resolvedShiftId) {
-    return {
-      status: 400,
-      message: "shiftId is required when user has no assigned shift",
-    };
+    return { status: 400, message: "shiftId is required when user has no assigned shift" };
+  }
+  const shift = await prisma.shift.findUnique({ where: { id: Number(resolvedShiftId) } });
+  if (!shift) return { status: 404, message: "Shift not found" };
+
+  // Machine-specific logic (piece counting, snapshot check)
+  let resolvedMachineId: number | null = null;
+  let cartonsCount = 0;
+  let piecesPerCarton = 0;
+  let totalPieces = 0;
+  let resolvedWorkingCavities: number | null = null;
+  let resolvedBoxes: (BoxEntry & { totalPieces: number })[] | null = null;
+
+  if (machineIdRaw !== null) {
+    const machine = await prisma.machine.findUnique({
+      where: { id: machineIdRaw },
+      select: { id: true, type: true, name: true },
+    });
+    if (!machine) return { status: 404, message: "Machine not found" };
+
+    const productType = getProductTypeFromMachineType(machine.type);
+    if (!productType) {
+      return { status: 400, message: "Machine type is not mapped to a product type. Use CAPS/PREFORM machine type." };
+    }
+
+    const setting = await prisma.productionSetting.findUnique({
+      where: { productType },
+      select: { piecesPerCarton: true },
+    });
+    if (!setting) {
+      return { status: 400, message: `Missing ProductionSetting for ${productType}` };
+    }
+
+    // Snapshot counter check — only required when machine is used
+    const hasShiftCounters = await hasSnapshotInShiftWindow(
+      userId,
+      shift.startTime,
+      shift.endTime,
+      new Date(),
+    );
+    if (!hasShiftCounters) {
+      return {
+        status: 400,
+        message: "You must record machine and electricity counters first in this shift before saving production.",
+      };
+    }
+
+    // Validate boxes
+    if (Array.isArray(payload.boxes) && payload.boxes.length > 0) {
+      for (const b of payload.boxes) {
+        const cav = Number(b.cavities);
+        const cyc = Number(b.cycles);
+        const nb = Number(b.numberOfBoxes);
+        if (!Number.isInteger(cav) || cav <= 0) return { status: 400, message: "Each box must have a valid cavities count (>0)" };
+        if (!Number.isInteger(cyc) || cyc < 0) return { status: 400, message: "Each box must have a valid cycles count (>=0)" };
+        if (!Number.isInteger(nb) || nb <= 0) return { status: 400, message: "Each box must have a valid numberOfBoxes count (>0)" };
+      }
+      resolvedBoxes = payload.boxes.map((b) => ({
+        cavities: Number(b.cavities),
+        cycles: Number(b.cycles),
+        numberOfBoxes: Number(b.numberOfBoxes),
+        totalPieces: Number(b.cavities) * Number(b.cycles) * Number(b.numberOfBoxes),
+      }));
+    }
+
+    piecesPerCarton = setting.piecesPerCarton;
+    cartonsCount = resolvedBoxes
+      ? resolvedBoxes.reduce((s, b) => s + b.numberOfBoxes, 0)
+      : Number(payload.cartonsCount);
+
+    if (!resolvedBoxes && (!Number.isInteger(cartonsCount) || cartonsCount < 0)) {
+      return { status: 400, message: "cartonsCount is required and must be zero or a positive integer" };
+    }
+
+    totalPieces = resolvedBoxes
+      ? resolvedBoxes.reduce((s, b) => s + b.totalPieces, 0)
+      : cartonsCount * piecesPerCarton;
+
+    const firstBoxCavities = resolvedBoxes?.[0]?.cavities ?? null;
+    resolvedWorkingCavities = firstBoxCavities
+      ? Math.min(Math.max(1, firstBoxCavities), 72)
+      : payload.workingCavities
+        ? Math.min(Math.max(1, Number(payload.workingCavities)), 72)
+        : null;
+
+    resolvedMachineId = machine.id;
   }
 
-  const shift = await prisma.shift.findUnique({
-    where: { id: Number(resolvedShiftId) },
-  });
-  if (!shift) {
-    return { status: 404, message: "Shift not found" };
-  }
-
-  const hasShiftCounters = await hasSnapshotInShiftWindow(
-    userId,
-    shift.startTime,
-    shift.endTime,
-    new Date(),
-  );
-
-  if (!hasShiftCounters) {
-    return {
-      status: 400,
-      message:
-        "You must record machine and electricity counters first in this shift before saving production.",
-    };
-  }
-
+  // Material validation
   const materialValidation = getMaterialUsageEntries(payload);
-  if (materialValidation.error) {
-    return materialValidation.error;
-  }
-
+  if (materialValidation.error) return materialValidation.error;
   const materialUsages = materialValidation.usages;
-  const downtimeMinutes = asNonNegativeNumber(payload.downtimeMinutes);
 
-  if (
-    payload.downtimeMinutes !== undefined &&
-    payload.downtimeMinutes !== null &&
-    downtimeMinutes === null
-  ) {
-    return {
-      status: 400,
-      message: "downtimeMinutes must be zero or a positive number",
-    };
+  const downtimeMinutes = asNonNegativeNumber(payload.downtimeMinutes);
+  if (payload.downtimeMinutes !== undefined && payload.downtimeMinutes !== null && downtimeMinutes === null) {
+    return { status: 400, message: "downtimeMinutes must be zero or a positive number" };
   }
 
+  // Resolve raw materials for inventory deduction (soft — skip if not found)
   const rawMaterials = materialUsages.length
     ? await prisma.rawMaterial.findMany({
         select: { id: true, name: true, currentQuantity: true, unit: true },
@@ -474,62 +489,40 @@ export const createProductionRecord = async (
     : [];
 
   const resolveMaterialForUsage = (usage: MaterialUsageEntry) => {
-    const aliases = getUsageAliases(usage.field);
-    const normalizedAliases = aliases.map((alias) =>
-      normalizeMaterialName(alias),
-    );
-
-    return rawMaterials.find((material) => {
-      const normalizedMaterial = normalizeMaterialName(material.name);
-      return normalizedAliases.some(
-        (normalizedAlias) =>
-          normalizedMaterial === normalizedAlias ||
-          normalizedMaterial.includes(normalizedAlias) ||
-          normalizedAlias.includes(normalizedMaterial),
-      );
+    const normalizedAliases = getUsageAliases(usage.field).map(normalizeMaterialName);
+    return rawMaterials.find((m) => {
+      const nm = normalizeMaterialName(m.name);
+      return normalizedAliases.some((a) => nm === a || nm.includes(a) || a.includes(nm));
     });
   };
 
-  const resolvedMaterialByField = new Map<
-    string,
-    (typeof rawMaterials)[number]
-  >();
-
+  const resolvedMaterialByField = new Map<string, (typeof rawMaterials)[number]>();
   for (const usage of materialUsages) {
     const material = resolveMaterialForUsage(usage);
-    if (!material) {
-      return {
-        status: 400,
-        message: `Raw material for field ${usage.field} was not found in inventory`,
-      };
+    if (material) {
+      if (material.currentQuantity < usage.quantity) {
+        return {
+          status: 400,
+          message: `Insufficient stock for ${material.name}. Available: ${material.currentQuantity} ${material.unit}`,
+        };
+      }
+      resolvedMaterialByField.set(usage.field, material);
     }
-
-    resolvedMaterialByField.set(usage.field, material);
-
-    if (material.currentQuantity < usage.quantity) {
-      return {
-        status: 400,
-        message: `Insufficient stock for ${material.name}. Available: ${material.currentQuantity} ${material.unit}`,
-      };
-    }
+    // If material not found in inventory, skip deduction silently
   }
-
-  const piecesPerCarton = setting.piecesPerCarton;
-  const totalPieces = cartonsCount * piecesPerCarton;
 
   const production = await prisma.$transaction(async (tx) => {
     const created = await tx.productionRecord.create({
       data: {
-        machineId: machine.id,
+        machineId: resolvedMachineId ?? undefined,
         userId,
         shiftId: Number(resolvedShiftId),
         hourSlot: payload.hourSlot?.trim() || generateHourSlot(),
         cartonsCount,
         piecesPerCarton,
         totalPieces,
-        workingCavities: payload.workingCavities
-          ? Math.min(Math.max(1, Number(payload.workingCavities)), 72)
-          : null,
+        workingCavities: resolvedWorkingCavities,
+        boxesData: resolvedBoxes ? JSON.stringify(resolvedBoxes) : null,
         rawHdpeUsed: asNonNegativeNumber(payload.rawHdpeUsed),
         rawLdpeUsed: asNonNegativeNumber(payload.rawLdpeUsed),
         rawPetUsed: asNonNegativeNumber(payload.rawPetUsed),
@@ -548,19 +541,11 @@ export const createProductionRecord = async (
 
     for (const usage of materialUsages) {
       const material = resolvedMaterialByField.get(usage.field);
-      if (!material) {
-        throw new Error(
-          `Material for ${usage.field} missing during transaction`,
-        );
-      }
+      if (!material) continue; // skip if not in inventory
 
       await tx.rawMaterial.update({
         where: { id: material.id },
-        data: {
-          currentQuantity: {
-            decrement: usage.quantity,
-          },
-        },
+        data: { currentQuantity: { decrement: usage.quantity } },
       });
 
       await tx.inventoryTransaction.create({
@@ -583,12 +568,7 @@ export const createProductionRecord = async (
     AuditAction.PRODUCTION_RECORD_CREATED,
     AuditEntityType.PRODUCTION_RECORD,
     production.id,
-    {
-      machineId: machine.id,
-      machineName: machine.name,
-      cartonsCount,
-      totalPieces,
-    },
+    { machineId: resolvedMachineId, cartonsCount, totalPieces },
   );
 
   await dispatchAutoNotification({
@@ -746,6 +726,19 @@ export const getProductionAdminOverview = async (
     }
   >();
 
+  const shiftRawUsageMap = new Map<
+    string,
+    {
+      date: string;
+      shiftId: number | null;
+      shiftName: string;
+      hdpeKg: number;
+      ldpeKg: number;
+      petKg: number;
+      colorKg: number;
+    }
+  >();
+
   for (const record of records) {
     const user = record.user;
     const currentByUser = productionByUserMap.get(user.id) ?? {
@@ -819,13 +812,15 @@ export const getProductionAdminOverview = async (
     }
     dailyProductMap.set(dayKey, byDayProduct);
 
+    // HDPE, LDPE, PET are all stored in BAGS (matching inventory CARTON/BAG unit).
+    // kg/bag is variable and not stored, so reports aggregate bag counts.
     const rawUsed = {
-      hdpe: Number(record.rawHdpeUsed ?? 0),
-      ldpe: Number(record.rawLdpeUsed ?? 0),
-      pet: Number(record.rawPetUsed ?? 0),
+      hdpe: Number(record.rawHdpeUsed ?? 0),   // bags
+      ldpe: Number(record.rawLdpeUsed ?? 0),   // bags
+      pet: Number(record.rawPetUsed ?? 0),     // bags
       adhesive: Number(record.adhesiveUsed ?? 0),
       emptyBags: Number(record.emptyBagsUsed ?? 0),
-      color: Number(record.colorUsed ?? 0),
+      color: Number(record.colorUsed ?? 0),    // kg
     };
 
     const byDayRaw = dailyRawUsageMap.get(dayKey) ?? {
@@ -854,6 +849,22 @@ export const getProductionAdminOverview = async (
       rawUsed.color;
 
     dailyRawUsageMap.set(dayKey, byDayRaw);
+
+    // Per-shift raw material usage
+    const byShiftRaw = shiftRawUsageMap.get(shiftProductKey) ?? {
+      date: dayKey,
+      shiftId: record.shift?.id ?? null,
+      shiftName: record.shift?.name ?? "Unassigned",
+      hdpeKg: 0,
+      ldpeKg: 0,
+      petKg: 0,
+      colorKg: 0,
+    };
+    byShiftRaw.hdpeKg += rawUsed.hdpe;
+    byShiftRaw.ldpeKg += rawUsed.ldpe;
+    byShiftRaw.petKg += rawUsed.pet;
+    byShiftRaw.colorKg += rawUsed.color;
+    shiftRawUsageMap.set(shiftProductKey, byShiftRaw);
   }
 
   return {
@@ -881,6 +892,11 @@ export const getProductionAdminOverview = async (
       ),
       dailyRawMaterialUsage: Array.from(dailyRawUsageMap.values()).sort(
         (a, b) => b.date.localeCompare(a.date),
+      ),
+      byShiftRawUsage: Array.from(shiftRawUsageMap.values()).sort((a, b) =>
+        b.date === a.date
+          ? (a.shiftId ?? 0) - (b.shiftId ?? 0)
+          : b.date.localeCompare(a.date),
       ),
       recentRecords: records.slice(0, 25),
     },

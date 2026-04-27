@@ -12,6 +12,7 @@ import {
   Filter,
 } from "lucide-react";
 import { API_BASE_URL } from "../../lib/api";
+import { confirmDialog } from "../../lib/dialog";
 
 /* ── Types ─────────────────────────────────────────────────── */
 type InventoryItem = {
@@ -138,11 +139,7 @@ export function AccountantPartsPricingPage() {
   const handleReview = async (inventoryId: number) => {
     const inv = inventories.find((i) => i.id === inventoryId);
     if (!inv) return;
-    if (
-      !confirm(
-        `Mark inventory for ${MONTHS[inv.month - 1]} ${inv.year} as Reviewed?`,
-      )
-    )
+    if (!(await confirmDialog(`Mark inventory for ${MONTHS[inv.month - 1]} ${inv.year} as Reviewed?`)))
       return;
     setReviewingId(inventoryId);
     try {

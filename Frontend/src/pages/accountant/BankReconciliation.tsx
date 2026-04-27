@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
+import { confirmDialog } from "../../lib/dialog";
 import { Plus, Edit, Trash2, CheckCircle, Clock, Landmark } from "lucide-react";
 import { ModulePageShell } from "../../components/ModulePageShell";
 import { Button } from "../../components/ui/button";
@@ -75,7 +76,7 @@ export default function BankReconciliation() {
   };
 
   const handleDelete = async (id: number) => {
-    if (!confirm(nav("Delete this reconciliation?", "حذف هذا التسوية؟"))) return;
+    if (!(await confirmDialog(nav("Delete this reconciliation?", "حذف هذا التسوية؟"), { danger: true }))) return;
     await fetch(`${API_BASE_URL}/bank-reconciliations/${id}`, {
       method: "DELETE", headers: { ...authHeaders() }, credentials: "include",
     });

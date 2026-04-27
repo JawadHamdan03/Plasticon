@@ -238,7 +238,7 @@ export const getDashboardOverview = async (): Promise<ServiceResult<unknown>> =>
         recentProduction: recentProductionRaw.map((r) => ({
           id: r.id,
           workerName: r.user.fullName,
-          machineName: r.machine.name,
+          machineName: r.machine?.name ?? "—",
           totalPieces: r.totalPieces,
           cartonsCount: r.cartonsCount,
           createdAt: r.createdAt.toISOString(),

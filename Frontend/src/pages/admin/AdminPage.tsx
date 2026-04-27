@@ -4,6 +4,8 @@ import { useAuth } from "../../context/AuthContext";
 import { useLocale } from "../../context/LocaleContext";
 import { appCopy } from "../../content/appCopy";
 import { API_BASE_URL, readApiError } from "../../lib/api";
+import { toast } from "../../lib/toast";
+import { confirmDialog } from "../../lib/dialog";
 import { Button } from "../../components/ui/button";
 import { EmptyState } from "../../components/ui/empty-state";
 import { PageHeader } from "../../components/ui/page-header";
@@ -877,7 +879,7 @@ export function AdminPage() {
   }, [attendanceRecords, users]);
 
   const handleDeleteUser = async (id: number) => {
-    const confirmed = window.confirm(copy.admin.deleteUserConfirm);
+    const confirmed = await confirmDialog(copy.admin.deleteUserConfirm, { danger: true, confirmText: "Delete" });
     if (!confirmed) {
       return;
     }
@@ -896,9 +898,7 @@ export function AdminPage() {
         ),
       );
     } catch (error) {
-      window.alert(
-        error instanceof Error ? error.message : copy.admin.deleteUserFailed,
-      );
+      toast.error(error instanceof Error ? error.message : copy.admin.deleteUserFailed);
     }
   };
 
@@ -908,7 +908,7 @@ export function AdminPage() {
   ) => {
     const piecesPerCarton = Number(value);
     if (!Number.isInteger(piecesPerCarton) || piecesPerCarton <= 0) {
-      window.alert("piecesPerCarton must be a positive integer");
+      toast.warning("Pieces per carton must be a positive integer");
       return;
     }
     try {
@@ -931,11 +931,7 @@ export function AdminPage() {
       );
       await loadSettingsOverview();
     } catch (error) {
-      window.alert(
-        error instanceof Error
-          ? error.message
-          : "Failed to update production setting",
-      );
+      toast.error(error instanceof Error ? error.message : "Failed to update production setting");
     }
   };
 
@@ -965,14 +961,10 @@ export function AdminPage() {
       }
       const data = (await response.json()) as SystemSetting;
       setSystemSetting(data);
-      window.alert("System settings updated successfully");
+      toast.success("System settings updated successfully");
       await loadSettingsOverview();
     } catch (error) {
-      window.alert(
-        error instanceof Error
-          ? error.message
-          : "Failed to update system settings",
-      );
+      toast.error(error instanceof Error ? error.message : "Failed to update system settings");
     }
   };
 
@@ -1143,13 +1135,9 @@ export function AdminPage() {
                                         : userItem,
                                     ),
                                   );
-                                  window.alert(copy.admin.userUpdated);
+                                  toast.success(copy.admin.userUpdated);
                                 } catch (error) {
-                                  window.alert(
-                                    error instanceof Error
-                                      ? error.message
-                                      : copy.admin.userUpdateFailed,
-                                  );
+                                  toast.error(error instanceof Error ? error.message : copy.admin.userUpdateFailed);
                                 }
                               })();
                             }}

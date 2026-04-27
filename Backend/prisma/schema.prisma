@@ -143,7 +143,9 @@ model User {
   salaryConfigUpdates  SalaryConfig[] @relation("SalaryConfigUpdater")
   notifications Notification[]
 
-  electricityReadings   ElectricityReading[]
+  electricityRecorded      ElectricityReading[]   @relation("ElectricityRecorder")
+  electricityEngineered    ElectricityReading[]   @relation("ElectricityEngineer")
+  electricityKwhPricesSet  ElectricityKwhPrice[]  @relation("KwhPriceSetter")
   inventoryTransactions InventoryTransaction[]
   purchases             Purchase[]
   sales                 Sale[]
@@ -220,7 +222,7 @@ model Shift {
   maintenances     Maintenance[]
   qualityChecks    QualityCheck[]
   machineReads     MachineReading[]
-  electricityReads ElectricityReading[]
+  electricityReadings ElectricityReading[]
 }
 
 model Attendance {
@@ -286,18 +288,46 @@ model MachineReading {
   recordedAt DateTime @default(now())
 }
 
+model ElectricityKwhPrice {
+  id            Int      @id @default(autoincrement())
+  price         Float
+  effectiveFrom DateTime @default(now())
+  notes         String?
+  setById       Int
+  setBy         User     @relation("KwhPriceSetter", fields: [setById], references: [id])
+
+  readings ElectricityReading[]
+
+  createdAt DateTime @default(now())
+}
+
 model ElectricityReading {
-  id           Int     @id @default(autoincrement())
-  shiftId      Int
-  userId       Int
-  startReading Float
-  endReading   Float
-  imagePath    String?
+  id                    Int      @id @default(autoincrement())
+  date                  DateTime
+  shiftId               Int
+  startReading          Float
+  endReading            Float
+  isMeterReset          Boolean  @default(false)
+  maxMeterValue         Float?
+  consumption           Float
+  kwhPriceId            Int
+  kwhPriceSnap          Float
+  shiftCost             Float
+  notes                 String?
+  imagePath             String?
+  recordedById          Int
+  responsibleEngineerId Int?
 
-  shift Shift @relation(fields: [shiftId], references: [id])
-  user  User  @relation(fields: [userId], references: [id])
+  shift               Shift              @relation(fields: [shiftId], references: [id])
+  recordedBy          User               @relation("ElectricityRecorder", fields: [recordedById], references: [id])
+  responsibleEngineer User?              @relation("ElectricityEngineer", fields: [responsibleEngineerId], references: [id])
+  kwhPrice            ElectricityKwhPrice @relation(fields: [kwhPriceId], references: [id])
 
-  recordedAt DateTime @default(now())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([date])
+  @@index([shiftId])
 }
 
 //////////////////////
@@ -306,14 +336,14 @@ model ElectricityReading {
 
 model ProductionRecord {
   id        Int    @id @default(autoincrement())
-  machineId Int
+  machineId Int?
   userId    Int
   shiftId   Int
   hourSlot  String
 
-  cartonsCount    Int
-  piecesPerCarton Int
-  totalPieces     Int
+  cartonsCount    Int @default(0)
+  piecesPerCarton Int @default(0)
+  totalPieces     Int @default(0)
   workingCavities Int?
 
   rawHdpeUsed   Float?
@@ -326,11 +356,13 @@ model ProductionRecord {
   downtimeReason  String?
   downtimeMinutes Int?
 
+  boxesData String?
+
   notes String?
 
-  machine Machine @relation(fields: [machineId], references: [id])
-  user    User    @relation(fields: [userId], references: [id])
-  shift   Shift   @relation(fields: [shiftId], references: [id])
+  machine Machine? @relation(fields: [machineId], references: [id])
+  user    User     @relation(fields: [userId], references: [id])
+  shift   Shift    @relation(fields: [shiftId], references: [id])
 
   notifications Notification[]
 

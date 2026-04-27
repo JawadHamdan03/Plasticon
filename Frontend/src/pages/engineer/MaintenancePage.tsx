@@ -70,7 +70,7 @@ export function MaintenancePage() {
   const { locale } = useLocale();
 
   const role = String(user?.role ?? "WORKER").toUpperCase();
-  const canCreate = ["ENGINEER", "WORKER", "ADMIN"].includes(role);
+  const canCreate = ["ENGINEER", "WORKER"].includes(role);
   const canViewAll = ["ADMIN", "ACCOUNTANT"].includes(role);
 
   const [records, setRecords] = useState<Maintenance[]>([]);

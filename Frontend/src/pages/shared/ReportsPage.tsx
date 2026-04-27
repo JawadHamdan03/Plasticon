@@ -13,6 +13,7 @@ import { useAuth } from "../../context/AuthContext";
 import { useLocale } from "../../context/LocaleContext";
 import { appCopy } from "../../content/appCopy";
 import { API_BASE_URL, readApiError } from "../../lib/api";
+import { toast } from "../../lib/toast";
 import { ModulePageShell } from "../../components/ModulePageShell";
 import { Button } from "../../components/ui/button";
 import { EmptyState } from "../../components/ui/empty-state";
@@ -165,6 +166,30 @@ type SaleRecord = {
   };
 };
 
+type ElectricityShiftRecord = {
+  id: number;
+  shift: { id: number; name: string };
+  startReading: number;
+  endReading: number;
+  consumption: number;
+  kwhPriceSnap: number;
+  shiftCost: number;
+  isMeterReset: boolean;
+  notes: string | null;
+};
+type ElectricityDayRow = {
+  date: string;
+  shifts: ElectricityShiftRecord[];
+  totalConsumption: number;
+  totalCost: number;
+};
+type ElectricityReport = {
+  range: { fromDate: string; toDate: string };
+  currentKwhPrice: number;
+  days: ElectricityDayRow[];
+  summary: { totalConsumption: number; totalCost: number; totalReadings: number; currentKwhPrice: number };
+};
+
 async function fetchWithAuth(path: string, options?: RequestInit) {
   return fetch(`${API_BASE_URL}${path}`, {
     ...options,
@@ -247,6 +272,12 @@ export function ReportsPage() {
     month: "",
     year: "",
   });
+  const [electricityReport, setElectricityReport] = useState<ElectricityReport | null>(null);
+  const [electricityFromDate, setElectricityFromDate] = useState("");
+  const [electricityToDate, setElectricityToDate] = useState("");
+  const [electricityMonth, setElectricityMonth] = useState("");
+  const [electricityYear, setElectricityYear] = useState("");
+  const [loadingElectricity, setLoadingElectricity] = useState(false);
   const [payrollScopeMode, setPayrollScopeMode] = useState<"ALL" | "PERSON">(
     "ALL",
   );
@@ -283,6 +314,24 @@ export function ReportsPage() {
       setLoadingCommerce(false);
     }
   }, []);
+
+  const loadElectricityReport = useCallback(async () => {
+    setLoadingElectricity(true);
+    try {
+      const params = new URLSearchParams();
+      if (electricityFromDate) params.set("fromDate", electricityFromDate);
+      if (electricityToDate) params.set("toDate", electricityToDate);
+      if (electricityMonth) params.set("month", electricityMonth);
+      if (electricityYear) params.set("year", electricityYear);
+      const res = await fetchWithAuth(`/electricity/report?${params.toString()}`);
+      if (!res.ok) throw new Error(await readApiError(res));
+      setElectricityReport((await res.json()) as ElectricityReport);
+    } catch {
+      setElectricityReport(null);
+    } finally {
+      setLoadingElectricity(false);
+    }
+  }, [electricityFromDate, electricityToDate, electricityMonth, electricityYear]);
 
   const buildPeriodParams = (filters: PeriodFilters) => {
     const params = new URLSearchParams({ period: filters.period });
@@ -700,7 +749,7 @@ export function ReportsPage() {
                 dir="ltr"
                 onClick={() => {
                   if (!supplierReportRows.length) {
-                    window.alert(copy.reports.pdfNoData);
+                    toast.info(copy.reports.pdfNoData);
                     return;
                   }
 
@@ -751,7 +800,7 @@ export function ReportsPage() {
                 dir="ltr"
                 onClick={() => {
                   if (!supplierReportRows.length) {
-                    window.alert(copy.reports.pdfNoData);
+                    toast.info(copy.reports.pdfNoData);
                     return;
                   }
                   exportExcelTable(
@@ -855,7 +904,7 @@ export function ReportsPage() {
                 dir="ltr"
                 onClick={() => {
                   if (!customerReportRows.length) {
-                    window.alert(copy.reports.pdfNoData);
+                    toast.info(copy.reports.pdfNoData);
                     return;
                   }
 
@@ -904,7 +953,7 @@ export function ReportsPage() {
                 dir="ltr"
                 onClick={() => {
                   if (!customerReportRows.length) {
-                    window.alert(copy.reports.pdfNoData);
+                    toast.info(copy.reports.pdfNoData);
                     return;
                   }
                   exportExcelTable(
@@ -1052,7 +1101,7 @@ export function ReportsPage() {
               dir="ltr"
               onClick={() => {
                 if (!productionActivity) {
-                  window.alert(copy.reports.pdfNoData);
+                  toast.info(copy.reports.pdfNoData);
                   return;
                 }
 
@@ -1094,7 +1143,7 @@ export function ReportsPage() {
               dir="ltr"
               onClick={() => {
                 if (!productionActivity) {
-                  window.alert(copy.reports.pdfNoData);
+                  toast.info(copy.reports.pdfNoData);
                   return;
                 }
                 exportExcelTable(
@@ -1230,7 +1279,7 @@ export function ReportsPage() {
               dir="ltr"
               onClick={() => {
                 if (!inventoryActivity) {
-                  window.alert(copy.reports.pdfNoData);
+                  toast.info(copy.reports.pdfNoData);
                   return;
                 }
 
@@ -1269,7 +1318,7 @@ export function ReportsPage() {
               dir="ltr"
               onClick={() => {
                 if (!inventoryActivity) {
-                  window.alert(copy.reports.pdfNoData);
+                  toast.info(copy.reports.pdfNoData);
                   return;
                 }
                 exportExcelTable(
@@ -1403,7 +1452,7 @@ export function ReportsPage() {
               dir="ltr"
               onClick={() => {
                 if (!attendanceActivity) {
-                  window.alert(copy.reports.pdfNoData);
+                  toast.info(copy.reports.pdfNoData);
                   return;
                 }
 
@@ -1447,7 +1496,7 @@ export function ReportsPage() {
               dir="ltr"
               onClick={() => {
                 if (!attendanceActivity) {
-                  window.alert(copy.reports.pdfNoData);
+                  toast.info(copy.reports.pdfNoData);
                   return;
                 }
                 exportExcelTable(
@@ -1616,12 +1665,12 @@ export function ReportsPage() {
               dir="ltr"
               onClick={() => {
                 if (!payrollActivity) {
-                  window.alert(copy.reports.pdfNoData);
+                  toast.info(copy.reports.pdfNoData);
                   return;
                 }
 
                 if (!filteredPayrollRows.length) {
-                  window.alert(copy.reports.pdfNoData);
+                  toast.info(copy.reports.pdfNoData);
                   return;
                 }
 
@@ -1663,7 +1712,7 @@ export function ReportsPage() {
               dir="ltr"
               onClick={() => {
                 if (!payrollActivity || !filteredPayrollRows.length) {
-                  window.alert(copy.reports.pdfNoData);
+                  toast.info(copy.reports.pdfNoData);
                   return;
                 }
                 exportExcelTable(
@@ -1728,6 +1777,124 @@ export function ReportsPage() {
               </TableBase>
             </TableShell>
           ) : null}
+        </article>
+
+        {/* ── Electricity Consumption Report ── */}
+        <article className="module-panel module-panel--full">
+          <h2>{isArabic ? "تقرير استهلاك الكهرباء" : "Electricity Consumption Report"}</h2>
+          <div className="module-form module-form--inline" style={{ flexWrap: "wrap", gap: ".75rem", marginBottom: "1rem" }}>
+            <label style={{ display: "flex", flexDirection: "column", gap: ".25rem", fontSize: ".8rem", fontWeight: 600 }}>
+              {isArabic ? "من تاريخ" : "From date"}
+              <input type="date" className="module-form__input" value={electricityFromDate} onChange={(e) => setElectricityFromDate(e.target.value)} />
+            </label>
+            <label style={{ display: "flex", flexDirection: "column", gap: ".25rem", fontSize: ".8rem", fontWeight: 600 }}>
+              {isArabic ? "إلى تاريخ" : "To date"}
+              <input type="date" className="module-form__input" value={electricityToDate} onChange={(e) => setElectricityToDate(e.target.value)} />
+            </label>
+            <label style={{ display: "flex", flexDirection: "column", gap: ".25rem", fontSize: ".8rem", fontWeight: 600 }}>
+              {isArabic ? "الشهر" : "Month"}
+              <input type="month" className="module-form__input" value={electricityMonth ? `${electricityYear || new Date().getFullYear()}-${electricityMonth.padStart(2, "0")}` : ""}
+                onChange={(e) => {
+                  const [y, m] = e.target.value.split("-");
+                  setElectricityYear(y ?? "");
+                  setElectricityMonth(String(Number(m ?? "0")));
+                  setElectricityFromDate(""); setElectricityToDate("");
+                }} />
+            </label>
+            <div style={{ display: "flex", gap: ".5rem", alignItems: "flex-end" }}>
+              <button type="button" className="auth-button" onClick={() => void loadElectricityReport()}>
+                {isArabic ? "تحميل" : "Load"}
+              </button>
+              <button type="button" className="auth-button auth-button--ghost" onClick={() => { setElectricityFromDate(""); setElectricityToDate(""); setElectricityMonth(""); setElectricityYear(""); setElectricityReport(null); }}>
+                {isArabic ? "مسح" : "Clear"}
+              </button>
+            </div>
+          </div>
+
+          {loadingElectricity && <p style={{ color: "var(--text-muted)" }}>{isArabic ? "جاري التحميل…" : "Loading…"}</p>}
+
+          {electricityReport && (
+            <>
+              {/* KPI Summary */}
+              <div className="module-report-grid" style={{ marginBottom: "1.25rem" }}>
+                <div className="module-report-card">
+                  <span>{isArabic ? "إجمالي الاستهلاك" : "Total Consumption"}</span>
+                  <strong>{electricityReport.summary.totalConsumption.toFixed(2)} kWh</strong>
+                </div>
+                <div className="module-report-card">
+                  <span>{isArabic ? "إجمالي التكلفة" : "Total Cost"}</span>
+                  <strong>{electricityReport.summary.totalCost.toFixed(2)} ILS</strong>
+                </div>
+                <div className="module-report-card">
+                  <span>{isArabic ? "عدد القراءات" : "Total Readings"}</span>
+                  <strong>{electricityReport.summary.totalReadings}</strong>
+                </div>
+                <div className="module-report-card">
+                  <span>{isArabic ? "سعر kWh الحالي" : "Current kWh Price"}</span>
+                  <strong>{electricityReport.currentKwhPrice.toFixed(3)} ILS</strong>
+                </div>
+              </div>
+
+              {/* Detailed table */}
+              {electricityReport.days.length === 0 ? (
+                <p style={{ color: "var(--text-secondary)", textAlign: "center", padding: "1.5rem 0" }}>{isArabic ? "لا توجد بيانات" : "No data in selected range"}</p>
+              ) : (
+                <TableShell>
+                  <TableBase className="admin-table">
+                    <thead>
+                      <tr>
+                        <th>{isArabic ? "التاريخ" : "Date"}</th>
+                        <th>{isArabic ? "الشفت" : "Shift"}</th>
+                        <th>{isArabic ? "بداية (kWh)" : "Start (kWh)"}</th>
+                        <th>{isArabic ? "نهاية (kWh)" : "End (kWh)"}</th>
+                        <th>{isArabic ? "الاستهلاك (kWh)" : "Consumption (kWh)"}</th>
+                        <th>{isArabic ? "سعر kWh" : "kWh Price"}</th>
+                        <th>{isArabic ? "تكلفة الشفت (ILS)" : "Shift Cost (ILS)"}</th>
+                        <th>{isArabic ? "تهيئة" : "Reset"}</th>
+                        <th>{isArabic ? "ملاحظات" : "Notes"}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {electricityReport.days.map((day) => (
+                        <>
+                          {day.shifts.map((s, si) => (
+                            <tr key={s.id}>
+                              {si === 0 && (
+                                <td rowSpan={day.shifts.length} style={{ fontWeight: 700, verticalAlign: "middle", whiteSpace: "nowrap" }}>
+                                  {new Date(day.date).toLocaleDateString(isArabic ? "ar-SA" : "en-GB")}
+                                </td>
+                              )}
+                              <td>
+                                <span style={{ padding: ".15rem .45rem", borderRadius: "999px", background: s.shift.name.includes("A") ? "#dbeafe" : s.shift.name.includes("B") ? "#ffedd5" : "#ede9fe", color: s.shift.name.includes("A") ? "#1d4ed8" : s.shift.name.includes("B") ? "#c2410c" : "#6d28d9", fontWeight: 700, fontSize: ".8rem" }}>
+                                  {s.shift.name}
+                                </span>
+                              </td>
+                              <td>{s.startReading.toFixed(2)}</td>
+                              <td>{s.endReading.toFixed(2)}</td>
+                              <td><strong>{s.consumption.toFixed(2)}</strong></td>
+                              <td style={{ fontSize: ".85rem" }}>{s.kwhPriceSnap.toFixed(3)}</td>
+                              <td><strong>{s.shiftCost.toFixed(2)}</strong></td>
+                              <td>{s.isMeterReset ? <span style={{ fontSize: ".75rem", padding: ".1rem .35rem", background: "#fef3c7", color: "#92400e", borderRadius: 4, fontWeight: 700 }}>{isArabic ? "تهيئة" : "Reset"}</span> : "—"}</td>
+                              <td style={{ fontSize: ".8rem", color: "var(--text-secondary)" }}>{s.notes ?? "—"}</td>
+                            </tr>
+                          ))}
+                          {/* Daily total row */}
+                          <tr style={{ background: "var(--bg-subtle)", fontWeight: 700 }}>
+                            <td colSpan={3} style={{ textAlign: "right", color: "var(--text-secondary)", fontSize: ".85rem" }}>{isArabic ? "إجمالي اليوم" : "Day Total"}</td>
+                            <td></td>
+                            <td style={{ color: "var(--brand-primary)" }}>{day.totalConsumption.toFixed(2)} kWh</td>
+                            <td></td>
+                            <td style={{ color: "#15803d" }}>{day.totalCost.toFixed(2)} ILS</td>
+                            <td colSpan={2}></td>
+                          </tr>
+                        </>
+                      ))}
+                    </tbody>
+                  </TableBase>
+                </TableShell>
+              )}
+            </>
+          )}
         </article>
 
         <article className="module-panel module-panel--full">

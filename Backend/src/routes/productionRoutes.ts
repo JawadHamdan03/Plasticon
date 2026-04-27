@@ -11,7 +11,11 @@ import { UserRole } from "../config/generated/prisma/client";
 
 const router = Router();
 
-router.post("/", authorizeRoles([UserRole.WORKER]), createProductionHandler);
+router.post(
+  "/",
+  authorizeRoles([UserRole.WORKER, UserRole.ENGINEER]),
+  createProductionHandler,
+);
 
 router.get(
   "/me",
@@ -26,7 +30,7 @@ router.get(
 
 router.get(
   "/all",
-  authorizeRoles([UserRole.ACCOUNTANT, UserRole.ADMIN]),
+  authorizeRoles([UserRole.ACCOUNTANT, UserRole.ENGINEER, UserRole.ADMIN]),
   getAllProductionHandler,
 );
 
