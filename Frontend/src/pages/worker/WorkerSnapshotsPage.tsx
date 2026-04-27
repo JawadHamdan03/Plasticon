@@ -769,23 +769,47 @@ export function WorkerSnapshotsPage({
 
   const tabs: Array<{ id: ToolTab; label: string }> = [
     { id: "stops", label: locale === "ar" ? "توقف فوري" : "Stop Alerts" },
-    {
-      id: "checklist",
-      label: locale === "ar" ? "مهام الشفت" : "Shift Checklist",
-    },
-    { id: "waste", label: locale === "ar" ? "هدر المواد" : "Material Waste" },
+    { id: "checklist", label: locale === "ar" ? "مهام الشفت" : "Checklist" },
+    { id: "waste", label: locale === "ar" ? "هدر المواد" : "Waste" },
     { id: "target", label: locale === "ar" ? "الهدف اليومي" : "Daily Target" },
-    { id: "kaizen", label: locale === "ar" ? "Kaizen" : "Kaizen" },
-    {
-      id: "quality",
-      label: locale === "ar" ? "مشاكل الجودة" : "Quality Issues",
-    },
-    { id: "micro", label: locale === "ar" ? "Micro-stops" : "Micro-stops" },
-    {
-      id: "anomaly",
-      label: locale === "ar" ? "تنبيه كهرباء" : "Electricity Anomaly",
-    },
+    { id: "kaizen", label: "Kaizen" },
+    { id: "quality", label: locale === "ar" ? "مشاكل الجودة" : "Quality" },
+    { id: "micro", label: locale === "ar" ? "توقف قصير" : "Micro-stops" },
+    { id: "anomaly", label: locale === "ar" ? "تنبيه كهرباء" : "Elec. Alert" },
   ];
+
+  const tabIcons: Record<ToolTab, string> = {
+    stops: "🛑",
+    checklist: "✅",
+    waste: "🗑️",
+    target: "🎯",
+    kaizen: "💡",
+    quality: "🔍",
+    micro: "⏱️",
+    anomaly: "⚡",
+  };
+
+  const tabColors: Record<ToolTab, string> = {
+    stops: "#ef4444",
+    checklist: "#22c55e",
+    waste: "#f59e0b",
+    target: "#3b82f6",
+    kaizen: "#8b5cf6",
+    quality: "#f97316",
+    micro: "#14b8a6",
+    anomaly: "#eab308",
+  };
+
+  const toolDescriptions: Record<ToolTab, string> = {
+    stops: locale === "ar" ? "أبلغ عن توقف فوري في الماكينة" : "Report an immediate machine stoppage",
+    checklist: locale === "ar" ? "أكمل قائمة مهام بداية/نهاية الشفت" : "Complete shift start/end task checklist",
+    waste: locale === "ar" ? "سجّل هدر المواد الخام" : "Record raw material waste",
+    target: locale === "ar" ? "سجّل الهدف اليومي والإنجاز الفعلي" : "Log daily target vs actual output",
+    kaizen: locale === "ar" ? "أرسل اقتراحاً لتحسين العمليات" : "Submit a process improvement suggestion",
+    quality: locale === "ar" ? "بلّغ عن مشكلة في الجودة" : "Report a quality defect or issue",
+    micro: locale === "ar" ? "سجّل توقفاً قصيراً للماكينة" : "Log a short machine micro-stop",
+    anomaly: locale === "ar" ? "اكتشاف استهلاك كهربائي غير طبيعي" : "Detect abnormal electricity consumption",
+  };
 
   return (
     <ModulePageShell
@@ -796,1308 +820,870 @@ export function WorkerSnapshotsPage({
           type="button"
           className="auth-button auth-button--ghost"
           onClick={() => {
-            if (showSnapshots) {
-              void loadHistory();
-            }
-            if (showTools) {
-              void loadWorkerTools();
-            }
+            if (showSnapshots) void loadHistory();
+            if (showTools) void loadWorkerTools();
           }}
         >
           {text.refresh}
         </button>
       }
     >
-      <section className="worker-profile-strip">
-        <div className="worker-profile-chip">
-          <div className="worker-profile-chip__avatar">{profileInitial}</div>
-          <div>
-            <p className="worker-profile-chip__eyebrow">{text.profileTitle}</p>
-            <strong>{user?.name ?? "-"}</strong>
-            <small>
-              {user?.email ?? "-"} {user?.role ? `• ${user.role}` : ""}
-            </small>
+      {/* ── Hero Card ── */}
+      <div className="wt-hero">
+        <div className="wt-hero__left">
+          <div className="wt-hero__avatar">{profileInitial}</div>
+          <div className="wt-hero__info">
+            <p className="wt-hero__eyebrow">{text.profileTitle}</p>
+            <strong className="wt-hero__name">{user?.name ?? "-"}</strong>
+            <span className="wt-hero__meta">
+              {user?.email ?? "-"}
+              {user?.role ? ` · ${user.role}` : ""}
+            </span>
           </div>
         </div>
-        <div className="worker-progress-box">
-          <p>
-            {text.progressLabel}: {todayStats.entries}/{targetEntries}
-          </p>
-          <div className="worker-progress-track">
-            <span style={{ width: `${progressPercent}%` }} />
+        <div className="wt-hero__progress-wrap">
+          <div className="wt-hero__progress-label">
+            <span>{text.progressLabel}</span>
+            <strong>{todayStats.entries}/{targetEntries}</strong>
           </div>
+          <div className="wt-hero__progress-track">
+            <div
+              className="wt-hero__progress-fill"
+              style={{ width: `${progressPercent}%` }}
+            />
+          </div>
+          <div className="wt-hero__progress-pct">{progressPercent}%</div>
         </div>
-      </section>
+      </div>
 
+      {/* ── KPI Row (Snapshots mode) ── */}
       {showSnapshots ? (
-        <section className="worker-snapshot-kpi-grid">
-          <article className="worker-snapshot-kpi">
-            <p>{text.entriesLabel}</p>
-            <strong>{visibleSummary.entries}</strong>
-            <small>
+        <div className="wt-kpi-grid">
+          <div className="wt-kpi-card wt-kpi-card--blue">
+            <span className="wt-kpi-icon">📊</span>
+            <p className="wt-kpi-label">{text.entriesLabel}</p>
+            <strong className="wt-kpi-value">{visibleSummary.entries}</strong>
+            <small className="wt-kpi-sub">
               {locale === "ar" ? "آخر تحديث" : "Last sync"}:{" "}
               {lastSyncAt ? new Date(lastSyncAt).toLocaleTimeString() : "-"}
             </small>
-          </article>
-          <article className="worker-snapshot-kpi">
-            <p>{text.totalElectricityLabel}</p>
-            <strong>{visibleSummary.totalElectricity.toFixed(2)} kWh</strong>
-            <small>
-              {locale === "ar" ? "اليوم" : "Today"}:{" "}
-              {todayStats.totalElectricity.toFixed(2)} kWh
+          </div>
+          <div className="wt-kpi-card wt-kpi-card--green">
+            <span className="wt-kpi-icon">⚡</span>
+            <p className="wt-kpi-label">{text.totalElectricityLabel}</p>
+            <strong className="wt-kpi-value">
+              {visibleSummary.totalElectricity.toFixed(2)}
+            </strong>
+            <small className="wt-kpi-sub">
+              kWh · {locale === "ar" ? "اليوم" : "Today"}:{" "}
+              {todayStats.totalElectricity.toFixed(2)}
             </small>
-          </article>
-          <article className="worker-snapshot-kpi">
-            <p>{text.averageElectricityLabel}</p>
-            <strong>{visibleSummary.averageElectricity.toFixed(2)} kWh</strong>
-            <small>
-              {text.counterDeltaLabel}:{" "}
+          </div>
+          <div className="wt-kpi-card wt-kpi-card--orange">
+            <span className="wt-kpi-icon">📈</span>
+            <p className="wt-kpi-label">{text.averageElectricityLabel}</p>
+            <strong className="wt-kpi-value">
+              {visibleSummary.averageElectricity.toFixed(2)}
+            </strong>
+            <small className="wt-kpi-sub">
+              kWh · {text.counterDeltaLabel}:{" "}
               {counterDelta === null
                 ? "-"
                 : `${counterDelta > 0 ? "+" : ""}${counterDelta}`}
             </small>
-          </article>
-          <article className="worker-snapshot-kpi">
-            <p>{text.machinesLabel}</p>
-            <strong>{visibleSummary.uniqueMachines}</strong>
-            <small>
+          </div>
+          <div className="wt-kpi-card wt-kpi-card--purple">
+            <span className="wt-kpi-icon">🏭</span>
+            <p className="wt-kpi-label">{text.machinesLabel}</p>
+            <strong className="wt-kpi-value">{visibleSummary.uniqueMachines}</strong>
+            <small className="wt-kpi-sub">
               {locale === "ar" ? "آخر قراءة" : "Latest"}:{" "}
               {latest ? new Date(latest.createdAt).toLocaleString() : "-"}
             </small>
-          </article>
-        </section>
+          </div>
+        </div>
       ) : null}
 
-      <section className="module-grid">
-        <article className="module-panel worker-snapshot-form-panel">
+      {/* ── Tab Navigation (Tools mode) ── */}
+      {showTools ? (
+        <div className="wt-tab-nav">
+          {tabs.map((tab) => (
+            <button
+              key={tab.id}
+              type="button"
+              className={`wt-tab-btn${activeTool === tab.id ? " wt-tab-btn--active" : ""}`}
+              style={
+                activeTool === tab.id
+                  ? { background: tabColors[tab.id], borderColor: tabColors[tab.id], color: "#fff" }
+                  : {}
+              }
+              onClick={() => setActiveTool(tab.id)}
+            >
+              <span className="wt-tab-icon">{tabIcons[tab.id]}</span>
+              <span>{tab.label}</span>
+            </button>
+          ))}
+        </div>
+      ) : null}
+
+      {/* ── Message Banner ── */}
+      {message ? (
+        <div
+          className={`auth-alert ${messageTone === "error" ? "auth-alert--error" : "auth-alert--success"}`}
+          style={{ marginBottom: "1rem" }}
+        >
+          {message}
+        </div>
+      ) : null}
+
+      {/* ── Main Two-Column Layout ── */}
+      <div className="wt-layout">
+        {/* ─── LEFT: Form Panel ─── */}
+        <div>
+          {/* Snapshots form */}
           {showSnapshots ? (
-            <>
-              <div className="worker-snapshot-panel-head">
-                <div>
-                  <h2>{locale === "ar" ? "تسجيل قراءة" : "Add Snapshot"}</h2>
-                  <p className="worker-snapshot-panel-hint">{text.editHint}</p>
+            <div className="wt-card">
+              <div className="wt-card__header wt-card__header--blue">
+                <span className="wt-card__header-icon">📸</span>
+                <div style={{ flex: 1 }}>
+                  <h2 className="wt-card__header-title">
+                    {editingSnapshotId !== null
+                      ? locale === "ar" ? "تعديل قراءة" : "Edit Reading"
+                      : locale === "ar" ? "تسجيل قراءة جديدة" : "New Reading"}
+                  </h2>
+                  <p className="wt-card__header-sub">{text.editHint}</p>
                 </div>
                 {editingSnapshotId !== null ? (
                   <button
                     type="button"
-                    className="auth-button auth-button--ghost"
+                    className="wt-card__header-cancel"
                     onClick={cancelSnapshotEdit}
                   >
                     {text.cancel}
                   </button>
                 ) : null}
               </div>
-              <div className="worker-snapshot-filter-grid">
-                <label>
-                  {text.searchSnapshots}
-                  <input
-                    value={snapshotSearch}
-                    onChange={(event) => setSnapshotSearch(event.target.value)}
-                    placeholder={
-                      locale === "ar"
-                        ? "ابحث باسم الماكينة أو الملاحظات"
-                        : "Search by machine or note"
-                    }
-                  />
-                </label>
-                <label>
-                  {text.fromDate}
-                  <input
-                    type="date"
-                    value={snapshotFrom}
-                    onChange={(event) => setSnapshotFrom(event.target.value)}
-                  />
-                </label>
-                <label>
-                  {text.toDate}
-                  <input
-                    type="date"
-                    value={snapshotTo}
-                    onChange={(event) => setSnapshotTo(event.target.value)}
-                  />
-                </label>
-                <button
-                  type="button"
-                  className="auth-button auth-button--ghost"
-                  onClick={() => {
-                    setSnapshotSearch("");
-                    setSnapshotFrom("");
-                    setSnapshotTo("");
-                  }}
-                >
-                  {text.clearFilters}
-                </button>
-              </div>
-              <h3 className="worker-snapshot-summary-title">
-                {text.summariesTitle}
-              </h3>
-              <div className="worker-snapshot-summary-strip">
-                <article className="worker-snapshot-summary-card">
-                  <span>{text.entriesLabel}</span>
-                  <strong>{visibleSummary.entries}</strong>
-                </article>
-                <article className="worker-snapshot-summary-card">
-                  <span>{text.totalElectricityLabel}</span>
-                  <strong>
-                    {visibleSummary.totalElectricity.toFixed(2)} kWh
-                  </strong>
-                </article>
-                <article className="worker-snapshot-summary-card">
-                  <span>{text.averageElectricityLabel}</span>
-                  <strong>
-                    {visibleSummary.averageElectricity.toFixed(2)} kWh
-                  </strong>
-                </article>
-                <article className="worker-snapshot-summary-card">
-                  <span>{text.machinesLabel}</span>
-                  <strong>{visibleSummary.uniqueMachines}</strong>
-                </article>
-              </div>
-              {editingSnapshotId !== null ? (
-                <div className="worker-snapshot-edit-banner">
-                  {locale === "ar"
-                    ? "أنت الآن تعدل سجلًا محفوظًا. عند الحفظ سيتم تحديثه مباشرة."
-                    : "You are editing a saved record. Saving will update it immediately."}
-                </div>
-              ) : null}
-              <div className="worker-snapshot-form-grid">
-                <label>
-                  {text.machineLabel}
-                  <input
-                    list="worker-machine-suggestions"
-                    value={draft.machineLabel}
-                    onChange={(event) =>
-                      setDraft((prev) => ({
-                        ...prev,
-                        machineLabel: event.target.value,
-                      }))
-                    }
-                  />
-                  <datalist id="worker-machine-suggestions">
-                    {machineSuggestions.map((item) => (
-                      <option key={item} value={item} />
-                    ))}
-                  </datalist>
-                </label>
-                <label>
-                  {text.machineCounter}
-                  <input
-                    type="number"
-                    min={0}
-                    value={draft.machineCounter}
-                    onChange={(event) =>
-                      setDraft((prev) => ({
-                        ...prev,
-                        machineCounter: event.target.value,
-                      }))
-                    }
-                  />
-                </label>
-                <label>
-                  {text.electricityKwh}
-                  <input
-                    type="number"
-                    min={0}
-                    step="0.01"
-                    value={draft.electricityKwh}
-                    onChange={(event) =>
-                      setDraft((prev) => ({
-                        ...prev,
-                        electricityKwh: event.target.value,
-                      }))
-                    }
-                  />
-                </label>
-                <label>
-                  {text.notes}
-                  <input
-                    value={draft.notes}
-                    onChange={(event) =>
-                      setDraft((prev) => ({
-                        ...prev,
-                        notes: event.target.value,
-                      }))
-                    }
-                  />
-                </label>
-                <label>
-                  {text.machineCounterImage}
-                  <PhotoUploadButton
-                    label={locale === "ar" ? "التقط صورة" : "Take a Photo"}
-                    selectedFileName={draft.machineCounterImage?.name ?? null}
-                    onFileSelect={(file) =>
-                      setDraft((prev) => ({
-                        ...prev,
-                        machineCounterImage: file,
-                      }))
-                    }
-                  />
-                </label>
-                <label>
-                  {text.electricityImage}
-                  <PhotoUploadButton
-                    label={locale === "ar" ? "التقط صورة" : "Take a Photo"}
-                    selectedFileName={draft.electricityImage?.name ?? null}
-                    onFileSelect={(file) =>
-                      setDraft((prev) => ({
-                        ...prev,
-                        electricityImage: file,
-                      }))
-                    }
-                  />
-                </label>
-              </div>
-
-              <div className="admin-section__actions admin-section__actions--inline">
-                <button
-                  type="button"
-                  className="auth-button auth-button--ghost"
-                  onClick={() =>
-                    setDraft((prev) => ({
-                      ...prev,
-                      machineLabel: latest?.machineLabel ?? prev.machineLabel,
-                    }))
-                  }
-                >
-                  {locale === "ar" ? "استخدم آخر ماكينة" : "Use last machine"}
-                </button>
-                <button
-                  type="button"
-                  className="auth-button"
-                  disabled={saving}
-                  onClick={() => void handleSnapshotSubmit()}
-                >
-                  {saving
-                    ? text.loading
-                    : editingSnapshotId !== null
-                      ? text.saveChanges
-                      : text.submit}
-                </button>
-              </div>
-
-              {message ? (
-                <div
-                  className={`auth-alert ${
-                    messageTone === "error"
-                      ? "auth-alert--error"
-                      : "auth-alert--success"
-                  }`}
-                >
-                  {message}
-                </div>
-              ) : null}
-            </>
-          ) : null}
-
-          {showTools ? (
-            <>
-              {showTools && activeTool === "stops" ? (
-                <div className="worker-snapshot-form-grid">
-                  <label>
-                    {locale === "ar" ? "الماكينة" : "Machine"}
+              <div className="wt-card__body">
+                {/* Filters */}
+                <div className="wt-filter-row">
+                  <div className="wt-field">
+                    <label>{text.searchSnapshots}</label>
                     <input
-                      value={stopForm.machineLabel}
-                      onChange={(event) =>
-                        setStopForm((prev) => ({
-                          ...prev,
-                          machineLabel: event.target.value,
-                        }))
-                      }
+                      value={snapshotSearch}
+                      onChange={(e) => setSnapshotSearch(e.target.value)}
+                      placeholder={locale === "ar" ? "ابحث..." : "Search..."}
                     />
-                  </label>
-                  <label>
-                    {locale === "ar" ? "الأولوية" : "Priority"}
-                    <select
-                      value={stopForm.priority}
-                      onChange={(event) =>
-                        setStopForm((prev) => ({
-                          ...prev,
-                          priority: event.target.value,
-                        }))
-                      }
-                    >
-                      <option value="CRITICAL">CRITICAL</option>
-                      <option value="HIGH">HIGH</option>
-                      <option value="NORMAL">NORMAL</option>
-                    </select>
-                  </label>
-                  <label>
-                    {locale === "ar" ? "السبب" : "Reason"}
-                    <input
-                      value={stopForm.reason}
-                      onChange={(event) =>
-                        setStopForm((prev) => ({
-                          ...prev,
-                          reason: event.target.value,
-                        }))
-                      }
-                    />
-                  </label>
-                  <button
-                    className="auth-button"
-                    type="button"
-                    onClick={() => void submitStopAlert()}
-                  >
-                    {locale === "ar" ? "إرسال البلاغ" : "Submit Alert"}
-                  </button>
-                </div>
-              ) : null}
-
-              {showTools && activeTool === "checklist" ? (
-                <div className="worker-snapshot-form-grid">
-                  <label>
-                    {locale === "ar" ? "مرحلة الشفت" : "Shift Phase"}
-                    <select
-                      value={checklistForm.shiftPhase}
-                      onChange={(event) =>
-                        setChecklistForm((prev) => ({
-                          ...prev,
-                          shiftPhase: event.target.value,
-                        }))
-                      }
-                    >
-                      <option value="START">START</option>
-                      <option value="END">END</option>
-                    </select>
-                  </label>
-                  <label>
-                    {locale === "ar"
-                      ? "المهام (سطر لكل مهمة)"
-                      : "Tasks (one per line)"}
-                    <textarea
-                      value={checklistForm.tasksText}
-                      onChange={(event) =>
-                        setChecklistForm((prev) => ({
-                          ...prev,
-                          tasksText: event.target.value,
-                        }))
-                      }
-                    />
-                  </label>
-                  <label>
-                    {locale === "ar" ? "التوقيع الرقمي" : "Digital Signature"}
-                    <input
-                      value={checklistForm.digitalSignature}
-                      onChange={(event) =>
-                        setChecklistForm((prev) => ({
-                          ...prev,
-                          digitalSignature: event.target.value,
-                        }))
-                      }
-                    />
-                  </label>
-                  <button
-                    className="auth-button"
-                    type="button"
-                    onClick={() => void submitChecklist()}
-                  >
-                    {locale === "ar" ? "حفظ القائمة" : "Save Checklist"}
-                  </button>
-                </div>
-              ) : null}
-
-              {showTools && activeTool === "waste" ? (
-                <div className="worker-snapshot-form-grid">
-                  <label>
-                    {locale === "ar" ? "الماكينة" : "Machine"}
-                    <input
-                      value={wasteForm.machineLabel}
-                      onChange={(event) =>
-                        setWasteForm((p) => ({
-                          ...p,
-                          machineLabel: event.target.value,
-                        }))
-                      }
-                    />
-                  </label>
-                  <label>
-                    {locale === "ar" ? "نوع الماكينة" : "Machine Type"}
-                    <input
-                      value={wasteForm.machineType}
-                      onChange={(event) =>
-                        setWasteForm((p) => ({
-                          ...p,
-                          machineType: event.target.value,
-                        }))
-                      }
-                    />
-                  </label>
-                  <label>
-                    {locale === "ar" ? "نوع المادة" : "Material"}
-                    <input
-                      value={wasteForm.materialType}
-                      onChange={(event) =>
-                        setWasteForm((p) => ({
-                          ...p,
-                          materialType: event.target.value,
-                        }))
-                      }
-                    />
-                  </label>
-                  <label>
-                    {locale === "ar" ? "الكمية كغ" : "Waste Kg"}
-                    <input
-                      type="number"
-                      value={wasteForm.wasteKg}
-                      onChange={(event) =>
-                        setWasteForm((p) => ({
-                          ...p,
-                          wasteKg: event.target.value,
-                        }))
-                      }
-                    />
-                  </label>
-                  <label>
-                    {locale === "ar" ? "سبب الهدر" : "Reason"}
-                    <input
-                      value={wasteForm.reason}
-                      onChange={(event) =>
-                        setWasteForm((p) => ({
-                          ...p,
-                          reason: event.target.value,
-                        }))
-                      }
-                    />
-                  </label>
-                  <button
-                    className="auth-button"
-                    type="button"
-                    onClick={() => void submitWaste()}
-                  >
-                    {locale === "ar" ? "حفظ الهدر" : "Save Waste"}
-                  </button>
-                </div>
-              ) : null}
-
-              {showTools && activeTool === "target" ? (
-                <div className="worker-snapshot-form-grid">
-                  <label>
-                    {locale === "ar" ? "التاريخ" : "Date"}
+                  </div>
+                  <div className="wt-field">
+                    <label>{text.fromDate}</label>
                     <input
                       type="date"
-                      value={targetForm.targetDate}
-                      onChange={(event) =>
-                        setTargetForm((p) => ({
-                          ...p,
-                          targetDate: event.target.value,
-                        }))
-                      }
+                      value={snapshotFrom}
+                      onChange={(e) => setSnapshotFrom(e.target.value)}
                     />
-                  </label>
-                  <label>
-                    {locale === "ar" ? "الهدف" : "Target"}
+                  </div>
+                  <div className="wt-field">
+                    <label>{text.toDate}</label>
                     <input
-                      type="number"
-                      value={targetForm.targetUnits}
-                      onChange={(event) =>
-                        setTargetForm((p) => ({
-                          ...p,
-                          targetUnits: event.target.value,
-                        }))
-                      }
+                      type="date"
+                      value={snapshotTo}
+                      onChange={(e) => setSnapshotTo(e.target.value)}
                     />
-                  </label>
-                  <label>
-                    {locale === "ar" ? "المنجز" : "Actual"}
-                    <input
-                      type="number"
-                      value={targetForm.actualUnits}
-                      onChange={(event) =>
-                        setTargetForm((p) => ({
-                          ...p,
-                          actualUnits: event.target.value,
-                        }))
-                      }
-                    />
-                  </label>
-                  <label>
-                    {locale === "ar" ? "ملاحظة" : "Note"}
-                    <input
-                      value={targetForm.note}
-                      onChange={(event) =>
-                        setTargetForm((p) => ({
-                          ...p,
-                          note: event.target.value,
-                        }))
-                      }
-                    />
-                  </label>
+                  </div>
                   <button
-                    className="auth-button"
                     type="button"
-                    onClick={() => void submitTarget()}
+                    className="auth-button auth-button--ghost"
+                    style={{ alignSelf: "flex-end" }}
+                    onClick={() => {
+                      setSnapshotSearch("");
+                      setSnapshotFrom("");
+                      setSnapshotTo("");
+                    }}
                   >
-                    {locale === "ar" ? "حفظ الإنجاز" : "Save Progress"}
+                    {text.clearFilters}
                   </button>
                 </div>
-              ) : null}
 
-              {showTools && activeTool === "kaizen" ? (
-                <div className="worker-snapshot-form-grid">
-                  <label>
-                    {locale === "ar" ? "عنوان الاقتراح" : "Suggestion Title"}
-                    <input
-                      value={kaizenForm.title}
-                      onChange={(event) =>
-                        setKaizenForm((p) => ({
-                          ...p,
-                          title: event.target.value,
-                        }))
-                      }
-                    />
-                  </label>
-                  <label>
-                    {locale === "ar" ? "تفاصيل" : "Details"}
-                    <textarea
-                      value={kaizenForm.details}
-                      onChange={(event) =>
-                        setKaizenForm((p) => ({
-                          ...p,
-                          details: event.target.value,
-                        }))
-                      }
-                    />
-                  </label>
-                  <label>
-                    {locale === "ar" ? "الأثر المتوقع" : "Estimated Impact"}
-                    <input
-                      value={kaizenForm.estimatedImpact}
-                      onChange={(event) =>
-                        setKaizenForm((p) => ({
-                          ...p,
-                          estimatedImpact: event.target.value,
-                        }))
-                      }
-                    />
-                  </label>
-                  <button
-                    className="auth-button"
-                    type="button"
-                    onClick={() => void submitKaizen()}
-                  >
-                    {locale === "ar" ? "إرسال الاقتراح" : "Submit Suggestion"}
-                  </button>
+                {/* Summary strip */}
+                <div className="wt-summary-strip">
+                  <div className="wt-summary-chip">
+                    <span>{text.entriesLabel}</span>
+                    <strong>{visibleSummary.entries}</strong>
+                  </div>
+                  <div className="wt-summary-chip">
+                    <span>{text.totalElectricityLabel}</span>
+                    <strong>{visibleSummary.totalElectricity.toFixed(2)} kWh</strong>
+                  </div>
+                  <div className="wt-summary-chip">
+                    <span>{text.averageElectricityLabel}</span>
+                    <strong>{visibleSummary.averageElectricity.toFixed(2)} kWh</strong>
+                  </div>
+                  <div className="wt-summary-chip">
+                    <span>{text.machinesLabel}</span>
+                    <strong>{visibleSummary.uniqueMachines}</strong>
+                  </div>
                 </div>
-              ) : null}
 
-              {showTools && activeTool === "quality" ? (
-                <div className="worker-snapshot-form-grid">
-                  <label>
-                    {locale === "ar" ? "رمز الدفعة" : "Batch Code"}
+                {editingSnapshotId !== null ? (
+                  <div className="worker-snapshot-edit-banner">
+                    {locale === "ar"
+                      ? "أنت الآن تعدل سجلًا محفوظًا."
+                      : "Editing a saved record — saving will update it."}
+                  </div>
+                ) : null}
+
+                {/* Form fields */}
+                <div className="wt-form-grid">
+                  <div className="wt-field">
+                    <label>{text.machineLabel}</label>
                     <input
-                      value={qualityForm.batchCode}
-                      onChange={(event) =>
-                        setQualityForm((p) => ({
-                          ...p,
-                          batchCode: event.target.value,
-                        }))
-                      }
+                      list="worker-machine-suggestions"
+                      value={draft.machineLabel}
+                      onChange={(e) => setDraft((p) => ({ ...p, machineLabel: e.target.value }))}
                     />
-                  </label>
-                  <label>
-                    {locale === "ar" ? "الماكينة" : "Machine"}
+                    <datalist id="worker-machine-suggestions">
+                      {machineSuggestions.map((item) => (
+                        <option key={item} value={item} />
+                      ))}
+                    </datalist>
+                  </div>
+                  <div className="wt-field">
+                    <label>{text.machineCounter}</label>
                     <input
-                      value={qualityForm.machineLabel}
-                      onChange={(event) =>
-                        setQualityForm((p) => ({
-                          ...p,
-                          machineLabel: event.target.value,
-                        }))
-                      }
+                      type="number"
+                      min={0}
+                      value={draft.machineCounter}
+                      onChange={(e) => setDraft((p) => ({ ...p, machineCounter: e.target.value }))}
                     />
-                  </label>
-                  <label>
-                    {locale === "ar" ? "نوع المشكلة" : "Issue Type"}
+                  </div>
+                  <div className="wt-field">
+                    <label>{text.electricityKwh}</label>
                     <input
-                      value={qualityForm.issueType}
-                      onChange={(event) =>
-                        setQualityForm((p) => ({
-                          ...p,
-                          issueType: event.target.value,
-                        }))
-                      }
+                      type="number"
+                      min={0}
+                      step="0.01"
+                      value={draft.electricityKwh}
+                      onChange={(e) => setDraft((p) => ({ ...p, electricityKwh: e.target.value }))}
                     />
-                  </label>
-                  <label>
-                    {locale === "ar" ? "تفاصيل" : "Details"}
+                  </div>
+                  <div className="wt-field">
+                    <label>{text.notes}</label>
                     <input
-                      value={qualityForm.details}
-                      onChange={(event) =>
-                        setQualityForm((p) => ({
-                          ...p,
-                          details: event.target.value,
-                        }))
-                      }
+                      value={draft.notes}
+                      onChange={(e) => setDraft((p) => ({ ...p, notes: e.target.value }))}
                     />
-                  </label>
-                  <label>
-                    {locale === "ar" ? "صورة المشكلة" : "Issue Image"}
+                  </div>
+                  <div className="wt-field">
+                    <label>{text.machineCounterImage}</label>
                     <PhotoUploadButton
                       label={locale === "ar" ? "التقط صورة" : "Take a Photo"}
-                      selectedFileName={qualityForm.issueImage?.name ?? null}
-                      onFileSelect={(file) =>
-                        setQualityForm((p) => ({
-                          ...p,
-                          issueImage: file,
-                        }))
-                      }
+                      selectedFileName={draft.machineCounterImage?.name ?? null}
+                      onFileSelect={(file) => setDraft((p) => ({ ...p, machineCounterImage: file }))}
                     />
-                  </label>
-                  <button
-                    className="auth-button"
-                    type="button"
-                    onClick={() => void submitQualityIssue()}
-                  >
-                    {locale === "ar" ? "رفع المشكلة" : "Report Issue"}
-                  </button>
-                </div>
-              ) : null}
-
-              {showTools && activeTool === "micro" ? (
-                <div className="worker-snapshot-form-grid">
-                  <label>
-                    {locale === "ar" ? "الماكينة" : "Machine"}
-                    <input
-                      value={microForm.machineLabel}
-                      onChange={(event) =>
-                        setMicroForm((p) => ({
-                          ...p,
-                          machineLabel: event.target.value,
-                        }))
-                      }
-                    />
-                  </label>
-                  <label>
-                    {locale === "ar" ? "سبب التوقف" : "Stop Reason"}
-                    <input
-                      value={microForm.reason}
-                      onChange={(event) =>
-                        setMicroForm((p) => ({
-                          ...p,
-                          reason: event.target.value,
-                        }))
-                      }
-                    />
-                  </label>
-                  <label>
-                    {locale === "ar" ? "المدة بالدقائق" : "Duration (min)"}
-                    <input
-                      type="number"
-                      value={microForm.durationMinutes}
-                      onChange={(event) =>
-                        setMicroForm((p) => ({
-                          ...p,
-                          durationMinutes: event.target.value,
-                        }))
-                      }
-                    />
-                  </label>
-                  <button
-                    className="auth-button"
-                    type="button"
-                    onClick={() => void submitMicroStop()}
-                  >
-                    {locale === "ar" ? "حفظ التوقف" : "Save Micro-stop"}
-                  </button>
-                </div>
-              ) : null}
-
-              {showTools && activeTool === "anomaly" ? (
-                <div className="worker-snapshot-form-grid">
-                  <label>
-                    {locale === "ar" ? "الماكينة" : "Machine"}
-                    <input
-                      value={anomalyForm.machineLabel}
-                      onChange={(event) =>
-                        setAnomalyForm((p) => ({
-                          ...p,
-                          machineLabel: event.target.value,
-                        }))
-                      }
-                    />
-                  </label>
-                  <label>
-                    {locale === "ar" ? "القراءة الحالية kWh" : "Current kWh"}
-                    <input
-                      type="number"
-                      step="0.01"
-                      value={anomalyForm.currentKwh}
-                      onChange={(event) =>
-                        setAnomalyForm((p) => ({
-                          ...p,
-                          currentKwh: event.target.value,
-                        }))
-                      }
-                    />
-                  </label>
-                  <label>
-                    {locale === "ar" ? "نسبة الحد" : "Threshold Ratio"}
-                    <input
-                      type="number"
-                      step="0.05"
-                      value={anomalyForm.thresholdRatio}
-                      onChange={(event) =>
-                        setAnomalyForm((p) => ({
-                          ...p,
-                          thresholdRatio: event.target.value,
-                        }))
-                      }
-                    />
-                  </label>
-                  <button
-                    className="auth-button"
-                    type="button"
-                    onClick={() => void submitAnomaly()}
-                  >
-                    {locale === "ar" ? "فحص التنبيه" : "Check Alert"}
-                  </button>
-                </div>
-              ) : null}
-            </>
-          ) : null}
-        </article>
-
-        <article className="module-panel">
-          {showSnapshots ? (
-            <>
-              <h2>{locale === "ar" ? "آخر القراءات" : "Latest snapshots"}</h2>
-              {loading ? <TruckLoader /> : null}
-              {!loading && visibleHistory.length === 0 ? (
-                <p>{text.noData}</p>
-              ) : null}
-              <div className="module-list">
-                {visibleHistory.slice(0, 20).map((item) => (
-                  <div className="module-row" key={item.id}>
-                    <strong>{item.machineLabel}</strong>
-                    <span>
-                      {text.machineCounter}: {item.machineCounter} |{" "}
-                      {text.electricityKwh}: {item.electricityKwh.toFixed(2)}
-                    </span>
-                    {item.notes ? <small>{item.notes}</small> : null}
-                    <div className="worker-snapshot-history-images">
-                      {item.machineCounterImage ? (
-                        <img
-                          src={
-                            normalizeSnapshotImagePath(
-                              item.machineCounterImage,
-                            ) ?? ""
-                          }
-                          alt={text.machineCounterImage}
-                        />
-                      ) : null}
-                      {item.electricityImage ? (
-                        <img
-                          src={
-                            normalizeSnapshotImagePath(item.electricityImage) ??
-                            ""
-                          }
-                          alt={text.electricityImage}
-                        />
-                      ) : null}
-                    </div>
-                    <div className="worker-snapshot-row-actions">
-                      <button
-                        type="button"
-                        className="auth-button auth-button--ghost"
-                        onClick={() => beginSnapshotEdit(item)}
-                      >
-                        {text.edit}
-                      </button>
-                      <button
-                        type="button"
-                        className="auth-button auth-button--ghost worker-snapshot-row-actions__danger"
-                        disabled={saving}
-                        onClick={() => void deleteSnapshot(item)}
-                      >
-                        {text.remove}
-                      </button>
-                    </div>
-                    <small>{new Date(item.createdAt).toLocaleString()}</small>
                   </div>
-                ))}
+                  <div className="wt-field">
+                    <label>{text.electricityImage}</label>
+                    <PhotoUploadButton
+                      label={locale === "ar" ? "التقط صورة" : "Take a Photo"}
+                      selectedFileName={draft.electricityImage?.name ?? null}
+                      onFileSelect={(file) => setDraft((p) => ({ ...p, electricityImage: file }))}
+                    />
+                  </div>
+                </div>
+
+                <div className="wt-form-actions">
+                  <button
+                    type="button"
+                    className="auth-button auth-button--ghost"
+                    onClick={() =>
+                      setDraft((p) => ({ ...p, machineLabel: latest?.machineLabel ?? p.machineLabel }))
+                    }
+                  >
+                    {locale === "ar" ? "استخدم آخر ماكينة" : "Use last machine"}
+                  </button>
+                  <button
+                    type="button"
+                    className="auth-button"
+                    disabled={saving}
+                    onClick={() => void handleSnapshotSubmit()}
+                  >
+                    {saving ? text.loading : editingSnapshotId !== null ? text.saveChanges : text.submit}
+                  </button>
+                </div>
               </div>
-            </>
+            </div>
           ) : null}
 
+          {/* Tool form */}
           {showTools ? (
-            <>
-              <h3>
-                {locale === "ar" ? "سجل الأداة الحالية" : "Current tool log"}
-              </h3>
-              <div className="admin-table-wrap worker-tools-table-wrap">
-                <table className="admin-table">
-                  <thead>
-                    {activeTool === "stops" ? (
-                      <tr>
-                        <th>{locale === "ar" ? "الماكينة" : "Machine"}</th>
-                        <th>{locale === "ar" ? "الأولوية" : "Priority"}</th>
-                        <th>{locale === "ar" ? "السبب" : "Reason"}</th>
-                        <th>{locale === "ar" ? "الاستجابة" : "Response"}</th>
-                        <th>{locale === "ar" ? "الحالة" : "Status"}</th>
-                        <th>{locale === "ar" ? "إجراء" : "Action"}</th>
-                      </tr>
-                    ) : null}
-                    {activeTool === "checklist" ? (
-                      <tr>
-                        <th>{locale === "ar" ? "المرحلة" : "Phase"}</th>
-                        <th>{locale === "ar" ? "التوقيع" : "Signature"}</th>
-                        <th>{locale === "ar" ? "المهام" : "Tasks"}</th>
-                        <th>{locale === "ar" ? "التاريخ" : "Created"}</th>
-                        <th>{locale === "ar" ? "إجراء" : "Action"}</th>
-                      </tr>
-                    ) : null}
-                    {activeTool === "waste" ? (
-                      <tr>
-                        <th>{locale === "ar" ? "الماكينة" : "Machine"}</th>
-                        <th>{locale === "ar" ? "النوع" : "Machine type"}</th>
-                        <th>{locale === "ar" ? "المادة" : "Material"}</th>
-                        <th>{locale === "ar" ? "الهدر كغ" : "Waste Kg"}</th>
-                        <th>{locale === "ar" ? "السبب" : "Reason"}</th>
-                        <th>{locale === "ar" ? "إجراء" : "Action"}</th>
-                      </tr>
-                    ) : null}
-                    {activeTool === "target" ? (
-                      <tr>
-                        <th>{locale === "ar" ? "التاريخ" : "Date"}</th>
-                        <th>{locale === "ar" ? "الهدف" : "Target"}</th>
-                        <th>{locale === "ar" ? "المنجز" : "Actual"}</th>
-                        <th>{locale === "ar" ? "الفجوة" : "Gap"}</th>
-                        <th>{locale === "ar" ? "ملاحظة" : "Note"}</th>
-                        <th>{locale === "ar" ? "إجراء" : "Action"}</th>
-                      </tr>
-                    ) : null}
-                    {activeTool === "kaizen" ? (
-                      <tr>
-                        <th>{locale === "ar" ? "العنوان" : "Title"}</th>
-                        <th>{locale === "ar" ? "التفاصيل" : "Details"}</th>
-                        <th>{locale === "ar" ? "الأثر" : "Impact"}</th>
-                        <th>{locale === "ar" ? "الحالة" : "Status"}</th>
-                        <th>{locale === "ar" ? "النقاط" : "Reward"}</th>
-                        <th>{locale === "ar" ? "إجراء" : "Action"}</th>
-                      </tr>
-                    ) : null}
-                    {activeTool === "quality" ? (
-                      <tr>
-                        <th>{locale === "ar" ? "الدفعة" : "Batch"}</th>
-                        <th>{locale === "ar" ? "الماكينة" : "Machine"}</th>
-                        <th>{locale === "ar" ? "النوع" : "Issue type"}</th>
-                        <th>{locale === "ar" ? "التفاصيل" : "Details"}</th>
-                        <th>{locale === "ar" ? "صورة" : "Image"}</th>
-                        <th>{locale === "ar" ? "إجراء" : "Action"}</th>
-                      </tr>
-                    ) : null}
-                    {activeTool === "micro" ? (
-                      <tr>
-                        <th>{locale === "ar" ? "الماكينة" : "Machine"}</th>
-                        <th>{locale === "ar" ? "السبب" : "Reason"}</th>
-                        <th>{locale === "ar" ? "المدة" : "Duration"}</th>
-                        <th>{locale === "ar" ? "التاريخ" : "Created"}</th>
-                        <th>{locale === "ar" ? "إجراء" : "Action"}</th>
-                      </tr>
-                    ) : null}
-                    {activeTool === "anomaly" ? (
-                      <tr>
-                        <th>{locale === "ar" ? "الماكينة" : "Machine"}</th>
-                        <th>{locale === "ar" ? "القراءة" : "Current kWh"}</th>
-                        <th>{locale === "ar" ? "النسبة" : "Ratio"}</th>
-                        <th>{locale === "ar" ? "الإنذار" : "Alert"}</th>
-                        <th>{locale === "ar" ? "التاريخ" : "Created"}</th>
-                        <th>{locale === "ar" ? "إجراء" : "Action"}</th>
-                      </tr>
-                    ) : null}
-                  </thead>
-                  <tbody>
-                    {activeTool === "stops"
-                      ? stopLogs.slice(0, 20).map((row, index) => {
-                          const id = Number(row.id ?? 0);
-                          const resolvedAt = row.resolved_at;
-                          return (
-                            <tr key={`${activeTool}-${index}`}>
-                              <td>{String(row.machine_label ?? "-")}</td>
-                              <td>{String(row.priority ?? "NORMAL")}</td>
-                              <td>{String(row.reason ?? "-")}</td>
-                              <td>
-                                {row.response_minutes
-                                  ? `${Number(row.response_minutes).toFixed(1)} min`
-                                  : "-"}
-                              </td>
-                              <td>{resolvedAt ? "RESOLVED" : "OPEN"}</td>
-                              <td>
-                                <div className="worker-snapshot-row-actions">
-                                  {!resolvedAt && id > 0 ? (
-                                    <button
-                                      type="button"
-                                      className="auth-button auth-button--ghost"
-                                      onClick={() => void resolveStopAlert(id)}
-                                    >
-                                      {locale === "ar" ? "إغلاق" : "Resolve"}
-                                    </button>
-                                  ) : (
-                                    <span className="admin-muted">-</span>
-                                  )}
-                                  {id > 0 ? (
-                                    <button
-                                      type="button"
-                                      className="auth-button auth-button--ghost worker-snapshot-row-actions__danger"
-                                      disabled={saving}
-                                      onClick={() => void deleteToolLog(id)}
-                                    >
-                                      {text.removeEntry}
-                                    </button>
-                                  ) : null}
-                                </div>
-                              </td>
-                            </tr>
-                          );
-                        })
-                      : null}
-                    {activeTool === "checklist"
-                      ? checklists.slice(0, 20).map((row, index) => (
-                          <tr key={`${activeTool}-${index}`}>
-                            <td>{String(row.shift_phase ?? "-")}</td>
-                            <td>{String(row.digital_signature ?? "-")}</td>
-                            <td>{String(row.tasks_json ?? "-")}</td>
-                            <td>
-                              {new Date(
-                                String(row.created_at),
-                              ).toLocaleString()}
-                            </td>
-                            <td>
-                              <button
-                                type="button"
-                                className="auth-button auth-button--ghost worker-snapshot-row-actions__danger"
-                                disabled={saving}
-                                onClick={() => void deleteToolLog(row.id)}
-                              >
-                                {text.removeEntry}
-                              </button>
-                            </td>
-                          </tr>
-                        ))
-                      : null}
-                    {activeTool === "waste"
-                      ? wasteLogs.slice(0, 20).map((row, index) => (
-                          <tr key={`${activeTool}-${index}`}>
-                            <td>{String(row.machine_label ?? "-")}</td>
-                            <td>{String(row.machine_type ?? "-")}</td>
-                            <td>{String(row.material_type ?? "-")}</td>
-                            <td>{Number(row.waste_kg ?? 0).toFixed(2)}</td>
-                            <td>{String(row.reason ?? "-")}</td>
-                            <td>
-                              <button
-                                type="button"
-                                className="auth-button auth-button--ghost worker-snapshot-row-actions__danger"
-                                disabled={saving}
-                                onClick={() => void deleteToolLog(row.id)}
-                              >
-                                {text.removeEntry}
-                              </button>
-                            </td>
-                          </tr>
-                        ))
-                      : null}
-                    {activeTool === "target"
-                      ? targetLogs.slice(0, 20).map((row, index) => {
-                          const target = Number(row.target_units ?? 0);
-                          const actual = Number(row.actual_units ?? 0);
-                          return (
-                            <tr key={`${activeTool}-${index}`}>
-                              <td>{String(row.target_date ?? "-")}</td>
-                              <td>{target}</td>
-                              <td>{actual}</td>
-                              <td>{target - actual}</td>
-                              <td>{String(row.note ?? "-")}</td>
-                              <td>
-                                <button
-                                  type="button"
-                                  className="auth-button auth-button--ghost worker-snapshot-row-actions__danger"
-                                  disabled={saving}
-                                  onClick={() => void deleteToolLog(row.id)}
-                                >
-                                  {text.removeEntry}
-                                </button>
-                              </td>
-                            </tr>
-                          );
-                        })
-                      : null}
-                    {activeTool === "kaizen"
-                      ? kaizenLogs.slice(0, 20).map((row, index) => (
-                          <tr key={`${activeTool}-${index}`}>
-                            <td>{String(row.title ?? "-")}</td>
-                            <td>{String(row.details ?? "-")}</td>
-                            <td>{String(row.estimated_impact ?? "-")}</td>
-                            <td>{String(row.review_status ?? "PENDING")}</td>
-                            <td>{Number(row.reward_points ?? 0)}</td>
-                            <td>
-                              <button
-                                type="button"
-                                className="auth-button auth-button--ghost worker-snapshot-row-actions__danger"
-                                disabled={saving}
-                                onClick={() => void deleteToolLog(row.id)}
-                              >
-                                {text.removeEntry}
-                              </button>
-                            </td>
-                          </tr>
-                        ))
-                      : null}
-                    {activeTool === "quality"
-                      ? qualityLogs.slice(0, 20).map((row, index) => (
-                          <tr key={`${activeTool}-${index}`}>
-                            <td>{String(row.batch_code ?? "-")}</td>
-                            <td>{String(row.machine_label ?? "-")}</td>
-                            <td>{String(row.issue_type ?? "-")}</td>
-                            <td>{String(row.details ?? "-")}</td>
-                            <td>
-                              {row.issue_image ? (
-                                <a
-                                  href={
-                                    normalizeSnapshotImagePath(
-                                      String(row.issue_image),
-                                    ) ?? "#"
-                                  }
-                                  target="_blank"
-                                  rel="noreferrer"
-                                >
-                                  {locale === "ar" ? "عرض" : "View"}
-                                </a>
-                              ) : (
-                                "-"
-                              )}
-                            </td>
-                            <td>
-                              <button
-                                type="button"
-                                className="auth-button auth-button--ghost worker-snapshot-row-actions__danger"
-                                disabled={saving}
-                                onClick={() => void deleteToolLog(row.id)}
-                              >
-                                {text.removeEntry}
-                              </button>
-                            </td>
-                          </tr>
-                        ))
-                      : null}
-                    {activeTool === "micro"
-                      ? microLogs.slice(0, 20).map((row, index) => (
-                          <tr key={`${activeTool}-${index}`}>
-                            <td>{String(row.machine_label ?? "-")}</td>
-                            <td>{String(row.reason ?? "-")}</td>
-                            <td>{Number(row.duration_minutes ?? 0)} min</td>
-                            <td>
-                              {new Date(
-                                String(row.created_at),
-                              ).toLocaleString()}
-                            </td>
-                            <td>
-                              <button
-                                type="button"
-                                className="auth-button auth-button--ghost worker-snapshot-row-actions__danger"
-                                disabled={saving}
-                                onClick={() => void deleteToolLog(row.id)}
-                              >
-                                {text.removeEntry}
-                              </button>
-                            </td>
-                          </tr>
-                        ))
-                      : null}
-                    {activeTool === "anomaly"
-                      ? anomalyLogs.slice(0, 20).map((row, index) => (
-                          <tr key={`${activeTool}-${index}`}>
-                            <td>{String(row.machine_label ?? "-")}</td>
-                            <td>{Number(row.current_kwh ?? 0).toFixed(2)}</td>
-                            <td>
-                              {Number(row.threshold_ratio ?? 0).toFixed(2)}
-                            </td>
-                            <td>
-                              {row.is_alert
-                                ? locale === "ar"
-                                  ? "نعم"
-                                  : "Yes"
-                                : locale === "ar"
-                                  ? "لا"
-                                  : "No"}
-                            </td>
-                            <td>
-                              {new Date(
-                                String(row.created_at),
-                              ).toLocaleString()}
-                            </td>
-                            <td>
-                              <button
-                                type="button"
-                                className="auth-button auth-button--ghost worker-snapshot-row-actions__danger"
-                                disabled={saving}
-                                onClick={() => void deleteToolLog(row.id)}
-                              >
-                                {text.removeEntry}
-                              </button>
-                            </td>
-                          </tr>
-                        ))
-                      : null}
-                    {!stopLogs.length && activeTool === "stops" ? (
-                      <tr>
-                        <td colSpan={6}>{text.noData}</td>
-                      </tr>
-                    ) : null}
-                    {!checklists.length && activeTool === "checklist" ? (
-                      <tr>
-                        <td colSpan={5}>{text.noData}</td>
-                      </tr>
-                    ) : null}
-                    {!wasteLogs.length && activeTool === "waste" ? (
-                      <tr>
-                        <td colSpan={6}>{text.noData}</td>
-                      </tr>
-                    ) : null}
-                    {!targetLogs.length && activeTool === "target" ? (
-                      <tr>
-                        <td colSpan={6}>{text.noData}</td>
-                      </tr>
-                    ) : null}
-                    {!kaizenLogs.length && activeTool === "kaizen" ? (
-                      <tr>
-                        <td colSpan={6}>{text.noData}</td>
-                      </tr>
-                    ) : null}
-                    {!qualityLogs.length && activeTool === "quality" ? (
-                      <tr>
-                        <td colSpan={6}>{text.noData}</td>
-                      </tr>
-                    ) : null}
-                    {!microLogs.length && activeTool === "micro" ? (
-                      <tr>
-                        <td colSpan={5}>{text.noData}</td>
-                      </tr>
-                    ) : null}
-                    {!anomalyLogs.length && activeTool === "anomaly" ? (
-                      <tr>
-                        <td colSpan={6}>{text.noData}</td>
-                      </tr>
-                    ) : null}
-                  </tbody>
-                </table>
+            <div className="wt-card">
+              <div
+                className="wt-card__header"
+                style={{
+                  background: `linear-gradient(135deg, ${tabColors[activeTool]}12, ${tabColors[activeTool]}04)`,
+                  borderBottom: `1.5px solid ${tabColors[activeTool]}25`,
+                }}
+              >
+                <span
+                  className="wt-card__header-icon"
+                  style={{ background: `${tabColors[activeTool]}18`, color: tabColors[activeTool] }}
+                >
+                  {tabIcons[activeTool]}
+                </span>
+                <div>
+                  <h2 className="wt-card__header-title">
+                    {tabs.find((t) => t.id === activeTool)?.label}
+                  </h2>
+                  <p className="wt-card__header-sub">{toolDescriptions[activeTool]}</p>
+                </div>
               </div>
+              <div className="wt-card__body">
+                {/* Stops */}
+                {activeTool === "stops" ? (
+                  <div className="wt-form-grid">
+                    <div className="wt-field">
+                      <label>{locale === "ar" ? "الماكينة" : "Machine"}</label>
+                      <input
+                        value={stopForm.machineLabel}
+                        onChange={(e) => setStopForm((p) => ({ ...p, machineLabel: e.target.value }))}
+                      />
+                    </div>
+                    <div className="wt-field">
+                      <label>{locale === "ar" ? "الأولوية" : "Priority"}</label>
+                      <select
+                        value={stopForm.priority}
+                        onChange={(e) => setStopForm((p) => ({ ...p, priority: e.target.value }))}
+                      >
+                        <option value="CRITICAL">🔴 CRITICAL</option>
+                        <option value="HIGH">🟠 HIGH</option>
+                        <option value="NORMAL">🟡 NORMAL</option>
+                      </select>
+                    </div>
+                    <div className="wt-field wt-field--full">
+                      <label>{locale === "ar" ? "السبب" : "Reason"}</label>
+                      <input
+                        value={stopForm.reason}
+                        onChange={(e) => setStopForm((p) => ({ ...p, reason: e.target.value }))}
+                      />
+                    </div>
+                    <div className="wt-form-actions">
+                      <button
+                        className="auth-button"
+                        type="button"
+                        style={{ background: tabColors.stops }}
+                        onClick={() => void submitStopAlert()}
+                      >
+                        🛑 {locale === "ar" ? "إرسال البلاغ" : "Submit Alert"}
+                      </button>
+                    </div>
+                  </div>
+                ) : null}
 
-              <div className="worker-tools-mobile-list">
-                {activeTool === "stops"
-                  ? stopLogs.slice(0, 20).map((row, index) => {
-                      const id = Number(row.id ?? 0);
-                      const resolvedAt = row.resolved_at;
-                      return (
-                        <article
-                          className="worker-tools-mobile-card"
-                          key={`mobile-${activeTool}-${index}`}
-                        >
-                          <strong>{String(row.machine_label ?? "-")}</strong>
-                          <span>{String(row.priority ?? "NORMAL")}</span>
-                          <small>{String(row.reason ?? "-")}</small>
-                          <small>
-                            {resolvedAt ? "RESOLVED" : "OPEN"} •{" "}
-                            {new Date(String(row.created_at)).toLocaleString()}
-                          </small>
-                          <div className="worker-snapshot-row-actions">
-                            {!resolvedAt && id > 0 ? (
-                              <button
-                                type="button"
-                                className="auth-button auth-button--ghost"
-                                onClick={() => void resolveStopAlert(id)}
-                              >
-                                {locale === "ar" ? "إغلاق" : "Resolve"}
-                              </button>
-                            ) : null}
-                            {id > 0 ? (
-                              <button
-                                type="button"
-                                className="auth-button auth-button--ghost worker-snapshot-row-actions__danger"
-                                disabled={saving}
-                                onClick={() => void deleteToolLog(id)}
-                              >
-                                {text.removeEntry}
-                              </button>
-                            ) : null}
+                {/* Checklist */}
+                {activeTool === "checklist" ? (
+                  <div className="wt-form-grid">
+                    <div className="wt-field">
+                      <label>{locale === "ar" ? "مرحلة الشفت" : "Shift Phase"}</label>
+                      <select
+                        value={checklistForm.shiftPhase}
+                        onChange={(e) => setChecklistForm((p) => ({ ...p, shiftPhase: e.target.value }))}
+                      >
+                        <option value="START">🌅 START</option>
+                        <option value="END">🌙 END</option>
+                      </select>
+                    </div>
+                    <div className="wt-field">
+                      <label>{locale === "ar" ? "التوقيع الرقمي" : "Digital Signature"}</label>
+                      <input
+                        value={checklistForm.digitalSignature}
+                        onChange={(e) => setChecklistForm((p) => ({ ...p, digitalSignature: e.target.value }))}
+                      />
+                    </div>
+                    <div className="wt-field wt-field--full">
+                      <label>{locale === "ar" ? "المهام (سطر لكل مهمة)" : "Tasks (one per line)"}</label>
+                      <textarea
+                        value={checklistForm.tasksText}
+                        rows={5}
+                        onChange={(e) => setChecklistForm((p) => ({ ...p, tasksText: e.target.value }))}
+                      />
+                    </div>
+                    <div className="wt-form-actions">
+                      <button
+                        className="auth-button"
+                        type="button"
+                        style={{ background: tabColors.checklist }}
+                        onClick={() => void submitChecklist()}
+                      >
+                        ✅ {locale === "ar" ? "حفظ القائمة" : "Save Checklist"}
+                      </button>
+                    </div>
+                  </div>
+                ) : null}
+
+                {/* Waste */}
+                {activeTool === "waste" ? (
+                  <div className="wt-form-grid">
+                    <div className="wt-field">
+                      <label>{locale === "ar" ? "الماكينة" : "Machine"}</label>
+                      <input
+                        value={wasteForm.machineLabel}
+                        onChange={(e) => setWasteForm((p) => ({ ...p, machineLabel: e.target.value }))}
+                      />
+                    </div>
+                    <div className="wt-field">
+                      <label>{locale === "ar" ? "نوع الماكينة" : "Machine Type"}</label>
+                      <input
+                        value={wasteForm.machineType}
+                        onChange={(e) => setWasteForm((p) => ({ ...p, machineType: e.target.value }))}
+                      />
+                    </div>
+                    <div className="wt-field">
+                      <label>{locale === "ar" ? "نوع المادة" : "Material"}</label>
+                      <input
+                        value={wasteForm.materialType}
+                        onChange={(e) => setWasteForm((p) => ({ ...p, materialType: e.target.value }))}
+                      />
+                    </div>
+                    <div className="wt-field">
+                      <label>{locale === "ar" ? "الكمية كغ" : "Waste Kg"}</label>
+                      <input
+                        type="number"
+                        value={wasteForm.wasteKg}
+                        onChange={(e) => setWasteForm((p) => ({ ...p, wasteKg: e.target.value }))}
+                      />
+                    </div>
+                    <div className="wt-field wt-field--full">
+                      <label>{locale === "ar" ? "سبب الهدر" : "Reason"}</label>
+                      <input
+                        value={wasteForm.reason}
+                        onChange={(e) => setWasteForm((p) => ({ ...p, reason: e.target.value }))}
+                      />
+                    </div>
+                    <div className="wt-form-actions">
+                      <button
+                        className="auth-button"
+                        type="button"
+                        style={{ background: tabColors.waste }}
+                        onClick={() => void submitWaste()}
+                      >
+                        🗑️ {locale === "ar" ? "حفظ الهدر" : "Save Waste"}
+                      </button>
+                    </div>
+                  </div>
+                ) : null}
+
+                {/* Target */}
+                {activeTool === "target" ? (
+                  <div className="wt-form-grid">
+                    <div className="wt-field">
+                      <label>{locale === "ar" ? "التاريخ" : "Date"}</label>
+                      <input
+                        type="date"
+                        value={targetForm.targetDate}
+                        onChange={(e) => setTargetForm((p) => ({ ...p, targetDate: e.target.value }))}
+                      />
+                    </div>
+                    <div className="wt-field">
+                      <label>{locale === "ar" ? "ملاحظة" : "Note"}</label>
+                      <input
+                        value={targetForm.note}
+                        onChange={(e) => setTargetForm((p) => ({ ...p, note: e.target.value }))}
+                      />
+                    </div>
+                    <div className="wt-field">
+                      <label>{locale === "ar" ? "الهدف" : "Target Units"}</label>
+                      <input
+                        type="number"
+                        value={targetForm.targetUnits}
+                        onChange={(e) => setTargetForm((p) => ({ ...p, targetUnits: e.target.value }))}
+                      />
+                    </div>
+                    <div className="wt-field">
+                      <label>{locale === "ar" ? "المنجز" : "Actual Units"}</label>
+                      <input
+                        type="number"
+                        value={targetForm.actualUnits}
+                        onChange={(e) => setTargetForm((p) => ({ ...p, actualUnits: e.target.value }))}
+                      />
+                    </div>
+                    <div className="wt-form-actions">
+                      <button
+                        className="auth-button"
+                        type="button"
+                        style={{ background: tabColors.target }}
+                        onClick={() => void submitTarget()}
+                      >
+                        🎯 {locale === "ar" ? "حفظ الإنجاز" : "Save Progress"}
+                      </button>
+                    </div>
+                  </div>
+                ) : null}
+
+                {/* Kaizen */}
+                {activeTool === "kaizen" ? (
+                  <div className="wt-form-grid">
+                    <div className="wt-field wt-field--full">
+                      <label>{locale === "ar" ? "عنوان الاقتراح" : "Suggestion Title"}</label>
+                      <input
+                        value={kaizenForm.title}
+                        onChange={(e) => setKaizenForm((p) => ({ ...p, title: e.target.value }))}
+                      />
+                    </div>
+                    <div className="wt-field wt-field--full">
+                      <label>{locale === "ar" ? "تفاصيل" : "Details"}</label>
+                      <textarea
+                        value={kaizenForm.details}
+                        rows={4}
+                        onChange={(e) => setKaizenForm((p) => ({ ...p, details: e.target.value }))}
+                      />
+                    </div>
+                    <div className="wt-field wt-field--full">
+                      <label>{locale === "ar" ? "الأثر المتوقع" : "Estimated Impact"}</label>
+                      <input
+                        value={kaizenForm.estimatedImpact}
+                        onChange={(e) => setKaizenForm((p) => ({ ...p, estimatedImpact: e.target.value }))}
+                      />
+                    </div>
+                    <div className="wt-form-actions">
+                      <button
+                        className="auth-button"
+                        type="button"
+                        style={{ background: tabColors.kaizen }}
+                        onClick={() => void submitKaizen()}
+                      >
+                        💡 {locale === "ar" ? "إرسال الاقتراح" : "Submit Suggestion"}
+                      </button>
+                    </div>
+                  </div>
+                ) : null}
+
+                {/* Quality */}
+                {activeTool === "quality" ? (
+                  <div className="wt-form-grid">
+                    <div className="wt-field">
+                      <label>{locale === "ar" ? "رمز الدفعة" : "Batch Code"}</label>
+                      <input
+                        value={qualityForm.batchCode}
+                        onChange={(e) => setQualityForm((p) => ({ ...p, batchCode: e.target.value }))}
+                      />
+                    </div>
+                    <div className="wt-field">
+                      <label>{locale === "ar" ? "الماكينة" : "Machine"}</label>
+                      <input
+                        value={qualityForm.machineLabel}
+                        onChange={(e) => setQualityForm((p) => ({ ...p, machineLabel: e.target.value }))}
+                      />
+                    </div>
+                    <div className="wt-field wt-field--full">
+                      <label>{locale === "ar" ? "نوع المشكلة" : "Issue Type"}</label>
+                      <input
+                        value={qualityForm.issueType}
+                        onChange={(e) => setQualityForm((p) => ({ ...p, issueType: e.target.value }))}
+                      />
+                    </div>
+                    <div className="wt-field wt-field--full">
+                      <label>{locale === "ar" ? "تفاصيل" : "Details"}</label>
+                      <input
+                        value={qualityForm.details}
+                        onChange={(e) => setQualityForm((p) => ({ ...p, details: e.target.value }))}
+                      />
+                    </div>
+                    <div className="wt-field wt-field--full">
+                      <label>{locale === "ar" ? "صورة المشكلة" : "Issue Image"}</label>
+                      <PhotoUploadButton
+                        label={locale === "ar" ? "التقط صورة" : "Take a Photo"}
+                        selectedFileName={qualityForm.issueImage?.name ?? null}
+                        onFileSelect={(file) => setQualityForm((p) => ({ ...p, issueImage: file }))}
+                      />
+                    </div>
+                    <div className="wt-form-actions">
+                      <button
+                        className="auth-button"
+                        type="button"
+                        style={{ background: tabColors.quality }}
+                        onClick={() => void submitQualityIssue()}
+                      >
+                        🔍 {locale === "ar" ? "رفع المشكلة" : "Report Issue"}
+                      </button>
+                    </div>
+                  </div>
+                ) : null}
+
+                {/* Micro-stops */}
+                {activeTool === "micro" ? (
+                  <div className="wt-form-grid">
+                    <div className="wt-field">
+                      <label>{locale === "ar" ? "الماكينة" : "Machine"}</label>
+                      <input
+                        value={microForm.machineLabel}
+                        onChange={(e) => setMicroForm((p) => ({ ...p, machineLabel: e.target.value }))}
+                      />
+                    </div>
+                    <div className="wt-field">
+                      <label>{locale === "ar" ? "المدة بالدقائق" : "Duration (min)"}</label>
+                      <input
+                        type="number"
+                        value={microForm.durationMinutes}
+                        onChange={(e) => setMicroForm((p) => ({ ...p, durationMinutes: e.target.value }))}
+                      />
+                    </div>
+                    <div className="wt-field wt-field--full">
+                      <label>{locale === "ar" ? "سبب التوقف" : "Stop Reason"}</label>
+                      <input
+                        value={microForm.reason}
+                        onChange={(e) => setMicroForm((p) => ({ ...p, reason: e.target.value }))}
+                      />
+                    </div>
+                    <div className="wt-form-actions">
+                      <button
+                        className="auth-button"
+                        type="button"
+                        style={{ background: tabColors.micro }}
+                        onClick={() => void submitMicroStop()}
+                      >
+                        ⏱️ {locale === "ar" ? "حفظ التوقف" : "Save Micro-stop"}
+                      </button>
+                    </div>
+                  </div>
+                ) : null}
+
+                {/* Anomaly */}
+                {activeTool === "anomaly" ? (
+                  <div className="wt-form-grid">
+                    <div className="wt-field">
+                      <label>{locale === "ar" ? "الماكينة" : "Machine"}</label>
+                      <input
+                        value={anomalyForm.machineLabel}
+                        onChange={(e) => setAnomalyForm((p) => ({ ...p, machineLabel: e.target.value }))}
+                      />
+                    </div>
+                    <div className="wt-field">
+                      <label>{locale === "ar" ? "القراءة الحالية kWh" : "Current kWh"}</label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={anomalyForm.currentKwh}
+                        onChange={(e) => setAnomalyForm((p) => ({ ...p, currentKwh: e.target.value }))}
+                      />
+                    </div>
+                    <div className="wt-field">
+                      <label>{locale === "ar" ? "نسبة الحد" : "Threshold Ratio"}</label>
+                      <input
+                        type="number"
+                        step="0.05"
+                        value={anomalyForm.thresholdRatio}
+                        onChange={(e) => setAnomalyForm((p) => ({ ...p, thresholdRatio: e.target.value }))}
+                      />
+                    </div>
+                    <div className="wt-form-actions">
+                      <button
+                        className="auth-button"
+                        type="button"
+                        style={{ background: tabColors.anomaly }}
+                        onClick={() => void submitAnomaly()}
+                      >
+                        ⚡ {locale === "ar" ? "فحص التنبيه" : "Check Alert"}
+                      </button>
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+            </div>
+          ) : null}
+        </div>
+
+        {/* ─── RIGHT: Log Panel ─── */}
+        <div>
+          {/* Snapshots log */}
+          {showSnapshots ? (
+            <div className="wt-card">
+              <div className="wt-card__header wt-card__header--gray">
+                <span className="wt-card__header-icon">🕐</span>
+                <div>
+                  <h2 className="wt-card__header-title">
+                    {locale === "ar" ? "آخر القراءات" : "Latest Readings"}
+                  </h2>
+                  <p className="wt-card__header-sub">
+                    {visibleSummary.entries} {locale === "ar" ? "سجل" : "records"}
+                  </p>
+                </div>
+              </div>
+              <div className="wt-card__body">
+                {loading ? <TruckLoader /> : null}
+                {!loading && visibleHistory.length === 0 ? (
+                  <div className="wt-empty">
+                    <span className="wt-empty__icon">📭</span>
+                    <p>{text.noData}</p>
+                  </div>
+                ) : null}
+                <div className="wt-log-cards">
+                  {visibleHistory.slice(0, 20).map((item) => (
+                    <div className="wt-log-card" key={item.id}>
+                      <div className="wt-log-card__header">
+                        <strong>{item.machineLabel}</strong>
+                        <span className="wt-badge wt-badge--blue">
+                          ⚡ {item.electricityKwh.toFixed(2)} kWh
+                        </span>
+                      </div>
+                      <div className="wt-log-card__meta">
+                        <span>
+                          {locale === "ar" ? "العداد" : "Counter"}:{" "}
+                          <strong>{item.machineCounter}</strong>
+                        </span>
+                        {item.notes ? <span>📝 {item.notes}</span> : null}
+                      </div>
+                      {item.machineCounterImage || item.electricityImage ? (
+                        <div className="worker-snapshot-history-images">
+                          {item.machineCounterImage ? (
+                            <img
+                              src={normalizeSnapshotImagePath(item.machineCounterImage) ?? ""}
+                              alt={text.machineCounterImage}
+                            />
+                          ) : null}
+                          {item.electricityImage ? (
+                            <img
+                              src={normalizeSnapshotImagePath(item.electricityImage) ?? ""}
+                              alt={text.electricityImage}
+                            />
+                          ) : null}
+                        </div>
+                      ) : null}
+                      <div className="wt-log-card__footer">
+                        <small className="wt-log-card__date">
+                          {new Date(item.createdAt).toLocaleString()}
+                        </small>
+                        <div className="wt-log-card__actions">
+                          <button
+                            type="button"
+                            className="auth-button auth-button--ghost"
+                            onClick={() => beginSnapshotEdit(item)}
+                          >
+                            {text.edit}
+                          </button>
+                          <button
+                            type="button"
+                            className="auth-button auth-button--ghost worker-snapshot-row-actions__danger"
+                            disabled={saving}
+                            onClick={() => void deleteSnapshot(item)}
+                          >
+                            {text.remove}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          ) : null}
+
+          {/* Tool log */}
+          {showTools ? (
+            <div className="wt-card">
+              <div
+                className="wt-card__header"
+                style={{
+                  background: `linear-gradient(135deg, ${tabColors[activeTool]}0e, transparent)`,
+                  borderBottom: `1px solid ${tabColors[activeTool]}20`,
+                }}
+              >
+                <span
+                  className="wt-card__header-icon"
+                  style={{ background: `${tabColors[activeTool]}15`, color: tabColors[activeTool] }}
+                >
+                  {tabIcons[activeTool]}
+                </span>
+                <div>
+                  <h2 className="wt-card__header-title">
+                    {locale === "ar" ? "السجل" : "Recent Log"}
+                  </h2>
+                  <p className="wt-card__header-sub">
+                    {tabs.find((t) => t.id === activeTool)?.label}
+                  </p>
+                </div>
+              </div>
+              <div className="wt-card__body">
+                {/* Stops log */}
+                {activeTool === "stops" ? (
+                  stopLogs.length === 0 ? (
+                    <div className="wt-empty"><span className="wt-empty__icon">🛑</span><p>{text.noData}</p></div>
+                  ) : (
+                    <div className="wt-log-cards">
+                      {stopLogs.slice(0, 20).map((row, index) => {
+                        const id = Number(row.id ?? 0);
+                        const resolvedAt = row.resolved_at;
+                        return (
+                          <div className="wt-log-card" key={`stops-${index}`}>
+                            <div className="wt-log-card__header">
+                              <strong>{String(row.machine_label ?? "-")}</strong>
+                              <span className={`wt-badge ${String(row.priority) === "CRITICAL" ? "wt-badge--red" : String(row.priority) === "HIGH" ? "wt-badge--orange" : "wt-badge--yellow"}`}>
+                                {String(row.priority ?? "NORMAL")}
+                              </span>
+                            </div>
+                            <div className="wt-log-card__meta">
+                              <span>{String(row.reason ?? "-")}</span>
+                              {row.response_minutes ? (
+                                <span>⏱️ {Number(row.response_minutes).toFixed(1)} min</span>
+                              ) : null}
+                            </div>
+                            <div className="wt-log-card__footer">
+                              <span className={`wt-badge ${resolvedAt ? "wt-badge--green" : "wt-badge--red"}`}>
+                                {resolvedAt
+                                  ? locale === "ar" ? "مغلق" : "RESOLVED"
+                                  : locale === "ar" ? "مفتوح" : "OPEN"}
+                              </span>
+                              <div className="wt-log-card__actions">
+                                {!resolvedAt && id > 0 ? (
+                                  <button
+                                    type="button"
+                                    className="auth-button auth-button--ghost"
+                                    onClick={() => void resolveStopAlert(id)}
+                                  >
+                                    {locale === "ar" ? "إغلاق" : "Resolve"}
+                                  </button>
+                                ) : null}
+                                {id > 0 ? (
+                                  <button
+                                    type="button"
+                                    className="auth-button auth-button--ghost worker-snapshot-row-actions__danger"
+                                    disabled={saving}
+                                    onClick={() => void deleteToolLog(id)}
+                                  >
+                                    {text.removeEntry}
+                                  </button>
+                                ) : null}
+                              </div>
+                            </div>
                           </div>
-                        </article>
-                      );
-                    })
-                  : null}
+                        );
+                      })}
+                    </div>
+                  )
+                ) : null}
 
-                {activeTool === "checklist"
-                  ? checklists.slice(0, 20).map((row, index) => (
-                      <article
-                        className="worker-tools-mobile-card"
-                        key={`mobile-${activeTool}-${index}`}
-                      >
-                        <strong>{String(row.shift_phase ?? "-")}</strong>
-                        <span>{String(row.digital_signature ?? "-")}</span>
-                        <small>{String(row.tasks_json ?? "-")}</small>
-                        <small>
-                          {new Date(String(row.created_at)).toLocaleString()}
-                        </small>
-                        <div className="worker-snapshot-row-actions">
-                          <button
-                            type="button"
-                            className="auth-button auth-button--ghost worker-snapshot-row-actions__danger"
-                            disabled={saving}
-                            onClick={() => void deleteToolLog(row.id)}
-                          >
-                            {text.removeEntry}
-                          </button>
-                        </div>
-                      </article>
-                    ))
-                  : null}
-
-                {activeTool === "waste"
-                  ? wasteLogs.slice(0, 20).map((row, index) => (
-                      <article
-                        className="worker-tools-mobile-card"
-                        key={`mobile-${activeTool}-${index}`}
-                      >
-                        <strong>{String(row.machine_label ?? "-")}</strong>
-                        <span>{String(row.machine_type ?? "-")}</span>
-                        <small>
-                          {String(row.material_type ?? "-")} •{" "}
-                          {Number(row.waste_kg ?? 0).toFixed(2)} kg
-                        </small>
-                        <small>{String(row.reason ?? "-")}</small>
-                        <div className="worker-snapshot-row-actions">
-                          <button
-                            type="button"
-                            className="auth-button auth-button--ghost worker-snapshot-row-actions__danger"
-                            disabled={saving}
-                            onClick={() => void deleteToolLog(row.id)}
-                          >
-                            {text.removeEntry}
-                          </button>
-                        </div>
-                      </article>
-                    ))
-                  : null}
-
-                {activeTool === "target"
-                  ? targetLogs.slice(0, 20).map((row, index) => {
-                      const target = Number(row.target_units ?? 0);
-                      const actual = Number(row.actual_units ?? 0);
-                      return (
-                        <article
-                          className="worker-tools-mobile-card"
-                          key={`mobile-${activeTool}-${index}`}
-                        >
-                          <strong>{String(row.target_date ?? "-")}</strong>
-                          <span>
-                            {locale === "ar" ? "الهدف" : "Target"}: {target}
-                          </span>
-                          <small>
-                            {locale === "ar" ? "المنجز" : "Actual"}: {actual} •{" "}
-                            {locale === "ar" ? "الفجوة" : "Gap"}:{" "}
-                            {target - actual}
-                          </small>
-                          <small>{String(row.note ?? "-")}</small>
-                          <div className="worker-snapshot-row-actions">
+                {/* Checklist log */}
+                {activeTool === "checklist" ? (
+                  checklists.length === 0 ? (
+                    <div className="wt-empty"><span className="wt-empty__icon">✅</span><p>{text.noData}</p></div>
+                  ) : (
+                    <div className="wt-log-cards">
+                      {checklists.slice(0, 20).map((row, index) => (
+                        <div className="wt-log-card" key={`checklist-${index}`}>
+                          <div className="wt-log-card__header">
+                            <span className={`wt-badge ${String(row.shift_phase) === "START" ? "wt-badge--green" : "wt-badge--blue"}`}>
+                              {String(row.shift_phase ?? "-")}
+                            </span>
+                            <span className="wt-badge wt-badge--gray">
+                              ✍️ {String(row.digital_signature ?? "-")}
+                            </span>
+                          </div>
+                          <div className="wt-log-card__meta">
+                            <span style={{ fontSize: "0.78rem", color: "var(--text-tertiary)" }}>
+                              {String(row.tasks_json ?? "-")}
+                            </span>
+                          </div>
+                          <div className="wt-log-card__footer">
+                            <small>{new Date(String(row.created_at)).toLocaleString()}</small>
                             <button
                               type="button"
                               className="auth-button auth-button--ghost worker-snapshot-row-actions__danger"
@@ -2107,147 +1693,255 @@ export function WorkerSnapshotsPage({
                               {text.removeEntry}
                             </button>
                           </div>
-                        </article>
-                      );
-                    })
-                  : null}
-
-                {activeTool === "kaizen"
-                  ? kaizenLogs.slice(0, 20).map((row, index) => (
-                      <article
-                        className="worker-tools-mobile-card"
-                        key={`mobile-${activeTool}-${index}`}
-                      >
-                        <strong>{String(row.title ?? "-")}</strong>
-                        <span>{String(row.review_status ?? "PENDING")}</span>
-                        <small>{String(row.details ?? "-")}</small>
-                        <small>
-                          {locale === "ar" ? "النقاط" : "Points"}:{" "}
-                          {Number(row.reward_points ?? 0)}
-                        </small>
-                        <div className="worker-snapshot-row-actions">
-                          <button
-                            type="button"
-                            className="auth-button auth-button--ghost worker-snapshot-row-actions__danger"
-                            disabled={saving}
-                            onClick={() => void deleteToolLog(row.id)}
-                          >
-                            {text.removeEntry}
-                          </button>
                         </div>
-                      </article>
-                    ))
-                  : null}
+                      ))}
+                    </div>
+                  )
+                ) : null}
 
-                {activeTool === "quality"
-                  ? qualityLogs.slice(0, 20).map((row, index) => (
-                      <article
-                        className="worker-tools-mobile-card"
-                        key={`mobile-${activeTool}-${index}`}
-                      >
-                        <strong>{String(row.batch_code ?? "-")}</strong>
-                        <span>{String(row.machine_label ?? "-")}</span>
-                        <small>{String(row.issue_type ?? "-")}</small>
-                        <small>{String(row.details ?? "-")}</small>
-                        {row.issue_image ? (
-                          <a
-                            href={
-                              normalizeSnapshotImagePath(
-                                String(row.issue_image),
-                              ) ?? "#"
-                            }
-                            target="_blank"
-                            rel="noreferrer"
-                          >
-                            {locale === "ar" ? "عرض الصورة" : "View image"}
-                          </a>
-                        ) : null}
-                        <div className="worker-snapshot-row-actions">
-                          <button
-                            type="button"
-                            className="auth-button auth-button--ghost worker-snapshot-row-actions__danger"
-                            disabled={saving}
-                            onClick={() => void deleteToolLog(row.id)}
-                          >
-                            {text.removeEntry}
-                          </button>
+                {/* Waste log */}
+                {activeTool === "waste" ? (
+                  wasteLogs.length === 0 ? (
+                    <div className="wt-empty"><span className="wt-empty__icon">🗑️</span><p>{text.noData}</p></div>
+                  ) : (
+                    <div className="wt-log-cards">
+                      {wasteLogs.slice(0, 20).map((row, index) => (
+                        <div className="wt-log-card" key={`waste-${index}`}>
+                          <div className="wt-log-card__header">
+                            <strong>{String(row.machine_label ?? "-")}</strong>
+                            <span className="wt-badge wt-badge--orange">
+                              {Number(row.waste_kg ?? 0).toFixed(2)} kg
+                            </span>
+                          </div>
+                          <div className="wt-log-card__meta">
+                            <span>{String(row.machine_type ?? "-")} · {String(row.material_type ?? "-")}</span>
+                            <span>{String(row.reason ?? "-")}</span>
+                          </div>
+                          <div className="wt-log-card__footer">
+                            <small />
+                            <button
+                              type="button"
+                              className="auth-button auth-button--ghost worker-snapshot-row-actions__danger"
+                              disabled={saving}
+                              onClick={() => void deleteToolLog(row.id)}
+                            >
+                              {text.removeEntry}
+                            </button>
+                          </div>
                         </div>
-                      </article>
-                    ))
-                  : null}
+                      ))}
+                    </div>
+                  )
+                ) : null}
 
-                {activeTool === "micro"
-                  ? microLogs.slice(0, 20).map((row, index) => (
-                      <article
-                        className="worker-tools-mobile-card"
-                        key={`mobile-${activeTool}-${index}`}
-                      >
-                        <strong>{String(row.machine_label ?? "-")}</strong>
-                        <span>{String(row.reason ?? "-")}</span>
-                        <small>{Number(row.duration_minutes ?? 0)} min</small>
-                        <small>
-                          {new Date(String(row.created_at)).toLocaleString()}
-                        </small>
-                        <div className="worker-snapshot-row-actions">
-                          <button
-                            type="button"
-                            className="auth-button auth-button--ghost worker-snapshot-row-actions__danger"
-                            disabled={saving}
-                            onClick={() => void deleteToolLog(row.id)}
-                          >
-                            {text.removeEntry}
-                          </button>
+                {/* Target log */}
+                {activeTool === "target" ? (
+                  targetLogs.length === 0 ? (
+                    <div className="wt-empty"><span className="wt-empty__icon">🎯</span><p>{text.noData}</p></div>
+                  ) : (
+                    <div className="wt-log-cards">
+                      {targetLogs.slice(0, 20).map((row, index) => {
+                        const target = Number(row.target_units ?? 0);
+                        const actual = Number(row.actual_units ?? 0);
+                        const pct = target > 0 ? Math.round((actual / target) * 100) : 0;
+                        return (
+                          <div className="wt-log-card" key={`target-${index}`}>
+                            <div className="wt-log-card__header">
+                              <strong>{String(row.target_date ?? "-")}</strong>
+                              <span className={`wt-badge ${pct >= 100 ? "wt-badge--green" : pct >= 80 ? "wt-badge--blue" : "wt-badge--orange"}`}>
+                                {pct}%
+                              </span>
+                            </div>
+                            <div className="wt-log-card__meta">
+                              <span>{locale === "ar" ? "الهدف" : "Target"}: <strong>{target}</strong></span>
+                              <span>{locale === "ar" ? "المنجز" : "Actual"}: <strong>{actual}</strong></span>
+                              <span>{locale === "ar" ? "الفجوة" : "Gap"}: {target - actual}</span>
+                            </div>
+                            {row.note ? (
+                              <div className="wt-log-card__meta">
+                                <span>📝 {String(row.note)}</span>
+                              </div>
+                            ) : null}
+                            <div className="wt-log-card__footer">
+                              <small />
+                              <button
+                                type="button"
+                                className="auth-button auth-button--ghost worker-snapshot-row-actions__danger"
+                                disabled={saving}
+                                onClick={() => void deleteToolLog(row.id)}
+                              >
+                                {text.removeEntry}
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )
+                ) : null}
+
+                {/* Kaizen log */}
+                {activeTool === "kaizen" ? (
+                  kaizenLogs.length === 0 ? (
+                    <div className="wt-empty"><span className="wt-empty__icon">💡</span><p>{text.noData}</p></div>
+                  ) : (
+                    <div className="wt-log-cards">
+                      {kaizenLogs.slice(0, 20).map((row, index) => (
+                        <div className="wt-log-card" key={`kaizen-${index}`}>
+                          <div className="wt-log-card__header">
+                            <strong>{String(row.title ?? "-")}</strong>
+                            <span className={`wt-badge ${String(row.review_status) === "APPROVED" ? "wt-badge--green" : String(row.review_status) === "REJECTED" ? "wt-badge--red" : "wt-badge--purple"}`}>
+                              {String(row.review_status ?? "PENDING")}
+                            </span>
+                          </div>
+                          <div className="wt-log-card__meta">
+                            <span>{String(row.details ?? "-")}</span>
+                            {Number(row.reward_points) > 0 ? (
+                              <span>🏆 {Number(row.reward_points)} pts</span>
+                            ) : null}
+                          </div>
+                          <div className="wt-log-card__footer">
+                            <small>{String(row.estimated_impact ?? "-")}</small>
+                            <button
+                              type="button"
+                              className="auth-button auth-button--ghost worker-snapshot-row-actions__danger"
+                              disabled={saving}
+                              onClick={() => void deleteToolLog(row.id)}
+                            >
+                              {text.removeEntry}
+                            </button>
+                          </div>
                         </div>
-                      </article>
-                    ))
-                  : null}
+                      ))}
+                    </div>
+                  )
+                ) : null}
 
-                {activeTool === "anomaly"
-                  ? anomalyLogs.slice(0, 20).map((row, index) => (
-                      <article
-                        className="worker-tools-mobile-card"
-                        key={`mobile-${activeTool}-${index}`}
-                      >
-                        <strong>{String(row.machine_label ?? "-")}</strong>
-                        <span>
-                          {Number(row.current_kwh ?? 0).toFixed(2)} kWh
-                        </span>
-                        <small>
-                          {locale === "ar" ? "النسبة" : "Ratio"}:{" "}
-                          {Number(row.threshold_ratio ?? 0).toFixed(2)}
-                        </small>
-                        <small>
-                          {new Date(String(row.created_at)).toLocaleString()}
-                        </small>
-                        <div className="worker-snapshot-row-actions">
-                          <button
-                            type="button"
-                            className="auth-button auth-button--ghost worker-snapshot-row-actions__danger"
-                            disabled={saving}
-                            onClick={() => void deleteToolLog(row.id)}
-                          >
-                            {text.removeEntry}
-                          </button>
+                {/* Quality log */}
+                {activeTool === "quality" ? (
+                  qualityLogs.length === 0 ? (
+                    <div className="wt-empty"><span className="wt-empty__icon">🔍</span><p>{text.noData}</p></div>
+                  ) : (
+                    <div className="wt-log-cards">
+                      {qualityLogs.slice(0, 20).map((row, index) => (
+                        <div className="wt-log-card" key={`quality-${index}`}>
+                          <div className="wt-log-card__header">
+                            <strong>{String(row.batch_code ?? "-")}</strong>
+                            <span className="wt-badge wt-badge--orange">
+                              {String(row.issue_type ?? "-")}
+                            </span>
+                          </div>
+                          <div className="wt-log-card__meta">
+                            <span>🏭 {String(row.machine_label ?? "-")}</span>
+                            <span>{String(row.details ?? "-")}</span>
+                          </div>
+                          <div className="wt-log-card__footer">
+                            {row.issue_image ? (
+                              <a
+                                className="wt-badge wt-badge--blue"
+                                href={normalizeSnapshotImagePath(String(row.issue_image)) ?? "#"}
+                                target="_blank"
+                                rel="noreferrer"
+                                style={{ textDecoration: "none" }}
+                              >
+                                📷 {locale === "ar" ? "عرض" : "View"}
+                              </a>
+                            ) : (
+                              <small />
+                            )}
+                            <button
+                              type="button"
+                              className="auth-button auth-button--ghost worker-snapshot-row-actions__danger"
+                              disabled={saving}
+                              onClick={() => void deleteToolLog(row.id)}
+                            >
+                              {text.removeEntry}
+                            </button>
+                          </div>
                         </div>
-                      </article>
-                    ))
-                  : null}
+                      ))}
+                    </div>
+                  )
+                ) : null}
 
-                {(activeTool === "stops" && !stopLogs.length) ||
-                (activeTool === "checklist" && !checklists.length) ||
-                (activeTool === "waste" && !wasteLogs.length) ||
-                (activeTool === "target" && !targetLogs.length) ||
-                (activeTool === "kaizen" && !kaizenLogs.length) ||
-                (activeTool === "quality" && !qualityLogs.length) ||
-                (activeTool === "micro" && !microLogs.length) ||
-                (activeTool === "anomaly" && !anomalyLogs.length) ? (
-                  <p>{text.noData}</p>
+                {/* Micro log */}
+                {activeTool === "micro" ? (
+                  microLogs.length === 0 ? (
+                    <div className="wt-empty"><span className="wt-empty__icon">⏱️</span><p>{text.noData}</p></div>
+                  ) : (
+                    <div className="wt-log-cards">
+                      {microLogs.slice(0, 20).map((row, index) => (
+                        <div className="wt-log-card" key={`micro-${index}`}>
+                          <div className="wt-log-card__header">
+                            <strong>{String(row.machine_label ?? "-")}</strong>
+                            <span className="wt-badge wt-badge--teal">
+                              {Number(row.duration_minutes ?? 0)} min
+                            </span>
+                          </div>
+                          <div className="wt-log-card__meta">
+                            <span>{String(row.reason ?? "-")}</span>
+                          </div>
+                          <div className="wt-log-card__footer">
+                            <small>{new Date(String(row.created_at)).toLocaleString()}</small>
+                            <button
+                              type="button"
+                              className="auth-button auth-button--ghost worker-snapshot-row-actions__danger"
+                              disabled={saving}
+                              onClick={() => void deleteToolLog(row.id)}
+                            >
+                              {text.removeEntry}
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )
+                ) : null}
+
+                {/* Anomaly log */}
+                {activeTool === "anomaly" ? (
+                  anomalyLogs.length === 0 ? (
+                    <div className="wt-empty"><span className="wt-empty__icon">⚡</span><p>{text.noData}</p></div>
+                  ) : (
+                    <div className="wt-log-cards">
+                      {anomalyLogs.slice(0, 20).map((row, index) => (
+                        <div className="wt-log-card" key={`anomaly-${index}`}>
+                          <div className="wt-log-card__header">
+                            <strong>{String(row.machine_label ?? "-")}</strong>
+                            <span className={`wt-badge ${row.is_alert ? "wt-badge--red" : "wt-badge--green"}`}>
+                              {row.is_alert
+                                ? locale === "ar" ? "⚠️ إنذار" : "⚠️ ALERT"
+                                : locale === "ar" ? "✅ طبيعي" : "✅ Normal"}
+                            </span>
+                          </div>
+                          <div className="wt-log-card__meta">
+                            <span>
+                              {Number(row.current_kwh ?? 0).toFixed(2)} kWh ·{" "}
+                              {locale === "ar" ? "النسبة" : "Ratio"}:{" "}
+                              {Number(row.threshold_ratio ?? 0).toFixed(2)}
+                            </span>
+                          </div>
+                          <div className="wt-log-card__footer">
+                            <small>{new Date(String(row.created_at)).toLocaleString()}</small>
+                            <button
+                              type="button"
+                              className="auth-button auth-button--ghost worker-snapshot-row-actions__danger"
+                              disabled={saving}
+                              onClick={() => void deleteToolLog(row.id)}
+                            >
+                              {text.removeEntry}
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )
                 ) : null}
               </div>
-            </>
+            </div>
           ) : null}
-        </article>
-      </section>
+        </div>
+      </div>
     </ModulePageShell>
   );
 }

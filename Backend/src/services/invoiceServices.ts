@@ -27,14 +27,28 @@ export const createInvoice = async (
   payload: any,
 ): Promise<ServiceResult<unknown>> => {
   try {
-    const { customerId, invoiceNumber, totalAmount, dueDate } = payload;
+    const { customerId: rawCustomerId, customerName, invoiceNumber, totalAmount, dueDate } = payload;
 
-    if (!customerId || !invoiceNumber || !totalAmount || totalAmount <= 0 || !dueDate) {
+    if (!invoiceNumber || !totalAmount || totalAmount <= 0 || !dueDate) {
       return { status: 400, message: "Missing required fields" };
     }
 
+    let resolvedCustomerId: number = rawCustomerId;
+
+    if (!resolvedCustomerId && customerName) {
+      let customer = await prisma.customer.findFirst({ where: { name: customerName.trim() } });
+      if (!customer) {
+        customer = await prisma.customer.create({ data: { name: customerName.trim() } });
+      }
+      resolvedCustomerId = customer.id;
+    }
+
+    if (!resolvedCustomerId) {
+      return { status: 400, message: "Customer is required" };
+    }
+
     const customer = await prisma.customer.findUnique({
-      where: { id: customerId },
+      where: { id: resolvedCustomerId },
       select: { id: true },
     });
 
@@ -44,7 +58,7 @@ export const createInvoice = async (
 
     const invoice = await prisma.invoice.create({
       data: {
-        customerId,
+        customerId: resolvedCustomerId,
         createdById,
         invoiceNumber,
         totalAmount,

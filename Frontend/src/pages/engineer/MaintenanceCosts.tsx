@@ -144,19 +144,22 @@ export default function MaintenanceCosts() {
       icon={<DollarSign size={22} />}
     >
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-        <Card className="p-4 bg-linear-to-br from-blue-50 to-blue-100 dark:from-blue-900/30 dark:to-blue-800/20">
-          <p className="text-xs text-blue-600 dark:text-blue-400 font-medium">{nav("Total Records", "إجمالي السجلات")}</p>
-          <p className="text-2xl font-bold text-blue-800 dark:text-blue-200">{records.length}</p>
-        </Card>
-        <Card className="p-4 bg-linear-to-br from-orange-50 to-orange-100 dark:from-orange-900/30 dark:to-orange-800/20">
-          <p className="text-xs text-orange-600 dark:text-orange-400 font-medium">{nav("Total Cost", "التكلفة الإجمالية")}</p>
-          <p className="text-2xl font-bold text-orange-800 dark:text-orange-200">{totalCost.toLocaleString()}</p>
-        </Card>
-        <Card className="p-4 bg-linear-to-br from-green-50 to-green-100 dark:from-green-900/30 dark:to-green-800/20">
-          <p className="text-xs text-green-600 dark:text-green-400 font-medium">{nav("Avg Cost / Repair", "متوسط تكلفة الإصلاح")}</p>
-          <p className="text-2xl font-bold text-green-800 dark:text-green-200">{avgCost.toFixed(0)}</p>
-        </Card>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
+        {[
+          { label: nav("Total Records", "إجمالي السجلات"), value: records.length, icon: "🔧", color: "#1d4ed8", bg: "#dbeafe" },
+          { label: nav("Total Cost", "التكلفة الإجمالية"), value: `$${totalCost.toLocaleString()}`, icon: "💰", color: "#d97706", bg: "#fef3c7" },
+          { label: nav("Avg Cost / Repair", "متوسط تكلفة الإصلاح"), value: `$${avgCost.toFixed(0)}`, icon: "📊", color: "#059669", bg: "#d1fae5" },
+        ].map((k) => (
+          <Card key={k.label} className="p-4 flex items-center gap-3">
+            <div style={{ width: 40, height: 40, borderRadius: 10, background: k.bg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.2rem", flexShrink: 0 }}>
+              {k.icon}
+            </div>
+            <div>
+              <p className="text-xs text-[var(--text-secondary)] font-medium leading-tight">{k.label}</p>
+              <p className="text-xl font-bold" style={{ color: k.color }}>{k.value}</p>
+            </div>
+          </Card>
+        ))}
       </div>
 
       {/* Machine summary */}

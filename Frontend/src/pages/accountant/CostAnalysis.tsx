@@ -1,6 +1,6 @@
-﻿import { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { confirmDialog } from "../../lib/dialog";
-import { Plus, Edit, Trash2, PieChart } from "lucide-react";
+import { Plus, Pencil, Trash2, PieChart, X, Save } from "lucide-react";
 import { ModulePageShell } from "../../components/ModulePageShell";
 import { Button } from "../../components/ui/button";
 import { Card } from "../../components/ui/card";
@@ -22,253 +22,265 @@ interface CostAnalysis {
   notes?: string;
 }
 
-const BAR_COLORS = [
-  "bg-blue-500", "bg-green-500", "bg-orange-500", "bg-purple-500",
-  "bg-red-500", "bg-teal-500", "bg-pink-500", "bg-yellow-500",
+const COST_CATEGORIES = [
+  { value: "Raw Materials",         label: "Raw Materials",         labelAr: "المواد الخام",          color: "#1d4ed8", bg: "#dbeafe",  icon: "🧱" },
+  { value: "Production Labor",      label: "Production Labor",      labelAr: "عمالة الإنتاج",         color: "#7c3aed", bg: "#ede9fe",  icon: "👷" },
+  { value: "Machine Maintenance",   label: "Machine Maintenance",   labelAr: "صيانة الآلات",          color: "#d97706", bg: "#fef3c7",  icon: "🔧" },
+  { value: "Electricity",           label: "Electricity",           labelAr: "الكهرباء",              color: "#059669", bg: "#d1fae5",  icon: "⚡" },
+  { value: "Packaging & Logistics", label: "Packaging & Logistics", labelAr: "التغليف والخدمات اللوجستية", color: "#0891b2", bg: "#cffafe", icon: "📦" },
+  { value: "Quality Control",       label: "Quality Control",       labelAr: "مراقبة الجودة",         color: "#dc2626", bg: "#fee2e2",  icon: "🔍" },
+  { value: "Admin & Office",        label: "Admin & Office",        labelAr: "الإدارة والمكتب",       color: "#6b7280", bg: "#f3f4f6",  icon: "🏢" },
+  { value: "Other",                 label: "Other",                 labelAr: "أخرى",                  color: "#9ca3af", bg: "#f9fafb",  icon: "📋" },
 ];
+
+const BAR_COLORS = ["#1d4ed8","#7c3aed","#d97706","#059669","#0891b2","#dc2626","#6b7280","#9ca3af"];
+
+const emptyForm = { category: "Raw Materials", cost: "", period: "", notes: "" };
 
 export default function CostAnalysis() {
   const { locale } = useLocale();
   const { user } = useAuth();
   const isAdmin = user?.role === "ADMIN";
   const nav = (en: string, ar: string) => locale === "ar" ? ar : en;
+
   const [analyses, setAnalyses] = useState<CostAnalysis[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
-  const [form, setForm] = useState({ category: "", cost: 0, percentage: 0, period: "", notes: "" });
+  const [form, setForm] = useState(emptyForm);
+  const [saving, setSaving] = useState(false);
+  const [filterPeriod, setFilterPeriod] = useState("");
 
-  useEffect(() => { fetchAnalyses(); }, []);
+  useEffect(() => { void fetchAnalyses(); }, []);
 
   const fetchAnalyses = async () => {
+    setLoading(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/cost-analysis`, {
-        headers: { ...authHeaders() },
-        credentials: "include",
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setAnalyses(data || []);
-      }
+      const res = await fetch(`${API_BASE_URL}/cost-analysis`, { headers: authHeaders(), credentials: "include" });
+      if (res.ok) { const data = await res.json(); setAnalyses(data ?? []); }
     } catch { } finally { setLoading(false); }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const openNew = () => { setEditingId(null); setForm(emptyForm); setShowForm(true); };
+  const openEdit = (a: CostAnalysis) => {
+    setEditingId(a.id);
+    setForm({ category: a.category, cost: String(a.cost), period: a.period ? a.period.substring(0, 7) : "", notes: a.notes ?? "" });
+    setShowForm(true);
+  };
+
+  const handleSave = async () => {
+    if (!form.cost) return;
+    setSaving(true);
     try {
       const url = editingId ? `${API_BASE_URL}/cost-analysis/${editingId}` : `${API_BASE_URL}/cost-analysis`;
+      const cost = parseFloat(form.cost);
+      const totalCostForPct = analyses.reduce((s, a) => s + a.cost, 0) + (editingId ? 0 : cost);
+      const percentage = totalCostForPct > 0 ? (cost / totalCostForPct) * 100 : 0;
       const res = await fetch(url, {
         method: editingId ? "PATCH" : "POST",
         headers: { "Content-Type": "application/json", ...authHeaders() },
         credentials: "include",
-        body: JSON.stringify({ ...form, cost: parseFloat(String(form.cost)), percentage: parseFloat(String(form.percentage)) }),
+        body: JSON.stringify({ category: form.category, cost, percentage, period: form.period || undefined, notes: form.notes.trim() || undefined }),
       });
-      if (res.ok) {
-        setForm({ category: "", cost: 0, percentage: 0, period: "", notes: "" });
-        setEditingId(null);
-        setShowForm(false);
-        fetchAnalyses();
-      }
-    } catch { }
-  };
-
-  const handleEdit = (a: CostAnalysis) => {
-    setForm({ category: a.category, cost: a.cost, percentage: a.percentage, period: a.period.split("T")[0], notes: a.notes || "" });
-    setEditingId(a.id);
-    setShowForm(true);
+      if (res.ok) { setShowForm(false); void fetchAnalyses(); }
+    } catch { } finally { setSaving(false); }
   };
 
   const handleDelete = async (id: number) => {
     if (!(await confirmDialog(nav("Delete this analysis?", "حذف هذا التحليل؟"), { danger: true }))) return;
-    await fetch(`${API_BASE_URL}/cost-analysis/${id}`, {
-      method: "DELETE", headers: { ...authHeaders() }, credentials: "include",
-    });
-    fetchAnalyses();
+    await fetch(`${API_BASE_URL}/cost-analysis/${id}`, { method: "DELETE", headers: authHeaders(), credentials: "include" });
+    void fetchAnalyses();
   };
 
+  const periods = [...new Set(analyses.map((a) => a.period).filter(Boolean))].sort().reverse();
+  const filtered = analyses.filter((a) => !filterPeriod || a.period === filterPeriod);
   const totalCost = analyses.reduce((s, a) => s + a.cost, 0);
-  const topCategory = analyses.reduce((top, a) => (a.cost > (top?.cost ?? 0) ? a : top), analyses[0]);
+  const topCategory = [...analyses].sort((a, b) => b.cost - a.cost)[0];
+  const fmtMoney = (n: number) => `$${n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  const getCatMeta = (cat: string) => COST_CATEGORIES.find((c) => c.value === cat) ?? COST_CATEGORIES[COST_CATEGORIES.length - 1];
 
   return (
     <ModulePageShell
       title={nav("Cost Analysis", "تحليل التكاليف")}
-      subtitle={nav("Analyze cost distribution and trends", "تحليل توزيع التكاليف والاتجاهات")}
+      subtitle={nav("Analyze cost distribution across factory categories", "تحليل توزيع التكاليف عبر فئات المصنع")}
+      icon={<PieChart size={22} />}
     >
-      <div className="space-y-6">
-        {/* KPIs */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card className="p-4 bg-linear-to-br from-blue-50 to-blue-100 dark:from-blue-900/30 dark:to-blue-800/30 border border-blue-200 dark:border-blue-800">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-xs text-slate-500 dark:text-slate-400">{nav("Total Cost", "التكلفة الإجمالية")}</p>
-              <PieChart size={18} className="text-blue-600 dark:text-blue-400" />
+      {/* KPIs */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
+        {[
+          { label: nav("Total Cost", "التكلفة الإجمالية"), value: fmtMoney(totalCost), icon: "💰", color: "#1d4ed8", bg: "#dbeafe" },
+          { label: nav("Categories", "الفئات"), value: analyses.length, icon: "📊", color: "#7c3aed", bg: "#ede9fe" },
+          { label: nav("Top Category", "أعلى فئة"), value: topCategory ? getCatMeta(topCategory.category).icon + " " + (locale === "ar" ? getCatMeta(topCategory.category).labelAr : topCategory.category) : "—", icon: "🏆", color: "#d97706", bg: "#fef3c7" },
+        ].map((k) => (
+          <Card key={k.label} className="p-4 flex items-center gap-3">
+            <div style={{ width: 40, height: 40, borderRadius: 10, background: k.bg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.2rem", flexShrink: 0 }}>
+              {k.icon}
             </div>
-            <p className="text-2xl font-bold text-blue-700 dark:text-blue-300">${totalCost.toFixed(2)}</p>
-          </Card>
-          <Card className="p-4 bg-linear-to-br from-purple-50 to-purple-100 dark:from-purple-900/30 dark:to-purple-800/30 border border-purple-200 dark:border-purple-800">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-xs text-slate-500 dark:text-slate-400">{nav("Categories", "الفئات")}</p>
-              <PieChart size={18} className="text-purple-600 dark:text-purple-400" />
-            </div>
-            <p className="text-2xl font-bold text-purple-700 dark:text-purple-300">{analyses.length}</p>
-          </Card>
-          <Card className="p-4 bg-linear-to-br from-orange-50 to-orange-100 dark:from-orange-900/30 dark:to-orange-800/30 border border-orange-200 dark:border-orange-800">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-xs text-slate-500 dark:text-slate-400">{nav("Top Category", "أعلى فئة")}</p>
-              <PieChart size={18} className="text-orange-600 dark:text-orange-400" />
-            </div>
-            <p className="text-lg font-bold text-orange-700 dark:text-orange-300 truncate">
-              {topCategory?.category ?? "—"}
-            </p>
-          </Card>
-        </div>
-
-        {/* Visual breakdown */}
-        {analyses.length > 0 && (
-          <Card className="p-5 border border-slate-200 dark:border-slate-700">
-            <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-4">{nav("Cost Distribution", "توزيع التكاليف")}</h3>
-            <div className="space-y-3">
-              {[...analyses].sort((a, b) => b.cost - a.cost).map((a, idx) => {
-                const pct = totalCost > 0 ? (a.cost / totalCost) * 100 : 0;
-                return (
-                  <div key={a.id}>
-                    <div className="flex justify-between text-xs text-slate-600 dark:text-slate-400 mb-1">
-                      <span className="font-medium">{a.category}</span>
-                      <span>${a.cost.toFixed(2)} ({pct.toFixed(1)}%)</span>
-                    </div>
-                    <div className="w-full bg-slate-100 dark:bg-slate-700 rounded-full h-2.5">
-                      <div className={`h-2.5 rounded-full transition-all ${BAR_COLORS[idx % BAR_COLORS.length]}`}
-                        style={{ width: `${pct}%` }} />
-                    </div>
-                  </div>
-                );
-              })}
+            <div className="min-w-0">
+              <p className="text-xs text-[var(--text-secondary)] font-medium leading-tight">{k.label}</p>
+              <p className="text-lg font-bold truncate" style={{ color: k.color }}>{k.value}</p>
             </div>
           </Card>
-        )}
+        ))}
+      </div>
 
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold">{nav("Cost Entries", "مدخلات التكاليف")}</h2>
-          {!isAdmin && (
-            <Button onClick={() => { setShowForm(!showForm); setEditingId(null); }} className="gap-2">
-              <Plus size={16} />
-              {nav("Add Analysis", "إضافة تحليل")}
-            </Button>
-          )}
-        </div>
-
-        {/* Form */}
-        {!isAdmin && showForm && (
-          <Card className="p-5 border border-slate-200 dark:border-slate-700">
-            <h3 className="font-semibold mb-4 text-slate-800 dark:text-slate-200">
-              {editingId ? nav("Edit Analysis", "تعديل التحليل") : nav("New Cost Entry", "إدخال تكلفة جديد")}
-            </h3>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">{nav("Category", "الفئة")}</label>
-                  <input type="text" value={form.category} onChange={e => setForm({ ...form, category: e.target.value })}
-                    className="w-full px-3 py-2 border rounded-lg bg-white border-slate-300 dark:border-slate-600 text-sm" required />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">{nav("Cost ($)", "التكلفة ($)")}</label>
-                  <input type="number" min={0} step={0.01} value={form.cost}
-                    onChange={e => setForm({ ...form, cost: parseFloat(e.target.value) || 0 })}
-                    className="w-full px-3 py-2 border rounded-lg bg-white border-slate-300 dark:border-slate-600 text-sm" required />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">{nav("Percentage (%)", "النسبة المئوية (%)")}</label>
-                  <input type="number" min={0} max={100} step={0.1} value={form.percentage}
-                    onChange={e => setForm({ ...form, percentage: parseFloat(e.target.value) || 0 })}
-                    className="w-full px-3 py-2 border rounded-lg bg-white border-slate-300 dark:border-slate-600 text-sm" />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">{nav("Period", "الفترة")}</label>
-                  <input type="month" value={form.period} onChange={e => setForm({ ...form, period: e.target.value })}
-                    className="w-full px-3 py-2 border rounded-lg bg-white border-slate-300 dark:border-slate-600 text-sm" />
-                </div>
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">{nav("Notes", "ملاحظات")}</label>
-                <textarea value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-lg bg-white border-slate-300 dark:border-slate-600 text-sm" rows={2} />
-              </div>
-              <div className="flex gap-2">
-                <Button type="submit">{nav("Save", "حفظ")}</Button>
-                <button type="button" onClick={() => { setShowForm(false); setEditingId(null); }}
-                  className="px-4 py-2 text-sm border rounded-lg bg-white hover:bg-slate-50 dark:hover:bg-slate-600">
-                  {nav("Cancel", "إلغاء")}
-                </button>
-              </div>
-            </form>
-          </Card>
-        )}
-
-        {/* Table */}
-        {loading ? (
+      {/* Distribution Chart */}
+      {analyses.length > 0 && (
+        <Card className="p-5 mb-6">
+          <p className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wide mb-4">{nav("Cost Distribution", "توزيع التكاليف")}</p>
           <div className="space-y-3">
-            {[1, 2, 3].map(i => <div key={i} className="h-14 rounded-lg bg-slate-100 dark:bg-slate-700 animate-pulse" />)}
+            {[...analyses].sort((a, b) => b.cost - a.cost).map((a, idx) => {
+              const pct = totalCost > 0 ? (a.cost / totalCost) * 100 : 0;
+              const meta = getCatMeta(a.category);
+              return (
+                <div key={a.id}>
+                  <div className="flex justify-between text-xs text-[var(--text-secondary)] mb-1">
+                    <span className="font-medium flex items-center gap-1">{meta.icon} {locale === "ar" ? meta.labelAr : a.category}</span>
+                    <span>{fmtMoney(a.cost)} ({pct.toFixed(1)}%)</span>
+                  </div>
+                  <div className="w-full bg-gray-100 rounded-full h-2.5">
+                    <div className="h-2.5 rounded-full transition-all" style={{ width: `${pct}%`, background: BAR_COLORS[idx % BAR_COLORS.length] }} />
+                  </div>
+                </div>
+              );
+            })}
           </div>
-        ) : analyses.length === 0 ? (
-          <Card className="p-12 text-center border border-dashed border-slate-300 dark:border-slate-600">
-            <PieChart className="mx-auto mb-3 text-slate-400" size={40} />
-            <p className="text-slate-500 dark:text-slate-400">{nav("No cost entries yet. Click 'Add Analysis' to start.", "لا توجد مدخلات تكاليف بعد.")}</p>
-          </Card>
-        ) : (
-          <Card className="overflow-hidden border border-slate-200 dark:border-slate-700">
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="bg-slate-50 dark:bg-slate-700/50 border-b border-slate-200 dark:border-slate-700">
-                  <tr>
-                    <th className="text-left py-3 px-4 font-semibold text-slate-600 dark:text-slate-300">{nav("Category", "الفئة")}</th>
-                    <th className="text-left py-3 px-4 font-semibold text-slate-600 dark:text-slate-300">{nav("Cost", "التكلفة")}</th>
-                    <th className="text-left py-3 px-4 font-semibold text-slate-600 dark:text-slate-300">{nav("Share", "الحصة")}</th>
-                    <th className="text-left py-3 px-4 font-semibold text-slate-600 dark:text-slate-300">{nav("Period", "الفترة")}</th>
-                    <th className="py-3 px-4" />
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
-                  {analyses.map((a, idx) => {
-                    const sharePct = totalCost > 0 ? (a.cost / totalCost) * 100 : 0;
-                    return (
-                      <tr key={a.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
-                        <td className="py-3 px-4 font-medium text-slate-800 dark:text-slate-200">{a.category}</td>
-                        <td className="py-3 px-4 font-semibold text-slate-700 dark:text-slate-300">${a.cost.toFixed(2)}</td>
-                        <td className="py-3 px-4">
-                          <div className="flex items-center gap-2">
-                            <div className="w-24 bg-slate-100 dark:bg-slate-700 rounded-full h-2">
-                              <div className={`h-2 rounded-full ${BAR_COLORS[idx % BAR_COLORS.length]}`}
-                                style={{ width: `${sharePct}%` }} />
-                            </div>
-                            <span className="text-xs text-slate-500">{sharePct.toFixed(1)}%</span>
-                          </div>
-                        </td>
-                        <td className="py-3 px-4 text-xs text-slate-500">
-                          {a.period ? new Date(a.period).toLocaleDateString("en-US", { month: "long", year: "numeric" }) : "—"}
-                        </td>
-                        <td className="py-3 px-4">
-                          {!isAdmin && (
-                            <div className="flex items-center gap-1 justify-end">
-                              <button onClick={() => handleEdit(a)}
-                                className="p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-500">
-                                <Edit size={14} />
-                              </button>
-                              <button onClick={() => handleDelete(a.id)}
-                                className="p-1.5 rounded hover:bg-red-100 dark:hover:bg-red-900/30 text-red-500">
-                                <Trash2 size={14} />
-                              </button>
-                            </div>
-                          )}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </Card>
+        </Card>
+      )}
+
+      {/* Toolbar */}
+      <div className="flex flex-wrap items-center gap-2 mb-4">
+        {!isAdmin && (
+          <Button size="sm" onClick={openNew}>
+            <Plus size={15} className="me-1" />
+            {nav("Add Entry", "إضافة إدخال")}
+          </Button>
+        )}
+        {periods.length > 0 && (
+          <select className="input text-sm h-8 min-w-[160px]" value={filterPeriod} onChange={(e) => setFilterPeriod(e.target.value)}>
+            <option value="">{nav("All Periods", "جميع الفترات")}</option>
+            {periods.map((p) => (
+              <option key={p} value={p}>
+                {new Date(p + "-01").toLocaleDateString(locale === "ar" ? "ar-SA" : "en-US", { month: "long", year: "numeric" })}
+              </option>
+            ))}
+          </select>
+        )}
+        {filterPeriod && (
+          <button className="text-xs text-[var(--text-secondary)] underline" onClick={() => setFilterPeriod("")}>
+            {nav("Clear", "مسح")}
+          </button>
         )}
       </div>
+
+      {/* Form */}
+      {!isAdmin && showForm && (
+        <Card className="p-5 mb-6 border-2 border-[var(--accent)]">
+          <div className="flex items-center justify-between mb-5">
+            <div>
+              <h3 className="font-bold text-[var(--text-primary)] text-base">
+                {editingId ? nav("Edit Cost Entry", "تعديل إدخال التكلفة") : nav("New Cost Entry", "إدخال تكلفة جديد")}
+              </h3>
+              <p className="text-xs text-[var(--text-secondary)] mt-0.5">{nav("Enter cost details for a factory category", "أدخل بيانات التكلفة لفئة مصنع")}</p>
+            </div>
+            <button className="text-[var(--text-secondary)] hover:text-[var(--text-primary)]" onClick={() => setShowForm(false)}><X size={18} /></button>
+          </div>
+
+          <p className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wide mb-2">{nav("Cost Details", "بيانات التكلفة")}</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+            <div>
+              <label className="label">{nav("Category *", "الفئة *")}</label>
+              <select className="input" value={form.category} onChange={(e) => setForm((p) => ({ ...p, category: e.target.value }))}>
+                {COST_CATEGORIES.map((c) => (
+                  <option key={c.value} value={c.value}>{c.icon} {locale === "ar" ? c.labelAr : c.label}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="label">{nav("Cost ($) *", "التكلفة ($) *")}</label>
+              <input className="input" type="number" min="0" step="0.01" placeholder="0.00"
+                value={form.cost} onChange={(e) => setForm((p) => ({ ...p, cost: e.target.value }))} />
+            </div>
+            <div>
+              <label className="label">{nav("Period", "الفترة")}</label>
+              <input className="input" type="month"
+                value={form.period} onChange={(e) => setForm((p) => ({ ...p, period: e.target.value }))} />
+            </div>
+            <div>
+              <label className="label">{nav("Notes", "ملاحظات")}</label>
+              <input className="input" placeholder={nav("Optional notes…", "ملاحظات اختيارية...")}
+                value={form.notes} onChange={(e) => setForm((p) => ({ ...p, notes: e.target.value }))} />
+            </div>
+          </div>
+
+          <div className="flex gap-2 pt-2 border-t border-[var(--border-default)]">
+            <Button size="sm" onClick={handleSave} disabled={saving || !form.cost}>
+              <Save size={14} className="me-1" />
+              {saving ? nav("Saving...", "جارٍ الحفظ...") : nav("Save Entry", "حفظ الإدخال")}
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => setShowForm(false)}>{nav("Cancel", "إلغاء")}</Button>
+          </div>
+        </Card>
+      )}
+
+      {/* Cards */}
+      {loading ? (
+        <div className="flex justify-center p-12"><div className="spinner" /></div>
+      ) : filtered.length === 0 ? (
+        <Card className="p-12 text-center text-[var(--text-secondary)]">
+          <PieChart size={32} className="mx-auto mb-3 opacity-30" />
+          <p className="font-medium">{nav("No cost entries found", "لا توجد إدخالات تكاليف")}</p>
+          <p className="text-sm mt-1">{nav("Add your first cost entry to get started", "أضف أول إدخال تكلفة للبدء")}</p>
+        </Card>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {filtered.map((a, idx) => {
+            const meta = getCatMeta(a.category);
+            const sharePct = totalCost > 0 ? (a.cost / totalCost) * 100 : 0;
+            return (
+              <Card key={a.id} className="p-0 overflow-hidden flex flex-col">
+                <div style={{ background: meta.bg, borderBottom: `2px solid ${meta.color}20`, padding: "12px 16px" }}
+                  className="flex items-start justify-between gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span style={{ fontSize: "1.3rem" }}>{meta.icon}</span>
+                    <div className="min-w-0">
+                      <p className="font-bold text-sm text-[var(--text-primary)] truncate">
+                        {locale === "ar" ? meta.labelAr : a.category}
+                      </p>
+                      {a.period && (
+                        <p className="text-xs text-[var(--text-secondary)]">
+                          {new Date(a.period + "-01").toLocaleDateString(locale === "ar" ? "ar-SA" : "en-US", { month: "long", year: "numeric" })}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  {!isAdmin && (
+                    <div className="flex gap-1 flex-shrink-0">
+                      <button className="text-[var(--text-secondary)] hover:text-blue-600 p-1" onClick={() => openEdit(a)}><Pencil size={14} /></button>
+                      <button className="text-[var(--text-secondary)] hover:text-red-500 p-1" onClick={() => handleDelete(a.id)}><Trash2 size={14} /></button>
+                    </div>
+                  )}
+                </div>
+                <div className="p-4 flex-1 flex flex-col gap-3">
+                  <p className="text-2xl font-bold" style={{ color: meta.color }}>{fmtMoney(a.cost)}</p>
+                  <div>
+                    <div className="flex justify-between text-xs text-[var(--text-secondary)] mb-1">
+                      <span>{nav("Share of Total", "الحصة من الإجمالي")}</span>
+                      <span>{sharePct.toFixed(1)}%</span>
+                    </div>
+                    <div className="w-full bg-gray-100 rounded-full h-2">
+                      <div className="h-2 rounded-full transition-all" style={{ width: `${sharePct}%`, background: BAR_COLORS[idx % BAR_COLORS.length] }} />
+                    </div>
+                  </div>
+                  {a.notes && (
+                    <p className="text-xs text-[var(--text-secondary)] bg-[var(--bg-surface-2,#f8fafc)] rounded px-2.5 py-1.5 italic">{a.notes}</p>
+                  )}
+                </div>
+              </Card>
+            );
+          })}
+        </div>
+      )}
     </ModulePageShell>
   );
 }

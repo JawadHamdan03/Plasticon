@@ -13,14 +13,14 @@ type OpsSnapshot = {
   notes: string | null;
   machineCounterImage: string | null;
   electricityImage: string | null;
+  createdById: number | null;
+  createdByName: string | null;
 };
 
 type SnapshotImagePreview = {
   src: string;
   alt: string;
 };
-
-const tokenKey = "plasticon_token";
 
 const toIsoStartOfDay = (dateValue: string) => {
   if (!dateValue) {
@@ -61,11 +61,17 @@ const downloadCsv = (filename: string, header: string[], rows: string[][]) => {
   URL.revokeObjectURL(href);
 };
 
+function authHeader(): Record<string, string> {
+  const token = localStorage.getItem("plasticon_token");
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
 async function fetchWithAdminAuth(path: string, options?: RequestInit) {
   return fetch(`${API_BASE_URL}${path}`, {
     ...options,
     headers: {
       ...(options?.headers ?? {}),
+      ...authHeader(),
     },
     credentials: "include",
   });
@@ -362,7 +368,14 @@ export function AdminSnapshotsPage() {
 
             {snapshots.map((item) => (
               <article className="settings-snapshot-item" key={item.id}>
-                <strong>{item.machineLabel}</strong>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: ".25rem" }}>
+                  <strong>{item.machineLabel}</strong>
+                  {item.createdByName && (
+                    <span style={{ fontSize: ".78rem", background: "var(--bg-surface)", border: "1px solid var(--border-default)", borderRadius: "20px", padding: "2px 10px", color: "var(--text-secondary)", fontWeight: 600 }}>
+                      👤 {item.createdByName}
+                    </span>
+                  )}
+                </div>
                 <p>
                   {text.machineCounter}: {item.machineCounter}
                 </p>

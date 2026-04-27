@@ -7,7 +7,7 @@ import {
   Wrench, CheckSquare, AlertTriangle, Lightbulb, Activity, Target,
   Factory, Shield, Calendar, Boxes, Receipt, ClipboardCheck,
   UserCheck, Layers, Search, Package, PieChart, CreditCard, Percent, Wallet, CheckCircle,
-  Truck, Award, UserPlus, Sun, Moon,
+  Truck, Award, UserPlus, Sun, Moon, Briefcase,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useLocale } from "../context/LocaleContext";
@@ -117,6 +117,7 @@ function getNavSectionsBi(role: string): NavSectionBi[] {
           { to: "/admin/attendance", icon: <UserCheck size={17} />, label: nav("Attendance", "الحضور") },
           { to: "/admin/payroll", icon: <DollarSign size={17} />, label: nav("Payroll", "الرواتب") },
           { to: "/admin/snapshots", icon: <Camera size={17} />, label: nav("Snapshots", "القراءات") },
+          { to: "/admin/worker-records", icon: <Briefcase size={17} />, label: nav("Worker Hub", "مركز العمال") },
           { to: "/admin/settings/electricity", icon: <Zap size={17} />, label: nav("Electricity", "الكهرباء") },
         ],
       },

@@ -1,6 +1,6 @@
-﻿import { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { confirmDialog } from "../../lib/dialog";
-import { Plus, Edit, Trash2, CheckCircle, Clock, Archive, GitBranch } from "lucide-react";
+import { Plus, Pencil, Trash2, CheckCircle, Clock, Archive, GitBranch, X, Save } from "lucide-react";
 import { ModulePageShell } from "../../components/ModulePageShell";
 import { Button } from "../../components/ui/button";
 import { Card } from "../../components/ui/card";
@@ -23,222 +23,223 @@ interface ApprovalWorkflow {
   createdBy?: { id: number; fullName: string };
 }
 
-const STATUS_STYLES: Record<string, string> = {
-  ACTIVE: "bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300",
-  DRAFT: "bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300",
-  ARCHIVED: "bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300",
+const STATUS_META: Record<string, { label: string; labelAr: string; color: string; bg: string }> = {
+  ACTIVE:   { label: "Active",   labelAr: "نشط",    color: "#059669", bg: "#d1fae5" },
+  DRAFT:    { label: "Draft",    labelAr: "مسودة",  color: "#1d4ed8", bg: "#dbeafe" },
+  ARCHIVED: { label: "Archived", labelAr: "مؤرشف", color: "#6b7280", bg: "#f3f4f6" },
 };
+
+const emptyForm = { workflowName: "", status: "ACTIVE", itemsCount: "", approverCount: "" };
 
 export default function ApprovalWorkflows() {
   const { locale } = useLocale();
   const { user } = useAuth();
   const isAdmin = user?.role === "ADMIN";
   const nav = (en: string, ar: string) => locale === "ar" ? ar : en;
+
   const [workflows, setWorkflows] = useState<ApprovalWorkflow[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
-  const [form, setForm] = useState({ workflowName: "", status: "ACTIVE", itemsCount: 0, approverCount: 0 });
+  const [form, setForm] = useState(emptyForm);
+  const [saving, setSaving] = useState(false);
+  const [filterStatus, setFilterStatus] = useState("");
 
-  useEffect(() => { fetchWorkflows(); }, []);
+  useEffect(() => { void fetchWorkflows(); }, []);
 
   const fetchWorkflows = async () => {
+    setLoading(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/approval-workflows`, {
-        headers: { ...authHeaders() },
-        credentials: "include",
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setWorkflows(data || []);
-      }
+      const res = await fetch(`${API_BASE_URL}/approval-workflows`, { headers: authHeaders(), credentials: "include" });
+      if (res.ok) { const data = await res.json(); setWorkflows(data ?? []); }
     } catch { } finally { setLoading(false); }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const openNew = () => { setEditingId(null); setForm(emptyForm); setShowForm(true); };
+  const openEdit = (w: ApprovalWorkflow) => {
+    setEditingId(w.id);
+    setForm({ workflowName: w.workflowName, status: w.status, itemsCount: String(w.itemsCount), approverCount: String(w.approverCount) });
+    setShowForm(true);
+  };
+
+  const handleSave = async () => {
+    if (!form.workflowName.trim()) return;
+    setSaving(true);
     try {
       const url = editingId ? `${API_BASE_URL}/approval-workflows/${editingId}` : `${API_BASE_URL}/approval-workflows`;
       const res = await fetch(url, {
         method: editingId ? "PATCH" : "POST",
         headers: { "Content-Type": "application/json", ...authHeaders() },
         credentials: "include",
-        body: JSON.stringify({ ...form, itemsCount: parseInt(String(form.itemsCount)), approverCount: parseInt(String(form.approverCount)) }),
+        body: JSON.stringify({ workflowName: form.workflowName.trim(), status: form.status, itemsCount: parseInt(form.itemsCount) || 0, approverCount: parseInt(form.approverCount) || 0 }),
       });
-      if (res.ok) {
-        setForm({ workflowName: "", status: "ACTIVE", itemsCount: 0, approverCount: 0 });
-        setEditingId(null);
-        setShowForm(false);
-        fetchWorkflows();
-      }
-    } catch { }
-  };
-
-  const handleEdit = (w: ApprovalWorkflow) => {
-    setForm({ workflowName: w.workflowName, status: w.status, itemsCount: w.itemsCount, approverCount: w.approverCount });
-    setEditingId(w.id);
-    setShowForm(true);
+      if (res.ok) { setShowForm(false); void fetchWorkflows(); }
+    } catch { } finally { setSaving(false); }
   };
 
   const handleDelete = async (id: number) => {
     if (!(await confirmDialog(nav("Delete this workflow?", "حذف سير العمل هذا؟"), { danger: true }))) return;
-    await fetch(`${API_BASE_URL}/approval-workflows/${id}`, {
-      method: "DELETE", headers: { ...authHeaders() }, credentials: "include",
-    });
-    fetchWorkflows();
+    await fetch(`${API_BASE_URL}/approval-workflows/${id}`, { method: "DELETE", headers: authHeaders(), credentials: "include" });
+    void fetchWorkflows();
   };
 
-  const activeCount = workflows.filter(w => w.status === "ACTIVE").length;
-  const draftCount = workflows.filter(w => w.status === "DRAFT").length;
-  const totalItems = workflows.reduce((s, w) => s + w.itemsCount, 0);
+  const activeCount = workflows.filter((w) => w.status === "ACTIVE").length;
+  const draftCount = workflows.filter((w) => w.status === "DRAFT").length;
+  const archivedCount = workflows.filter((w) => w.status === "ARCHIVED").length;
+  const filtered = workflows.filter((w) => !filterStatus || w.status === filterStatus);
 
   return (
     <ModulePageShell
       title={nav("Approval Workflows", "سير عمل الموافقة")}
-      subtitle={nav("Configure and manage approval processes", "تكوين وإدارة عمليات الموافقة")}
+      subtitle={nav("Configure and manage financial approval processes", "تكوين وإدارة عمليات الموافقة المالية")}
+      icon={<GitBranch size={22} />}
     >
-      <div className="space-y-6">
-        {/* KPIs */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card className="p-4 bg-linear-to-br from-green-50 to-green-100 dark:from-green-900/30 dark:to-green-800/30 border border-green-200 dark:border-green-800">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-xs text-slate-500 dark:text-slate-400">{nav("Active", "نشط")}</p>
-              <CheckCircle size={18} className="text-green-600 dark:text-green-400" />
+      {/* KPIs */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
+        {[
+          { label: nav("Active", "نشط"), value: activeCount, icon: "✅", color: "#059669", bg: "#d1fae5" },
+          { label: nav("Draft", "مسودة"), value: draftCount, icon: "📝", color: "#1d4ed8", bg: "#dbeafe" },
+          { label: nav("Archived", "مؤرشف"), value: archivedCount, icon: "🗂️", color: "#6b7280", bg: "#f3f4f6" },
+        ].map((k) => (
+          <Card key={k.label} className="p-4 flex items-center gap-3">
+            <div style={{ width: 40, height: 40, borderRadius: 10, background: k.bg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.2rem", flexShrink: 0 }}>
+              {k.icon}
             </div>
-            <p className="text-2xl font-bold text-green-700 dark:text-green-300">{activeCount}</p>
-          </Card>
-          <Card className="p-4 bg-linear-to-br from-blue-50 to-blue-100 dark:from-blue-900/30 dark:to-blue-800/30 border border-blue-200 dark:border-blue-800">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-xs text-slate-500 dark:text-slate-400">{nav("Draft", "مسودة")}</p>
-              <Clock size={18} className="text-blue-600 dark:text-blue-400" />
+            <div>
+              <p className="text-xs text-[var(--text-secondary)] font-medium leading-tight">{k.label}</p>
+              <p className="text-xl font-bold" style={{ color: k.color }}>{k.value}</p>
             </div>
-            <p className="text-2xl font-bold text-blue-700 dark:text-blue-300">{draftCount}</p>
           </Card>
-          <Card className="p-4 bg-linear-to-br from-orange-50 to-orange-100 dark:from-orange-900/30 dark:to-orange-800/30 border border-orange-200 dark:border-orange-800">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-xs text-slate-500 dark:text-slate-400">{nav("Total Items", "إجمالي العناصر")}</p>
-              <GitBranch size={18} className="text-orange-600 dark:text-orange-400" />
-            </div>
-            <p className="text-2xl font-bold text-orange-700 dark:text-orange-300">{totalItems}</p>
-          </Card>
-        </div>
+        ))}
+      </div>
 
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold">{nav("Workflows", "سير العمل")}</h2>
-          {!isAdmin && (
-            <Button onClick={() => { setShowForm(!showForm); setEditingId(null); }} className="gap-2">
-              <Plus size={16} />
-              {nav("Add Workflow", "إضافة سير عمل")}
-            </Button>
-          )}
-        </div>
-
-        {/* Form */}
-        {!isAdmin && showForm && (
-          <Card className="p-5 border border-slate-200 dark:border-slate-700">
-            <h3 className="font-semibold mb-4 text-slate-800 dark:text-slate-200">
-              {editingId ? nav("Edit Workflow", "تعديل سير العمل") : nav("New Workflow", "سير عمل جديد")}
-            </h3>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">{nav("Workflow Name", "اسم سير العمل")}</label>
-                  <input type="text" value={form.workflowName} onChange={e => setForm({ ...form, workflowName: e.target.value })}
-                    className="w-full px-3 py-2 border rounded-lg bg-white border-slate-300 dark:border-slate-600 text-sm" required />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">{nav("Status", "الحالة")}</label>
-                  <select value={form.status} onChange={e => setForm({ ...form, status: e.target.value })}
-                    className="w-full px-3 py-2 border rounded-lg bg-white border-slate-300 dark:border-slate-600 text-sm">
-                    <option value="ACTIVE">Active</option>
-                    <option value="DRAFT">Draft</option>
-                    <option value="ARCHIVED">Archived</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">{nav("Items Count", "عدد العناصر")}</label>
-                  <input type="number" min={0} value={form.itemsCount}
-                    onChange={e => setForm({ ...form, itemsCount: parseInt(e.target.value) || 0 })}
-                    className="w-full px-3 py-2 border rounded-lg bg-white border-slate-300 dark:border-slate-600 text-sm" />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">{nav("Approvers Required", "الموافقون المطلوبون")}</label>
-                  <input type="number" min={0} value={form.approverCount}
-                    onChange={e => setForm({ ...form, approverCount: parseInt(e.target.value) || 0 })}
-                    className="w-full px-3 py-2 border rounded-lg bg-white border-slate-300 dark:border-slate-600 text-sm" />
-                </div>
-              </div>
-              <div className="flex gap-2">
-                <Button type="submit">{nav("Save", "حفظ")}</Button>
-                <button type="button" onClick={() => { setShowForm(false); setEditingId(null); }}
-                  className="px-4 py-2 text-sm border rounded-lg bg-white hover:bg-slate-50 dark:hover:bg-slate-600">
-                  {nav("Cancel", "إلغاء")}
-                </button>
-              </div>
-            </form>
-          </Card>
+      {/* Toolbar */}
+      <div className="flex flex-wrap items-center gap-2 mb-4">
+        {!isAdmin && (
+          <Button size="sm" onClick={openNew}>
+            <Plus size={15} className="me-1" />
+            {nav("Add Workflow", "إضافة سير عمل")}
+          </Button>
         )}
-
-        {/* Table */}
-        {loading ? (
-          <div className="space-y-3">
-            {[1, 2, 3].map(i => <div key={i} className="h-14 rounded-lg bg-slate-100 dark:bg-slate-700 animate-pulse" />)}
-          </div>
-        ) : workflows.length === 0 ? (
-          <Card className="p-12 text-center border border-dashed border-slate-300 dark:border-slate-600">
-            <GitBranch className="mx-auto mb-3 text-slate-400" size={40} />
-            <p className="text-slate-500 dark:text-slate-400">{nav("No workflows yet. Click 'Add Workflow' to create one.", "لا توجد سير عمل بعد.")}</p>
-          </Card>
-        ) : (
-          <Card className="overflow-hidden border border-slate-200 dark:border-slate-700">
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="bg-slate-50 dark:bg-slate-700/50 border-b border-slate-200 dark:border-slate-700">
-                  <tr>
-                    <th className="text-left py-3 px-4 font-semibold text-slate-600 dark:text-slate-300">{nav("Workflow Name", "اسم سير العمل")}</th>
-                    <th className="text-left py-3 px-4 font-semibold text-slate-600 dark:text-slate-300">{nav("Status", "الحالة")}</th>
-                    <th className="text-left py-3 px-4 font-semibold text-slate-600 dark:text-slate-300">{nav("Items", "العناصر")}</th>
-                    <th className="text-left py-3 px-4 font-semibold text-slate-600 dark:text-slate-300">{nav("Approvers", "الموافقون")}</th>
-                    <th className="text-left py-3 px-4 font-semibold text-slate-600 dark:text-slate-300">{nav("Created By", "أنشأه")}</th>
-                    <th className="py-3 px-4" />
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
-                  {workflows.map(w => (
-                    <tr key={w.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
-                      <td className="py-3 px-4 font-medium text-slate-800 dark:text-slate-200">{w.workflowName}</td>
-                      <td className="py-3 px-4">
-                        <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium ${STATUS_STYLES[w.status] ?? STATUS_STYLES.DRAFT}`}>
-                          {w.status === "ACTIVE" ? <CheckCircle size={11} /> : w.status === "DRAFT" ? <Clock size={11} /> : <Archive size={11} />}
-                          {nav(w.status, w.status === "ACTIVE" ? "نشط" : w.status === "DRAFT" ? "مسودة" : "مؤرشف")}
-                        </span>
-                      </td>
-                      <td className="py-3 px-4 text-slate-600 dark:text-slate-400">{w.itemsCount}</td>
-                      <td className="py-3 px-4 text-slate-600 dark:text-slate-400">{w.approverCount}</td>
-                      <td className="py-3 px-4 text-xs text-slate-500">{w.createdBy?.fullName ?? "—"}</td>
-                      <td className="py-3 px-4">
-                        {!isAdmin && (
-                          <div className="flex items-center gap-1 justify-end">
-                            <button onClick={() => handleEdit(w)}
-                              className="p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-500">
-                              <Edit size={14} />
-                            </button>
-                            <button onClick={() => handleDelete(w.id)}
-                              className="p-1.5 rounded hover:bg-red-100 dark:hover:bg-red-900/30 text-red-500">
-                              <Trash2 size={14} />
-                            </button>
-                          </div>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </Card>
+        <select className="input text-sm h-8 min-w-[160px]" value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}>
+          <option value="">{nav("All Statuses", "جميع الحالات")}</option>
+          <option value="ACTIVE">{nav("Active", "نشط")}</option>
+          <option value="DRAFT">{nav("Draft", "مسودة")}</option>
+          <option value="ARCHIVED">{nav("Archived", "مؤرشف")}</option>
+        </select>
+        {filterStatus && (
+          <button className="text-xs text-[var(--text-secondary)] underline" onClick={() => setFilterStatus("")}>
+            {nav("Clear", "مسح")}
+          </button>
         )}
       </div>
+
+      {/* Form */}
+      {!isAdmin && showForm && (
+        <Card className="p-5 mb-6 border-2 border-[var(--accent)]">
+          <div className="flex items-center justify-between mb-5">
+            <div>
+              <h3 className="font-bold text-[var(--text-primary)] text-base">
+                {editingId ? nav("Edit Workflow", "تعديل سير العمل") : nav("New Workflow", "سير عمل جديد")}
+              </h3>
+              <p className="text-xs text-[var(--text-secondary)] mt-0.5">{nav("Define an approval process for financial operations", "حدد عملية موافقة للعمليات المالية")}</p>
+            </div>
+            <button className="text-[var(--text-secondary)] hover:text-[var(--text-primary)]" onClick={() => setShowForm(false)}><X size={18} /></button>
+          </div>
+
+          <p className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wide mb-2">{nav("Workflow Details", "بيانات سير العمل")}</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+            <div className="sm:col-span-2">
+              <label className="label">{nav("Workflow Name *", "اسم سير العمل *")}</label>
+              <input className="input" placeholder={nav("e.g. Purchase Order Approval", "مثال: موافقة طلبات الشراء")}
+                value={form.workflowName} onChange={(e) => setForm((p) => ({ ...p, workflowName: e.target.value }))} />
+            </div>
+            <div>
+              <label className="label">{nav("Status", "الحالة")}</label>
+              <select className="input" value={form.status} onChange={(e) => setForm((p) => ({ ...p, status: e.target.value }))}>
+                <option value="ACTIVE">{nav("Active", "نشط")}</option>
+                <option value="DRAFT">{nav("Draft", "مسودة")}</option>
+                <option value="ARCHIVED">{nav("Archived", "مؤرشف")}</option>
+              </select>
+            </div>
+            <div>
+              <label className="label">{nav("Approvers Required", "الموافقون المطلوبون")}</label>
+              <input className="input" type="number" min="0" placeholder="0"
+                value={form.approverCount} onChange={(e) => setForm((p) => ({ ...p, approverCount: e.target.value }))} />
+            </div>
+            <div>
+              <label className="label">{nav("Items Count", "عدد العناصر")}</label>
+              <input className="input" type="number" min="0" placeholder="0"
+                value={form.itemsCount} onChange={(e) => setForm((p) => ({ ...p, itemsCount: e.target.value }))} />
+            </div>
+          </div>
+
+          <div className="flex gap-2 pt-2 border-t border-[var(--border-default)]">
+            <Button size="sm" onClick={handleSave} disabled={saving || !form.workflowName.trim()}>
+              <Save size={14} className="me-1" />
+              {saving ? nav("Saving...", "جارٍ الحفظ...") : nav("Save Workflow", "حفظ سير العمل")}
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => setShowForm(false)}>{nav("Cancel", "إلغاء")}</Button>
+          </div>
+        </Card>
+      )}
+
+      {/* Cards */}
+      {loading ? (
+        <div className="flex justify-center p-12"><div className="spinner" /></div>
+      ) : filtered.length === 0 ? (
+        <Card className="p-12 text-center text-[var(--text-secondary)]">
+          <GitBranch size={32} className="mx-auto mb-3 opacity-30" />
+          <p className="font-medium">{nav("No workflows found", "لا توجد سير عمل")}</p>
+          <p className="text-sm mt-1">{nav("Add your first approval workflow to get started", "أضف أول سير عمل موافقة للبدء")}</p>
+        </Card>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {filtered.map((w) => {
+            const meta = STATUS_META[w.status] ?? STATUS_META.DRAFT;
+            const StatusIcon = w.status === "ACTIVE" ? CheckCircle : w.status === "DRAFT" ? Clock : Archive;
+            return (
+              <Card key={w.id} className="p-0 overflow-hidden flex flex-col">
+                <div style={{ background: meta.bg, borderBottom: `2px solid ${meta.color}20`, padding: "12px 16px" }}
+                  className="flex items-start justify-between gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span style={{ fontSize: "1.3rem" }}>🔀</span>
+                    <div className="min-w-0">
+                      <p className="font-bold text-sm text-[var(--text-primary)] truncate">{w.workflowName}</p>
+                      <span style={{ background: meta.color + "20", color: meta.color, borderRadius: "20px", padding: "1px 8px", fontSize: ".68rem", fontWeight: 700 }}
+                        className="inline-flex items-center gap-1">
+                        <StatusIcon size={9} />
+                        {locale === "ar" ? meta.labelAr : meta.label}
+                      </span>
+                    </div>
+                  </div>
+                  {!isAdmin && (
+                    <div className="flex gap-1 flex-shrink-0">
+                      <button className="text-[var(--text-secondary)] hover:text-blue-600 p-1" onClick={() => openEdit(w)}><Pencil size={14} /></button>
+                      <button className="text-[var(--text-secondary)] hover:text-red-500 p-1" onClick={() => handleDelete(w.id)}><Trash2 size={14} /></button>
+                    </div>
+                  )}
+                </div>
+                <div className="p-4 flex-1 flex flex-col gap-2.5">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="bg-[var(--bg-surface-2,#f8fafc)] rounded-lg p-3 text-center">
+                      <p className="text-xs text-[var(--text-secondary)] mb-1">{nav("Items", "العناصر")}</p>
+                      <p className="text-xl font-bold text-[var(--text-primary)]">{w.itemsCount}</p>
+                    </div>
+                    <div className="bg-[var(--bg-surface-2,#f8fafc)] rounded-lg p-3 text-center">
+                      <p className="text-xs text-[var(--text-secondary)] mb-1">{nav("Approvers", "الموافقون")}</p>
+                      <p className="text-xl font-bold text-[var(--text-primary)]">{w.approverCount}</p>
+                    </div>
+                  </div>
+                  {w.createdBy && (
+                    <p className="text-xs text-[var(--text-secondary)]">👤 {w.createdBy.fullName}</p>
+                  )}
+                </div>
+              </Card>
+            );
+          })}
+        </div>
+      )}
     </ModulePageShell>
   );
 }

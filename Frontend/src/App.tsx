@@ -43,6 +43,7 @@ const AttendanceAdminPage        = lazy(() => import("./pages/admin/AttendanceAd
 const PayrollAdminPage           = lazy(() => import("./pages/admin/PayrollAdminPage").then(m => ({ default: m.PayrollAdminPage })));
 const SettingsAdminPage          = lazy(() => import("./pages/admin/SettingsAdminPage").then(m => ({ default: m.SettingsAdminPage })));
 const AdminSnapshotsPage         = lazy(() => import("./pages/admin/AdminSnapshotsPage").then(m => ({ default: m.AdminSnapshotsPage })));
+const AdminWorkerRecordsPage     = lazy(() => import("./pages/admin/AdminWorkerRecordsPage").then(m => ({ default: m.AdminWorkerRecordsPage })));
 const SettingsElectricityPage    = lazy(() => import("./pages/admin/SettingsElectricityPage").then(m => ({ default: m.SettingsElectricityPage })));
 const ShiftsPage                 = lazy(() => import("./pages/admin/ShiftsPage").then(m => ({ default: m.ShiftsPage })));
 const MachinesPage               = lazy(() => import("./pages/admin/MachinesPage").then(m => ({ default: m.MachinesPage })));
@@ -52,6 +53,7 @@ const EngineerOverviewPage       = lazy(() => import("./pages/admin/EngineerOver
 
 // Worker pages
 const WorkerSnapshotsPage        = lazy(() => import("./pages/worker/WorkerSnapshotsPage").then(m => ({ default: m.WorkerSnapshotsPage })));
+const WorkerHubPage              = lazy(() => import("./pages/worker/WorkerHubPage").then(m => ({ default: m.WorkerHubPage })));
 
 // Engineer pages
 const EngineerInventoryPage          = lazy(() => import("./pages/engineer/EngineerInventoryPage").then(m => ({ default: m.EngineerInventoryPage })));
@@ -178,6 +180,7 @@ function App() {
               <Route path="/admin/users" element={<AdminOnlyRoute><UsersAdminPage /></AdminOnlyRoute>} />
               <Route path="/admin/settings" element={<AdminOnlyRoute><SettingsAdminPage /></AdminOnlyRoute>} />
               <Route path="/admin/snapshots" element={<AdminOnlyRoute><AdminSnapshotsPage /></AdminOnlyRoute>} />
+              <Route path="/admin/worker-records" element={<AdminOnlyRoute><AdminWorkerRecordsPage /></AdminOnlyRoute>} />
               <Route path="/admin/settings/electricity" element={<RoleProtectedRoute allowedRoles={["ADMIN", "ENGINEER", "ACCOUNTANT"]}><SettingsElectricityPage /></RoleProtectedRoute>} />
               <Route path="/admin/shifts" element={<AdminOnlyRoute><ShiftsPage /></AdminOnlyRoute>} />
               <Route path="/admin/machines" element={<AdminOnlyRoute><MachinesPage /></AdminOnlyRoute>} />
@@ -523,6 +526,14 @@ function App() {
               />
 
               {/* ── Worker only ── */}
+              <Route
+                path="/worker/hub"
+                element={
+                  <RoleProtectedRoute allowedRoles={["WORKER"]}>
+                    <WorkerHubPage />
+                  </RoleProtectedRoute>
+                }
+              />
               <Route
                 path="/worker/snapshots"
                 element={
