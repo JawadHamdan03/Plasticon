@@ -340,6 +340,23 @@ export const saveShiftChecklist = async (
     return { status: 400, message: "tasks and digitalSignature are required" };
   }
 
+  // One checklist per phase per shift (today's shift window)
+  const today = new Date();
+  const dayStart = new Date(today); dayStart.setHours(0, 0, 0, 0);
+  const dayEnd   = new Date(today); dayEnd.setHours(23, 59, 59, 999);
+  const existing = (await prisma.$queryRawUnsafe(
+    `SELECT COUNT(*)::bigint AS count FROM worker_shift_checklists
+     WHERE user_id = $1 AND shift_phase = $2
+       AND created_at >= $3 AND created_at <= $4`,
+    userId, phase, dayStart, dayEnd,
+  )) as Array<{ count: bigint }>;
+  if (Number(existing[0]?.count ?? 0) > 0) {
+    return {
+      status: 409,
+      message: `لقد سجّلت قائمة ${phase === "START" ? "البداية" : "النهاية"} لهذه الوردية بالفعل. / You already submitted the ${phase} checklist for this shift.`,
+    };
+  }
+
   const rows = (await prisma.$queryRawUnsafe(
     `INSERT INTO worker_shift_checklists (user_id, shift_phase, tasks_json, digital_signature)
      VALUES ($1, $2, $3::jsonb, $4)
@@ -457,6 +474,19 @@ export const saveDailyTargetProgress = async (
     return {
       status: 400,
       message: "targetUnits and actualUnits must be valid numbers",
+    };
+  }
+
+  // One daily-target record per user per date
+  const existingTarget = (await prisma.$queryRawUnsafe(
+    `SELECT COUNT(*)::bigint AS count FROM worker_daily_targets
+     WHERE user_id = $1 AND target_date = $2::date`,
+    userId, targetDate,
+  )) as Array<{ count: bigint }>;
+  if (Number(existingTarget[0]?.count ?? 0) > 0) {
+    return {
+      status: 409,
+      message: "لقد سجّلت أهداف اليوم بالفعل. / You already submitted daily targets for this date.",
     };
   }
 
@@ -584,7 +614,7 @@ export const getAdminKaizenSuggestions = async (
 
   const rows = hasFilter
     ? ((await prisma.$queryRawUnsafe(
-        `SELECT k.id, k.user_id, u.fullName AS worker_name, k.title, k.details, k.estimated_impact,
+        `SELECT k.id, k.user_id, u."fullName" AS worker_name, k.title, k.details, k.estimated_impact,
                 k.review_status, k.review_note, k.reviewed_by_id, k.reviewed_at,
                 k.score, k.reward_points, k.created_at
          FROM worker_kaizen_suggestions k
@@ -594,7 +624,7 @@ export const getAdminKaizenSuggestions = async (
         status,
       )) as Array<Record<string, unknown>>)
     : ((await prisma.$queryRawUnsafe(
-        `SELECT k.id, k.user_id, u.fullName AS worker_name, k.title, k.details, k.estimated_impact,
+        `SELECT k.id, k.user_id, u."fullName" AS worker_name, k.title, k.details, k.estimated_impact,
                 k.review_status, k.review_note, k.reviewed_by_id, k.reviewed_at,
                 k.score, k.reward_points, k.created_at
          FROM worker_kaizen_suggestions k

@@ -1,20 +1,14 @@
-import { useState, useCallback, useEffect, type FormEvent } from "react";
+import { useState, useCallback, useEffect } from "react";
 import {
-  DollarSign,
-  Package,
-  ChevronDown,
-  ChevronUp,
-  CheckCircle,
-  Clock,
-  Image,
-  AlertCircle,
-  X,
-  Filter,
+  DollarSign, Package, ChevronDown, ChevronUp,
+  CheckCircle, Clock, Image, AlertCircle, X, Filter,
 } from "lucide-react";
 import { API_BASE_URL } from "../../lib/api";
 import { confirmDialog } from "../../lib/dialog";
+import { ModulePageShell } from "../../components/ModulePageShell";
+import { Card } from "../../components/ui/card";
+import { useLocale } from "../../context/LocaleContext";
 
-/* ── Types ─────────────────────────────────────────────────── */
 type InventoryItem = {
   id: number;
   partName: string;
@@ -37,15 +31,11 @@ type Inventory = {
   items: InventoryItem[];
 };
 
-/* ── helpers ─────────────────────────────────────────────── */
 async function api<T>(method: string, path: string, body?: object): Promise<T> {
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-  };
   const res = await fetch(`${API_BASE_URL}${path}`, {
     method,
     credentials: "include",
-    headers,
+    headers: { "Content-Type": "application/json" },
     body: body ? JSON.stringify(body) : undefined,
   });
   const json = (await res.json()) as T & { message?: string };
@@ -53,45 +43,26 @@ async function api<T>(method: string, path: string, body?: object): Promise<T> {
   return json;
 }
 
-const MONTHS = [
-  "January",
-  "February",
-  "March",
-  "April",
-  "May",
-  "June",
-  "July",
-  "August",
-  "September",
-  "October",
-  "November",
-  "December",
-];
+const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
 
-function statusBadge(status: Inventory["status"]) {
-  if (status === "SUBMITTED")
-    return <span className="badge badge--orange">Submitted</span>;
-  if (status === "REVIEWED")
-    return <span className="badge badge--green">Reviewed</span>;
-  return <span className="badge badge--gray">Draft</span>;
-}
+const STATUS_META = {
+  SUBMITTED: { label: "Submitted",       color: "#d97706", bg: "#fef3c7" },
+  REVIEWED:  { label: "Reviewed",        color: "#059669", bg: "#d1fae5" },
+  DRAFT:     { label: "Draft",           color: "#6b7280", bg: "#f3f4f6" },
+};
 
-/* ── Component ─────────────────────────────────────────────── */
 export function AccountantPartsPricingPage() {
+  const { locale } = useLocale();
+  const nav = (en: string, ar: string) => locale === "ar" ? ar : en;
+
   const [inventories, setInventories] = useState<Inventory[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [expandedId, setExpandedId] = useState<number | null>(null);
-  const [filter, setFilter] = useState<"ALL" | "SUBMITTED" | "REVIEWED">(
-    "SUBMITTED",
-  );
-
-  /* pricing state per item */
+  const [filter, setFilter] = useState<"ALL" | "SUBMITTED" | "REVIEWED">("SUBMITTED");
   const [priceInputs, setPriceInputs] = useState<Record<number, string>>({});
   const [savingItem, setSavingItem] = useState<number | null>(null);
   const [savedItems, setSavedItems] = useState<Set<number>>(new Set());
-
-  /* review state */
   const [reviewingId, setReviewingId] = useState<number | null>(null);
 
   const load = useCallback(async () => {
@@ -107,26 +78,17 @@ export function AccountantPartsPricingPage() {
     }
   }, []);
 
-  useEffect(() => {
-    void load();
-  }, [load]);
+  useEffect(() => { void load(); }, [load]);
 
-  const filtered = inventories.filter((inv) =>
-    filter === "ALL" ? true : inv.status === filter,
-  );
+  const filtered = inventories.filter((inv) => filter === "ALL" ? true : inv.status === filter);
 
-  const handleSetPrice = async (itemId: number, inventoryId: number) => {
+  const handleSetPrice = async (itemId: number) => {
     const raw = priceInputs[itemId];
     const price = Number(raw);
-    if (!raw || isNaN(price) || price < 0) {
-      setError("Please enter a valid price (0 or more)");
-      return;
-    }
+    if (!raw || isNaN(price) || price < 0) { setError(nav("Please enter a valid price (0 or more)", "يرجى إدخال سعر صحيح (0 أو أكثر)")); return; }
     setSavingItem(itemId);
     try {
-      await api("PATCH", `/engineer-inventory/items/${itemId}/price`, {
-        unitPrice: price,
-      });
+      await api("PATCH", `/engineer-inventory/items/${itemId}/price`, { unitPrice: price });
       setSavedItems((s) => new Set([...s, itemId]));
       await load();
     } catch (e) {
@@ -139,8 +101,7 @@ export function AccountantPartsPricingPage() {
   const handleReview = async (inventoryId: number) => {
     const inv = inventories.find((i) => i.id === inventoryId);
     if (!inv) return;
-    if (!(await confirmDialog(`Mark inventory for ${MONTHS[inv.month - 1]} ${inv.year} as Reviewed?`)))
-      return;
+    if (!(await confirmDialog(`Mark inventory for ${MONTHS[inv.month - 1]} ${inv.year} as Reviewed?`))) return;
     setReviewingId(inventoryId);
     try {
       await api("PATCH", `/engineer-inventory/${inventoryId}/review`, {});
@@ -152,345 +113,216 @@ export function AccountantPartsPricingPage() {
     }
   };
 
-  const totalValue = (items: InventoryItem[]) =>
-    items.reduce((s, i) => s + (i.unitPrice ?? 0) * i.quantity, 0);
+  const totalValue = (items: InventoryItem[]) => items.reduce((s, i) => s + (i.unitPrice ?? 0) * i.quantity, 0);
+  const allPriced = (items: InventoryItem[]) => items.length > 0 && items.every((i) => i.unitPrice !== null);
 
-  const allPriced = (items: InventoryItem[]) =>
-    items.length > 0 && items.every((i) => i.unitPrice !== null);
+  const submittedCount = inventories.filter((i) => i.status === "SUBMITTED").length;
+  const reviewedCount = inventories.filter((i) => i.status === "REVIEWED").length;
+  const pendingPricing = inventories.filter((i) => i.status === "SUBMITTED" && !allPriced(i.items)).length;
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
-      {/* Header */}
-      <div className="page-header">
-        <div>
-          <h1 className="page-header__title">Parts Pricing</h1>
-          <p className="page-header__sub">
-            Review engineer inventory reports and set unit prices for each part
-          </p>
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: ".5rem" }}>
-          <Filter size={14} style={{ color: "var(--text-secondary)" }} />
-          {(["SUBMITTED", "REVIEWED", "ALL"] as const).map((f) => (
-            <button
-              key={f}
-              className={`btn btn--sm ${filter === f ? "btn--primary" : "btn--ghost"}`}
-              style={{ border: "1px solid var(--border-default)" }}
-              onClick={() => setFilter(f)}
-            >
-              {f === "ALL"
-                ? "All"
-                : f === "SUBMITTED"
-                  ? "Awaiting Pricing"
-                  : "Reviewed"}
-            </button>
-          ))}
-        </div>
+    <ModulePageShell
+      title={nav("Parts Pricing", "تسعير القطع")}
+      subtitle={nav("Review engineer inventory reports and set unit prices", "مراجعة تقارير مخزون المهندسين وتحديد أسعار الوحدات")}
+      icon={<DollarSign size={22} />}
+    >
+      {/* KPIs */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
+        {[
+          { label: nav("Awaiting Pricing", "في انتظار التسعير"), value: submittedCount, icon: "⏳", color: "#d97706", bg: "#fef3c7" },
+          { label: nav("Reviewed", "تمت المراجعة"), value: reviewedCount, icon: "✅", color: "#059669", bg: "#d1fae5" },
+          { label: nav("Incomplete Pricing", "تسعير غير مكتمل"), value: pendingPricing, icon: "⚠️", color: "#dc2626", bg: "#fee2e2" },
+        ].map((k) => (
+          <Card key={k.label} className="p-4 flex items-center gap-3">
+            <div style={{ width: 40, height: 40, borderRadius: 10, background: k.bg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.2rem", flexShrink: 0 }}>
+              {k.icon}
+            </div>
+            <div>
+              <p className="text-xs text-[var(--text-secondary)] font-medium leading-tight">{k.label}</p>
+              <p className="text-xl font-bold" style={{ color: k.color }}>{k.value}</p>
+            </div>
+          </Card>
+        ))}
       </div>
 
-      {error && (
-        <div
-          className="auth-alert auth-alert--error"
-          style={{ display: "flex", alignItems: "center", gap: ".5rem" }}
-        >
-          <AlertCircle size={16} /> {error}
+      {/* Filter */}
+      <div className="flex flex-wrap items-center gap-2 mb-4">
+        <Filter size={14} className="text-[var(--text-secondary)]" />
+        {(["SUBMITTED", "REVIEWED", "ALL"] as const).map((f) => (
           <button
-            type="button"
-            style={{
-              marginLeft: "auto",
-              background: "none",
-              border: "none",
-              cursor: "pointer",
-            }}
-            onClick={() => setError("")}
+            key={f}
+            onClick={() => setFilter(f)}
+            className={`text-xs font-medium px-3 py-1.5 rounded-full border transition-all ${filter === f ? "bg-[var(--accent)] text-white border-[var(--accent)]" : "border-[var(--border-default)] text-[var(--text-secondary)] hover:border-[var(--accent)]"}`}
           >
-            <X size={16} />
+            {f === "ALL" ? nav("All", "الكل") : f === "SUBMITTED" ? nav("Awaiting Pricing", "في انتظار التسعير") : nav("Reviewed", "تمت المراجعة")}
           </button>
+        ))}
+      </div>
+
+      {/* Error */}
+      {error && (
+        <div className="flex items-center gap-2 mb-4 p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm">
+          <AlertCircle size={15} />
+          <span className="flex-1">{error}</span>
+          <button onClick={() => setError("")}><X size={15} /></button>
         </div>
       )}
 
+      {/* Inventory List */}
       {loading ? (
-        <div className="empty-state">
-          <div className="spinner" />
-          <p className="empty-state__desc">Loading inventory reports…</p>
-        </div>
+        <div className="flex justify-center p-12"><div className="spinner" /></div>
       ) : filtered.length === 0 ? (
-        <div className="card">
-          <div className="empty-state" style={{ padding: "3rem" }}>
-            <div className="empty-state__icon">
-              <Package size={28} />
-            </div>
-            <h3 className="empty-state__title">
-              {filter === "SUBMITTED"
-                ? "No reports awaiting pricing"
-                : "No reports found"}
-            </h3>
-            <p className="empty-state__desc">
-              {filter === "SUBMITTED"
-                ? "Engineers haven't submitted any inventory reports yet."
-                : "Try changing the filter above."}
-            </p>
-          </div>
-        </div>
+        <Card className="p-12 text-center text-[var(--text-secondary)]">
+          <Package size={32} className="mx-auto mb-3 opacity-30" />
+          <p className="font-medium">
+            {filter === "SUBMITTED" ? nav("No reports awaiting pricing", "لا توجد تقارير في انتظار التسعير") : nav("No reports found", "لا توجد تقارير")}
+          </p>
+          <p className="text-sm mt-1">
+            {filter === "SUBMITTED" ? nav("Engineers haven't submitted any inventory reports yet.", "لم يقدم المهندسون أي تقارير مخزون بعد.") : nav("Try changing the filter above.", "جرب تغيير الفلتر أعلاه.")}
+          </p>
+        </Card>
       ) : (
-        <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+        <div className="flex flex-col gap-4">
           {filtered.map((inv) => {
             const isExpanded = expandedId === inv.id;
             const total = totalValue(inv.items);
             const done = allPriced(inv.items);
+            const statusMeta = STATUS_META[inv.status] ?? STATUS_META.DRAFT;
 
             return (
-              <div key={inv.id} className="card">
+              <Card key={inv.id} className="p-0 overflow-hidden">
+                {/* Card Header (clickable) */}
                 <div
-                  className="card-header"
-                  style={{ cursor: "pointer" }}
+                  className="flex items-center justify-between gap-3 p-4 cursor-pointer hover:bg-[var(--bg-surface-2,#f8fafc)] transition-colors"
                   onClick={() => setExpandedId(isExpanded ? null : inv.id)}
                 >
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: ".75rem",
-                    }}
-                  >
-                    <Package size={18} style={{ color: "var(--blue-700)" }} />
-                    <div>
-                      <p
-                        style={{
-                          margin: 0,
-                          fontWeight: 700,
-                          fontSize: ".95rem",
-                        }}
-                      >
-                        {MONTHS[inv.month - 1]} {inv.year}
-                      </p>
-                      <p
-                        style={{
-                          margin: 0,
-                          fontSize: ".75rem",
-                          color: "var(--text-secondary)",
-                        }}
-                      >
-                        By {inv.engineer.fullName} · {inv.items.length} parts
-                        {inv.submittedAt
-                          ? ` · Submitted ${new Date(inv.submittedAt).toLocaleDateString()}`
-                          : ""}
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div style={{ width: 40, height: 40, borderRadius: 10, background: statusMeta.bg, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                      <Package size={18} style={{ color: statusMeta.color }} />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="font-bold text-sm text-[var(--text-primary)]">{MONTHS[inv.month - 1]} {inv.year}</p>
+                        <span style={{ background: statusMeta.bg, color: statusMeta.color, borderRadius: "20px", padding: "1px 8px", fontSize: ".68rem", fontWeight: 700 }}>
+                          {statusMeta.label}
+                        </span>
+                        {done && inv.status !== "REVIEWED" && (
+                          <span style={{ background: "#dbeafe", color: "#1d4ed8", borderRadius: "20px", padding: "1px 8px", fontSize: ".68rem", fontWeight: 700 }}>
+                            {nav("All Priced", "مسعّر بالكامل")}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-[var(--text-secondary)] mt-0.5">
+                        {nav("By", "بواسطة")} {inv.engineer.fullName} · {inv.items.length} {nav("parts", "قطعة")}
+                        {inv.submittedAt ? ` · ${nav("Submitted", "قُدِّم")} ${new Date(inv.submittedAt).toLocaleDateString()}` : ""}
                       </p>
                     </div>
-                    {statusBadge(inv.status)}
-                    {done && inv.status !== "REVIEWED" && (
-                      <span className="badge badge--blue">All Priced</span>
-                    )}
                   </div>
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: ".75rem",
-                    }}
-                  >
+                  <div className="flex items-center gap-3 flex-shrink-0">
                     {total > 0 && (
-                      <span
-                        style={{
-                          fontSize: ".88rem",
-                          fontWeight: 700,
-                          color: "var(--green-600)",
-                        }}
-                      >
-                        Total: ${total.toFixed(2)}
+                      <span className="text-sm font-bold text-green-600 hidden sm:block">
+                        {nav("Total", "الإجمالي")}: ${total.toFixed(2)}
                       </span>
                     )}
                     {inv.status === "SUBMITTED" && done && (
                       <button
-                        className="btn btn--primary btn--sm"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          void handleReview(inv.id);
-                        }}
+                        className="flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-lg bg-[var(--accent)] text-white hover:opacity-90"
+                        onClick={(e) => { e.stopPropagation(); void handleReview(inv.id); }}
                         disabled={reviewingId === inv.id}
                       >
-                        <CheckCircle size={13} />
-                        {reviewingId === inv.id
-                          ? "Reviewing…"
-                          : "Mark Reviewed"}
+                        <CheckCircle size={12} />
+                        {reviewingId === inv.id ? nav("Reviewing…", "جارٍ المراجعة...") : nav("Mark Reviewed", "تأشير كمراجع")}
                       </button>
                     )}
-                    {isExpanded ? (
-                      <ChevronUp
-                        size={18}
-                        style={{ color: "var(--text-secondary)" }}
-                      />
-                    ) : (
-                      <ChevronDown
-                        size={18}
-                        style={{ color: "var(--text-secondary)" }}
-                      />
-                    )}
+                    {isExpanded ? <ChevronUp size={18} className="text-[var(--text-secondary)]" /> : <ChevronDown size={18} className="text-[var(--text-secondary)]" />}
                   </div>
                 </div>
 
+                {/* Expanded Body */}
                 {isExpanded && (
-                  <div className="card-body">
+                  <div className="border-t border-[var(--border-default)] p-4">
                     {inv.notes && (
-                      <div
-                        style={{
-                          marginBottom: "1rem",
-                          padding: ".75rem",
-                          borderRadius: "var(--radius-md)",
-                          background: "var(--blue-50)",
-                          fontSize: ".84rem",
-                          color: "var(--blue-800)",
-                        }}
-                      >
-                        <strong>Note:</strong> {inv.notes}
+                      <div className="mb-4 p-3 rounded-lg bg-blue-50 border border-blue-100 text-sm text-blue-800">
+                        <strong>{nav("Note:", "ملاحظة:")}</strong> {inv.notes}
                       </div>
                     )}
 
                     {inv.items.length === 0 ? (
-                      <div
-                        className="empty-state"
-                        style={{ padding: "1.5rem" }}
-                      >
-                        <p className="empty-state__desc">
-                          No parts in this inventory.
-                        </p>
-                      </div>
+                      <p className="text-sm text-[var(--text-secondary)] text-center py-6">{nav("No parts in this inventory.", "لا توجد قطع في هذا المخزون.")}</p>
                     ) : (
-                      <div className="table-wrapper">
-                        <table>
-                          <thead>
+                      <div className="overflow-x-auto rounded-lg border border-[var(--border-default)]">
+                        <table className="w-full text-sm">
+                          <thead className="bg-[var(--bg-surface-2,#f8fafc)] border-b border-[var(--border-default)]">
                             <tr>
-                              <th>#</th>
-                              <th>Part Name</th>
-                              <th>Qty Needed</th>
-                              <th>Photo</th>
-                              <th>Set Unit Price ($)</th>
-                              <th>Total</th>
-                              <th>Status</th>
+                              <th className="text-left py-2.5 px-3 text-xs font-semibold text-[var(--text-secondary)]">#</th>
+                              <th className="text-left py-2.5 px-3 text-xs font-semibold text-[var(--text-secondary)]">{nav("Part Name", "اسم القطعة")}</th>
+                              <th className="text-left py-2.5 px-3 text-xs font-semibold text-[var(--text-secondary)]">{nav("Qty", "الكمية")}</th>
+                              <th className="text-left py-2.5 px-3 text-xs font-semibold text-[var(--text-secondary)]">{nav("Photo", "صورة")}</th>
+                              <th className="text-left py-2.5 px-3 text-xs font-semibold text-[var(--text-secondary)]">{nav("Unit Price ($)", "سعر الوحدة ($)")}</th>
+                              <th className="text-left py-2.5 px-3 text-xs font-semibold text-[var(--text-secondary)]">{nav("Total", "الإجمالي")}</th>
+                              <th className="text-left py-2.5 px-3 text-xs font-semibold text-[var(--text-secondary)]">{nav("Status", "الحالة")}</th>
                             </tr>
                           </thead>
-                          <tbody>
+                          <tbody className="divide-y divide-[var(--border-default)]">
                             {inv.items.map((item, idx) => (
-                              <tr key={item.id}>
-                                <td
-                                  style={{
-                                    color: "var(--text-secondary)",
-                                    fontSize: ".8rem",
-                                  }}
-                                >
-                                  {idx + 1}
-                                </td>
-                                <td style={{ fontWeight: 600 }}>
-                                  {item.partName}
-                                </td>
-                                <td>
-                                  <span className="badge badge--blue">
+                              <tr key={item.id} className="hover:bg-[var(--bg-surface-2,#f8fafc)] transition-colors">
+                                <td className="py-2.5 px-3 text-xs text-[var(--text-secondary)]">{idx + 1}</td>
+                                <td className="py-2.5 px-3 font-semibold text-[var(--text-primary)]">{item.partName}</td>
+                                <td className="py-2.5 px-3">
+                                  <span style={{ background: "#dbeafe", color: "#1d4ed8", borderRadius: "20px", padding: "1px 8px", fontSize: ".68rem", fontWeight: 700 }}>
                                     {item.quantity}
                                   </span>
                                 </td>
-                                <td>
+                                <td className="py-2.5 px-3">
                                   {item.imagePath ? (
                                     <a
                                       href={`${API_BASE_URL.replace("/api", "")}/pictures/${item.imagePath.split("/").pop()}`}
                                       target="_blank"
                                       rel="noopener noreferrer"
-                                      className="btn btn--ghost btn--icon"
-                                      title="View photo"
+                                      className="text-[var(--text-secondary)] hover:text-blue-600 p-1 inline-flex"
+                                      title={nav("View photo", "عرض الصورة")}
                                     >
                                       <Image size={15} />
                                     </a>
                                   ) : (
-                                    <span
-                                      style={{
-                                        color: "var(--gray-300)",
-                                        fontSize: ".75rem",
-                                      }}
-                                    >
-                                      —
-                                    </span>
+                                    <span className="text-xs text-[var(--text-secondary)] opacity-40">—</span>
                                   )}
                                 </td>
-                                <td>
+                                <td className="py-2.5 px-3">
                                   {inv.status === "SUBMITTED" ? (
-                                    <div
-                                      style={{
-                                        display: "flex",
-                                        alignItems: "center",
-                                        gap: ".5rem",
-                                      }}
-                                    >
+                                    <div className="flex items-center gap-1.5">
                                       <input
                                         type="number"
                                         min={0}
                                         step={0.01}
-                                        className="form-input"
-                                        style={{
-                                          width: 90,
-                                          padding: ".35rem .5rem",
-                                          fontSize: ".82rem",
-                                        }}
-                                        placeholder={
-                                          item.unitPrice !== null
-                                            ? String(item.unitPrice)
-                                            : "0.00"
-                                        }
-                                        value={
-                                          priceInputs[item.id] ??
-                                          (item.unitPrice !== null
-                                            ? String(item.unitPrice)
-                                            : "")
-                                        }
-                                        onChange={(e) =>
-                                          setPriceInputs((p) => ({
-                                            ...p,
-                                            [item.id]: e.target.value,
-                                          }))
-                                        }
+                                        className="input"
+                                        style={{ width: 90, padding: ".3rem .5rem", fontSize: ".82rem" }}
+                                        placeholder={item.unitPrice !== null ? String(item.unitPrice) : "0.00"}
+                                        value={priceInputs[item.id] ?? (item.unitPrice !== null ? String(item.unitPrice) : "")}
+                                        onChange={(e) => setPriceInputs((p) => ({ ...p, [item.id]: e.target.value }))}
                                       />
                                       <button
-                                        className="btn btn--primary btn--sm"
-                                        onClick={() =>
-                                          void handleSetPrice(item.id, inv.id)
-                                        }
+                                        className="flex items-center gap-1 text-xs font-semibold px-2.5 py-1.5 rounded-lg bg-[var(--accent)] text-white hover:opacity-90 disabled:opacity-50"
+                                        onClick={() => void handleSetPrice(item.id)}
                                         disabled={savingItem === item.id}
                                       >
-                                        {savingItem === item.id
-                                          ? "…"
-                                          : savedItems.has(item.id)
-                                            ? "✓"
-                                            : "Set"}
+                                        {savingItem === item.id ? "…" : savedItems.has(item.id) ? "✓" : nav("Set", "تعيين")}
                                       </button>
                                     </div>
                                   ) : (
-                                    <span
-                                      style={{
-                                        fontWeight: 700,
-                                        color: "var(--green-600)",
-                                      }}
-                                    >
-                                      {item.unitPrice !== null
-                                        ? `$${item.unitPrice.toFixed(2)}`
-                                        : "—"}
+                                    <span className="font-bold text-green-600">
+                                      {item.unitPrice !== null ? `$${item.unitPrice.toFixed(2)}` : "—"}
                                     </span>
                                   )}
                                 </td>
-                                <td style={{ fontWeight: 700 }}>
-                                  {item.unitPrice !== null ? (
-                                    `$${(item.unitPrice * item.quantity).toFixed(2)}`
-                                  ) : (
-                                    <span style={{ color: "var(--gray-300)" }}>
-                                      —
-                                    </span>
-                                  )}
+                                <td className="py-2.5 px-3 font-bold text-[var(--text-primary)]">
+                                  {item.unitPrice !== null ? `$${(item.unitPrice * item.quantity).toFixed(2)}` : <span className="text-[var(--text-secondary)] opacity-40">—</span>}
                                 </td>
-                                <td>
+                                <td className="py-2.5 px-3">
                                   {item.unitPrice !== null ? (
-                                    <span className="badge badge--green">
-                                      Priced
-                                    </span>
+                                    <span style={{ background: "#d1fae5", color: "#059669", borderRadius: "20px", padding: "1px 8px", fontSize: ".68rem", fontWeight: 700 }}>{nav("Priced", "مسعّر")}</span>
                                   ) : (
-                                    <span className="badge badge--gray">
-                                      Pending
-                                    </span>
+                                    <span style={{ background: "#f3f4f6", color: "#6b7280", borderRadius: "20px", padding: "1px 8px", fontSize: ".68rem", fontWeight: 700 }}>{nav("Pending", "معلق")}</span>
                                   )}
                                 </td>
                               </tr>
@@ -500,58 +332,32 @@ export function AccountantPartsPricingPage() {
                       </div>
                     )}
 
+                    {/* Footer banners */}
                     {inv.status === "REVIEWED" && inv.reviewedAt && (
-                      <div
-                        style={{
-                          marginTop: "1rem",
-                          padding: ".75rem",
-                          borderRadius: "var(--radius-md)",
-                          background: "var(--green-50)",
-                          border: "1px solid var(--green-100)",
-                          display: "flex",
-                          alignItems: "center",
-                          gap: ".625rem",
-                          fontSize: ".82rem",
-                          color: "var(--green-600)",
-                        }}
-                      >
-                        <CheckCircle size={16} />
-                        Reviewed on{" "}
-                        {new Date(inv.reviewedAt).toLocaleDateString()} · Total
-                        value: <strong>${total.toFixed(2)}</strong>
+                      <div className="mt-4 flex items-center gap-2 p-3 rounded-lg bg-green-50 border border-green-100 text-sm text-green-700">
+                        <CheckCircle size={15} />
+                        {nav("Reviewed on", "تمت المراجعة في")} {new Date(inv.reviewedAt).toLocaleDateString()} · {nav("Total value", "القيمة الإجمالية")}: <strong>${total.toFixed(2)}</strong>
                       </div>
                     )}
-
                     {inv.status === "SUBMITTED" && !done && (
-                      <div
-                        style={{
-                          marginTop: "1rem",
-                          padding: ".75rem",
-                          borderRadius: "var(--radius-md)",
-                          background: "var(--orange-50)",
-                          border: "1px solid var(--orange-100)",
-                          display: "flex",
-                          alignItems: "center",
-                          gap: ".625rem",
-                          fontSize: ".82rem",
-                          color: "var(--orange-700)",
-                        }}
-                      >
-                        <Clock size={16} />
-                        Set prices for all{" "}
-                        {
-                          inv.items.filter((i) => i.unitPrice === null).length
-                        }{" "}
-                        remaining part(s) to complete pricing.
+                      <div className="mt-4 flex items-center gap-2 p-3 rounded-lg bg-orange-50 border border-orange-100 text-sm text-orange-700">
+                        <Clock size={15} />
+                        {nav(`Set prices for all ${inv.items.filter((i) => i.unitPrice === null).length} remaining part(s) to complete pricing.`,
+                          `قم بتعيين أسعار لجميع القطع المتبقية (${inv.items.filter((i) => i.unitPrice === null).length}) لإكمال التسعير.`)}
+                      </div>
+                    )}
+                    {total > 0 && (
+                      <div className="mt-3 flex justify-end">
+                        <span className="text-sm font-bold text-green-600">{nav("Total", "الإجمالي")}: ${total.toFixed(2)}</span>
                       </div>
                     )}
                   </div>
                 )}
-              </div>
+              </Card>
             );
           })}
         </div>
       )}
-    </div>
+    </ModulePageShell>
   );
 }

@@ -87,7 +87,7 @@ export const calculatePayroll = async (
 
   const user = await prisma.user.findUnique({
     where: { id: targetUserId },
-    select: { id: true, fullName: true, username: true, role: true },
+    select: { id: true, fullName: true, username: true, role: true, monthlySalary: true },
   });
 
   if (!user) {
@@ -110,6 +110,7 @@ export const calculatePayroll = async (
       userId: targetUserId,
       checkIn: { gte: range.start, lt: range.end },
       checkOut: { not: null },
+      leaveType: null, // exclude leave days from hours calculation
     },
   });
 
@@ -123,7 +124,9 @@ export const calculatePayroll = async (
   const hasHourlyRateInput = payload.hourlyRate !== undefined;
   const hasOvertimeRateInput = payload.overtimeRate !== undefined;
 
-  const baseMonthlySalary = ROLE_BASE_MONTHLY_SALARY[user.role] ?? 0;
+  // Use individual salary override if set, otherwise fall back to SalaryConfig then hardcoded defaults
+  const salaryConfig = await prisma.salaryConfig.findUnique({ where: { role: user.role } });
+  const baseMonthlySalary = user.monthlySalary ?? salaryConfig?.monthlySalary ?? ROLE_BASE_MONTHLY_SALARY[user.role] ?? 0;
   const roleDailyRate =
     baseMonthlySalary > 0 ? baseMonthlySalary / WORK_DAYS_PER_MONTH : 0;
   const roleHourlyRate = roleDailyRate / HOURS_PER_WORK_DAY;
@@ -548,7 +551,9 @@ export const updateSalaryConfig = async (
 
 const DAYS_IN_MONTH = 30;
 
-async function getSalaryForRole(role: string): Promise<number> {
+async function getEffectiveMonthlySalary(userId: number, role: string): Promise<number> {
+  const user = await prisma.user.findUnique({ where: { id: userId }, select: { monthlySalary: true } });
+  if (user?.monthlySalary != null) return user.monthlySalary;
   const config = await prisma.salaryConfig.findUnique({ where: { role: role as any } });
   if (config) return config.monthlySalary;
   const fallback: Record<string, number> = { WORKER: 2500, ENGINEER: 3500, ACCOUNTANT: 3000, ADMIN: 5000 };
@@ -573,22 +578,91 @@ export const calculateDailyPayroll = async (
   const existing = await prisma.dailyPayroll.findUnique({ where: { attendanceId } });
   if (existing) return { status: 409, message: "Daily payroll already calculated for this attendance" };
 
-  const monthlySalary = await getSalaryForRole(attendance.user.role);
+  const monthlySalary = await getEffectiveMonthlySalary(attendance.user.id, attendance.user.role);
   const dailyRate = monthlySalary / DAYS_IN_MONTH;
 
   const durationMs = attendance.checkOut.getTime() - attendance.checkIn.getTime();
   const hoursWorked = parseFloat((durationMs / 3600000).toFixed(4));
 
   let shiftHours = 8;
+  let shiftStartMs: number | null = null;
+  let shiftEndMs: number | null = null;
   if (attendance.shift) {
     const s = attendance.shift.startTime;
     const e = attendance.shift.endTime;
     const diff = (e.getTime() - s.getTime()) / 3600000;
-    if (diff > 0) shiftHours = diff;
+    if (diff > 0) {
+      shiftHours = diff;
+      shiftStartMs = s.getTime();
+      shiftEndMs = e.getTime();
+    }
   }
 
   const hourlyRate = dailyRate / shiftHours;
-  const totalDailyPay = parseFloat((hoursWorked * hourlyRate).toFixed(2));
+
+  // ── Apply deduction rules ──────────────────────────────────────
+  const rules = await prisma.deductionRule.findMany({ where: { isActive: true } });
+  const ruleMap = new Map(rules.map((r) => [r.type, r]));
+
+  let basePay: number;
+  let deductionAmount = 0;
+  const deductionParts: string[] = [];
+
+  const leaveType = attendance.leaveType;
+
+  if (leaveType === "UNPAID") {
+    // Unpaid leave — zero pay
+    basePay = 0;
+    deductionAmount = dailyRate;
+    deductionParts.push("Unpaid leave: full day deducted");
+  } else if (leaveType === "ANNUAL") {
+    // Annual leave — full day pay regardless of hours
+    basePay = dailyRate;
+  } else if (leaveType === "SICK") {
+    const sickRule = ruleMap.get("SICK_LEAVE");
+    if (sickRule) {
+      const payRate = Math.min(100, Math.max(0, sickRule.deductionValue)) / 100;
+      basePay = parseFloat((dailyRate * payRate).toFixed(2));
+      deductionAmount = parseFloat((dailyRate - basePay).toFixed(2));
+      deductionParts.push(`Sick leave: ${sickRule.deductionValue}% pay rate`);
+    } else {
+      basePay = parseFloat((hoursWorked * hourlyRate).toFixed(2));
+    }
+  } else {
+    // Normal work day — start with hours-based pay
+    basePay = parseFloat((hoursWorked * hourlyRate).toFixed(2));
+
+    // LATE_ARRIVAL rule
+    const lateRule = ruleMap.get("LATE_ARRIVAL");
+    if (lateRule && shiftStartMs !== null) {
+      const checkInMs = attendance.checkIn.getTime();
+      const lateMs = checkInMs - shiftStartMs;
+      const lateMinutes = lateMs / 60000;
+      if (lateMinutes > lateRule.thresholdMinutes) {
+        const lateHours = lateMinutes / 60;
+        const lateDeduction = parseFloat((lateHours * lateRule.deductionValue).toFixed(2));
+        deductionAmount += lateDeduction;
+        deductionParts.push(`Late arrival ${Math.round(lateMinutes)}min: -${lateDeduction} NIS`);
+      }
+    }
+
+    // EARLY_CHECKOUT rule
+    const earlyRule = ruleMap.get("EARLY_CHECKOUT");
+    if (earlyRule && shiftEndMs !== null) {
+      const checkOutMs = (attendance.checkOut as Date).getTime();
+      const earlyMs = shiftEndMs - checkOutMs;
+      const earlyMinutes = earlyMs / 60000;
+      if (earlyMinutes > earlyRule.thresholdMinutes) {
+        const missedHours = earlyMinutes / 60;
+        const earlyDeduction = parseFloat((missedHours * hourlyRate).toFixed(2));
+        deductionAmount += earlyDeduction;
+        deductionParts.push(`Early checkout ${Math.round(earlyMinutes)}min: -${earlyDeduction} NIS`);
+      }
+    }
+  }
+
+  const totalDailyPay = parseFloat(Math.max(0, basePay - deductionAmount).toFixed(2));
+  const deductionNotes = deductionParts.length > 0 ? deductionParts.join("; ") : null;
 
   const record = await prisma.dailyPayroll.create({
     data: {
@@ -598,6 +672,8 @@ export const calculateDailyPayroll = async (
       hoursWorked,
       dailyRate,
       totalDailyPay,
+      deductionAmount: parseFloat(deductionAmount.toFixed(2)),
+      deductionNotes,
     },
     include: {
       user: { select: { id: true, fullName: true, role: true } },
@@ -747,4 +823,139 @@ export const getMyDailyPayrolls = async (
   const total = records.filter(r => r.isConfirmed).reduce((s, r) => s + r.totalDailyPay, 0);
 
   return { status: 200, data: { records, confirmedTotal: parseFloat(total.toFixed(2)) } };
+};
+
+// ── Per-user salary management ──────────────────────────────────
+
+export const getUserSalaries = async (): Promise<ServiceResult<unknown>> => {
+  const users = await prisma.user.findMany({
+    where: { isActive: true, deletedAt: null },
+    select: { id: true, fullName: true, role: true, monthlySalary: true },
+    orderBy: [{ role: "asc" }, { fullName: "asc" }],
+  });
+
+  const configs = await prisma.salaryConfig.findMany();
+  const configMap = new Map(configs.map((c) => [c.role as string, c.monthlySalary]));
+
+  const data = users.map((u) => {
+    const roleDefault = configMap.get(u.role) ?? ROLE_BASE_MONTHLY_SALARY[u.role] ?? 0;
+    return {
+      id: u.id,
+      fullName: u.fullName,
+      role: u.role,
+      roleDefaultSalary: roleDefault,
+      individualSalary: u.monthlySalary ?? null,
+      effectiveSalary: u.monthlySalary ?? roleDefault,
+    };
+  });
+
+  return { status: 200, data };
+};
+
+export const setUserMonthlySalary = async (
+  userId: number,
+  monthlySalary: number | null,
+  adminId: number,
+): Promise<ServiceResult<unknown>> => {
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user) return { status: 404, message: "User not found" };
+
+  const updated = await prisma.user.update({
+    where: { id: userId },
+    data: { monthlySalary },
+    select: { id: true, fullName: true, role: true, monthlySalary: true },
+  });
+
+  auditAsync(adminId, AuditAction.USER_UPDATED, AuditEntityType.USER, userId, {
+    field: "monthlySalary",
+    before: user.monthlySalary,
+    after: monthlySalary,
+  });
+
+  return { status: 200, data: updated };
+};
+
+// ── Deduction Rules ──────────────────────────────────────────────
+
+const VALID_RULE_TYPES = ["LATE_ARRIVAL", "EARLY_CHECKOUT", "UNEXCUSED_ABSENCE", "SICK_LEAVE"] as const;
+
+export const getDeductionRules = async (): Promise<ServiceResult<unknown>> => {
+  // Ensure all 4 rule rows exist (upsert defaults if missing)
+  const existing = await prisma.deductionRule.findMany();
+  const existingTypes = new Set(existing.map((r) => r.type));
+  const defaults: Record<string, { thresholdMinutes: number; deductionValue: number }> = {
+    LATE_ARRIVAL:       { thresholdMinutes: 15, deductionValue: 5 },
+    EARLY_CHECKOUT:     { thresholdMinutes: 60, deductionValue: 0 },
+    UNEXCUSED_ABSENCE:  { thresholdMinutes: 0,  deductionValue: 0 },
+    SICK_LEAVE:         { thresholdMinutes: 0,  deductionValue: 75 },
+  };
+  for (const type of VALID_RULE_TYPES) {
+    if (!existingTypes.has(type)) {
+      await prisma.deductionRule.create({ data: { type, ...defaults[type] } });
+    }
+  }
+
+  const rules = await prisma.deductionRule.findMany({ orderBy: { type: "asc" } });
+  return { status: 200, data: rules };
+};
+
+export const updateDeductionRule = async (
+  type: string,
+  payload: { isActive?: boolean; thresholdMinutes?: number; deductionValue?: number },
+  adminId: number,
+): Promise<ServiceResult<unknown>> => {
+  if (!VALID_RULE_TYPES.includes(type as any)) {
+    return { status: 400, message: `type must be one of: ${VALID_RULE_TYPES.join(", ")}` };
+  }
+  if (payload.thresholdMinutes !== undefined && (payload.thresholdMinutes < 0 || !Number.isInteger(payload.thresholdMinutes))) {
+    return { status: 400, message: "thresholdMinutes must be a non-negative integer" };
+  }
+  if (payload.deductionValue !== undefined && (!Number.isFinite(payload.deductionValue) || payload.deductionValue < 0)) {
+    return { status: 400, message: "deductionValue must be a non-negative number" };
+  }
+  if (type === "SICK_LEAVE" && payload.deductionValue !== undefined && payload.deductionValue > 100) {
+    return { status: 400, message: "deductionValue for SICK_LEAVE is a pay-rate % (0–100)" };
+  }
+
+  const rule = await prisma.deductionRule.upsert({
+    where: { type },
+    update: { ...payload, updatedById: adminId },
+    create: { type, isActive: payload.isActive ?? false, thresholdMinutes: payload.thresholdMinutes ?? 15, deductionValue: payload.deductionValue ?? 0, updatedById: adminId },
+  });
+
+  auditAsync(adminId, AuditAction.USER_UPDATED, AuditEntityType.USER, rule.id, { type, changes: payload });
+
+  return { status: 200, data: rule };
+};
+
+// ── Attendance leave marking ─────────────────────────────────────
+
+export const markAttendanceLeave = async (
+  attendanceId: number,
+  leaveType: string | null,
+  adminId: number,
+): Promise<ServiceResult<unknown>> => {
+  const att = await prisma.attendance.findUnique({
+    where: { id: attendanceId },
+    include: { user: { select: { id: true, fullName: true } } },
+  });
+  if (!att) return { status: 404, message: "Attendance record not found" };
+
+  const validTypes = ["SICK", "ANNUAL", "UNPAID", null];
+  if (leaveType !== null && !validTypes.includes(leaveType)) {
+    return { status: 400, message: "leaveType must be SICK, ANNUAL, UNPAID, or null" };
+  }
+
+  const updated = await prisma.attendance.update({
+    where: { id: attendanceId },
+    data: { leaveType },
+  });
+
+  auditAsync(adminId, AuditAction.ATTENDANCE_UPDATED, AuditEntityType.ATTENDANCE, attendanceId, {
+    userId: att.userId,
+    leaveTypeBefore: att.leaveType,
+    leaveTypeAfter: leaveType,
+  });
+
+  return { status: 200, data: updated };
 };

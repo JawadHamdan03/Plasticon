@@ -339,7 +339,7 @@ export function ProductionPage() {
               </p>
             </div>
           ) : (
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(340px, 1fr))", gap: "1.25rem" }}>
+            <div className="machine-form-grid">
               {machines.map((machine) => {
                 const f = getForm(machine);
                 const isPreform = isPreformMachine(machine.type);
@@ -351,7 +351,7 @@ export function ProductionPage() {
                   : 0;
 
                 return (
-                  <div key={machine.id} style={{ background: "var(--bg-card)", border: "1px solid var(--border-default)", borderRadius: "var(--radius-xl)", overflow: "hidden" }}>
+                  <div key={machine.id} className="machine-form-card">
                     {/* Header */}
                     <div style={{ padding: "1rem 1.25rem", borderBottom: "1px solid var(--border-default)", background: "var(--bg-surface)", display: "flex", alignItems: "center", gap: ".6rem" }}>
                       <div style={{ width: 10, height: 10, borderRadius: "50%", background: accent, flexShrink: 0 }} />
@@ -363,7 +363,7 @@ export function ProductionPage() {
                       )}
                     </div>
 
-                    <div style={{ padding: "1.25rem" }}>
+                    <div className="machine-form-card__body">
                       {/* Shift badge */}
                       <div style={{ marginBottom: "1rem" }}>
                         <span style={{

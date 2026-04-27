@@ -1,6 +1,6 @@
-﻿import { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { confirmDialog } from "../../lib/dialog";
-import { Plus, Edit, Trash2, CheckCircle, Clock, AlertTriangle, Truck } from "lucide-react";
+import { Plus, Pencil, Trash2, CheckCircle, Clock, AlertTriangle, Truck, X, Save } from "lucide-react";
 import { ModulePageShell } from "../../components/ModulePageShell";
 import { Button } from "../../components/ui/button";
 import { Card } from "../../components/ui/card";
@@ -24,221 +24,243 @@ interface SupplierPayable {
   createdAt: string;
 }
 
-const STATUS_STYLES: Record<string, string> = {
-  PAID: "bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300",
-  PENDING: "bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300",
-  OVERDUE: "bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300",
+const STATUS_META: Record<string, { label: string; labelAr: string; color: string; bg: string }> = {
+  PAID:    { label: "Paid",    labelAr: "مدفوع",  color: "#059669", bg: "#d1fae5" },
+  PENDING: { label: "Pending", labelAr: "معلق",   color: "#d97706", bg: "#fef3c7" },
+  OVERDUE: { label: "Overdue", labelAr: "متأخر",  color: "#dc2626", bg: "#fee2e2" },
 };
+
+const emptyForm = { supplierName: "", amount: "", dueDate: "", paymentStatus: "PENDING", notes: "" };
 
 export default function SupplierPayables() {
   const { locale } = useLocale();
   const { user } = useAuth();
   const isAdmin = user?.role === "ADMIN";
   const nav = (en: string, ar: string) => locale === "ar" ? ar : en;
+
   const [payables, setPayables] = useState<SupplierPayable[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
-  const [form, setForm] = useState({ supplierId: "", amount: 0, dueDate: "", paymentStatus: "PENDING", notes: "" });
+  const [form, setForm] = useState(emptyForm);
+  const [saving, setSaving] = useState(false);
+  const [filterStatus, setFilterStatus] = useState("");
 
-  useEffect(() => { fetchPayables(); }, []);
+  useEffect(() => { void fetchPayables(); }, []);
 
   const fetchPayables = async () => {
+    setLoading(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/supplier-payables`, {
-        headers: { ...authHeaders() },
-        credentials: "include",
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setPayables(data || []);
-      }
+      const res = await fetch(`${API_BASE_URL}/supplier-payables`, { headers: authHeaders(), credentials: "include" });
+      if (res.ok) { const data = await res.json(); setPayables(data ?? []); }
     } catch { } finally { setLoading(false); }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const openNew = () => { setEditingId(null); setForm(emptyForm); setShowForm(true); };
+  const openEdit = (p: SupplierPayable) => {
+    setEditingId(p.id);
+    setForm({
+      supplierName: p.supplier?.name ?? String(p.supplierId),
+      amount: String(p.amount),
+      dueDate: p.dueDate.split("T")[0],
+      paymentStatus: p.paymentStatus,
+      notes: p.notes ?? "",
+    });
+    setShowForm(true);
+  };
+
+  const handleSave = async () => {
+    if (!form.amount || !form.dueDate) return;
+    setSaving(true);
     try {
       const url = editingId ? `${API_BASE_URL}/supplier-payables/${editingId}` : `${API_BASE_URL}/supplier-payables`;
       const res = await fetch(url, {
         method: editingId ? "PATCH" : "POST",
         headers: { "Content-Type": "application/json", ...authHeaders() },
         credentials: "include",
-        body: JSON.stringify({ ...form, supplierId: parseInt(form.supplierId), amount: parseFloat(String(form.amount)) }),
+        body: JSON.stringify({
+          supplierName: form.supplierName.trim() || undefined,
+          amount: parseFloat(form.amount),
+          dueDate: form.dueDate,
+          paymentStatus: form.paymentStatus,
+          notes: form.notes.trim() || undefined,
+        }),
       });
-      if (res.ok) {
-        setForm({ supplierId: "", amount: 0, dueDate: "", paymentStatus: "PENDING", notes: "" });
-        setEditingId(null);
-        setShowForm(false);
-        fetchPayables();
-      }
-    } catch { }
-  };
-
-  const handleEdit = (p: SupplierPayable) => {
-    setForm({ supplierId: String(p.supplierId), amount: p.amount, dueDate: p.dueDate.split("T")[0], paymentStatus: p.paymentStatus, notes: p.notes || "" });
-    setEditingId(p.id);
-    setShowForm(true);
+      if (res.ok) { setShowForm(false); void fetchPayables(); }
+    } catch { } finally { setSaving(false); }
   };
 
   const handleDelete = async (id: number) => {
     if (!(await confirmDialog(nav("Delete this payable?", "حذف هذه الدفعة؟"), { danger: true }))) return;
-    await fetch(`${API_BASE_URL}/supplier-payables/${id}`, {
-      method: "DELETE", headers: { ...authHeaders() }, credentials: "include",
-    });
-    fetchPayables();
+    await fetch(`${API_BASE_URL}/supplier-payables/${id}`, { method: "DELETE", headers: authHeaders(), credentials: "include" });
+    void fetchPayables();
   };
 
-  const pendingAmount = payables.filter(p => p.paymentStatus === "PENDING").reduce((s, p) => s + p.amount, 0);
-  const paidCount = payables.filter(p => p.paymentStatus === "PAID").length;
-  const overdueAmount = payables.filter(p => p.paymentStatus === "OVERDUE").reduce((s, p) => s + p.amount, 0);
+  const filtered = payables.filter((p) => !filterStatus || p.paymentStatus === filterStatus);
+  const pendingAmount = payables.filter((p) => p.paymentStatus === "PENDING").reduce((s, p) => s + p.amount, 0);
+  const paidCount = payables.filter((p) => p.paymentStatus === "PAID").length;
+  const overdueAmount = payables.filter((p) => p.paymentStatus === "OVERDUE").reduce((s, p) => s + p.amount, 0);
   const totalAmount = payables.reduce((s, p) => s + p.amount, 0);
+  const fmtMoney = (n: number) => `$${n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
   return (
     <ModulePageShell
-      title={nav("Supplier Payables", "حسابات الموردين الدائنة")}
-      subtitle={nav("Track payments owed to suppliers", "تتبع المدفوعات المستحقة للموردين")}
+      title={nav("Supplier Payables", "مستحقات الموردين")}
+      subtitle={nav("Track and manage payments owed to suppliers", "تتبع وإدارة المدفوعات المستحقة للموردين")}
+      icon={<Truck size={22} />}
     >
-      <div className="space-y-6">
-        {/* KPIs */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {[
-            { label: nav("Total Payables", "إجمالي المستحقات"), value: `$${totalAmount.toFixed(2)}`, color: "blue", icon: <Truck size={18} /> },
-            { label: nav("Pending", "معلق"), value: `$${pendingAmount.toFixed(2)}`, color: "orange", icon: <Clock size={18} /> },
-            { label: nav("Paid Count", "عدد المدفوعات"), value: paidCount, color: "green", icon: <CheckCircle size={18} /> },
-            { label: nav("Overdue", "متأخر"), value: `$${overdueAmount.toFixed(2)}`, color: "red", icon: <AlertTriangle size={18} /> },
-          ].map(({ label, value, color, icon }) => (
-            <Card key={label} className={`p-4 bg-${color}-50 dark:bg-${color}-900/20 border border-${color}-200 dark:border-${color}-800`}>
-              <div className="flex items-center justify-between mb-2">
-                <p className="text-xs text-slate-500 dark:text-slate-400">{label}</p>
-                <span className={`text-${color}-600 dark:text-${color}-400`}>{icon}</span>
-              </div>
-              <p className={`text-xl font-bold text-${color}-700 dark:text-${color}-300`}>{value}</p>
-            </Card>
-          ))}
-        </div>
-
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold">{nav("Payables", "الحسابات الدائنة")}</h2>
-          {!isAdmin && (
-            <Button onClick={() => { setShowForm(!showForm); setEditingId(null); }} className="gap-2">
-              <Plus size={16} />
-              {nav("Add Payable", "إضافة دفعة")}
-            </Button>
-          )}
-        </div>
-
-        {/* Form */}
-        {!isAdmin && showForm && (
-          <Card className="p-5 border border-slate-200 dark:border-slate-700">
-            <h3 className="font-semibold mb-4 text-slate-800 dark:text-slate-200">
-              {editingId ? nav("Edit Payable", "تعديل الدفعة") : nav("New Payable", "دفعة جديدة")}
-            </h3>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">{nav("Supplier ID", "معرف المورد")}</label>
-                  <input type="number" value={form.supplierId} onChange={e => setForm({ ...form, supplierId: e.target.value })}
-                    className="w-full px-3 py-2 border rounded-lg bg-white border-slate-300 dark:border-slate-600 text-sm" required />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">{nav("Amount ($)", "المبلغ ($)")}</label>
-                  <input type="number" min={0} step={0.01} value={form.amount}
-                    onChange={e => setForm({ ...form, amount: parseFloat(e.target.value) || 0 })}
-                    className="w-full px-3 py-2 border rounded-lg bg-white border-slate-300 dark:border-slate-600 text-sm" required />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">{nav("Due Date", "تاريخ الاستحقاق")}</label>
-                  <input type="date" value={form.dueDate} onChange={e => setForm({ ...form, dueDate: e.target.value })}
-                    className="w-full px-3 py-2 border rounded-lg bg-white border-slate-300 dark:border-slate-600 text-sm" required />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">{nav("Status", "الحالة")}</label>
-                  <select value={form.paymentStatus} onChange={e => setForm({ ...form, paymentStatus: e.target.value })}
-                    className="w-full px-3 py-2 border rounded-lg bg-white border-slate-300 dark:border-slate-600 text-sm">
-                    <option value="PENDING">Pending</option>
-                    <option value="PAID">Paid</option>
-                    <option value="OVERDUE">Overdue</option>
-                  </select>
-                </div>
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">{nav("Notes", "ملاحظات")}</label>
-                <textarea value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-lg bg-white border-slate-300 dark:border-slate-600 text-sm" rows={2} />
-              </div>
-              <div className="flex gap-2">
-                <Button type="submit">{nav("Save", "حفظ")}</Button>
-                <button type="button" onClick={() => { setShowForm(false); setEditingId(null); }}
-                  className="px-4 py-2 text-sm border rounded-lg bg-white hover:bg-slate-50 dark:hover:bg-slate-600">
-                  {nav("Cancel", "إلغاء")}
-                </button>
-              </div>
-            </form>
-          </Card>
-        )}
-
-        {/* Table */}
-        {loading ? (
-          <div className="space-y-3">
-            {[1, 2, 3].map(i => <div key={i} className="h-14 rounded-lg bg-slate-100 dark:bg-slate-700 animate-pulse" />)}
-          </div>
-        ) : payables.length === 0 ? (
-          <Card className="p-12 text-center border border-dashed border-slate-300 dark:border-slate-600">
-            <Truck className="mx-auto mb-3 text-slate-400" size={40} />
-            <p className="text-slate-500 dark:text-slate-400">{nav("No payables yet. Click 'Add Payable' to create one.", "لا توجد حسابات دائنة بعد.")}</p>
-          </Card>
-        ) : (
-          <Card className="overflow-hidden border border-slate-200 dark:border-slate-700">
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="bg-slate-50 dark:bg-slate-700/50 border-b border-slate-200 dark:border-slate-700">
-                  <tr>
-                    <th className="text-left py-3 px-4 font-semibold text-slate-600 dark:text-slate-300">{nav("Supplier", "المورد")}</th>
-                    <th className="text-left py-3 px-4 font-semibold text-slate-600 dark:text-slate-300">{nav("Amount", "المبلغ")}</th>
-                    <th className="text-left py-3 px-4 font-semibold text-slate-600 dark:text-slate-300">{nav("Due Date", "الاستحقاق")}</th>
-                    <th className="text-left py-3 px-4 font-semibold text-slate-600 dark:text-slate-300">{nav("Status", "الحالة")}</th>
-                    <th className="py-3 px-4" />
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
-                  {payables.map(p => (
-                    <tr key={p.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
-                      <td className="py-3 px-4">
-                        <p className="font-medium text-slate-800 dark:text-slate-200">{p.supplier?.name ?? `Supplier #${p.supplierId}`}</p>
-                        {p.supplier?.email && <p className="text-xs text-slate-400">{p.supplier.email}</p>}
-                      </td>
-                      <td className="py-3 px-4 font-semibold text-slate-700 dark:text-slate-300">${p.amount.toFixed(2)}</td>
-                      <td className="py-3 px-4 text-xs text-slate-500">{new Date(p.dueDate).toLocaleDateString()}</td>
-                      <td className="py-3 px-4">
-                        <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium ${STATUS_STYLES[p.paymentStatus] ?? "bg-slate-100 text-slate-700"}`}>
-                          {p.paymentStatus === "PAID" ? <CheckCircle size={11} /> : p.paymentStatus === "OVERDUE" ? <AlertTriangle size={11} /> : <Clock size={11} />}
-                          {nav(p.paymentStatus, p.paymentStatus === "PAID" ? "مدفوع" : p.paymentStatus === "OVERDUE" ? "متأخر" : "معلق")}
-                        </span>
-                      </td>
-                      <td className="py-3 px-4">
-                        {!isAdmin && (
-                          <div className="flex items-center gap-1 justify-end">
-                            <button onClick={() => handleEdit(p)}
-                              className="p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-500">
-                              <Edit size={14} />
-                            </button>
-                            <button onClick={() => handleDelete(p.id)}
-                              className="p-1.5 rounded hover:bg-red-100 dark:hover:bg-red-900/30 text-red-500">
-                              <Trash2 size={14} />
-                            </button>
-                          </div>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+      {/* KPIs */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+        {[
+          { label: nav("Total Payables", "إجمالي المستحقات"), value: fmtMoney(totalAmount), icon: "🏦", color: "#3b82f6", bg: "#dbeafe" },
+          { label: nav("Pending", "معلق"), value: fmtMoney(pendingAmount), icon: "⏳", color: "#d97706", bg: "#fef3c7" },
+          { label: nav("Paid Count", "المدفوع"), value: paidCount, icon: "✅", color: "#059669", bg: "#d1fae5" },
+          { label: nav("Overdue", "متأخر"), value: fmtMoney(overdueAmount), icon: "🚨", color: "#dc2626", bg: "#fee2e2" },
+        ].map((k) => (
+          <Card key={k.label} className="p-4 flex items-center gap-3">
+            <div style={{ width: 40, height: 40, borderRadius: 10, background: k.bg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.2rem", flexShrink: 0 }}>
+              {k.icon}
+            </div>
+            <div>
+              <p className="text-xs text-[var(--text-secondary)] font-medium leading-tight">{k.label}</p>
+              <p className="text-xl font-bold" style={{ color: k.color }}>{k.value}</p>
             </div>
           </Card>
+        ))}
+      </div>
+
+      {/* Toolbar */}
+      <div className="flex flex-wrap items-center gap-2 mb-4">
+        {!isAdmin && (
+          <Button size="sm" onClick={openNew}>
+            <Plus size={15} className="me-1" />
+            {nav("Add Payable", "إضافة دفعة")}
+          </Button>
+        )}
+        <select className="input text-sm h-8 min-w-[140px]" value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}>
+          <option value="">{nav("All Statuses", "جميع الحالات")}</option>
+          <option value="PENDING">{nav("Pending", "معلق")}</option>
+          <option value="PAID">{nav("Paid", "مدفوع")}</option>
+          <option value="OVERDUE">{nav("Overdue", "متأخر")}</option>
+        </select>
+        {filterStatus && (
+          <button className="text-xs text-[var(--text-secondary)] underline" onClick={() => setFilterStatus("")}>
+            {nav("Clear", "مسح")}
+          </button>
         )}
       </div>
+
+      {/* Form */}
+      {!isAdmin && showForm && (
+        <Card className="p-5 mb-6 border-2 border-[var(--accent)]">
+          <div className="flex items-center justify-between mb-5">
+            <div>
+              <h3 className="font-bold text-[var(--text-primary)] text-base">
+                {editingId ? nav("Edit Payable", "تعديل الدفعة") : nav("New Payable", "دفعة جديدة")}
+              </h3>
+              <p className="text-xs text-[var(--text-secondary)] mt-0.5">{nav("Enter payment details", "أدخل بيانات الدفعة")}</p>
+            </div>
+            <button className="text-[var(--text-secondary)] hover:text-[var(--text-primary)]" onClick={() => setShowForm(false)}><X size={18} /></button>
+          </div>
+
+          <p className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wide mb-2">{nav("Payment Info", "بيانات الدفعة")}</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+            <div>
+              <label className="label">{nav("Supplier Name", "اسم المورد")}</label>
+              <input className="input" placeholder={nav("e.g. Plastisource Ltd.", "مثال: بلاستي سورس")}
+                value={form.supplierName} onChange={(e) => setForm((p) => ({ ...p, supplierName: e.target.value }))} />
+            </div>
+            <div>
+              <label className="label">{nav("Amount ($) *", "المبلغ ($) *")}</label>
+              <input className="input" type="number" min="0" step="0.01" placeholder="0.00"
+                value={form.amount} onChange={(e) => setForm((p) => ({ ...p, amount: e.target.value }))} />
+            </div>
+            <div>
+              <label className="label">{nav("Due Date *", "تاريخ الاستحقاق *")}</label>
+              <input className="input" type="date"
+                value={form.dueDate} onChange={(e) => setForm((p) => ({ ...p, dueDate: e.target.value }))} />
+            </div>
+            <div>
+              <label className="label">{nav("Status", "الحالة")}</label>
+              <select className="input" value={form.paymentStatus} onChange={(e) => setForm((p) => ({ ...p, paymentStatus: e.target.value }))}>
+                <option value="PENDING">{nav("Pending", "معلق")}</option>
+                <option value="PAID">{nav("Paid", "مدفوع")}</option>
+                <option value="OVERDUE">{nav("Overdue", "متأخر")}</option>
+              </select>
+            </div>
+            <div className="sm:col-span-2">
+              <label className="label">{nav("Notes", "ملاحظات")}</label>
+              <textarea className="input resize-none" rows={2}
+                placeholder={nav("Payment terms, reference number, etc.", "شروط الدفع، رقم المرجع...")}
+                value={form.notes} onChange={(e) => setForm((p) => ({ ...p, notes: e.target.value }))} />
+            </div>
+          </div>
+
+          <div className="flex gap-2 pt-2 border-t border-[var(--border-default)]">
+            <Button size="sm" onClick={handleSave} disabled={saving || !form.amount || !form.dueDate}>
+              <Save size={14} className="me-1" />
+              {saving ? nav("Saving...", "جارٍ الحفظ...") : nav("Save Payable", "حفظ الدفعة")}
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => setShowForm(false)}>{nav("Cancel", "إلغاء")}</Button>
+          </div>
+        </Card>
+      )}
+
+      {/* Cards */}
+      {loading ? (
+        <div className="flex justify-center p-12"><div className="spinner" /></div>
+      ) : filtered.length === 0 ? (
+        <Card className="p-12 text-center text-[var(--text-secondary)]">
+          <Truck size={32} className="mx-auto mb-3 opacity-30" />
+          <p className="font-medium">{nav("No payables found", "لا توجد مستحقات")}</p>
+          <p className="text-sm mt-1">{nav("Add your first payable to get started", "أضف أول دفعة للبدء")}</p>
+        </Card>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {filtered.map((p) => {
+            const meta = STATUS_META[p.paymentStatus] ?? STATUS_META.PENDING;
+            const StatusIcon = p.paymentStatus === "PAID" ? CheckCircle : p.paymentStatus === "OVERDUE" ? AlertTriangle : Clock;
+            return (
+              <Card key={p.id} className="p-0 overflow-hidden flex flex-col">
+                <div style={{ background: meta.bg, borderBottom: `2px solid ${meta.color}20`, padding: "12px 16px" }}
+                  className="flex items-start justify-between gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span style={{ fontSize: "1.3rem" }}>🏦</span>
+                    <div className="min-w-0">
+                      <p className="font-bold text-sm text-[var(--text-primary)] truncate">
+                        {p.supplier?.name ?? nav("Supplier", "مورد")} #{p.supplierId}
+                      </p>
+                      <span style={{ background: meta.color + "20", color: meta.color, borderRadius: "20px", padding: "1px 8px", fontSize: ".68rem", fontWeight: 700 }}
+                        className="inline-flex items-center gap-1">
+                        <StatusIcon size={9} />
+                        {locale === "ar" ? meta.labelAr : meta.label}
+                      </span>
+                    </div>
+                  </div>
+                  {!isAdmin && (
+                    <div className="flex gap-1 flex-shrink-0">
+                      <button className="text-[var(--text-secondary)] hover:text-blue-600 p-1" onClick={() => openEdit(p)}><Pencil size={14} /></button>
+                      <button className="text-[var(--text-secondary)] hover:text-red-500 p-1" onClick={() => handleDelete(p.id)}><Trash2 size={14} /></button>
+                    </div>
+                  )}
+                </div>
+                <div className="p-4 flex-1 flex flex-col gap-2.5">
+                  <p className="text-2xl font-bold" style={{ color: meta.color }}>{fmtMoney(p.amount)}</p>
+                  {p.supplier?.email && (
+                    <p className="text-xs text-[var(--text-secondary)] truncate">📧 {p.supplier.email}</p>
+                  )}
+                  <p className="text-sm text-[var(--text-secondary)]">
+                    📅 {nav("Due", "الاستحقاق")}: <span className={p.paymentStatus === "OVERDUE" ? "text-red-600 font-semibold" : ""}>{new Date(p.dueDate).toLocaleDateString()}</span>
+                  </p>
+                  {p.notes && (
+                    <p className="text-xs text-[var(--text-secondary)] bg-[var(--bg-surface-2,#f8fafc)] rounded px-2.5 py-1.5 italic">{p.notes}</p>
+                  )}
+                </div>
+              </Card>
+            );
+          })}
+        </div>
+      )}
     </ModulePageShell>
   );
 }

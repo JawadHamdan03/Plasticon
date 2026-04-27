@@ -1,6 +1,9 @@
-﻿import { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { confirmDialog } from "../../lib/dialog";
-import { Plus, CheckCircle, Clock, Trash2, FileText, Search, AlertCircle } from "lucide-react";
+import {
+  Plus, CheckCircle, Clock, Trash2, FileText, Search,
+  AlertCircle, User, Mail, DollarSign, Calendar, X, Save,
+} from "lucide-react";
 import { ModulePageShell } from "../../components/ModulePageShell";
 import { Button } from "../../components/ui/button";
 import { Card } from "../../components/ui/card";
@@ -26,246 +29,272 @@ interface Invoice {
   createdBy?: { id: number; fullName: string };
 }
 
-const STATUS_STYLES: Record<string, string> = {
-  PAID: "bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300",
-  PENDING: "bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300",
-  OVERDUE: "bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300",
+const STATUS_META: Record<string, { label: string; labelAr: string; color: string; bg: string; icon: typeof CheckCircle }> = {
+  PAID:    { label: "Paid",    labelAr: "مدفوع",  color: "#059669", bg: "#d1fae5", icon: CheckCircle },
+  PENDING: { label: "Pending", labelAr: "معلق",   color: "#d97706", bg: "#fef3c7", icon: Clock },
+  OVERDUE: { label: "Overdue", labelAr: "متأخر",  color: "#dc2626", bg: "#fee2e2", icon: AlertCircle },
 };
+
+const emptyForm = { customerName: "", invoiceNumber: "", totalAmount: "", dueDate: "" };
 
 export default function InvoiceManagement() {
   const { locale } = useLocale();
   const { user } = useAuth();
   const isAdmin = user?.role === "ADMIN";
   const nav = (en: string, ar: string) => locale === "ar" ? ar : en;
+
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [search, setSearch] = useState("");
-  const [form, setForm] = useState({ customerId: "", invoiceNumber: "", totalAmount: 0, dueDate: "" });
+  const [filterStatus, setFilterStatus] = useState("");
+  const [form, setForm] = useState(emptyForm);
+  const [saving, setSaving] = useState(false);
 
-  useEffect(() => { fetchInvoices(); }, []);
+  useEffect(() => { void fetchInvoices(); }, []);
 
   const fetchInvoices = async () => {
+    setLoading(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/invoices`, {
-        headers: { ...authHeaders() },
-        credentials: "include",
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setInvoices(data.data || []);
-      }
+      const res = await fetch(`${API_BASE_URL}/invoices`, { headers: authHeaders(), credentials: "include" });
+      if (res.ok) { const data = await res.json(); setInvoices(Array.isArray(data) ? data : (data.data ?? [])); }
     } catch { } finally { setLoading(false); }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async () => {
+    if (!form.customerName.trim() || !form.invoiceNumber.trim() || !form.totalAmount || !form.dueDate) return;
+    setSaving(true);
     try {
       const res = await fetch(`${API_BASE_URL}/invoices`, {
         method: "POST",
         headers: { "Content-Type": "application/json", ...authHeaders() },
         credentials: "include",
         body: JSON.stringify({
-          ...form,
-          customerId: parseInt(form.customerId),
-          totalAmount: parseFloat(String(form.totalAmount)),
+          customerName: form.customerName.trim(),
+          invoiceNumber: form.invoiceNumber.trim(),
+          totalAmount: parseFloat(form.totalAmount),
+          dueDate: form.dueDate,
         }),
       });
-      if (res.ok) {
-        setForm({ customerId: "", invoiceNumber: "", totalAmount: 0, dueDate: "" });
-        setShowForm(false);
-        fetchInvoices();
-      }
-    } catch { }
+      if (res.ok) { setForm(emptyForm); setShowForm(false); void fetchInvoices(); }
+    } catch { } finally { setSaving(false); }
   };
 
   const handleRecordPayment = async (id: number) => {
     await fetch(`${API_BASE_URL}/invoices/${id}/payment`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json", ...authHeaders() },
-      credentials: "include",
-      body: JSON.stringify({ paymentStatus: "PAID" }),
+      method: "PATCH", headers: { "Content-Type": "application/json", ...authHeaders() },
+      credentials: "include", body: JSON.stringify({ paymentStatus: "PAID" }),
     });
-    fetchInvoices();
+    void fetchInvoices();
   };
 
   const handleDelete = async (id: number) => {
     if (!(await confirmDialog(nav("Delete this invoice?", "حذف هذه الفاتورة؟"), { danger: true }))) return;
-    await fetch(`${API_BASE_URL}/invoices/${id}`, {
-      method: "DELETE",
-      headers: { ...authHeaders() },
-      credentials: "include",
-    });
-    fetchInvoices();
+    await fetch(`${API_BASE_URL}/invoices/${id}`, { method: "DELETE", headers: authHeaders(), credentials: "include" });
+    void fetchInvoices();
   };
 
-  const isOverdue = (dueDate: string, status: string) =>
-    new Date(dueDate) < new Date() && status !== "PAID";
+  const isOverdue = (dueDate: string, status: string) => new Date(dueDate) < new Date() && status !== "PAID";
 
-  const filtered = invoices.filter(inv =>
-    inv.invoiceNumber.toLowerCase().includes(search.toLowerCase()) ||
-    (inv.customer?.name ?? "").toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = invoices
+    .filter((inv) => !filterStatus || inv.paymentStatus === filterStatus)
+    .filter((inv) =>
+      !search ||
+      inv.invoiceNumber.toLowerCase().includes(search.toLowerCase()) ||
+      (inv.customer?.name ?? "").toLowerCase().includes(search.toLowerCase())
+    );
 
   const totalInvoiced = invoices.reduce((s, i) => s + i.totalAmount, 0);
-  const paidAmount = invoices.filter(i => i.paymentStatus === "PAID").reduce((s, i) => s + i.totalAmount, 0);
-  const pendingAmount = invoices.filter(i => i.paymentStatus !== "PAID").reduce((s, i) => s + i.totalAmount, 0);
-  const overdueCount = invoices.filter(i => isOverdue(i.dueDate, i.paymentStatus)).length;
+  const paidAmount = invoices.filter((i) => i.paymentStatus === "PAID").reduce((s, i) => s + i.totalAmount, 0);
+  const pendingAmount = invoices.filter((i) => i.paymentStatus !== "PAID").reduce((s, i) => s + i.totalAmount, 0);
+  const overdueCount = invoices.filter((i) => isOverdue(i.dueDate, i.paymentStatus)).length;
+
+  const fmtMoney = (n: number) => `$${n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+  const StatusBadge = ({ status, dueDate }: { status: string; dueDate: string }) => {
+    const overdue = isOverdue(dueDate, status);
+    const key = overdue && status !== "PAID" ? "OVERDUE" : status;
+    const meta = STATUS_META[key] ?? STATUS_META.PENDING;
+    const Icon = meta.icon;
+    return (
+      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold"
+        style={{ background: meta.bg, color: meta.color }}>
+        <Icon size={11} />
+        {locale === "ar" ? meta.labelAr : meta.label}
+      </span>
+    );
+  };
 
   return (
     <ModulePageShell
       title={nav("Invoice Management", "إدارة الفواتير")}
-      subtitle={nav("Create and manage customer invoices", "إنشاء وإدارة فواتير العملاء")}
+      subtitle={nav("Create and track customer invoices", "إنشاء وتتبع فواتير العملاء")}
+      icon={<FileText size={22} />}
     >
-      <div className="space-y-6">
-        {/* KPIs */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {[
-            { label: nav("Total Invoiced", "إجمالي الفواتير"), value: `$${totalInvoiced.toFixed(2)}`, color: "blue", icon: <FileText size={18} /> },
-            { label: nav("Paid", "مدفوع"), value: `$${paidAmount.toFixed(2)}`, color: "green", icon: <CheckCircle size={18} /> },
-            { label: nav("Outstanding", "المستحق"), value: `$${pendingAmount.toFixed(2)}`, color: "orange", icon: <Clock size={18} /> },
-            { label: nav("Overdue", "متأخر"), value: overdueCount, color: "red", icon: <AlertCircle size={18} /> },
-          ].map(({ label, value, color, icon }) => (
-            <Card key={label} className={`p-4 bg-${color}-50 dark:bg-${color}-900/20 border border-${color}-200 dark:border-${color}-800`}>
-              <div className="flex items-center justify-between mb-2">
-                <p className="text-xs text-slate-500 dark:text-slate-400">{label}</p>
-                <span className={`text-${color}-600 dark:text-${color}-400`}>{icon}</span>
-              </div>
-              <p className={`text-xl font-bold text-${color}-700 dark:text-${color}-300`}>{value}</p>
-            </Card>
-          ))}
-        </div>
-
-        {/* Header + Search */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 justify-between">
-          <h2 className="text-lg font-semibold">{nav("Invoices", "الفواتير")}</h2>
-          <div className="flex gap-2 w-full sm:w-auto">
-            <div className="relative flex-1 sm:flex-none">
-              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-              <input type="text" placeholder={nav("Search...", "بحث...")} value={search}
-                onChange={e => setSearch(e.target.value)}
-                className="pl-8 pr-3 py-2 text-sm border rounded-lg bg-white border-slate-200 dark:border-slate-700 w-full sm:w-48" />
+      {/* KPIs */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+        {[
+          { label: nav("Total Invoiced", "إجمالي الفواتير"), value: fmtMoney(totalInvoiced), icon: "🧾", color: "#3b82f6", bg: "#dbeafe" },
+          { label: nav("Paid", "مدفوع"), value: fmtMoney(paidAmount), icon: "✅", color: "#059669", bg: "#d1fae5" },
+          { label: nav("Outstanding", "المستحق"), value: fmtMoney(pendingAmount), icon: "⏳", color: "#d97706", bg: "#fef3c7" },
+          { label: nav("Overdue", "متأخر"), value: overdueCount, icon: "🚨", color: "#dc2626", bg: "#fee2e2" },
+        ].map((k) => (
+          <Card key={k.label} className="p-4 flex items-center gap-3">
+            <div style={{ width: 40, height: 40, borderRadius: 10, background: k.bg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.2rem", flexShrink: 0 }}>
+              {k.icon}
             </div>
-            {!isAdmin && (
-              <Button onClick={() => setShowForm(!showForm)} className="gap-2 shrink-0">
-                <Plus size={16} />
-                {nav("Create Invoice", "إنشاء فاتورة")}
-              </Button>
-            )}
-          </div>
-        </div>
-
-        {/* Form */}
-        {!isAdmin && showForm && (
-          <Card className="p-5 border border-slate-200 dark:border-slate-700">
-            <h3 className="font-semibold mb-4 text-slate-800 dark:text-slate-200">{nav("New Invoice", "فاتورة جديدة")}</h3>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">{nav("Customer ID", "معرف العميل")}</label>
-                  <input type="number" value={form.customerId} onChange={e => setForm({ ...form, customerId: e.target.value })}
-                    className="w-full px-3 py-2 border rounded-lg bg-white border-slate-300 dark:border-slate-600 text-sm" required />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">{nav("Invoice Number", "رقم الفاتورة")}</label>
-                  <input type="text" value={form.invoiceNumber} onChange={e => setForm({ ...form, invoiceNumber: e.target.value })}
-                    className="w-full px-3 py-2 border rounded-lg bg-white border-slate-300 dark:border-slate-600 text-sm" required />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">{nav("Total Amount ($)", "المبلغ الإجمالي ($)")}</label>
-                  <input type="number" min={0} step={0.01} value={form.totalAmount}
-                    onChange={e => setForm({ ...form, totalAmount: parseFloat(e.target.value) || 0 })}
-                    className="w-full px-3 py-2 border rounded-lg bg-white border-slate-300 dark:border-slate-600 text-sm" required />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">{nav("Due Date", "تاريخ الاستحقاق")}</label>
-                  <input type="date" value={form.dueDate} onChange={e => setForm({ ...form, dueDate: e.target.value })}
-                    className="w-full px-3 py-2 border rounded-lg bg-white border-slate-300 dark:border-slate-600 text-sm" required />
-                </div>
-              </div>
-              <div className="flex gap-2">
-                <Button type="submit">{nav("Save", "حفظ")}</Button>
-                <button type="button" onClick={() => setShowForm(false)}
-                  className="px-4 py-2 text-sm border rounded-lg bg-white hover:bg-slate-50 dark:hover:bg-slate-600">
-                  {nav("Cancel", "إلغاء")}
-                </button>
-              </div>
-            </form>
+            <div>
+              <p className="text-xs text-[var(--text-secondary)] font-medium leading-tight">{k.label}</p>
+              <p className="text-xl font-bold" style={{ color: k.color }}>{k.value}</p>
+            </div>
           </Card>
+        ))}
+      </div>
+
+      {/* Toolbar */}
+      <div className="flex flex-wrap items-center gap-2 mb-4">
+        {!isAdmin && (
+          <Button size="sm" onClick={() => setShowForm(true)}>
+            <Plus size={15} className="me-1" />
+            {nav("Create Invoice", "إنشاء فاتورة")}
+          </Button>
         )}
-
-        {/* Table */}
-        {loading ? (
-          <div className="space-y-3">
-            {[1, 2, 3].map(i => <div key={i} className="h-14 rounded-lg bg-slate-100 dark:bg-slate-700 animate-pulse" />)}
-          </div>
-        ) : filtered.length === 0 ? (
-          <Card className="p-12 text-center border border-dashed border-slate-300 dark:border-slate-600">
-            <FileText className="mx-auto mb-3 text-slate-400" size={40} />
-            <p className="text-slate-500 dark:text-slate-400">
-              {search ? nav("No matching invoices", "لا توجد فواتير مطابقة") : nav("No invoices yet. Click 'Create Invoice' to start.", "لا توجد فواتير بعد.")}
-            </p>
-          </Card>
-        ) : (
-          <Card className="overflow-hidden border border-slate-200 dark:border-slate-700">
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="bg-slate-50 dark:bg-slate-700/50 border-b border-slate-200 dark:border-slate-700">
-                  <tr>
-                    <th className="text-left py-3 px-4 font-semibold text-slate-600 dark:text-slate-300">{nav("Invoice #", "رقم الفاتورة")}</th>
-                    <th className="text-left py-3 px-4 font-semibold text-slate-600 dark:text-slate-300">{nav("Customer", "العميل")}</th>
-                    <th className="text-left py-3 px-4 font-semibold text-slate-600 dark:text-slate-300">{nav("Amount", "المبلغ")}</th>
-                    <th className="text-left py-3 px-4 font-semibold text-slate-600 dark:text-slate-300">{nav("Due Date", "الاستحقاق")}</th>
-                    <th className="text-left py-3 px-4 font-semibold text-slate-600 dark:text-slate-300">{nav("Status", "الحالة")}</th>
-                    <th className="py-3 px-4" />
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
-                  {filtered.map(invoice => {
-                    const overdue = isOverdue(invoice.dueDate, invoice.paymentStatus);
-                    return (
-                      <tr key={invoice.id} className={`hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors ${overdue ? "bg-red-50/50 dark:bg-red-900/10" : ""}`}>
-                        <td className="py-3 px-4 font-semibold text-slate-800 dark:text-slate-200">{invoice.invoiceNumber}</td>
-                        <td className="py-3 px-4">
-                          <p className="font-medium text-slate-700 dark:text-slate-300">{invoice.customer?.name ?? `Customer #${invoice.customerId}`}</p>
-                          {invoice.customer?.email && <p className="text-xs text-slate-400">{invoice.customer.email}</p>}
-                        </td>
-                        <td className="py-3 px-4 font-bold text-slate-800 dark:text-slate-200">${invoice.totalAmount.toFixed(2)}</td>
-                        <td className="py-3 px-4 text-xs text-slate-500">
-                          {new Date(invoice.dueDate).toLocaleDateString()}
-                          {overdue && <span className="ml-1 font-semibold text-red-600">({nav("OVERDUE", "متأخر")})</span>}
-                        </td>
-                        <td className="py-3 px-4">
-                          <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium ${STATUS_STYLES[invoice.paymentStatus] ?? STATUS_STYLES.PENDING}`}>
-                            {invoice.paymentStatus === "PAID" ? <CheckCircle size={11} /> : overdue ? <AlertCircle size={11} /> : <Clock size={11} />}
-                            {nav(invoice.paymentStatus, invoice.paymentStatus === "PAID" ? "مدفوع" : overdue ? "متأخر" : "معلق")}
-                          </span>
-                        </td>
-                        <td className="py-3 px-4">
-                          {!isAdmin && (
-                          <div className="flex items-center gap-1 justify-end">
-                            {invoice.paymentStatus !== "PAID" && (
-                              <button onClick={() => handleRecordPayment(invoice.id)}
-                                className="text-xs px-2 py-1 bg-green-600 hover:bg-green-700 text-white rounded">
-                                {nav("Mark Paid", "مدفوع")}
-                              </button>
-                            )}
-                            <button onClick={() => handleDelete(invoice.id)}
-                              className="p-1.5 rounded hover:bg-red-100 dark:hover:bg-red-900/30 text-red-500">
-                              <Trash2 size={14} />
-                            </button>
-                          </div>
-                        )}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </Card>
+        <div className="relative">
+          <Search size={14} className="absolute start-2.5 top-1/2 -translate-y-1/2 text-[var(--text-secondary)]" />
+          <input className="input ps-8 h-8 text-sm w-48" placeholder={nav("Search...", "بحث...")}
+            value={search} onChange={(e) => setSearch(e.target.value)} />
+        </div>
+        <select className="input text-sm h-8 min-w-[130px]" value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}>
+          <option value="">{nav("All Statuses", "جميع الحالات")}</option>
+          <option value="PAID">{nav("Paid", "مدفوع")}</option>
+          <option value="PENDING">{nav("Pending", "معلق")}</option>
+          <option value="OVERDUE">{nav("Overdue", "متأخر")}</option>
+        </select>
+        {(filterStatus || search) && (
+          <button className="text-xs text-[var(--text-secondary)] underline" onClick={() => { setFilterStatus(""); setSearch(""); }}>
+            {nav("Clear", "مسح")}
+          </button>
         )}
       </div>
+
+      {/* Form */}
+      {!isAdmin && showForm && (
+        <Card className="p-5 mb-6 border-2 border-[var(--accent)]">
+          <div className="flex items-center justify-between mb-5">
+            <div>
+              <h3 className="font-bold text-[var(--text-primary)] text-base">{nav("New Invoice", "فاتورة جديدة")}</h3>
+              <p className="text-xs text-[var(--text-secondary)] mt-0.5">{nav("Fill in the invoice details", "أدخل بيانات الفاتورة")}</p>
+            </div>
+            <button className="text-[var(--text-secondary)] hover:text-[var(--text-primary)]" onClick={() => setShowForm(false)}><X size={18} /></button>
+          </div>
+
+          <p className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wide mb-2">{nav("Invoice Details", "بيانات الفاتورة")}</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+            <div>
+              <label className="label">{nav("Customer Name *", "اسم العميل *")}</label>
+              <input className="input" placeholder={nav("e.g. Al-Najah Plastics Co.", "مثال: شركة النجاح للبلاستيك")}
+                value={form.customerName} onChange={(e) => setForm((p) => ({ ...p, customerName: e.target.value }))} />
+            </div>
+            <div>
+              <label className="label">{nav("Invoice Number *", "رقم الفاتورة *")}</label>
+              <input className="input" placeholder="INV-2025-001"
+                value={form.invoiceNumber} onChange={(e) => setForm((p) => ({ ...p, invoiceNumber: e.target.value }))} />
+            </div>
+            <div>
+              <label className="label">{nav("Total Amount ($) *", "المبلغ الإجمالي ($) *")}</label>
+              <input className="input" type="number" min="0" step="0.01" placeholder="0.00"
+                value={form.totalAmount} onChange={(e) => setForm((p) => ({ ...p, totalAmount: e.target.value }))} />
+            </div>
+            <div>
+              <label className="label">{nav("Due Date *", "تاريخ الاستحقاق *")}</label>
+              <input className="input" type="date"
+                value={form.dueDate} onChange={(e) => setForm((p) => ({ ...p, dueDate: e.target.value }))} />
+            </div>
+          </div>
+
+          <div className="flex gap-2 pt-2 border-t border-[var(--border-default)]">
+            <Button size="sm" onClick={handleSubmit} disabled={saving || !form.customerName.trim() || !form.invoiceNumber.trim() || !form.totalAmount || !form.dueDate}>
+              <Save size={14} className="me-1" />
+              {saving ? nav("Saving...", "جارٍ الحفظ...") : nav("Save Invoice", "حفظ الفاتورة")}
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => setShowForm(false)}>{nav("Cancel", "إلغاء")}</Button>
+          </div>
+        </Card>
+      )}
+
+      {/* Invoice Cards */}
+      {loading ? (
+        <div className="flex justify-center p-12"><div className="spinner" /></div>
+      ) : filtered.length === 0 ? (
+        <Card className="p-12 text-center text-[var(--text-secondary)]">
+          <FileText size={32} className="mx-auto mb-3 opacity-30" />
+          <p className="font-medium">{nav("No invoices found", "لا توجد فواتير")}</p>
+          <p className="text-sm mt-1">{nav("Create your first invoice to get started", "أنشئ أول فاتورة للبدء")}</p>
+        </Card>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {filtered.map((inv) => {
+            const overdue = isOverdue(inv.dueDate, inv.paymentStatus);
+            const statusKey = overdue && inv.paymentStatus !== "PAID" ? "OVERDUE" : inv.paymentStatus;
+            const meta = STATUS_META[statusKey] ?? STATUS_META.PENDING;
+            return (
+              <Card key={inv.id} className="p-0 overflow-hidden flex flex-col">
+                <div style={{ background: meta.bg, borderBottom: `2px solid ${meta.color}20`, padding: "12px 16px" }}
+                  className="flex items-start justify-between gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span style={{ fontSize: "1.2rem" }}>🧾</span>
+                    <div className="min-w-0">
+                      <p className="font-bold text-sm text-[var(--text-primary)] truncate">{inv.invoiceNumber}</p>
+                      <StatusBadge status={inv.paymentStatus} dueDate={inv.dueDate} />
+                    </div>
+                  </div>
+                  {!isAdmin && (
+                    <button className="text-[var(--text-secondary)] hover:text-red-500 p-1 flex-shrink-0" onClick={() => handleDelete(inv.id)}>
+                      <Trash2 size={14} />
+                    </button>
+                  )}
+                </div>
+                <div className="p-4 flex-1 flex flex-col gap-2.5">
+                  {(inv.customer?.name) && (
+                    <div className="flex items-center gap-2 text-sm">
+                      <User size={12} className="text-[var(--text-secondary)] shrink-0" />
+                      <span className="font-medium truncate">{inv.customer.name}</span>
+                    </div>
+                  )}
+                  {inv.customer?.email && (
+                    <div className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
+                      <Mail size={12} className="shrink-0" />
+                      <span className="truncate">{inv.customer.email}</span>
+                    </div>
+                  )}
+                  <div className="flex items-center gap-2 text-sm">
+                    <DollarSign size={12} className="text-[var(--text-secondary)] shrink-0" />
+                    <span className="font-bold text-base" style={{ color: meta.color }}>{fmtMoney(inv.totalAmount)}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
+                    <Calendar size={12} className="shrink-0" />
+                    <span className={overdue && inv.paymentStatus !== "PAID" ? "text-red-600 font-semibold" : ""}>
+                      {nav("Due", "الاستحقاق")}: {new Date(inv.dueDate).toLocaleDateString()}
+                      {overdue && inv.paymentStatus !== "PAID" && ` (${nav("OVERDUE", "متأخر")})`}
+                    </span>
+                  </div>
+                </div>
+                {!isAdmin && inv.paymentStatus !== "PAID" && (
+                  <div className="border-t border-[var(--border-default)] px-4 py-2.5">
+                    <button
+                      onClick={() => handleRecordPayment(inv.id)}
+                      className="w-full text-xs font-semibold py-1.5 rounded-lg"
+                      style={{ background: "#d1fae5", color: "#059669" }}>
+                      <CheckCircle size={11} className="inline me-1" />
+                      {nav("Mark as Paid", "تسجيل الدفع")}
+                    </button>
+                  </div>
+                )}
+              </Card>
+            );
+          })}
+        </div>
+      )}
     </ModulePageShell>
   );
 }

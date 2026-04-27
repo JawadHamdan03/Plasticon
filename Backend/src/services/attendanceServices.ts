@@ -139,6 +139,61 @@ export const checkIn = async (
   return { status: 201, data: attendance };
 };
 
+const validateRequiredRecords = async (
+  userId: number,
+  shiftId: number | null,
+  checkInDate: Date,
+): Promise<string | null> => {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { role: true },
+  });
+  const role = user?.role;
+
+  const dayStart = new Date(checkInDate);
+  dayStart.setHours(0, 0, 0, 0);
+  const dayEnd = new Date(checkInDate);
+  dayEnd.setHours(23, 59, 59, 999);
+
+  if (role === "WORKER" || role === "ENGINEER") {
+    const productionRecord = await prisma.productionRecord.findFirst({
+      where: {
+        userId,
+        ...(shiftId ? { shiftId } : {}),
+        createdAt: { gte: dayStart, lte: dayEnd },
+      },
+    });
+    if (!productionRecord) {
+      return "يجب تسجيل الإنتاج قبل تسجيل الخروج. / Production record required before checkout.";
+    }
+
+    const electricityReading = await prisma.electricityReading.findFirst({
+      where: {
+        recordedById: userId,
+        ...(shiftId ? { shiftId } : {}),
+        createdAt: { gte: dayStart, lte: dayEnd },
+      },
+    });
+    if (!electricityReading) {
+      return "يجب تسجيل قراءة الكهرباء قبل تسجيل الخروج. / Electricity reading required before checkout.";
+    }
+  }
+
+  if (role === "ACCOUNTANT") {
+    const inventoryTx = await prisma.inventoryTransaction.findFirst({
+      where: {
+        createdById: userId,
+        createdAt: { gte: dayStart, lte: dayEnd },
+      },
+    });
+    if (!inventoryTx) {
+      return "يجب تسجيل حركة مخزونية (الاستهلاك) قبل تسجيل الخروج. / Consumption (inventory) record required before checkout.";
+    }
+  }
+
+  return null;
+};
+
 export const checkOut = async (
   userId: number,
 ): Promise<ServiceResult<unknown>> => {
@@ -162,6 +217,15 @@ export const checkOut = async (
 
     if (now.getTime() < shiftEnd.getTime()) {
       return { status: 400, message: "Early check-out is not allowed" };
+    }
+
+    const missingRecord = await validateRequiredRecords(
+      userId,
+      openAttendance.shiftId,
+      openAttendance.checkIn,
+    );
+    if (missingRecord) {
+      return { status: 400, message: missingRecord };
     }
 
     const minutesAfterShiftEnd = minutesBetween(now, shiftEnd);
@@ -190,6 +254,15 @@ export const checkOut = async (
     );
 
     return { status: 200, data: attendance };
+  }
+
+  const missingRecord = await validateRequiredRecords(
+    userId,
+    null,
+    openAttendance.checkIn,
+  );
+  if (missingRecord) {
+    return { status: 400, message: missingRecord };
   }
 
   const attendance = await prisma.attendance.update({

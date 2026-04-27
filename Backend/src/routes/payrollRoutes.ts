@@ -15,6 +15,11 @@ import {
   confirmDailyPayrollHandler,
   getDailyPayrollsHandler,
   getMyDailyPayrollsHandler,
+  getUserSalariesHandler,
+  setUserMonthlySalaryHandler,
+  markAttendanceLeaveHandler,
+  getDeductionRulesHandler,
+  updateDeductionRuleHandler,
 } from "../controllers/payrollController";
 import { authorizeRoles } from "../middleware/authMiddleware";
 
@@ -39,6 +44,17 @@ router.post(
 // ── Salary Config (must be before /:id) ──
 router.get("/salary-config", authorizeRoles(accountingRoles), getSalaryConfigsHandler);
 router.put("/salary-config", authorizeRoles([UserRole.ADMIN]), updateSalaryConfigHandler);
+
+// ── Per-user salary overrides ──
+router.get("/admin/user-salaries", authorizeRoles([UserRole.ADMIN]), getUserSalariesHandler);
+router.put("/admin/user-salaries/:userId", authorizeRoles([UserRole.ADMIN]), setUserMonthlySalaryHandler);
+
+// ── Mark attendance leave type ──
+router.patch("/admin/attendance/:id/leave", authorizeRoles([UserRole.ADMIN]), markAttendanceLeaveHandler);
+
+// ── Deduction Rules ──
+router.get("/admin/deduction-rules", authorizeRoles(accountingRoles), getDeductionRulesHandler);
+router.put("/admin/deduction-rules/:type", authorizeRoles([UserRole.ADMIN]), updateDeductionRuleHandler);
 
 // ── Daily Payroll (must be before /:id) ──
 router.get("/daily", authorizeRoles(accountingRoles), getDailyPayrollsHandler);

@@ -1,6 +1,6 @@
-﻿import { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { confirmDialog } from "../../lib/dialog";
-import { Award, Plus, Trash2, X, Save, Zap } from "lucide-react";
+import { Award, Plus, Trash2, X, Save, Zap, TrendingUp, Search, ChevronDown } from "lucide-react";
 import { ModulePageShell } from "../../components/ModulePageShell";
 import { Button } from "../../components/ui/button";
 import { Card } from "../../components/ui/card";
@@ -40,17 +40,68 @@ const emptyForm = {
   notes: "",
 };
 
-const scoreBadge = (score: number) => {
-  if (score >= 85) return "bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300";
-  if (score >= 60) return "bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300";
-  return "bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300";
+type Grade = "excellent" | "good" | "average" | "poor";
+
+function getGrade(score: number): Grade {
+  if (score >= 90) return "excellent";
+  if (score >= 75) return "good";
+  if (score >= 60) return "average";
+  return "poor";
+}
+
+const GRADE_META: Record<Grade, { label: string; labelAr: string; color: string; bg: string; border: string }> = {
+  excellent: { label: "Excellent",  labelAr: "ممتاز",       color: "#047857", bg: "#d1fae5", border: "#6ee7b7" },
+  good:      { label: "Good",       labelAr: "جيد",          color: "#1d4ed8", bg: "#dbeafe", border: "#93c5fd" },
+  average:   { label: "Average",    labelAr: "متوسط",        color: "#b45309", bg: "#fef3c7", border: "#fcd34d" },
+  poor:      { label: "Poor",       labelAr: "ضعيف",         color: "#b91c1c", bg: "#fee2e2", border: "#fca5a5" },
 };
+
+const SCORE_WEIGHTS = [
+  { key: "productionScore" as const, labelEn: "Production Output",  labelAr: "الإنتاج",     color: "#3b82f6", weight: 40 },
+  { key: "qualityScore"    as const, labelEn: "Quality Rate",       labelAr: "الجودة",      color: "#10b981", weight: 30 },
+  { key: "attendanceScore" as const, labelEn: "Attendance",         labelAr: "الحضور",      color: "#f59e0b", weight: 20 },
+  { key: "kaizenScore"     as const, labelEn: "Kaizen / Improvement", labelAr: "كايزن",    color: "#8b5cf6", weight: 10 },
+];
+
+function ScoreBar({ label, value, color, weight }: { label: string; value: number; color: string; weight: number }) {
+  return (
+    <div>
+      <div className="flex justify-between items-center mb-1">
+        <span className="text-xs font-medium text-[var(--text-secondary)]">{label}</span>
+        <div className="flex items-center gap-1.5">
+          <span className="text-xs text-[var(--text-secondary)]">weight {weight}%</span>
+          <span className="text-sm font-bold" style={{ color }}>{value.toFixed(0)}</span>
+        </div>
+      </div>
+      <div className="h-2 bg-[var(--border-default)] rounded-full overflow-hidden">
+        <div
+          className="h-full rounded-full transition-all duration-500"
+          style={{ width: `${Math.min(100, value)}%`, background: color }}
+        />
+      </div>
+    </div>
+  );
+}
+
+function GradeBadge({ score, isAr }: { score: number; isAr: boolean }) {
+  const g = getGrade(score);
+  const m = GRADE_META[g];
+  return (
+    <span style={{
+      background: m.bg, color: m.color, border: `1px solid ${m.border}`,
+      borderRadius: "20px", padding: "2px 10px", fontSize: ".72rem", fontWeight: 700,
+    }}>
+      {isAr ? m.labelAr : m.label}
+    </span>
+  );
+}
 
 export default function EmployeePerformance() {
   const { locale } = useLocale();
   const { user } = useAuth();
   const isAdmin = user?.role === "ADMIN";
-  const nav = (en: string, ar: string) => locale === "ar" ? ar : en;
+  const isAr = locale === "ar";
+  const nav = (en: string, ar: string) => isAr ? ar : en;
 
   const [records, setRecords] = useState<PerfRecord[]>([]);
   const [users, setUsers] = useState<UserOption[]>([]);
@@ -59,24 +110,21 @@ export default function EmployeePerformance() {
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
   const [autoCalc, setAutoCalc] = useState(false);
+  const [search, setSearch] = useState("");
+  const [filterPeriod, setFilterPeriod] = useState("");
+  const [expandedId, setExpandedId] = useState<number | null>(null);
 
-  useEffect(() => { fetchAll(); }, []);
+  useEffect(() => { void fetchAll(); }, []);
 
   const fetchAll = async () => {
     setLoading(true);
     try {
       const [r1, r2] = await Promise.all([
-        fetch(`${API_BASE_URL}/performance`, { headers: { ...authHeaders() }, credentials: "include" }),
-        fetch(`${API_BASE_URL}/users/all`, { headers: { ...authHeaders() }, credentials: "include" }),
+        fetch(`${API_BASE_URL}/performance`, { headers: authHeaders(), credentials: "include" }),
+        fetch(`${API_BASE_URL}/users/all`, { headers: authHeaders(), credentials: "include" }),
       ]);
-      if (r1.ok) {
-        const d = await r1.json();
-        setRecords(d.records ?? d ?? []);
-      }
-      if (r2.ok) {
-        const d = await r2.json();
-        setUsers((d.users ?? d ?? []).filter((u: UserOption) => u.role !== "ADMIN"));
-      }
+      if (r1.ok) { const d = await r1.json(); setRecords(d.records ?? d ?? []); }
+      if (r2.ok) { const d = await r2.json(); setUsers((d.users ?? d ?? []).filter((u: UserOption) => u.role !== "ADMIN")); }
     } catch { } finally { setLoading(false); }
   };
 
@@ -99,7 +147,7 @@ export default function EmployeePerformance() {
           notes: form.notes.trim() || undefined,
         }),
       });
-      if (res.ok) { setShowForm(false); fetchAll(); }
+      if (res.ok) { setShowForm(false); void fetchAll(); }
     } catch { } finally { setSaving(false); }
   };
 
@@ -111,81 +159,163 @@ export default function EmployeePerformance() {
         method: "POST",
         headers: { "Content-Type": "application/json", ...authHeaders() },
         credentials: "include",
-        body: JSON.stringify({
-          userId: parseInt(form.userId),
-          periodType: form.periodType,
-          periodDate: form.periodDate,
-        }),
+        body: JSON.stringify({ userId: parseInt(form.userId), periodType: form.periodType, periodDate: form.periodDate }),
       });
-      if (res.ok) { setShowForm(false); fetchAll(); }
+      if (res.ok) { setShowForm(false); void fetchAll(); }
     } catch { } finally { setAutoCalc(false); }
   };
 
   const handleDelete = async (id: number) => {
     if (!(await confirmDialog(nav("Delete this performance record?", "حذف هذا السجل؟"), { danger: true }))) return;
     try {
-      await fetch(`${API_BASE_URL}/performance/${id}`, {
-        method: "DELETE",
-        headers: { ...authHeaders() },
-        credentials: "include",
-      });
-      fetchAll();
+      await fetch(`${API_BASE_URL}/performance/${id}`, { method: "DELETE", headers: authHeaders(), credentials: "include" });
+      void fetchAll();
     } catch { }
   };
 
-  const totalRecords = records.length;
-  const avgScore = records.length
-    ? (records.reduce((a, b) => a + b.totalScore, 0) / records.length).toFixed(1)
-    : "—";
+  const filtered = records
+    .filter((r) => !search || r.user.fullName.toLowerCase().includes(search.toLowerCase()))
+    .filter((r) => !filterPeriod || r.periodType === filterPeriod);
+
+  // KPIs
+  const avgScore = records.length ? (records.reduce((a, b) => a + b.totalScore, 0) / records.length) : 0;
+  const excellent = records.filter((r) => r.totalScore >= 90).length;
   const topPerformer = records.length
-    ? records.reduce((a, b) => a.totalScore > b.totalScore ? a : b).user.fullName
-    : "—";
+    ? records.reduce((a, b) => a.totalScore > b.totalScore ? a : b)
+    : null;
+
+  // Leaderboard - top 3 by avg score per employee
+  const byEmployee = new Map<number, { name: string; role: string; scores: number[] }>();
+  for (const r of records) {
+    const e = byEmployee.get(r.user.id) ?? { name: r.user.fullName, role: r.user.role, scores: [] };
+    e.scores.push(r.totalScore);
+    byEmployee.set(r.user.id, e);
+  }
+  const leaderboard = [...byEmployee.values()]
+    .map((e) => ({ ...e, avg: e.scores.reduce((a, b) => a + b, 0) / e.scores.length }))
+    .sort((a, b) => b.avg - a.avg)
+    .slice(0, 3);
+
+  const ROLE_ICONS: Record<string, string> = { WORKER: "👷", ENGINEER: "🔧", ACCOUNTANT: "💼" };
+
+  const computedTotal = (f: typeof form) => {
+    const p = parseFloat(f.productionScore || "0");
+    const q = parseFloat(f.qualityScore || "0");
+    const a = parseFloat(f.attendanceScore || "0");
+    const k = parseFloat(f.kaizenScore || "0");
+    return (p * 0.4 + q * 0.3 + a * 0.2 + k * 0.1).toFixed(1);
+  };
 
   return (
     <ModulePageShell
       title={nav("Employee Performance", "أداء الموظفين")}
-      subtitle={nav("Track and evaluate employee performance scores", "تتبع وتقييم درجات أداء الموظفين")}
+      subtitle={nav("Production, quality, attendance and kaizen scoring", "تقييم الإنتاج والجودة والحضور والتحسين")}
       icon={<Award size={22} />}
     >
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-        <Card className="p-4 bg-linear-to-br from-blue-50 to-blue-100 dark:from-blue-900/30 dark:to-blue-800/20">
-          <p className="text-xs text-blue-600 dark:text-blue-400 font-medium">{nav("Total Assessments", "إجمالي التقييمات")}</p>
-          <p className="text-2xl font-bold text-blue-800 dark:text-blue-200">{totalRecords}</p>
-        </Card>
-        <Card className="p-4 bg-linear-to-br from-green-50 to-green-100 dark:from-green-900/30 dark:to-green-800/20">
-          <p className="text-xs text-green-600 dark:text-green-400 font-medium">{nav("Average Score", "متوسط الدرجات")}</p>
-          <p className="text-2xl font-bold text-green-800 dark:text-green-200">{avgScore}</p>
-        </Card>
-        <Card className="p-4 bg-linear-to-br from-purple-50 to-purple-100 dark:from-purple-900/30 dark:to-purple-800/20">
-          <p className="text-xs text-purple-600 dark:text-purple-400 font-medium">{nav("Top Performer", "أفضل أداء")}</p>
-          <p className="text-lg font-bold text-purple-800 dark:text-purple-200 truncate">{topPerformer}</p>
+      {/* KPI Row */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+        {[
+          { label: nav("Total Assessments", "إجمالي التقييمات"), value: records.length, icon: "📋", color: "#3b82f6", bg: "#dbeafe" },
+          { label: nav("Avg Score", "متوسط الدرجة"), value: records.length ? avgScore.toFixed(1) : "—", icon: "📊", color: "#10b981", bg: "#d1fae5" },
+          { label: nav("Excellent (≥90)", "ممتاز (≥90)"), value: excellent, icon: "🏆", color: "#f59e0b", bg: "#fef3c7" },
+          { label: nav("Top Performer", "الأفضل أداءً"), value: topPerformer?.user.fullName.split(" ")[0] ?? "—", icon: "⭐", color: "#8b5cf6", bg: "#ede9fe" },
+        ].map((k) => (
+          <Card key={k.label} className="p-4 flex items-center gap-3">
+            <div style={{ width: 40, height: 40, borderRadius: 10, background: k.bg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.2rem", flexShrink: 0 }}>
+              {k.icon}
+            </div>
+            <div className="min-w-0">
+              <p className="text-xs text-[var(--text-secondary)] font-medium leading-tight">{k.label}</p>
+              <p className="text-xl font-bold truncate" style={{ color: k.color }}>{k.value}</p>
+            </div>
+          </Card>
+        ))}
+      </div>
+
+      {/* Leaderboard + Action */}
+      <div className="flex flex-col sm:flex-row gap-4 mb-6">
+        {/* Leaderboard */}
+        {leaderboard.length > 0 && (
+          <Card className="p-4 flex-1">
+            <p className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wide mb-3 flex items-center gap-1.5">
+              <TrendingUp size={13} /> {nav("Top Performers", "أفضل الأداء")}
+            </p>
+            <div className="flex flex-col gap-2">
+              {leaderboard.map((e, i) => (
+                <div key={e.name} className="flex items-center gap-3">
+                  <span className="text-lg w-6 text-center">{i === 0 ? "🥇" : i === 1 ? "🥈" : "🥉"}</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-semibold truncate">{e.name}</span>
+                      <span className="text-sm font-bold text-[var(--text-primary)]">{e.avg.toFixed(1)}</span>
+                    </div>
+                    <div className="h-1.5 bg-[var(--border-default)] rounded-full mt-1">
+                      <div className="h-full rounded-full bg-gradient-to-r from-blue-500 to-purple-500"
+                        style={{ width: `${e.avg}%` }} />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Card>
+        )}
+
+        {/* Score weights legend */}
+        <Card className="p-4 flex-1">
+          <p className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wide mb-3">{nav("Score Weights", "أوزان الدرجات")}</p>
+          <div className="flex flex-col gap-2.5">
+            {SCORE_WEIGHTS.map((w) => (
+              <div key={w.key} className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ background: w.color }} />
+                <span className="text-xs flex-1 text-[var(--text-secondary)]">{isAr ? w.labelAr : w.labelEn}</span>
+                <span className="text-xs font-bold" style={{ color: w.color }}>{w.weight}%</span>
+              </div>
+            ))}
+          </div>
         </Card>
       </div>
 
       {/* Toolbar */}
-      {!isAdmin && (
-        <div className="mb-4">
+      <div className="flex flex-wrap items-center gap-2 mb-4">
+        {!isAdmin && (
           <Button size="sm" onClick={() => { setForm(emptyForm); setShowForm(true); }}>
             <Plus size={15} className="me-1" />
             {nav("Add Assessment", "إضافة تقييم")}
           </Button>
+        )}
+        <div className="relative">
+          <Search size={14} className="absolute start-2.5 top-1/2 -translate-y-1/2 text-[var(--text-secondary)]" />
+          <input className="input ps-8 h-8 text-sm w-44" placeholder={nav("Search employee...", "بحث...")}
+            value={search} onChange={(e) => setSearch(e.target.value)} />
         </div>
-      )}
+        <select className="input text-sm h-8" value={filterPeriod} onChange={(e) => setFilterPeriod(e.target.value)}>
+          <option value="">{nav("All Periods", "جميع الفترات")}</option>
+          <option value="DAILY">{nav("Daily", "يومي")}</option>
+          <option value="WEEKLY">{nav("Weekly", "أسبوعي")}</option>
+        </select>
+      </div>
 
-      {/* Form */}
+      {/* Assessment Form */}
       {showForm && (
         <Card className="p-5 mb-6 border-2 border-[var(--accent)]">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold text-[var(--text-primary)]">{nav("New Performance Assessment", "تقييم أداء جديد")}</h3>
-            <button onClick={() => setShowForm(false)}><X size={18} /></button>
+            <div>
+              <h3 className="font-bold text-[var(--text-primary)]">{nav("New Performance Assessment", "تقييم أداء جديد")}</h3>
+              <p className="text-xs text-[var(--text-secondary)] mt-0.5">{nav("Score is auto-weighted: Production 40%, Quality 30%, Attendance 20%, Kaizen 10%", "الأوزان: إنتاج 40%، جودة 30%، حضور 20%، كايزن 10%")}</p>
+            </div>
+            <button onClick={() => setShowForm(false)} className="text-[var(--text-secondary)]"><X size={18} /></button>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
             <div>
               <label className="label">{nav("Employee *", "الموظف *")}</label>
               <select className="input" value={form.userId} onChange={(e) => setForm((p) => ({ ...p, userId: e.target.value }))}>
                 <option value="">{nav("Select employee...", "اختر موظفًا...")}</option>
-                {users.map((u) => <option key={u.id} value={u.id}>{u.fullName} ({u.role})</option>)}
+                {users.map((u) => (
+                  <option key={u.id} value={u.id}>
+                    {ROLE_ICONS[u.role] ?? "👤"} {u.fullName} — {u.role}
+                  </option>
+                ))}
               </select>
             </div>
             <div>
@@ -199,96 +329,140 @@ export default function EmployeePerformance() {
               <label className="label">{nav("Period Date", "تاريخ الفترة")}</label>
               <input type="date" className="input" value={form.periodDate} onChange={(e) => setForm((p) => ({ ...p, periodDate: e.target.value }))} />
             </div>
-            <div>
-              <label className="label">{nav("Production Score (0-100)", "درجة الإنتاج")}</label>
-              <input type="number" min="0" max="100" className="input" value={form.productionScore} onChange={(e) => setForm((p) => ({ ...p, productionScore: e.target.value }))} />
-            </div>
-            <div>
-              <label className="label">{nav("Quality Score (0-100)", "درجة الجودة")}</label>
-              <input type="number" min="0" max="100" className="input" value={form.qualityScore} onChange={(e) => setForm((p) => ({ ...p, qualityScore: e.target.value }))} />
-            </div>
-            <div>
-              <label className="label">{nav("Attendance Score (0-100)", "درجة الحضور")}</label>
-              <input type="number" min="0" max="100" className="input" value={form.attendanceScore} onChange={(e) => setForm((p) => ({ ...p, attendanceScore: e.target.value }))} />
-            </div>
-            <div>
-              <label className="label">{nav("Kaizen Score (0-100)", "درجة كايزن")}</label>
-              <input type="number" min="0" max="100" className="input" value={form.kaizenScore} onChange={(e) => setForm((p) => ({ ...p, kaizenScore: e.target.value }))} />
-            </div>
-            <div>
-              <label className="label">{nav("Notes", "ملاحظات")}</label>
-              <input className="input" value={form.notes} onChange={(e) => setForm((p) => ({ ...p, notes: e.target.value }))} />
-            </div>
           </div>
-          <div className="flex flex-wrap gap-2 mt-4">
-            <Button size="sm" onClick={handleSave} disabled={saving}>
+
+          {/* Score sliders */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+            {SCORE_WEIGHTS.map((w) => (
+              <div key={w.key}>
+                <div className="flex justify-between mb-1">
+                  <label className="label mb-0">{isAr ? w.labelAr : w.labelEn} <span className="text-[var(--text-secondary)] font-normal">({w.weight}%)</span></label>
+                  <span className="text-sm font-bold" style={{ color: w.color }}>
+                    {form[w.key]}/100
+                  </span>
+                </div>
+                <input
+                  type="range" min="0" max="100" step="1"
+                  value={form[w.key]}
+                  onChange={(e) => setForm((p) => ({ ...p, [w.key]: e.target.value }))}
+                  className="w-full accent-blue-500"
+                  style={{ accentColor: w.color }}
+                />
+                <div className="flex justify-between text-xs text-[var(--text-secondary)]">
+                  <span>0</span><span>50</span><span>100</span>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Computed total preview */}
+          <div className="flex items-center gap-3 p-3 rounded-lg mb-4" style={{ background: "var(--bg-surface-2, #f8fafc)", border: "1px solid var(--border-default)" }}>
+            <span className="text-sm font-medium text-[var(--text-secondary)]">{nav("Computed Total Score:", "الدرجة الإجمالية المحسوبة:")}</span>
+            <span className="text-xl font-bold text-[var(--text-primary)]">{computedTotal(form)}</span>
+            <GradeBadge score={parseFloat(computedTotal(form))} isAr={isAr} />
+          </div>
+
+          <div className="mb-3">
+            <label className="label">{nav("Notes", "ملاحظات")}</label>
+            <input className="input" placeholder={nav("Optional notes about this assessment period", "ملاحظات اختيارية عن هذه الفترة")}
+              value={form.notes} onChange={(e) => setForm((p) => ({ ...p, notes: e.target.value }))} />
+          </div>
+
+          <div className="flex flex-wrap gap-2 pt-3 border-t border-[var(--border-default)]">
+            <Button size="sm" onClick={handleSave} disabled={saving || !form.userId}>
               <Save size={14} className="me-1" />
-              {saving ? nav("Saving...", "جارٍ الحفظ...") : nav("Save Manual", "حفظ يدوي")}
+              {saving ? nav("Saving...", "جارٍ الحفظ...") : nav("Save Assessment", "حفظ التقييم")}
             </Button>
-            <Button size="sm" variant="outline" onClick={handleAutoCalc} disabled={autoCalc}>
+            <Button size="sm" variant="outline" onClick={handleAutoCalc} disabled={autoCalc || !form.userId}>
               <Zap size={14} className="me-1" />
-              {autoCalc ? nav("Calculating...", "جارٍ الحساب...") : nav("Auto-Calculate", "حساب تلقائي")}
+              {autoCalc ? nav("Calculating...", "جارٍ الحساب...") : nav("Auto-Calculate from Records", "حساب تلقائي من السجلات")}
             </Button>
             <Button size="sm" variant="outline" onClick={() => setShowForm(false)}>{nav("Cancel", "إلغاء")}</Button>
           </div>
         </Card>
       )}
 
-      {/* Table */}
-      <Card className="overflow-hidden">
-        <div className="overflow-x-auto">
-          {loading ? (
-            <div className="flex justify-center p-10"><div className="spinner" /></div>
-          ) : records.length === 0 ? (
-            <div className="p-10 text-center text-[var(--text-secondary)]">{nav("No performance records", "لا توجد سجلات")}</div>
-          ) : (
-            <table className="data-table w-full">
-              <thead>
-                <tr>
-                  <th>{nav("Employee", "الموظف")}</th>
-                  <th>{nav("Period", "الفترة")}</th>
-                  <th>{nav("Production", "الإنتاج")}</th>
-                  <th>{nav("Quality", "الجودة")}</th>
-                  <th>{nav("Attendance", "الحضور")}</th>
-                  <th>{nav("Kaizen", "كايزن")}</th>
-                  <th>{nav("Total", "المجموع")}</th>
-                  <th>{nav("By", "بواسطة")}</th>
-                  {!isAdmin && <th>{nav("Actions", "الإجراءات")}</th>}
-                </tr>
-              </thead>
-              <tbody>
-                {records.map((r) => (
-                  <tr key={r.id}>
-                    <td>
-                      <div className="font-medium">{r.user.fullName}</div>
-                      <div className="text-xs text-[var(--text-secondary)]">{r.user.role}</div>
-                    </td>
-                    <td>
-                      <div>{r.periodType}</div>
-                      <div className="text-xs text-[var(--text-secondary)]">{new Date(r.periodDate).toLocaleDateString()}</div>
-                    </td>
-                    <td>{r.productionScore.toFixed(1)}</td>
-                    <td>{r.qualityScore.toFixed(1)}</td>
-                    <td>{r.attendanceScore.toFixed(1)}</td>
-                    <td>{r.kaizenScore.toFixed(1)}</td>
-                    <td>
-                      <span className={`badge ${scoreBadge(r.totalScore)}`}>{r.totalScore.toFixed(1)}</span>
-                    </td>
-                    <td className="text-sm">{r.calculatedBy.fullName}</td>
+      {/* Records */}
+      {loading ? (
+        <div className="flex justify-center p-12"><div className="spinner" /></div>
+      ) : filtered.length === 0 ? (
+        <Card className="p-12 text-center text-[var(--text-secondary)]">
+          <Award size={32} className="mx-auto mb-3 opacity-30" />
+          <p className="font-medium">{nav("No performance records", "لا توجد سجلات أداء")}</p>
+        </Card>
+      ) : (
+        <div className="flex flex-col gap-3">
+          {filtered.map((r) => {
+            const grade = getGrade(r.totalScore);
+            const gm = GRADE_META[grade];
+            const expanded = expandedId === r.id;
+            return (
+              <Card key={r.id} className="overflow-hidden">
+                <div
+                  className="p-4 cursor-pointer flex items-center justify-between gap-3"
+                  onClick={() => setExpandedId(expanded ? null : r.id)}
+                >
+                  {/* Left: employee info */}
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div style={{
+                      width: 40, height: 40, borderRadius: "50%", background: gm.bg,
+                      border: `2px solid ${gm.border}`, display: "flex", alignItems: "center",
+                      justifyContent: "center", fontSize: "1.1rem", flexShrink: 0,
+                    }}>
+                      {ROLE_ICONS[r.user.role] ?? "👤"}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="font-bold text-sm text-[var(--text-primary)] truncate">{r.user.fullName}</p>
+                      <p className="text-xs text-[var(--text-secondary)]">{r.user.role} · {r.periodType} · {new Date(r.periodDate).toLocaleDateString()}</p>
+                    </div>
+                  </div>
+
+                  {/* Right: score */}
+                  <div className="flex items-center gap-3 flex-shrink-0">
+                    <GradeBadge score={r.totalScore} isAr={isAr} />
+                    <div className="text-end">
+                      <p className="text-xl font-bold" style={{ color: gm.color }}>{r.totalScore.toFixed(1)}</p>
+                      <p className="text-xs text-[var(--text-secondary)]">/100</p>
+                    </div>
+                    <ChevronDown size={16} className={`text-[var(--text-secondary)] transition-transform ${expanded ? "rotate-180" : ""}`} />
                     {!isAdmin && (
-                      <td>
-                        <Button size="sm" variant="outline" onClick={() => handleDelete(r.id)} className="text-red-500 hover:text-red-700">
-                          <Trash2 size={13} />
-                        </Button>
-                      </td>
+                      <button className="text-[var(--text-secondary)] hover:text-red-500 p-1"
+                        onClick={(e) => { e.stopPropagation(); void handleDelete(r.id); }}>
+                        <Trash2 size={14} />
+                      </button>
                     )}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
+                  </div>
+                </div>
+
+                {/* Expandable score breakdown */}
+                {expanded && (
+                  <div className="border-t border-[var(--border-default)] px-4 pb-4 pt-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3">
+                      {SCORE_WEIGHTS.map((w) => (
+                        <ScoreBar
+                          key={w.key}
+                          label={`${isAr ? w.labelAr : w.labelEn} (${w.weight}%)`}
+                          value={r[w.key]}
+                          color={w.color}
+                          weight={w.weight}
+                        />
+                      ))}
+                    </div>
+                    {r.notes && (
+                      <p className="mt-3 text-xs text-[var(--text-secondary)] italic border-t border-[var(--border-default)] pt-2">
+                        📝 {r.notes}
+                      </p>
+                    )}
+                    <p className="mt-2 text-xs text-[var(--text-secondary)]">
+                      {nav("Assessed by:", "قيّمه:")} {r.calculatedBy.fullName}
+                    </p>
+                  </div>
+                )}
+              </Card>
+            );
+          })}
         </div>
-      </Card>
+      )}
     </ModulePageShell>
   );
 }

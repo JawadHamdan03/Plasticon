@@ -47,6 +47,7 @@ import electricityRoutes from "./routes/electricityRoutes";
 import profileRoutes from "./routes/profileRoutes";
 import registrationRequestRoutes from "./routes/registrationRequestRoutes";
 import { initializeEmailService } from "./utils/emailService";
+import { startShiftReminderScheduler } from "./services/shiftReminderScheduler";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -152,6 +153,9 @@ server.on("error", (error: NodeJS.ErrnoException) => {
   process.exit(1);
 });
 
-server.listen(PORT, () => console.log(`server is running on port ${PORT}`));
+server.listen(PORT, () => {
+  console.log(`server is running on port ${PORT}`);
+  startShiftReminderScheduler();
+});
 
 void initializeEmailService();

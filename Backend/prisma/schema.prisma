@@ -118,6 +118,7 @@ model User {
   profileImage     String?
   role             UserRole
   isActive         Boolean  @default(true)
+  monthlySalary    Float?   // per-user salary override; takes priority over role-based SalaryConfig
 
   // Extended profile
   bio              String?
@@ -191,6 +192,7 @@ model User {
   maintenanceCostsCreated    MaintenanceCost[]     @relation("MaintenanceCostCreator")
   userDocuments              UserDocument[]
   reviewedRegistrationRequests RegistrationRequest[] @relation("RegistrationReviewer")
+  deductionRulesUpdated        DeductionRule[]        @relation("DeductionRuleUpdater")
 
   // Indices for common queries
   @@index([email])
@@ -233,6 +235,7 @@ model Attendance {
   checkOut        DateTime?
   lateMinutes     Int       @default(0)
   overtimeMinutes Int       @default(0)
+  leaveType       String?   // "SICK" | "ANNUAL" | "UNPAID" | null (normal work day)
 
   user         User         @relation(fields: [userId], references: [id])
   shift        Shift?       @relation(fields: [shiftId], references: [id])
@@ -596,6 +599,8 @@ model DailyPayroll {
   hoursWorked      Float
   dailyRate        Float
   totalDailyPay    Float
+  deductionAmount  Float     @default(0)
+  deductionNotes   String?
   isConfirmed      Boolean   @default(false)
   confirmedById    Int?
   confirmedAt      DateTime?
@@ -621,6 +626,20 @@ model Payroll {
   user User @relation(fields: [userId], references: [id])
 
   calculatedAt DateTime @default(now())
+}
+
+// type values: "LATE_ARRIVAL" | "EARLY_CHECKOUT" | "UNEXCUSED_ABSENCE" | "SICK_LEAVE"
+// deductionValue: NIS/hr for LATE_ARRIVAL; pay-rate % (0-100) for SICK_LEAVE; ignored for others
+model DeductionRule {
+  id               Int      @id @default(autoincrement())
+  type             String   @unique
+  isActive         Boolean  @default(false)
+  thresholdMinutes Int      @default(15)
+  deductionValue   Float    @default(0)
+  updatedById      Int?
+  updatedBy        User?    @relation("DeductionRuleUpdater", fields: [updatedById], references: [id])
+  updatedAt        DateTime @updatedAt
+  createdAt        DateTime @default(now())
 }
 
 //////////////////////

@@ -1,6 +1,6 @@
-﻿import { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { confirmDialog } from "../../lib/dialog";
-import { Plus, Edit, Trash2, FileText, BarChart2, Calendar } from "lucide-react";
+import { Plus, Pencil, Trash2, FileText, BarChart2, Calendar, X, Save, ExternalLink } from "lucide-react";
 import { ModulePageShell } from "../../components/ModulePageShell";
 import { Button } from "../../components/ui/button";
 import { Card } from "../../components/ui/card";
@@ -24,40 +24,48 @@ interface FinancialReport {
   createdAt: string;
 }
 
-const TYPE_STYLES: Record<string, string> = {
-  MONTHLY: "bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300",
-  QUARTERLY: "bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300",
-  ANNUAL: "bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300",
+const TYPE_META: Record<string, { label: string; labelAr: string; color: string; bg: string; icon: string }> = {
+  MONTHLY:   { label: "Monthly",   labelAr: "شهري",  color: "#1d4ed8", bg: "#dbeafe", icon: "📅" },
+  QUARTERLY: { label: "Quarterly", labelAr: "فصلي",  color: "#7c3aed", bg: "#ede9fe", icon: "📊" },
+  ANNUAL:    { label: "Annual",    labelAr: "سنوي",  color: "#047857", bg: "#d1fae5", icon: "📈" },
 };
+
+const emptyForm = { title: "", reportType: "MONTHLY", period: "", pdfPath: "" };
 
 export default function FinancialReports() {
   const { locale } = useLocale();
   const { user } = useAuth();
   const isAdmin = user?.role === "ADMIN";
   const nav = (en: string, ar: string) => locale === "ar" ? ar : en;
+
   const [reports, setReports] = useState<FinancialReport[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
-  const [form, setForm] = useState({ title: "", reportType: "MONTHLY", period: "", pdfPath: "" });
+  const [form, setForm] = useState(emptyForm);
+  const [saving, setSaving] = useState(false);
+  const [filterType, setFilterType] = useState("");
 
-  useEffect(() => { fetchReports(); }, []);
+  useEffect(() => { void fetchReports(); }, []);
 
   const fetchReports = async () => {
+    setLoading(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/financial-reports`, {
-        headers: { ...authHeaders() },
-        credentials: "include",
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setReports(data || []);
-      }
+      const res = await fetch(`${API_BASE_URL}/financial-reports`, { headers: authHeaders(), credentials: "include" });
+      if (res.ok) { const data = await res.json(); setReports(data ?? []); }
     } catch { } finally { setLoading(false); }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const openNew = () => { setEditingId(null); setForm(emptyForm); setShowForm(true); };
+  const openEdit = (r: FinancialReport) => {
+    setEditingId(r.id);
+    setForm({ title: r.title, reportType: r.reportType, period: r.period, pdfPath: r.pdfPath ?? "" });
+    setShowForm(true);
+  };
+
+  const handleSave = async () => {
+    if (!form.title.trim() || !form.period.trim()) return;
+    setSaving(true);
     try {
       const url = editingId ? `${API_BASE_URL}/financial-reports/${editingId}` : `${API_BASE_URL}/financial-reports`;
       const res = await fetch(url, {
@@ -66,186 +74,184 @@ export default function FinancialReports() {
         credentials: "include",
         body: JSON.stringify(form),
       });
-      if (res.ok) {
-        setForm({ title: "", reportType: "MONTHLY", period: "", pdfPath: "" });
-        setEditingId(null);
-        setShowForm(false);
-        fetchReports();
-      }
-    } catch { }
-  };
-
-  const handleEdit = (r: FinancialReport) => {
-    setForm({ title: r.title, reportType: r.reportType, period: r.period, pdfPath: r.pdfPath || "" });
-    setEditingId(r.id);
-    setShowForm(true);
+      if (res.ok) { setShowForm(false); void fetchReports(); }
+    } catch { } finally { setSaving(false); }
   };
 
   const handleDelete = async (id: number) => {
     if (!(await confirmDialog(nav("Delete this report?", "حذف هذا التقرير؟"), { danger: true }))) return;
-    await fetch(`${API_BASE_URL}/financial-reports/${id}`, {
-      method: "DELETE", headers: { ...authHeaders() }, credentials: "include",
-    });
-    fetchReports();
+    await fetch(`${API_BASE_URL}/financial-reports/${id}`, { method: "DELETE", headers: authHeaders(), credentials: "include" });
+    void fetchReports();
   };
 
-  const monthly = reports.filter(r => r.reportType === "MONTHLY").length;
-  const quarterly = reports.filter(r => r.reportType === "QUARTERLY").length;
-  const annual = reports.filter(r => r.reportType === "ANNUAL").length;
+  const filtered = reports.filter((r) => !filterType || r.reportType === filterType);
+  const monthly = reports.filter((r) => r.reportType === "MONTHLY").length;
+  const quarterly = reports.filter((r) => r.reportType === "QUARTERLY").length;
+  const annual = reports.filter((r) => r.reportType === "ANNUAL").length;
 
   return (
     <ModulePageShell
       title={nav("Financial Reports", "التقارير المالية")}
-      subtitle={nav("Generate and access financial reports", "إنشاء الوصول إلى التقارير المالية")}
+      subtitle={nav("Generate and access periodic financial reports", "إنشاء والوصول إلى التقارير المالية الدورية")}
+      icon={<BarChart2 size={22} />}
     >
-      <div className="space-y-6">
-        {/* KPIs */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card className="p-4 bg-linear-to-br from-blue-50 to-blue-100 dark:from-blue-900/30 dark:to-blue-800/30 border border-blue-200 dark:border-blue-800">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-xs text-slate-500 dark:text-slate-400">{nav("Monthly Reports", "التقارير الشهرية")}</p>
-              <Calendar size={18} className="text-blue-600 dark:text-blue-400" />
+      {/* KPIs */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
+        {[
+          { label: nav("Monthly", "شهرية"), value: monthly, icon: "📅", color: "#1d4ed8", bg: "#dbeafe" },
+          { label: nav("Quarterly", "فصلية"), value: quarterly, icon: "📊", color: "#7c3aed", bg: "#ede9fe" },
+          { label: nav("Annual", "سنوية"), value: annual, icon: "📈", color: "#047857", bg: "#d1fae5" },
+        ].map((k) => (
+          <Card key={k.label} className="p-4 flex items-center gap-3">
+            <div style={{ width: 40, height: 40, borderRadius: 10, background: k.bg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.2rem", flexShrink: 0 }}>
+              {k.icon}
             </div>
-            <p className="text-2xl font-bold text-blue-700 dark:text-blue-300">{monthly}</p>
-          </Card>
-          <Card className="p-4 bg-linear-to-br from-purple-50 to-purple-100 dark:from-purple-900/30 dark:to-purple-800/30 border border-purple-200 dark:border-purple-800">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-xs text-slate-500 dark:text-slate-400">{nav("Quarterly Reports", "التقارير الفصلية")}</p>
-              <BarChart2 size={18} className="text-purple-600 dark:text-purple-400" />
+            <div>
+              <p className="text-xs text-[var(--text-secondary)] font-medium leading-tight">{k.label} {nav("Reports", "تقارير")}</p>
+              <p className="text-xl font-bold" style={{ color: k.color }}>{k.value}</p>
             </div>
-            <p className="text-2xl font-bold text-purple-700 dark:text-purple-300">{quarterly}</p>
           </Card>
-          <Card className="p-4 bg-linear-to-br from-green-50 to-green-100 dark:from-green-900/30 dark:to-green-800/30 border border-green-200 dark:border-green-800">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-xs text-slate-500 dark:text-slate-400">{nav("Annual Reports", "التقارير السنوية")}</p>
-              <FileText size={18} className="text-green-600 dark:text-green-400" />
-            </div>
-            <p className="text-2xl font-bold text-green-700 dark:text-green-300">{annual}</p>
-          </Card>
-        </div>
+        ))}
+      </div>
 
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold">{nav("Reports", "التقارير")}</h2>
-          {!isAdmin && (
-            <Button onClick={() => { setShowForm(!showForm); setEditingId(null); }} className="gap-2">
-              <Plus size={16} />
-              {nav("Add Report", "إضافة تقرير")}
-            </Button>
-          )}
-        </div>
-
-        {/* Form */}
-        {!isAdmin && showForm && (
-          <Card className="p-5 border border-slate-200 dark:border-slate-700">
-            <h3 className="font-semibold mb-4 text-slate-800 dark:text-slate-200">
-              {editingId ? nav("Edit Report", "تعديل التقرير") : nav("New Report", "تقرير جديد")}
-            </h3>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">{nav("Report Title", "عنوان التقرير")}</label>
-                  <input type="text" value={form.title} onChange={e => setForm({ ...form, title: e.target.value })}
-                    className="w-full px-3 py-2 border rounded-lg bg-white border-slate-300 dark:border-slate-600 text-sm" required />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">{nav("Report Type", "نوع التقرير")}</label>
-                  <select value={form.reportType} onChange={e => setForm({ ...form, reportType: e.target.value })}
-                    className="w-full px-3 py-2 border rounded-lg bg-white border-slate-300 dark:border-slate-600 text-sm">
-                    <option value="MONTHLY">Monthly</option>
-                    <option value="QUARTERLY">Quarterly</option>
-                    <option value="ANNUAL">Annual</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">{nav("Period", "الفترة")}</label>
-                  <input type="text" placeholder="e.g. Q1 2025, Jan 2025" value={form.period}
-                    onChange={e => setForm({ ...form, period: e.target.value })}
-                    className="w-full px-3 py-2 border rounded-lg bg-white border-slate-300 dark:border-slate-600 text-sm" required />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">{nav("PDF Path (optional)", "مسار PDF (اختياري)")}</label>
-                  <input type="text" value={form.pdfPath} onChange={e => setForm({ ...form, pdfPath: e.target.value })}
-                    className="w-full px-3 py-2 border rounded-lg bg-white border-slate-300 dark:border-slate-600 text-sm" />
-                </div>
-              </div>
-              <div className="flex gap-2">
-                <Button type="submit">{nav("Save", "حفظ")}</Button>
-                <button type="button" onClick={() => { setShowForm(false); setEditingId(null); }}
-                  className="px-4 py-2 text-sm border rounded-lg bg-white hover:bg-slate-50 dark:hover:bg-slate-600">
-                  {nav("Cancel", "إلغاء")}
-                </button>
-              </div>
-            </form>
-          </Card>
+      {/* Toolbar */}
+      <div className="flex flex-wrap items-center gap-2 mb-4">
+        {!isAdmin && (
+          <Button size="sm" onClick={openNew}>
+            <Plus size={15} className="me-1" />
+            {nav("Add Report", "إضافة تقرير")}
+          </Button>
         )}
-
-        {/* Table */}
-        {loading ? (
-          <div className="space-y-3">
-            {[1, 2, 3].map(i => <div key={i} className="h-14 rounded-lg bg-slate-100 dark:bg-slate-700 animate-pulse" />)}
-          </div>
-        ) : reports.length === 0 ? (
-          <Card className="p-12 text-center border border-dashed border-slate-300 dark:border-slate-600">
-            <FileText className="mx-auto mb-3 text-slate-400" size={40} />
-            <p className="text-slate-500 dark:text-slate-400">{nav("No reports yet. Click 'Add Report' to create one.", "لا توجد تقارير بعد.")}</p>
-          </Card>
-        ) : (
-          <Card className="overflow-hidden border border-slate-200 dark:border-slate-700">
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="bg-slate-50 dark:bg-slate-700/50 border-b border-slate-200 dark:border-slate-700">
-                  <tr>
-                    <th className="text-left py-3 px-4 font-semibold text-slate-600 dark:text-slate-300">{nav("Title", "العنوان")}</th>
-                    <th className="text-left py-3 px-4 font-semibold text-slate-600 dark:text-slate-300">{nav("Type", "النوع")}</th>
-                    <th className="text-left py-3 px-4 font-semibold text-slate-600 dark:text-slate-300">{nav("Period", "الفترة")}</th>
-                    <th className="text-left py-3 px-4 font-semibold text-slate-600 dark:text-slate-300">{nav("Generated By", "أنشأه")}</th>
-                    <th className="text-left py-3 px-4 font-semibold text-slate-600 dark:text-slate-300">{nav("Date", "التاريخ")}</th>
-                    <th className="py-3 px-4" />
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
-                  {reports.map(r => (
-                    <tr key={r.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
-                      <td className="py-3 px-4 font-medium text-slate-800 dark:text-slate-200">{r.title}</td>
-                      <td className="py-3 px-4">
-                        <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${TYPE_STYLES[r.reportType] ?? TYPE_STYLES.MONTHLY}`}>
-                          {nav(r.reportType, r.reportType === "MONTHLY" ? "شهري" : r.reportType === "QUARTERLY" ? "فصلي" : "سنوي")}
-                        </span>
-                      </td>
-                      <td className="py-3 px-4 text-slate-600 dark:text-slate-400">{r.period}</td>
-                      <td className="py-3 px-4 text-xs text-slate-500">{r.generatedBy?.fullName ?? "—"}</td>
-                      <td className="py-3 px-4 text-xs text-slate-500">{new Date(r.createdAt).toLocaleDateString()}</td>
-                      <td className="py-3 px-4">
-                        <div className="flex items-center gap-1 justify-end">
-                          {r.pdfPath && (
-                            <a href={r.pdfPath} target="_blank" rel="noopener noreferrer"
-                              className="p-1.5 rounded hover:bg-blue-100 dark:hover:bg-blue-900/30 text-blue-500">
-                              <FileText size={14} />
-                            </a>
-                          )}
-                          {!isAdmin && (
-                            <>
-                              <button onClick={() => handleEdit(r)}
-                                className="p-1.5 rounded hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-500">
-                                <Edit size={14} />
-                              </button>
-                              <button onClick={() => handleDelete(r.id)}
-                                className="p-1.5 rounded hover:bg-red-100 dark:hover:bg-red-900/30 text-red-500">
-                                <Trash2 size={14} />
-                              </button>
-                            </>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </Card>
+        <select className="input text-sm h-8 min-w-[150px]" value={filterType} onChange={(e) => setFilterType(e.target.value)}>
+          <option value="">{nav("All Types", "جميع الأنواع")}</option>
+          <option value="MONTHLY">{nav("Monthly", "شهري")}</option>
+          <option value="QUARTERLY">{nav("Quarterly", "فصلي")}</option>
+          <option value="ANNUAL">{nav("Annual", "سنوي")}</option>
+        </select>
+        {filterType && (
+          <button className="text-xs text-[var(--text-secondary)] underline" onClick={() => setFilterType("")}>
+            {nav("Clear", "مسح")}
+          </button>
         )}
       </div>
+
+      {/* Form */}
+      {!isAdmin && showForm && (
+        <Card className="p-5 mb-6 border-2 border-[var(--accent)]">
+          <div className="flex items-center justify-between mb-5">
+            <div>
+              <h3 className="font-bold text-[var(--text-primary)] text-base">
+                {editingId ? nav("Edit Report", "تعديل التقرير") : nav("New Report", "تقرير جديد")}
+              </h3>
+              <p className="text-xs text-[var(--text-secondary)] mt-0.5">{nav("Fill in the report details", "أدخل بيانات التقرير")}</p>
+            </div>
+            <button className="text-[var(--text-secondary)] hover:text-[var(--text-primary)]" onClick={() => setShowForm(false)}><X size={18} /></button>
+          </div>
+
+          <p className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wide mb-2">{nav("Report Info", "بيانات التقرير")}</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+            <div className="sm:col-span-2">
+              <label className="label">{nav("Report Title *", "عنوان التقرير *")}</label>
+              <input className="input" placeholder={nav("e.g. Q1 2025 Financial Summary", "مثال: ملخص مالي الربع الأول 2025")}
+                value={form.title} onChange={(e) => setForm((p) => ({ ...p, title: e.target.value }))} />
+            </div>
+            <div>
+              <label className="label">{nav("Report Type *", "نوع التقرير *")}</label>
+              <select className="input" value={form.reportType} onChange={(e) => setForm((p) => ({ ...p, reportType: e.target.value }))}>
+                <option value="MONTHLY">{nav("Monthly", "شهري")}</option>
+                <option value="QUARTERLY">{nav("Quarterly", "فصلي")}</option>
+                <option value="ANNUAL">{nav("Annual", "سنوي")}</option>
+              </select>
+            </div>
+            <div>
+              <label className="label">{nav("Period *", "الفترة *")}</label>
+              <input className="input" placeholder={nav("e.g. Q1 2025, Jan 2025, FY 2025", "مثال: Q1 2025 أو يناير 2025")}
+                value={form.period} onChange={(e) => setForm((p) => ({ ...p, period: e.target.value }))} />
+            </div>
+            <div className="sm:col-span-2">
+              <label className="label">{nav("PDF Link (optional)", "رابط PDF (اختياري)")}</label>
+              <input className="input" type="url" placeholder="https://..."
+                value={form.pdfPath} onChange={(e) => setForm((p) => ({ ...p, pdfPath: e.target.value }))} />
+            </div>
+          </div>
+
+          <div className="flex gap-2 pt-2 border-t border-[var(--border-default)]">
+            <Button size="sm" onClick={handleSave} disabled={saving || !form.title.trim() || !form.period.trim()}>
+              <Save size={14} className="me-1" />
+              {saving ? nav("Saving...", "جارٍ الحفظ...") : nav("Save Report", "حفظ التقرير")}
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => setShowForm(false)}>{nav("Cancel", "إلغاء")}</Button>
+          </div>
+        </Card>
+      )}
+
+      {/* Report Cards */}
+      {loading ? (
+        <div className="flex justify-center p-12"><div className="spinner" /></div>
+      ) : filtered.length === 0 ? (
+        <Card className="p-12 text-center text-[var(--text-secondary)]">
+          <FileText size={32} className="mx-auto mb-3 opacity-30" />
+          <p className="font-medium">{nav("No reports found", "لا توجد تقارير")}</p>
+          <p className="text-sm mt-1">{nav("Add your first report to get started", "أضف أول تقرير للبدء")}</p>
+        </Card>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {filtered.map((r) => {
+            const meta = TYPE_META[r.reportType] ?? TYPE_META.MONTHLY;
+            return (
+              <Card key={r.id} className="p-0 overflow-hidden flex flex-col">
+                <div style={{ background: meta.bg, borderBottom: `2px solid ${meta.color}20`, padding: "12px 16px" }}
+                  className="flex items-start justify-between gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span style={{ fontSize: "1.3rem" }}>{meta.icon}</span>
+                    <div className="min-w-0">
+                      <p className="font-bold text-sm text-[var(--text-primary)] truncate">{r.title}</p>
+                      <span style={{ background: meta.color + "20", color: meta.color, borderRadius: "20px", padding: "1px 8px", fontSize: ".68rem", fontWeight: 700 }}>
+                        {locale === "ar" ? meta.labelAr : meta.label}
+                      </span>
+                    </div>
+                  </div>
+                  {!isAdmin && (
+                    <div className="flex gap-1 flex-shrink-0">
+                      <button className="text-[var(--text-secondary)] hover:text-blue-600 p-1" onClick={() => openEdit(r)}>
+                        <Pencil size={14} />
+                      </button>
+                      <button className="text-[var(--text-secondary)] hover:text-red-500 p-1" onClick={() => handleDelete(r.id)}>
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                <div className="p-4 flex-1 flex flex-col gap-2.5">
+                  <div className="flex items-center gap-2 text-sm">
+                    <Calendar size={12} className="text-[var(--text-secondary)] shrink-0" />
+                    <span className="font-semibold">{r.period}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
+                    <span>👤</span>
+                    <span className="truncate">{r.generatedBy?.fullName ?? nav("Unknown", "غير معروف")}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-xs text-[var(--text-secondary)]">
+                    <span>{new Date(r.createdAt).toLocaleDateString()}</span>
+                  </div>
+                </div>
+
+                {r.pdfPath && (
+                  <div className="border-t border-[var(--border-default)] px-4 py-2.5">
+                    <a href={r.pdfPath} target="_blank" rel="noopener noreferrer"
+                      className="flex items-center justify-center gap-1.5 w-full text-xs font-semibold py-1.5 rounded-lg"
+                      style={{ background: meta.bg, color: meta.color }}>
+                      <ExternalLink size={11} />
+                      {nav("View PDF", "عرض PDF")}
+                    </a>
+                  </div>
+                )}
+              </Card>
+            );
+          })}
+        </div>
+      )}
     </ModulePageShell>
   );
 }

@@ -15,6 +15,11 @@ import {
   confirmDailyPayroll,
   getDailyPayrollsForAccountant,
   getMyDailyPayrolls,
+  getUserSalaries,
+  setUserMonthlySalary,
+  markAttendanceLeave,
+  getDeductionRules,
+  updateDeductionRule,
 } from "../services/payrollServices";
 
 export const calculatePayrollHandler = async (
@@ -265,5 +270,87 @@ export const getMyDailyPayrollsHandler = async (req: AuthenticatedRequest, res: 
   } catch (error) {
     console.error("Get my daily payrolls error:", error);
     res.status(500).json({ message: "Failed to fetch daily payrolls" });
+  }
+};
+
+export const getUserSalariesHandler = async (
+  _req: AuthenticatedRequest,
+  res: Response,
+) => {
+  try {
+    const result = await getUserSalaries();
+    res.status(result.status).json(result.data);
+  } catch (error) {
+    console.error("Get user salaries error:", error);
+    res.status(500).json({ message: "Failed to fetch user salaries" });
+  }
+};
+
+export const setUserMonthlySalaryHandler = async (
+  req: AuthenticatedRequest,
+  res: Response,
+) => {
+  try {
+    const adminId = req.user?.id;
+    if (!adminId) { res.status(401).json({ message: "Not authorized" }); return; }
+
+    const userId = Number(req.params.userId);
+    const { monthlySalary } = req.body as { monthlySalary: number | null };
+
+    const result = await setUserMonthlySalary(userId, monthlySalary ?? null, adminId);
+    if (result.message) { res.status(result.status).json({ message: result.message }); return; }
+    res.status(result.status).json(result.data);
+  } catch (error) {
+    console.error("Set user salary error:", error);
+    res.status(500).json({ message: "Failed to update user salary" });
+  }
+};
+
+export const getDeductionRulesHandler = async (_req: AuthenticatedRequest, res: Response) => {
+  try {
+    const result = await getDeductionRules();
+    res.status(result.status).json(result.data);
+  } catch (error) {
+    console.error("Get deduction rules error:", error);
+    res.status(500).json({ message: "Failed to fetch deduction rules" });
+  }
+};
+
+export const updateDeductionRuleHandler = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const adminId = req.user?.id;
+    if (!adminId) { res.status(401).json({ message: "Not authorized" }); return; }
+    const type = req.params.type as string;
+    const { isActive, thresholdMinutes, deductionValue } = req.body as {
+      isActive?: boolean;
+      thresholdMinutes?: number;
+      deductionValue?: number;
+    };
+    const result = await updateDeductionRule(type, { isActive, thresholdMinutes, deductionValue }, adminId);
+    if (result.message && result.status !== 200) { res.status(result.status).json({ message: result.message }); return; }
+    res.status(result.status).json(result.data);
+  } catch (error) {
+    console.error("Update deduction rule error:", error);
+    res.status(500).json({ message: "Failed to update deduction rule" });
+  }
+};
+
+export const markAttendanceLeaveHandler = async (
+  req: AuthenticatedRequest,
+  res: Response,
+) => {
+  try {
+    const adminId = req.user?.id;
+    if (!adminId) { res.status(401).json({ message: "Not authorized" }); return; }
+
+    const attendanceId = Number(req.params.id);
+    const { leaveType } = req.body as { leaveType: string | null };
+
+    const result = await markAttendanceLeave(attendanceId, leaveType ?? null, adminId);
+    if (result.message) { res.status(result.status).json({ message: result.message }); return; }
+    res.status(result.status).json(result.data);
+  } catch (error) {
+    console.error("Mark attendance leave error:", error);
+    res.status(500).json({ message: "Failed to update attendance leave type" });
   }
 };

@@ -21,9 +21,16 @@ router.get(
   getMyMaintenancesHandler,
 );
 
+// GET /maintenance  — all authenticated roles can read
 router.get(
   "/all",
-  authorizeRoles([UserRole.ACCOUNTANT, UserRole.ADMIN]),
+  authorizeRoles([UserRole.WORKER, UserRole.ENGINEER, UserRole.ACCOUNTANT, UserRole.ADMIN]),
+  getAllMaintenancesHandler,
+);
+
+router.get(
+  "/",
+  authorizeRoles([UserRole.WORKER, UserRole.ENGINEER, UserRole.ACCOUNTANT, UserRole.ADMIN]),
   getAllMaintenancesHandler,
 );
 

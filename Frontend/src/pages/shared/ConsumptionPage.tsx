@@ -84,11 +84,12 @@ async function fetchWithAuth(path: string, options?: RequestInit) {
 /* ─── Helpers ───────────────────────────────────────────── */
 const fmt = (n: number) => n.toLocaleString();
 const fmtKg = (n: number | null | undefined) => (n ? `${Number(n).toFixed(1)} kg` : "—");
-// HDPE/LDPE stored in BAGS; show "X bags (Y kg)"
+// HDPE/LDPE stored in BAGS (1 bag = 25 kg); show "Y kg (X bags)"
 const fmtBags = (n: number | null | undefined) => {
   if (!n || Number(n) === 0) return "—";
   const bags = Number(n);
-  return `${bags % 1 === 0 ? bags : bags.toFixed(1)} bags (${(bags * 25).toFixed(0)} kg)`;
+  const kg = bags * 25;
+  return `${kg % 1 === 0 ? kg : kg.toFixed(1)} kg (${bags % 1 === 0 ? bags : bags.toFixed(1)} bags)`;
 };
 
 const isMaterialRecord = (r: ConsumptionRecord) =>
@@ -330,7 +331,7 @@ export function ConsumptionPage() {
                           style={{ padding: ".45rem .65rem", border: "1px solid var(--border-default)", borderRadius: "var(--radius-md)", background: "var(--bg-card)", fontSize: ".9rem" }} />
                       </label>
                       <div style={{ padding: ".45rem .65rem", background: cfg.bg, border: `1px solid ${cfg.border}`, borderRadius: "var(--radius-md)", fontSize: ".85rem", fontWeight: 700, color: cfg.textColor, whiteSpace: "nowrap", alignSelf: "end" }}>
-                        {totalKg ? `= ${totalKg} kg` : bagsNum > 0 ? `${bagsNum} bags` : "0 bags"}
+                        {totalKg ? `= ${totalKg} kg` : bagsNum > 0 ? `= ${bagsNum * 25} kg` : "0 kg"}
                       </div>
                     </div>
                   </div>
@@ -371,9 +372,9 @@ export function ConsumptionPage() {
         <>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: "1rem", marginBottom: "1.5rem" }}>
             {[
-              { label: "HDPE", value: fmtBags(myTotalHdpe), sub: `${(myTotalHdpe * 25).toFixed(0)} kg`, gradient: "linear-gradient(135deg,#3b82f6,#1d4ed8)" },
-              { label: "LDPE", value: fmtBags(myTotalLdpe), sub: `${(myTotalLdpe * 25).toFixed(0)} kg`, gradient: "linear-gradient(135deg,#06b6d4,#0284c7)" },
-              { label: "PET", value: fmtBags(myTotalPet), sub: isAr ? "إجمالي استهلاكي" : "My total", gradient: "linear-gradient(135deg,#10b981,#059669)" },
+              { label: "HDPE (kg)", value: `${(myTotalHdpe * 25).toFixed(0)} kg`, sub: `${myTotalHdpe} bags`, gradient: "linear-gradient(135deg,#3b82f6,#1d4ed8)" },
+              { label: "LDPE (kg)", value: `${(myTotalLdpe * 25).toFixed(0)} kg`, sub: `${myTotalLdpe} bags`, gradient: "linear-gradient(135deg,#06b6d4,#0284c7)" },
+              { label: "PET (kg)", value: fmtBags(myTotalPet), sub: isAr ? "إجمالي استهلاكي" : "My total", gradient: "linear-gradient(135deg,#10b981,#059669)" },
               { label: isAr ? "اللون" : "Color", value: fmtKg(myTotalColor), sub: "", gradient: "linear-gradient(135deg,#f97316,#ea580c)" },
             ].map((kpi) => (
               <div key={kpi.label} style={{ background: kpi.gradient, borderRadius: "var(--radius-xl)", padding: "1rem 1.25rem", color: "#fff" }}>
@@ -391,9 +392,9 @@ export function ConsumptionPage() {
                   <tr>
                     <th>{isAr ? "التاريخ" : "Date"}</th>
                     <th>{isAr ? "الشفت" : "Shift"}</th>
-                    <th>HDPE ({isAr ? "أكياس" : "bags"})</th>
-                    <th>LDPE ({isAr ? "أكياس" : "bags"})</th>
-                    <th>PET ({isAr ? "أكياس" : "bags"})</th>
+                    <th>HDPE (kg)</th>
+                    <th>LDPE (kg)</th>
+                    <th>PET (kg)</th>
                     <th>{isAr ? "اللون" : "Color"} (kg)</th>
                   </tr>
                 </thead>
@@ -456,9 +457,9 @@ export function ConsumptionPage() {
             <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: "1rem" }}>
                 {[
-                  { label: `HDPE (${isAr ? "أكياس" : "bags"})`, value: `${totalHdpe.toLocaleString()}`, gradient: "linear-gradient(135deg,#3b82f6,#1d4ed8)", icon: "🔵" },
-                  { label: `LDPE (${isAr ? "أكياس" : "bags"})`, value: `${totalLdpe.toLocaleString()}`, gradient: "linear-gradient(135deg,#06b6d4,#0284c7)", icon: "🩵" },
-                  { label: `PET (${isAr ? "أكياس" : "bags"})`, value: `${totalPet.toLocaleString()}`, gradient: "linear-gradient(135deg,#10b981,#059669)", icon: "🟢" },
+                  { label: `HDPE (${isAr ? "كجم" : "kg"})`, value: `${(totalHdpe * 25).toLocaleString()}`, gradient: "linear-gradient(135deg,#3b82f6,#1d4ed8)", icon: "🔵" },
+                  { label: `LDPE (${isAr ? "كجم" : "kg"})`, value: `${(totalLdpe * 25).toLocaleString()}`, gradient: "linear-gradient(135deg,#06b6d4,#0284c7)", icon: "🩵" },
+                  { label: `PET (${isAr ? "كجم" : "kg"})`, value: `${(totalPet * 25).toLocaleString()}`, gradient: "linear-gradient(135deg,#10b981,#059669)", icon: "🟢" },
                   { label: isAr ? "اللون" : "Color", value: fmtKg(totalColor), gradient: "linear-gradient(135deg,#f97316,#ea580c)", icon: "🟠" },
                 ].map((kpi) => (
                   <div key={kpi.label} style={{ background: kpi.gradient, borderRadius: "var(--radius-xl)", padding: "1.1rem 1.25rem", color: "#fff", display: "flex", flexDirection: "column", gap: ".35rem", boxShadow: "0 4px 14px rgba(0,0,0,.12)" }}>
