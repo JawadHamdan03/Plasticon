@@ -11,6 +11,7 @@ import {
   getSalaryConfigsHandler,
   updateSalaryConfigHandler,
   calculateDailyPayrollHandler,
+  calculateDailyPayrollsForDateHandler,
   confirmDailyPayrollHandler,
   getDailyPayrollsHandler,
   getMyDailyPayrollsHandler,
@@ -35,40 +36,29 @@ router.post(
   calculatePayrollHandler,
 );
 
-// Get all payrolls — ACCOUNTANT/ADMIN
-router.get("/", authorizeRoles(accountingRoles), getAllPayrollsHandler);
-
-// Admin payroll overview
-router.get(
-  "/admin/overview",
-  authorizeRoles(accountingRoles),
-  getPayrollAdminOverviewHandler,
-);
-
-// Get my own payrolls — all roles
-router.get("/me", authorizeRoles(allRoles), getMyPayrollsHandler);
-
-// Get single payroll by id — ACCOUNTANT/ADMIN
-router.get("/:id", authorizeRoles(accountingRoles), getPayrollByIdHandler);
-
-// Update payroll — ACCOUNTANT/ADMIN
-router.put("/:id", authorizeRoles(accountingRoles), updatePayrollHandler);
-
-// Delete payroll — ADMIN only
-router.delete("/:id", authorizeRoles(accountingRoles), deletePayrollHandler);
-
-// ── Salary Config ──
+// ── Salary Config (must be before /:id) ──
 router.get("/salary-config", authorizeRoles(accountingRoles), getSalaryConfigsHandler);
 router.put("/salary-config", authorizeRoles([UserRole.ADMIN]), updateSalaryConfigHandler);
 
-// ── Daily Payroll ──
-// Get all daily payrolls (optionally filtered by ?date=YYYY-MM-DD) — ACCOUNTANT/ADMIN
+// ── Daily Payroll (must be before /:id) ──
 router.get("/daily", authorizeRoles(accountingRoles), getDailyPayrollsHandler);
-// Get my daily payrolls (optionally ?month=YYYY-MM) — all roles
 router.get("/daily/me", authorizeRoles(allRoles), getMyDailyPayrollsHandler);
-// Calculate daily payroll for one attendance record — ACCOUNTANT/ADMIN
 router.post("/daily/calculate", authorizeRoles(accountingRoles), calculateDailyPayrollHandler);
-// Confirm a daily payroll record — ACCOUNTANT/ADMIN
+router.post("/daily/calculate-date", authorizeRoles(accountingRoles), calculateDailyPayrollsForDateHandler);
 router.post("/daily/:id/confirm", authorizeRoles(accountingRoles), confirmDailyPayrollHandler);
+
+// ── Admin overview (must be before /:id) ──
+router.get("/admin/overview", authorizeRoles(accountingRoles), getPayrollAdminOverviewHandler);
+
+// ── My payrolls (must be before /:id) ──
+router.get("/me", authorizeRoles(allRoles), getMyPayrollsHandler);
+
+// ── All payrolls ──
+router.get("/", authorizeRoles(accountingRoles), getAllPayrollsHandler);
+
+// ── Single payroll by id (last — catches anything remaining) ──
+router.get("/:id", authorizeRoles(accountingRoles), getPayrollByIdHandler);
+router.put("/:id", authorizeRoles(accountingRoles), updatePayrollHandler);
+router.delete("/:id", authorizeRoles(accountingRoles), deletePayrollHandler);
 
 export default router;

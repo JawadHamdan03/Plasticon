@@ -11,6 +11,7 @@ import { Users, TrendingUp, DollarSign, Search, FileText, Pencil, Trash2, Extern
 import { useAuth } from "../../context/AuthContext";
 import { useLocale } from "../../context/LocaleContext";
 import { API_BASE_URL, readApiError } from "../../lib/api";
+import { confirmDialog } from "../../lib/dialog";
 import { ModulePageShell } from "../../components/ModulePageShell";
 
 type CustomerOption = {
@@ -394,10 +395,8 @@ export function SalesPage() {
       return;
     }
 
-    const confirmed = window.confirm(text.confirmDelete);
-    if (!confirmed) {
-      return;
-    }
+    const confirmed = await confirmDialog(text.confirmDelete, { danger: true });
+    if (!confirmed) return;
 
     try {
       const response = await fetchWithAuth(`/sales/${id}`, {

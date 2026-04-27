@@ -43,6 +43,7 @@ import rawMaterialAlertRoutes from "./routes/rawMaterialAlertRoutes";
 import supplierRoutes from "./routes/supplierRoutes";
 import performanceRoutes from "./routes/performanceRoutes";
 import maintenanceCostRoutes from "./routes/maintenanceCostRoutes";
+import electricityRoutes from "./routes/electricityRoutes";
 import profileRoutes from "./routes/profileRoutes";
 import registrationRequestRoutes from "./routes/registrationRequestRoutes";
 import { initializeEmailService } from "./utils/emailService";
@@ -131,6 +132,7 @@ app.use("/raw-material-alerts", rawMaterialAlertRoutes);
 app.use("/suppliers", supplierRoutes);
 app.use("/performance", performanceRoutes);
 app.use("/maintenance-costs", maintenanceCostRoutes);
+app.use("/electricity", electricityRoutes);
 
 initializeSocketServer(server);
 

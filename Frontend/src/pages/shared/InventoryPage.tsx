@@ -9,6 +9,7 @@ import { useAuth } from "../../context/AuthContext";
 import { useLocale } from "../../context/LocaleContext";
 import { appCopy } from "../../content/appCopy";
 import { API_BASE_URL, readApiError } from "../../lib/api";
+import { confirmDialog } from "../../lib/dialog";
 import { ModulePageShell } from "../../components/ModulePageShell";
 import { Badge } from "../../components/ui/badge";
 import { Button } from "../../components/ui/button";
@@ -588,7 +589,7 @@ export function InventoryPage() {
   };
 
   const deletePurchase = async (id: number) => {
-    const confirmed = window.confirm(purchaseText.confirmDelete);
+    const confirmed = await confirmDialog(purchaseText.confirmDelete, { danger: true });
     if (!confirmed) return;
 
     try {
@@ -607,7 +608,7 @@ export function InventoryPage() {
   };
 
   const deleteSale = async (id: number) => {
-    const confirmed = window.confirm(saleText.confirmDelete);
+    const confirmed = await confirmDialog(saleText.confirmDelete, { danger: true });
     if (!confirmed) return;
 
     try {

@@ -17,7 +17,11 @@ type RegistrationRequest = {
   createdAt: string;
 };
 
+type Shift = { id: number; name: string };
+
 const ROLES = ["WORKER", "ENGINEER", "ACCOUNTANT", "ADMIN"];
+
+const ROLES_WITH_SHIFT = ["WORKER", "ENGINEER"];
 
 const roleGradient: Record<string, string> = {
   ADMIN: "linear-gradient(135deg,#f97316,#ea580c)",
@@ -26,12 +30,30 @@ const roleGradient: Record<string, string> = {
   ACCOUNTANT: "linear-gradient(135deg,#10b981,#059669)",
 };
 
+const shiftColor: Record<string, string> = {
+  A: "#3b82f6",
+  B: "#f97316",
+  C: "#8b5cf6",
+};
+
+function shiftBadge(shiftName: string) {
+  const letter = shiftName.replace(/[^A-Ca-c]/g, "").toUpperCase() || shiftName[0]?.toUpperCase();
+  const color = shiftColor[letter] ?? "#64748b";
+  return (
+    <span style={{ display: "inline-flex", alignItems: "center", gap: ".25rem", padding: ".2rem .65rem", borderRadius: 999, fontSize: ".72rem", fontWeight: 700, background: `${color}18`, color, border: `1px solid ${color}30` }}>
+      Shift {shiftName}
+    </span>
+  );
+}
+
 export function RegistrationRequestsPage() {
   const [requests, setRequests] = useState<RegistrationRequest[]>([]);
+  const [shifts, setShifts] = useState<Shift[]>([]);
   const [loading, setLoading] = useState(false);
   const [statusFilter, setStatusFilter] = useState<"ALL" | "PENDING" | "APPROVED" | "REJECTED">("PENDING");
   const [approveModal, setApproveModal] = useState<RegistrationRequest | null>(null);
   const [selectedRole, setSelectedRole] = useState("WORKER");
+  const [selectedShiftId, setSelectedShiftId] = useState<string>("");
   const [reviewNote, setReviewNote] = useState("");
   const [saving, setSaving] = useState(false);
   const [actionMsg, setActionMsg] = useState("");
@@ -53,18 +75,36 @@ export function RegistrationRequestsPage() {
     }
   }, [statusFilter]);
 
+  // Load shifts once
+  useEffect(() => {
+    fetch(`${API_BASE_URL}/shifts`, { credentials: "include" })
+      .then(async (r) => { if (r.ok) setShifts((await r.json()) as Shift[]); })
+      .catch(() => {});
+  }, []);
+
   useEffect(() => { void load(); }, [load]);
+
+  const openApproveModal = (r: RegistrationRequest) => {
+    setApproveModal(r);
+    setSelectedRole("WORKER");
+    setSelectedShiftId("");
+    setReviewNote("");
+  };
 
   const handleApprove = async () => {
     if (!approveModal) return;
     setSaving(true);
     setActionMsg("");
     try {
+      const body: Record<string, unknown> = { role: selectedRole, reviewNote };
+      if (ROLES_WITH_SHIFT.includes(selectedRole) && selectedShiftId) {
+        body.shiftId = Number(selectedShiftId);
+      }
       const res = await fetch(`${API_BASE_URL}/registration-requests/${approveModal.id}/approve`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ role: selectedRole, reviewNote }),
+        body: JSON.stringify(body),
       });
       if (!res.ok) throw new Error(await readApiError(res));
       const data = (await res.json()) as { message: string; setPasswordUrl?: string };
@@ -114,6 +154,8 @@ export function RegistrationRequestsPage() {
     );
   };
 
+  const needsShift = ROLES_WITH_SHIFT.includes(selectedRole);
+
   return (
     <ModulePageShell
       title="Registration Requests"
@@ -127,7 +169,7 @@ export function RegistrationRequestsPage() {
       {/* KPI strip */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(160px,1fr))", gap: "1rem", marginBottom: "1.25rem" }}>
         {[
-          { label: "Total", value: requests.length + (statusFilter !== "ALL" ? "" : ""), gradient: "linear-gradient(135deg,#3b82f6,#1d4ed8)" },
+          { label: "Total", value: requests.length, gradient: "linear-gradient(135deg,#3b82f6,#1d4ed8)" },
           { label: "Pending", value: pending, gradient: "linear-gradient(135deg,#f97316,#ea580c)" },
           { label: "Approved", value: requests.filter((r) => r.status === "APPROVED").length, gradient: "linear-gradient(135deg,#10b981,#059669)" },
           { label: "Rejected", value: requests.filter((r) => r.status === "REJECTED").length, gradient: "linear-gradient(135deg,#94a3b8,#64748b)" },
@@ -208,7 +250,7 @@ export function RegistrationRequestsPage() {
                     <td>
                       {r.status === "PENDING" ? (
                         <div style={{ display: "flex", gap: ".4rem" }}>
-                          <button type="button" onClick={() => { setApproveModal(r); setSelectedRole("WORKER"); setReviewNote(""); }} style={{ padding: ".3rem .75rem", borderRadius: 7, border: "1px solid rgba(34,197,94,.3)", background: "rgba(34,197,94,.08)", color: "#16a34a", cursor: "pointer", fontWeight: 700, fontSize: ".78rem" }}>
+                          <button type="button" onClick={() => openApproveModal(r)} style={{ padding: ".3rem .75rem", borderRadius: 7, border: "1px solid rgba(34,197,94,.3)", background: "rgba(34,197,94,.08)", color: "#16a34a", cursor: "pointer", fontWeight: 700, fontSize: ".78rem" }}>
                             ✓ Approve
                           </button>
                           <button type="button" onClick={() => void handleReject(r.id)} style={{ padding: ".3rem .75rem", borderRadius: 7, border: "1px solid rgba(239,68,68,.3)", background: "rgba(239,68,68,.06)", color: "#dc2626", cursor: "pointer", fontWeight: 600, fontSize: ".78rem" }}>
@@ -229,10 +271,14 @@ export function RegistrationRequestsPage() {
         )}
       </div>
 
-      {/* Approve modal */}
+      {/* ── Approve modal ── */}
       {approveModal && (
-        <div role="dialog" aria-modal="true" onClick={() => setApproveModal(null)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: "1rem" }}>
-          <div onClick={(e) => e.stopPropagation()} style={{ background: "var(--bg-card,#fff)", borderRadius: 16, padding: "1.75rem", width: "100%", maxWidth: 440, display: "flex", flexDirection: "column", gap: "1.1rem" }}>
+        <div role="dialog" aria-modal="true" onClick={() => setApproveModal(null)}
+          style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: "1rem" }}>
+          <div onClick={(e) => e.stopPropagation()}
+            style={{ background: "var(--bg-card,#fff)", borderRadius: 16, padding: "1.75rem", width: "100%", maxWidth: 460, display: "flex", flexDirection: "column", gap: "1.1rem" }}>
+
+            {/* Header */}
             <div style={{ display: "flex", alignItems: "center", gap: ".75rem" }}>
               <div style={{ width: 44, height: 44, borderRadius: "50%", background: "rgba(34,197,94,.1)", display: "flex", alignItems: "center", justifyContent: "center" }}>
                 <CheckCircle size={22} color="#16a34a" />
@@ -248,17 +294,50 @@ export function RegistrationRequestsPage() {
               <p style={{ margin: "0 0 .6rem", fontSize: ".83rem", fontWeight: 700 }}>Select Role</p>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: ".5rem" }}>
                 {ROLES.map((role) => (
-                  <button key={role} type="button" onClick={() => setSelectedRole(role)} style={{ padding: ".65rem", borderRadius: 10, border: selectedRole === role ? "2px solid transparent" : "2px solid var(--border-default)", background: selectedRole === role ? roleGradient[role] : "var(--bg-surface)", color: selectedRole === role ? "#fff" : "var(--text-primary)", fontWeight: 700, fontSize: ".82rem", cursor: "pointer", transition: "all .15s" }}>
+                  <button key={role} type="button"
+                    onClick={() => { setSelectedRole(role); setSelectedShiftId(""); }}
+                    style={{ padding: ".65rem", borderRadius: 10, border: selectedRole === role ? "2px solid transparent" : "2px solid var(--border-default)", background: selectedRole === role ? roleGradient[role] : "var(--bg-surface)", color: selectedRole === role ? "#fff" : "var(--text-primary)", fontWeight: 700, fontSize: ".82rem", cursor: "pointer", transition: "all .15s" }}>
                     {role}
                   </button>
                 ))}
               </div>
             </div>
 
+            {/* Shift selector — only for WORKER and ENGINEER */}
+            {needsShift && (
+              <div>
+                <p style={{ margin: "0 0 .5rem", fontSize: ".83rem", fontWeight: 700 }}>
+                  Assign Shift <span style={{ color: "var(--text-muted)", fontWeight: 400 }}>(required for {selectedRole})</span>
+                </p>
+                {shifts.length === 0 ? (
+                  <p style={{ fontSize: ".8rem", color: "var(--text-secondary)" }}>No shifts configured. Go to Shifts page to create shifts first.</p>
+                ) : (
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: ".5rem" }}>
+                    {shifts.map((s) => {
+                      const letter = s.name.replace(/[^A-Ca-c]/g, "").toUpperCase() || s.name[0]?.toUpperCase();
+                      const color = shiftColor[letter] ?? "#64748b";
+                      const isSelected = selectedShiftId === String(s.id);
+                      return (
+                        <button key={s.id} type="button"
+                          onClick={() => setSelectedShiftId(String(s.id))}
+                          style={{ padding: ".7rem .5rem", borderRadius: 10, border: isSelected ? `2px solid ${color}` : "2px solid var(--border-default)", background: isSelected ? `${color}15` : "var(--bg-surface)", color: isSelected ? color : "var(--text-primary)", fontWeight: 700, fontSize: ".85rem", cursor: "pointer", transition: "all .15s", display: "flex", flexDirection: "column", alignItems: "center", gap: ".2rem" }}>
+                          <span style={{ fontSize: "1.3rem", fontWeight: 900 }}>{letter}</span>
+                          <span style={{ fontSize: ".7rem", fontWeight: 600, opacity: .8 }}>Shift {s.name}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Review note */}
             <div>
               <label style={{ display: "flex", flexDirection: "column", gap: ".3rem", fontSize: ".82rem", fontWeight: 600 }}>
                 Review Note (optional)
-                <textarea className="auth-input" style={{ paddingLeft: "1rem", resize: "vertical" }} rows={2} value={reviewNote} onChange={(e) => setReviewNote(e.target.value)} placeholder="e.g. Assigned to morning shift" />
+                <textarea className="auth-input" style={{ paddingLeft: "1rem", resize: "vertical" }} rows={2}
+                  value={reviewNote} onChange={(e) => setReviewNote(e.target.value)}
+                  placeholder="e.g. Assigned to morning shift" />
               </label>
             </div>
 
@@ -270,7 +349,8 @@ export function RegistrationRequestsPage() {
               <button type="button" onClick={() => setApproveModal(null)} style={{ padding: ".5rem 1.25rem", borderRadius: 8, border: "1px solid var(--border-default)", background: "transparent", cursor: "pointer", fontWeight: 600 }}>
                 Cancel
               </button>
-              <button type="button" onClick={() => void handleApprove()} disabled={saving} style={{ padding: ".5rem 1.5rem", borderRadius: 8, background: "rgba(34,197,94,1)", color: "#fff", border: "none", fontWeight: 700, cursor: "pointer", opacity: saving ? .7 : 1 }}>
+              <button type="button" onClick={() => void handleApprove()} disabled={saving || (needsShift && shifts.length > 0 && !selectedShiftId)}
+                style={{ padding: ".5rem 1.5rem", borderRadius: 8, background: "rgba(34,197,94,1)", color: "#fff", border: "none", fontWeight: 700, cursor: "pointer", opacity: (saving || (needsShift && shifts.length > 0 && !selectedShiftId)) ? .5 : 1 }}>
                 {saving ? "Approving…" : "Approve & Create Account"}
               </button>
             </div>

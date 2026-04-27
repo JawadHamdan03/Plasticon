@@ -4,6 +4,7 @@ import { ModulePageShell } from "../../components/ModulePageShell";
 import { TruckLoader } from "../../components/TruckLoader";
 import { PhotoUploadButton } from "../../components/PhotoUploadButton";
 import { API_BASE_URL, readApiError } from "../../lib/api";
+import { confirmDialog } from "../../lib/dialog";
 import { createUserSocket } from "../../lib/socket";
 import { useLocale } from "../../context/LocaleContext";
 import { useAuth } from "../../context/AuthContext";
@@ -475,15 +476,11 @@ export function WorkerSnapshotsPage({
   };
 
   const deleteSnapshot = async (item: WorkerSnapshot) => {
-    const confirmed = window.confirm(
-      locale === "ar"
-        ? `حذف قراءة ${item.machineLabel}؟`
-        : `Delete the reading for ${item.machineLabel}?`,
+    const confirmed = await confirmDialog(
+      locale === "ar" ? `حذف قراءة ${item.machineLabel}؟` : `Delete the reading for ${item.machineLabel}?`,
+      { danger: true, confirmText: locale === "ar" ? "حذف" : "Delete" },
     );
-
-    if (!confirmed) {
-      return;
-    }
+    if (!confirmed) return;
 
     setSaving(true);
     setMessage("");
@@ -518,10 +515,8 @@ export function WorkerSnapshotsPage({
       return;
     }
 
-    const confirmed = window.confirm(text.deleteConfirm);
-    if (!confirmed) {
-      return;
-    }
+    const confirmed = await confirmDialog(text.deleteConfirm, { danger: true });
+    if (!confirmed) return;
 
     setSaving(true);
     setMessage("");

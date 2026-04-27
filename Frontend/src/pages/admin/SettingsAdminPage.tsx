@@ -1801,7 +1801,7 @@ export function SettingsAdminPage() {
             </div>
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 300px", gap: "1.25rem", alignItems: "start" }}>
+          <div className="layout-main-aside">
             {/* Form */}
             <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
               {/* Quality group */}

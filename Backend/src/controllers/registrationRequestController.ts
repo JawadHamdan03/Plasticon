@@ -37,9 +37,9 @@ export const approveRegistrationRequestHandler = async (req: AuthenticatedReques
     const adminId = req.user?.id;
     if (!adminId) { res.status(401).json({ message: "Not authorized" }); return; }
     const requestId = Number(req.params.id);
-    const { role, reviewNote } = req.body as { role?: string; reviewNote?: string };
+    const { role, reviewNote, shiftId } = req.body as { role?: string; reviewNote?: string; shiftId?: number | null };
     if (!role) { res.status(400).json({ message: "role is required" }); return; }
-    const result = await approveRegistrationRequest(requestId, adminId, role, reviewNote);
+    const result = await approveRegistrationRequest(requestId, adminId, role, reviewNote, shiftId ?? null);
     if (result.message && result.status !== 200) {
       res.status(result.status).json({ message: result.message });
       return;

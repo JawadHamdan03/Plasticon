@@ -20,6 +20,7 @@ type SearchItem = { labelAr: string; labelEn: string; to: string };
 const ALL_SEARCH_ITEMS: SearchItem[] = [
   { labelAr: "لوحة التحكم", labelEn: "Dashboard", to: "/dashboard" },
   { labelAr: "الإنتاج", labelEn: "Production", to: "/production" },
+  { labelAr: "الاستهلاك", labelEn: "Consumption", to: "/consumption" },
   { labelAr: "الإشعارات", labelEn: "Notifications", to: "/notifications" },
   { labelAr: "الدردشة", labelEn: "Chat", to: "/chat" },
   { labelAr: "المخزون", labelEn: "Inventory", to: "/inventory" },
@@ -112,6 +113,7 @@ function getNavSectionsBi(role: string): NavSectionBi[] {
         label: nav("Operations", "العمليات"),
         items: [
           { to: "/production", icon: <Factory size={17} />, label: nav("Production", "الإنتاج") },
+          { to: "/consumption", icon: <Package size={17} />, label: nav("Consumption", "الاستهلاك") },
           { to: "/admin/attendance", icon: <UserCheck size={17} />, label: nav("Attendance", "الحضور") },
           { to: "/admin/payroll", icon: <DollarSign size={17} />, label: nav("Payroll", "الرواتب") },
           { to: "/admin/snapshots", icon: <Camera size={17} />, label: nav("Snapshots", "القراءات") },
@@ -122,6 +124,7 @@ function getNavSectionsBi(role: string): NavSectionBi[] {
         label: nav("Finance", "المالية"),
         items: [
           { to: "/accountant/financial-dashboard", icon: <PieChart size={17} />, label: nav("Fin. Dashboard", "لوحة المالية") },
+          { to: "/consumption", icon: <Package size={17} />, label: nav("Consumption", "الاستهلاك") },
           { to: "/accountant/invoices", icon: <FileText size={17} />, label: nav("Invoices", "الفواتير") },
           { to: "/accountant/expenses", icon: <DollarSign size={17} />, label: nav("Expenses", "المصروفات") },
           { to: "/accountant/financial-reports", icon: <BarChart3 size={17} />, label: nav("Fin. Reports", "تقارير مالية") },
@@ -183,6 +186,7 @@ function getNavSectionsBi(role: string): NavSectionBi[] {
         label: nav("Engineering", "الهندسة"),
         items: [
           { to: "/production", icon: <Factory size={17} />, label: nav("Production", "الإنتاج") },
+          { to: "/consumption", icon: <Package size={17} />, label: nav("Consumption", "الاستهلاك") },
           { to: "/quality-checks", icon: <CheckSquare size={17} />, label: nav("Quality Checks", "فحص الجودة") },
           { to: "/maintenance", icon: <Wrench size={17} />, label: nav("Maintenance", "الصيانة") },
           { to: "/engineer/inventory", icon: <ClipboardList size={17} />, label: nav("Parts Inventory", "مخزون القطع") },
@@ -198,7 +202,7 @@ function getNavSectionsBi(role: string): NavSectionBi[] {
           { to: "/engineer/equipment-transfer", icon: <Layers size={17} />, label: nav("Equip. Transfer", "نقل معدات") },
           { to: "/engineer/raw-material-alerts", icon: <AlertTriangle size={17} />, label: nav("Raw Mat. Alerts", "تنبيهات المواد") },
           { to: "/engineer/maintenance-costs", icon: <DollarSign size={17} />, label: nav("Maint. Costs", "تكاليف الصيانة") },
-          { to: "/admin/settings/electricity", icon: <Zap size={17} />, label: nav("Electricity", "الكهرباء") },
+          { to: "/electricity", icon: <Zap size={17} />, label: nav("Electricity", "الكهرباء") },
         ],
       },
       {
@@ -276,6 +280,7 @@ function getNavSectionsBi(role: string): NavSectionBi[] {
       label: nav("Work", "العمل"),
       items: [
         { to: "/production", icon: <Factory size={17} />, label: nav("Production", "الإنتاج") },
+        { to: "/consumption", icon: <Package size={17} />, label: nav("Consumption", "الاستهلاك") },
         { to: "/worker/snapshots", icon: <Camera size={17} />, label: nav("Readings", "القراءات") },
         { to: "/worker/tools?tab=stops", icon: <AlertTriangle size={17} />, label: nav("Machine Stops", "توقف الماكينات") },
         { to: "/worker/tools?tab=checklist", icon: <CheckSquare size={17} />, label: nav("Daily Checklist", "قائمة اليوم") },
@@ -285,6 +290,7 @@ function getNavSectionsBi(role: string): NavSectionBi[] {
         { to: "/worker/tools?tab=quality", icon: <Activity size={17} />, label: nav("Quality Issues", "مشاكل الجودة") },
         { to: "/worker/tools?tab=micro", icon: <Cpu size={17} />, label: nav("Micro Stops", "توقفات مايكرو") },
         { to: "/worker/tools?tab=anomaly", icon: <Zap size={17} />, label: nav("Electricity Alerts", "تنبيهات الكهرباء") },
+        { to: "/electricity", icon: <Zap size={17} />, label: nav("Electricity Record", "تسجيل الكهرباء") },
       ],
     },
     {

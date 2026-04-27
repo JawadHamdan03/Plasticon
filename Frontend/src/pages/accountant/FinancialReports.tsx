@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
+import { confirmDialog } from "../../lib/dialog";
 import { Plus, Edit, Trash2, FileText, BarChart2, Calendar } from "lucide-react";
 import { ModulePageShell } from "../../components/ModulePageShell";
 import { Button } from "../../components/ui/button";
@@ -81,7 +82,7 @@ export default function FinancialReports() {
   };
 
   const handleDelete = async (id: number) => {
-    if (!confirm(nav("Delete this report?", "حذف هذا التقرير؟"))) return;
+    if (!(await confirmDialog(nav("Delete this report?", "حذف هذا التقرير؟"), { danger: true }))) return;
     await fetch(`${API_BASE_URL}/financial-reports/${id}`, {
       method: "DELETE", headers: { ...authHeaders() }, credentials: "include",
     });

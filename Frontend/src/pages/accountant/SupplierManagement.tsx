@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
+import { confirmDialog } from "../../lib/dialog";
 import { Truck, Plus, Pencil, Trash2, X, Save, Star } from "lucide-react";
 import { ModulePageShell } from "../../components/ModulePageShell";
 import { Button } from "../../components/ui/button";
@@ -122,7 +123,7 @@ export default function SupplierManagement() {
   };
 
   const handleDelete = async (id: number) => {
-    if (!confirm(nav("Delete this supplier?", "حذف هذا المورد؟"))) return;
+    if (!(await confirmDialog(nav("Delete this supplier?", "حذف هذا المورد؟"), { danger: true }))) return;
     try {
       await fetch(`${API_BASE_URL}/suppliers/${id}`, {
         method: "DELETE",

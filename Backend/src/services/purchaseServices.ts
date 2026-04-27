@@ -517,7 +517,7 @@ export const updatePurchase = async (
     AuditEntityType.PURCHASE,
     purchaseId,
     {
-      supplierId,
+      supplierId: resolvedSupplierId,
       totalAmount,
       itemCount: nextItems.length,
     },

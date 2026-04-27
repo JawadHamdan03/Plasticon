@@ -75,7 +75,9 @@ export function QualityChecksPage() {
   const isAr = locale === "ar";
 
   const role = String(user?.role ?? "WORKER").toUpperCase();
+  const isAdmin = role === "ADMIN";
   const canViewAll = ["ADMIN", "ACCOUNTANT"].includes(role);
+  const canCreate = !isAdmin;
 
   const [records, setRecords] = useState<QualityCheck[]>([]);
   const [machines, setMachines] = useState<Machine[]>([]);
@@ -249,13 +251,15 @@ export function QualityChecksPage() {
           >
             {t.refresh}
           </button>
-          <button
-            className="auth-button"
-            type="button"
-            onClick={() => setShowForm((v) => !v)}
-          >
-            <Plus size={15} /> {t.newCheck}
-          </button>
+          {canCreate && (
+            <button
+              className="auth-button"
+              type="button"
+              onClick={() => setShowForm((v) => !v)}
+            >
+              <Plus size={15} /> {t.newCheck}
+            </button>
+          )}
         </div>
       </div>
 
@@ -458,7 +462,7 @@ export function QualityChecksPage() {
         </div>
 
         {/* Create form */}
-        {showForm ? (
+        {canCreate && showForm ? (
           <div className="maintenance-card">
             <div className="maintenance-card__head">
               <p className="maintenance-card__title">{t.newCheck}</p>

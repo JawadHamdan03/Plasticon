@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
+import { confirmDialog } from "../../lib/dialog";
 import { Plus, Edit, Trash2, PieChart } from "lucide-react";
 import { ModulePageShell } from "../../components/ModulePageShell";
 import { Button } from "../../components/ui/button";
@@ -78,7 +79,7 @@ export default function CostAnalysis() {
   };
 
   const handleDelete = async (id: number) => {
-    if (!confirm(nav("Delete this analysis?", "حذف هذا التحليل؟"))) return;
+    if (!(await confirmDialog(nav("Delete this analysis?", "حذف هذا التحليل؟"), { danger: true }))) return;
     await fetch(`${API_BASE_URL}/cost-analysis/${id}`, {
       method: "DELETE", headers: { ...authHeaders() }, credentials: "include",
     });

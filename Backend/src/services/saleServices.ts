@@ -250,7 +250,7 @@ export const createSale = async (
     AuditEntityType.SALE,
     result?.id,
     {
-      customerId,
+      customerId: resolvedCustomerId,
       totalAmount,
       itemCount: preparedItems.length,
     },
@@ -400,7 +400,7 @@ export const updateSale = async (
   });
 
   auditAsync(userId, AuditAction.SALE_UPDATED, AuditEntityType.SALE, saleId, {
-    customerId,
+    customerId: resolvedCustomerId,
     totalAmount,
     itemCount: nextItems.length,
   });

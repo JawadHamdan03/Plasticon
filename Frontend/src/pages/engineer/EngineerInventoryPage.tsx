@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { API_BASE_URL } from "../../lib/api";
+import { confirmDialog } from "../../lib/dialog";
 import { ModulePageShell } from "../../components/ModulePageShell";
 import { Card } from "../../components/ui/card";
 
@@ -197,7 +198,7 @@ export function EngineerInventoryPage() {
 
   /* Delete item */
   const handleDeleteItem = async (itemId: number) => {
-    if (!confirm("Delete this part?")) return;
+    if (!(await confirmDialog("Delete this part?", { danger: true }))) return;
     setDeleting(itemId);
     try {
       await api("DELETE", `/engineer-inventory/items/${itemId}`);
@@ -216,11 +217,7 @@ export function EngineerInventoryPage() {
       setError("Add at least one part before submitting");
       return;
     }
-    if (
-      !confirm(
-        `Submit this inventory for ${MONTHS[inv.month - 1]} ${inv.year}? This cannot be undone.`,
-      )
-    )
+    if (!(await confirmDialog(`Submit this inventory for ${MONTHS[inv.month - 1]} ${inv.year}? This cannot be undone.`)))
       return;
     setSubmitting(inventoryId);
     try {

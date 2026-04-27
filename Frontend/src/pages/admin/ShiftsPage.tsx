@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLocale } from "../../context/LocaleContext";
 import { appCopy } from "../../content/appCopy";
 import { API_BASE_URL, readApiError } from "../../lib/api";
+import { toast } from "../../lib/toast";
 
 type Shift = {
   id: number;
@@ -85,8 +86,8 @@ export function ShiftsPage() {
     setEditingShiftId(shift.id);
     setShiftForm({
       name: shift.name,
-      startTime: `${String(start.getHours()).padStart(2, "0")}:${String(start.getMinutes()).padStart(2, "0")}`,
-      endTime: `${String(end.getHours()).padStart(2, "0")}:${String(end.getMinutes()).padStart(2, "0")}`,
+      startTime: `${String(start.getUTCHours()).padStart(2, "0")}:${String(start.getUTCMinutes()).padStart(2, "0")}`,
+      endTime: `${String(end.getUTCHours()).padStart(2, "0")}:${String(end.getUTCMinutes()).padStart(2, "0")}`,
     });
   };
 
@@ -134,9 +135,7 @@ export function ShiftsPage() {
 
       cancelEditShift();
     } catch (saveError) {
-      window.alert(
-        saveError instanceof Error ? saveError.message : "Failed to update",
-      );
+      toast.error(saveError instanceof Error ? saveError.message : "Failed to update");
     }
   };
 
@@ -212,10 +211,7 @@ export function ShiftsPage() {
                             }
                           />
                         ) : (
-                          new Date(item.startTime).toLocaleTimeString([], {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })
+                          (() => { const d = new Date(item.startTime); return `${String(d.getUTCHours()).padStart(2,"0")}:${String(d.getUTCMinutes()).padStart(2,"0")}`; })()
                         )}
                       </td>
                       <td>
@@ -231,10 +227,7 @@ export function ShiftsPage() {
                             }
                           />
                         ) : (
-                          new Date(item.endTime).toLocaleTimeString([], {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })
+                          (() => { const d = new Date(item.endTime); return `${String(d.getUTCHours()).padStart(2,"0")}:${String(d.getUTCMinutes()).padStart(2,"0")}`; })()
                         )}
                       </td>
                       <td>

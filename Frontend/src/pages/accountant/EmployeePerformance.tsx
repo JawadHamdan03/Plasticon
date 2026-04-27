@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
+import { confirmDialog } from "../../lib/dialog";
 import { Award, Plus, Trash2, X, Save, Zap } from "lucide-react";
 import { ModulePageShell } from "../../components/ModulePageShell";
 import { Button } from "../../components/ui/button";
@@ -121,7 +122,7 @@ export default function EmployeePerformance() {
   };
 
   const handleDelete = async (id: number) => {
-    if (!confirm(nav("Delete this performance record?", "حذف هذا السجل؟"))) return;
+    if (!(await confirmDialog(nav("Delete this performance record?", "حذف هذا السجل؟"), { danger: true }))) return;
     try {
       await fetch(`${API_BASE_URL}/performance/${id}`, {
         method: "DELETE",

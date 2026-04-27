@@ -7,7 +7,7 @@ const router = Router();
 
 router.get(
   "/",
-  authorizeRoles([UserRole.ADMIN, UserRole.ENGINEER]),
+  authorizeRoles([UserRole.ADMIN, UserRole.ENGINEER, UserRole.WORKER]),
   machinesController.getAllMachinesHandler,
 );
 

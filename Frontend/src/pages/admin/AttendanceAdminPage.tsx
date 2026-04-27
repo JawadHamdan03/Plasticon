@@ -3,6 +3,10 @@ import { useAuth } from "../../context/AuthContext";
 import { useLocale } from "../../context/LocaleContext";
 import { appCopy } from "../../content/appCopy";
 import { API_BASE_URL, readApiError } from "../../lib/api";
+import { toast } from "../../lib/toast";
+import { confirmDialog } from "../../lib/dialog";
+
+type Shift = { id: number; name: string };
 
 type AttendanceRecord = {
   id: number;
@@ -21,6 +25,8 @@ type AttendanceRecord = {
 
 type AdminUser = {
   id: number;
+  fullName: string;
+  username: string;
   role: "ADMIN" | "ENGINEER" | "ACCOUNTANT" | "WORKER";
   isActive: boolean;
   deletedAt?: string | null;
@@ -64,6 +70,12 @@ export function AttendanceAdminPage() {
   const [filterDate, setFilterDate] = useState("");
   const [filterShiftId, setFilterShiftId] = useState("");
   const [filterUserId, setFilterUserId] = useState("");
+
+  // Add attendance form
+  const [shifts, setShifts] = useState<Shift[]>([]);
+  const [addForm, setAddForm] = useState({ userId: "", checkIn: "", checkOut: "", shiftId: "" });
+  const [addLoading, setAddLoading] = useState(false);
+  const [addError, setAddError] = useState("");
 
   const text = useMemo(
     () =>
@@ -114,6 +126,42 @@ export function AttendanceAdminPage() {
           },
     [locale],
   );
+
+  const loadShifts = useCallback(async () => {
+    const res = await fetchWithAdminAuth("/shifts");
+    if (res.ok) setShifts((await res.json()) as Shift[]);
+  }, []);
+
+  useEffect(() => { void loadShifts(); }, [loadShifts]);
+
+  const submitAddAttendance = async () => {
+    setAddError("");
+    if (!addForm.userId) { setAddError(locale === "ar" ? "اختر موظفاً" : "Select an employee"); return; }
+    if (!addForm.checkIn) { setAddError(locale === "ar" ? "أدخل وقت الدخول" : "Enter check-in time"); return; }
+    setAddLoading(true);
+    try {
+      const body: Record<string, unknown> = {
+        userId: Number(addForm.userId),
+        checkIn: addForm.checkIn,
+        checkOut: addForm.checkOut || null,
+        shiftId: addForm.shiftId ? Number(addForm.shiftId) : null,
+      };
+      const res = await fetchWithAdminAuth("/attendance", {
+        method: "POST",
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({})) as { message?: string };
+        throw new Error(data.message ?? "Failed to create attendance");
+      }
+      setAddForm({ userId: "", checkIn: "", checkOut: "", shiftId: "" });
+      await loadData();
+    } catch (e) {
+      setAddError(e instanceof Error ? e.message : "Failed to create attendance");
+    } finally {
+      setAddLoading(false);
+    }
+  };
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -188,38 +236,23 @@ export function AttendanceAdminPage() {
       await loadData();
       cancelEditAttendance();
     } catch (saveError) {
-      window.alert(
-        saveError instanceof Error
-          ? saveError.message
-          : "Failed to update attendance",
-      );
+      toast.error(saveError instanceof Error ? saveError.message : "Failed to update attendance");
     }
   };
 
   const deleteAttendanceRecord = async (id: number) => {
-    const confirmed = window.confirm(
-      locale === "ar"
-        ? "هل أنت متأكد من حذف سجل الحضور؟"
-        : "Are you sure you want to delete this attendance record?",
+    const confirmed = await confirmDialog(
+      locale === "ar" ? "هل أنت متأكد من حذف سجل الحضور؟" : "Are you sure you want to delete this attendance record?",
+      { danger: true, confirmText: locale === "ar" ? "حذف" : "Delete" },
     );
-    if (!confirmed) {
-      return;
-    }
+    if (!confirmed) return;
 
     try {
-      const response = await fetchWithAdminAuth(`/attendance/${id}`, {
-        method: "DELETE",
-      });
-      if (!response.ok) {
-        throw new Error(await readApiError(response));
-      }
+      const response = await fetchWithAdminAuth(`/attendance/${id}`, { method: "DELETE" });
+      if (!response.ok) throw new Error(await readApiError(response));
       await loadData();
     } catch (deleteError) {
-      window.alert(
-        deleteError instanceof Error
-          ? deleteError.message
-          : "Failed to delete attendance",
-      );
+      toast.error(deleteError instanceof Error ? deleteError.message : "Failed to delete attendance");
     }
   };
 
@@ -251,17 +284,22 @@ export function AttendanceAdminPage() {
 
   const employeeOptions = useMemo(() => {
     const map = new Map<number, string>();
-    for (const record of records) {
-      if (!record.userId) {
-        continue;
+    // Seed from all-users list first (admin only)
+    for (const u of users) {
+      if (!u.deletedAt && u.isActive) {
+        map.set(u.id, `${u.fullName || u.username} (${u.role})`);
       }
+    }
+    // Override/augment with richer labels from attendance records
+    for (const record of records) {
+      if (!record.userId) continue;
       const label = record.user
         ? `${record.user.fullName || record.user.username} (${record.user.role})`
         : `#${record.userId}`;
       map.set(record.userId, label);
     }
     return Array.from(map.entries()).map(([id, label]) => ({ id, label }));
-  }, [records]);
+  }, [records, users]);
 
   const stats = useMemo(() => {
     const start = new Date();
@@ -317,6 +355,74 @@ export function AttendanceAdminPage() {
         </header>
 
         <section className="admin-section">
+
+          {/* ── Add Attendance (Admin) ── */}
+          <article className="admin-panel" style={{ marginBottom: 16 }}>
+            <h3>{locale === "ar" ? "إضافة سجل حضور" : "Add Attendance Record"}</h3>
+            <div className="admin-panel-body" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: ".75rem", alignItems: "end" }}>
+              <div>
+                <label style={{ fontSize: ".8rem", fontWeight: 600, display: "block", marginBottom: ".25rem" }}>
+                  {locale === "ar" ? "الموظف" : "Employee"}
+                </label>
+                <select
+                  value={addForm.userId}
+                  onChange={(e) => setAddForm((p) => ({ ...p, userId: e.target.value }))}
+                >
+                  <option value="">{locale === "ar" ? "-- اختر --" : "-- Select --"}</option>
+                  {employeeOptions.map((u) => (
+                    <option key={u.id} value={u.id}>{u.label}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label style={{ fontSize: ".8rem", fontWeight: 600, display: "block", marginBottom: ".25rem" }}>
+                  {locale === "ar" ? "الشفت" : "Shift"}
+                </label>
+                <select
+                  value={addForm.shiftId}
+                  onChange={(e) => setAddForm((p) => ({ ...p, shiftId: e.target.value }))}
+                >
+                  <option value="">{locale === "ar" ? "-- تلقائي --" : "-- Auto --"}</option>
+                  {shifts.map((s) => (
+                    <option key={s.id} value={s.id}>{s.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label style={{ fontSize: ".8rem", fontWeight: 600, display: "block", marginBottom: ".25rem" }}>
+                  {locale === "ar" ? "وقت الدخول" : "Check-in"}
+                </label>
+                <input
+                  type="datetime-local"
+                  value={addForm.checkIn}
+                  onChange={(e) => setAddForm((p) => ({ ...p, checkIn: e.target.value }))}
+                />
+              </div>
+              <div>
+                <label style={{ fontSize: ".8rem", fontWeight: 600, display: "block", marginBottom: ".25rem" }}>
+                  {locale === "ar" ? "وقت الخروج (اختياري)" : "Check-out (optional)"}
+                </label>
+                <input
+                  type="datetime-local"
+                  value={addForm.checkOut}
+                  onChange={(e) => setAddForm((p) => ({ ...p, checkOut: e.target.value }))}
+                />
+              </div>
+              <button
+                type="button"
+                className="btn btn--primary btn--sm"
+                onClick={() => void submitAddAttendance()}
+                disabled={addLoading}
+                style={{ alignSelf: "end" }}
+              >
+                {addLoading ? "..." : (locale === "ar" ? "إضافة" : "Add")}
+              </button>
+            </div>
+            {addError && (
+              <div className="auth-alert auth-alert--error" style={{ marginTop: ".5rem" }}>{addError}</div>
+            )}
+          </article>
+
           <div className="admin-grid" style={{ marginBottom: 12 }}>
             <article className="admin-panel">
               <h3>{text.filters}</h3>

@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
+import { confirmDialog } from "../../lib/dialog";
 import { DollarSign, Plus, Pencil, Trash2, X, Save } from "lucide-react";
 import { ModulePageShell } from "../../components/ModulePageShell";
 import { Button } from "../../components/ui/button";
@@ -113,7 +114,7 @@ export default function MaintenanceCosts() {
   };
 
   const handleDelete = async (id: number) => {
-    if (!confirm(nav("Delete this cost record?", "حذف هذا السجل؟"))) return;
+    if (!(await confirmDialog(nav("Delete this cost record?", "حذف هذا السجل؟"), { danger: true }))) return;
     try {
       await fetch(`${API_BASE_URL}/maintenance-costs/${id}`, {
         method: "DELETE",

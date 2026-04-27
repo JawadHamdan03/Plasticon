@@ -682,6 +682,49 @@ export const getDailyPayrollsForAccountant = async (
   return { status: 200, data: records };
 };
 
+export const calculateDailyPayrollsForDate = async (
+  dateStr: string,
+  calculatedById: number,
+): Promise<ServiceResult<unknown>> => {
+  const date = new Date(dateStr);
+  if (isNaN(date.getTime())) {
+    return { status: 400, message: "date must be a valid date string" };
+  }
+
+  const start = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  const end = new Date(start.getTime() + 86400000);
+
+  const attendances = await prisma.attendance.findMany({
+    where: {
+      checkIn: { gte: start, lt: end },
+      checkOut: { not: null },
+      dailyPayroll: null,
+    },
+    select: { id: true },
+  });
+
+  if (attendances.length === 0) {
+    return { status: 200, data: { calculated: 0, message: "No new attendance records to process" } };
+  }
+
+  let calculated = 0;
+  let skipped = 0;
+  for (const att of attendances) {
+    try {
+      const result = await calculateDailyPayroll(att.id, calculatedById);
+      if (result.status === 201) calculated++;
+      else skipped++;
+    } catch {
+      skipped++;
+    }
+  }
+
+  return {
+    status: 200,
+    data: { calculated, skipped, message: `Calculated ${calculated} payroll record(s)` },
+  };
+};
+
 export const getMyDailyPayrolls = async (
   userId: number,
   month?: string,

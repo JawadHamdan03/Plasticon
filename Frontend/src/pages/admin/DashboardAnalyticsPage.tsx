@@ -183,6 +183,8 @@ export function DashboardAnalyticsPage() {
 
   const profit = d ? d.salesThisMonth - d.purchasesThisMonth - d.expensesThisMonth : 0;
 
+  const COL2 = "1fr 1fr";
+
   return (
     <ModulePageShell
       title="Dashboard Analytics"
@@ -209,97 +211,93 @@ export function DashboardAnalyticsPage() {
       {d && (
         <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
 
-          {/* ── Hero KPI Strip ─────────────────────────────── */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(170px,1fr))", gap: "1rem" }}>
+          {/* ── Row 0: Hero KPI Strip ──────────────────────── */}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(6,1fr)", gap: "1rem" }}>
             <HeroCard icon={<Users size={18} />} label="Active Users" value={d.activeUsers}
               sub={`${d.totalUsers} total · ${d.pendingRegistrations} pending`}
               gradient="linear-gradient(135deg,#3b82f6,#1d4ed8)" alert={d.pendingRegistrations > 0} />
             <HeroCard icon={<Factory size={18} />} label="Production Today" value={fmt(d.production.todayPieces)}
-              sub={`${fmt(d.production.todayCartons)} cartons · ${d.production.todayRecords} records`}
+              sub={`${fmt(d.production.todayCartons)} cartons`}
               gradient="linear-gradient(135deg,#f97316,#ea580c)" />
             <HeroCard icon={<Cpu size={18} />} label="Machines" value={`${d.operationalMachines}/${d.totalMachines}`}
               sub={`${machineHealth}% operational`}
               gradient="linear-gradient(135deg,#8b5cf6,#6d28d9)" alert={d.overdueSchedules > 0} />
             <HeroCard icon={<TrendingUp size={18} />} label="Revenue / Month" value={`SAR ${fmtMoney(d.salesThisMonth)}`}
-              sub={`${d.salesCountThisMonth} sales · ${profit >= 0 ? "+" : ""}${fmtMoney(profit)} net`}
-              gradient={profit >= 0 ? "linear-gradient(135deg,#10b981,#059669)" : "linear-gradient(135deg,#ef4444,#dc2626)"}
-            />
-            <HeroCard icon={<CheckSquare size={18} />} label="Open Quality Issues" value={d.openQualityIssues}
+              sub={`${d.salesCountThisMonth} sales`}
+              gradient={profit >= 0 ? "linear-gradient(135deg,#10b981,#059669)" : "linear-gradient(135deg,#ef4444,#dc2626)"} />
+            <HeroCard icon={<CheckSquare size={18} />} label="Quality Issues" value={d.openQualityIssues}
               sub={`${d.qualityThisWeek} checks this week`}
               gradient="linear-gradient(135deg,#0ea5e9,#0284c7)" alert={d.openQualityIssues > 0} />
             <HeroCard icon={<AlertTriangle size={18} />} label="Active Alerts" value={totalAlerts}
-              sub={`${d.outOfStockCount} out of stock · ${d.overdueSchedules} overdue`}
+              sub={`${d.outOfStockCount} out of stock`}
               gradient={totalAlerts > 0 ? "linear-gradient(135deg,#ef4444,#b91c1c)" : "linear-gradient(135deg,#64748b,#475569)"}
               alert={totalAlerts > 0} />
           </div>
 
           {/* ── Row 1: People + Production ─────────────────── */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(320px,1fr))", gap: "1rem" }}>
+          <div style={{ display: "grid", gridTemplateColumns: COL2, gap: "1rem" }}>
 
-            {/* People */}
             <SectionCard title="People & Attendance" icon={<Users size={16} />}>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: ".5rem" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: ".5rem" }}>
                 {(["WORKER", "ENGINEER", "ACCOUNTANT", "ADMIN"] as const).map((role) => {
                   const count = d.usersByRole.find((r) => r.role === role)?.count ?? 0;
                   return (
-                    <div key={role} style={{ background: ROLE_GRADIENT[role], borderRadius: 10, padding: ".6rem .8rem", color: "#fff" }}>
-                      <p style={{ margin: 0, fontSize: ".65rem", opacity: .85, fontWeight: 700, textTransform: "uppercase" }}>{role}</p>
-                      <p style={{ margin: 0, fontSize: "1.5rem", fontWeight: 900, lineHeight: 1 }}>{count}</p>
+                    <div key={role} style={{ background: ROLE_GRADIENT[role], borderRadius: 10, padding: ".65rem .5rem", color: "#fff", textAlign: "center" }}>
+                      <p style={{ margin: "0 0 .2rem", fontSize: ".6rem", opacity: .9, fontWeight: 700, textTransform: "uppercase" }}>{role}</p>
+                      <p style={{ margin: 0, fontSize: "1.6rem", fontWeight: 900, lineHeight: 1 }}>{count}</p>
                     </div>
                   );
                 })}
               </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: ".4rem" }}>
+              <div style={{ display: "grid", gridTemplateColumns: COL2, gap: ".4rem" }}>
                 <StatPill label="Checked in today" value={d.attendanceToday} color="#16a34a" />
-                <StatPill label="Late arrivals today" value={d.lateToday} color={d.lateToday > 0 ? "#f97316" : "#16a34a"} />
-                <StatPill label="Attendance rate" value={attendanceRate} color={attendanceRate >= 80 ? "#16a34a" : "#f97316"} />
+                <StatPill label="Late arrivals" value={d.lateToday} color={d.lateToday > 0 ? "#f97316" : "#16a34a"} />
+                <StatPill label="Attendance rate %" value={attendanceRate} color={attendanceRate >= 80 ? "#16a34a" : "#f97316"} />
                 <StatPill label="Pending registrations" value={d.pendingRegistrations} color={d.pendingRegistrations > 0 ? "#f97316" : "#64748b"} />
               </div>
             </SectionCard>
 
-            {/* Production */}
             <SectionCard title="Production Output" icon={<Factory size={16} />}>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: ".5rem", textAlign: "center" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: ".5rem" }}>
                 {[
                   { label: "Today", pieces: d.production.todayPieces, cartons: d.production.todayCartons },
                   { label: "This Week", pieces: d.production.weekPieces, cartons: d.production.weekCartons },
                   { label: "This Month", pieces: d.production.monthPieces, cartons: d.production.monthCartons },
                 ].map((p) => (
-                  <div key={p.label} style={{ background: "rgba(249,115,22,.07)", border: "1px solid rgba(249,115,22,.15)", borderRadius: 10, padding: ".6rem .4rem" }}>
-                    <p style={{ margin: "0 0 .25rem", fontSize: ".65rem", fontWeight: 700, color: "var(--text-secondary)", textTransform: "uppercase" }}>{p.label}</p>
-                    <p style={{ margin: "0 0 .1rem", fontSize: "1.1rem", fontWeight: 900, color: "#f97316" }}>{fmtMoney(p.pieces)}</p>
-                    <p style={{ margin: 0, fontSize: ".68rem", color: "var(--text-secondary)" }}>pcs</p>
-                    <p style={{ margin: ".2rem 0 0", fontSize: ".75rem", fontWeight: 700, color: "var(--text-primary)" }}>{fmtMoney(p.cartons)}<span style={{ fontSize: ".6rem", fontWeight: 400, color: "var(--text-secondary)" }}> ctn</span></p>
+                  <div key={p.label} style={{ background: "rgba(249,115,22,.07)", border: "1px solid rgba(249,115,22,.15)", borderRadius: 10, padding: ".75rem .5rem", textAlign: "center" }}>
+                    <p style={{ margin: "0 0 .3rem", fontSize: ".62rem", fontWeight: 700, color: "var(--text-secondary)", textTransform: "uppercase" }}>{p.label}</p>
+                    <p style={{ margin: "0 0 .1rem", fontSize: "1.25rem", fontWeight: 900, color: "#f97316" }}>{fmtMoney(p.pieces)}</p>
+                    <p style={{ margin: 0, fontSize: ".65rem", color: "var(--text-secondary)" }}>pieces</p>
+                    <p style={{ margin: ".25rem 0 0", fontSize: ".78rem", fontWeight: 700 }}>{fmtMoney(p.cartons)}<span style={{ fontSize: ".62rem", color: "var(--text-secondary)", fontWeight: 400 }}> ctn</span></p>
                   </div>
                 ))}
               </div>
-              <BarRow label="Today vs Week" value={d.production.todayPieces} max={d.production.weekPieces || 1} color="#f97316" />
-              <BarRow label="Week vs Month" value={d.production.weekPieces} max={d.production.monthPieces || 1} color="#fb923c" />
+              <BarRow label="Today vs Week avg" value={d.production.todayPieces} max={d.production.weekPieces || 1} color="#f97316" />
+              <BarRow label="Week vs Month avg" value={d.production.weekPieces} max={d.production.monthPieces || 1} color="#fb923c" />
             </SectionCard>
 
           </div>
 
           {/* ── Row 2: Machines + Inventory ────────────────── */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(320px,1fr))", gap: "1rem" }}>
+          <div style={{ display: "grid", gridTemplateColumns: COL2, gap: "1rem" }}>
 
-            {/* Machines */}
             <SectionCard title="Machine Status" icon={<Cpu size={16} />}>
               <div style={{ display: "flex", flexDirection: "column", gap: ".4rem" }}>
                 {d.machinesByStatus.length === 0
                   ? <p style={{ margin: 0, fontSize: ".85rem", color: "var(--text-secondary)" }}>No machines recorded.</p>
                   : d.machinesByStatus.map((m) => (
-                    <div key={m.status} style={{ display: "flex", alignItems: "center", gap: ".6rem", padding: ".45rem .75rem", borderRadius: 8, background: "var(--bg-surface)", border: "1px solid var(--border-default)" }}>
+                    <div key={m.status} style={{ display: "flex", alignItems: "center", gap: ".6rem", padding: ".5rem .75rem", borderRadius: 8, background: "var(--bg-surface)", border: "1px solid var(--border-default)" }}>
                       <span style={{ width: 10, height: 10, borderRadius: "50%", background: MACHINE_STATUS_COLOR[m.status] ?? "#94a3b8", flexShrink: 0 }} />
-                      <span style={{ fontSize: ".8rem", fontWeight: 600, flex: 1 }}>{m.status.replace(/_/g, " ")}</span>
-                      <span style={{ fontSize: ".85rem", fontWeight: 800, color: MACHINE_STATUS_COLOR[m.status] ?? "inherit" }}>{m.count}</span>
-                      <div style={{ width: 60, height: 5, borderRadius: 999, background: "var(--border-default)", overflow: "hidden" }}>
+                      <span style={{ fontSize: ".82rem", fontWeight: 600, flex: 1 }}>{m.status.replace(/_/g, " ")}</span>
+                      <span style={{ fontSize: ".88rem", fontWeight: 800, color: MACHINE_STATUS_COLOR[m.status] ?? "inherit" }}>{m.count}</span>
+                      <div style={{ width: 70, height: 6, borderRadius: 999, background: "var(--border-default)", overflow: "hidden" }}>
                         <div style={{ height: "100%", width: `${(m.count / (d.totalMachines || 1)) * 100}%`, background: MACHINE_STATUS_COLOR[m.status] ?? "#94a3b8" }} />
                       </div>
                     </div>
                   ))
                 }
               </div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: ".5rem" }}>
+              <div style={{ display: "grid", gridTemplateColumns: COL2, gap: ".5rem" }}>
                 <StatPill label="Overdue schedules" value={d.overdueSchedules} color={d.overdueSchedules > 0 ? "#ef4444" : "#16a34a"} />
                 <StatPill label="Pending schedules" value={d.pendingSchedules} color={d.pendingSchedules > 0 ? "#f97316" : "#64748b"} />
                 <StatPill label="Maintenance this month" value={d.maintenanceThisMonth} color="#8b5cf6" />
@@ -307,27 +305,26 @@ export function DashboardAnalyticsPage() {
               </div>
             </SectionCard>
 
-            {/* Inventory */}
             <SectionCard title="Raw Material Inventory" icon={<Package size={16} />}>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: ".5rem", textAlign: "center" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: ".5rem" }}>
                 {[
-                  { label: "Total", value: d.totalRawMaterials, color: "#3b82f6" },
-                  { label: "Low Stock", value: d.lowStockMaterials.length, color: "#f97316" },
-                  { label: "Out of Stock", value: d.outOfStockCount, color: "#ef4444" },
+                  { label: "Total Materials", value: d.totalRawMaterials, color: "#3b82f6", bg: "rgba(59,130,246,.06)" },
+                  { label: "Low Stock", value: d.lowStockMaterials.length, color: "#f97316", bg: "rgba(249,115,22,.06)" },
+                  { label: "Out of Stock", value: d.outOfStockCount, color: "#ef4444", bg: "rgba(239,68,68,.06)" },
                 ].map((s) => (
-                  <div key={s.label} style={{ borderRadius: 10, padding: ".65rem .4rem", background: "var(--bg-surface)", border: "1px solid var(--border-default)" }}>
-                    <p style={{ margin: "0 0 .2rem", fontSize: ".65rem", fontWeight: 700, color: "var(--text-secondary)", textTransform: "uppercase" }}>{s.label}</p>
-                    <p style={{ margin: 0, fontSize: "1.5rem", fontWeight: 900, color: s.color }}>{s.value}</p>
+                  <div key={s.label} style={{ borderRadius: 10, padding: ".75rem .5rem", background: s.bg, border: `1px solid ${s.color}22`, textAlign: "center" }}>
+                    <p style={{ margin: "0 0 .25rem", fontSize: ".62rem", fontWeight: 700, color: "var(--text-secondary)", textTransform: "uppercase" }}>{s.label}</p>
+                    <p style={{ margin: 0, fontSize: "1.6rem", fontWeight: 900, color: s.color }}>{s.value}</p>
                   </div>
                 ))}
               </div>
               {d.lowStockMaterials.length > 0 ? (
                 <div style={{ display: "flex", flexDirection: "column", gap: ".35rem" }}>
-                  <p style={{ margin: 0, fontSize: ".75rem", fontWeight: 700, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: ".04em" }}>Low stock materials</p>
+                  <p style={{ margin: 0, fontSize: ".72rem", fontWeight: 700, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: ".04em" }}>Low stock materials</p>
                   {d.lowStockMaterials.map((m) => (
-                    <div key={m.id} style={{ display: "flex", alignItems: "center", gap: ".5rem", padding: ".35rem .6rem", borderRadius: 7, background: "rgba(249,115,22,.06)", border: "1px solid rgba(249,115,22,.15)" }}>
-                      <span style={{ flex: 1, fontSize: ".78rem", fontWeight: 600 }}>{m.name}</span>
-                      <span style={{ fontSize: ".75rem", color: "#f97316", fontWeight: 700 }}>{fmt(m.currentQuantity, 1)} / {fmt(m.minQuantity, 1)} {m.unit}</span>
+                    <div key={m.id} style={{ display: "flex", alignItems: "center", gap: ".5rem", padding: ".4rem .65rem", borderRadius: 7, background: "rgba(249,115,22,.06)", border: "1px solid rgba(249,115,22,.15)" }}>
+                      <span style={{ flex: 1, fontSize: ".8rem", fontWeight: 600 }}>{m.name}</span>
+                      <span style={{ fontSize: ".75rem", color: "#f97316", fontWeight: 700 }}>{fmt(m.currentQuantity, 1)}/{fmt(m.minQuantity, 1)} {m.unit}</span>
                     </div>
                   ))}
                 </div>
@@ -338,109 +335,123 @@ export function DashboardAnalyticsPage() {
 
           </div>
 
-          {/* ── Row 3: Finance + Quality ────────────────────── */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(320px,1fr))", gap: "1rem" }}>
+          {/* ── Row 3: Sales & Purchases — FULL WIDTH ──────── */}
+          <div style={{ background: "var(--bg-card)", border: "1px solid var(--border-default)", borderRadius: 14, padding: "1.25rem", display: "flex", flexDirection: "column", gap: "1rem" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: ".5rem", borderBottom: "1px solid var(--border-default)", paddingBottom: ".75rem" }}>
+              <span style={{ color: "var(--orange-500,#f97316)" }}><DollarSign size={16} /></span>
+              <h3 style={{ margin: 0, fontSize: ".9rem", fontWeight: 800 }}>Finance Overview — This Month</h3>
+              <div style={{ marginLeft: "auto", padding: ".3rem .85rem", borderRadius: 999, background: profit >= 0 ? "rgba(16,185,129,.12)" : "rgba(239,68,68,.12)", border: `1px solid ${profit >= 0 ? "rgba(16,185,129,.25)" : "rgba(239,68,68,.25)"}` }}>
+                <span style={{ fontSize: ".78rem", fontWeight: 800, color: profit >= 0 ? "#10b981" : "#ef4444" }}>
+                  Net {profit >= 0 ? "+" : ""}SAR {fmtMoney(profit)}
+                </span>
+              </div>
+            </div>
 
-            {/* Finance */}
-            <SectionCard title="Finance — This Month" icon={<DollarSign size={16} />}>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: ".5rem" }}>
-                {[
-                  { label: "Sales Revenue", value: d.salesThisMonth, color: "#10b981", icon: <ArrowUpRight size={13} /> },
-                  { label: "Purchases", value: d.purchasesThisMonth, color: "#f97316", icon: <ArrowDownRight size={13} /> },
-                  { label: "Expenses", value: d.expensesThisMonth, color: "#ef4444", icon: <ArrowDownRight size={13} /> },
-                  { label: "Payroll", value: d.payrollThisMonth, color: "#8b5cf6", icon: <DollarSign size={13} /> },
-                ].map((f) => (
-                  <div key={f.label} style={{ padding: ".65rem .75rem", borderRadius: 10, background: "var(--bg-surface)", border: "1px solid var(--border-default)" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: ".3rem", marginBottom: ".2rem" }}>
-                      <span style={{ color: f.color }}>{f.icon}</span>
-                      <span style={{ fontSize: ".67rem", fontWeight: 700, color: "var(--text-secondary)", textTransform: "uppercase" }}>{f.label}</span>
-                    </div>
-                    <p style={{ margin: 0, fontSize: "1.1rem", fontWeight: 900, color: f.color }}>SAR {fmtMoney(f.value)}</p>
+            {/* Sales + Purchases — two big full cards side by side */}
+            <div style={{ display: "grid", gridTemplateColumns: COL2, gap: "1rem" }}>
+              {/* Sales */}
+              <div style={{ borderRadius: 12, background: "linear-gradient(135deg,#10b981,#059669)", padding: "1.25rem 1.5rem", color: "#fff", position: "relative", overflow: "hidden" }}>
+                <div style={{ position: "absolute", right: -12, top: -12, opacity: .12, transform: "scale(3.5)" }}><TrendingUp size={40} /></div>
+                <div style={{ display: "flex", alignItems: "center", gap: ".5rem", marginBottom: ".75rem" }}>
+                  <ArrowUpRight size={16} />
+                  <span style={{ fontSize: ".72rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: ".05em", opacity: .9 }}>Sales Revenue</span>
+                </div>
+                <p style={{ margin: "0 0 .25rem", fontSize: "2.4rem", fontWeight: 900, lineHeight: 1 }}>SAR {fmtMoney(d.salesThisMonth)}</p>
+                <div style={{ display: "flex", alignItems: "center", gap: "1rem", marginTop: ".75rem" }}>
+                  <div style={{ background: "rgba(255,255,255,.18)", borderRadius: 8, padding: ".4rem .75rem", textAlign: "center" }}>
+                    <p style={{ margin: 0, fontSize: ".62rem", opacity: .85, fontWeight: 600 }}>TRANSACTIONS</p>
+                    <p style={{ margin: 0, fontSize: "1.1rem", fontWeight: 900 }}>{d.salesCountThisMonth}</p>
                   </div>
-                ))}
+                  <div style={{ background: "rgba(255,255,255,.18)", borderRadius: 8, padding: ".4rem .75rem", textAlign: "center" }}>
+                    <p style={{ margin: 0, fontSize: ".62rem", opacity: .85, fontWeight: 600 }}>AVG / SALE</p>
+                    <p style={{ margin: 0, fontSize: "1.1rem", fontWeight: 900 }}>SAR {d.salesCountThisMonth > 0 ? fmtMoney(d.salesThisMonth / d.salesCountThisMonth) : "0"}</p>
+                  </div>
+                  <div style={{ background: "rgba(255,255,255,.18)", borderRadius: 8, padding: ".4rem .75rem", textAlign: "center" }}>
+                    <p style={{ margin: 0, fontSize: ".62rem", opacity: .85, fontWeight: 600 }}>INVOICES PENDING</p>
+                    <p style={{ margin: 0, fontSize: "1.1rem", fontWeight: 900 }}>{d.invoicesPending}</p>
+                  </div>
+                </div>
               </div>
-              <div style={{ padding: ".7rem .9rem", borderRadius: 10, background: profit >= 0 ? "rgba(16,185,129,.08)" : "rgba(239,68,68,.08)", border: `1px solid ${profit >= 0 ? "rgba(16,185,129,.2)" : "rgba(239,68,68,.2)"}` }}>
-                <span style={{ fontSize: ".75rem", fontWeight: 700, color: "var(--text-secondary)" }}>Estimated Profit</span>
-                <p style={{ margin: ".1rem 0 0", fontSize: "1.25rem", fontWeight: 900, color: profit >= 0 ? "#10b981" : "#ef4444" }}>
-                  {profit >= 0 ? "+" : ""}SAR {fmtMoney(profit)}
-                </p>
-              </div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: ".4rem" }}>
-                <StatPill label="Invoices pending" value={d.invoicesPending} color={d.invoicesPending > 0 ? "#f97316" : "#64748b"} />
-                <StatPill label="Overdue invoices" value={d.invoicesOverdue} color={d.invoicesOverdue > 0 ? "#ef4444" : "#64748b"} />
-                <StatPill label="Pending expenses" value={d.expensesPending} color={d.expensesPending > 0 ? "#f97316" : "#64748b"} />
-              </div>
-            </SectionCard>
 
-            {/* Quality */}
+              {/* Purchases */}
+              <div style={{ borderRadius: 12, background: "linear-gradient(135deg,#f97316,#ea580c)", padding: "1.25rem 1.5rem", color: "#fff", position: "relative", overflow: "hidden" }}>
+                <div style={{ position: "absolute", right: -12, top: -12, opacity: .12, transform: "scale(3.5)" }}><ShoppingCart size={40} /></div>
+                <div style={{ display: "flex", alignItems: "center", gap: ".5rem", marginBottom: ".75rem" }}>
+                  <ShoppingCart size={16} />
+                  <span style={{ fontSize: ".72rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: ".05em", opacity: .9 }}>Purchases</span>
+                </div>
+                <p style={{ margin: "0 0 .25rem", fontSize: "2.4rem", fontWeight: 900, lineHeight: 1 }}>SAR {fmtMoney(d.purchasesThisMonth)}</p>
+                <div style={{ display: "flex", alignItems: "center", gap: "1rem", marginTop: ".75rem" }}>
+                  <div style={{ background: "rgba(255,255,255,.18)", borderRadius: 8, padding: ".4rem .75rem", textAlign: "center" }}>
+                    <p style={{ margin: 0, fontSize: ".62rem", opacity: .85, fontWeight: 600 }}>ORDERS</p>
+                    <p style={{ margin: 0, fontSize: "1.1rem", fontWeight: 900 }}>{d.purchasesCountThisMonth}</p>
+                  </div>
+                  <div style={{ background: "rgba(255,255,255,.18)", borderRadius: 8, padding: ".4rem .75rem", textAlign: "center" }}>
+                    <p style={{ margin: 0, fontSize: ".62rem", opacity: .85, fontWeight: 600 }}>AVG / ORDER</p>
+                    <p style={{ margin: 0, fontSize: "1.1rem", fontWeight: 900 }}>SAR {d.purchasesCountThisMonth > 0 ? fmtMoney(d.purchasesThisMonth / d.purchasesCountThisMonth) : "0"}</p>
+                  </div>
+                  <div style={{ background: "rgba(255,255,255,.18)", borderRadius: 8, padding: ".4rem .75rem", textAlign: "center" }}>
+                    <p style={{ margin: 0, fontSize: ".62rem", opacity: .85, fontWeight: 600 }}>OVERDUE INV.</p>
+                    <p style={{ margin: 0, fontSize: "1.1rem", fontWeight: 900 }}>{d.invoicesOverdue}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Expenses + Payroll + pending stats */}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: ".75rem" }}>
+              {[
+                { label: "Expenses This Month", value: d.expensesThisMonth, color: "#ef4444", icon: <ArrowDownRight size={14} />, sub: `${d.expensesPending} pending approval` },
+                { label: "Payroll This Month", value: d.payrollThisMonth, color: "#8b5cf6", icon: <UserCheck size={14} />, sub: `${d.totalShifts} shifts total` },
+                { label: "Invoices Pending", value: d.invoicesPending, color: "#f97316", icon: <BarChart2 size={14} />, sub: `${d.invoicesOverdue} overdue` },
+                { label: "Pending Expenses", value: d.expensesPending, color: "#ef4444", icon: <Clock size={14} />, sub: "awaiting approval" },
+              ].map((item) => (
+                <div key={item.label} style={{ padding: ".85rem 1rem", borderRadius: 10, background: "var(--bg-surface)", border: "1px solid var(--border-default)" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: ".35rem", marginBottom: ".3rem" }}>
+                    <span style={{ color: item.color }}>{item.icon}</span>
+                    <span style={{ fontSize: ".65rem", fontWeight: 700, color: "var(--text-secondary)", textTransform: "uppercase" }}>{item.label}</span>
+                  </div>
+                  <p style={{ margin: "0 0 .15rem", fontSize: "1.25rem", fontWeight: 900, color: item.color }}>
+                    {item.label.includes("Invoices") || item.label.includes("Expenses") ? item.value : `SAR ${fmtMoney(item.value)}`}
+                  </p>
+                  <p style={{ margin: 0, fontSize: ".7rem", color: "var(--text-secondary)" }}>{item.sub}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* ── Row 4: Quality + Recent Activity ───────────── */}
+          <div style={{ display: "grid", gridTemplateColumns: COL2, gap: "1rem" }}>
+
             <SectionCard title="Quality & Maintenance" icon={<CheckSquare size={16} />}>
               <div style={{ display: "flex", flexDirection: "column", gap: ".4rem" }}>
-                <p style={{ margin: 0, fontSize: ".75rem", fontWeight: 700, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: ".04em" }}>Quality Issues by Severity</p>
+                <p style={{ margin: 0, fontSize: ".72rem", fontWeight: 700, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: ".04em" }}>Issues by Severity</p>
                 {d.qualityBySeverity.length === 0
                   ? <p style={{ margin: 0, fontSize: ".85rem", color: "#16a34a", fontWeight: 600 }}>✓ No quality issues recorded</p>
                   : d.qualityBySeverity.map((q) => {
                     const maxQ = Math.max(...d.qualityBySeverity.map((x) => x.count), 1);
-                    return (
-                      <BarRow key={q.severity} label={q.severity} value={q.count} max={maxQ}
-                        color={SEVERITY_COLOR[q.severity] ?? "#94a3b8"} />
-                    );
+                    return <BarRow key={q.severity} label={q.severity} value={q.count} max={maxQ} color={SEVERITY_COLOR[q.severity] ?? "#94a3b8"} />;
                   })
                 }
               </div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: ".5rem" }}>
+              <div style={{ display: "grid", gridTemplateColumns: COL2, gap: ".5rem" }}>
                 <StatPill label="Open issues" value={d.openQualityIssues} color={d.openQualityIssues > 0 ? "#ef4444" : "#16a34a"} />
                 <StatPill label="Checks this week" value={d.qualityThisWeek} color="#0ea5e9" />
-                <StatPill label="Maint. this month" value={d.maintenanceThisMonth} color="#8b5cf6" />
+                <StatPill label="Maintenance this month" value={d.maintenanceThisMonth} color="#8b5cf6" />
                 <StatPill label="Total shifts" value={d.totalShifts} color="#64748b" />
               </div>
             </SectionCard>
 
-          </div>
-
-          {/* ── Row 4: Recent Activity ──────────────────────── */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(320px,1fr))", gap: "1rem" }}>
-
-            {/* Recent Production */}
-            <SectionCard title="Today's Production Records" icon={<Activity size={16} />}>
-              {d.recentProduction.length === 0 ? (
-                <p style={{ margin: 0, color: "var(--text-secondary)", fontSize: ".85rem" }}>No production records today.</p>
-              ) : (
-                <div style={{ overflowX: "auto" }}>
-                  <table style={{ width: "100%", borderCollapse: "collapse", fontSize: ".78rem" }}>
-                    <thead>
-                      <tr style={{ borderBottom: "1px solid var(--border-default)" }}>
-                        {["Worker", "Machine", "Pieces", "Cartons", "Time"].map((h) => (
-                          <th key={h} style={{ padding: ".35rem .5rem", textAlign: "left", fontWeight: 700, color: "var(--text-secondary)", whiteSpace: "nowrap" }}>{h}</th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {d.recentProduction.map((r) => (
-                        <tr key={r.id} style={{ borderBottom: "1px solid var(--border-default)" }}>
-                          <td style={{ padding: ".4rem .5rem", fontWeight: 600 }}>{r.workerName}</td>
-                          <td style={{ padding: ".4rem .5rem", color: "var(--text-secondary)" }}>{r.machineName}</td>
-                          <td style={{ padding: ".4rem .5rem", fontWeight: 700, color: "#f97316" }}>{fmt(r.totalPieces)}</td>
-                          <td style={{ padding: ".4rem .5rem", color: "var(--text-secondary)" }}>{fmt(r.cartonsCount)}</td>
-                          <td style={{ padding: ".4rem .5rem", color: "var(--text-secondary)", whiteSpace: "nowrap" }}>{timeAgo(r.createdAt)}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </SectionCard>
-
-            {/* Recent Maintenance */}
             <SectionCard title="Recent Maintenance" icon={<Wrench size={16} />}>
               {d.recentMaintenance.length === 0 ? (
                 <p style={{ margin: 0, color: "var(--text-secondary)", fontSize: ".85rem" }}>No maintenance records this month.</p>
               ) : (
                 <div style={{ display: "flex", flexDirection: "column", gap: ".5rem" }}>
                   {d.recentMaintenance.map((m) => (
-                    <div key={m.id} style={{ padding: ".5rem .75rem", borderRadius: 9, background: "var(--bg-surface)", border: "1px solid var(--border-default)", display: "flex", gap: ".65rem", alignItems: "flex-start" }}>
+                    <div key={m.id} style={{ padding: ".55rem .75rem", borderRadius: 9, background: "var(--bg-surface)", border: "1px solid var(--border-default)", display: "flex", gap: ".65rem", alignItems: "flex-start" }}>
                       <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#8b5cf6", marginTop: 5, flexShrink: 0 }} />
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <p style={{ margin: 0, fontSize: ".8rem", fontWeight: 700 }}>{m.machineName}</p>
+                        <p style={{ margin: 0, fontSize: ".82rem", fontWeight: 700 }}>{m.machineName}</p>
                         <p style={{ margin: ".1rem 0 0", fontSize: ".73rem", color: "var(--text-secondary)" }}>
                           {m.engineerName} · {m.downtimeReason?.replace(/_/g, " ") ?? "N/A"}
                           {m.downtimeMinutes ? ` · ${m.downtimeMinutes}min` : ""}
@@ -455,6 +466,36 @@ export function DashboardAnalyticsPage() {
 
           </div>
 
+          {/* ── Row 5: Production Records — FULL WIDTH ─────── */}
+          <SectionCard title="Today's Production Records" icon={<Activity size={16} />}>
+            {d.recentProduction.length === 0 ? (
+              <p style={{ margin: 0, color: "var(--text-secondary)", fontSize: ".85rem" }}>No production records today.</p>
+            ) : (
+              <div style={{ overflowX: "auto" }}>
+                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: ".82rem" }}>
+                  <thead>
+                    <tr style={{ background: "var(--bg-surface)", borderBottom: "1px solid var(--border-default)" }}>
+                      {["Worker", "Machine", "Pieces", "Cartons", "Time"].map((h) => (
+                        <th key={h} style={{ padding: ".45rem .75rem", textAlign: "left", fontWeight: 700, color: "var(--text-secondary)", whiteSpace: "nowrap" }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {d.recentProduction.map((r, i) => (
+                      <tr key={r.id} style={{ borderBottom: "1px solid var(--border-default)", background: i % 2 === 0 ? "transparent" : "var(--bg-surface)" }}>
+                        <td style={{ padding: ".5rem .75rem", fontWeight: 700 }}>{r.workerName}</td>
+                        <td style={{ padding: ".5rem .75rem", color: "var(--text-secondary)" }}>{r.machineName}</td>
+                        <td style={{ padding: ".5rem .75rem", fontWeight: 800, color: "#f97316" }}>{fmt(r.totalPieces)}</td>
+                        <td style={{ padding: ".5rem .75rem", color: "var(--text-secondary)" }}>{fmt(r.cartonsCount)}</td>
+                        <td style={{ padding: ".5rem .75rem", color: "var(--text-secondary)", whiteSpace: "nowrap" }}>{timeAgo(r.createdAt)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </SectionCard>
+
           {/* ── Alerts Panel ────────────────────────────────── */}
           {totalAlerts > 0 && (
             <div style={{ background: "rgba(239,68,68,.05)", border: "1px solid rgba(239,68,68,.2)", borderRadius: 14, padding: "1.25rem" }}>
@@ -463,24 +504,12 @@ export function DashboardAnalyticsPage() {
                 <h3 style={{ margin: 0, fontSize: ".95rem", fontWeight: 800, color: "#ef4444" }}>Action Required — {totalAlerts} alert{totalAlerts !== 1 ? "s" : ""}</h3>
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(220px,1fr))", gap: ".6rem" }}>
-                {d.outOfStockCount > 0 && (
-                  <AlertItem icon={<Package size={14} />} label={`${d.outOfStockCount} material${d.outOfStockCount !== 1 ? "s" : ""} out of stock`} color="#ef4444" />
-                )}
-                {d.overdueSchedules > 0 && (
-                  <AlertItem icon={<Clock size={14} />} label={`${d.overdueSchedules} overdue maintenance schedule${d.overdueSchedules !== 1 ? "s" : ""}`} color="#ef4444" />
-                )}
-                {d.invoicesOverdue > 0 && (
-                  <AlertItem icon={<BarChart2 size={14} />} label={`${d.invoicesOverdue} overdue invoice${d.invoicesOverdue !== 1 ? "s" : ""}`} color="#f97316" />
-                )}
-                {d.expensesPending > 0 && (
-                  <AlertItem icon={<DollarSign size={14} />} label={`${d.expensesPending} expense${d.expensesPending !== 1 ? "s" : ""} awaiting approval`} color="#f97316" />
-                )}
-                {d.pendingRegistrations > 0 && (
-                  <AlertItem icon={<UserPlus size={14} />} label={`${d.pendingRegistrations} user registration request${d.pendingRegistrations !== 1 ? "s" : ""} pending`} color="#3b82f6" />
-                )}
-                {d.openQualityIssues > 0 && (
-                  <AlertItem icon={<CheckSquare size={14} />} label={`${d.openQualityIssues} unresolved quality issue${d.openQualityIssues !== 1 ? "s" : ""}`} color="#0ea5e9" />
-                )}
+                {d.outOfStockCount > 0 && <AlertItem icon={<Package size={14} />} label={`${d.outOfStockCount} material${d.outOfStockCount !== 1 ? "s" : ""} out of stock`} color="#ef4444" />}
+                {d.overdueSchedules > 0 && <AlertItem icon={<Clock size={14} />} label={`${d.overdueSchedules} overdue maintenance schedule${d.overdueSchedules !== 1 ? "s" : ""}`} color="#ef4444" />}
+                {d.invoicesOverdue > 0 && <AlertItem icon={<BarChart2 size={14} />} label={`${d.invoicesOverdue} overdue invoice${d.invoicesOverdue !== 1 ? "s" : ""}`} color="#f97316" />}
+                {d.expensesPending > 0 && <AlertItem icon={<DollarSign size={14} />} label={`${d.expensesPending} expense${d.expensesPending !== 1 ? "s" : ""} awaiting approval`} color="#f97316" />}
+                {d.pendingRegistrations > 0 && <AlertItem icon={<UserPlus size={14} />} label={`${d.pendingRegistrations} registration request${d.pendingRegistrations !== 1 ? "s" : ""} pending`} color="#3b82f6" />}
+                {d.openQualityIssues > 0 && <AlertItem icon={<CheckSquare size={14} />} label={`${d.openQualityIssues} unresolved quality issue${d.openQualityIssues !== 1 ? "s" : ""}`} color="#0ea5e9" />}
               </div>
             </div>
           )}

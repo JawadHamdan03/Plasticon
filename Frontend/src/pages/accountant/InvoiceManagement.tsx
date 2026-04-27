@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
+import { confirmDialog } from "../../lib/dialog";
 import { Plus, CheckCircle, Clock, Trash2, FileText, Search, AlertCircle } from "lucide-react";
 import { ModulePageShell } from "../../components/ModulePageShell";
 import { Button } from "../../components/ui/button";
@@ -89,7 +90,7 @@ export default function InvoiceManagement() {
   };
 
   const handleDelete = async (id: number) => {
-    if (!confirm(nav("Delete this invoice?", "حذف هذه الفاتورة؟"))) return;
+    if (!(await confirmDialog(nav("Delete this invoice?", "حذف هذه الفاتورة؟"), { danger: true }))) return;
     await fetch(`${API_BASE_URL}/invoices/${id}`, {
       method: "DELETE",
       headers: { ...authHeaders() },

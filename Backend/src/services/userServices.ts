@@ -10,7 +10,10 @@ type ServiceResult<T> = {
 };
 
 export const getUsers = async (): Promise<ServiceResult<unknown>> => {
-  const users = await prisma.user.findMany();
+  const users = await prisma.user.findMany({
+    include: { shift: { select: { id: true, name: true } } },
+    orderBy: { id: "asc" },
+  });
   return { status: 200, data: users };
 };
 

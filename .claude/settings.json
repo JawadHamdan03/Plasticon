@@ -18,7 +18,16 @@
       "Bash(curl -s -o /dev/null -w \"POST /registration-requests -> %{http_code}\\\\n\" -X POST http://localhost:8080/registration-requests -H \"Content-Type: application/json\" -d '{\"fullName\":\"John\",\"email\":\"john99@test.com\"}')",
       "Bash(curl -s -o /dev/null -w \"GET /dashboard/overview -> %{http_code}\\\\n\" http://localhost:8080/dashboard/overview)",
       "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:8080/dashboard/overview)",
-      "Bash(npm install *)"
+      "Bash(npm install *)",
+      "Bash(grep -E \"\\\\.\\(ts|js\\)$\")",
+      "Bash(python3 -)",
+      "Bash(python3 -c \" import sys, json lines = sys.stdin.read\\(\\).strip\\(\\).split\\('\\\\n'\\) for line in lines[-20:]: try: obj = json.loads\\(line\\) role = obj.get\\('role',''\\) content = obj.get\\('content',''\\) if isinstance\\(content, list\\): for c in content: if isinstance\\(c, dict\\) and c.get\\('type'\\) == 'text': print\\(f'[{role}]: {c[\\\\\"text\\\\\"][:300]}'\\) elif isinstance\\(content, str\\): print\\(f'[{role}]: {content[:300]}'\\) except: pass \")",
+      "Bash(grep -v \"^\\\\\"/$\\\\|^\\\\\"#\")",
+      "Bash(grep -roh '`\\\\${API_BASE_URL}[^`]*`\\\\|fetchWithAuth\\(\"[^\"]*\"\\)\\\\|api<[^>]*>\\(\"[^\"]*\"\\)\\\\|api\\(\"[^\"]*\"\\)' \"C:/Users/JC/OneDrive/Documents/Plasticon/Frontend/src/pages\" --include=\"*.tsx\")",
+      "Bash(grep -rh \"fetchWithAuth\\\\|fetch.*\\\\`\\\\${API\" \"C:/Users/JC/OneDrive/Documents/Plasticon/Frontend/src/pages\" --include=\"*.tsx\")",
+      "Bash(grep -rn \"await fetch\\\\\\(\\\\`\\\\${API_BASE_URL}\" C:/Users/JC/OneDrive/Documents/Plasticon/Frontend/src/pages/)",
+      "Bash(xargs -I {} basename {})",
+      "Bash(python -c \"import json,sys; d=json.load\\(sys.stdin\\); [print\\(k,v\\) for k,v in sorted\\(d.get\\('dependencies',{}\\).items\\(\\)\\)]\")"
     ]
   }
 }

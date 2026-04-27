@@ -320,6 +320,82 @@ export const deleteAttendance = async (
   };
 };
 
+export const createAttendanceForUser = async (
+  adminId: number,
+  payload: {
+    userId: number;
+    checkIn: string | Date;
+    checkOut?: string | Date | null;
+    shiftId?: number | null;
+  },
+): Promise<ServiceResult<unknown>> => {
+  const user = await prisma.user.findUnique({
+    where: { id: payload.userId },
+    include: { shift: true },
+  });
+
+  if (!user) return { status: 404, message: "User not found" };
+
+  const checkInDate = parseDateInput(payload.checkIn);
+  if (!checkInDate)
+    return { status: 400, message: "checkIn is required and must be a valid date" };
+
+  const checkOutDate =
+    payload.checkOut !== undefined && payload.checkOut !== null
+      ? parseDateInput(payload.checkOut)
+      : null;
+
+  if (checkOutDate && checkOutDate.getTime() < checkInDate.getTime())
+    return { status: 400, message: "checkOut cannot be earlier than checkIn" };
+
+  let shiftId: number | null =
+    payload.shiftId !== undefined ? (payload.shiftId ?? null) : (user.shiftId ?? null);
+
+  let effectiveShift: { startTime: Date; endTime: Date } | null = null;
+  if (shiftId) {
+    effectiveShift = await prisma.shift.findUnique({
+      where: { id: shiftId },
+      select: { startTime: true, endTime: true },
+    });
+    if (!effectiveShift) shiftId = null;
+  }
+
+  const lateMinutes = effectiveShift
+    ? calculateLateMinutes(new Date(effectiveShift.startTime), checkInDate)
+    : 0;
+  const overtimeMinutes = effectiveShift
+    ? calculateOvertimeMinutes(new Date(effectiveShift.endTime), checkOutDate)
+    : 0;
+
+  const attendance = await prisma.attendance.create({
+    data: {
+      userId: payload.userId,
+      shiftId,
+      checkIn: checkInDate,
+      checkOut: checkOutDate,
+      lateMinutes,
+      overtimeMinutes,
+    },
+    include: {
+      user: { select: { id: true, fullName: true, username: true, role: true } },
+      shift: true,
+    },
+  });
+
+  auditAsync(adminId, AuditAction.ATTENDANCE_UPDATED, AuditEntityType.ATTENDANCE, attendance.id, {
+    action: "ADMIN_CREATED",
+    forUserId: payload.userId,
+  });
+
+  if (checkOutDate) {
+    calculateDailyPayroll(attendance.id, adminId).catch((err) =>
+      console.error("Auto daily-payroll calculation failed:", err),
+    );
+  }
+
+  return { status: 201, data: attendance };
+};
+
 export const updateAttendance = async (
   attendanceId: number,
   payload: {

@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
+import { confirmDialog } from "../../lib/dialog";
 import { Plus, Edit, Trash2, CheckCircle, Clock, Archive, GitBranch } from "lucide-react";
 import { ModulePageShell } from "../../components/ModulePageShell";
 import { Button } from "../../components/ui/button";
@@ -80,7 +81,7 @@ export default function ApprovalWorkflows() {
   };
 
   const handleDelete = async (id: number) => {
-    if (!confirm(nav("Delete this workflow?", "حذف سير العمل هذا؟"))) return;
+    if (!(await confirmDialog(nav("Delete this workflow?", "حذف سير العمل هذا؟"), { danger: true }))) return;
     await fetch(`${API_BASE_URL}/approval-workflows/${id}`, {
       method: "DELETE", headers: { ...authHeaders() }, credentials: "include",
     });

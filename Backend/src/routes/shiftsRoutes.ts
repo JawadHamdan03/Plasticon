@@ -7,7 +7,7 @@ const router = Router();
 
 router.get(
   "/",
-  authorizeRoles([UserRole.ADMIN]),
+  authorizeRoles([UserRole.ADMIN, UserRole.ENGINEER, UserRole.WORKER, UserRole.ACCOUNTANT]),
   shiftsController.getAllShiftsHandler,
 );
 

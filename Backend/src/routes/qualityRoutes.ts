@@ -11,13 +11,13 @@ const router = Router();
 
 router.post(
     "/",
-    authorizeRoles([UserRole.ENGINEER, UserRole.ADMIN]),
+    authorizeRoles([UserRole.ENGINEER]),
     createQualityCheckHandler
 );
 
 router.get(
     "/me",
-    authorizeRoles([UserRole.ENGINEER, UserRole.ADMIN]),
+    authorizeRoles([UserRole.ENGINEER]),
     getMyQualityChecksHandler
 );
 

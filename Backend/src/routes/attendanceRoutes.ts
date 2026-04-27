@@ -2,6 +2,7 @@ import { Router } from "express";
 import {
   checkInHandler,
   checkOutHandler,
+  createAttendanceForUserHandler,
   deleteAttendance,
   getAllAttendances,
   getMyAttendances,
@@ -11,6 +12,12 @@ import { authorizeRoles } from "../middleware/authMiddleware";
 import { UserRole } from "../config/generated/prisma/client";
 
 const router = Router();
+
+router.post(
+  "/",
+  authorizeRoles([UserRole.ADMIN]),
+  createAttendanceForUserHandler,
+);
 
 router.post(
   "/check-in",

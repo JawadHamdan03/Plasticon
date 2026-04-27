@@ -13,6 +13,7 @@ import { ModulePageShell } from "../../components/ModulePageShell";
 import { useLocale } from "../../context/LocaleContext";
 import { useAuth } from "../../context/AuthContext";
 import { API_BASE_URL, readApiError } from "../../lib/api";
+import { toast } from "../../lib/toast";
 
 type DailyRecord = {
   id: number;
@@ -117,8 +118,7 @@ export function PayrollAdminPage() {
   } | null>(null);
   const [savingConfig, setSavingConfig] = useState(false);
 
-  // Calculate daily payroll
-  const [calcAttId, setCalcAttId] = useState("");
+  // Calculate all payrolls for selected date
   const [calculating, setCalculating] = useState(false);
   const [calcMsg, setCalcMsg] = useState("");
 
@@ -178,7 +178,7 @@ export function PayrollAdminPage() {
     try {
       const res = await api(`/payroll/daily/${id}/confirm`, { method: "POST" });
       if (!res.ok) {
-        window.alert(await readApiError(res));
+        toast.error(await readApiError(res));
         return;
       }
       setDaily((prev) =>
@@ -189,33 +189,35 @@ export function PayrollAdminPage() {
         ),
       );
     } catch (e) {
-      window.alert(e instanceof Error ? e.message : "Failed");
+      toast.error(e instanceof Error ? e.message : "Failed");
     } finally {
       setConfirmingId(null);
     }
   };
 
-  const calculateDaily = async () => {
-    const id = Number(calcAttId.trim());
-    if (!id) {
-      setCalcMsg("Enter a valid attendance ID");
+  const calculateAllForDate = async () => {
+    if (!dateFilter) {
+      setCalcMsg(isAr ? "اختر تاريخاً أولاً" : "Select a date first");
       return;
     }
     setCalculating(true);
     setCalcMsg("");
     try {
-      const res = await api("/payroll/daily/calculate", {
+      const res = await api("/payroll/daily/calculate-date", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ attendanceId: id }),
+        body: JSON.stringify({ date: dateFilter }),
       });
-      const data = await res.json();
+      const data = await res.json() as { calculated?: number; message?: string };
       if (!res.ok) {
-        setCalcMsg(data.message ?? "Error");
+        setCalcMsg((data as { message?: string }).message ?? "Error");
         return;
       }
-      setCalcMsg(isAr ? "تم الحساب بنجاح" : "Calculated successfully");
-      setCalcAttId("");
+      setCalcMsg(
+        data.calculated === 0
+          ? (isAr ? "لا توجد سجلات جديدة" : "No new records to process")
+          : (isAr ? `تم حساب ${data.calculated} راتب` : `Calculated ${data.calculated} payroll record(s)`)
+      );
       void loadDaily();
     } catch (e) {
       setCalcMsg(e instanceof Error ? e.message : "Failed");
@@ -237,13 +239,13 @@ export function PayrollAdminPage() {
         }),
       });
       if (!res.ok) {
-        window.alert(await readApiError(res));
+        toast.error(await readApiError(res));
         return;
       }
       await loadConfigs();
       setEditConfig(null);
     } catch (e) {
-      window.alert(e instanceof Error ? e.message : "Failed");
+      toast.error(e instanceof Error ? e.message : "Failed");
     } finally {
       setSavingConfig(false);
     }
@@ -386,23 +388,15 @@ export function PayrollAdminPage() {
             <div style={{ flex: 1 }} />
             <div className="field" style={{ flex: "0 0 auto" }}>
               <label className="field__label">
-                {isAr ? "حساب راتب (رقم الحضور)" : "Calculate (Attendance ID)"}
+                {isAr ? "حساب رواتب اليوم المحدد" : "Calculate payrolls for selected date"}
               </label>
-              <div style={{ display: "flex", gap: ".5rem" }}>
-                <input
-                  className="field__control"
-                  placeholder="e.g. 42"
-                  value={calcAttId}
-                  onChange={(e) => setCalcAttId(e.target.value)}
-                  style={{ width: "120px" }}
-                  onKeyDown={(e) => e.key === "Enter" && void calculateDaily()}
-                />
+              <div style={{ display: "flex", gap: ".5rem", alignItems: "center" }}>
                 <button
                   className="btn btn--primary btn--sm"
-                  onClick={() => void calculateDaily()}
+                  onClick={() => void calculateAllForDate()}
                   disabled={calculating}
                 >
-                  {calculating ? "..." : isAr ? "احسب" : "Calculate"}
+                  {calculating ? "..." : isAr ? "احسب الكل" : "Calculate All"}
                 </button>
               </div>
               {calcMsg && (
@@ -411,9 +405,9 @@ export function PayrollAdminPage() {
                     margin: ".25rem 0 0",
                     fontSize: ".78rem",
                     color:
-                      calcMsg.includes("success") || calcMsg.includes("بنجاح")
-                        ? "var(--green-600)"
-                        : "var(--red-600)",
+                      calcMsg.includes("0") || calcMsg.includes("Error") || calcMsg.includes("خطأ")
+                        ? "var(--orange-500)"
+                        : "var(--green-600)",
                   }}
                 >
                   {calcMsg}

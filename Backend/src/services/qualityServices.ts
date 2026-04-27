@@ -1,7 +1,6 @@
 import { prisma } from "../config/lib/prisma";
 import {
   NotificationType,
-  QualityStatus,
   UserRole,
 } from "../config/generated/prisma/client";
 import { emitNotificationUnreadCountUpdate } from "../config/socket";
@@ -14,12 +13,15 @@ type ServiceResult<T> = {
   data?: T;
 };
 
+const VALID_ISSUE_TYPES = ["DIMENSIONAL", "SURFACE_DEFECT", "MATERIAL_FAULT", "WEIGHT_ISSUE", "COLOR_ISSUE", "OTHER"] as const;
+const VALID_SEVERITIES = ["LOW", "MEDIUM", "HIGH", "CRITICAL"] as const;
+
 type CreateQualityCheckPayload = {
   machineId?: number;
   shiftId?: number;
-  capsStatus?: string;
-  preformStatus?: string;
-  notes?: string;
+  issueType?: string;
+  severity?: string;
+  description?: string;
 };
 
 export const createQualityCheck = async (
@@ -29,83 +31,43 @@ export const createQualityCheck = async (
   const machineId = Number(payload.machineId);
 
   if (!Number.isInteger(machineId) || machineId <= 0) {
-    return {
-      status: 400,
-      message: "machineId is required and must be a positive integer",
-    };
+    return { status: 400, message: "machineId is required and must be a positive integer" };
   }
 
-  const user = await prisma.user.findUnique({
-    where: { id: engineerId },
-    select: { id: true, shiftId: true },
-  });
-
-  if (!user) {
-    return { status: 404, message: "User not found" };
+  const issueType = (payload.issueType ?? "OTHER").trim().toUpperCase();
+  if (!VALID_ISSUE_TYPES.includes(issueType as typeof VALID_ISSUE_TYPES[number])) {
+    return { status: 400, message: `issueType must be one of: ${VALID_ISSUE_TYPES.join(", ")}` };
   }
 
-  const machine = await prisma.machine.findUnique({
-    where: { id: machineId },
-    select: { id: true, name: true, type: true },
-  });
-
-  if (!machine) {
-    return { status: 404, message: "Machine not found" };
+  const severity = (payload.severity ?? "MEDIUM").trim().toUpperCase();
+  if (!VALID_SEVERITIES.includes(severity as typeof VALID_SEVERITIES[number])) {
+    return { status: 400, message: `severity must be one of: ${VALID_SEVERITIES.join(", ")}` };
   }
+
+  const description = payload.description?.trim() || null;
+
+  const user = await prisma.user.findUnique({ where: { id: engineerId }, select: { id: true, shiftId: true } });
+  if (!user) return { status: 404, message: "User not found" };
+
+  const machine = await prisma.machine.findUnique({ where: { id: machineId }, select: { id: true, name: true, type: true } });
+  if (!machine) return { status: 404, message: "Machine not found" };
 
   const resolvedShiftId = payload.shiftId ?? user.shiftId;
   if (!resolvedShiftId) {
-    return {
-      status: 400,
-      message: "shiftId is required when user has no assigned shift",
-    };
+    return { status: 400, message: "shiftId is required when user has no assigned shift" };
   }
 
-  const shift = await prisma.shift.findUnique({
-    where: { id: Number(resolvedShiftId) },
-  });
-  if (!shift) {
-    return { status: 404, message: "Shift not found" };
-  }
-
-  const toQualityStatus = (value?: string): QualityStatus | undefined => {
-    const normalized = value?.trim().toUpperCase();
-    if (!normalized) {
-      return undefined;
-    }
-
-    const validStatuses: QualityStatus[] = [
-      QualityStatus.PASS,
-      QualityStatus.FAIL,
-      QualityStatus.REWORK_REQUIRED,
-      QualityStatus.PENDING_REVIEW,
-    ];
-
-    return validStatuses.includes(normalized as QualityStatus)
-      ? (normalized as QualityStatus)
-      : undefined;
-  };
-
-  const capsStatus = toQualityStatus(payload.capsStatus);
-  const preformStatus = toQualityStatus(payload.preformStatus);
-  const notes = payload.notes?.trim() || null;
-
-  if (!capsStatus && !preformStatus && !notes) {
-    return {
-      status: 400,
-      message:
-        "At least one of capsStatus, preformStatus, or notes is required",
-    };
-  }
+  const shift = await prisma.shift.findUnique({ where: { id: Number(resolvedShiftId) } });
+  if (!shift) return { status: 404, message: "Shift not found" };
 
   const qualityCheck = await prisma.qualityCheck.create({
     data: {
       machineId: machine.id,
       engineerId,
       shiftId: Number(resolvedShiftId),
-      capsStatus,
-      preformStatus,
-      notes,
+      issueType,
+      severity,
+      description,
     },
     include: {
       machine: { select: { id: true, name: true, type: true } },
@@ -113,41 +75,26 @@ export const createQualityCheck = async (
     },
   });
 
-  auditAsync(
-    engineerId,
-    AuditAction.QUALITY_CHECK_CREATED,
-    AuditEntityType.QUALITY_CHECK,
-    qualityCheck.id,
-    {
-      machineId: machine.id,
-      machineName: machine.name,
-    },
-  );
+  auditAsync(engineerId, AuditAction.QUALITY_CHECK_CREATED, AuditEntityType.QUALITY_CHECK, qualityCheck.id, {
+    machineId: machine.id,
+    machineName: machine.name,
+    issueType,
+    severity,
+  });
 
-  const hasFailure =
-    String(qualityCheck.capsStatus) === "FAIL" ||
-    String(qualityCheck.preformStatus) === "FAIL";
-
-  if (hasFailure) {
-    const adminUsers = await prisma.user.findMany({
-      where: { role: UserRole.ADMIN },
-      select: { id: true },
-    });
-
+  if (severity === "HIGH" || severity === "CRITICAL") {
+    const adminUsers = await prisma.user.findMany({ where: { role: UserRole.ADMIN }, select: { id: true } });
     if (adminUsers.length > 0) {
       await prisma.notification.createMany({
         data: adminUsers.map((admin) => ({
           userId: admin.id,
           title: "Quality issue detected",
-          message: `A failed quality check was recorded on ${machine.name}.`,
+          message: `A ${severity.toLowerCase()} severity ${issueType.toLowerCase().replace(/_/g, " ")} issue was recorded on ${machine.name}.`,
           type: NotificationType.QUALITY_ISSUE,
           machineId: machine.id,
         })),
       });
-
-      adminUsers.forEach((admin) => {
-        emitNotificationUnreadCountUpdate(admin.id, { refresh: true });
-      });
+      adminUsers.forEach((admin) => { emitNotificationUnreadCountUpdate(admin.id, { refresh: true }); });
     }
   }
 

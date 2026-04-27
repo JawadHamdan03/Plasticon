@@ -230,7 +230,12 @@ export function ProfilePage() {
   const handleDeleteDoc = async (id: number) => {
     setDeletingId(id);
     try {
-      await fetch(`${API_BASE_URL}/profile/me/documents/${id}`, { method: "DELETE" });
+      const token = localStorage.getItem("plasticon_token");
+      await fetch(`${API_BASE_URL}/profile/me/documents/${id}`, {
+        method: "DELETE",
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        credentials: "include",
+      });
       await refreshUser();
     } finally {
       setDeletingId(null);

@@ -90,6 +90,7 @@ export const approveRegistrationRequest = async (
   adminId: number,
   role: string,
   reviewNote?: string,
+  shiftId?: number | null,
 ): Promise<ServiceResult<unknown>> => {
   const request = await prisma.registrationRequest.findUnique({ where: { id: requestId } });
   if (!request) return { status: 404, message: "Request not found" };
@@ -136,6 +137,7 @@ export const approveRegistrationRequest = async (
       password: hashedPassword,
       role: role as UserRole,
       isActive: true,
+      shiftId: shiftId ?? null,
     },
   });
 

@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
+import { confirmDialog } from "../../lib/dialog";
 import { Plus, Edit, Trash2, CheckCircle, Clock, AlertTriangle, Truck } from "lucide-react";
 import { ModulePageShell } from "../../components/ModulePageShell";
 import { Button } from "../../components/ui/button";
@@ -81,7 +82,7 @@ export default function SupplierPayables() {
   };
 
   const handleDelete = async (id: number) => {
-    if (!confirm(nav("Delete this payable?", "حذف هذه الدفعة؟"))) return;
+    if (!(await confirmDialog(nav("Delete this payable?", "حذف هذه الدفعة؟"), { danger: true }))) return;
     await fetch(`${API_BASE_URL}/supplier-payables/${id}`, {
       method: "DELETE", headers: { ...authHeaders() }, credentials: "include",
     });
