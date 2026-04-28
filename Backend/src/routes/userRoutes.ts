@@ -11,7 +11,7 @@ import { UserRole } from "../config/generated/prisma/client";
 
 const router = Router();
 
-router.get("/all", authorizeRoles([UserRole.ADMIN]), getUsers);
+router.get("/all", authorizeRoles([UserRole.ADMIN, UserRole.ACCOUNTANT]), getUsers);
 router.get("/:id", authorizeRoles([UserRole.ADMIN]), getUserById);
 router.put("/:id", authorizeRoles([UserRole.ADMIN]), updateUser);
 router.put("/:id/role", authorizeRoles([UserRole.ADMIN]), updateUserRole);

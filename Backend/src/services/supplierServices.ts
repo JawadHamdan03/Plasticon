@@ -67,53 +67,47 @@ export const createSupplier = async (payload: {
 
 export const updateSupplier = async (
     id: number,
-    payload: {
-        name?: string;
-        phone?: string;
-        email?: string;
-        address?: string;
-        contactPerson?: string;
-        website?: string;
-        category?: string;
-        leadTimeDays?: number;
-        rating?: number;
-        notes?: string;
-    }
+    payload: Record<string, unknown>
 ): Promise<ServiceResult<unknown>> => {
-    const supplierId = Number(id);
-    if (!Number.isInteger(supplierId) || supplierId <= 0) {
-        return { status: 400, message: "Invalid supplier id" };
-    }
+    try {
+        const supplierId = Number(id);
+        if (!Number.isInteger(supplierId) || supplierId <= 0) {
+            return { status: 400, message: "Invalid supplier id" };
+        }
 
-    const existing = await prisma.supplier.findUnique({ where: { id: supplierId } });
-    if (!existing || existing.deletedAt) {
-        return { status: 404, message: "Supplier not found" };
-    }
+        const existing = await prisma.supplier.findUnique({ where: { id: supplierId } });
+        if (!existing || existing.deletedAt) {
+            return { status: 404, message: "Supplier not found" };
+        }
 
-    if (payload.rating !== undefined && payload.rating !== null) {
-        const r = Number(payload.rating);
-        if (r < 1 || r > 5) {
+        const rating = payload.rating != null ? Number(payload.rating) : null;
+        if (rating !== null && (rating < 1 || rating > 5)) {
             return { status: 400, message: "Rating must be between 1 and 5" };
         }
+
+        const str = (v: unknown) => (typeof v === "string" ? v.trim() || null : null);
+
+        const updated = await prisma.supplier.update({
+            where: { id: supplierId },
+            data: {
+                ...("name" in payload && payload.name != null && { name: String(payload.name).trim() }),
+                ...("phone" in payload && { phone: str(payload.phone) }),
+                ...("email" in payload && { email: str(payload.email) }),
+                ...("address" in payload && { address: str(payload.address) }),
+                ...("contactPerson" in payload && { contactPerson: str(payload.contactPerson) }),
+                ...("website" in payload && { website: str(payload.website) }),
+                ...("category" in payload && { category: str(payload.category) }),
+                ...("leadTimeDays" in payload && { leadTimeDays: payload.leadTimeDays != null ? Number(payload.leadTimeDays) : null }),
+                ...("rating" in payload && { rating }),
+                ...("notes" in payload && { notes: str(payload.notes) }),
+            },
+        });
+
+        return { status: 200, data: updated };
+    } catch (error) {
+        console.error("Update supplier error:", error);
+        return { status: 500, message: "Failed to update supplier" };
     }
-
-    const updated = await prisma.supplier.update({
-        where: { id: supplierId },
-        data: {
-            ...(payload.name !== undefined && { name: payload.name.trim() }),
-            ...(payload.phone !== undefined && { phone: payload.phone.trim() || null }),
-            ...(payload.email !== undefined && { email: payload.email.trim() || null }),
-            ...(payload.address !== undefined && { address: payload.address.trim() || null }),
-            ...(payload.contactPerson !== undefined && { contactPerson: payload.contactPerson.trim() || null }),
-            ...(payload.website !== undefined && { website: payload.website.trim() || null }),
-            ...(payload.category !== undefined && { category: payload.category.trim() || null }),
-            ...(payload.leadTimeDays !== undefined && { leadTimeDays: payload.leadTimeDays ? Number(payload.leadTimeDays) : null }),
-            ...(payload.rating !== undefined && { rating: payload.rating ? Number(payload.rating) : null }),
-            ...(payload.notes !== undefined && { notes: payload.notes.trim() || null }),
-        },
-    });
-
-    return { status: 200, data: updated };
 };
 
 export const deleteSupplier = async (id: number): Promise<ServiceResult<unknown>> => {

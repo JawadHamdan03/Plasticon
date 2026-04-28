@@ -160,7 +160,11 @@ export function ChatPage() {
   const [selectedAudienceKey, setSelectedAudienceKey] = useState<"" | AudienceTarget["key"]>("");
   const [directMessageText, setDirectMessageText] = useState("");
   const [sendingDirect, setSendingDirect] = useState(false);
-  const [createGroupForm, setCreateGroupForm] = useState({ name: "", description: "", memberIds: "" });
+  type NewGroupType = "SHIFT" | "ENGINEERS" | "ACCOUNTANTS" | "ACC_ENG" | "WORKERS" | "CUSTOM";
+  const [createGroupForm, setCreateGroupForm] = useState<{
+    name: string; description: string;
+    groupType: NewGroupType; shiftId: string; selectedMemberIds: number[];
+  }>({ name: "", description: "", groupType: "SHIFT", shiftId: "", selectedMemberIds: [] });
   const [creatingGroup, setCreatingGroup] = useState(false);
   const [addMemberForm, setAddMemberForm] = useState({ userId: "", role: "MEMBER" as GroupRole });
 
@@ -203,6 +207,21 @@ export function ChatPage() {
     const filtered = roleFilter === "ALL" ? all : all.filter((m) => m.role === roleFilter);
     return filtered.map((m) => ({ id: m.id, displayLabel: `${m.fullName} — @${m.username} (${m.role})` }));
   }, [membersByShift, roleFilter]);
+
+  const newGroupCandidates = useMemo(() => {
+    const all = membersByShift.flatMap((b) => b.members);
+    switch (createGroupForm.groupType) {
+      case "SHIFT":
+        return createGroupForm.shiftId
+          ? (membersByShift.find((b) => String(b.shiftId) === createGroupForm.shiftId)?.members ?? [])
+          : [];
+      case "ENGINEERS":   return all.filter((m) => m.role === "ENGINEER");
+      case "ACCOUNTANTS": return all.filter((m) => m.role === "ACCOUNTANT");
+      case "ACC_ENG":     return all.filter((m) => m.role === "ACCOUNTANT" || m.role === "ENGINEER");
+      case "WORKERS":     return all.filter((m) => m.role === "WORKER");
+      default:            return all;
+    }
+  }, [createGroupForm.groupType, createGroupForm.shiftId, membersByShift]);
 
   // ── Data loading ──
   const loadGroups = useCallback(async () => {
@@ -261,11 +280,11 @@ export function ChatPage() {
     void loadGroups();
     if (isAdmin) void loadMembersDirectory();
     else {
-      // load flat members for non-admin DM
-      fetchApi("/chat/admin/targets").then(async (r) => {
+      // load recipients for non-admin DM — filtered by role/shift on backend
+      fetchApi("/chat/members-by-shift").then(async (r) => {
         if (!r.ok) return;
-        const d = (await r.json()) as AdminTargetsResponse;
-        setFlatMembers((d.usersByShift ?? []).flatMap((b) =>
+        const buckets = (await r.json()) as ShiftMembersBucket[];
+        setFlatMembers(buckets.flatMap((b) =>
           b.members.map((m) => ({ id: m.id, label: `${m.fullName} (@${m.username})` }))
         ));
       }).catch(() => {});

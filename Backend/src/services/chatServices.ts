@@ -776,19 +776,48 @@ export const getChatMembersByShift = async (
 ): Promise<ServiceResult<ShiftMemberBucket[]>> => {
   const search = String(query.search ?? "").trim();
 
+  // Fetch requester's role and shift for access filtering
+  const requester = await prisma.user.findUnique({
+    where: { id: requesterId },
+    select: { id: true, role: true, shiftId: true },
+  });
+  if (!requester) return { status: 404, message: "User not found" };
+
+  // Build recipient filter based on requester's role:
+  //   WORKER / ENGINEER → ADMIN + ACCOUNTANT + same-shift WORKER + same-shift ENGINEER
+  //   ACCOUNTANT        → everyone (no extra restriction)
+  //   ADMIN             → everyone (ADMIN typically uses /admin/targets, but handle gracefully)
+  const roleRestricted =
+    requester.role === UserRole.WORKER || requester.role === UserRole.ENGINEER;
+
+  const roleShiftFilter = roleRestricted
+    ? {
+        OR: [
+          { role: { in: [UserRole.ADMIN, UserRole.ACCOUNTANT] as any[] } },
+          {
+            role: { in: [UserRole.WORKER, UserRole.ENGINEER] as any[] },
+            shiftId: requester.shiftId ?? -1,
+          },
+        ],
+      }
+    : {};
+
+  const searchFilter = search
+    ? {
+        OR: [
+          { fullName: { contains: search, mode: "insensitive" as const } },
+          { username: { contains: search, mode: "insensitive" as const } },
+        ],
+      }
+    : {};
+
   const users = await prisma.user.findMany({
     where: {
       deletedAt: null,
       isActive: true,
       role: { in: chatEligibleRoles as unknown as any[] },
-      ...(search
-        ? {
-            OR: [
-              { fullName: { contains: search, mode: "insensitive" } },
-              { username: { contains: search, mode: "insensitive" } },
-            ],
-          }
-        : {}),
+      ...roleShiftFilter,
+      ...(search ? { AND: [searchFilter] } : {}),
     },
     select: {
       id: true,

@@ -1,99 +1,103 @@
+import { useState } from "react";
 import { FileText, Download, Clock } from "lucide-react";
 import { Card } from "../../components/ui/card";
 import { ModulePageShell } from "../../components/ModulePageShell";
 import { useLocale } from "../../context/LocaleContext";
 
+const DOCS = [
+  { id: 1, title: "Machine A - User Manual",        category: "Manual",      updated: "2026-03-15", downloads: 24 },
+  { id: 2, title: "Machine B - Maintenance Guide",  category: "Maintenance", updated: "2026-02-20", downloads: 18 },
+  { id: 3, title: "Safety Procedures Overview",     category: "Safety",      updated: "2026-01-10", downloads: 42 },
+  { id: 4, title: "Calibration Standards",          category: "Reference",   updated: "2026-03-01", downloads: 12 },
+  { id: 5, title: "Troubleshooting Guide",          category: "Support",     updated: "2026-02-28", downloads: 35 },
+];
+
+const CATEGORIES = ["All", "Manual", "Maintenance", "Safety", "Reference", "Support"];
+
+const CAT_META: Record<string, { color: string; bg: string }> = {
+  Manual:      { color: "#1d4ed8", bg: "#dbeafe" },
+  Maintenance: { color: "#d97706", bg: "#fef3c7" },
+  Safety:      { color: "#dc2626", bg: "#fee2e2" },
+  Reference:   { color: "#7c3aed", bg: "#ede9fe" },
+  Support:     { color: "#059669", bg: "#d1fae5" },
+};
+
 export default function TechnicalDocumentation() {
   const { locale } = useLocale();
   const nav = (en: string, ar: string) => locale === "ar" ? ar : en;
+  const [activeCat, setActiveCat] = useState("All");
 
-  const docs = [
-    { id: 1, title: "Machine A - User Manual", category: "Manual", updated: "2026-03-15", downloads: 24 },
-    { id: 2, title: "Machine B - Maintenance Guide", category: "Maintenance", updated: "2026-02-20", downloads: 18 },
-    { id: 3, title: "Safety Procedures Overview", category: "Safety", updated: "2026-01-10", downloads: 42 },
-    { id: 4, title: "Calibration Standards", category: "Reference", updated: "2026-03-01", downloads: 12 },
-    { id: 5, title: "Troubleshooting Guide", category: "Support", updated: "2026-02-28", downloads: 35 },
-  ];
-
-  const categories = ["All", "Manual", "Maintenance", "Safety", "Reference", "Support"];
+  const recentCount = DOCS.filter(d => new Date(d.updated) > new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)).length;
+  const totalDownloads = DOCS.reduce((s, d) => s + d.downloads, 0);
+  const filtered = activeCat === "All" ? DOCS : DOCS.filter(d => d.category === activeCat);
 
   return (
     <ModulePageShell
-      title="Technical Documentation"
-      subtitle="Access and manage technical resources and manuals"
+      title={nav("Technical Documentation", "التوثيق التقني")}
+      subtitle={nav("Access and manage technical resources and manuals", "الوصول وإدارة الموارد التقنية والكتيبات")}
+      icon={<FileText size={22} />}
     >
-      <div className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card className="p-4 bg-linear-to-br from-blue-50 to-blue-100 dark:from-blue-900/30 dark:to-blue-800/30 border border-blue-200 dark:border-blue-800">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-xs text-slate-500">{nav("Total Documents", "إجمالي الوثائق")}</p>
-              <FileText size={18} className="text-blue-600" />
+      {/* KPIs */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
+        {[
+          { label: nav("Total Documents", "إجمالي الوثائق"), value: DOCS.length, icon: "📄", color: "#1d4ed8", bg: "#dbeafe" },
+          { label: nav("Recently Updated", "محدث مؤخراً"), value: recentCount, icon: "🕐", color: "#059669", bg: "#d1fae5" },
+          { label: nav("Total Downloads", "إجمالي التنزيلات"), value: totalDownloads, icon: "⬇️", color: "#d97706", bg: "#fef3c7" },
+        ].map((k) => (
+          <Card key={k.label} className="p-4 flex items-center gap-3">
+            <div style={{ width: 40, height: 40, borderRadius: 10, background: k.bg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.2rem", flexShrink: 0 }}>
+              {k.icon}
             </div>
-            <p className="text-2xl font-bold text-blue-700 dark:text-blue-300">{docs.length}</p>
-          </Card>
-          <Card className="p-4 bg-linear-to-br from-green-50 to-green-100 dark:from-green-900/30 dark:to-green-800/30 border border-green-200 dark:border-green-800">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-xs text-slate-500">{nav("Recently Updated", "محدث مؤخرا")}</p>
-              <Clock size={18} className="text-green-600" />
+            <div>
+              <p className="text-xs text-[var(--text-secondary)] font-medium leading-tight">{k.label}</p>
+              <p className="text-xl font-bold" style={{ color: k.color }}>{k.value}</p>
             </div>
-            <p className="text-2xl font-bold text-green-700 dark:text-green-300">{docs.filter(d => new Date(d.updated) > new Date(Date.now() - 30*24*60*60*1000)).length}</p>
           </Card>
-          <Card className="p-4 bg-linear-to-br from-orange-50 to-orange-100 dark:from-orange-900/30 dark:to-orange-800/30 border border-orange-200 dark:border-orange-800">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-xs text-slate-500">{nav("Total Downloads", "إجمالي التنزيلات")}</p>
-              <Download size={18} className="text-orange-600" />
-            </div>
-            <p className="text-2xl font-bold text-orange-700 dark:text-orange-300">{docs.reduce((s, d) => s + d.downloads, 0)}</p>
-          </Card>
-        </div>
+        ))}
+      </div>
 
-        <div className="flex gap-2 flex-wrap">
-          {categories.map(cat => (
-            <button key={cat} className={`px-3 py-1 text-sm rounded-full transition-all ${
-              cat === "All"
-                ? "bg-slate-800 dark:bg-slate-200 text-white dark:text-slate-900"
-                : "bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600"
-            }`}>
-              {cat}
-            </button>
-          ))}
-        </div>
+      {/* Category filter pills */}
+      <div className="flex gap-2 flex-wrap mb-4">
+        {CATEGORIES.map(cat => (
+          <button key={cat} onClick={() => setActiveCat(cat)}
+            className="px-3 py-1 text-xs font-semibold rounded-full transition-all"
+            style={{
+              background: activeCat === cat ? "#f97316" : "var(--surface-2)",
+              color: activeCat === cat ? "#fff" : "var(--text-secondary)",
+            }}>
+            {cat}
+          </button>
+        ))}
+      </div>
 
-        <Card className="overflow-hidden border border-slate-200 dark:border-slate-700">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-slate-50 dark:bg-slate-700/50 border-b border-slate-200 dark:border-slate-700">
-                <tr>
-                  <th className="text-left py-3 px-4 font-semibold text-slate-600 dark:text-slate-300">{nav("Title", "العنوان")}</th>
-                  <th className="text-left py-3 px-4 font-semibold text-slate-600 dark:text-slate-300">{nav("Category", "الفئة")}</th>
-                  <th className="text-left py-3 px-4 font-semibold text-slate-600 dark:text-slate-300">{nav("Updated", "آخر تحديث")}</th>
-                  <th className="text-left py-3 px-4 font-semibold text-slate-600 dark:text-slate-300">{nav("Downloads", "التنزيلات")}</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
-                {docs.map(doc => (
-                  <tr key={doc.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
-                    <td className="py-3 px-4">
-                      <div className="flex items-center gap-2">
-                        <FileText size={16} className="text-slate-400 flex-shrink-0" />
-                        <span className="font-medium text-slate-800 dark:text-slate-200">{doc.title}</span>
-                      </div>
-                    </td>
-                    <td className="py-3 px-4">
-                      <span className="px-2 py-1 rounded-full text-xs font-medium bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300">
-                        {doc.category}
-                      </span>
-                    </td>
-                    <td className="py-3 px-4 text-slate-500">{new Date(doc.updated).toLocaleDateString()}</td>
-                    <td className="py-3 px-4">
-                      <span className="text-slate-600 dark:text-slate-400">{doc.downloads}</span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </Card>
+      {/* Document cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {filtered.map(doc => {
+          const meta = CAT_META[doc.category] ?? { color: "#6b7280", bg: "#f3f4f6" };
+          return (
+            <Card key={doc.id} className="p-0 overflow-hidden flex flex-col">
+              <div style={{ background: meta.bg, borderBottom: `2px solid ${meta.color}20`, padding: "12px 16px" }}
+                className="flex items-center gap-2">
+                <FileText size={18} style={{ color: meta.color, flexShrink: 0 }} />
+                <div className="min-w-0">
+                  <p className="font-bold text-sm text-[var(--text-primary)] truncate">{doc.title}</p>
+                  <span className="inline-block text-xs px-2 py-0.5 rounded-full font-semibold"
+                    style={{ background: meta.color + "20", color: meta.color }}>{doc.category}</span>
+                </div>
+              </div>
+              <div className="p-4 flex flex-col gap-2 flex-1">
+                <div className="flex items-center gap-2 text-xs text-[var(--text-secondary)]">
+                  <Clock size={12} />
+                  <span>{nav("Updated", "تحديث")}: {new Date(doc.updated).toLocaleDateString()}</span>
+                </div>
+                <div className="flex items-center gap-2 text-xs text-[var(--text-secondary)]">
+                  <Download size={12} />
+                  <span>{doc.downloads} {nav("downloads", "تنزيل")}</span>
+                </div>
+              </div>
+            </Card>
+          );
+        })}
       </div>
     </ModulePageShell>
   );
