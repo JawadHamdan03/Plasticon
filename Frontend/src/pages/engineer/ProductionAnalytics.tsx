@@ -11,14 +11,9 @@ function authHeaders(): Record<string, string> {
 }
 
 interface ProductionData {
-  id: number;
-  machineId: number;
+  id: number; machineId: number;
   machine?: { id: number; name: string; type: string };
-  unitsProduced: number;
-  efficiency: number;
-  downtimeMinutes: number;
-  qualityRate: number;
-  date: string;
+  unitsProduced: number; efficiency: number; downtimeMinutes: number; qualityRate: number; date: string;
 }
 
 export default function ProductionAnalytics() {
@@ -27,30 +22,22 @@ export default function ProductionAnalytics() {
   const [data, setData] = useState<ProductionData[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchProductionData();
-  }, []);
+  useEffect(() => { fetchData(); }, []);
 
-  const fetchProductionData = async () => {
+  const fetchData = async () => {
     try {
-      const res = await fetch(`${API_BASE_URL}/machine-health`, {
-        headers: { ...authHeaders() },
-        credentials: "include",
-      });
+      const res = await fetch(`${API_BASE_URL}/machine-health`, { headers: { ...authHeaders() }, credentials: "include" });
       if (res.ok) {
         const records = await res.json();
-        const healthRecords = Array.isArray(records) ? records : (records.data || []);
-        const transformed = healthRecords.map((r: any) => ({
-          id: r.id,
-          machineId: r.machineId,
-          machine: r.machine,
+        const raw = Array.isArray(records) ? records : (records.data || []);
+        setData(raw.map((r: any) => ({
+          id: r.id, machineId: r.machineId, machine: r.machine,
           unitsProduced: Math.round(r.efficiencyRating * 10),
           efficiency: r.efficiencyRating,
           downtimeMinutes: r.maintenanceHours * 60,
           qualityRate: Math.min(100, r.efficiencyRating + 5),
           date: r.recordedAt,
-        }));
-        setData(transformed);
+        })));
       }
     } catch { } finally { setLoading(false); }
   };
@@ -62,93 +49,78 @@ export default function ProductionAnalytics() {
 
   return (
     <ModulePageShell
-      title="Production Analytics"
-      subtitle="Analyze production metrics and performance trends"
+      title={nav("Production Analytics", "تحليلات الإنتاج")}
+      subtitle={nav("Analyze production metrics and performance trends", "تحليل مقاييس الإنتاج واتجاهات الأداء")}
+      icon={<BarChart3 size={22} />}
     >
-      <div className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Card className="p-4 bg-linear-to-br from-blue-50 to-blue-100 dark:from-blue-900/30 dark:to-blue-800/30 border border-blue-200 dark:border-blue-800">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-xs text-slate-500">{nav("Units Produced", "الوحدات المُنتجة")}</p>
-              <Package size={18} className="text-blue-600" />
+      {/* KPIs */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+        {[
+          { label: nav("Units Produced", "الوحدات المُنتجة"), value: totalUnits.toLocaleString(), icon: "📦", color: "#1d4ed8", bg: "#dbeafe" },
+          { label: nav("Avg Efficiency", "متوسط الكفاءة"), value: `${avgEfficiency}%`, icon: "⚡", color: "#059669", bg: "#d1fae5" },
+          { label: nav("Total Downtime", "إجمالي التوقف"), value: `${totalDowntime}h`, icon: "⏱️", color: "#d97706", bg: "#fef3c7" },
+          { label: nav("Avg Quality Rate", "متوسط معدل الجودة"), value: `${avgQuality}%`, icon: "📊", color: "#7c3aed", bg: "#ede9fe" },
+        ].map((k) => (
+          <Card key={k.label} className="p-4 flex items-center gap-3">
+            <div style={{ width: 40, height: 40, borderRadius: 10, background: k.bg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.2rem", flexShrink: 0 }}>
+              {k.icon}
             </div>
-            <p className="text-2xl font-bold text-blue-700 dark:text-blue-300">{totalUnits.toLocaleString()}</p>
-          </Card>
-          <Card className="p-4 bg-linear-to-br from-green-50 to-green-100 dark:from-green-900/30 dark:to-green-800/30 border border-green-200 dark:border-green-800">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-xs text-slate-500">{nav("Efficiency", "الكفاءة")}</p>
-              <Zap size={18} className="text-green-600" />
-            </div>
-            <p className="text-2xl font-bold text-green-700 dark:text-green-300">{avgEfficiency}%</p>
-          </Card>
-          <Card className="p-4 bg-linear-to-br from-orange-50 to-orange-100 dark:from-orange-900/30 dark:to-orange-800/30 border border-orange-200 dark:border-orange-800">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-xs text-slate-500">{nav("Downtime", "التوقف")}</p>
-              <TrendingUp size={18} className="text-orange-600" />
-            </div>
-            <p className="text-2xl font-bold text-orange-700 dark:text-orange-300">{totalDowntime}h</p>
-          </Card>
-          <Card className="p-4 bg-linear-to-br from-purple-50 to-purple-100 dark:from-purple-900/30 dark:to-purple-800/30 border border-purple-200 dark:border-purple-800">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-xs text-slate-500">{nav("Quality Rate", "معدل الجودة")}</p>
-              <BarChart3 size={18} className="text-purple-600" />
-            </div>
-            <p className="text-2xl font-bold text-purple-700 dark:text-purple-300">{avgQuality}%</p>
-          </Card>
-        </div>
-
-        {loading ? (
-          <div className="space-y-3">{[1,2,3].map(i => <div key={i} className="h-14 rounded-lg bg-slate-100 dark:bg-slate-700 animate-pulse" />)}</div>
-        ) : data.length === 0 ? (
-          <Card className="p-12 text-center border border-dashed border-slate-300 dark:border-slate-600">
-            <BarChart3 className="mx-auto mb-3 text-slate-400" size={40} />
-            <p className="text-slate-500">{nav("No production data available", "لا توجد بيانات إنتاج متاحة")}</p>
-          </Card>
-        ) : (
-          <Card className="overflow-hidden border border-slate-200 dark:border-slate-700">
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="bg-slate-50 dark:bg-slate-700/50 border-b border-slate-200 dark:border-slate-700">
-                  <tr>
-                    <th className="text-left py-3 px-4 font-semibold text-slate-600 dark:text-slate-300">{nav("Machine", "الآلة")}</th>
-                    <th className="text-left py-3 px-4 font-semibold text-slate-600 dark:text-slate-300">{nav("Units", "وحدات")}</th>
-                    <th className="text-left py-3 px-4 font-semibold text-slate-600 dark:text-slate-300">{nav("Efficiency", "الكفاءة")}</th>
-                    <th className="text-left py-3 px-4 font-semibold text-slate-600 dark:text-slate-300">{nav("Downtime", "التوقف")}</th>
-                    <th className="text-left py-3 px-4 font-semibold text-slate-600 dark:text-slate-300">{nav("Quality", "الجودة")}</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
-                  {data.map(row => (
-                    <tr key={row.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
-                      <td className="py-3 px-4 font-medium text-slate-800 dark:text-slate-200">{row.machine?.name || `Machine #${row.machineId}`}</td>
-                      <td className="py-3 px-4 text-slate-600 dark:text-slate-400">{row.unitsProduced}</td>
-                      <td className="py-3 px-4">
-                        <div className="flex items-center gap-2">
-                          <div className="w-16 bg-slate-200 dark:bg-slate-600 rounded-full h-2">
-                            <div className={`h-2 rounded-full ${row.efficiency >= 80 ? "bg-green-500" : row.efficiency >= 60 ? "bg-orange-500" : "bg-red-500"}`}
-                              style={{ width: `${row.efficiency}%` }} />
-                          </div>
-                          <span className="text-xs text-slate-500">{row.efficiency.toFixed(0)}%</span>
-                        </div>
-                      </td>
-                      <td className="py-3 px-4 text-slate-600 dark:text-slate-400">{(row.downtimeMinutes / 60).toFixed(1)}h</td>
-                      <td className="py-3 px-4">
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          row.qualityRate >= 95 ? "bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300"
-                          : row.qualityRate >= 90 ? "bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300"
-                          : "bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300"
-                        }`}>
-                          {row.qualityRate.toFixed(1)}%
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <div className="min-w-0">
+              <p className="text-xs text-[var(--text-secondary)] font-medium leading-tight truncate">{k.label}</p>
+              <p className="text-xl font-bold" style={{ color: k.color }}>{k.value}</p>
             </div>
           </Card>
-        )}
+        ))}
       </div>
+
+      <Card className="overflow-hidden">
+        <div className="overflow-x-auto">
+          {loading ? (
+            <div className="flex justify-center p-10"><div className="spinner" /></div>
+          ) : data.length === 0 ? (
+            <div className="p-10 text-center text-[var(--text-secondary)]">
+              <BarChart3 size={32} className="mx-auto mb-3 opacity-30" />
+              <p className="font-medium">{nav("No production data available", "لا توجد بيانات إنتاج")}</p>
+            </div>
+          ) : (
+            <table className="data-table w-full">
+              <thead>
+                <tr>
+                  <th>{nav("Machine", "الآلة")}</th>
+                  <th>{nav("Units", "وحدات")}</th>
+                  <th>{nav("Efficiency", "الكفاءة")}</th>
+                  <th>{nav("Downtime", "التوقف")}</th>
+                  <th>{nav("Quality", "الجودة")}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.map(row => (
+                  <tr key={row.id}>
+                    <td className="font-medium">{row.machine?.name || `Machine #${row.machineId}`}</td>
+                    <td>{row.unitsProduced}</td>
+                    <td>
+                      <div className="flex items-center gap-2">
+                        <div className="w-14 h-1.5 rounded-full bg-slate-200 overflow-hidden">
+                          <div className={`h-1.5 rounded-full ${row.efficiency >= 80 ? "bg-green-500" : row.efficiency >= 60 ? "bg-orange-500" : "bg-red-500"}`}
+                            style={{ width: `${row.efficiency}%` }} />
+                        </div>
+                        <span className="text-xs text-[var(--text-secondary)]">{row.efficiency.toFixed(0)}%</span>
+                      </div>
+                    </td>
+                    <td className="text-sm text-[var(--text-secondary)]">{(row.downtimeMinutes / 60).toFixed(1)}h</td>
+                    <td>
+                      <span className="inline-block px-2.5 py-1 rounded-full text-xs font-bold"
+                        style={{ background: row.qualityRate >= 95 ? "#d1fae5" : row.qualityRate >= 90 ? "#fef3c7" : "#fee2e2", color: row.qualityRate >= 95 ? "#059669" : row.qualityRate >= 90 ? "#d97706" : "#dc2626" }}>
+                        {row.qualityRate.toFixed(1)}%
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      </Card>
     </ModulePageShell>
   );
 }

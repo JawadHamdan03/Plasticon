@@ -12,16 +12,19 @@ function authHeaders(): Record<string, string> {
 }
 
 interface Maintenance {
-  id: number;
-  machineId: number;
+  id: number; machineId: number;
   machine?: { id: number; name: string; type: string };
-  partsUsed: string;
-  downtimeMinutes: number | null;
-  downtimeReason: string;
-  reportText?: string;
+  partsUsed: string; downtimeMinutes: number | null;
+  downtimeReason: string; reportText?: string;
   createdAt: string;
   engineer?: { id: number; fullName: string };
 }
+
+const PRIORITY_META = {
+  High:   { color: "#dc2626", bg: "#fee2e2" },
+  Medium: { color: "#d97706", bg: "#fef3c7" },
+  Low:    { color: "#059669", bg: "#d1fae5" },
+};
 
 export default function WorkOrders() {
   const { locale } = useLocale();
@@ -30,116 +33,101 @@ export default function WorkOrders() {
   const [orders, setOrders] = useState<Maintenance[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchOrders();
-  }, [user?.role]);
+  useEffect(() => { fetchOrders(); }, [user?.role]);
 
   const fetchOrders = async () => {
     const isAdmin = user?.role === "ADMIN" || user?.role === "ACCOUNTANT";
     const endpoint = isAdmin ? "/maintenance/all" : "/maintenance/me";
     try {
-      const res = await fetch(`${API_BASE_URL}${endpoint}`, {
-        headers: { ...authHeaders() },
-        credentials: "include",
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setOrders(Array.isArray(data) ? data : (data.data || []));
-      }
+      const res = await fetch(`${API_BASE_URL}${endpoint}`, { headers: { ...authHeaders() }, credentials: "include" });
+      if (res.ok) { const d = await res.json(); setOrders(Array.isArray(d) ? d : (d.data || [])); }
     } catch { } finally { setLoading(false); }
   };
 
-  const priorityFromDowntime = (mins: number | null): string => {
+  const priorityFromDowntime = (mins: number | null): keyof typeof PRIORITY_META => {
     if (!mins || mins < 30) return "Low";
     if (mins < 90) return "Medium";
     return "High";
   };
 
-  const inProgressCount = orders.filter(o => o.reportText && !o.reportText.includes("completed")).length;
-  const completedCount = orders.filter(o => o.reportText?.toLowerCase().includes("completed")).length;
+  const inProgressCount = orders.filter(o => o.reportText && !o.reportText.toLowerCase().includes("completed")).length;
+  const completedCount  = orders.filter(o => o.reportText?.toLowerCase().includes("completed")).length;
 
   return (
     <ModulePageShell
-      title="Work Orders"
-      subtitle="Track and manage maintenance work orders"
+      title={nav("Work Orders", "أوامر العمل")}
+      subtitle={nav("Track and manage maintenance work orders", "تتبع وإدارة أوامر عمل الصيانة")}
+      icon={<Wrench size={22} />}
     >
-      <div className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card className="p-4 bg-linear-to-br from-blue-50 to-blue-100 dark:from-blue-900/30 dark:to-blue-800/30 border border-blue-200 dark:border-blue-800">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-xs text-slate-500">{nav("Total Orders", "إجمالي الطلبات")}</p>
-              <Wrench size={18} className="text-blue-600" />
+      {/* KPIs */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
+        {[
+          { label: nav("Total Orders", "إجمالي الطلبات"), value: orders.length, icon: "🔧", color: "#1d4ed8", bg: "#dbeafe" },
+          { label: nav("In Progress", "قيد التنفيذ"),     value: inProgressCount, icon: "⏳", color: "#d97706", bg: "#fef3c7" },
+          { label: nav("Completed", "مكتمل"),             value: completedCount,  icon: "✅", color: "#059669", bg: "#d1fae5" },
+        ].map((k) => (
+          <Card key={k.label} className="p-4 flex items-center gap-3">
+            <div style={{ width: 40, height: 40, borderRadius: 10, background: k.bg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.2rem", flexShrink: 0 }}>
+              {k.icon}
             </div>
-            <p className="text-2xl font-bold text-blue-700 dark:text-blue-300">{orders.length}</p>
-          </Card>
-          <Card className="p-4 bg-linear-to-br from-orange-50 to-orange-100 dark:from-orange-900/30 dark:to-orange-800/30 border border-orange-200 dark:border-orange-800">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-xs text-slate-500">{nav("In Progress", "قيد التنفيذ")}</p>
-              <Clock size={18} className="text-orange-600" />
+            <div>
+              <p className="text-xs text-[var(--text-secondary)] font-medium leading-tight">{k.label}</p>
+              <p className="text-xl font-bold" style={{ color: k.color }}>{k.value}</p>
             </div>
-            <p className="text-2xl font-bold text-orange-700 dark:text-orange-300">{inProgressCount}</p>
           </Card>
-          <Card className="p-4 bg-linear-to-br from-green-50 to-green-100 dark:from-green-900/30 dark:to-green-800/30 border border-green-200 dark:border-green-800">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-xs text-slate-500">{nav("Completed", "اكتمل")}</p>
-              <CheckCircle size={18} className="text-green-600" />
-            </div>
-            <p className="text-2xl font-bold text-green-700 dark:text-green-300">{completedCount}</p>
-          </Card>
-        </div>
+        ))}
+      </div>
 
-        {loading ? (
-          <div className="space-y-3">{[1,2,3].map(i => <div key={i} className="h-16 rounded-lg bg-slate-100 dark:bg-slate-700 animate-pulse" />)}</div>
-        ) : orders.length === 0 ? (
-          <Card className="p-12 text-center border border-dashed border-slate-300 dark:border-slate-600">
-            <Wrench className="mx-auto mb-3 text-slate-400" size={40} />
-            <p className="text-slate-500">{nav("No work orders yet", "لا توجد طلبات عمل حتى الآن")}</p>
-          </Card>
-        ) : (
-          <Card className="overflow-hidden border border-slate-200 dark:border-slate-700">
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="bg-slate-50 dark:bg-slate-700/50 border-b border-slate-200 dark:border-slate-700">
-                  <tr>
-                    <th className="text-left py-3 px-4 font-semibold text-slate-600 dark:text-slate-300">{nav("Machine", "الآلة")}</th>
-                    <th className="text-left py-3 px-4 font-semibold text-slate-600 dark:text-slate-300">{nav("Parts Used", "الأجزاء المستخدمة")}</th>
-                    <th className="text-left py-3 px-4 font-semibold text-slate-600 dark:text-slate-300">{nav("Downtime", "التوقف")}</th>
-                    <th className="text-left py-3 px-4 font-semibold text-slate-600 dark:text-slate-300">{nav("Priority", "الأولوية")}</th>
-                    <th className="text-left py-3 px-4 font-semibold text-slate-600 dark:text-slate-300">{nav("Date", "التاريخ")}</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
-                  {orders.map(order => (
-                    <tr key={order.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
-                      <td className="py-3 px-4 font-medium text-slate-800 dark:text-slate-200">{order.machine?.name || `Machine #${order.machineId}`}</td>
-                      <td className="py-3 px-4 text-slate-600 dark:text-slate-400">{order.partsUsed || "—"}</td>
-                      <td className="py-3 px-4">
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          !order.downtimeMinutes || order.downtimeMinutes < 30 ? "bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300"
-                          : order.downtimeMinutes < 90 ? "bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300"
-                          : "bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300"
-                        }`}>
+      <Card className="overflow-hidden">
+        <div className="overflow-x-auto">
+          {loading ? (
+            <div className="flex justify-center p-10"><div className="spinner" /></div>
+          ) : orders.length === 0 ? (
+            <div className="p-10 text-center text-[var(--text-secondary)]">
+              <Wrench size={32} className="mx-auto mb-3 opacity-30" />
+              <p className="font-medium">{nav("No work orders yet", "لا توجد أوامر عمل حتى الآن")}</p>
+            </div>
+          ) : (
+            <table className="data-table w-full">
+              <thead>
+                <tr>
+                  <th>{nav("Machine", "الآلة")}</th>
+                  <th>{nav("Parts Used", "الأجزاء المستخدمة")}</th>
+                  <th>{nav("Downtime", "التوقف")}</th>
+                  <th>{nav("Priority", "الأولوية")}</th>
+                  <th>{nav("Date", "التاريخ")}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {orders.map(order => {
+                  const priority = priorityFromDowntime(order.downtimeMinutes);
+                  const pMeta = PRIORITY_META[priority];
+                  return (
+                    <tr key={order.id}>
+                      <td className="font-medium">{order.machine?.name || `Machine #${order.machineId}`}</td>
+                      <td className="text-sm text-[var(--text-secondary)]">{order.partsUsed || "—"}</td>
+                      <td>
+                        <span className="inline-block px-2.5 py-1 rounded-full text-xs font-bold"
+                          style={{ background: pMeta.bg, color: pMeta.color }}>
                           {order.downtimeMinutes ? `${order.downtimeMinutes}m` : "—"}
                         </span>
                       </td>
-                      <td className="py-3 px-4">
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          priorityFromDowntime(order.downtimeMinutes) === "High" ? "bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300"
-                          : priorityFromDowntime(order.downtimeMinutes) === "Medium" ? "bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300"
-                          : "bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300"
-                        }`}>
-                          {priorityFromDowntime(order.downtimeMinutes)}
+                      <td>
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold"
+                          style={{ background: pMeta.bg, color: pMeta.color }}>
+                          {priority === "High" ? <AlertTriangle size={10} /> : priority === "Medium" ? <Clock size={10} /> : <CheckCircle size={10} />}
+                          {priority}
                         </span>
                       </td>
-                      <td className="py-3 px-4 text-xs text-slate-500">{new Date(order.createdAt).toLocaleDateString()}</td>
+                      <td className="text-sm text-[var(--text-secondary)]">{new Date(order.createdAt).toLocaleDateString()}</td>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </Card>
-        )}
-      </div>
+                  );
+                })}
+              </tbody>
+            </table>
+          )}
+        </div>
+      </Card>
     </ModulePageShell>
   );
 }
