@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { AlertTriangle, Package, TrendingDown, Save } from "lucide-react";
+import React, { useEffect, useState } from "react";
+import { AlertTriangle, Save } from "lucide-react";
 import { ModulePageShell } from "../../components/ModulePageShell";
 import { Button } from "../../components/ui/button";
 import { Card } from "../../components/ui/card";
@@ -89,10 +89,10 @@ export default function RawMaterialAlerts() {
   const lowCount = materials.filter((m) => m.status === "LOW").length;
   const criticalCount = materials.filter((m) => m.status === "CRITICAL").length;
 
-  const statusBadge = (status: string) => {
-    if (status === "CRITICAL") return "bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300";
-    if (status === "LOW") return "bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300";
-    return "bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300";
+  const statusBadge = (status: string): React.CSSProperties => {
+    if (status === "CRITICAL") return { background: "rgba(239,68,68,.12)", color: "#dc2626" };
+    if (status === "LOW") return { background: "rgba(249,115,22,.12)", color: "#ea580c" };
+    return { background: "rgba(34,197,94,.12)", color: "#16a34a" };
   };
 
   const rowClass = (status: string) => {
@@ -109,33 +109,23 @@ export default function RawMaterialAlerts() {
     >
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-        <Card className="p-4 bg-linear-to-br from-blue-50 to-blue-100 dark:from-blue-900/30 dark:to-blue-800/20">
-          <div className="flex items-center gap-3">
-            <Package size={20} className="text-blue-600 dark:text-blue-400" />
-            <div>
-              <p className="text-xs text-blue-600 dark:text-blue-400 font-medium">{nav("Total Materials", "إجمالي المواد")}</p>
-              <p className="text-2xl font-bold text-blue-800 dark:text-blue-200">{totalMaterials}</p>
+        {[
+          { icon: "📦", label: nav("Total Materials", "إجمالي المواد"), value: totalMaterials, color: "#3b82f6", bg: "rgba(59,130,246,.1)" },
+          { icon: "⚠️", label: nav("Low Stock", "مخزون منخفض"), value: lowCount, color: "#f97316", bg: "rgba(249,115,22,.1)" },
+          { icon: "🚨", label: nav("Critical (0 stock)", "حرج (لا مخزون)"), value: criticalCount, color: "#ef4444", bg: "rgba(239,68,68,.1)" },
+        ].map((kpi) => (
+          <Card key={kpi.label} className="p-4">
+            <div className="flex items-center gap-3">
+              <div style={{ width: 40, height: 40, borderRadius: 8, background: kpi.bg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.2rem", flexShrink: 0 }}>
+                {kpi.icon}
+              </div>
+              <div>
+                <p style={{ margin: 0, fontSize: ".75rem", fontWeight: 600, color: "var(--text-secondary)" }}>{kpi.label}</p>
+                <p style={{ margin: 0, fontSize: "1.6rem", fontWeight: 800, color: kpi.color }}>{kpi.value}</p>
+              </div>
             </div>
-          </div>
-        </Card>
-        <Card className="p-4 bg-linear-to-br from-orange-50 to-orange-100 dark:from-orange-900/30 dark:to-orange-800/20">
-          <div className="flex items-center gap-3">
-            <TrendingDown size={20} className="text-orange-600 dark:text-orange-400" />
-            <div>
-              <p className="text-xs text-orange-600 dark:text-orange-400 font-medium">{nav("Low Stock", "مخزون منخفض")}</p>
-              <p className="text-2xl font-bold text-orange-800 dark:text-orange-200">{lowCount}</p>
-            </div>
-          </div>
-        </Card>
-        <Card className="p-4 bg-linear-to-br from-red-50 to-red-100 dark:from-red-900/30 dark:to-red-800/20">
-          <div className="flex items-center gap-3">
-            <AlertTriangle size={20} className="text-red-600 dark:text-red-400" />
-            <div>
-              <p className="text-xs text-red-600 dark:text-red-400 font-medium">{nav("Critical (0 stock)", "حرج (لا مخزون)")}</p>
-              <p className="text-2xl font-bold text-red-800 dark:text-red-200">{criticalCount}</p>
-            </div>
-          </div>
-        </Card>
+          </Card>
+        ))}
       </div>
 
       {/* Table */}
@@ -144,7 +134,7 @@ export default function RawMaterialAlerts() {
           {loading ? (
             <div className="flex justify-center p-10"><div className="spinner" /></div>
           ) : materials.length === 0 ? (
-            <div className="p-10 text-center text-[var(--text-secondary)]">{nav("No materials found", "لا توجد مواد")}</div>
+            <div className="p-10 text-center text-(--text-secondary)">{nav("No materials found", "لا توجد مواد")}</div>
           ) : (
             <table className="data-table w-full">
               <thead>
@@ -166,7 +156,7 @@ export default function RawMaterialAlerts() {
                     <td>{m.currentQuantity.toFixed(2)}</td>
                     <td>{m.minQuantity.toFixed(2)}</td>
                     <td>
-                      <span className={`badge ${statusBadge(m.status)}`}>{m.status}</span>
+                      <span style={{ padding: ".2rem .6rem", borderRadius: 999, fontSize: ".75rem", fontWeight: 700, ...statusBadge(m.status) }}>{m.status}</span>
                     </td>
                     {!isAdmin && (
                       <td>

@@ -27,7 +27,23 @@
       "Bash(grep -rh \"fetchWithAuth\\\\|fetch.*\\\\`\\\\${API\" \"C:/Users/JC/OneDrive/Documents/Plasticon/Frontend/src/pages\" --include=\"*.tsx\")",
       "Bash(grep -rn \"await fetch\\\\\\(\\\\`\\\\${API_BASE_URL}\" C:/Users/JC/OneDrive/Documents/Plasticon/Frontend/src/pages/)",
       "Bash(xargs -I {} basename {})",
-      "Bash(python -c \"import json,sys; d=json.load\\(sys.stdin\\); [print\\(k,v\\) for k,v in sorted\\(d.get\\('dependencies',{}\\).items\\(\\)\\)]\")"
+      "Bash(python -c \"import json,sys; d=json.load\\(sys.stdin\\); [print\\(k,v\\) for k,v in sorted\\(d.get\\('dependencies',{}\\).items\\(\\)\\)]\")",
+      "Bash(powershell -Command \"\\(Get-Content src/services/sparePartRequestServices.ts\\) -replace '\\\\\\(prisma as any\\\\\\)\\\\.sparePartRequest', 'prisma.sparePartRequest' | Set-Content src/services/sparePartRequestServices.ts -Encoding utf8\")",
+      "Bash(powershell -Command \"\\(Get-Content src/services/techDocumentServices.ts\\) -replace '\\\\\\(prisma as any\\\\\\)\\\\.techDocument', 'prisma.techDocument' | Set-Content src/services/techDocumentServices.ts -Encoding utf8\")",
+      "Bash(netstat -ano)",
+      "Bash(findstr \":8080\")",
+      "Bash(findstr \"LISTENING\")",
+      "Bash(taskkill /PID 25480 /F)",
+      "PowerShell(Stop-Process -Id 25480 -Force 2>&1)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:8080/machines)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:8080/spare-part-requests/mine)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:8080/tech-documents)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:8080/spare-part-requests)",
+      "PowerShell($env:PGPASSWORD=\"123456\"; psql -h localhost -U postgres -d plasticon -c 'SELECT tablename FROM pg_tables WHERE schemaname='\"'\"'public'\"'\"' AND tablename IN \\('\"'\"'SparePartRequest'\"'\"','\"'\"'TechDocument'\"'\"'\\);' 2>&1)",
+      "Read(//c/Users/JC/OneDrive/Documents/Plasticon/Backend/src/config/generated/prisma/**)",
+      "PowerShell(\\(Get-NetTCPConnection -LocalPort 8080 -ErrorAction SilentlyContinue\\).OwningProcess)",
+      "Bash(curl -s -X POST http://localhost:8080/spare-part-requests -H 'Content-Type: multipart/form-data' -H 'Authorization: Bearer invalid_token_for_test' -F machineId=1 -F partName=test -F quantity=1)",
+      "Bash(cmd /c \"npx tsx src/app.ts > server-out.txt 2>&1\")"
     ]
   }
 }

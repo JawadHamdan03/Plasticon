@@ -312,7 +312,7 @@ export function ChatPage() {
 
   // ── Actions ──
   const markAsRead = async (groupId: number) => {
-    await fetchApi(`/chat/groups/${groupId}/read`, { method: "POST" });
+    await fetchApi(`/chat/groups/${groupId}/mark-as-read`, { method: "PATCH" });
     setGroups((prev) => prev.map((g) => g.id === groupId ? { ...g, unreadCount: 0 } : g));
   };
 
@@ -366,15 +366,14 @@ export function ChatPage() {
     if (!createGroupForm.name.trim()) return;
     setCreatingGroup(true);
     try {
-      const memberIds = createGroupForm.memberIds
-        .split(",").map((s) => Number(s.trim())).filter((n) => Number.isFinite(n) && n > 0);
+      const memberIds = createGroupForm.selectedMemberIds;
       const res = await fetchApi("/chat/groups", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: createGroupForm.name.trim(), description: createGroupForm.description.trim() || undefined, memberIds }),
       });
       if (!res.ok) throw new Error(await readApiError(res));
-      setCreateGroupForm({ name: "", description: "", memberIds: "" });
+      setCreateGroupForm({ name: "", description: "", groupType: "SHIFT", shiftId: "", selectedMemberIds: [] });
       setShowAdminPanel("none");
       await loadGroups();
     } catch (e) {
@@ -390,7 +389,7 @@ export function ChatPage() {
     if (!content || !selectedAdminTarget) return;
     setSendingDirect(true);
     try {
-      const body: Record<string, unknown> = { content };
+      const body: Record<string, unknown> = { content, targetType: selectedAdminTarget.type };
       if (selectedAdminTarget.type === "USER") body.targetUserId = selectedAdminTarget.id;
       else if (selectedAdminTarget.type === "SHIFT") body.shiftId = selectedAdminTarget.id;
       else body.audienceKey = selectedAdminTarget.id;
@@ -510,13 +509,91 @@ export function ChatPage() {
               <button type="button" className="cm-icon-btn" onClick={() => setShowAdminPanel("none")}><X size={14} /></button>
             </div>
             <form onSubmit={(e) => void handleCreateGroup(e)} style={{ display: "flex", flexDirection: "column", gap: ".5rem" }}>
+              {/* Group name */}
               <input className="cm-form-input" placeholder={isAr ? "اسم المجموعة *" : "Group name *"} required
                 value={createGroupForm.name} onChange={(e) => setCreateGroupForm((p) => ({ ...p, name: e.target.value }))} />
               <input className="cm-form-input" placeholder={isAr ? "وصف اختياري" : "Description (optional)"}
                 value={createGroupForm.description} onChange={(e) => setCreateGroupForm((p) => ({ ...p, description: e.target.value }))} />
-              <input className="cm-form-input" placeholder={isAr ? "معرّفات الأعضاء: 1,2,3" : "Member IDs: 1,2,3"}
-                value={createGroupForm.memberIds} onChange={(e) => setCreateGroupForm((p) => ({ ...p, memberIds: e.target.value }))} />
-              <button type="submit" className="cm-send-btn" disabled={creatingGroup} style={{ alignSelf: "flex-end" }}>
+
+              {/* Group type */}
+              <select className="cm-form-input" value={createGroupForm.groupType}
+                onChange={(e) => {
+                  const groupType = e.target.value as typeof createGroupForm.groupType;
+                  const all = membersByShift.flatMap((b) => b.members);
+                  let autoIds: number[] = [];
+                  if (groupType === "ENGINEERS")   autoIds = all.filter((m) => m.role === "ENGINEER").map((m) => m.id);
+                  if (groupType === "ACCOUNTANTS") autoIds = all.filter((m) => m.role === "ACCOUNTANT").map((m) => m.id);
+                  if (groupType === "ACC_ENG")     autoIds = all.filter((m) => m.role === "ACCOUNTANT" || m.role === "ENGINEER").map((m) => m.id);
+                  if (groupType === "WORKERS")     autoIds = all.filter((m) => m.role === "WORKER").map((m) => m.id);
+                  setCreateGroupForm((p) => ({ ...p, groupType, shiftId: "", selectedMemberIds: autoIds }));
+                }}>
+                <option value="SHIFT">{isAr ? "مجموعة شفت" : "Shift Group"}</option>
+                <option value="ENGINEERS">{isAr ? "كل المهندسين" : "All Engineers"}</option>
+                <option value="ACCOUNTANTS">{isAr ? "كل المحاسبين" : "All Accountants"}</option>
+                <option value="ACC_ENG">{isAr ? "محاسبون + مهندسون" : "Accountants + Engineers"}</option>
+                <option value="WORKERS">{isAr ? "كل العمال" : "All Workers"}</option>
+                <option value="CUSTOM">{isAr ? "مخصص" : "Custom"}</option>
+              </select>
+
+              {/* Shift selector */}
+              {createGroupForm.groupType === "SHIFT" && (
+                <select className="cm-form-input" value={createGroupForm.shiftId}
+                  onChange={(e) => {
+                    const shiftId = e.target.value;
+                    const members = membersByShift.find((b) => String(b.shiftId) === shiftId)?.members ?? [];
+                    setCreateGroupForm((p) => ({ ...p, shiftId, selectedMemberIds: members.map((m) => m.id) }));
+                  }}>
+                  <option value="">{isAr ? "اختر شفت…" : "Choose shift…"}</option>
+                  {shiftTargets.map((s) => (
+                    <option key={s.shiftId} value={s.shiftId}>{s.shiftName} ({s.membersCount})</option>
+                  ))}
+                </select>
+              )}
+
+              {/* Member checklist */}
+              {newGroupCandidates.length > 0 && (
+                <div style={{ maxHeight: 160, overflowY: "auto", border: "1px solid var(--border-default)", borderRadius: "var(--radius-md)", padding: ".4rem .5rem", display: "flex", flexDirection: "column", gap: ".25rem" }}>
+                  {/* Select-all row */}
+                  <label style={{ display: "flex", alignItems: "center", gap: ".4rem", fontSize: ".75rem", fontWeight: 600, color: "var(--text-secondary)", paddingBottom: ".25rem", borderBottom: "1px solid var(--border-default)", cursor: "pointer" }}>
+                    <input type="checkbox"
+                      checked={newGroupCandidates.every((m) => createGroupForm.selectedMemberIds.includes(m.id))}
+                      onChange={(e) => setCreateGroupForm((p) => ({
+                        ...p,
+                        selectedMemberIds: e.target.checked ? newGroupCandidates.map((m) => m.id) : [],
+                      }))}
+                    />
+                    {isAr ? "تحديد الكل" : "Select all"} ({newGroupCandidates.length})
+                  </label>
+                  {newGroupCandidates.map((m) => (
+                    <label key={m.id} style={{ display: "flex", alignItems: "center", gap: ".4rem", fontSize: ".78rem", cursor: "pointer" }}>
+                      <input type="checkbox"
+                        checked={createGroupForm.selectedMemberIds.includes(m.id)}
+                        onChange={(e) => setCreateGroupForm((p) => ({
+                          ...p,
+                          selectedMemberIds: e.target.checked
+                            ? [...p.selectedMemberIds, m.id]
+                            : p.selectedMemberIds.filter((id) => id !== m.id),
+                        }))}
+                      />
+                      <span style={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        {m.fullName}
+                      </span>
+                      <span style={{ fontSize: ".68rem", color: "var(--text-secondary)", flexShrink: 0 }}>{m.role}</span>
+                    </label>
+                  ))}
+                </div>
+              )}
+
+              {/* Selection counter */}
+              {createGroupForm.selectedMemberIds.length > 0 && (
+                <p style={{ fontSize: ".73rem", color: "var(--text-secondary)", margin: 0 }}>
+                  {createGroupForm.selectedMemberIds.length} {isAr ? "عضو محدد" : "member(s) selected"}
+                </p>
+              )}
+
+              <button type="submit" className="cm-send-btn"
+                disabled={creatingGroup || !createGroupForm.name.trim() || createGroupForm.selectedMemberIds.length === 0}
+                style={{ alignSelf: "flex-end" }}>
                 {creatingGroup ? (isAr ? "جارٍ…" : "Creating…") : (isAr ? "إنشاء" : "Create")}
               </button>
             </form>

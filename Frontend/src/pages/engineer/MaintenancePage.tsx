@@ -25,11 +25,16 @@ type Maintenance = {
   engineer?: { id: number; fullName: string; username: string; role: string };
 };
 
+function authToken(): Record<string, string> {
+  const token = localStorage.getItem("plasticon_token");
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
 async function fetchAuth(path: string, options?: RequestInit) {
   return fetch(`${API_BASE_URL}${path}`, {
     ...options,
     headers: {
       "Content-Type": "application/json",
+      ...authToken(),
       ...(options?.headers ?? {}),
     },
     credentials: "include",
