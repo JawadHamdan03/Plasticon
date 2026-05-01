@@ -1,128 +1,233 @@
-import { useEffect, useState } from "react";
-import { CheckCircle, Clock, AlertTriangle } from "lucide-react";
+import { useEffect, useState, type FormEvent } from "react";
+import { CheckCircle, Clock, AlertTriangle, Plus, X } from "lucide-react";
 import { ModulePageShell } from "../../components/ModulePageShell";
 import { Card } from "../../components/ui/card";
+import { Button } from "../../components/ui/button";
 import { useLocale } from "../../context/LocaleContext";
-import { API_BASE_URL } from "../../lib/api";
+import { useAuth } from "../../context/AuthContext";
+import { API_BASE_URL, readApiError } from "../../lib/api";
 
 function authHeaders(): Record<string, string> {
   const token = localStorage.getItem("plasticon_token");
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
+async function apiFetch(path: string, options?: RequestInit) {
+  return fetch(`${API_BASE_URL}${path}`, {
+    ...options,
+    headers: { "Content-Type": "application/json", ...authHeaders(), ...(options?.headers ?? {}) },
+    credentials: "include",
+  });
+}
 
+interface Machine { id: number; name: string; type: string }
 interface HealthRecord {
   id: number; machineId: number;
   machine?: { id: number; name: string; type: string };
-  efficiencyRating: number; maintenanceHours: number; recordedAt: string;
+  recordedBy?: { id: number; fullName: string };
+  operationalStatus: string;
+  efficiencyRating: number;
+  maintenanceHours: number;
+  downtimePercentage: number;
+  notes?: string | null;
+  recordedAt: string;
 }
 
-const STATUS_META = {
-  Valid:   { color: "#059669", bg: "#d1fae5" },
-  Pending: { color: "#d97706", bg: "#fef3c7" },
-  Expired: { color: "#dc2626", bg: "#fee2e2" },
-};
+// Calibration status derived from efficiency
+function calStatus(eff: number) {
+  if (eff >= 90) return { label: "Valid", color: "#059669", bg: "#d1fae5", Icon: CheckCircle };
+  if (eff >= 75) return { label: "Due Soon", color: "#d97706", bg: "#fef3c7", Icon: Clock };
+  return { label: "Expired", color: "#dc2626", bg: "#fee2e2", Icon: AlertTriangle };
+}
+
+function nextDue(date: string) {
+  const d = new Date(date);
+  d.setMonth(d.getMonth() + 6);
+  return d.toLocaleDateString();
+}
+
+const OP_STATUSES = [
+  { value: "OPERATIONAL", label: "Fully Calibrated" },
+  { value: "MAINTENANCE", label: "Calibration Needed" },
+  { value: "BROKEN",      label: "Failed Calibration" },
+  { value: "OFFLINE",     label: "Out of Service" },
+];
+
+const emptyForm = () => ({ machineId: "", operationalStatus: "OPERATIONAL", efficiencyRating: "100", maintenanceHours: "0", downtimePercentage: "0", notes: "" });
 
 export default function EquipmentCalibration() {
   const { locale } = useLocale();
+  const { user } = useAuth();
   const nav = (en: string, ar: string) => locale === "ar" ? ar : en;
-  const [calibrations, setCalibrations] = useState<HealthRecord[]>([]);
+  const isEngineer = user?.role === "ENGINEER";
+  const isAdmin = user?.role === "ADMIN";
+  const canAdd = isEngineer || isAdmin;
+
+  const [records, setRecords] = useState<HealthRecord[]>([]);
+  const [machines, setMachines] = useState<Machine[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showForm, setShowForm] = useState(false);
+  const [form, setForm] = useState(emptyForm());
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
-  useEffect(() => { fetchCalibrations(); }, []);
+  useEffect(() => { void load(); }, []);
 
-  const fetchCalibrations = async () => {
+  const load = async () => {
+    setLoading(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/machine-health`, { headers: { ...authHeaders() }, credentials: "include" });
-      if (res.ok) { const d = await res.json(); setCalibrations(Array.isArray(d) ? d : (d.data || [])); }
+      const [rRes, mRes] = await Promise.all([apiFetch("/machine-health"), apiFetch("/machines")]);
+      if (rRes.ok) { const d = await rRes.json(); setRecords(Array.isArray(d) ? d : (d.data ?? [])); }
+      if (mRes.ok) { const d = await mRes.json(); setMachines(Array.isArray(d) ? d : (d.items ?? d.data ?? [])); }
     } catch { } finally { setLoading(false); }
   };
 
-  const getStatus = (efficiency: number) => {
-    if (efficiency >= 95) return "Valid";
-    if (efficiency >= 85) return "Pending";
-    return "Expired";
+  const submit = async (e: FormEvent) => {
+    e.preventDefault();
+    setError(""); setSuccess("");
+    if (!form.machineId) { setError(nav("Select a machine", "اختر آلة")); return; }
+    setSaving(true);
+    try {
+      const res = await apiFetch("/machine-health", {
+        method: "POST",
+        body: JSON.stringify({
+          machineId: Number(form.machineId),
+          operationalStatus: form.operationalStatus,
+          efficiencyRating: Number(form.efficiencyRating),
+          maintenanceHours: Number(form.maintenanceHours),
+          downtimePercentage: Number(form.downtimePercentage),
+          notes: form.notes || undefined,
+        }),
+      });
+      if (!res.ok) throw new Error(await readApiError(res));
+      setSuccess(nav("Calibration record saved", "تم حفظ سجل المعايرة"));
+      setForm(emptyForm());
+      setShowForm(false);
+      void load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to save");
+    } finally { setSaving(false); }
   };
 
-  const nextDue = (date: string) => {
-    const d = new Date(date);
-    d.setMonth(d.getMonth() + 6);
-    return d.toLocaleDateString();
-  };
-
-  const validCount   = calibrations.filter(c => getStatus(c.efficiencyRating) === "Valid").length;
-  const pendingCount = calibrations.filter(c => getStatus(c.efficiencyRating) === "Pending").length;
-  const expiredCount = calibrations.filter(c => getStatus(c.efficiencyRating) === "Expired").length;
+  const validCount   = records.filter(r => calStatus(r.efficiencyRating).label === "Valid").length;
+  const dueCount     = records.filter(r => calStatus(r.efficiencyRating).label === "Due Soon").length;
+  const expiredCount = records.filter(r => calStatus(r.efficiencyRating).label === "Expired").length;
 
   return (
     <ModulePageShell
       title={nav("Equipment Calibration", "معايرة المعدات")}
-      subtitle={nav("Manage equipment calibration schedules and records", "إدارة جداول وسجلات معايرة المعدات")}
+      subtitle={nav("Log and track equipment calibration records", "تسجيل وتتبع سجلات معايرة المعدات")}
       icon={<CheckCircle size={22} />}
+      actions={canAdd ? (
+        <Button size="sm" onClick={() => setShowForm(v => !v)}>
+          {showForm ? <X size={14} /> : <Plus size={14} />}
+          {showForm ? nav("Cancel", "إلغاء") : nav("Log Calibration", "تسجيل معايرة")}
+        </Button>
+      ) : undefined}
     >
       {/* KPIs */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
         {[
           { label: nav("Valid", "صحيح"), value: validCount, icon: "✅", color: "#059669", bg: "#d1fae5" },
-          { label: nav("Pending", "قيد الانتظار"), value: pendingCount, icon: "⏳", color: "#d97706", bg: "#fef3c7" },
+          { label: nav("Due Soon", "قيد الانتظار"), value: dueCount, icon: "⏳", color: "#d97706", bg: "#fef3c7" },
           { label: nav("Expired", "منتهي الصلاحية"), value: expiredCount, icon: "❌", color: "#dc2626", bg: "#fee2e2" },
-        ].map((k) => (
+        ].map(k => (
           <Card key={k.label} className="p-4 flex items-center gap-3">
-            <div style={{ width: 40, height: 40, borderRadius: 10, background: k.bg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.2rem", flexShrink: 0 }}>
-              {k.icon}
-            </div>
+            <div style={{ width: 40, height: 40, borderRadius: 10, background: k.bg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.2rem", flexShrink: 0 }}>{k.icon}</div>
             <div>
-              <p className="text-xs text-[var(--text-secondary)] font-medium leading-tight">{k.label}</p>
-              <p className="text-xl font-bold" style={{ color: k.color }}>{k.value}</p>
+              <p style={{ margin: 0, fontSize: ".75rem", fontWeight: 600, color: "var(--text-secondary)" }}>{k.label}</p>
+              <p style={{ margin: 0, fontSize: "1.4rem", fontWeight: 800, color: k.color }}>{k.value}</p>
             </div>
           </Card>
         ))}
       </div>
 
+      {/* Add form */}
+      {canAdd && showForm && (
+        <Card className="p-5 mb-5 border-2 border-(--accent)">
+          <h3 style={{ margin: "0 0 1rem", fontSize: ".95rem", fontWeight: 700 }}>{nav("New Calibration Record", "سجل معايرة جديد")}</h3>
+          {error && <div className="auth-alert auth-alert--error mb-3">{error}</div>}
+          {success && <div className="auth-alert mb-3">{success}</div>}
+          <form className="module-form" onSubmit={e => void submit(e)}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
+              <label>{nav("Machine", "الآلة")} *
+                <select className="input" value={form.machineId} onChange={e => setForm(p => ({ ...p, machineId: e.target.value }))} required>
+                  <option value="">{nav("Select machine...", "اختر الآلة...")}</option>
+                  {machines.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+                </select>
+              </label>
+              <label>{nav("Calibration Result", "نتيجة المعايرة")}
+                <select className="input" value={form.operationalStatus} onChange={e => setForm(p => ({ ...p, operationalStatus: e.target.value }))}>
+                  {OP_STATUSES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
+                </select>
+              </label>
+              <label>{nav("Calibration Score (%)", "نتيجة المعايرة (%)")}
+                <input type="number" min={0} max={100} className="input" value={form.efficiencyRating} onChange={e => setForm(p => ({ ...p, efficiencyRating: e.target.value }))} />
+              </label>
+              <label>{nav("Hours Spent", "الساعات المستغرقة")} *
+                <input type="number" min={0} step="0.5" className="input" value={form.maintenanceHours} onChange={e => setForm(p => ({ ...p, maintenanceHours: e.target.value }))} required />
+              </label>
+              <label>{nav("Downtime (%)", "نسبة التوقف (%)")} *
+                <input type="number" min={0} max={100} className="input" value={form.downtimePercentage} onChange={e => setForm(p => ({ ...p, downtimePercentage: e.target.value }))} required />
+              </label>
+            </div>
+            <label>{nav("Notes", "ملاحظات")}
+              <textarea rows={2} className="input" value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} placeholder={nav("Calibration notes...", "ملاحظات المعايرة...")} />
+            </label>
+            <div style={{ display: "flex", gap: ".625rem" }}>
+              <Button type="submit" size="sm" disabled={saving}>{saving ? nav("Saving...", "جارٍ الحفظ...") : nav("Save", "حفظ")}</Button>
+              <Button type="button" size="sm" variant="outline" onClick={() => { setShowForm(false); setError(""); }}>{nav("Cancel", "إلغاء")}</Button>
+            </div>
+          </form>
+        </Card>
+      )}
+
+      {/* Table */}
       <Card className="overflow-hidden">
         <div className="overflow-x-auto">
           {loading ? (
             <div className="flex justify-center p-10"><div className="spinner" /></div>
-          ) : calibrations.length === 0 ? (
-            <div className="p-10 text-center text-[var(--text-secondary)]">
-              <CheckCircle size={32} className="mx-auto mb-3 opacity-30" />
-              <p className="font-medium">{nav("No calibration records found", "لم يتم العثور على سجلات معايرة")}</p>
+          ) : records.length === 0 ? (
+            <div className="p-10 text-center" style={{ color: "var(--text-secondary)" }}>
+              <CheckCircle size={32} style={{ margin: "0 auto 12px", opacity: .3, display: "block" }} />
+              <p style={{ fontWeight: 600 }}>{nav("No calibration records yet", "لا توجد سجلات معايرة بعد")}</p>
+              {canAdd && <p style={{ fontSize: ".85rem", marginTop: ".25rem" }}>{nav("Click 'Log Calibration' to add a record", "انقر على 'تسجيل معايرة' لإضافة سجل")}</p>}
             </div>
           ) : (
             <table className="data-table w-full">
               <thead>
                 <tr>
-                  <th>{nav("Equipment", "المعدات")}</th>
-                  <th>{nav("Last Calibrated", "آخر معايرة")}</th>
-                  <th>{nav("Next Due", "التالي المستحق")}</th>
-                  <th>{nav("Efficiency", "الكفاءة")}</th>
+                  <th>{nav("Machine", "الآلة")}</th>
+                  <th>{nav("Calibrated On", "تاريخ المعايرة")}</th>
+                  <th>{nav("Next Due", "الموعد التالي")}</th>
+                  <th>{nav("Score", "النتيجة")}</th>
                   <th>{nav("Status", "الحالة")}</th>
+                  <th>{nav("By", "بواسطة")}</th>
                 </tr>
               </thead>
               <tbody>
-                {calibrations.map(cal => {
-                  const status = getStatus(cal.efficiencyRating);
-                  const meta = STATUS_META[status as keyof typeof STATUS_META];
-                  const StatusIcon = status === "Valid" ? CheckCircle : status === "Pending" ? Clock : AlertTriangle;
+                {records.map(r => {
+                  const s = calStatus(r.efficiencyRating);
                   return (
-                    <tr key={cal.id}>
-                      <td className="font-medium">{cal.machine?.name || `Machine #${cal.machineId}`}</td>
-                      <td className="text-sm text-[var(--text-secondary)]">{new Date(cal.recordedAt).toLocaleDateString()}</td>
-                      <td className="text-sm text-[var(--text-secondary)]">{nextDue(cal.recordedAt)}</td>
+                    <tr key={r.id}>
+                      <td className="font-medium">{r.machine?.name ?? `#${r.machineId}`}</td>
+                      <td style={{ color: "var(--text-secondary)" }}>{new Date(r.recordedAt).toLocaleDateString()}</td>
+                      <td style={{ color: "var(--text-secondary)" }}>{nextDue(r.recordedAt)}</td>
                       <td>
-                        <div className="flex items-center gap-2">
-                          <div className="w-14 h-1.5 rounded-full bg-slate-200 overflow-hidden">
-                            <div className="h-1.5 rounded-full" style={{ width: `${cal.efficiencyRating}%`, background: meta.color }} />
+                        <div style={{ display: "flex", alignItems: "center", gap: ".5rem" }}>
+                          <div style={{ width: 48, height: 6, borderRadius: 3, background: "#e5e7eb", overflow: "hidden" }}>
+                            <div style={{ height: "100%", borderRadius: 3, width: `${r.efficiencyRating}%`, background: s.color }} />
                           </div>
-                          <span className="text-xs text-[var(--text-secondary)]">{cal.efficiencyRating}%</span>
+                          <span style={{ fontSize: ".78rem", color: "var(--text-secondary)" }}>{r.efficiencyRating}%</span>
                         </div>
                       </td>
                       <td>
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold"
-                          style={{ background: meta.bg, color: meta.color }}>
-                          <StatusIcon size={10} />
-                          {status}
+                        <span style={{ display: "inline-flex", alignItems: "center", gap: ".3rem", padding: ".2rem .6rem", borderRadius: 999, fontSize: ".75rem", fontWeight: 700, background: s.bg, color: s.color }}>
+                          <s.Icon size={11} />
+                          {s.label}
                         </span>
                       </td>
+                      <td style={{ color: "var(--text-secondary)" }}>{r.recordedBy?.fullName ?? "—"}</td>
                     </tr>
                   );
                 })}

@@ -57,3 +57,26 @@ export const uploadInvoice = multer({
   fileFilter: invoiceFileFilter,
   limits: { fileSize: 10 * 1024 * 1024 },
 });
+
+const docFileFilter = (_req: any, file: Express.Multer.File, cb: any) => {
+  const allowedMimes = [
+    "image/jpeg",
+    "image/png",
+    "image/gif",
+    "image/webp",
+    "application/pdf",
+    "application/msword",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  ];
+  if (allowedMimes.includes(file.mimetype)) {
+    cb(null, true);
+  } else {
+    cb(new Error("Only image, PDF, and Word document files are allowed"));
+  }
+};
+
+export const uploadDoc = multer({
+  storage,
+  fileFilter: docFileFilter,
+  limits: { fileSize: 20 * 1024 * 1024 }, // 20MB limit for documents
+});

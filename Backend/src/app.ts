@@ -46,6 +46,8 @@ import maintenanceCostRoutes from "./routes/maintenanceCostRoutes";
 import electricityRoutes from "./routes/electricityRoutes";
 import profileRoutes from "./routes/profileRoutes";
 import registrationRequestRoutes from "./routes/registrationRequestRoutes";
+import sparePartRequestRoutes from "./routes/sparePartRequestRoutes";
+import techDocumentRoutes from "./routes/techDocumentRoutes";
 import { initializeEmailService } from "./utils/emailService";
 import { startShiftReminderScheduler } from "./services/shiftReminderScheduler";
 
@@ -134,6 +136,15 @@ app.use("/suppliers", supplierRoutes);
 app.use("/performance", performanceRoutes);
 app.use("/maintenance-costs", maintenanceCostRoutes);
 app.use("/electricity", electricityRoutes);
+app.use("/spare-part-requests", sparePartRequestRoutes);
+app.use("/tech-documents", techDocumentRoutes);
+
+// Global JSON error handler — catches multer/middleware errors and returns JSON
+app.use((err: Error & { status?: number; code?: string }, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+  const status = (err as any).status ?? (err as any).statusCode ?? 500;
+  console.error("Unhandled error:", err.message, err.code ?? "");
+  res.status(status).json({ message: err.message ?? "Internal server error" });
+});
 
 initializeSocketServer(server);
 
