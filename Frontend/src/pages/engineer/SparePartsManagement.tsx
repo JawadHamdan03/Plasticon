@@ -282,7 +282,7 @@ export default function SparePartsManagement() {
                   {req.unitPrice != null ? (
                     <div style={{ background: "#ede9fe", borderRadius: 8, padding: ".5rem .75rem" }}>
                       <p style={{ margin: 0, fontWeight: 700, color: "#7c3aed", fontSize: ".82rem" }}>
-                        💰 ${req.unitPrice.toFixed(2)} × {req.quantity} = <strong>${totalCost!.toFixed(2)}</strong>
+                        💰 ₪{req.unitPrice.toFixed(2)} × {req.quantity} = <strong>₪{totalCost!.toFixed(2)}</strong>
                       </p>
                       {req.pricedBy && (
                         <p style={{ margin: ".2rem 0 0", fontSize: ".72rem", color: "#6d28d9" }}>
@@ -296,7 +296,7 @@ export default function SparePartsManagement() {
                         type="number"
                         min={0}
                         step="0.01"
-                        placeholder={nav("Unit price...", "سعر الوحدة...")}
+                        placeholder={nav("Unit price (₪)...", "سعر الوحدة (₪)...")}
                         className="input"
                         style={{ flex: 1, padding: ".3rem .5rem", fontSize: ".82rem" }}
                         value={priceInputs[req.id] ?? ""}

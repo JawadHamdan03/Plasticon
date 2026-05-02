@@ -5,7 +5,19 @@ import {
   useState,
   type FormEvent,
 } from "react";
-import { Download, FileSpreadsheet } from "lucide-react";
+import {
+  Download,
+  FileSpreadsheet,
+  Truck,
+  Users,
+  Factory,
+  Package,
+  UserCheck,
+  DollarSign,
+  Zap,
+  Receipt,
+  RefreshCw,
+} from "lucide-react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
@@ -16,8 +28,11 @@ import { API_BASE_URL, readApiError } from "../../lib/api";
 import { toast } from "../../lib/toast";
 import { ModulePageShell } from "../../components/ModulePageShell";
 import { Button } from "../../components/ui/button";
+import { Card } from "../../components/ui/card";
 import { EmptyState } from "../../components/ui/empty-state";
 import { TableBase, TableShell } from "../../components/ui/table-shell";
+
+// ─── Types ────────────────────────────────────────────────────────────────────
 
 type ReportBlock = Record<string, unknown>;
 
@@ -187,8 +202,96 @@ type ElectricityReport = {
   range: { fromDate: string; toDate: string };
   currentKwhPrice: number;
   days: ElectricityDayRow[];
-  summary: { totalConsumption: number; totalCost: number; totalReadings: number; currentKwhPrice: number };
+  summary: {
+    totalConsumption: number;
+    totalCost: number;
+    totalReadings: number;
+    currentKwhPrice: number;
+  };
 };
+
+type ExpenseRecord = {
+  id: number;
+  category: string;
+  amount: number;
+  description: string | null;
+  paymentStatus: string;
+  submittedAt: string;
+  submittedBy?: { fullName: string };
+};
+
+type TabKey =
+  | "suppliers"
+  | "customers"
+  | "production"
+  | "inventory"
+  | "attendance"
+  | "payroll"
+  | "electricity"
+  | "expenses";
+
+// ─── Tab config ───────────────────────────────────────────────────────────────
+
+const TABS = [
+  {
+    key: "suppliers" as const,
+    labelEn: "Suppliers",
+    labelAr: "الموردون",
+    icon: Truck,
+    color: "#3b82f6",
+  },
+  {
+    key: "customers" as const,
+    labelEn: "Customers",
+    labelAr: "الزباين",
+    icon: Users,
+    color: "#10b981",
+  },
+  {
+    key: "production" as const,
+    labelEn: "Production",
+    labelAr: "الإنتاج",
+    icon: Factory,
+    color: "#8b5cf6",
+  },
+  {
+    key: "inventory" as const,
+    labelEn: "Raw Materials",
+    labelAr: "المواد الخام",
+    icon: Package,
+    color: "#f97316",
+  },
+  {
+    key: "attendance" as const,
+    labelEn: "Attendance",
+    labelAr: "الحضور",
+    icon: UserCheck,
+    color: "#06b6d4",
+  },
+  {
+    key: "payroll" as const,
+    labelEn: "Payroll",
+    labelAr: "الرواتب",
+    icon: DollarSign,
+    color: "#ec4899",
+  },
+  {
+    key: "electricity" as const,
+    labelEn: "Electricity",
+    labelAr: "الكهرباء",
+    icon: Zap,
+    color: "#d97706",
+  },
+  {
+    key: "expenses" as const,
+    labelEn: "Expenses",
+    labelAr: "المصروفات",
+    icon: Receipt,
+    color: "#ef4444",
+  },
+] as const;
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 async function fetchWithAuth(path: string, options?: RequestInit) {
   return fetch(`${API_BASE_URL}${path}`, {
@@ -200,37 +303,248 @@ async function fetchWithAuth(path: string, options?: RequestInit) {
   });
 }
 
+// KPI gradient card helper
+function KpiCard({
+  label,
+  value,
+  gradient,
+}: {
+  label: string;
+  value: string | number;
+  gradient: string;
+}) {
+  return (
+    <div
+      style={{
+        padding: "1rem",
+        borderRadius: "var(--radius-lg)",
+        background: gradient,
+        color: "#fff",
+      }}
+    >
+      <p style={{ margin: 0, fontSize: ".78rem", fontWeight: 600, opacity: 0.85 }}>
+        {label}
+      </p>
+      <p style={{ margin: ".25rem 0 0", fontSize: "1.5rem", fontWeight: 800 }}>
+        {value}
+      </p>
+    </div>
+  );
+}
+
+// PeriodFilterBar component
+function PeriodFilterBar({
+  filters,
+  setFilters,
+  onLoad,
+  isAr,
+  copy,
+  loading,
+  extra,
+}: {
+  filters: PeriodFilters;
+  setFilters: React.Dispatch<React.SetStateAction<PeriodFilters>>;
+  onLoad: () => void;
+  isAr: boolean;
+  copy: (typeof appCopy)["en"];
+  loading: boolean;
+  extra?: React.ReactNode;
+}) {
+  return (
+    <div
+      style={{
+        display: "flex",
+        flexWrap: "wrap",
+        gap: ".75rem",
+        alignItems: "flex-end",
+        padding: "1rem 1.25rem",
+        borderBottom: "1px solid var(--border-default)",
+      }}
+    >
+      <label
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: ".2rem",
+          fontSize: ".8rem",
+          fontWeight: 600,
+        }}
+      >
+        {copy.reports.period}
+        <select
+          style={{
+            padding: ".35rem .6rem",
+            borderRadius: 6,
+            border: "1px solid var(--border-default)",
+            fontSize: ".85rem",
+            background: "var(--bg-card)",
+            color: "var(--text-primary)",
+          }}
+          value={filters.period}
+          onChange={(e) =>
+            setFilters((prev) => ({
+              ...prev,
+              period: e.target.value as ReportPeriod,
+            }))
+          }
+        >
+          <option value="daily">{copy.reports.day}</option>
+          <option value="weekly">{copy.reports.week}</option>
+          <option value="monthly">{copy.reports.month}</option>
+          <option value="yearly">{copy.reports.year}</option>
+        </select>
+      </label>
+
+      {(filters.period === "daily" || filters.period === "weekly") && (
+        <label
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: ".2rem",
+            fontSize: ".8rem",
+            fontWeight: 600,
+          }}
+        >
+          {copy.reports.day}
+          <input
+            type="date"
+            style={{
+              padding: ".35rem .6rem",
+              borderRadius: 6,
+              border: "1px solid var(--border-default)",
+              fontSize: ".85rem",
+              background: "var(--bg-card)",
+              color: "var(--text-primary)",
+            }}
+            value={filters.date}
+            onChange={(e) =>
+              setFilters((prev) => ({ ...prev, date: e.target.value }))
+            }
+          />
+        </label>
+      )}
+
+      {filters.period === "monthly" && (
+        <label
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: ".2rem",
+            fontSize: ".8rem",
+            fontWeight: 600,
+          }}
+        >
+          {copy.reports.month}
+          <input
+            type="month"
+            style={{
+              padding: ".35rem .6rem",
+              borderRadius: 6,
+              border: "1px solid var(--border-default)",
+              fontSize: ".85rem",
+              background: "var(--bg-card)",
+              color: "var(--text-primary)",
+            }}
+            value={filters.month}
+            onChange={(e) =>
+              setFilters((prev) => ({ ...prev, month: e.target.value }))
+            }
+          />
+        </label>
+      )}
+
+      {filters.period === "yearly" && (
+        <label
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: ".2rem",
+            fontSize: ".8rem",
+            fontWeight: 600,
+          }}
+        >
+          {copy.reports.year}
+          <input
+            type="number"
+            min={2000}
+            max={9999}
+            style={{
+              padding: ".35rem .6rem",
+              borderRadius: 6,
+              border: "1px solid var(--border-default)",
+              fontSize: ".85rem",
+              background: "var(--bg-card)",
+              color: "var(--text-primary)",
+              width: 100,
+            }}
+            value={filters.year}
+            onChange={(e) =>
+              setFilters((prev) => ({ ...prev, year: e.target.value }))
+            }
+          />
+        </label>
+      )}
+
+      <button
+        type="button"
+        className="auth-button"
+        disabled={loading}
+        onClick={onLoad}
+        style={{ alignSelf: "flex-end" }}
+      >
+        {loading ? (isAr ? "جارٍ..." : "Loading…") : copy.load}
+      </button>
+
+      {extra}
+    </div>
+  );
+}
+
+// ─── Main Component ───────────────────────────────────────────────────────────
+
 export function ReportsPage() {
   const { user } = useAuth();
   const { locale } = useLocale();
   const copy = appCopy[locale];
-  const isArabic = locale === "ar";
-  const reportText = {
+  const isAr = locale === "ar";
+
+  const t = {
+    date: isAr ? "التاريخ" : "Date",
+    machine: isAr ? "الماكينة" : "Machine",
+    shift: isAr ? "الشفت" : "Shift",
+    user: isAr ? "المستخدم" : "User",
+    records: isAr ? "السجلات" : "Records",
+    cartons: isAr ? "الكرتونات" : "Cartons",
+    pieces: isAr ? "القطع" : "Pieces",
+    total: isAr ? "الإجمالي" : "Total",
+    material: isAr ? "المادة" : "Material",
+    type: isAr ? "النوع" : "Type",
+    qty: isAr ? "الكمية" : "Qty",
+    reference: isAr ? "المرجع" : "Reference",
+    checkIn: isAr ? "الدخول" : "Check In",
+    checkOut: isAr ? "الخروج" : "Check Out",
+    late: isAr ? "التأخير" : "Late",
+    overtime: isAr ? "الإضافي" : "OT",
+    month: isAr ? "الشهر" : "Month",
+    hours: isAr ? "الساعات" : "Hours",
+    overtimeHours: isAr ? "ساعات الإضافي" : "OT Hours",
     period: copy.reports.period,
     generatedAt: copy.reports.generatedAt,
-    date: isArabic ? "التاريخ" : "Date",
-    machine: isArabic ? "الماكينة" : "Machine",
-    shift: isArabic ? "الشفت" : "Shift",
-    user: isArabic ? "المستخدم" : "User",
-    records: isArabic ? "السجلات" : "Records",
-    cartons: isArabic ? "الكرتونات" : "Cartons",
-    pieces: isArabic ? "القطع" : "Pieces",
-    customer: isArabic ? "العميل" : "Customer",
-    invoices: isArabic ? "الفواتير" : "Invoices",
-    items: isArabic ? "العناصر" : "Items",
-    total: isArabic ? "الإجمالي" : "Total",
-    material: isArabic ? "المادة" : "Material",
-    type: isArabic ? "النوع" : "Type",
-    qty: isArabic ? "الكمية" : "Qty",
-    reference: isArabic ? "المرجع" : "Reference",
-    checkIn: isArabic ? "الدخول" : "Check In",
-    checkOut: isArabic ? "الخروج" : "Check Out",
-    late: isArabic ? "التأخير" : "Late",
-    overtime: isArabic ? "الإضافي" : "OT",
-    month: isArabic ? "الشهر" : "Month",
-    hours: isArabic ? "الساعات" : "Hours",
-    overtimeHours: isArabic ? "ساعات الإضافي" : "OT Hours",
   };
+
+  // ── Tab state ──
+  const [activeTab, setActiveTab] = useState<TabKey>("suppliers");
+
+  // ── Commerce ──
+  const [purchases, setPurchases] = useState<PurchaseRecord[]>([]);
+  const [sales, setSales] = useState<SaleRecord[]>([]);
+  const [supplierFromDate, setSupplierFromDate] = useState("");
+  const [supplierToDate, setSupplierToDate] = useState("");
+  const [customerFromDate, setCustomerFromDate] = useState("");
+  const [customerToDate, setCustomerToDate] = useState("");
+  const [loadingCommerce, setLoadingCommerce] = useState(false);
+
+  // ── Activity reports ──
   const [productionActivity, setProductionActivity] =
     useState<ProductionActivityReport | null>(null);
   const [inventoryActivity, setInventoryActivity] =
@@ -239,15 +553,8 @@ export function ReportsPage() {
     useState<AttendanceActivityReport | null>(null);
   const [payrollActivity, setPayrollActivity] =
     useState<PayrollActivityReport | null>(null);
-  const [inventorySnapshot, setInventorySnapshot] =
-    useState<ReportBlock | null>(null);
-  const [purchases, setPurchases] = useState<PurchaseRecord[]>([]);
-  const [sales, setSales] = useState<SaleRecord[]>([]);
-  const [supplierFromDate, setSupplierFromDate] = useState("");
-  const [supplierToDate, setSupplierToDate] = useState("");
-  const [customerFromDate, setCustomerFromDate] = useState("");
-  const [customerToDate, setCustomerToDate] = useState("");
-  const [inventoryThreshold, setInventoryThreshold] = useState("");
+
+  // ── Period filters ──
   const [productionFilters, setProductionFilters] = useState<PeriodFilters>({
     period: "daily",
     date: "",
@@ -272,46 +579,66 @@ export function ReportsPage() {
     month: "",
     year: "",
   });
-  const [electricityReport, setElectricityReport] = useState<ElectricityReport | null>(null);
+
+  // ── Electricity ──
+  const [electricityReport, setElectricityReport] =
+    useState<ElectricityReport | null>(null);
   const [electricityFromDate, setElectricityFromDate] = useState("");
   const [electricityToDate, setElectricityToDate] = useState("");
   const [electricityMonth, setElectricityMonth] = useState("");
   const [electricityYear, setElectricityYear] = useState("");
   const [loadingElectricity, setLoadingElectricity] = useState(false);
+
+  // ── Inventory snapshot ──
+  const [inventorySnapshot, setInventorySnapshot] =
+    useState<ReportBlock | null>(null);
+  const [inventoryThreshold, setInventoryThreshold] = useState("");
+
+  // ── Payroll scope ──
   const [payrollScopeMode, setPayrollScopeMode] = useState<"ALL" | "PERSON">(
-    "ALL",
+    "ALL"
   );
   const [payrollScopeUser, setPayrollScopeUser] = useState("");
+
+  // ── Expenses ──
+  const [expenses, setExpenses] = useState<ExpenseRecord[]>([]);
+  const [expenseFromDate, setExpenseFromDate] = useState("");
+  const [expenseToDate, setExpenseToDate] = useState("");
+  const [loadingExpenses, setLoadingExpenses] = useState(false);
+
+  // ── Loading / error ──
   const [loadingSection, setLoadingSection] = useState<string>("");
-  const [loadingCommerce, setLoadingCommerce] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+
+  // ─── Data loaders ────────────────────────────────────────────────────────────
 
   const loadCommerceReports = useCallback(async () => {
     setLoadingCommerce(true);
     try {
-      const [purchasesResponse, salesResponse] = await Promise.all([
+      const [purchasesRes, salesRes] = await Promise.all([
         fetchWithAuth("/purchases/all"),
         fetchWithAuth("/sales/all"),
       ]);
-
-      if (!purchasesResponse.ok) {
-        throw new Error(await readApiError(purchasesResponse));
-      }
-
-      if (!salesResponse.ok) {
-        throw new Error(await readApiError(salesResponse));
-      }
-
-      setPurchases((await purchasesResponse.json()) as PurchaseRecord[]);
-      setSales((await salesResponse.json()) as SaleRecord[]);
+      if (!purchasesRes.ok) throw new Error(await readApiError(purchasesRes));
+      if (!salesRes.ok) throw new Error(await readApiError(salesRes));
+      setPurchases((await purchasesRes.json()) as PurchaseRecord[]);
+      setSales((await salesRes.json()) as SaleRecord[]);
     } catch (error) {
       setErrorMessage(
-        error instanceof Error
-          ? error.message
-          : "Failed to load commerce reports",
+        error instanceof Error ? error.message : "Failed to load commerce reports"
       );
     } finally {
       setLoadingCommerce(false);
+    }
+  }, []);
+
+  const loadExpenses = useCallback(async () => {
+    setLoadingExpenses(true);
+    try {
+      const res = await fetchWithAuth("/expenses");
+      if (res.ok) setExpenses((await res.json()) as ExpenseRecord[]);
+    } finally {
+      setLoadingExpenses(false);
     }
   }, []);
 
@@ -323,7 +650,9 @@ export function ReportsPage() {
       if (electricityToDate) params.set("toDate", electricityToDate);
       if (electricityMonth) params.set("month", electricityMonth);
       if (electricityYear) params.set("year", electricityYear);
-      const res = await fetchWithAuth(`/electricity/report?${params.toString()}`);
+      const res = await fetchWithAuth(
+        `/electricity/report?${params.toString()}`
+      );
       if (!res.ok) throw new Error(await readApiError(res));
       setElectricityReport((await res.json()) as ElectricityReport);
     } catch {
@@ -335,21 +664,15 @@ export function ReportsPage() {
 
   const buildPeriodParams = (filters: PeriodFilters) => {
     const params = new URLSearchParams({ period: filters.period });
-
     if (filters.period === "daily" || filters.period === "weekly") {
-      if (filters.date) {
-        params.set("date", filters.date);
-      }
+      if (filters.date) params.set("date", filters.date);
     }
-
     if (filters.period === "monthly" && filters.month) {
       params.set("month", filters.month);
     }
-
     if (filters.period === "yearly" && filters.year) {
       params.set("year", filters.year);
     }
-
     return params.toString();
   };
 
@@ -358,17 +681,14 @@ export function ReportsPage() {
     setState: (value: TReport | null) => void,
     loadingKey: string,
     filtersValue: PeriodFilters,
-    fallbackMessage: string,
+    fallbackMessage: string
   ) => {
     setErrorMessage("");
     setLoadingSection(loadingKey);
-
     try {
       const suffix = buildPeriodParams(filtersValue);
       const response = await fetchWithAuth(suffix ? `${path}?${suffix}` : path);
-      if (!response.ok) {
-        throw new Error(await readApiError(response));
-      }
+      if (!response.ok) throw new Error(await readApiError(response));
       setState((await response.json()) as TReport);
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : fallbackMessage);
@@ -381,23 +701,18 @@ export function ReportsPage() {
     event?.preventDefault();
     setErrorMessage("");
     setLoadingSection("inventory");
-
     try {
       const suffix = inventoryThreshold
         ? `?threshold=${encodeURIComponent(inventoryThreshold)}`
         : "";
       const response = await fetchWithAuth(
-        `/reports/inventory/snapshot${suffix}`,
+        `/reports/inventory/snapshot${suffix}`
       );
-      if (!response.ok) {
-        throw new Error(await readApiError(response));
-      }
+      if (!response.ok) throw new Error(await readApiError(response));
       setInventorySnapshot((await response.json()) as ReportBlock);
     } catch (error) {
       setErrorMessage(
-        error instanceof Error
-          ? error.message
-          : "Failed to load inventory snapshot",
+        error instanceof Error ? error.message : "Failed to load inventory snapshot"
       );
     } finally {
       setLoadingSection("");
@@ -406,7 +721,10 @@ export function ReportsPage() {
 
   useEffect(() => {
     void loadCommerceReports();
-  }, [loadCommerceReports]);
+    void loadExpenses();
+  }, [loadCommerceReports, loadExpenses]);
+
+  // ─── Derived data ─────────────────────────────────────────────────────────────
 
   const filteredPurchases = useMemo(() => {
     const fromTime = supplierFromDate
@@ -415,18 +733,11 @@ export function ReportsPage() {
     const toTime = supplierToDate
       ? new Date(`${supplierToDate}T23:59:59.999`).getTime()
       : null;
-
-    return purchases.filter((purchase) => {
-      const purchaseTime = new Date(purchase.date).getTime();
-      if (Number.isNaN(purchaseTime)) {
-        return false;
-      }
-      if (fromTime !== null && purchaseTime < fromTime) {
-        return false;
-      }
-      if (toTime !== null && purchaseTime > toTime) {
-        return false;
-      }
+    return purchases.filter((p) => {
+      const t2 = new Date(p.date).getTime();
+      if (Number.isNaN(t2)) return false;
+      if (fromTime !== null && t2 < fromTime) return false;
+      if (toTime !== null && t2 > toTime) return false;
       return true;
     });
   }, [purchases, supplierFromDate, supplierToDate]);
@@ -438,18 +749,11 @@ export function ReportsPage() {
     const toTime = customerToDate
       ? new Date(`${customerToDate}T23:59:59.999`).getTime()
       : null;
-
-    return sales.filter((sale) => {
-      const saleTime = new Date(sale.date).getTime();
-      if (Number.isNaN(saleTime)) {
-        return false;
-      }
-      if (fromTime !== null && saleTime < fromTime) {
-        return false;
-      }
-      if (toTime !== null && saleTime > toTime) {
-        return false;
-      }
+    return sales.filter((s) => {
+      const t2 = new Date(s.date).getTime();
+      if (Number.isNaN(t2)) return false;
+      if (fromTime !== null && t2 < fromTime) return false;
+      if (toTime !== null && t2 > toTime) return false;
       return true;
     });
   }, [customerFromDate, customerToDate, sales]);
@@ -465,7 +769,6 @@ export function ReportsPage() {
         lastPurchaseDate: string | null;
       }
     >();
-
     for (const purchase of filteredPurchases) {
       const supplierId = purchase.supplier?.id ?? purchase.supplierId;
       const current = map.get(supplierId) ?? {
@@ -475,7 +778,6 @@ export function ReportsPage() {
         totalAmount: 0,
         lastPurchaseDate: null,
       };
-
       current.purchasesCount += 1;
       current.totalAmount += purchase.totalAmount ?? 0;
       if (
@@ -485,13 +787,9 @@ export function ReportsPage() {
       ) {
         current.lastPurchaseDate = purchase.date;
       }
-
       map.set(supplierId, current);
     }
-
-    return Array.from(map.values()).sort(
-      (a, b) => b.totalAmount - a.totalAmount,
-    );
+    return Array.from(map.values()).sort((a, b) => b.totalAmount - a.totalAmount);
   }, [filteredPurchases]);
 
   const customerReportRows = useMemo(() => {
@@ -505,7 +803,6 @@ export function ReportsPage() {
         lastSaleDate: string | null;
       }
     >();
-
     for (const sale of filteredSales) {
       const customerId = sale.customer?.id ?? sale.customerId;
       const current = map.get(customerId) ?? {
@@ -515,7 +812,6 @@ export function ReportsPage() {
         totalAmount: 0,
         lastSaleDate: null,
       };
-
       current.salesCount += 1;
       current.totalAmount += sale.totalAmount ?? 0;
       if (
@@ -524,42 +820,117 @@ export function ReportsPage() {
       ) {
         current.lastSaleDate = sale.date;
       }
-
       map.set(customerId, current);
     }
-
-    return Array.from(map.values()).sort(
-      (a, b) => b.totalAmount - a.totalAmount,
-    );
+    return Array.from(map.values()).sort((a, b) => b.totalAmount - a.totalAmount);
   }, [filteredSales]);
+
+  const payrollUsers = useMemo(() => {
+    if (!payrollActivity) return [] as Array<{ username: string; name: string }>;
+    return Array.from(
+      new Map(
+        payrollActivity.records.map((row) => [
+          row.username,
+          { username: row.username, name: row.userName },
+        ])
+      ).values()
+    ).sort((a, b) => a.name.localeCompare(b.name));
+  }, [payrollActivity]);
+
+  useEffect(() => {
+    if (!payrollUsers.length) {
+      if (payrollScopeUser) setPayrollScopeUser("");
+      return;
+    }
+    if (payrollScopeMode === "PERSON") {
+      const exists = payrollUsers.some((u) => u.username === payrollScopeUser);
+      if (!exists) setPayrollScopeUser(payrollUsers[0]?.username ?? "");
+    }
+  }, [payrollScopeMode, payrollScopeUser, payrollUsers]);
+
+  const filteredPayrollRows = useMemo(() => {
+    if (!payrollActivity) return [] as PayrollActivityReport["records"];
+    if (payrollScopeMode === "ALL") return payrollActivity.records;
+    return payrollActivity.records.filter(
+      (row) => row.username === payrollScopeUser
+    );
+  }, [payrollActivity, payrollScopeMode, payrollScopeUser]);
+
+  const payrollScopeLabel = useMemo(() => {
+    if (payrollScopeMode === "ALL") return isAr ? "الكل" : "All";
+    const selected = payrollUsers.find((u) => u.username === payrollScopeUser);
+    return selected?.name ?? payrollScopeUser;
+  }, [isAr, payrollScopeMode, payrollScopeUser, payrollUsers]);
+
+  const filteredPayrollTotals = useMemo(() => {
+    const peopleCount = new Set(filteredPayrollRows.map((r) => r.username)).size;
+    return {
+      peopleCount,
+      recordsCount: filteredPayrollRows.length,
+      totalBaseSalary: filteredPayrollRows.reduce((s, r) => s + r.baseSalary, 0),
+      totalOvertimeSalary: filteredPayrollRows.reduce(
+        (s, r) => s + r.overtimeSalary,
+        0
+      ),
+      totalPayout: filteredPayrollRows.reduce((s, r) => s + r.totalSalary, 0),
+    };
+  }, [filteredPayrollRows]);
+
+  const filteredExpenses = useMemo(() => {
+    const fromTime = expenseFromDate
+      ? new Date(`${expenseFromDate}T00:00:00`).getTime()
+      : null;
+    const toTime = expenseToDate
+      ? new Date(`${expenseToDate}T23:59:59.999`).getTime()
+      : null;
+    return expenses.filter((e) => {
+      const t2 = new Date(e.submittedAt).getTime();
+      if (Number.isNaN(t2)) return false;
+      if (fromTime !== null && t2 < fromTime) return false;
+      if (toTime !== null && t2 > toTime) return false;
+      return true;
+    });
+  }, [expenses, expenseFromDate, expenseToDate]);
+
+  const expenseTotals = useMemo(
+    () => ({
+      total: filteredExpenses.reduce((s, e) => s + e.amount, 0),
+      approved: filteredExpenses
+        .filter((e) => e.paymentStatus === "APPROVED")
+        .reduce((s, e) => s + e.amount, 0),
+      pending: filteredExpenses
+        .filter((e) => e.paymentStatus === "PENDING")
+        .reduce((s, e) => s + e.amount, 0),
+      count: filteredExpenses.length,
+    }),
+    [filteredExpenses]
+  );
+
+  // ─── Export helpers ───────────────────────────────────────────────────────────
 
   const exportPdfTable = (
     title: string,
     metaLines: string[],
     headers: string[],
     rows: string[][],
-    fileName: string,
+    fileName: string
   ) => {
     const doc = new jsPDF();
-    doc.setTextColor(23, 37, 84);
-    doc.setFontSize(18);
-    doc.text(title, 14, 18);
-
     doc.setFillColor(37, 99, 235);
     doc.rect(0, 0, 210, 10, "F");
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(10);
     doc.text("Plasticon", 14, 7);
 
+    doc.setTextColor(23, 37, 84);
+    doc.setFontSize(18);
+    doc.text(title, 14, 22);
+
     doc.setTextColor(71, 85, 105);
     doc.setFontSize(10);
-    doc.text(
-      `${reportText.generatedAt}: ${new Date().toLocaleString()}`,
-      14,
-      26,
-    );
+    doc.text(`${t.generatedAt}: ${new Date().toLocaleString()}`, 14, 30);
 
-    let metaY = 34;
+    let metaY = 38;
     metaLines.forEach((line) => {
       doc.text(line, 14, metaY);
       metaY += 6;
@@ -570,19 +941,9 @@ export function ReportsPage() {
       head: [headers],
       body: rows,
       theme: "grid",
-      headStyles: {
-        fillColor: [37, 99, 235],
-        textColor: 255,
-        fontStyle: "bold",
-      },
-      alternateRowStyles: {
-        fillColor: [248, 250, 252],
-      },
-      styles: {
-        fontSize: 9,
-        cellPadding: 3,
-        overflow: "linebreak",
-      },
+      headStyles: { fillColor: [37, 99, 235], textColor: 255, fontStyle: "bold" },
+      alternateRowStyles: { fillColor: [248, 250, 252] },
+      styles: { fontSize: 9, cellPadding: 3, overflow: "linebreak" },
       margin: { left: 14, right: 14 },
     });
     doc.save(fileName);
@@ -591,7 +952,7 @@ export function ReportsPage() {
   const exportExcelTable = (
     headers: string[],
     rows: string[][],
-    fileName: string,
+    fileName: string
   ) => {
     const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
     const wb = XLSX.utils.book_new();
@@ -599,91 +960,125 @@ export function ReportsPage() {
     XLSX.writeFile(wb, fileName);
   };
 
-  const payrollUsers = useMemo(() => {
-    if (!payrollActivity) {
-      return [] as Array<{ username: string; name: string }>;
-    }
+  // ─── Reusable download button pair ───────────────────────────────────────────
 
-    return Array.from(
-      new Map(
-        payrollActivity.records.map((row) => [
-          row.username,
-          {
-            username: row.username,
-            name: row.userName,
-          },
-        ]),
-      ).values(),
-    ).sort((a, b) => a.name.localeCompare(b.name));
-  }, [payrollActivity]);
-
-  useEffect(() => {
-    if (!payrollUsers.length) {
-      if (payrollScopeUser) {
-        setPayrollScopeUser("");
-      }
-      return;
-    }
-
-    if (payrollScopeMode === "PERSON") {
-      const exists = payrollUsers.some(
-        (userRow) => userRow.username === payrollScopeUser,
-      );
-      if (!exists) {
-        setPayrollScopeUser(payrollUsers[0]?.username ?? "");
-      }
-    }
-  }, [payrollScopeMode, payrollScopeUser, payrollUsers]);
-
-  const filteredPayrollRows = useMemo(() => {
-    if (!payrollActivity) {
-      return [] as PayrollActivityReport["records"];
-    }
-
-    if (payrollScopeMode === "ALL") {
-      return payrollActivity.records;
-    }
-
-    return payrollActivity.records.filter(
-      (row) => row.username === payrollScopeUser,
+  function DownloadButtons({
+    onPdf,
+    onExcel,
+  }: {
+    onPdf: () => void;
+    onExcel: () => void;
+  }) {
+    return (
+      <div style={{ display: "flex", gap: ".5rem" }}>
+        <button
+          type="button"
+          className="auth-button auth-button--ghost reports-download-button"
+          dir="ltr"
+          onClick={onPdf}
+        >
+          <Download size={14} aria-hidden="true" style={{ marginRight: 4 }} />
+          {copy.reports.downloadPdf}
+        </button>
+        <button
+          type="button"
+          className="auth-button auth-button--ghost reports-download-button"
+          dir="ltr"
+          onClick={onExcel}
+        >
+          <FileSpreadsheet
+            size={14}
+            aria-hidden="true"
+            style={{ marginRight: 4 }}
+          />
+          {isAr ? "Excel تنزيل" : "Download Excel"}
+        </button>
+      </div>
     );
-  }, [payrollActivity, payrollScopeMode, payrollScopeUser]);
+  }
 
-  const payrollScopeLabel = useMemo(() => {
-    if (payrollScopeMode === "ALL") {
-      return isArabic ? "الكل" : "All";
-    }
+  // ─── Section header helper ────────────────────────────────────────────────────
 
-    const selected = payrollUsers.find(
-      (userRow) => userRow.username === payrollScopeUser,
+  function SectionHeader({
+    icon: Icon,
+    color,
+    title,
+    subtitle,
+    actions,
+  }: {
+    icon: React.ElementType;
+    color: string;
+    title: string;
+    subtitle: string;
+    actions?: React.ReactNode;
+  }) {
+    return (
+      <div
+        style={{
+          padding: "1rem 1.25rem",
+          borderBottom: "1px solid var(--border-default)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          flexWrap: "wrap",
+          gap: ".5rem",
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: ".75rem" }}>
+          <div
+            style={{
+              width: 36,
+              height: 36,
+              borderRadius: "var(--radius-md)",
+              background: color,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              color: "#fff",
+              flexShrink: 0,
+            }}
+          >
+            <Icon size={18} />
+          </div>
+          <div>
+            <h2 style={{ margin: 0, fontSize: "1rem", fontWeight: 700 }}>
+              {title}
+            </h2>
+            <p
+              style={{
+                margin: 0,
+                fontSize: ".78rem",
+                color: "var(--text-secondary)",
+              }}
+            >
+              {subtitle}
+            </p>
+          </div>
+        </div>
+        {actions && <div>{actions}</div>}
+      </div>
     );
-    return selected?.name ?? payrollScopeUser;
-  }, [isArabic, payrollScopeMode, payrollScopeUser, payrollUsers]);
+  }
 
-  const filteredPayrollTotals = useMemo(() => {
-    const peopleCount = new Set(filteredPayrollRows.map((row) => row.username))
-      .size;
-    const totalBaseSalary = filteredPayrollRows.reduce(
-      (sum, row) => sum + row.baseSalary,
-      0,
-    );
-    const totalOvertimeSalary = filteredPayrollRows.reduce(
-      (sum, row) => sum + row.overtimeSalary,
-      0,
-    );
-    const totalPayout = filteredPayrollRows.reduce(
-      (sum, row) => sum + row.totalSalary,
-      0,
-    );
+  // ─── KPI grid wrapper ─────────────────────────────────────────────────────────
 
-    return {
-      peopleCount,
-      recordsCount: filteredPayrollRows.length,
-      totalBaseSalary,
-      totalOvertimeSalary,
-      totalPayout,
-    };
-  }, [filteredPayrollRows]);
+  function KpiGrid({ children }: { children: React.ReactNode }) {
+    return (
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit,minmax(160px,1fr))",
+          gap: ".75rem",
+          padding: "1rem 1.25rem",
+          borderBottom: "1px solid var(--border-default)",
+        }}
+      >
+        {children}
+      </div>
+    );
+  }
+
+  // ─── Render ───────────────────────────────────────────────────────────────────
 
   return (
     <ModulePageShell
@@ -694,9 +1089,11 @@ export function ReportsPage() {
           variant="outline"
           onClick={() => {
             void loadCommerceReports();
+            void loadExpenses();
             void loadInventorySnapshot();
           }}
         >
+          <RefreshCw size={14} style={{ marginRight: 4 }} />
           {copy.refreshAll}
         </Button>
       }
@@ -707,147 +1104,223 @@ export function ReportsPage() {
         </div>
       )}
 
-      <div className="module-summary-bar">
-        <span>{copy.reports.summaryLabel}</span>
-        <strong>{copy.reports.loaded}</strong>
+      {/* ── Tab navigation ── */}
+      <div
+        style={{
+          display: "flex",
+          gap: ".5rem",
+          overflowX: "auto",
+          paddingBottom: ".5rem",
+          marginBottom: "1.5rem",
+          borderBottom: "1px solid var(--border-default)",
+        }}
+      >
+        {TABS.map((tab) => (
+          <button
+            key={tab.key}
+            type="button"
+            onClick={() => setActiveTab(tab.key)}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: ".4rem",
+              padding: ".5rem 1rem",
+              borderRadius: 999,
+              border: "none",
+              cursor: "pointer",
+              fontSize: ".82rem",
+              fontWeight: 600,
+              whiteSpace: "nowrap",
+              background:
+                activeTab === tab.key ? tab.color : "var(--bg-subtle)",
+              color: activeTab === tab.key ? "#fff" : "var(--text-secondary)",
+              transition: "all .15s",
+            }}
+          >
+            <tab.icon size={14} />
+            {isAr ? tab.labelAr : tab.labelEn}
+          </button>
+        ))}
       </div>
 
-      <section className="module-grid module-grid--reports">
-        <article className="module-panel module-panel--full module-panel--reports-supplier">
-          <h2>{isArabic ? "تقارير الموردين" : "Supplier reports"}</h2>
-          <div className="module-form module-form--inline module-form--commerce-range">
-            <label>
-              {isArabic ? "من تاريخ" : "From date"}
-              <input
-                type="date"
-                value={supplierFromDate}
-                onChange={(event) => setSupplierFromDate(event.target.value)}
-              />
-            </label>
-            <label>
-              {isArabic ? "إلى تاريخ" : "To date"}
-              <input
-                type="date"
-                value={supplierToDate}
-                onChange={(event) => setSupplierToDate(event.target.value)}
-              />
-            </label>
-            <div className="module-form-controls">
-              <button
-                type="button"
-                className="auth-button auth-button--ghost"
-                onClick={() => {
-                  setSupplierFromDate("");
-                  setSupplierToDate("");
-                }}
-              >
-                {isArabic ? "إعادة تعيين" : "Reset"}
-              </button>
-              <button
-                type="button"
-                className="auth-button auth-button--ghost reports-download-button"
-                dir="ltr"
-                onClick={() => {
+      {/* ════════════════════════════════════════════════════════════════
+          SUPPLIERS TAB
+      ════════════════════════════════════════════════════════════════ */}
+      {activeTab === "suppliers" && (
+        <Card className="overflow-hidden">
+          <SectionHeader
+            icon={Truck}
+            color="#3b82f6"
+            title={isAr ? "تقارير الموردين" : "Supplier Reports"}
+            subtitle={
+              isAr ? "ملخص المشتريات حسب المورد" : "Purchase summary by supplier"
+            }
+            actions={
+              <DownloadButtons
+                onPdf={() => {
                   if (!supplierReportRows.length) {
                     toast.info(copy.reports.pdfNoData);
                     return;
                   }
-
-                  const supplierRangeText =
+                  const rangeText =
                     supplierFromDate || supplierToDate
-                      ? `${supplierFromDate || "-"} ${isArabic ? "إلى" : "to"} ${supplierToDate || "-"}`
-                      : isArabic
-                        ? "كل الفترات"
-                        : "All dates";
-
+                      ? `${supplierFromDate || "-"} ${isAr ? "إلى" : "to"} ${supplierToDate || "-"}`
+                      : isAr
+                      ? "كل الفترات"
+                      : "All dates";
                   exportPdfTable(
-                    isArabic ? "تقرير الموردين" : "Supplier report",
+                    isAr ? "تقرير الموردين" : "Supplier Report",
                     [
-                      `${reportText.period}: ${supplierRangeText}`,
-                      `${isArabic ? "عدد الموردين" : "Suppliers"}: ${supplierReportRows.length}`,
-                      `${isArabic ? "عدد عمليات الشراء" : "Purchases"}: ${filteredPurchases.length}`,
-                      `${isArabic ? "إجمالي الشراء" : "Total spent"}: ${supplierReportRows
-                        .reduce((sum, row) => sum + row.totalAmount, 0)
-                        .toLocaleString()}`,
+                      `${t.period}: ${rangeText}`,
+                      `${isAr ? "عدد الموردين" : "Suppliers"}: ${supplierReportRows.length}`,
+                      `${isAr ? "عدد عمليات الشراء" : "Purchases"}: ${filteredPurchases.length}`,
+                      `${isAr ? "إجمالي الشراء" : "Total spent"}: ₪${supplierReportRows.reduce((s, r) => s + r.totalAmount, 0).toLocaleString()}`,
                     ],
                     [
-                      isArabic ? "المورد" : "Supplier",
-                      isArabic ? "العمليات" : "Purchases",
-                      isArabic ? "الإجمالي" : "Total",
-                      isArabic ? "آخر استلام" : "Last purchase",
+                      isAr ? "المورد" : "Supplier",
+                      isAr ? "العمليات" : "Purchases",
+                      isAr ? "الإجمالي" : "Total",
+                      isAr ? "آخر استلام" : "Last Purchase",
                     ],
-                    supplierReportRows.map((row) => [
-                      row.supplierName,
-                      String(row.purchasesCount),
-                      row.totalAmount.toLocaleString(),
-                      row.lastPurchaseDate
-                        ? row.lastPurchaseDate.slice(0, 10)
-                        : "-",
+                    supplierReportRows.map((r) => [
+                      r.supplierName,
+                      String(r.purchasesCount),
+                      `₪${r.totalAmount.toLocaleString()}`,
+                      r.lastPurchaseDate ? r.lastPurchaseDate.slice(0, 10) : "-",
                     ]),
-                    `supplier-report-${new Date().toISOString().slice(0, 10)}.pdf`,
+                    `supplier-report-${new Date().toISOString().slice(0, 10)}.pdf`
                   );
                 }}
-              >
-                <Download
-                  className="reports-download-icon"
-                  aria-hidden="true"
-                />
-                {copy.reports.downloadPdf}
-              </button>
-              <button
-                type="button"
-                className="auth-button auth-button--ghost reports-download-button"
-                dir="ltr"
-                onClick={() => {
+                onExcel={() => {
                   if (!supplierReportRows.length) {
                     toast.info(copy.reports.pdfNoData);
                     return;
                   }
                   exportExcelTable(
-                    [isArabic ? "المورد" : "Supplier", isArabic ? "العمليات" : "Purchases", isArabic ? "الإجمالي" : "Total", isArabic ? "آخر استلام" : "Last purchase"],
-                    supplierReportRows.map((row) => [row.supplierName, String(row.purchasesCount), row.totalAmount.toLocaleString(), row.lastPurchaseDate ? row.lastPurchaseDate.slice(0, 10) : "-"]),
-                    `supplier-report-${new Date().toISOString().slice(0, 10)}.xlsx`,
+                    [
+                      isAr ? "المورد" : "Supplier",
+                      isAr ? "العمليات" : "Purchases",
+                      isAr ? "الإجمالي" : "Total",
+                      isAr ? "آخر استلام" : "Last Purchase",
+                    ],
+                    supplierReportRows.map((r) => [
+                      r.supplierName,
+                      String(r.purchasesCount),
+                      `₪${r.totalAmount.toLocaleString()}`,
+                      r.lastPurchaseDate ? r.lastPurchaseDate.slice(0, 10) : "-",
+                    ]),
+                    `supplier-report-${new Date().toISOString().slice(0, 10)}.xlsx`
                   );
                 }}
-              >
-                <FileSpreadsheet className="reports-download-icon" aria-hidden="true" />
-                {isArabic ? "Excel تنزيل" : "Download Excel"}
-              </button>
-            </div>
+              />
+            }
+          />
+
+          {/* Filter bar */}
+          <div
+            style={{
+              display: "flex",
+              flexWrap: "wrap",
+              gap: ".75rem",
+              alignItems: "flex-end",
+              padding: "1rem 1.25rem",
+              borderBottom: "1px solid var(--border-default)",
+            }}
+          >
+            <label
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: ".2rem",
+                fontSize: ".8rem",
+                fontWeight: 600,
+              }}
+            >
+              {isAr ? "من تاريخ" : "From date"}
+              <input
+                type="date"
+                style={{
+                  padding: ".35rem .6rem",
+                  borderRadius: 6,
+                  border: "1px solid var(--border-default)",
+                  fontSize: ".85rem",
+                  background: "var(--bg-card)",
+                  color: "var(--text-primary)",
+                }}
+                value={supplierFromDate}
+                onChange={(e) => setSupplierFromDate(e.target.value)}
+              />
+            </label>
+            <label
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: ".2rem",
+                fontSize: ".8rem",
+                fontWeight: 600,
+              }}
+            >
+              {isAr ? "إلى تاريخ" : "To date"}
+              <input
+                type="date"
+                style={{
+                  padding: ".35rem .6rem",
+                  borderRadius: 6,
+                  border: "1px solid var(--border-default)",
+                  fontSize: ".85rem",
+                  background: "var(--bg-card)",
+                  color: "var(--text-primary)",
+                }}
+                value={supplierToDate}
+                onChange={(e) => setSupplierToDate(e.target.value)}
+              />
+            </label>
+            <button
+              type="button"
+              className="auth-button auth-button--ghost"
+              style={{ alignSelf: "flex-end" }}
+              onClick={() => {
+                setSupplierFromDate("");
+                setSupplierToDate("");
+              }}
+            >
+              {isAr ? "إعادة تعيين" : "Reset"}
+            </button>
           </div>
-          {loadingCommerce ? (
-            <p>
-              {isArabic
-                ? "جارٍ تحميل بيانات الموردين والزباين..."
-                : "Loading supplier and customer data..."}
+
+          {/* KPI cards */}
+          <KpiGrid>
+            <KpiCard
+              label={isAr ? "عدد الموردين" : "Suppliers"}
+              value={supplierReportRows.length}
+              gradient="linear-gradient(135deg,#3b82f6,#1d4ed8)"
+            />
+            <KpiCard
+              label={isAr ? "عدد عمليات الشراء" : "Purchase Operations"}
+              value={filteredPurchases.length}
+              gradient="linear-gradient(135deg,#60a5fa,#3b82f6)"
+            />
+            <KpiCard
+              label={isAr ? "إجمالي الشراء" : "Total Spent"}
+              value={`₪${supplierReportRows.reduce((s, r) => s + r.totalAmount, 0).toLocaleString()}`}
+              gradient="linear-gradient(135deg,#2563eb,#1e40af)"
+            />
+          </KpiGrid>
+
+          {loadingCommerce && (
+            <p style={{ padding: "1rem 1.25rem", color: "var(--text-muted)" }}>
+              {isAr ? "جارٍ التحميل..." : "Loading..."}
             </p>
-          ) : null}
-          <div className="module-report-grid">
-            <div className="module-report-card">
-              <span>{isArabic ? "عدد الموردين" : "Suppliers"}</span>
-              <strong>{supplierReportRows.length}</strong>
-            </div>
-            <div className="module-report-card">
-              <span>{isArabic ? "إجمالي الشراء" : "Total spent"}</span>
-              <strong>
-                {supplierReportRows
-                  .reduce((sum, row) => sum + row.totalAmount, 0)
-                  .toLocaleString()}
-              </strong>
-            </div>
-            <div className="module-report-card">
-              <span>{isArabic ? "عدد عمليات الشراء" : "Purchases"}</span>
-              <strong>{filteredPurchases.length}</strong>
-            </div>
-          </div>
-          <TableShell className="mt-4">
+          )}
+
+          <TableShell className="mt-0">
             <TableBase className="admin-table">
               <thead>
                 <tr>
-                  <th>{isArabic ? "المورد" : "Supplier"}</th>
-                  <th>{isArabic ? "العمليات" : "Purchases"}</th>
-                  <th>{isArabic ? "الإجمالي" : "Total"}</th>
-                  <th>{isArabic ? "آخر استلام" : "Last purchase"}</th>
+                  <th>{isAr ? "المورد" : "Supplier"}</th>
+                  <th>{isAr ? "العمليات" : "Purchases"}</th>
+                  <th>{isAr ? "الإجمالي" : "Total"}</th>
+                  <th>{isAr ? "آخر استلام" : "Last Purchase"}</th>
                 </tr>
               </thead>
               <tbody>
@@ -855,7 +1328,7 @@ export function ReportsPage() {
                   <tr key={row.supplierId}>
                     <td>{row.supplierName}</td>
                     <td>{row.purchasesCount}</td>
-                    <td>{row.totalAmount.toLocaleString()}</td>
+                    <td>₪{row.totalAmount.toLocaleString()}</td>
                     <td>
                       {row.lastPurchaseDate
                         ? row.lastPurchaseDate.slice(0, 10)
@@ -863,137 +1336,192 @@ export function ReportsPage() {
                     </td>
                   </tr>
                 ))}
+                {supplierReportRows.length === 0 && (
+                  <tr>
+                    <td
+                      colSpan={4}
+                      style={{ textAlign: "center", color: "var(--text-secondary)", padding: "1.5rem" }}
+                    >
+                      {isAr ? "لا توجد بيانات" : "No data"}
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </TableBase>
           </TableShell>
-        </article>
+        </Card>
+      )}
 
-        <article className="module-panel module-panel--full module-panel--reports-customer">
-          <h2>{isArabic ? "تقارير الزباين" : "Customer reports"}</h2>
-          <div className="module-form module-form--inline module-form--commerce-range">
-            <label>
-              {isArabic ? "من تاريخ" : "From date"}
-              <input
-                type="date"
-                value={customerFromDate}
-                onChange={(event) => setCustomerFromDate(event.target.value)}
-              />
-            </label>
-            <label>
-              {isArabic ? "إلى تاريخ" : "To date"}
-              <input
-                type="date"
-                value={customerToDate}
-                onChange={(event) => setCustomerToDate(event.target.value)}
-              />
-            </label>
-            <div className="module-form-controls">
-              <button
-                type="button"
-                className="auth-button auth-button--ghost"
-                onClick={() => {
-                  setCustomerFromDate("");
-                  setCustomerToDate("");
-                }}
-              >
-                {isArabic ? "إعادة تعيين" : "Reset"}
-              </button>
-              <button
-                type="button"
-                className="auth-button auth-button--ghost reports-download-button"
-                dir="ltr"
-                onClick={() => {
+      {/* ════════════════════════════════════════════════════════════════
+          CUSTOMERS TAB
+      ════════════════════════════════════════════════════════════════ */}
+      {activeTab === "customers" && (
+        <Card className="overflow-hidden">
+          <SectionHeader
+            icon={Users}
+            color="#10b981"
+            title={isAr ? "تقارير الزباين" : "Customer Reports"}
+            subtitle={isAr ? "ملخص المبيعات حسب الزبون" : "Sales summary by customer"}
+            actions={
+              <DownloadButtons
+                onPdf={() => {
                   if (!customerReportRows.length) {
                     toast.info(copy.reports.pdfNoData);
                     return;
                   }
-
-                  const customerRangeText =
+                  const rangeText =
                     customerFromDate || customerToDate
-                      ? `${customerFromDate || "-"} ${isArabic ? "إلى" : "to"} ${customerToDate || "-"}`
-                      : isArabic
-                        ? "كل الفترات"
-                        : "All dates";
-
+                      ? `${customerFromDate || "-"} ${isAr ? "إلى" : "to"} ${customerToDate || "-"}`
+                      : isAr
+                      ? "كل الفترات"
+                      : "All dates";
                   exportPdfTable(
-                    isArabic ? "تقرير الزباين" : "Customer report",
+                    isAr ? "تقرير الزباين" : "Customer Report",
                     [
-                      `${reportText.period}: ${customerRangeText}`,
-                      `${isArabic ? "عدد الزباين" : "Customers"}: ${customerReportRows.length}`,
-                      `${isArabic ? "عدد عمليات البيع" : "Sales"}: ${filteredSales.length}`,
-                      `${isArabic ? "إجمالي المبيعات" : "Total sales"}: ${customerReportRows
-                        .reduce((sum, row) => sum + row.totalAmount, 0)
-                        .toLocaleString()}`,
+                      `${t.period}: ${rangeText}`,
+                      `${isAr ? "عدد الزباين" : "Customers"}: ${customerReportRows.length}`,
+                      `${isAr ? "عدد عمليات البيع" : "Sales"}: ${filteredSales.length}`,
+                      `${isAr ? "إجمالي المبيعات" : "Total sales"}: ₪${customerReportRows.reduce((s, r) => s + r.totalAmount, 0).toLocaleString()}`,
                     ],
                     [
-                      isArabic ? "الزبون" : "Customer",
-                      isArabic ? "العمليات" : "Sales",
-                      isArabic ? "الإجمالي" : "Total",
-                      isArabic ? "آخر بيع" : "Last sale",
+                      isAr ? "الزبون" : "Customer",
+                      isAr ? "العمليات" : "Sales",
+                      isAr ? "الإجمالي" : "Total",
+                      isAr ? "آخر بيع" : "Last Sale",
                     ],
-                    customerReportRows.map((row) => [
-                      row.customerName,
-                      String(row.salesCount),
-                      row.totalAmount.toLocaleString(),
-                      row.lastSaleDate ? row.lastSaleDate.slice(0, 10) : "-",
+                    customerReportRows.map((r) => [
+                      r.customerName,
+                      String(r.salesCount),
+                      `₪${r.totalAmount.toLocaleString()}`,
+                      r.lastSaleDate ? r.lastSaleDate.slice(0, 10) : "-",
                     ]),
-                    `customer-report-${new Date().toISOString().slice(0, 10)}.pdf`,
+                    `customer-report-${new Date().toISOString().slice(0, 10)}.pdf`
                   );
                 }}
-              >
-                <Download
-                  className="reports-download-icon"
-                  aria-hidden="true"
-                />
-                {copy.reports.downloadPdf}
-              </button>
-              <button
-                type="button"
-                className="auth-button auth-button--ghost reports-download-button"
-                dir="ltr"
-                onClick={() => {
+                onExcel={() => {
                   if (!customerReportRows.length) {
                     toast.info(copy.reports.pdfNoData);
                     return;
                   }
                   exportExcelTable(
-                    [isArabic ? "الزبون" : "Customer", isArabic ? "العمليات" : "Sales", isArabic ? "الإجمالي" : "Total", isArabic ? "آخر بيع" : "Last sale"],
-                    customerReportRows.map((row) => [row.customerName, String(row.salesCount), row.totalAmount.toLocaleString(), row.lastSaleDate ? row.lastSaleDate.slice(0, 10) : "-"]),
-                    `customer-report-${new Date().toISOString().slice(0, 10)}.xlsx`,
+                    [
+                      isAr ? "الزبون" : "Customer",
+                      isAr ? "العمليات" : "Sales",
+                      isAr ? "الإجمالي" : "Total",
+                      isAr ? "آخر بيع" : "Last Sale",
+                    ],
+                    customerReportRows.map((r) => [
+                      r.customerName,
+                      String(r.salesCount),
+                      `₪${r.totalAmount.toLocaleString()}`,
+                      r.lastSaleDate ? r.lastSaleDate.slice(0, 10) : "-",
+                    ]),
+                    `customer-report-${new Date().toISOString().slice(0, 10)}.xlsx`
                   );
                 }}
-              >
-                <FileSpreadsheet className="reports-download-icon" aria-hidden="true" />
-                {isArabic ? "Excel تنزيل" : "Download Excel"}
-              </button>
-            </div>
+              />
+            }
+          />
+
+          {/* Filter bar */}
+          <div
+            style={{
+              display: "flex",
+              flexWrap: "wrap",
+              gap: ".75rem",
+              alignItems: "flex-end",
+              padding: "1rem 1.25rem",
+              borderBottom: "1px solid var(--border-default)",
+            }}
+          >
+            <label
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: ".2rem",
+                fontSize: ".8rem",
+                fontWeight: 600,
+              }}
+            >
+              {isAr ? "من تاريخ" : "From date"}
+              <input
+                type="date"
+                style={{
+                  padding: ".35rem .6rem",
+                  borderRadius: 6,
+                  border: "1px solid var(--border-default)",
+                  fontSize: ".85rem",
+                  background: "var(--bg-card)",
+                  color: "var(--text-primary)",
+                }}
+                value={customerFromDate}
+                onChange={(e) => setCustomerFromDate(e.target.value)}
+              />
+            </label>
+            <label
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: ".2rem",
+                fontSize: ".8rem",
+                fontWeight: 600,
+              }}
+            >
+              {isAr ? "إلى تاريخ" : "To date"}
+              <input
+                type="date"
+                style={{
+                  padding: ".35rem .6rem",
+                  borderRadius: 6,
+                  border: "1px solid var(--border-default)",
+                  fontSize: ".85rem",
+                  background: "var(--bg-card)",
+                  color: "var(--text-primary)",
+                }}
+                value={customerToDate}
+                onChange={(e) => setCustomerToDate(e.target.value)}
+              />
+            </label>
+            <button
+              type="button"
+              className="auth-button auth-button--ghost"
+              style={{ alignSelf: "flex-end" }}
+              onClick={() => {
+                setCustomerFromDate("");
+                setCustomerToDate("");
+              }}
+            >
+              {isAr ? "إعادة تعيين" : "Reset"}
+            </button>
           </div>
-          <div className="module-report-grid">
-            <div className="module-report-card">
-              <span>{isArabic ? "عدد الزباين" : "Customers"}</span>
-              <strong>{customerReportRows.length}</strong>
-            </div>
-            <div className="module-report-card">
-              <span>{isArabic ? "إجمالي المبيعات" : "Total sales"}</span>
-              <strong>
-                {customerReportRows
-                  .reduce((sum, row) => sum + row.totalAmount, 0)
-                  .toLocaleString()}
-              </strong>
-            </div>
-            <div className="module-report-card">
-              <span>{isArabic ? "عدد عمليات البيع" : "Sales"}</span>
-              <strong>{filteredSales.length}</strong>
-            </div>
-          </div>
-          <TableShell className="mt-4">
+
+          {/* KPI cards */}
+          <KpiGrid>
+            <KpiCard
+              label={isAr ? "عدد الزباين" : "Customers"}
+              value={customerReportRows.length}
+              gradient="linear-gradient(135deg,#10b981,#059669)"
+            />
+            <KpiCard
+              label={isAr ? "عدد عمليات البيع" : "Sale Operations"}
+              value={filteredSales.length}
+              gradient="linear-gradient(135deg,#34d399,#10b981)"
+            />
+            <KpiCard
+              label={isAr ? "إجمالي المبيعات" : "Total Sales"}
+              value={`₪${customerReportRows.reduce((s, r) => s + r.totalAmount, 0).toLocaleString()}`}
+              gradient="linear-gradient(135deg,#059669,#047857)"
+            />
+          </KpiGrid>
+
+          <TableShell className="mt-0">
             <TableBase className="admin-table">
               <thead>
                 <tr>
-                  <th>{isArabic ? "الزبون" : "Customer"}</th>
-                  <th>{isArabic ? "العمليات" : "Sales"}</th>
-                  <th>{isArabic ? "الإجمالي" : "Total"}</th>
-                  <th>{isArabic ? "آخر بيع" : "Last sale"}</th>
+                  <th>{isAr ? "الزبون" : "Customer"}</th>
+                  <th>{isAr ? "العمليات" : "Sales"}</th>
+                  <th>{isAr ? "الإجمالي" : "Total"}</th>
+                  <th>{isAr ? "آخر بيع" : "Last Sale"}</th>
                 </tr>
               </thead>
               <tbody>
@@ -1001,176 +1529,151 @@ export function ReportsPage() {
                   <tr key={row.customerId}>
                     <td>{row.customerName}</td>
                     <td>{row.salesCount}</td>
-                    <td>{row.totalAmount.toLocaleString()}</td>
+                    <td>₪{row.totalAmount.toLocaleString()}</td>
                     <td>
                       {row.lastSaleDate ? row.lastSaleDate.slice(0, 10) : "-"}
                     </td>
                   </tr>
                 ))}
+                {customerReportRows.length === 0 && (
+                  <tr>
+                    <td
+                      colSpan={4}
+                      style={{ textAlign: "center", color: "var(--text-secondary)", padding: "1.5rem" }}
+                    >
+                      {isAr ? "لا توجد بيانات" : "No data"}
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </TableBase>
           </TableShell>
-        </article>
+        </Card>
+      )}
 
-        <article className="module-panel module-panel--full">
-          <h2>{copy.reports.dailyProduction}</h2>
-          <div className="module-form module-form--inline">
-            <label>
-              {copy.reports.period}
-              <select
-                value={productionFilters.period}
-                onChange={(event) =>
-                  setProductionFilters((prev) => ({
-                    ...prev,
-                    period: event.target.value as ReportPeriod,
-                  }))
-                }
-              >
-                <option value="daily">{copy.reports.day}</option>
-                <option value="weekly">{copy.reports.week}</option>
-                <option value="monthly">{copy.reports.month}</option>
-                <option value="yearly">{copy.reports.year}</option>
-              </select>
-            </label>
-            {(productionFilters.period === "daily" ||
-              productionFilters.period === "weekly") && (
-              <label>
-                {copy.reports.day}
-                <input
-                  type="date"
-                  value={productionFilters.date}
-                  onChange={(event) =>
-                    setProductionFilters((prev) => ({
-                      ...prev,
-                      date: event.target.value,
-                    }))
+      {/* ════════════════════════════════════════════════════════════════
+          PRODUCTION TAB
+      ════════════════════════════════════════════════════════════════ */}
+      {activeTab === "production" && (
+        <Card className="overflow-hidden">
+          <SectionHeader
+            icon={Factory}
+            color="#8b5cf6"
+            title={copy.reports.dailyProduction}
+            subtitle={
+              isAr
+                ? "سجلات الإنتاج حسب الفترة"
+                : "Production records by period"
+            }
+            actions={
+              <DownloadButtons
+                onPdf={() => {
+                  if (!productionActivity) {
+                    toast.info(copy.reports.pdfNoData);
+                    return;
                   }
-                />
-              </label>
-            )}
-            {productionFilters.period === "monthly" && (
-              <label>
-                {copy.reports.month}
-                <input
-                  type="month"
-                  value={productionFilters.month}
-                  onChange={(event) =>
-                    setProductionFilters((prev) => ({
-                      ...prev,
-                      month: event.target.value,
-                    }))
+                  exportPdfTable(
+                    copy.reports.dailyProduction,
+                    [
+                      `${t.period}: ${productionActivity.rangeStart.slice(0, 10)} ${isAr ? "إلى" : "to"} ${productionActivity.rangeEnd.slice(0, 10)} (${productionActivity.period})`,
+                      `${t.records}: ${productionActivity.totals.recordsCount}`,
+                      `${t.cartons}: ${productionActivity.totals.totalCartons}`,
+                      `${t.pieces}: ${productionActivity.totals.totalPieces}`,
+                      `${isAr ? "دقائق التوقف" : "Downtime minutes"}: ${productionActivity.totals.totalDowntimeMinutes}`,
+                    ],
+                    [t.date, t.machine, t.shift, t.user, t.cartons, t.pieces],
+                    productionActivity.records.map((r) => [
+                      r.createdAt.slice(0, 10),
+                      r.machineName,
+                      r.shiftName,
+                      r.userName,
+                      String(r.cartonsCount),
+                      String(r.totalPieces),
+                    ]),
+                    `production-${productionActivity.label}.pdf`
+                  );
+                }}
+                onExcel={() => {
+                  if (!productionActivity) {
+                    toast.info(copy.reports.pdfNoData);
+                    return;
                   }
-                />
-              </label>
-            )}
-            {productionFilters.period === "yearly" && (
-              <label>
-                {copy.reports.year}
-                <input
-                  type="number"
-                  min={2000}
-                  max={9999}
-                  value={productionFilters.year}
-                  onChange={(event) =>
-                    setProductionFilters((prev) => ({
-                      ...prev,
-                      year: event.target.value,
-                    }))
-                  }
-                />
-              </label>
-            )}
-            <button
-              type="button"
-              className="auth-button"
-              onClick={() =>
-                void loadActivityReport(
-                  "/reports/production/activity",
-                  setProductionActivity,
-                  "productionActivity",
-                  productionFilters,
-                  "Failed to load production activity report",
-                )
-              }
-            >
-              {copy.load}
-            </button>
-            <button
-              type="button"
-              className="auth-button auth-button--ghost reports-download-button"
-              dir="ltr"
-              onClick={() => {
-                if (!productionActivity) {
-                  toast.info(copy.reports.pdfNoData);
-                  return;
-                }
+                  exportExcelTable(
+                    [t.date, t.machine, t.shift, t.user, t.cartons, t.pieces],
+                    productionActivity.records.map((r) => [
+                      r.createdAt.slice(0, 10),
+                      r.machineName,
+                      r.shiftName,
+                      r.userName,
+                      String(r.cartonsCount),
+                      String(r.totalPieces),
+                    ]),
+                    `production-${productionActivity.label}.xlsx`
+                  );
+                }}
+              />
+            }
+          />
 
-                exportPdfTable(
-                  copy.reports.dailyProduction,
-                  [
-                    `${reportText.period}: ${productionActivity.rangeStart.slice(0, 10)} ${isArabic ? "إلى" : "to"} ${productionActivity.rangeEnd.slice(0, 10)} (${productionActivity.period})`,
-                    `${reportText.records}: ${productionActivity.totals.recordsCount}`,
-                    `${reportText.cartons}: ${productionActivity.totals.totalCartons}`,
-                    `${reportText.pieces}: ${productionActivity.totals.totalPieces}`,
-                    `${isArabic ? "دقائق التوقف" : "Downtime minutes"}: ${productionActivity.totals.totalDowntimeMinutes}`,
-                  ],
-                  [
-                    reportText.date,
-                    reportText.machine,
-                    reportText.shift,
-                    reportText.user,
-                    reportText.cartons,
-                    reportText.pieces,
-                  ],
-                  productionActivity.records.map((row) => [
-                    row.createdAt.slice(0, 10),
-                    row.machineName,
-                    row.shiftName,
-                    row.userName,
-                    String(row.cartonsCount),
-                    String(row.totalPieces),
-                  ]),
-                  `production-${productionActivity.label}.pdf`,
-                );
-              }}
-            >
-              <Download className="reports-download-icon" aria-hidden="true" />
-              {copy.reports.downloadPdf}
-            </button>
-            <button
-              type="button"
-              className="auth-button auth-button--ghost reports-download-button"
-              dir="ltr"
-              onClick={() => {
-                if (!productionActivity) {
-                  toast.info(copy.reports.pdfNoData);
-                  return;
-                }
-                exportExcelTable(
-                  [reportText.date, reportText.machine, reportText.shift, reportText.user, reportText.cartons, reportText.pieces],
-                  productionActivity.records.map((row) => [row.createdAt.slice(0, 10), row.machineName, row.shiftName, row.userName, String(row.cartonsCount), String(row.totalPieces)]),
-                  `production-${productionActivity.label}.xlsx`,
-                );
-              }}
-            >
-              <FileSpreadsheet className="reports-download-icon" aria-hidden="true" />
-              {isArabic ? "Excel تنزيل" : "Download Excel"}
-            </button>
-          </div>
-          {loadingSection === "productionActivity" ? (
-            <p>{copy.reports.loadingDaily}</p>
-          ) : null}
-          {productionActivity ? (
-            <TableShell>
+          <PeriodFilterBar
+            filters={productionFilters}
+            setFilters={setProductionFilters}
+            isAr={isAr}
+            copy={copy}
+            loading={loadingSection === "productionActivity"}
+            onLoad={() =>
+              void loadActivityReport(
+                "/reports/production/activity",
+                setProductionActivity,
+                "productionActivity",
+                productionFilters,
+                "Failed to load production activity report"
+              )
+            }
+          />
+
+          {productionActivity && (
+            <KpiGrid>
+              <KpiCard
+                label={t.records}
+                value={productionActivity.totals.recordsCount}
+                gradient="linear-gradient(135deg,#8b5cf6,#7c3aed)"
+              />
+              <KpiCard
+                label={t.cartons}
+                value={productionActivity.totals.totalCartons.toLocaleString()}
+                gradient="linear-gradient(135deg,#a78bfa,#8b5cf6)"
+              />
+              <KpiCard
+                label={t.pieces}
+                value={productionActivity.totals.totalPieces.toLocaleString()}
+                gradient="linear-gradient(135deg,#7c3aed,#6d28d9)"
+              />
+              <KpiCard
+                label={isAr ? "دقائق التوقف" : "Downtime (min)"}
+                value={productionActivity.totals.totalDowntimeMinutes}
+                gradient="linear-gradient(135deg,#6d28d9,#5b21b6)"
+              />
+            </KpiGrid>
+          )}
+
+          {loadingSection === "productionActivity" && (
+            <p style={{ padding: "1rem 1.25rem", color: "var(--text-muted)" }}>
+              {copy.reports.loadingDaily}
+            </p>
+          )}
+
+          {productionActivity && (
+            <TableShell className="mt-0">
               <TableBase className="admin-table">
                 <thead>
                   <tr>
-                    <th>Date</th>
-                    <th>Machine</th>
-                    <th>Shift</th>
-                    <th>User</th>
-                    <th>Cartons</th>
-                    <th>Pieces</th>
+                    <th>{t.date}</th>
+                    <th>{t.machine}</th>
+                    <th>{t.shift}</th>
+                    <th>{t.user}</th>
+                    <th>{t.cartons}</th>
+                    <th>{t.pieces}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1187,164 +1690,124 @@ export function ReportsPage() {
                 </tbody>
               </TableBase>
             </TableShell>
-          ) : null}
-        </article>
+          )}
+        </Card>
+      )}
 
-        <article className="module-panel module-panel--full">
-          <h2>{copy.reports.inventoryActivity}</h2>
-          <div className="module-form module-form--inline">
-            <label>
-              {copy.reports.period}
-              <select
-                value={inventoryFilters.period}
-                onChange={(event) =>
-                  setInventoryFilters((prev) => ({
-                    ...prev,
-                    period: event.target.value as ReportPeriod,
-                  }))
-                }
-              >
-                <option value="daily">{copy.reports.day}</option>
-                <option value="weekly">{copy.reports.week}</option>
-                <option value="monthly">{copy.reports.month}</option>
-                <option value="yearly">{copy.reports.year}</option>
-              </select>
-            </label>
-            {(inventoryFilters.period === "daily" ||
-              inventoryFilters.period === "weekly") && (
-              <label>
-                {copy.reports.day}
-                <input
-                  type="date"
-                  value={inventoryFilters.date}
-                  onChange={(event) =>
-                    setInventoryFilters((prev) => ({
-                      ...prev,
-                      date: event.target.value,
-                    }))
+      {/* ════════════════════════════════════════════════════════════════
+          INVENTORY (RAW MATERIALS) TAB
+      ════════════════════════════════════════════════════════════════ */}
+      {activeTab === "inventory" && (
+        <Card className="overflow-hidden">
+          <SectionHeader
+            icon={Package}
+            color="#f97316"
+            title={copy.reports.inventoryActivity}
+            subtitle={
+              isAr
+                ? "حركة المواد الخام حسب الفترة"
+                : "Raw material movements by period"
+            }
+            actions={
+              <DownloadButtons
+                onPdf={() => {
+                  if (!inventoryActivity) {
+                    toast.info(copy.reports.pdfNoData);
+                    return;
                   }
-                />
-              </label>
-            )}
-            {inventoryFilters.period === "monthly" && (
-              <label>
-                {copy.reports.month}
-                <input
-                  type="month"
-                  value={inventoryFilters.month}
-                  onChange={(event) =>
-                    setInventoryFilters((prev) => ({
-                      ...prev,
-                      month: event.target.value,
-                    }))
+                  exportPdfTable(
+                    copy.reports.inventoryActivity,
+                    [
+                      `${t.period}: ${inventoryActivity.rangeStart.slice(0, 10)} ${isAr ? "إلى" : "to"} ${inventoryActivity.rangeEnd.slice(0, 10)} (${inventoryActivity.period})`,
+                      `${t.records}: ${inventoryActivity.totals.recordsCount}`,
+                      `${isAr ? "الوارد" : "IN"}: ${inventoryActivity.totals.inCount} (${inventoryActivity.totals.totalInQuantity})`,
+                      `${isAr ? "الصادر" : "OUT"}: ${inventoryActivity.totals.outCount} (${inventoryActivity.totals.totalOutQuantity})`,
+                    ],
+                    [t.date, t.material, t.type, t.qty, t.reference],
+                    inventoryActivity.records.map((r) => [
+                      r.createdAt.slice(0, 10),
+                      r.materialName,
+                      r.type,
+                      `${r.quantity} ${r.materialUnit}`,
+                      r.referenceType,
+                    ]),
+                    `inventory-${inventoryActivity.label}.pdf`
+                  );
+                }}
+                onExcel={() => {
+                  if (!inventoryActivity) {
+                    toast.info(copy.reports.pdfNoData);
+                    return;
                   }
-                />
-              </label>
-            )}
-            {inventoryFilters.period === "yearly" && (
-              <label>
-                {copy.reports.year}
-                <input
-                  type="number"
-                  min={2000}
-                  max={9999}
-                  value={inventoryFilters.year}
-                  onChange={(event) =>
-                    setInventoryFilters((prev) => ({
-                      ...prev,
-                      year: event.target.value,
-                    }))
-                  }
-                />
-              </label>
-            )}
-            <button
-              type="button"
-              className="auth-button"
-              onClick={() =>
-                void loadActivityReport(
-                  "/reports/inventory/activity",
-                  setInventoryActivity,
-                  "inventoryActivity",
-                  inventoryFilters,
-                  "Failed to load inventory activity report",
-                )
-              }
-            >
-              {copy.load}
-            </button>
-            <button
-              type="button"
-              className="auth-button auth-button--ghost reports-download-button"
-              dir="ltr"
-              onClick={() => {
-                if (!inventoryActivity) {
-                  toast.info(copy.reports.pdfNoData);
-                  return;
-                }
+                  exportExcelTable(
+                    [t.date, t.material, t.type, t.qty, t.reference],
+                    inventoryActivity.records.map((r) => [
+                      r.createdAt.slice(0, 10),
+                      r.materialName,
+                      r.type,
+                      `${r.quantity} ${r.materialUnit}`,
+                      r.referenceType,
+                    ]),
+                    `inventory-${inventoryActivity.label}.xlsx`
+                  );
+                }}
+              />
+            }
+          />
 
-                exportPdfTable(
-                  copy.reports.inventoryActivity,
-                  [
-                    `${reportText.period}: ${inventoryActivity.rangeStart.slice(0, 10)} ${isArabic ? "إلى" : "to"} ${inventoryActivity.rangeEnd.slice(0, 10)} (${inventoryActivity.period})`,
-                    `${reportText.records}: ${inventoryActivity.totals.recordsCount}`,
-                    `${isArabic ? "الوارد" : "IN"}: ${inventoryActivity.totals.inCount} (${inventoryActivity.totals.totalInQuantity})`,
-                    `${isArabic ? "الصادر" : "OUT"}: ${inventoryActivity.totals.outCount} (${inventoryActivity.totals.totalOutQuantity})`,
-                  ],
-                  [
-                    reportText.date,
-                    reportText.material,
-                    reportText.type,
-                    reportText.qty,
-                    reportText.reference,
-                  ],
-                  inventoryActivity.records.map((row) => [
-                    row.createdAt.slice(0, 10),
-                    row.materialName,
-                    row.type,
-                    `${row.quantity} ${row.materialUnit}`,
-                    row.referenceType,
-                  ]),
-                  `inventory-${inventoryActivity.label}.pdf`,
-                );
-              }}
-            >
-              <Download className="reports-download-icon" aria-hidden="true" />
-              {copy.reports.downloadPdf}
-            </button>
-            <button
-              type="button"
-              className="auth-button auth-button--ghost reports-download-button"
-              dir="ltr"
-              onClick={() => {
-                if (!inventoryActivity) {
-                  toast.info(copy.reports.pdfNoData);
-                  return;
-                }
-                exportExcelTable(
-                  [reportText.date, reportText.material, reportText.type, reportText.qty, reportText.reference],
-                  inventoryActivity.records.map((row) => [row.createdAt.slice(0, 10), row.materialName, row.type, `${row.quantity} ${row.materialUnit}`, row.referenceType]),
-                  `inventory-${inventoryActivity.label}.xlsx`,
-                );
-              }}
-            >
-              <FileSpreadsheet className="reports-download-icon" aria-hidden="true" />
-              {isArabic ? "Excel تنزيل" : "Download Excel"}
-            </button>
-          </div>
-          {loadingSection === "inventoryActivity" ? (
-            <p>{copy.reports.loadingInventoryActivity}</p>
-          ) : null}
-          {inventoryActivity ? (
-            <TableShell>
+          <PeriodFilterBar
+            filters={inventoryFilters}
+            setFilters={setInventoryFilters}
+            isAr={isAr}
+            copy={copy}
+            loading={loadingSection === "inventoryActivity"}
+            onLoad={() =>
+              void loadActivityReport(
+                "/reports/inventory/activity",
+                setInventoryActivity,
+                "inventoryActivity",
+                inventoryFilters,
+                "Failed to load inventory activity report"
+              )
+            }
+          />
+
+          {inventoryActivity && (
+            <KpiGrid>
+              <KpiCard
+                label={t.records}
+                value={inventoryActivity.totals.recordsCount}
+                gradient="linear-gradient(135deg,#f97316,#ea580c)"
+              />
+              <KpiCard
+                label={isAr ? "الوارد" : "IN"}
+                value={`${inventoryActivity.totals.inCount} (${inventoryActivity.totals.totalInQuantity.toLocaleString()})`}
+                gradient="linear-gradient(135deg,#fb923c,#f97316)"
+              />
+              <KpiCard
+                label={isAr ? "الصادر" : "OUT"}
+                value={`${inventoryActivity.totals.outCount} (${inventoryActivity.totals.totalOutQuantity.toLocaleString()})`}
+                gradient="linear-gradient(135deg,#ea580c,#c2410c)"
+              />
+            </KpiGrid>
+          )}
+
+          {loadingSection === "inventoryActivity" && (
+            <p style={{ padding: "1rem 1.25rem", color: "var(--text-muted)" }}>
+              {copy.reports.loadingInventoryActivity}
+            </p>
+          )}
+
+          {inventoryActivity && (
+            <TableShell className="mt-0">
               <TableBase className="admin-table">
                 <thead>
                   <tr>
-                    <th>Date</th>
-                    <th>Material</th>
-                    <th>Type</th>
-                    <th>Qty</th>
-                    <th>Reference</th>
+                    <th>{t.date}</th>
+                    <th>{t.material}</th>
+                    <th>{t.type}</th>
+                    <th>{t.qty}</th>
+                    <th>{t.reference}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1360,170 +1823,194 @@ export function ReportsPage() {
                 </tbody>
               </TableBase>
             </TableShell>
-          ) : null}
-        </article>
+          )}
 
-        <article className="module-panel module-panel--full">
-          <h2>{copy.reports.attendanceActivity}</h2>
-          <div className="module-form module-form--inline">
-            <label>
-              {copy.reports.period}
-              <select
-                value={attendanceFilters.period}
-                onChange={(event) =>
-                  setAttendanceFilters((prev) => ({
-                    ...prev,
-                    period: event.target.value as ReportPeriod,
-                  }))
-                }
+          {/* Inventory snapshot sub-section */}
+          <div
+            style={{
+              borderTop: "1px solid var(--border-default)",
+              padding: "1rem 1.25rem",
+            }}
+          >
+            <h3
+              style={{
+                margin: "0 0 .75rem",
+                fontSize: ".9rem",
+                fontWeight: 700,
+              }}
+            >
+              {copy.reports.inventorySnapshot}
+            </h3>
+            <form
+              style={{ display: "flex", gap: ".75rem", flexWrap: "wrap", alignItems: "flex-end", marginBottom: ".75rem" }}
+              onSubmit={loadInventorySnapshot}
+            >
+              <label
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: ".2rem",
+                  fontSize: ".8rem",
+                  fontWeight: 600,
+                }}
               >
-                <option value="daily">{copy.reports.day}</option>
-                <option value="weekly">{copy.reports.week}</option>
-                <option value="monthly">{copy.reports.month}</option>
-                <option value="yearly">{copy.reports.year}</option>
-              </select>
-            </label>
-            {(attendanceFilters.period === "daily" ||
-              attendanceFilters.period === "weekly") && (
-              <label>
-                {copy.reports.day}
-                <input
-                  type="date"
-                  value={attendanceFilters.date}
-                  onChange={(event) =>
-                    setAttendanceFilters((prev) => ({
-                      ...prev,
-                      date: event.target.value,
-                    }))
-                  }
-                />
-              </label>
-            )}
-            {attendanceFilters.period === "monthly" && (
-              <label>
-                {copy.reports.month}
-                <input
-                  type="month"
-                  value={attendanceFilters.month}
-                  onChange={(event) =>
-                    setAttendanceFilters((prev) => ({
-                      ...prev,
-                      month: event.target.value,
-                    }))
-                  }
-                />
-              </label>
-            )}
-            {attendanceFilters.period === "yearly" && (
-              <label>
-                {copy.reports.year}
+                {copy.reports.threshold}
                 <input
                   type="number"
-                  min={2000}
-                  max={9999}
-                  value={attendanceFilters.year}
-                  onChange={(event) =>
-                    setAttendanceFilters((prev) => ({
-                      ...prev,
-                      year: event.target.value,
-                    }))
-                  }
+                  min={0}
+                  step="0.01"
+                  style={{
+                    padding: ".35rem .6rem",
+                    borderRadius: 6,
+                    border: "1px solid var(--border-default)",
+                    fontSize: ".85rem",
+                    background: "var(--bg-card)",
+                    color: "var(--text-primary)",
+                    width: 120,
+                  }}
+                  value={inventoryThreshold}
+                  onChange={(e) => setInventoryThreshold(e.target.value)}
                 />
               </label>
+              <button
+                type="submit"
+                className="auth-button"
+                style={{ alignSelf: "flex-end" }}
+              >
+                {copy.load}
+              </button>
+            </form>
+            {loadingSection === "inventory" && (
+              <p style={{ color: "var(--text-muted)" }}>
+                {copy.reports.loadingInventory}
+              </p>
             )}
-            <button
-              type="button"
-              className="auth-button"
-              onClick={() =>
-                void loadActivityReport(
-                  "/reports/attendance/activity",
-                  setAttendanceActivity,
-                  "attendanceActivity",
-                  attendanceFilters,
-                  "Failed to load attendance report",
-                )
-              }
-            >
-              {copy.load}
-            </button>
-            <button
-              type="button"
-              className="auth-button auth-button--ghost reports-download-button"
-              dir="ltr"
-              onClick={() => {
-                if (!attendanceActivity) {
-                  toast.info(copy.reports.pdfNoData);
-                  return;
-                }
-
-                exportPdfTable(
-                  copy.reports.attendanceActivity,
-                  [
-                    `${reportText.period}: ${attendanceActivity.rangeStart.slice(0, 10)} ${isArabic ? "إلى" : "to"} ${attendanceActivity.rangeEnd.slice(0, 10)} (${attendanceActivity.period})`,
-                    `${reportText.records}: ${attendanceActivity.totals.recordsCount}`,
-                    `${isArabic ? "الغياب" : "Absent"}: ${attendanceActivity.totals.absentCount}`,
-                    `${isArabic ? "دقائق التأخير" : "Late minutes"}: ${attendanceActivity.totals.totalLateMinutes}`,
-                    `${isArabic ? "دقائق الإضافي" : "Overtime minutes"}: ${attendanceActivity.totals.totalOvertimeMinutes}`,
-                  ],
-                  [
-                    reportText.user,
-                    reportText.shift,
-                    reportText.checkIn,
-                    reportText.checkOut,
-                    reportText.late,
-                    reportText.overtime,
-                  ],
-                  attendanceActivity.records.map((row) => [
-                    row.userName,
-                    row.shiftName ?? "-",
-                    row.checkIn.replace("T", " ").slice(0, 16),
-                    row.checkOut
-                      ? row.checkOut.replace("T", " ").slice(0, 16)
-                      : "-",
-                    String(row.lateMinutes),
-                    String(row.overtimeMinutes),
-                  ]),
-                  `attendance-${attendanceActivity.label}.pdf`,
-                );
-              }}
-            >
-              <Download className="reports-download-icon" aria-hidden="true" />
-              {copy.reports.downloadPdf}
-            </button>
-            <button
-              type="button"
-              className="auth-button auth-button--ghost reports-download-button"
-              dir="ltr"
-              onClick={() => {
-                if (!attendanceActivity) {
-                  toast.info(copy.reports.pdfNoData);
-                  return;
-                }
-                exportExcelTable(
-                  [reportText.user, reportText.shift, reportText.checkIn, reportText.checkOut, reportText.late, reportText.overtime],
-                  attendanceActivity.records.map((row) => [row.userName, row.shiftName ?? "-", row.checkIn.replace("T", " ").slice(0, 16), row.checkOut ? row.checkOut.replace("T", " ").slice(0, 16) : "-", String(row.lateMinutes), String(row.overtimeMinutes)]),
-                  `attendance-${attendanceActivity.label}.xlsx`,
-                );
-              }}
-            >
-              <FileSpreadsheet className="reports-download-icon" aria-hidden="true" />
-              {isArabic ? "Excel تنزيل" : "Download Excel"}
-            </button>
+            <ReportView data={inventorySnapshot} copy={copy} />
           </div>
-          {loadingSection === "attendanceActivity" ? (
-            <p>{copy.reports.loadingAttendanceActivity}</p>
-          ) : null}
-          {attendanceActivity ? (
-            <TableShell>
+        </Card>
+      )}
+
+      {/* ════════════════════════════════════════════════════════════════
+          ATTENDANCE TAB
+      ════════════════════════════════════════════════════════════════ */}
+      {activeTab === "attendance" && (
+        <Card className="overflow-hidden">
+          <SectionHeader
+            icon={UserCheck}
+            color="#06b6d4"
+            title={copy.reports.attendanceActivity}
+            subtitle={
+              isAr ? "سجلات الحضور والغياب" : "Attendance and absence records"
+            }
+            actions={
+              <DownloadButtons
+                onPdf={() => {
+                  if (!attendanceActivity) {
+                    toast.info(copy.reports.pdfNoData);
+                    return;
+                  }
+                  exportPdfTable(
+                    copy.reports.attendanceActivity,
+                    [
+                      `${t.period}: ${attendanceActivity.rangeStart.slice(0, 10)} ${isAr ? "إلى" : "to"} ${attendanceActivity.rangeEnd.slice(0, 10)} (${attendanceActivity.period})`,
+                      `${t.records}: ${attendanceActivity.totals.recordsCount}`,
+                      `${isAr ? "الغياب" : "Absent"}: ${attendanceActivity.totals.absentCount}`,
+                      `${isAr ? "دقائق التأخير" : "Late minutes"}: ${attendanceActivity.totals.totalLateMinutes}`,
+                      `${isAr ? "دقائق الإضافي" : "OT minutes"}: ${attendanceActivity.totals.totalOvertimeMinutes}`,
+                    ],
+                    [t.user, t.shift, t.checkIn, t.checkOut, t.late, t.overtime],
+                    attendanceActivity.records.map((r) => [
+                      r.userName,
+                      r.shiftName ?? "-",
+                      r.checkIn.replace("T", " ").slice(0, 16),
+                      r.checkOut ? r.checkOut.replace("T", " ").slice(0, 16) : "-",
+                      String(r.lateMinutes),
+                      String(r.overtimeMinutes),
+                    ]),
+                    `attendance-${attendanceActivity.label}.pdf`
+                  );
+                }}
+                onExcel={() => {
+                  if (!attendanceActivity) {
+                    toast.info(copy.reports.pdfNoData);
+                    return;
+                  }
+                  exportExcelTable(
+                    [t.user, t.shift, t.checkIn, t.checkOut, t.late, t.overtime],
+                    attendanceActivity.records.map((r) => [
+                      r.userName,
+                      r.shiftName ?? "-",
+                      r.checkIn.replace("T", " ").slice(0, 16),
+                      r.checkOut ? r.checkOut.replace("T", " ").slice(0, 16) : "-",
+                      String(r.lateMinutes),
+                      String(r.overtimeMinutes),
+                    ]),
+                    `attendance-${attendanceActivity.label}.xlsx`
+                  );
+                }}
+              />
+            }
+          />
+
+          <PeriodFilterBar
+            filters={attendanceFilters}
+            setFilters={setAttendanceFilters}
+            isAr={isAr}
+            copy={copy}
+            loading={loadingSection === "attendanceActivity"}
+            onLoad={() =>
+              void loadActivityReport(
+                "/reports/attendance/activity",
+                setAttendanceActivity,
+                "attendanceActivity",
+                attendanceFilters,
+                "Failed to load attendance report"
+              )
+            }
+          />
+
+          {attendanceActivity && (
+            <KpiGrid>
+              <KpiCard
+                label={t.records}
+                value={attendanceActivity.totals.recordsCount}
+                gradient="linear-gradient(135deg,#06b6d4,#0891b2)"
+              />
+              <KpiCard
+                label={isAr ? "الغياب" : "Absent"}
+                value={attendanceActivity.totals.absentCount}
+                gradient="linear-gradient(135deg,#22d3ee,#06b6d4)"
+              />
+              <KpiCard
+                label={isAr ? "دقائق التأخير" : "Late (min)"}
+                value={attendanceActivity.totals.totalLateMinutes.toLocaleString()}
+                gradient="linear-gradient(135deg,#0891b2,#0e7490)"
+              />
+              <KpiCard
+                label={isAr ? "دقائق الإضافي" : "OT (min)"}
+                value={attendanceActivity.totals.totalOvertimeMinutes.toLocaleString()}
+                gradient="linear-gradient(135deg,#0e7490,#155e75)"
+              />
+            </KpiGrid>
+          )}
+
+          {loadingSection === "attendanceActivity" && (
+            <p style={{ padding: "1rem 1.25rem", color: "var(--text-muted)" }}>
+              {copy.reports.loadingAttendanceActivity}
+            </p>
+          )}
+
+          {attendanceActivity && (
+            <TableShell className="mt-0">
               <TableBase className="admin-table">
                 <thead>
                   <tr>
-                    <th>User</th>
-                    <th>Shift</th>
-                    <th>Check In</th>
-                    <th>Check Out</th>
-                    <th>Late</th>
-                    <th>OT</th>
+                    <th>{t.user}</th>
+                    <th>{t.shift}</th>
+                    <th>{t.checkIn}</th>
+                    <th>{t.checkOut}</th>
+                    <th>{t.late}</th>
+                    <th>{t.overtime}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1544,223 +2031,193 @@ export function ReportsPage() {
                 </tbody>
               </TableBase>
             </TableShell>
-          ) : null}
-        </article>
+          )}
+        </Card>
+      )}
 
-        <article className="module-panel module-panel--full">
-          <h2>{copy.reports.payrollActivity}</h2>
-          <div className="module-form module-form--inline">
-            <label>
-              {copy.reports.period}
-              <select
-                value={payrollFilters.period}
-                onChange={(event) =>
-                  setPayrollFilters((prev) => ({
-                    ...prev,
-                    period: event.target.value as ReportPeriod,
-                  }))
-                }
-              >
-                <option value="daily">{copy.reports.day}</option>
-                <option value="weekly">{copy.reports.week}</option>
-                <option value="monthly">{copy.reports.month}</option>
-                <option value="yearly">{copy.reports.year}</option>
-              </select>
-            </label>
-            {(payrollFilters.period === "daily" ||
-              payrollFilters.period === "weekly") && (
-              <label>
-                {copy.reports.day}
-                <input
-                  type="date"
-                  value={payrollFilters.date}
-                  onChange={(event) =>
-                    setPayrollFilters((prev) => ({
-                      ...prev,
-                      date: event.target.value,
-                    }))
+      {/* ════════════════════════════════════════════════════════════════
+          PAYROLL TAB
+      ════════════════════════════════════════════════════════════════ */}
+      {activeTab === "payroll" && (
+        <Card className="overflow-hidden">
+          <SectionHeader
+            icon={DollarSign}
+            color="#ec4899"
+            title={copy.reports.payrollActivity}
+            subtitle={isAr ? "كشف الرواتب حسب الفترة" : "Payroll records by period"}
+            actions={
+              <DownloadButtons
+                onPdf={() => {
+                  if (!payrollActivity || !filteredPayrollRows.length) {
+                    toast.info(copy.reports.pdfNoData);
+                    return;
                   }
-                />
-              </label>
-            )}
-            {payrollFilters.period === "monthly" && (
-              <label>
-                {copy.reports.month}
-                <input
-                  type="month"
-                  value={payrollFilters.month}
-                  onChange={(event) =>
-                    setPayrollFilters((prev) => ({
-                      ...prev,
-                      month: event.target.value,
-                    }))
+                  exportPdfTable(
+                    copy.reports.payrollActivity,
+                    [
+                      `${t.period}: ${payrollActivity.rangeStart.slice(0, 10)} ${isAr ? "إلى" : "to"} ${payrollActivity.rangeEnd.slice(0, 10)} (${payrollActivity.period})`,
+                      `${isAr ? "نطاق التقرير" : "Report scope"}: ${payrollScopeLabel}`,
+                      `${isAr ? "عدد الأشخاص" : "People"}: ${filteredPayrollTotals.peopleCount}`,
+                      `${t.records}: ${filteredPayrollTotals.recordsCount}`,
+                      `${isAr ? "الراتب الأساسي" : "Base salary"}: ₪${filteredPayrollTotals.totalBaseSalary.toLocaleString()}`,
+                      `${isAr ? "بدل الإضافي" : "OT salary"}: ₪${filteredPayrollTotals.totalOvertimeSalary.toLocaleString()}`,
+                      `${isAr ? "إجمالي المدفوع" : "Total payout"}: ₪${filteredPayrollTotals.totalPayout.toLocaleString()}`,
+                    ],
+                    [t.user, t.month, t.hours, t.overtimeHours, t.total],
+                    filteredPayrollRows.map((r) => [
+                      r.userName,
+                      r.month,
+                      String(r.totalHours),
+                      String(r.overtimeHours),
+                      `₪${r.totalSalary.toLocaleString()}`,
+                    ]),
+                    `payroll-${payrollActivity.label}-${payrollScopeMode === "ALL" ? "all" : "person"}.pdf`
+                  );
+                }}
+                onExcel={() => {
+                  if (!payrollActivity || !filteredPayrollRows.length) {
+                    toast.info(copy.reports.pdfNoData);
+                    return;
                   }
-                />
-              </label>
-            )}
-            {payrollFilters.period === "yearly" && (
-              <label>
-                {copy.reports.year}
-                <input
-                  type="number"
-                  min={2000}
-                  max={9999}
-                  value={payrollFilters.year}
-                  onChange={(event) =>
-                    setPayrollFilters((prev) => ({
-                      ...prev,
-                      year: event.target.value,
-                    }))
-                  }
-                />
-              </label>
-            )}
-            <label>
-              {isArabic ? "نطاق التقرير" : "Report scope"}
-              <select
-                value={payrollScopeMode}
-                onChange={(event) =>
-                  setPayrollScopeMode(event.target.value as "ALL" | "PERSON")
-                }
-              >
-                <option value="ALL">{isArabic ? "الكل" : "All"}</option>
-                <option value="PERSON">
-                  {isArabic ? "شخص معيّن" : "Specific person"}
-                </option>
-              </select>
-            </label>
-            {payrollScopeMode === "PERSON" ? (
-              <label>
-                {isArabic ? "الموظف" : "Employee"}
-                <select
-                  value={payrollScopeUser}
-                  onChange={(event) => setPayrollScopeUser(event.target.value)}
+                  exportExcelTable(
+                    [t.user, t.month, t.hours, t.overtimeHours, t.total],
+                    filteredPayrollRows.map((r) => [
+                      r.userName,
+                      r.month,
+                      String(r.totalHours),
+                      String(r.overtimeHours),
+                      `₪${r.totalSalary.toLocaleString()}`,
+                    ]),
+                    `payroll-${payrollActivity.label}-${payrollScopeMode === "ALL" ? "all" : "person"}.xlsx`
+                  );
+                }}
+              />
+            }
+          />
+
+          <PeriodFilterBar
+            filters={payrollFilters}
+            setFilters={setPayrollFilters}
+            isAr={isAr}
+            copy={copy}
+            loading={loadingSection === "payrollActivity"}
+            onLoad={() =>
+              void loadActivityReport(
+                "/reports/payroll/activity",
+                setPayrollActivity,
+                "payrollActivity",
+                payrollFilters,
+                "Failed to load payroll report"
+              )
+            }
+            extra={
+              <>
+                <label
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: ".2rem",
+                    fontSize: ".8rem",
+                    fontWeight: 600,
+                  }}
                 >
-                  {payrollUsers.map((person) => (
-                    <option key={person.username} value={person.username}>
-                      {person.name}
+                  {isAr ? "نطاق التقرير" : "Report scope"}
+                  <select
+                    style={{
+                      padding: ".35rem .6rem",
+                      borderRadius: 6,
+                      border: "1px solid var(--border-default)",
+                      fontSize: ".85rem",
+                      background: "var(--bg-card)",
+                      color: "var(--text-primary)",
+                    }}
+                    value={payrollScopeMode}
+                    onChange={(e) =>
+                      setPayrollScopeMode(e.target.value as "ALL" | "PERSON")
+                    }
+                  >
+                    <option value="ALL">{isAr ? "الكل" : "All"}</option>
+                    <option value="PERSON">
+                      {isAr ? "شخص معيّن" : "Specific person"}
                     </option>
-                  ))}
-                </select>
-              </label>
-            ) : null}
-            <button
-              type="button"
-              className="auth-button"
-              onClick={() =>
-                void loadActivityReport(
-                  "/reports/payroll/activity",
-                  setPayrollActivity,
-                  "payrollActivity",
-                  payrollFilters,
-                  "Failed to load payroll report",
-                )
-              }
-            >
-              {copy.load}
-            </button>
-            <button
-              type="button"
-              className="auth-button auth-button--ghost reports-download-button"
-              dir="ltr"
-              onClick={() => {
-                if (!payrollActivity) {
-                  toast.info(copy.reports.pdfNoData);
-                  return;
-                }
+                  </select>
+                </label>
+                {payrollScopeMode === "PERSON" && (
+                  <label
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: ".2rem",
+                      fontSize: ".8rem",
+                      fontWeight: 600,
+                    }}
+                  >
+                    {isAr ? "الموظف" : "Employee"}
+                    <select
+                      style={{
+                        padding: ".35rem .6rem",
+                        borderRadius: 6,
+                        border: "1px solid var(--border-default)",
+                        fontSize: ".85rem",
+                        background: "var(--bg-card)",
+                        color: "var(--text-primary)",
+                      }}
+                      value={payrollScopeUser}
+                      onChange={(e) => setPayrollScopeUser(e.target.value)}
+                    >
+                      {payrollUsers.map((person) => (
+                        <option key={person.username} value={person.username}>
+                          {person.name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                )}
+              </>
+            }
+          />
 
-                if (!filteredPayrollRows.length) {
-                  toast.info(copy.reports.pdfNoData);
-                  return;
-                }
+          {payrollActivity && (
+            <KpiGrid>
+              <KpiCard
+                label={isAr ? "نطاق التقرير" : "Scope"}
+                value={payrollScopeLabel}
+                gradient="linear-gradient(135deg,#ec4899,#db2777)"
+              />
+              <KpiCard
+                label={isAr ? "عدد الأشخاص" : "People"}
+                value={filteredPayrollTotals.peopleCount}
+                gradient="linear-gradient(135deg,#f472b6,#ec4899)"
+              />
+              <KpiCard
+                label={t.records}
+                value={filteredPayrollTotals.recordsCount}
+                gradient="linear-gradient(135deg,#db2777,#be185d)"
+              />
+              <KpiCard
+                label={isAr ? "إجمالي المدفوع" : "Total Payout"}
+                value={`₪${filteredPayrollTotals.totalPayout.toLocaleString()}`}
+                gradient="linear-gradient(135deg,#be185d,#9d174d)"
+              />
+            </KpiGrid>
+          )}
 
-                exportPdfTable(
-                  copy.reports.payrollActivity,
-                  [
-                    `${reportText.period}: ${payrollActivity.rangeStart.slice(0, 10)} ${isArabic ? "إلى" : "to"} ${payrollActivity.rangeEnd.slice(0, 10)} (${payrollActivity.period})`,
-                    `${isArabic ? "نطاق التقرير" : "Report scope"}: ${payrollScopeLabel}`,
-                    `${isArabic ? "عدد الأشخاص" : "People"}: ${filteredPayrollTotals.peopleCount}`,
-                    `${reportText.records}: ${filteredPayrollTotals.recordsCount}`,
-                    `${isArabic ? "الراتب الأساسي" : "Base salary"}: ${filteredPayrollTotals.totalBaseSalary.toLocaleString()}`,
-                    `${isArabic ? "بدل الإضافي" : "Overtime salary"}: ${filteredPayrollTotals.totalOvertimeSalary.toLocaleString()}`,
-                    `${isArabic ? "إجمالي المدفوع" : "Total payout"}: ${filteredPayrollTotals.totalPayout.toLocaleString()}`,
-                  ],
-                  [
-                    reportText.user,
-                    reportText.month,
-                    reportText.hours,
-                    reportText.overtimeHours,
-                    reportText.total,
-                  ],
-                  filteredPayrollRows.map((row) => [
-                    row.userName,
-                    row.month,
-                    String(row.totalHours),
-                    String(row.overtimeHours),
-                    row.totalSalary.toLocaleString(),
-                  ]),
-                  `payroll-${payrollActivity.label}-${payrollScopeMode === "ALL" ? "all" : "person"}.pdf`,
-                );
-              }}
-            >
-              <Download className="reports-download-icon" aria-hidden="true" />
-              {copy.reports.downloadPdf}
-            </button>
-            <button
-              type="button"
-              className="auth-button auth-button--ghost reports-download-button"
-              dir="ltr"
-              onClick={() => {
-                if (!payrollActivity || !filteredPayrollRows.length) {
-                  toast.info(copy.reports.pdfNoData);
-                  return;
-                }
-                exportExcelTable(
-                  [reportText.user, reportText.month, reportText.hours, reportText.overtimeHours, reportText.total],
-                  filteredPayrollRows.map((row) => [row.userName, row.month, String(row.totalHours), String(row.overtimeHours), row.totalSalary.toLocaleString()]),
-                  `payroll-${payrollActivity.label}-${payrollScopeMode === "ALL" ? "all" : "person"}.xlsx`,
-                );
-              }}
-            >
-              <FileSpreadsheet className="reports-download-icon" aria-hidden="true" />
-              {isArabic ? "Excel تنزيل" : "Download Excel"}
-            </button>
-          </div>
-          {loadingSection === "payrollActivity" ? (
-            <p>{copy.reports.loadingPayrollActivity}</p>
-          ) : null}
-          {payrollActivity ? (
-            <div className="module-report-grid">
-              <div className="module-report-card">
-                <span>{isArabic ? "نطاق التقرير" : "Report scope"}</span>
-                <strong>{payrollScopeLabel}</strong>
-              </div>
-              <div className="module-report-card">
-                <span>{isArabic ? "عدد الأشخاص" : "People"}</span>
-                <strong>{filteredPayrollTotals.peopleCount}</strong>
-              </div>
-              <div className="module-report-card">
-                <span>{reportText.records}</span>
-                <strong>{filteredPayrollTotals.recordsCount}</strong>
-              </div>
-              <div className="module-report-card">
-                <span>{isArabic ? "إجمالي المدفوع" : "Total payout"}</span>
-                <strong>
-                  {filteredPayrollTotals.totalPayout.toLocaleString()}
-                </strong>
-              </div>
-            </div>
-          ) : null}
-          {payrollActivity ? (
-            <TableShell>
+          {loadingSection === "payrollActivity" && (
+            <p style={{ padding: "1rem 1.25rem", color: "var(--text-muted)" }}>
+              {copy.reports.loadingPayrollActivity}
+            </p>
+          )}
+
+          {payrollActivity && (
+            <TableShell className="mt-0">
               <TableBase className="admin-table">
                 <thead>
                   <tr>
-                    <th>User</th>
-                    <th>Month</th>
-                    <th>Hours</th>
-                    <th>OT Hours</th>
-                    <th>Total</th>
+                    <th>{t.user}</th>
+                    <th>{t.month}</th>
+                    <th>{t.hours}</th>
+                    <th>{t.overtimeHours}</th>
+                    <th>{t.total}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1770,166 +2227,591 @@ export function ReportsPage() {
                       <td>{row.month}</td>
                       <td>{row.totalHours}</td>
                       <td>{row.overtimeHours}</td>
-                      <td>{row.totalSalary.toLocaleString()}</td>
+                      <td>₪{row.totalSalary.toLocaleString()}</td>
                     </tr>
                   ))}
                 </tbody>
               </TableBase>
             </TableShell>
-          ) : null}
-        </article>
+          )}
+        </Card>
+      )}
 
-        {/* ── Electricity Consumption Report ── */}
-        <article className="module-panel module-panel--full">
-          <h2>{isArabic ? "تقرير استهلاك الكهرباء" : "Electricity Consumption Report"}</h2>
-          <div className="module-form module-form--inline" style={{ flexWrap: "wrap", gap: ".75rem", marginBottom: "1rem" }}>
-            <label style={{ display: "flex", flexDirection: "column", gap: ".25rem", fontSize: ".8rem", fontWeight: 600 }}>
-              {isArabic ? "من تاريخ" : "From date"}
-              <input type="date" className="module-form__input" value={electricityFromDate} onChange={(e) => setElectricityFromDate(e.target.value)} />
+      {/* ════════════════════════════════════════════════════════════════
+          ELECTRICITY TAB
+      ════════════════════════════════════════════════════════════════ */}
+      {activeTab === "electricity" && (
+        <Card className="overflow-hidden">
+          <SectionHeader
+            icon={Zap}
+            color="#d97706"
+            title={isAr ? "تقرير استهلاك الكهرباء" : "Electricity Consumption Report"}
+            subtitle={
+              isAr
+                ? "استهلاك الكهرباء بالشفت والتكلفة"
+                : "Electricity consumption by shift and cost"
+            }
+          />
+
+          {/* Electricity filters */}
+          <div
+            style={{
+              display: "flex",
+              flexWrap: "wrap",
+              gap: ".75rem",
+              alignItems: "flex-end",
+              padding: "1rem 1.25rem",
+              borderBottom: "1px solid var(--border-default)",
+            }}
+          >
+            <label
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: ".2rem",
+                fontSize: ".8rem",
+                fontWeight: 600,
+              }}
+            >
+              {isAr ? "من تاريخ" : "From date"}
+              <input
+                type="date"
+                style={{
+                  padding: ".35rem .6rem",
+                  borderRadius: 6,
+                  border: "1px solid var(--border-default)",
+                  fontSize: ".85rem",
+                  background: "var(--bg-card)",
+                  color: "var(--text-primary)",
+                }}
+                value={electricityFromDate}
+                onChange={(e) => setElectricityFromDate(e.target.value)}
+              />
             </label>
-            <label style={{ display: "flex", flexDirection: "column", gap: ".25rem", fontSize: ".8rem", fontWeight: 600 }}>
-              {isArabic ? "إلى تاريخ" : "To date"}
-              <input type="date" className="module-form__input" value={electricityToDate} onChange={(e) => setElectricityToDate(e.target.value)} />
+            <label
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: ".2rem",
+                fontSize: ".8rem",
+                fontWeight: 600,
+              }}
+            >
+              {isAr ? "إلى تاريخ" : "To date"}
+              <input
+                type="date"
+                style={{
+                  padding: ".35rem .6rem",
+                  borderRadius: 6,
+                  border: "1px solid var(--border-default)",
+                  fontSize: ".85rem",
+                  background: "var(--bg-card)",
+                  color: "var(--text-primary)",
+                }}
+                value={electricityToDate}
+                onChange={(e) => setElectricityToDate(e.target.value)}
+              />
             </label>
-            <label style={{ display: "flex", flexDirection: "column", gap: ".25rem", fontSize: ".8rem", fontWeight: 600 }}>
-              {isArabic ? "الشهر" : "Month"}
-              <input type="month" className="module-form__input" value={electricityMonth ? `${electricityYear || new Date().getFullYear()}-${electricityMonth.padStart(2, "0")}` : ""}
+            <label
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: ".2rem",
+                fontSize: ".8rem",
+                fontWeight: 600,
+              }}
+            >
+              {isAr ? "الشهر" : "Month"}
+              <input
+                type="month"
+                style={{
+                  padding: ".35rem .6rem",
+                  borderRadius: 6,
+                  border: "1px solid var(--border-default)",
+                  fontSize: ".85rem",
+                  background: "var(--bg-card)",
+                  color: "var(--text-primary)",
+                }}
+                value={
+                  electricityMonth
+                    ? `${electricityYear || new Date().getFullYear()}-${electricityMonth.padStart(2, "0")}`
+                    : ""
+                }
                 onChange={(e) => {
                   const [y, m] = e.target.value.split("-");
                   setElectricityYear(y ?? "");
                   setElectricityMonth(String(Number(m ?? "0")));
-                  setElectricityFromDate(""); setElectricityToDate("");
-                }} />
+                  setElectricityFromDate("");
+                  setElectricityToDate("");
+                }}
+              />
             </label>
-            <div style={{ display: "flex", gap: ".5rem", alignItems: "flex-end" }}>
-              <button type="button" className="auth-button" onClick={() => void loadElectricityReport()}>
-                {isArabic ? "تحميل" : "Load"}
+            <div style={{ display: "flex", gap: ".5rem", alignSelf: "flex-end" }}>
+              <button
+                type="button"
+                className="auth-button"
+                disabled={loadingElectricity}
+                onClick={() => void loadElectricityReport()}
+              >
+                {loadingElectricity ? (isAr ? "جارٍ..." : "Loading…") : (isAr ? "تحميل" : "Load")}
               </button>
-              <button type="button" className="auth-button auth-button--ghost" onClick={() => { setElectricityFromDate(""); setElectricityToDate(""); setElectricityMonth(""); setElectricityYear(""); setElectricityReport(null); }}>
-                {isArabic ? "مسح" : "Clear"}
+              <button
+                type="button"
+                className="auth-button auth-button--ghost"
+                onClick={() => {
+                  setElectricityFromDate("");
+                  setElectricityToDate("");
+                  setElectricityMonth("");
+                  setElectricityYear("");
+                  setElectricityReport(null);
+                }}
+              >
+                {isAr ? "مسح" : "Clear"}
               </button>
             </div>
           </div>
 
-          {loadingElectricity && <p style={{ color: "var(--text-muted)" }}>{isArabic ? "جاري التحميل…" : "Loading…"}</p>}
-
           {electricityReport && (
-            <>
-              {/* KPI Summary */}
-              <div className="module-report-grid" style={{ marginBottom: "1.25rem" }}>
-                <div className="module-report-card">
-                  <span>{isArabic ? "إجمالي الاستهلاك" : "Total Consumption"}</span>
-                  <strong>{electricityReport.summary.totalConsumption.toFixed(2)} kWh</strong>
-                </div>
-                <div className="module-report-card">
-                  <span>{isArabic ? "إجمالي التكلفة" : "Total Cost"}</span>
-                  <strong>{electricityReport.summary.totalCost.toFixed(2)} ILS</strong>
-                </div>
-                <div className="module-report-card">
-                  <span>{isArabic ? "عدد القراءات" : "Total Readings"}</span>
-                  <strong>{electricityReport.summary.totalReadings}</strong>
-                </div>
-                <div className="module-report-card">
-                  <span>{isArabic ? "سعر kWh الحالي" : "Current kWh Price"}</span>
-                  <strong>{electricityReport.currentKwhPrice.toFixed(3)} ILS</strong>
-                </div>
-              </div>
-
-              {/* Detailed table */}
-              {electricityReport.days.length === 0 ? (
-                <p style={{ color: "var(--text-secondary)", textAlign: "center", padding: "1.5rem 0" }}>{isArabic ? "لا توجد بيانات" : "No data in selected range"}</p>
-              ) : (
-                <TableShell>
-                  <TableBase className="admin-table">
-                    <thead>
-                      <tr>
-                        <th>{isArabic ? "التاريخ" : "Date"}</th>
-                        <th>{isArabic ? "الشفت" : "Shift"}</th>
-                        <th>{isArabic ? "بداية (kWh)" : "Start (kWh)"}</th>
-                        <th>{isArabic ? "نهاية (kWh)" : "End (kWh)"}</th>
-                        <th>{isArabic ? "الاستهلاك (kWh)" : "Consumption (kWh)"}</th>
-                        <th>{isArabic ? "سعر kWh" : "kWh Price"}</th>
-                        <th>{isArabic ? "تكلفة الشفت (ILS)" : "Shift Cost (ILS)"}</th>
-                        <th>{isArabic ? "تهيئة" : "Reset"}</th>
-                        <th>{isArabic ? "ملاحظات" : "Notes"}</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {electricityReport.days.map((day) => (
-                        <>
-                          {day.shifts.map((s, si) => (
-                            <tr key={s.id}>
-                              {si === 0 && (
-                                <td rowSpan={day.shifts.length} style={{ fontWeight: 700, verticalAlign: "middle", whiteSpace: "nowrap" }}>
-                                  {new Date(day.date).toLocaleDateString(isArabic ? "ar-SA" : "en-GB")}
-                                </td>
-                              )}
-                              <td>
-                                <span style={{ padding: ".15rem .45rem", borderRadius: "999px", background: s.shift.name.includes("A") ? "#dbeafe" : s.shift.name.includes("B") ? "#ffedd5" : "#ede9fe", color: s.shift.name.includes("A") ? "#1d4ed8" : s.shift.name.includes("B") ? "#c2410c" : "#6d28d9", fontWeight: 700, fontSize: ".8rem" }}>
-                                  {s.shift.name}
-                                </span>
-                              </td>
-                              <td>{s.startReading.toFixed(2)}</td>
-                              <td>{s.endReading.toFixed(2)}</td>
-                              <td><strong>{s.consumption.toFixed(2)}</strong></td>
-                              <td style={{ fontSize: ".85rem" }}>{s.kwhPriceSnap.toFixed(3)}</td>
-                              <td><strong>{s.shiftCost.toFixed(2)}</strong></td>
-                              <td>{s.isMeterReset ? <span style={{ fontSize: ".75rem", padding: ".1rem .35rem", background: "#fef3c7", color: "#92400e", borderRadius: 4, fontWeight: 700 }}>{isArabic ? "تهيئة" : "Reset"}</span> : "—"}</td>
-                              <td style={{ fontSize: ".8rem", color: "var(--text-secondary)" }}>{s.notes ?? "—"}</td>
-                            </tr>
-                          ))}
-                          {/* Daily total row */}
-                          <tr style={{ background: "var(--bg-subtle)", fontWeight: 700 }}>
-                            <td colSpan={3} style={{ textAlign: "right", color: "var(--text-secondary)", fontSize: ".85rem" }}>{isArabic ? "إجمالي اليوم" : "Day Total"}</td>
-                            <td></td>
-                            <td style={{ color: "var(--brand-primary)" }}>{day.totalConsumption.toFixed(2)} kWh</td>
-                            <td></td>
-                            <td style={{ color: "#15803d" }}>{day.totalCost.toFixed(2)} ILS</td>
-                            <td colSpan={2}></td>
-                          </tr>
-                        </>
-                      ))}
-                    </tbody>
-                  </TableBase>
-                </TableShell>
-              )}
-            </>
+            <KpiGrid>
+              <KpiCard
+                label={isAr ? "إجمالي الاستهلاك" : "Total Consumption"}
+                value={`${electricityReport.summary.totalConsumption.toFixed(2)} kWh`}
+                gradient="linear-gradient(135deg,#d97706,#b45309)"
+              />
+              <KpiCard
+                label={isAr ? "إجمالي التكلفة" : "Total Cost"}
+                value={`₪${electricityReport.summary.totalCost.toFixed(2)}`}
+                gradient="linear-gradient(135deg,#fbbf24,#d97706)"
+              />
+              <KpiCard
+                label={isAr ? "عدد القراءات" : "Total Readings"}
+                value={electricityReport.summary.totalReadings}
+                gradient="linear-gradient(135deg,#b45309,#92400e)"
+              />
+              <KpiCard
+                label={isAr ? "سعر kWh الحالي" : "Current kWh Price"}
+                value={`₪${electricityReport.currentKwhPrice.toFixed(3)}`}
+                gradient="linear-gradient(135deg,#92400e,#78350f)"
+              />
+            </KpiGrid>
           )}
-        </article>
 
-        <article className="module-panel module-panel--full">
-          <h2>{copy.reports.inventorySnapshot}</h2>
-          <form
-            className="module-form module-form--inline"
-            onSubmit={loadInventorySnapshot}
+          {loadingElectricity && (
+            <p style={{ padding: "1rem 1.25rem", color: "var(--text-muted)" }}>
+              {isAr ? "جاري التحميل…" : "Loading…"}
+            </p>
+          )}
+
+          {electricityReport && electricityReport.days.length === 0 && (
+            <p
+              style={{
+                textAlign: "center",
+                color: "var(--text-secondary)",
+                padding: "2rem",
+              }}
+            >
+              {isAr ? "لا توجد بيانات" : "No data in selected range"}
+            </p>
+          )}
+
+          {electricityReport && electricityReport.days.length > 0 && (
+            <TableShell className="mt-0">
+              <TableBase className="admin-table">
+                <thead>
+                  <tr>
+                    <th>{isAr ? "التاريخ" : "Date"}</th>
+                    <th>{isAr ? "الشفت" : "Shift"}</th>
+                    <th>{isAr ? "بداية (kWh)" : "Start (kWh)"}</th>
+                    <th>{isAr ? "نهاية (kWh)" : "End (kWh)"}</th>
+                    <th>{isAr ? "الاستهلاك (kWh)" : "Consumption (kWh)"}</th>
+                    <th>{isAr ? "سعر kWh" : "kWh Price"}</th>
+                    <th>{isAr ? "تكلفة الشفت" : "Shift Cost"}</th>
+                    <th>{isAr ? "تهيئة" : "Reset"}</th>
+                    <th>{isAr ? "ملاحظات" : "Notes"}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {electricityReport.days.map((day) => (
+                    <>
+                      {day.shifts.map((s, si) => (
+                        <tr key={s.id}>
+                          {si === 0 && (
+                            <td
+                              rowSpan={day.shifts.length}
+                              style={{
+                                fontWeight: 700,
+                                verticalAlign: "middle",
+                                whiteSpace: "nowrap",
+                              }}
+                            >
+                              {new Date(day.date).toLocaleDateString(
+                                isAr ? "ar-SA" : "en-GB"
+                              )}
+                            </td>
+                          )}
+                          <td>
+                            <span
+                              style={{
+                                padding: ".15rem .45rem",
+                                borderRadius: "999px",
+                                background: s.shift.name.includes("A")
+                                  ? "#dbeafe"
+                                  : s.shift.name.includes("B")
+                                  ? "#ffedd5"
+                                  : "#ede9fe",
+                                color: s.shift.name.includes("A")
+                                  ? "#1d4ed8"
+                                  : s.shift.name.includes("B")
+                                  ? "#c2410c"
+                                  : "#6d28d9",
+                                fontWeight: 700,
+                                fontSize: ".8rem",
+                              }}
+                            >
+                              {s.shift.name}
+                            </span>
+                          </td>
+                          <td>{s.startReading.toFixed(2)}</td>
+                          <td>{s.endReading.toFixed(2)}</td>
+                          <td>
+                            <strong>{s.consumption.toFixed(2)}</strong>
+                          </td>
+                          <td style={{ fontSize: ".85rem" }}>
+                            {s.kwhPriceSnap.toFixed(3)}
+                          </td>
+                          <td>
+                            <strong>₪{s.shiftCost.toFixed(2)}</strong>
+                          </td>
+                          <td>
+                            {s.isMeterReset ? (
+                              <span
+                                style={{
+                                  fontSize: ".75rem",
+                                  padding: ".1rem .35rem",
+                                  background: "#fef3c7",
+                                  color: "#92400e",
+                                  borderRadius: 4,
+                                  fontWeight: 700,
+                                }}
+                              >
+                                {isAr ? "تهيئة" : "Reset"}
+                              </span>
+                            ) : (
+                              "—"
+                            )}
+                          </td>
+                          <td
+                            style={{
+                              fontSize: ".8rem",
+                              color: "var(--text-secondary)",
+                            }}
+                          >
+                            {s.notes ?? "—"}
+                          </td>
+                        </tr>
+                      ))}
+                      {/* Daily total row */}
+                      <tr
+                        style={{
+                          background: "var(--bg-subtle)",
+                          fontWeight: 700,
+                        }}
+                      >
+                        <td
+                          colSpan={3}
+                          style={{
+                            textAlign: "right",
+                            color: "var(--text-secondary)",
+                            fontSize: ".85rem",
+                          }}
+                        >
+                          {isAr ? "إجمالي اليوم" : "Day Total"}
+                        </td>
+                        <td></td>
+                        <td style={{ color: "var(--brand-primary)" }}>
+                          {day.totalConsumption.toFixed(2)} kWh
+                        </td>
+                        <td></td>
+                        <td style={{ color: "#15803d" }}>
+                          ₪{day.totalCost.toFixed(2)}
+                        </td>
+                        <td colSpan={2}></td>
+                      </tr>
+                    </>
+                  ))}
+                </tbody>
+              </TableBase>
+            </TableShell>
+          )}
+        </Card>
+      )}
+
+      {/* ════════════════════════════════════════════════════════════════
+          EXPENSES TAB
+      ════════════════════════════════════════════════════════════════ */}
+      {activeTab === "expenses" && (
+        <Card className="overflow-hidden">
+          <SectionHeader
+            icon={Receipt}
+            color="#ef4444"
+            title={isAr ? "تقرير المصروفات" : "Expenses Report"}
+            subtitle={
+              isAr
+                ? "ملخص المصروفات حسب الفئة والحالة"
+                : "Expense summary by category and status"
+            }
+            actions={
+              <DownloadButtons
+                onPdf={() => {
+                  if (!filteredExpenses.length) {
+                    toast.info(copy.reports.pdfNoData);
+                    return;
+                  }
+                  exportPdfTable(
+                    isAr ? "تقرير المصروفات" : "Expenses Report",
+                    [
+                      `${isAr ? "الإجمالي" : "Total"}: ₪${expenseTotals.total.toLocaleString()}`,
+                      `${isAr ? "معتمد" : "Approved"}: ₪${expenseTotals.approved.toLocaleString()}`,
+                      `${isAr ? "معلق" : "Pending"}: ₪${expenseTotals.pending.toLocaleString()}`,
+                    ],
+                    [
+                      isAr ? "التاريخ" : "Date",
+                      isAr ? "الفئة" : "Category",
+                      isAr ? "الوصف" : "Description",
+                      isAr ? "المبلغ" : "Amount",
+                      isAr ? "الحالة" : "Status",
+                      isAr ? "مقدم الطلب" : "Submitted By",
+                    ],
+                    filteredExpenses.map((e) => [
+                      e.submittedAt.slice(0, 10),
+                      e.category,
+                      e.description ?? "-",
+                      `₪${e.amount.toLocaleString()}`,
+                      e.paymentStatus,
+                      e.submittedBy?.fullName ?? "-",
+                    ]),
+                    `expenses-report-${new Date().toISOString().slice(0, 10)}.pdf`
+                  );
+                }}
+                onExcel={() => {
+                  if (!filteredExpenses.length) {
+                    toast.info(copy.reports.pdfNoData);
+                    return;
+                  }
+                  exportExcelTable(
+                    [
+                      isAr ? "التاريخ" : "Date",
+                      isAr ? "الفئة" : "Category",
+                      isAr ? "الوصف" : "Description",
+                      isAr ? "المبلغ" : "Amount",
+                      isAr ? "الحالة" : "Status",
+                      isAr ? "مقدم الطلب" : "Submitted By",
+                    ],
+                    filteredExpenses.map((e) => [
+                      e.submittedAt.slice(0, 10),
+                      e.category,
+                      e.description ?? "-",
+                      `₪${e.amount.toLocaleString()}`,
+                      e.paymentStatus,
+                      e.submittedBy?.fullName ?? "-",
+                    ]),
+                    `expenses-report-${new Date().toISOString().slice(0, 10)}.xlsx`
+                  );
+                }}
+              />
+            }
+          />
+
+          {/* Filter bar */}
+          <div
+            style={{
+              display: "flex",
+              flexWrap: "wrap",
+              gap: ".75rem",
+              alignItems: "flex-end",
+              padding: "1rem 1.25rem",
+              borderBottom: "1px solid var(--border-default)",
+            }}
           >
-            <label>
-              {copy.reports.threshold}
+            <label
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: ".2rem",
+                fontSize: ".8rem",
+                fontWeight: 600,
+              }}
+            >
+              {isAr ? "من تاريخ" : "From date"}
               <input
-                type="number"
-                min={0}
-                step="0.01"
-                value={inventoryThreshold}
-                onChange={(event) => setInventoryThreshold(event.target.value)}
+                type="date"
+                style={{
+                  padding: ".35rem .6rem",
+                  borderRadius: 6,
+                  border: "1px solid var(--border-default)",
+                  fontSize: ".85rem",
+                  background: "var(--bg-card)",
+                  color: "var(--text-primary)",
+                }}
+                value={expenseFromDate}
+                onChange={(e) => setExpenseFromDate(e.target.value)}
               />
             </label>
-            <button type="submit" className="auth-button">
-              {copy.load}
+            <label
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: ".2rem",
+                fontSize: ".8rem",
+                fontWeight: 600,
+              }}
+            >
+              {isAr ? "إلى تاريخ" : "To date"}
+              <input
+                type="date"
+                style={{
+                  padding: ".35rem .6rem",
+                  borderRadius: 6,
+                  border: "1px solid var(--border-default)",
+                  fontSize: ".85rem",
+                  background: "var(--bg-card)",
+                  color: "var(--text-primary)",
+                }}
+                value={expenseToDate}
+                onChange={(e) => setExpenseToDate(e.target.value)}
+              />
+            </label>
+            <button
+              type="button"
+              className="auth-button auth-button--ghost"
+              style={{ alignSelf: "flex-end" }}
+              onClick={() => {
+                setExpenseFromDate("");
+                setExpenseToDate("");
+              }}
+            >
+              {isAr ? "إعادة تعيين" : "Reset"}
             </button>
-          </form>
-          {loadingSection === "inventory" ? (
-            <p>{copy.reports.loadingInventory}</p>
-          ) : null}
-          <ReportView data={inventorySnapshot} copy={copy} />
-        </article>
-      </section>
+            <button
+              type="button"
+              className="auth-button auth-button--ghost"
+              style={{ alignSelf: "flex-end" }}
+              disabled={loadingExpenses}
+              onClick={() => void loadExpenses()}
+            >
+              <RefreshCw size={13} style={{ marginRight: 4 }} />
+              {loadingExpenses ? (isAr ? "جارٍ..." : "Loading…") : (isAr ? "تحديث" : "Refresh")}
+            </button>
+          </div>
 
-      {errorMessage ? (
-        <div className="auth-alert auth-alert--error">{errorMessage}</div>
-      ) : null}
+          {/* KPI cards */}
+          <KpiGrid>
+            <KpiCard
+              label={isAr ? "عدد المصروفات" : "Total Expenses"}
+              value={expenseTotals.count}
+              gradient="linear-gradient(135deg,#ef4444,#dc2626)"
+            />
+            <KpiCard
+              label={isAr ? "الإجمالي" : "Total Amount"}
+              value={`₪${expenseTotals.total.toLocaleString()}`}
+              gradient="linear-gradient(135deg,#f87171,#ef4444)"
+            />
+            <KpiCard
+              label={isAr ? "المعتمد" : "Approved"}
+              value={`₪${expenseTotals.approved.toLocaleString()}`}
+              gradient="linear-gradient(135deg,#16a34a,#15803d)"
+            />
+            <KpiCard
+              label={isAr ? "المعلق" : "Pending"}
+              value={`₪${expenseTotals.pending.toLocaleString()}`}
+              gradient="linear-gradient(135deg,#d97706,#b45309)"
+            />
+          </KpiGrid>
+
+          {loadingExpenses && (
+            <p style={{ padding: "1rem 1.25rem", color: "var(--text-muted)" }}>
+              {isAr ? "جارٍ التحميل..." : "Loading..."}
+            </p>
+          )}
+
+          <TableShell className="mt-0">
+            <TableBase className="admin-table">
+              <thead>
+                <tr>
+                  <th>{isAr ? "التاريخ" : "Date"}</th>
+                  <th>{isAr ? "الفئة" : "Category"}</th>
+                  <th>{isAr ? "الوصف" : "Description"}</th>
+                  <th>{isAr ? "المبلغ" : "Amount"}</th>
+                  <th>{isAr ? "الحالة" : "Status"}</th>
+                  <th>{isAr ? "مقدم الطلب" : "Submitted By"}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredExpenses.map((expense) => (
+                  <tr key={expense.id}>
+                    <td>{expense.submittedAt.slice(0, 10)}</td>
+                    <td>{expense.category}</td>
+                    <td style={{ color: "var(--text-secondary)", fontSize: ".85rem" }}>
+                      {expense.description ?? "-"}
+                    </td>
+                    <td>₪{expense.amount.toLocaleString()}</td>
+                    <td>
+                      <span
+                        style={{
+                          padding: ".15rem .5rem",
+                          borderRadius: 999,
+                          fontSize: ".75rem",
+                          fontWeight: 700,
+                          background:
+                            expense.paymentStatus === "APPROVED"
+                              ? "#dcfce7"
+                              : expense.paymentStatus === "PENDING"
+                              ? "#fef3c7"
+                              : "#fee2e2",
+                          color:
+                            expense.paymentStatus === "APPROVED"
+                              ? "#166534"
+                              : expense.paymentStatus === "PENDING"
+                              ? "#92400e"
+                              : "#991b1b",
+                        }}
+                      >
+                        {expense.paymentStatus}
+                      </span>
+                    </td>
+                    <td>{expense.submittedBy?.fullName ?? "-"}</td>
+                  </tr>
+                ))}
+                {filteredExpenses.length === 0 && (
+                  <tr>
+                    <td
+                      colSpan={6}
+                      style={{
+                        textAlign: "center",
+                        color: "var(--text-secondary)",
+                        padding: "1.5rem",
+                      }}
+                    >
+                      {isAr ? "لا توجد مصروفات" : "No expenses found"}
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </TableBase>
+          </TableShell>
+        </Card>
+      )}
+
+      {errorMessage && (
+        <div className="auth-alert auth-alert--error" style={{ marginTop: "1rem" }}>
+          {errorMessage}
+        </div>
+      )}
     </ModulePageShell>
   );
 }
+
+// ─── Helpers (bottom of file) ─────────────────────────────────────────────────
 
 function ReportView({
   data,
@@ -1960,18 +2842,14 @@ function prettyValueLocalized(value: unknown, copy: (typeof appCopy)["en"]) {
   if (Array.isArray(value)) {
     return `${value.length} ${copy.reports.items}`;
   }
-
   if (typeof value === "number") {
     return value.toLocaleString();
   }
-
   if (typeof value === "boolean") {
     return value ? copy.reports.yes : copy.reports.no;
   }
-
   if (value && typeof value === "object") {
     return JSON.stringify(value);
   }
-
   return String(value ?? "-");
 }

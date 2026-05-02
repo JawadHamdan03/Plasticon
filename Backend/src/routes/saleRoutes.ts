@@ -22,7 +22,7 @@ router.post(
 );
 router.get(
   "/all",
-  authorizeRoles([UserRole.ACCOUNTANT, UserRole.ADMIN]),
+  authorizeRoles([UserRole.ACCOUNTANT, UserRole.ADMIN, UserRole.ENGINEER]),
   getAllSalesHandler,
 );
 router.get(

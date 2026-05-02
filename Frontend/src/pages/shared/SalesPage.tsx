@@ -105,7 +105,8 @@ const getRecordInvoiceUrl = (record: {
 };
 
 const formatMoney = (locale: string, value: number) =>
-  new Intl.NumberFormat(locale === "ar" ? "ar-EG" : "en-US", {
+  "₪" + new Intl.NumberFormat(locale === "ar" ? "ar-EG" : "en-US", {
+    minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(value);
 
@@ -334,6 +335,11 @@ export function SalesPage() {
     setErrorMessage("");
     setSuccessMessage("");
 
+    if (!editingSaleId && !saleInvoiceFile) {
+      setErrorMessage(isArabic ? "صورة الفاتورة مطلوبة لإضافة عملية بيع." : "Invoice image is required to create a sale.");
+      return;
+    }
+
     try {
       const body = new FormData();
       body.append("customerName", saleForm.customerName.trim());
@@ -547,8 +553,12 @@ export function SalesPage() {
               </div>
             </div>
             <div>
-              <label style={{ display:"block", fontSize:".78rem", fontWeight:600, color:"var(--text-secondary)", marginBottom:".3rem" }}>{text.invoice}</label>
+              <label style={{ display:"block", fontSize:".78rem", fontWeight:600, color:"var(--text-secondary)", marginBottom:".3rem" }}>
+                {text.invoice}
+                {!editingSaleId && <span style={{ color:"#ef4444", marginLeft:".25rem" }}>*</span>}
+              </label>
               <input type="file" accept="image/*,application/pdf" onChange={e=>setSaleInvoiceFile(e.target.files?.[0]??null)} style={{ fontSize:".84rem", color:"var(--text-primary)" }}/>
+              {!editingSaleId && !saleInvoiceFile && <p style={{ margin:"4px 0 0", fontSize:".74rem", color:"#ef4444" }}>{isArabic ? "مطلوب للبيع الجديد" : "Required for new sales"}</p>}
               {saleInvoiceFile && <p style={{ margin:"4px 0 0", fontSize:".76rem", color:"var(--text-secondary)" }}>{text.fileSelected}: {saleInvoiceFile.name}</p>}
             </div>
             <div style={{ display:"flex", gap:".6rem", paddingTop:".1rem" }}>

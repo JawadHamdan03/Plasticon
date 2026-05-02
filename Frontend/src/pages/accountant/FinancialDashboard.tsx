@@ -20,6 +20,13 @@ interface DashboardData {
   profit: number;
   profitMargin: number;
   cashBalance: number;
+  // Factory KPIs
+  salesRevenue: number;
+  rawMaterialCost: number;
+  electricityCost: number;
+  salaryCost: number;
+  netProfit: number;
+  netProfitMargin: number;
   targets: { revenueTarget: number; expenseLimit: number; profitMarginTarget: number };
 }
 
@@ -112,7 +119,7 @@ export default function FinancialDashboard() {
   };
 
   const pct = (v: number, t: number) => t > 0 ? Math.min((v / t) * 100, 100) : 0;
-  const fmtMoney = (n: number) => `$${n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  const fmtMoney = (n: number) => `₪${n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
   return (
     <ModulePageShell
@@ -163,12 +170,12 @@ export default function FinancialDashboard() {
           <form onSubmit={saveSettings}>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
               <div>
-                <label className="label">{nav("Revenue Target ($)", "هدف الإيرادات ($)")}</label>
+                <label className="label">{nav("Revenue Target (₪)", "هدف الإيرادات ($)")}</label>
                 <input type="number" min={0} step={0.01} className="input" value={settings.revenueTarget}
                   onChange={(e) => setSettings({ ...settings, revenueTarget: parseFloat(e.target.value) || 0 })} />
               </div>
               <div>
-                <label className="label">{nav("Expense Limit ($)", "حد المصروفات ($)")}</label>
+                <label className="label">{nav("Expense Limit (₪)", "حد المصروفات ($)")}</label>
                 <input type="number" min={0} step={0.01} className="input" value={settings.expenseLimit}
                   onChange={(e) => setSettings({ ...settings, expenseLimit: parseFloat(e.target.value) || 0 })} />
               </div>
@@ -217,6 +224,33 @@ export default function FinancialDashboard() {
                 </div>
               </Card>
             ))}
+          </div>
+
+          {/* Factory Cost Breakdown */}
+          <div className="mb-6">
+            <h3 className="text-sm font-bold text-(--text-primary) mb-3">{nav("Factory Cost Breakdown — Net Profit Formula", "تفصيل تكاليف المصنع — معادلة صافي الربح")}</h3>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+              {[
+                { label: nav("Sales Revenue", "إيرادات المبيعات"),   value: fmtMoney(data.salesRevenue ?? 0),      icon: "📦", color: "#1d4ed8", bg: "#dbeafe" },
+                { label: nav("Raw Materials", "المواد الخام"),        value: fmtMoney(data.rawMaterialCost ?? 0),   icon: "🧱", color: "#d97706", bg: "#fef3c7" },
+                { label: nav("Electricity",   "الكهرباء"),            value: fmtMoney(data.electricityCost ?? 0),   icon: "⚡", color: "#7c3aed", bg: "#ede9fe" },
+                { label: nav("Salaries",      "الرواتب"),             value: fmtMoney(data.salaryCost ?? 0),        icon: "👷", color: "#0891b2", bg: "#cffafe" },
+                { label: nav("Other Expenses","مصروفات أخرى"),        value: fmtMoney(data.approvedExpenses ?? 0),  icon: "🧾", color: "#6b7280", bg: "#f3f4f6" },
+                { label: nav("Net Profit",    "صافي الربح"),          value: fmtMoney(data.netProfit ?? 0),         icon: (data.netProfit ?? 0) >= 0 ? "📈" : "📉", color: (data.netProfit ?? 0) >= 0 ? "#059669" : "#dc2626", bg: (data.netProfit ?? 0) >= 0 ? "#d1fae5" : "#fee2e2" },
+              ].map((k) => (
+                <Card key={k.label} className="p-3 flex items-center gap-2">
+                  <div style={{ width: 34, height: 34, borderRadius: 8, background: k.bg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1rem", flexShrink: 0 }}>{k.icon}</div>
+                  <div className="min-w-0">
+                    <p className="text-[11px] text-(--text-secondary) font-medium leading-tight truncate">{k.label}</p>
+                    <p className="text-sm font-bold leading-tight" style={{ color: k.color }}>{k.value}</p>
+                  </div>
+                </Card>
+              ))}
+            </div>
+            <p className="text-xs text-(--text-secondary) mt-2">
+              {nav("Net Profit = Sales − (Raw Materials + Electricity + Salaries + Other Expenses)", "صافي الربح = المبيعات − (المواد الخام + الكهرباء + الرواتب + المصروفات الأخرى)")}
+              {" · "}{nav("Margin", "الهامش")}: <strong style={{ color: (data.netProfit ?? 0) >= 0 ? "#059669" : "#dc2626" }}>{(data.netProfitMargin ?? 0).toFixed(1)}%</strong>
+            </p>
           </div>
 
           {/* Metric Detail Cards */}

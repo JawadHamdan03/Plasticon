@@ -226,6 +226,10 @@ export function SuppliersPage() {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!canEdit) return;
+    if (!editingId && !invoiceFile) {
+      setError(nav("Invoice image is required to create a purchase.", "صورة الفاتورة مطلوبة لإضافة الشراء."));
+      return;
+    }
     setSaving(true);
     setError(""); setSuccess("");
     try {
@@ -453,6 +457,7 @@ export function SuppliersPage() {
               <span style={{ fontSize: ".82rem", fontWeight: 600, color: "var(--text-secondary)" }}>
                 <FileText size={14} style={{ display: "inline", marginRight: ".25rem" }} />
                 {nav("Invoice (PDF / Image)", "الفاتورة (PDF / صورة)")}
+                {!editingId && <span style={{ color: "#ef4444", marginLeft: ".25rem" }}>*</span>}
               </span>
               <input
                 type="file"
@@ -460,6 +465,11 @@ export function SuppliersPage() {
                 onChange={(e) => setInvoiceFile(e.target.files?.[0] ?? null)}
                 style={{ padding: ".4rem 0", fontSize: ".85rem", color: "var(--text-primary)" }}
               />
+              {!editingId && !invoiceFile && (
+                <span style={{ fontSize: ".75rem", color: "#ef4444" }}>
+                  {nav("Required for new purchases", "مطلوب للشراء الجديد")}
+                </span>
+              )}
               {invoiceFile && (
                 <span style={{ fontSize: ".75rem", color: "var(--text-muted)" }}>
                   📎 {invoiceFile.name}

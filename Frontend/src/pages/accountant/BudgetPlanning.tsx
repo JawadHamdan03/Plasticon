@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { confirmDialog } from "../../lib/dialog";
 import { Plus, Pencil, Trash2, Target, TrendingDown, DollarSign, X, Save } from "lucide-react";
 import { ModulePageShell } from "../../components/ModulePageShell";
@@ -100,7 +100,7 @@ export default function BudgetPlanning() {
   const totalSpent = budgets.reduce((s, b) => s + b.spent, 0);
   const remaining = totalAllocated - totalSpent;
   const overallPct = totalAllocated > 0 ? Math.min((totalSpent / totalAllocated) * 100, 100) : 0;
-  const fmtMoney = (n: number) => `$${n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  const fmtMoney = (n: number) => `₪${n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
   return (
     <ModulePageShell

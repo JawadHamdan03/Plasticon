@@ -407,7 +407,7 @@ export function PayrollAdminPage() {
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "1rem", marginBottom: "1.5rem" }}>
             <KpiCard label={isAr ? "قيد الانتظار" : "Pending"}    value={pendingCount}                     gradient="linear-gradient(135deg,#f97316,#ea580c)" icon={<AlertCircle size={20} />} />
             <KpiCard label={isAr ? "مؤكد" : "Confirmed"}           value={confirmedCount}                   gradient="linear-gradient(135deg,#10b981,#059669)" icon={<CheckCircle size={20} />} />
-            <KpiCard label={isAr ? "إجمالي اليوم" : "Day Total"}   value={`${dailyTotal.toFixed(2)} NIS`}  gradient="linear-gradient(135deg,#3b82f6,#1d4ed8)" icon={<DollarSign size={20} />} />
+            <KpiCard label={isAr ? "إجمالي اليوم" : "Day Total"}   value={`${dailyTotal.toFixed(2)} ₪`}  gradient="linear-gradient(135deg,#3b82f6,#1d4ed8)" icon={<DollarSign size={20} />} />
             <KpiCard label={isAr ? "الموظفون" : "Employees"}       value={daily.length}                     gradient="linear-gradient(135deg,#8b5cf6,#7c3aed)" icon={<Users size={20} />} />
           </div>
 
@@ -490,7 +490,7 @@ export function PayrollAdminPage() {
                               {shortDay && <span style={{ background: "#fee2e2", border: "1px solid #fca5a5", borderRadius: "4px", padding: "1px 5px", color: "#991b1b", fontSize: ".7rem", fontWeight: 600 }}>⚠ Short</span>}
                             </span>
                           </td>
-                          <td style={{ fontWeight: 700, color: "var(--brand-primary)" }}>{r.totalDailyPay.toFixed(2)} NIS</td>
+                          <td style={{ fontWeight: 700, color: "var(--brand-primary)" }}>{r.totalDailyPay.toFixed(2)} ₪</td>
                           <td>
                             <div style={{ display: "flex", flexDirection: "column", gap: ".25rem", alignItems: "flex-start" }}>
                               {leaveBadge
@@ -555,9 +555,9 @@ export function PayrollAdminPage() {
           {monthlyError && <div className="auth-alert auth-alert--error" style={{ marginBottom: "1rem" }}>{monthlyError}</div>}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "1rem", marginBottom: "1.5rem" }}>
             <KpiCard label={isAr ? "سجلات الرواتب" : "Payroll Records"} value={overview?.totals.payrollCount ?? "—"}                                      gradient="linear-gradient(135deg,#3b82f6,#1d4ed8)" icon={<Users size={20} />} />
-            <KpiCard label={isAr ? "إجمالي الصرف" : "Total Payout"}      value={`${(overview?.totals.totalPayout ?? 0).toLocaleString()} NIS`}              gradient="linear-gradient(135deg,#10b981,#059669)" icon={<DollarSign size={20} />} />
-            <KpiCard label={isAr ? "الراتب الأساسي" : "Base Salary"}     value={`${(overview?.totals.totalBaseSalary ?? 0).toLocaleString()} NIS`}          gradient="linear-gradient(135deg,#8b5cf6,#7c3aed)" icon={<Clock size={20} />} />
-            <KpiCard label={isAr ? "الوقت الإضافي" : "Overtime"}         value={`${(overview?.totals.totalOvertimeSalary ?? 0).toLocaleString()} NIS`}      gradient="linear-gradient(135deg,#f97316,#ea580c)" icon={<Settings size={20} />} />
+            <KpiCard label={isAr ? "إجمالي الصرف" : "Total Payout"}      value={`${(overview?.totals.totalPayout ?? 0).toLocaleString()} ₪`}              gradient="linear-gradient(135deg,#10b981,#059669)" icon={<DollarSign size={20} />} />
+            <KpiCard label={isAr ? "الراتب الأساسي" : "Base Salary"}     value={`${(overview?.totals.totalBaseSalary ?? 0).toLocaleString()} ₪`}          gradient="linear-gradient(135deg,#8b5cf6,#7c3aed)" icon={<Clock size={20} />} />
+            <KpiCard label={isAr ? "الوقت الإضافي" : "Overtime"}         value={`${(overview?.totals.totalOvertimeSalary ?? 0).toLocaleString()} ₪`}      gradient="linear-gradient(135deg,#f97316,#ea580c)" icon={<Settings size={20} />} />
           </div>
 
           <div className="payroll-monthly-grid">
@@ -568,7 +568,7 @@ export function PayrollAdminPage() {
                   {(overview?.byRole ?? []).map((r) => (
                     <div key={r.role} style={{ display: "flex", justifyContent: "space-between", padding: ".5rem .75rem", borderRadius: "var(--radius-md)", background: "var(--bg-page)", border: "1px solid var(--border-default)" }}>
                       <span style={{ fontWeight: 600, color: ROLE_COLORS[r.role] ?? "var(--text-primary)", fontSize: ".85rem" }}>{r.role}</span>
-                      <span style={{ fontSize: ".85rem" }}>{r.totalPayout.toLocaleString()} NIS</span>
+                      <span style={{ fontSize: ".85rem" }}>{r.totalPayout.toLocaleString()} ₪</span>
                     </div>
                   ))}
                   {(overview?.byRole ?? []).length === 0 && <p style={{ color: "var(--text-secondary)", fontSize: ".85rem" }}>{isAr ? "لا بيانات" : "No data"}</p>}
@@ -603,11 +603,11 @@ export function PayrollAdminPage() {
                             {editMonthly?.id === r.id ? (
                               <div style={{ display: "flex", alignItems: "center", gap: ".4rem" }}>
                                 <input className="field__control" type="number" value={editMonthly.value} onChange={(e) => setEditMonthly({ ...editMonthly, value: e.target.value })} style={{ width: "110px", fontSize: ".85rem" }} autoFocus />
-                                <span style={{ fontSize: ".8rem", color: "var(--text-secondary)" }}>NIS</span>
+                                <span style={{ fontSize: ".8rem", color: "var(--text-secondary)" }}>₪</span>
                                 <button className="btn btn--primary btn--sm" onClick={() => void saveMonthlyPayroll()} disabled={savingMonthly}>{savingMonthly ? "..." : isAr ? "حفظ" : "Save"}</button>
                                 <button className="btn btn--ghost btn--sm" onClick={() => setEditMonthly(null)}><X size={13} /></button>
                               </div>
-                            ) : `${r.totalSalary.toLocaleString()} NIS`}
+                            ) : `${r.totalSalary.toLocaleString()} ₪`}
                           </td>
                           {isAdmin && (
                             <td>
@@ -687,7 +687,7 @@ export function PayrollAdminPage() {
                                   style={{ width: "150px", fontSize: ".9rem" }}
                                   autoFocus
                                 />
-                                <span style={{ fontSize: ".8rem", color: "var(--text-secondary)" }}>NIS/mo</span>
+                                <span style={{ fontSize: ".8rem", color: "var(--text-secondary)" }}>₪/mo</span>
                                 <button className="btn btn--primary btn--sm" onClick={() => void saveUserSalary()} disabled={isSaving}>
                                   {isSaving ? "..." : isAr ? "حفظ" : "Save"}
                                 </button>
@@ -706,7 +706,7 @@ export function PayrollAdminPage() {
                             ) : (
                               <div style={{ display: "flex", alignItems: "center", gap: ".5rem" }}>
                                 <span style={{ fontWeight: 700, fontSize: "1rem", color: isCustom ? "var(--blue-600)" : "var(--text-primary)" }}>
-                                  {u.effectiveSalary.toLocaleString()} NIS
+                                  {u.effectiveSalary.toLocaleString()} ₪
                                 </span>
                                 {isAdmin && (
                                   <button
@@ -722,7 +722,7 @@ export function PayrollAdminPage() {
                             )}
                           </td>
                           <td style={{ color: "var(--text-secondary)", fontSize: ".88rem" }}>
-                            {(u.effectiveSalary / 30).toFixed(1)} NIS
+                            {(u.effectiveSalary / 30).toFixed(1)} ₪
                           </td>
                           <td>
                             {isCustom ? (
@@ -759,7 +759,7 @@ export function PayrollAdminPage() {
                               </div>
                             ) : (
                               <span style={{ fontSize: ".75rem", color: "var(--text-secondary)" }}>
-                                {isAr ? "راتب الدور" : "Role default"} ({u.roleDefaultSalary.toLocaleString()} NIS)
+                                {isAr ? "راتب الدور" : "Role default"} ({u.roleDefaultSalary.toLocaleString()} ₪)
                               </span>
                             )}
                           </td>
@@ -800,14 +800,14 @@ export function PayrollAdminPage() {
                   {editConfig?.role === c.role ? (
                     <>
                       <input className="field__control" type="number" value={editConfig.value} onChange={(e) => setEditConfig({ ...editConfig, value: e.target.value })} style={{ width: "120px", fontSize: ".9rem" }} autoFocus />
-                      <span style={{ fontSize: ".8rem", color: "var(--text-secondary)" }}>NIS/mo</span>
+                      <span style={{ fontSize: ".8rem", color: "var(--text-secondary)" }}>₪/mo</span>
                       <button className="btn btn--primary btn--sm" onClick={() => void saveConfig()} disabled={savingConfig}>{savingConfig ? "..." : isAr ? "حفظ" : "Save"}</button>
                       <button className="btn btn--ghost btn--sm" onClick={() => setEditConfig(null)}>{isAr ? "إلغاء" : "Cancel"}</button>
                     </>
                   ) : (
                     <>
-                      <span style={{ flex: 1, fontWeight: 600, fontSize: ".95rem" }}>{c.monthlySalary.toLocaleString()} NIS/mo</span>
-                      <span style={{ fontSize: ".78rem", color: "var(--text-secondary)" }}>≈ {(c.monthlySalary / 30).toFixed(1)} NIS/day</span>
+                      <span style={{ flex: 1, fontWeight: 600, fontSize: ".95rem" }}>{c.monthlySalary.toLocaleString()} ₪/mo</span>
+                      <span style={{ fontSize: ".78rem", color: "var(--text-secondary)" }}>≈ {(c.monthlySalary / 30).toFixed(1)} ₪/day</span>
                       {isAdmin && <button className="btn btn--ghost btn--sm" onClick={() => setEditConfig({ role: c.role, value: String(c.monthlySalary) })}>{isAr ? "تعديل" : "Edit"}</button>}
                     </>
                   )}
@@ -836,9 +836,9 @@ export function PayrollAdminPage() {
                 const ruleMeta: Record<string, { icon: string; title: string; titleAr: string; desc: string; descAr: string; showThreshold: boolean; valueLabel: string; valueLabelAr: string; valueHint: string }> = {
                   LATE_ARRIVAL: {
                     icon: "🕐", title: "Late Arrival", titleAr: "تأخر في الدخول",
-                    desc: "Deduct X NIS per hour of lateness beyond threshold",
+                    desc: "Deduct X ₪ per hour of lateness beyond threshold",
                     descAr: "خصم X شيكل لكل ساعة تأخر بعد الحد الأدنى",
-                    showThreshold: true, valueLabel: "NIS per hour late", valueLabelAr: "شيكل/ساعة تأخر", valueHint: "e.g. 5",
+                    showThreshold: true, valueLabel: "₪ per hour late", valueLabelAr: "شيكل/ساعة تأخر", valueHint: "e.g. 5",
                   },
                   EARLY_CHECKOUT: {
                     icon: "🚪", title: "Early Checkout", titleAr: "خروج مبكر",
@@ -922,7 +922,7 @@ export function PayrollAdminPage() {
                               )}
                               {type === "LATE_ARRIVAL" && (
                                 <span style={{ fontSize: ".8rem", background: "var(--bg-surface)", border: "1px solid var(--border-default)", borderRadius: "6px", padding: "2px 8px" }}>
-                                  {isAr ? "الخصم:" : "Deduct:"} <strong>{rule.deductionValue} NIS/hr</strong>
+                                  {isAr ? "الخصم:" : "Deduct:"} <strong>{rule.deductionValue} ₪/hr</strong>
                                 </span>
                               )}
                               {type === "SICK_LEAVE" && (

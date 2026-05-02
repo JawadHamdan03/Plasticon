@@ -159,6 +159,7 @@ export function ConsumptionPage() {
   const [toDate, setToDate] = useState("");
   const [adminTab, setAdminTab] = useState<"overview" | "by-shift" | "daily" | "records" | "workers">("overview");
   const [form, setForm] = useState<ConsumptionForm>(emptyForm());
+  const [docFile, setDocFile] = useState<File | null>(null);
   const [nowMinutes, setNowMinutes] = useState(() => {
     const d = new Date();
     return d.getUTCHours() * 60 + d.getUTCMinutes();
@@ -223,24 +224,33 @@ export function ConsumptionPage() {
     try {
       const autoShift = getCurrentShift(shifts, nowMinutes);
       const hdpeBags = parseFloat(form.hdpeBags) || 0;
+      const hdpeKgPerBag = parseFloat(form.hdpeKgPerBag) || 25;
       const ldpeBags = parseFloat(form.ldpeBags) || 0;
+      const ldpeKgPerBag = parseFloat(form.ldpeKgPerBag) || 25;
       const petBags = parseFloat(form.petBags) || 0;
+      const petKgPerBag = parseFloat(form.petKgPerBag) || 0;
       const colorKg = parseFloat(form.colorKg) || 0;
 
+      // PET requires explicit kg/bag because weight varies (22–30 kg)
+      if (petBags > 0 && petKgPerBag <= 0) {
+        patchForm({ saving: false, error: isAr ? "يرجى إدخال وزن كيس PET (كغ/كيس)" : "Enter PET kg per bag (bags vary: 22–30 kg)" });
+        return;
+      }
+
       const body: Record<string, unknown> = { shiftId: autoShift?.id };
-      // All bag-type materials submitted in BAGS to match inventory unit
-      if (hdpeBags > 0) body.rawHdpeUsed = hdpeBags;
-      if (ldpeBags > 0) body.rawLdpeUsed = ldpeBags;
-      if (petBags > 0) body.rawPetUsed = petBags;
+      // Send KG to backend (bags × kg/bag)
+      if (hdpeBags > 0) body.rawHdpeUsed = hdpeBags * hdpeKgPerBag;
+      if (ldpeBags > 0) body.rawLdpeUsed = ldpeBags * ldpeKgPerBag;
+      if (petBags > 0) body.rawPetUsed = petBags * petKgPerBag;
       if (colorKg > 0) body.colorUsed = colorKg;
       if (form.notes) body.notes = form.notes;
 
-      const res = await fetchWithAuth("/production", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
+      const fd = new FormData();
+      Object.entries(body).forEach(([k, v]) => { if (v !== undefined && v !== null) fd.append(k, String(v)); });
+      if (docFile) fd.append("document", docFile);
+      const res = await fetchWithAuth("/production", { method: "POST", body: fd });
       if (!res.ok) throw new Error(await readApiError(res));
+      setDocFile(null);
       setForm({ ...emptyForm(), success: isAr ? "تم الحفظ بنجاح ✓" : "Saved successfully ✓" });
       void loadAll();
     } catch (err) {
@@ -357,6 +367,14 @@ export function ConsumptionPage() {
                 <textarea rows={2} value={form.notes} onChange={(e) => patchForm({ notes: e.target.value })}
                   placeholder={isAr ? "ملاحظات اختيارية..." : "Optional notes..."}
                   style={{ padding: ".5rem .65rem", border: "1px solid var(--border-default)", borderRadius: "var(--radius-md)", background: "var(--bg-card)", fontSize: ".875rem", resize: "vertical" }} />
+              </label>
+
+              <label style={{ display: "flex", flexDirection: "column", gap: ".3rem", fontSize: ".82rem", fontWeight: 600, color: "var(--text-secondary)" }}>
+                {isAr ? "إرفاق مستند أو صورة إثبات (اختياري)" : "Attach document or proof image (optional)"}
+                <input type="file" accept="image/*,application/pdf,.doc,.docx"
+                  onChange={(e) => setDocFile(e.target.files?.[0] ?? null)}
+                  style={{ padding: ".4rem .6rem", border: "1px solid var(--border-default)", borderRadius: "var(--radius-md)", background: "var(--bg-card)", fontSize: ".82rem" }} />
+                {docFile && <span style={{ fontSize: ".75rem", color: "var(--text-secondary)", marginTop: ".2rem" }}>📎 {docFile.name}</span>}
               </label>
 
               <button type="submit" className="auth-button" disabled={form.saving} style={{ width: "100%" }}>

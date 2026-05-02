@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { confirmDialog } from "../../lib/dialog";
 import { Plus, Pencil, Trash2, CheckCircle, Clock, Landmark, X, Save } from "lucide-react";
 import { ModulePageShell } from "../../components/ModulePageShell";
@@ -81,7 +81,7 @@ export default function BankReconciliation() {
   const reconciledCount = reconciliations.filter((r) => r.reconciled).length;
   const pendingCount = reconciliations.length - reconciledCount;
   const totalBankBalance = reconciliations.reduce((s, r) => s + r.bankBalance, 0);
-  const fmtMoney = (n: number) => `$${n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  const fmtMoney = (n: number) => `₪${n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
   const filtered = reconciliations.filter((r) => {
     if (!filterStatus) return true;

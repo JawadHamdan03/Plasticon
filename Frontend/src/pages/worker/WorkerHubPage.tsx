@@ -457,7 +457,7 @@ export function WorkerHubPage() {
               {/* Summary */}
               <div style={{ display: "flex", gap: ".75rem", flexWrap: "wrap", marginBottom: "1.25rem" }}>
                 {[
-                  { label: isAr ? "إجمالي مكتسب (مؤكد)" : "Total Earned (confirmed)", value: `${dailyPayroll.filter(r => r.isConfirmed).reduce((s, r) => s + r.totalDailyPay, 0).toFixed(2)} NIS`, color: "#10b981" },
+                  { label: isAr ? "إجمالي مكتسب (مؤكد)" : "Total Earned (confirmed)", value: `${dailyPayroll.filter(r => r.isConfirmed).reduce((s, r) => s + r.totalDailyPay, 0).toFixed(2)} ₪`, color: "#10b981" },
                   { label: isAr ? "سجلات يومية" : "Daily Records", value: dailyPayroll.length, color: "#3b82f6" },
                   { label: isAr ? "سجلات شهرية" : "Monthly Records", value: monthlyPayroll.length, color: "#8b5cf6" },
                 ].map((chip) => (
@@ -486,7 +486,7 @@ export function WorkerHubPage() {
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: ".4rem" }}>
                           <span style={{ fontWeight: 700, fontSize: ".9rem" }}>{fmtDate(r.date)}</span>
                           <div style={{ display: "flex", alignItems: "center", gap: ".5rem" }}>
-                            <span style={{ fontWeight: 800, fontSize: "1rem", color: "#10b981" }}>{r.totalDailyPay.toFixed(2)} NIS</span>
+                            <span style={{ fontWeight: 800, fontSize: "1rem", color: "#10b981" }}>{r.totalDailyPay.toFixed(2)} ₪</span>
                             {r.isConfirmed
                               ? <span style={{ background: "#dcfce7", border: "1px solid #86efac", borderRadius: "4px", padding: "1px 7px", color: "#15803d", fontSize: ".72rem", fontWeight: 700 }}><CheckCircle size={11} style={{ verticalAlign: "middle" }} /> {isAr ? "مؤكد" : "Confirmed"}</span>
                               : <span style={{ background: "#fef9c3", border: "1px solid #fde047", borderRadius: "4px", padding: "1px 7px", color: "#854d0e", fontSize: ".72rem", fontWeight: 700 }}><AlertCircle size={11} style={{ verticalAlign: "middle" }} /> {isAr ? "انتظار" : "Pending"}</span>
@@ -495,8 +495,8 @@ export function WorkerHubPage() {
                         </div>
                         <div style={{ fontSize: ".81rem", color: "var(--text-secondary)", display: "flex", gap: "1.25rem", flexWrap: "wrap" }}>
                           <span><Clock size={11} style={{ verticalAlign: "middle" }} /> {r.hoursWorked.toFixed(1)}h</span>
-                          <span>{isAr ? "المعدل:" : "Rate:"} {r.dailyRate.toFixed(2)} NIS/day</span>
-                          {r.deductionAmount > 0 && <span style={{ color: "#ef4444" }}>−{r.deductionAmount.toFixed(2)} NIS {r.deductionNotes ? `(${r.deductionNotes})` : ""}</span>}
+                          <span>{isAr ? "المعدل:" : "Rate:"} {r.dailyRate.toFixed(2)} ₪/day</span>
+                          {r.deductionAmount > 0 && <span style={{ color: "#ef4444" }}>−{r.deductionAmount.toFixed(2)} ₪ {r.deductionNotes ? `(${r.deductionNotes})` : ""}</span>}
                         </div>
                       </HubCard>
                     ))}
@@ -511,11 +511,11 @@ export function WorkerHubPage() {
                       <HubCard key={r.id}>
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: ".4rem" }}>
                           <span style={{ fontWeight: 700, fontSize: ".95rem" }}>{r.month}</span>
-                          <span style={{ fontWeight: 800, fontSize: "1.1rem", color: "#10b981" }}>{r.totalSalary.toLocaleString()} NIS</span>
+                          <span style={{ fontWeight: 800, fontSize: "1.1rem", color: "#10b981" }}>{r.totalSalary.toLocaleString()} ₪</span>
                         </div>
                         <div style={{ fontSize: ".81rem", color: "var(--text-secondary)", display: "flex", gap: "1.25rem", flexWrap: "wrap" }}>
                           <span>{isAr ? "الساعات:" : "Hours:"} {r.totalHours.toFixed(1)}h</span>
-                          <span>{isAr ? "أساسي:" : "Base:"} {r.baseSalary.toFixed(2)} NIS</span>
+                          <span>{isAr ? "أساسي:" : "Base:"} {r.baseSalary.toFixed(2)} ₪</span>
                           {r.overtimeSalary > 0 && <span style={{ color: "#f59e0b" }}>+{r.overtimeSalary.toFixed(2)} OT</span>}
                         </div>
                       </HubCard>

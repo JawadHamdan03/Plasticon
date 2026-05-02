@@ -51,6 +51,13 @@ type UpdateSalePayload = {
   };
 };
 
+const classifyProductType = (value?: string | null): "CAPS" | "PREFORM" | "OTHER" => {
+  const normalized = (value ?? "").trim().toUpperCase();
+  if (normalized === "PREFORM" || normalized.includes("PREFORM") || normalized.includes("PET")) return "PREFORM";
+  if (normalized === "CAPS" || normalized.includes("CAP")) return "CAPS";
+  return "OTHER";
+};
+
 const prepareSaleItems = (items: SaleItemPayload[]) => {
   const preparedItems: {
     machineType: string;
@@ -193,6 +200,54 @@ export const createSale = async (
   if (Number.isNaN(saleDate.getTime())) {
     return { status: 400, message: "Invalid sale date" };
   }
+
+  // ── Finished-goods stock validation ──────────────────────────────────
+  {
+    const [allProductions, allSaleItems] = await Promise.all([
+      prisma.productionRecord.findMany({
+        select: { totalPieces: true, machine: { select: { type: true } } },
+      }),
+      prisma.saleItem.findMany({ select: { machineType: true, quantity: true } }),
+    ]);
+
+    let capsProduced = 0, preformProduced = 0;
+    for (const p of allProductions) {
+      const t = classifyProductType(p.machine?.type);
+      if (t === "CAPS") capsProduced += p.totalPieces;
+      else if (t === "PREFORM") preformProduced += p.totalPieces;
+    }
+
+    let capsSold = 0, preformSold = 0;
+    for (const item of allSaleItems) {
+      const t = classifyProductType(item.machineType);
+      if (t === "CAPS") capsSold += item.quantity;
+      else if (t === "PREFORM") preformSold += item.quantity;
+    }
+
+    let newCaps = 0, newPreform = 0;
+    for (const item of preparedItems) {
+      const t = classifyProductType(item.machineType);
+      if (t === "CAPS") newCaps += item.quantity;
+      else if (t === "PREFORM") newPreform += item.quantity;
+    }
+
+    const availableCaps = Math.max(0, capsProduced - capsSold);
+    const availablePreform = Math.max(0, preformProduced - preformSold);
+
+    if (newCaps > 0 && newCaps > availableCaps) {
+      return {
+        status: 400,
+        message: `Insufficient CAPS stock. Available: ${availableCaps.toLocaleString()} pcs, Requested: ${newCaps.toLocaleString()} pcs`,
+      };
+    }
+    if (newPreform > 0 && newPreform > availablePreform) {
+      return {
+        status: 400,
+        message: `Insufficient PREFORM stock. Available: ${availablePreform.toLocaleString()} pcs, Requested: ${newPreform.toLocaleString()} pcs`,
+      };
+    }
+  }
+  // ─────────────────────────────────────────────────────────────────────
 
   const result = await prisma.$transaction(async (tx) => {
     const sale = await tx.sale.create({

@@ -136,6 +136,7 @@ function getNavSectionsBi(role: string): NavSectionBi[] {
           { to: "/accountant/reconciliation", icon: <CheckCircle size={17} />, label: nav("Reconciliation", "توفيق") },
           { to: "/accountant/cost-analysis", icon: <Percent size={17} />, label: nav("Cost Analysis", "التكاليف") },
           { to: "/accountant/approvals", icon: <Zap size={17} />, label: nav("Approvals", "موافقات") },
+          { to: "/warehouse", icon: <Boxes size={17} />, label: nav("Warehouse", "المستودع") },
           { to: "/inventory", icon: <Boxes size={17} />, label: nav("Inventory", "المخزون") },
           { to: "/purchases", icon: <ShoppingCart size={17} />, label: nav("Purchases", "المشتريات") },
           { to: "/sales", icon: <TrendingUp size={17} />, label: nav("Sales", "المبيعات") },
@@ -188,6 +189,7 @@ function getNavSectionsBi(role: string): NavSectionBi[] {
         items: [
           { to: "/production", icon: <Factory size={17} />, label: nav("Production", "الإنتاج") },
           { to: "/consumption", icon: <Package size={17} />, label: nav("Consumption", "الاستهلاك") },
+          { to: "/warehouse", icon: <Boxes size={17} />, label: nav("Warehouse", "المستودع") },
           { to: "/quality-checks", icon: <CheckSquare size={17} />, label: nav("Quality Checks", "فحص الجودة") },
           { to: "/maintenance", icon: <Wrench size={17} />, label: nav("Maintenance", "الصيانة") },
           { to: "/engineer/inventory", icon: <ClipboardList size={17} />, label: nav("Parts Inventory", "مخزون القطع") },
@@ -241,6 +243,7 @@ function getNavSectionsBi(role: string): NavSectionBi[] {
           { to: "/accountant/reconciliation", icon: <CheckCircle size={17} />, label: nav("Reconciliation", "توفيق") },
           { to: "/accountant/cost-analysis", icon: <Percent size={17} />, label: nav("Cost Analysis", "تحليل التكاليف") },
           { to: "/accountant/approvals", icon: <Zap size={17} />, label: nav("Approvals", "موافقات") },
+          { to: "/warehouse", icon: <Boxes size={17} />, label: nav("Warehouse", "المستودع") },
           { to: "/inventory", icon: <Boxes size={17} />, label: nav("Inventory", "المخزون") },
           { to: "/purchases", icon: <ShoppingCart size={17} />, label: nav("Purchases", "المشتريات") },
           { to: "/sales", icon: <TrendingUp size={17} />, label: nav("Sales", "المبيعات") },

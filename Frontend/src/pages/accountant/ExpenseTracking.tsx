@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { confirmDialog } from "../../lib/dialog";
 import { Plus, CheckCircle, Clock, Trash2, Receipt, Search, X, Save } from "lucide-react";
 import { ModulePageShell } from "../../components/ModulePageShell";
@@ -101,7 +101,7 @@ export default function ExpenseTracking() {
   const approvedAmount = expenses.filter((e) => e.paymentStatus === "APPROVED").reduce((s, e) => s + e.amount, 0);
   const pendingAmount = expenses.filter((e) => e.paymentStatus === "PENDING").reduce((s, e) => s + e.amount, 0);
 
-  const fmtMoney = (n: number) => `$${n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  const fmtMoney = (n: number) => `₪${n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
   return (
     <ModulePageShell
