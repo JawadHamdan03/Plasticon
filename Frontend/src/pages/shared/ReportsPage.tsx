@@ -17,6 +17,9 @@ import {
   Zap,
   Receipt,
   RefreshCw,
+  Wrench,
+  ShieldCheck,
+  Boxes,
 } from "lucide-react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -220,6 +223,48 @@ type ExpenseRecord = {
   submittedBy?: { fullName: string };
 };
 
+type MaintenanceCostRecord = {
+  id: number;
+  laborHours: number;
+  laborCostPerHour: number;
+  sparesTotal: number;
+  laborTotal: number;
+  totalCost: number;
+  notes: string | null;
+  createdAt: string;
+  maintenance: {
+    id: number;
+    machine: { id: number; name: string; type: string };
+    engineer: { id: number; fullName: string };
+  };
+  createdBy: { id: number; fullName: string } | null;
+};
+
+type QualityCheckRecord = {
+  id: number;
+  issueType: string;
+  severity: string;
+  description: string | null;
+  resolvedAt: string | null;
+  createdAt: string;
+  machine: { id: number; name: string; type: string };
+  engineer: { id: number; fullName: string; username: string };
+};
+
+type SparePartRequestRecord = {
+  id: number;
+  partName: string;
+  quantity: number;
+  unitPrice: number | null;
+  status: string;
+  notes: string | null;
+  receivedAt: string | null;
+  createdAt: string;
+  engineer: { id: number; fullName: string; username: string };
+  machine: { id: number; name: string; type: string } | null;
+  pricedBy: { id: number; fullName: string } | null;
+};
+
 type TabKey =
   | "suppliers"
   | "customers"
@@ -228,7 +273,10 @@ type TabKey =
   | "attendance"
   | "payroll"
   | "electricity"
-  | "expenses";
+  | "expenses"
+  | "maintenance"
+  | "quality"
+  | "spareParts";
 
 // ─── Tab config ───────────────────────────────────────────────────────────────
 
@@ -288,6 +336,27 @@ const TABS = [
     labelAr: "المصروفات",
     icon: Receipt,
     color: "#ef4444",
+  },
+  {
+    key: "maintenance" as const,
+    labelEn: "Maintenance",
+    labelAr: "الصيانة",
+    icon: Wrench,
+    color: "#0891b2",
+  },
+  {
+    key: "quality" as const,
+    labelEn: "Quality",
+    labelAr: "الجودة",
+    icon: ShieldCheck,
+    color: "#16a34a",
+  },
+  {
+    key: "spareParts" as const,
+    labelEn: "Spare Parts",
+    labelAr: "قطع الغيار",
+    icon: Boxes,
+    color: "#7c3aed",
   },
 ] as const;
 
@@ -604,6 +673,15 @@ export function ReportsPage() {
   const [expenses, setExpenses] = useState<ExpenseRecord[]>([]);
   const [expenseFromDate, setExpenseFromDate] = useState("");
   const [expenseToDate, setExpenseToDate] = useState("");
+
+  // ── New report tabs state ──
+  const [maintenanceCosts, setMaintenanceCosts] = useState<MaintenanceCostRecord[]>([]);
+  const [qualityChecks, setQualityChecks] = useState<QualityCheckRecord[]>([]);
+  const [sparePartRequests, setSparePartRequests] = useState<SparePartRequestRecord[]>([]);
+  const [maintenanceFromDate, setMaintenanceFromDate] = useState("");
+  const [maintenanceToDate, setMaintenanceToDate] = useState("");
+  const [qualitySeverityFilter, setQualitySeverityFilter] = useState("ALL");
+  const [sparePartsStatusFilter, setSparePartsStatusFilter] = useState("ALL");
   const [loadingExpenses, setLoadingExpenses] = useState(false);
 
   // ── Loading / error ──
@@ -640,6 +718,27 @@ export function ReportsPage() {
     } finally {
       setLoadingExpenses(false);
     }
+  }, []);
+
+  const loadMaintenanceCosts = useCallback(async () => {
+    try {
+      const res = await fetchWithAuth("/maintenance-costs");
+      if (res.ok) setMaintenanceCosts((await res.json()) as MaintenanceCostRecord[]);
+    } catch { /* silent */ }
+  }, []);
+
+  const loadQualityChecks = useCallback(async () => {
+    try {
+      const res = await fetchWithAuth("/quality/all");
+      if (res.ok) setQualityChecks((await res.json()) as QualityCheckRecord[]);
+    } catch { /* silent */ }
+  }, []);
+
+  const loadSparePartRequests = useCallback(async () => {
+    try {
+      const res = await fetchWithAuth("/spare-part-requests");
+      if (res.ok) setSparePartRequests((await res.json()) as SparePartRequestRecord[]);
+    } catch { /* silent */ }
   }, []);
 
   const loadElectricityReport = useCallback(async () => {
@@ -722,7 +821,10 @@ export function ReportsPage() {
   useEffect(() => {
     void loadCommerceReports();
     void loadExpenses();
-  }, [loadCommerceReports, loadExpenses]);
+    void loadMaintenanceCosts();
+    void loadQualityChecks();
+    void loadSparePartRequests();
+  }, [loadCommerceReports, loadExpenses, loadMaintenanceCosts, loadQualityChecks, loadSparePartRequests]);
 
   // ─── Derived data ─────────────────────────────────────────────────────────────
 
@@ -940,6 +1042,52 @@ export function ReportsPage() {
     }),
     [filteredExpenses]
   );
+
+  // ── Maintenance filtered ──
+  const filteredMaintenance = useMemo(() => {
+    if (!maintenanceFromDate && !maintenanceToDate) return maintenanceCosts;
+    const from = maintenanceFromDate ? new Date(`${maintenanceFromDate}T00:00:00`).getTime() : null;
+    const to   = maintenanceToDate   ? new Date(`${maintenanceToDate}T23:59:59.999`).getTime() : null;
+    return maintenanceCosts.filter((r) => {
+      const t = new Date(r.createdAt).getTime();
+      if (from !== null && t < from) return false;
+      if (to   !== null && t > to)   return false;
+      return true;
+    });
+  }, [maintenanceCosts, maintenanceFromDate, maintenanceToDate]);
+
+  const maintenanceTotals = useMemo(() => ({
+    records: filteredMaintenance.length,
+    totalCost: filteredMaintenance.reduce((s, r) => s + r.totalCost, 0),
+    totalLaborHours: filteredMaintenance.reduce((s, r) => s + r.laborHours, 0),
+    totalSpares: filteredMaintenance.reduce((s, r) => s + r.sparesTotal, 0),
+  }), [filteredMaintenance]);
+
+  // ── Quality filtered ──
+  const filteredQuality = useMemo(() => {
+    if (qualitySeverityFilter === "ALL") return qualityChecks;
+    return qualityChecks.filter((r) => r.severity === qualitySeverityFilter);
+  }, [qualityChecks, qualitySeverityFilter]);
+
+  const qualityTotals = useMemo(() => ({
+    total: filteredQuality.length,
+    critical: filteredQuality.filter((r) => r.severity === "CRITICAL").length,
+    high:     filteredQuality.filter((r) => r.severity === "HIGH").length,
+    resolved: filteredQuality.filter((r) => r.resolvedAt !== null).length,
+  }), [filteredQuality]);
+
+  // ── Spare parts filtered ──
+  const filteredSpareParts = useMemo(() => {
+    if (sparePartsStatusFilter === "ALL") return sparePartRequests;
+    return sparePartRequests.filter((r) => r.status === sparePartsStatusFilter);
+  }, [sparePartRequests, sparePartsStatusFilter]);
+
+  const sparePartsTotals = useMemo(() => ({
+    total: filteredSpareParts.length,
+    pending:  filteredSpareParts.filter((r) => r.status === "PENDING").length,
+    received: filteredSpareParts.filter((r) => r.status === "RECEIVED").length,
+    totalCost: filteredSpareParts.reduce((s, r) => s + (r.unitPrice ?? 0) * r.quantity, 0),
+  }), [filteredSpareParts]);
 
   // ─── Export helpers ───────────────────────────────────────────────────────────
 
@@ -2906,6 +3054,289 @@ export function ReportsPage() {
               </tbody>
             </TableBase>
           </TableShell>
+        </Card>
+      )}
+
+      {/* ════════════════════════════════════════════════════════════════
+          MAINTENANCE TAB
+      ════════════════════════════════════════════════════════════════ */}
+      {activeTab === "maintenance" && (
+        <Card className="overflow-hidden">
+          <SectionHeader
+            icon={Wrench}
+            color="#0891b2"
+            title={isAr ? "تقرير تكاليف الصيانة" : "Maintenance Cost Report"}
+            subtitle={isAr ? "سجلات تكاليف الصيانة لكل آلة ومهندس" : "Maintenance cost records by machine and engineer"}
+            actions={
+              <DownloadButtons
+                onPdf={() => {
+                  if (!filteredMaintenance.length) { toast.info(copy.reports.pdfNoData); return; }
+                  exportPdfTable(
+                    isAr ? "تقرير الصيانة" : "Maintenance Report",
+                    [`${isAr ? "السجلات" : "Records"}: ${maintenanceTotals.records}`, `${isAr ? "إجمالي التكلفة" : "Total cost"}: ₪${maintenanceTotals.totalCost.toLocaleString()}`],
+                    [isAr ? "الآلة" : "Machine", isAr ? "المهندس" : "Engineer", isAr ? "ساعات العمل" : "Labor Hrs", isAr ? "قطع الغيار" : "Spares", isAr ? "الإجمالي" : "Total", isAr ? "التاريخ" : "Date"],
+                    filteredMaintenance.map((r) => [r.maintenance.machine.name, r.maintenance.engineer.fullName, r.laborHours.toFixed(1), `₪${r.sparesTotal.toLocaleString()}`, `₪${r.totalCost.toLocaleString()}`, r.createdAt.slice(0, 10)]),
+                    `maintenance-report-${new Date().toISOString().slice(0, 10)}.pdf`
+                  );
+                }}
+                onExcel={() => {
+                  if (!filteredMaintenance.length) { toast.info(copy.reports.pdfNoData); return; }
+                  exportExcelTable(
+                    [isAr ? "الآلة" : "Machine", isAr ? "المهندس" : "Engineer", isAr ? "ساعات العمل" : "Labor Hrs", isAr ? "قطع الغيار" : "Spares", isAr ? "الإجمالي" : "Total", isAr ? "التاريخ" : "Date"],
+                    filteredMaintenance.map((r) => [r.maintenance.machine.name, r.maintenance.engineer.fullName, r.laborHours.toFixed(1), `₪${r.sparesTotal.toLocaleString()}`, `₪${r.totalCost.toLocaleString()}`, r.createdAt.slice(0, 10)]),
+                    `maintenance-report-${new Date().toISOString().slice(0, 10)}.xlsx`
+                  );
+                }}
+              />
+            }
+          />
+
+          {/* Date filters */}
+          <div style={{ display: "flex", flexWrap: "wrap", gap: ".75rem", alignItems: "flex-end", padding: "1rem 1.25rem", borderBottom: "1px solid var(--border-default)" }}>
+            <label style={{ display: "flex", flexDirection: "column", gap: ".2rem", fontSize: ".8rem", fontWeight: 600 }}>
+              {isAr ? "من تاريخ" : "From date"}
+              <input type="date" value={maintenanceFromDate} onChange={(e) => setMaintenanceFromDate(e.target.value)} style={{ padding: ".35rem .6rem", borderRadius: 6, border: "1px solid var(--border-default)", fontSize: ".85rem", background: "var(--bg-card)", color: "var(--text-primary)" }} />
+            </label>
+            <label style={{ display: "flex", flexDirection: "column", gap: ".2rem", fontSize: ".8rem", fontWeight: 600 }}>
+              {isAr ? "إلى تاريخ" : "To date"}
+              <input type="date" value={maintenanceToDate} onChange={(e) => setMaintenanceToDate(e.target.value)} style={{ padding: ".35rem .6rem", borderRadius: 6, border: "1px solid var(--border-default)", fontSize: ".85rem", background: "var(--bg-card)", color: "var(--text-primary)" }} />
+            </label>
+            <button type="button" onClick={() => void loadMaintenanceCosts()} style={{ padding: ".4rem 1rem", borderRadius: 7, background: "var(--orange-500,#f97316)", color: "#fff", border: "none", fontWeight: 700, fontSize: ".82rem", cursor: "pointer" }}>
+              <RefreshCw size={13} style={{ display: "inline", marginInlineEnd: 4 }} />{isAr ? "تحديث" : "Refresh"}
+            </button>
+          </div>
+
+          <KpiGrid>
+            <KpiCard label={isAr ? "السجلات" : "Records"}           value={maintenanceTotals.records}                                      gradient="linear-gradient(135deg,#0891b2,#0e7490)" />
+            <KpiCard label={isAr ? "إجمالي التكلفة" : "Total Cost"}  value={`₪${maintenanceTotals.totalCost.toLocaleString()}`}             gradient="linear-gradient(135deg,#0e7490,#155e75)" />
+            <KpiCard label={isAr ? "ساعات العمل" : "Labor Hours"}    value={maintenanceTotals.totalLaborHours.toFixed(1)}                   gradient="linear-gradient(135deg,#155e75,#164e63)" />
+            <KpiCard label={isAr ? "تكلفة قطع الغيار" : "Spares"}   value={`₪${maintenanceTotals.totalSpares.toLocaleString()}`}           gradient="linear-gradient(135deg,#06b6d4,#0891b2)" />
+          </KpiGrid>
+
+          {filteredMaintenance.length > 0 && (
+            <TableShell className="mt-0">
+              <TableBase className="admin-table">
+                <thead>
+                  <tr>
+                    <th>{isAr ? "الآلة" : "Machine"}</th>
+                    <th>{isAr ? "النوع" : "Type"}</th>
+                    <th>{isAr ? "المهندس" : "Engineer"}</th>
+                    <th>{isAr ? "ساعات العمل" : "Labor Hrs"}</th>
+                    <th>{isAr ? "تكلفة العمل" : "Labor Cost"}</th>
+                    <th>{isAr ? "قطع الغيار" : "Spares"}</th>
+                    <th>{isAr ? "الإجمالي" : "Total"}</th>
+                    <th>{isAr ? "ملاحظات" : "Notes"}</th>
+                    <th>{isAr ? "التاريخ" : "Date"}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredMaintenance.map((r) => (
+                    <tr key={r.id}>
+                      <td style={{ fontWeight: 600 }}>{r.maintenance.machine.name}</td>
+                      <td>{r.maintenance.machine.type}</td>
+                      <td>{r.maintenance.engineer.fullName}</td>
+                      <td>{r.laborHours.toFixed(1)}</td>
+                      <td>₪{r.laborTotal.toLocaleString()}</td>
+                      <td>₪{r.sparesTotal.toLocaleString()}</td>
+                      <td style={{ fontWeight: 700, color: "#0891b2" }}>₪{r.totalCost.toLocaleString()}</td>
+                      <td style={{ color: "var(--text-secondary)", fontSize: ".78rem" }}>{r.notes ?? "—"}</td>
+                      <td>{r.createdAt.slice(0, 10)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </TableBase>
+            </TableShell>
+          )}
+        </Card>
+      )}
+
+      {/* ════════════════════════════════════════════════════════════════
+          QUALITY TAB
+      ════════════════════════════════════════════════════════════════ */}
+      {activeTab === "quality" && (
+        <Card className="overflow-hidden">
+          <SectionHeader
+            icon={ShieldCheck}
+            color="#16a34a"
+            title={isAr ? "تقرير فحص الجودة" : "Quality Checks Report"}
+            subtitle={isAr ? "سجلات فحص الجودة حسب الآلة والمهندس والخطورة" : "Quality check records by machine, engineer and severity"}
+            actions={
+              <DownloadButtons
+                onPdf={() => {
+                  if (!filteredQuality.length) { toast.info(copy.reports.pdfNoData); return; }
+                  exportPdfTable(
+                    isAr ? "تقرير الجودة" : "Quality Report",
+                    [`${isAr ? "السجلات" : "Records"}: ${qualityTotals.total}`, `${isAr ? "حرجة" : "Critical"}: ${qualityTotals.critical}`, `${isAr ? "عالية" : "High"}: ${qualityTotals.high}`],
+                    [isAr ? "الآلة" : "Machine", isAr ? "المهندس" : "Engineer", isAr ? "نوع المشكلة" : "Issue Type", isAr ? "الخطورة" : "Severity", isAr ? "التاريخ" : "Date"],
+                    filteredQuality.map((r) => [r.machine.name, r.engineer.fullName, r.issueType, r.severity, r.createdAt.slice(0, 10)]),
+                    `quality-report-${new Date().toISOString().slice(0, 10)}.pdf`
+                  );
+                }}
+                onExcel={() => {
+                  if (!filteredQuality.length) { toast.info(copy.reports.pdfNoData); return; }
+                  exportExcelTable(
+                    [isAr ? "الآلة" : "Machine", isAr ? "المهندس" : "Engineer", isAr ? "نوع المشكلة" : "Issue Type", isAr ? "الخطورة" : "Severity", isAr ? "التاريخ" : "Date"],
+                    filteredQuality.map((r) => [r.machine.name, r.engineer.fullName, r.issueType, r.severity, r.createdAt.slice(0, 10)]),
+                    `quality-report-${new Date().toISOString().slice(0, 10)}.xlsx`
+                  );
+                }}
+              />
+            }
+          />
+
+          {/* Severity filter */}
+          <div style={{ display: "flex", flexWrap: "wrap", gap: ".75rem", alignItems: "flex-end", padding: "1rem 1.25rem", borderBottom: "1px solid var(--border-default)" }}>
+            <label style={{ display: "flex", flexDirection: "column", gap: ".2rem", fontSize: ".8rem", fontWeight: 600 }}>
+              {isAr ? "تصفية الخطورة" : "Severity filter"}
+              <select value={qualitySeverityFilter} onChange={(e) => setQualitySeverityFilter(e.target.value)} style={{ padding: ".35rem .6rem", borderRadius: 6, border: "1px solid var(--border-default)", fontSize: ".85rem", background: "var(--bg-card)", color: "var(--text-primary)" }}>
+                <option value="ALL">{isAr ? "الكل" : "All"}</option>
+                {["CRITICAL", "HIGH", "MEDIUM", "LOW"].map((v) => <option key={v} value={v}>{v}</option>)}
+              </select>
+            </label>
+            <button type="button" onClick={() => void loadQualityChecks()} style={{ padding: ".4rem 1rem", borderRadius: 7, background: "var(--orange-500,#f97316)", color: "#fff", border: "none", fontWeight: 700, fontSize: ".82rem", cursor: "pointer" }}>
+              <RefreshCw size={13} style={{ display: "inline", marginInlineEnd: 4 }} />{isAr ? "تحديث" : "Refresh"}
+            </button>
+          </div>
+
+          <KpiGrid>
+            <KpiCard label={isAr ? "إجمالي الفحوصات" : "Total Checks"}  value={qualityTotals.total}    gradient="linear-gradient(135deg,#16a34a,#15803d)" />
+            <KpiCard label={isAr ? "حرجة" : "Critical"}                 value={qualityTotals.critical}  gradient="linear-gradient(135deg,#dc2626,#b91c1c)" />
+            <KpiCard label={isAr ? "عالية" : "High"}                    value={qualityTotals.high}      gradient="linear-gradient(135deg,#d97706,#b45309)" />
+            <KpiCard label={isAr ? "تم الحل" : "Resolved"}              value={qualityTotals.resolved}  gradient="linear-gradient(135deg,#0891b2,#0e7490)" />
+          </KpiGrid>
+
+          {filteredQuality.length > 0 && (
+            <TableShell className="mt-0">
+              <TableBase className="admin-table">
+                <thead>
+                  <tr>
+                    <th>{isAr ? "الآلة" : "Machine"}</th>
+                    <th>{isAr ? "النوع" : "Type"}</th>
+                    <th>{isAr ? "المهندس" : "Engineer"}</th>
+                    <th>{isAr ? "نوع المشكلة" : "Issue Type"}</th>
+                    <th>{isAr ? "الخطورة" : "Severity"}</th>
+                    <th>{isAr ? "الوصف" : "Description"}</th>
+                    <th>{isAr ? "تاريخ الحل" : "Resolved"}</th>
+                    <th>{isAr ? "التاريخ" : "Date"}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredQuality.map((r) => {
+                    const sevColor = r.severity === "CRITICAL" ? "#dc2626" : r.severity === "HIGH" ? "#d97706" : r.severity === "MEDIUM" ? "#2563eb" : "#16a34a";
+                    return (
+                      <tr key={r.id}>
+                        <td style={{ fontWeight: 600 }}>{r.machine.name}</td>
+                        <td>{r.machine.type}</td>
+                        <td>{r.engineer.fullName}</td>
+                        <td>{r.issueType}</td>
+                        <td><span style={{ padding: "2px 8px", borderRadius: 99, fontSize: ".72rem", fontWeight: 700, background: `${sevColor}18`, color: sevColor }}>{r.severity}</span></td>
+                        <td style={{ maxWidth: 160, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: "var(--text-secondary)", fontSize: ".78rem" }}>{r.description ?? "—"}</td>
+                        <td>{r.resolvedAt ? r.resolvedAt.slice(0, 10) : <span style={{ color: "var(--text-muted)" }}>—</span>}</td>
+                        <td>{r.createdAt.slice(0, 10)}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </TableBase>
+            </TableShell>
+          )}
+        </Card>
+      )}
+
+      {/* ════════════════════════════════════════════════════════════════
+          SPARE PARTS TAB
+      ════════════════════════════════════════════════════════════════ */}
+      {activeTab === "spareParts" && (
+        <Card className="overflow-hidden">
+          <SectionHeader
+            icon={Boxes}
+            color="#7c3aed"
+            title={isAr ? "تقرير طلبات قطع الغيار" : "Spare Parts Requests Report"}
+            subtitle={isAr ? "طلبات قطع الغيار حسب المهندس والآلة والحالة" : "Spare part requests by engineer, machine and status"}
+            actions={
+              <DownloadButtons
+                onPdf={() => {
+                  if (!filteredSpareParts.length) { toast.info(copy.reports.pdfNoData); return; }
+                  exportPdfTable(
+                    isAr ? "تقرير قطع الغيار" : "Spare Parts Report",
+                    [`${isAr ? "الطلبات" : "Requests"}: ${sparePartsTotals.total}`, `${isAr ? "المعلّقة" : "Pending"}: ${sparePartsTotals.pending}`, `${isAr ? "المستلمة" : "Received"}: ${sparePartsTotals.received}`],
+                    [isAr ? "القطعة" : "Part", isAr ? "الآلة" : "Machine", isAr ? "المهندس" : "Engineer", isAr ? "الكمية" : "Qty", isAr ? "سعر الوحدة" : "Unit Price", isAr ? "الحالة" : "Status", isAr ? "التاريخ" : "Date"],
+                    filteredSpareParts.map((r) => [r.partName, r.machine?.name ?? "—", r.engineer.fullName, String(r.quantity), r.unitPrice != null ? `₪${r.unitPrice}` : "—", r.status, r.createdAt.slice(0, 10)]),
+                    `spare-parts-report-${new Date().toISOString().slice(0, 10)}.pdf`
+                  );
+                }}
+                onExcel={() => {
+                  if (!filteredSpareParts.length) { toast.info(copy.reports.pdfNoData); return; }
+                  exportExcelTable(
+                    [isAr ? "القطعة" : "Part", isAr ? "الآلة" : "Machine", isAr ? "المهندس" : "Engineer", isAr ? "الكمية" : "Qty", isAr ? "سعر الوحدة" : "Unit Price", isAr ? "الحالة" : "Status", isAr ? "التاريخ" : "Date"],
+                    filteredSpareParts.map((r) => [r.partName, r.machine?.name ?? "—", r.engineer.fullName, String(r.quantity), r.unitPrice != null ? `₪${r.unitPrice}` : "—", r.status, r.createdAt.slice(0, 10)]),
+                    `spare-parts-report-${new Date().toISOString().slice(0, 10)}.xlsx`
+                  );
+                }}
+              />
+            }
+          />
+
+          {/* Status filter */}
+          <div style={{ display: "flex", flexWrap: "wrap", gap: ".75rem", alignItems: "flex-end", padding: "1rem 1.25rem", borderBottom: "1px solid var(--border-default)" }}>
+            <label style={{ display: "flex", flexDirection: "column", gap: ".2rem", fontSize: ".8rem", fontWeight: 600 }}>
+              {isAr ? "تصفية الحالة" : "Status filter"}
+              <select value={sparePartsStatusFilter} onChange={(e) => setSparePartsStatusFilter(e.target.value)} style={{ padding: ".35rem .6rem", borderRadius: 6, border: "1px solid var(--border-default)", fontSize: ".85rem", background: "var(--bg-card)", color: "var(--text-primary)" }}>
+                <option value="ALL">{isAr ? "الكل" : "All"}</option>
+                <option value="PENDING">{isAr ? "معلّق" : "Pending"}</option>
+                <option value="RECEIVED">{isAr ? "مستلم" : "Received"}</option>
+              </select>
+            </label>
+            <button type="button" onClick={() => void loadSparePartRequests()} style={{ padding: ".4rem 1rem", borderRadius: 7, background: "var(--orange-500,#f97316)", color: "#fff", border: "none", fontWeight: 700, fontSize: ".82rem", cursor: "pointer" }}>
+              <RefreshCw size={13} style={{ display: "inline", marginInlineEnd: 4 }} />{isAr ? "تحديث" : "Refresh"}
+            </button>
+          </div>
+
+          <KpiGrid>
+            <KpiCard label={isAr ? "إجمالي الطلبات" : "Total Requests"} value={sparePartsTotals.total}                                  gradient="linear-gradient(135deg,#7c3aed,#6d28d9)" />
+            <KpiCard label={isAr ? "معلّقة" : "Pending"}                value={sparePartsTotals.pending}                                 gradient="linear-gradient(135deg,#d97706,#b45309)" />
+            <KpiCard label={isAr ? "مستلمة" : "Received"}               value={sparePartsTotals.received}                                gradient="linear-gradient(135deg,#16a34a,#15803d)" />
+            <KpiCard label={isAr ? "التكلفة الإجمالية" : "Total Cost"}  value={`₪${sparePartsTotals.totalCost.toLocaleString()}`}        gradient="linear-gradient(135deg,#6d28d9,#5b21b6)" />
+          </KpiGrid>
+
+          {filteredSpareParts.length > 0 && (
+            <TableShell className="mt-0">
+              <TableBase className="admin-table">
+                <thead>
+                  <tr>
+                    <th>{isAr ? "القطعة" : "Part"}</th>
+                    <th>{isAr ? "الآلة" : "Machine"}</th>
+                    <th>{isAr ? "المهندس" : "Engineer"}</th>
+                    <th>{isAr ? "الكمية" : "Qty"}</th>
+                    <th>{isAr ? "سعر الوحدة" : "Unit Price"}</th>
+                    <th>{isAr ? "الإجمالي" : "Total"}</th>
+                    <th>{isAr ? "الحالة" : "Status"}</th>
+                    <th>{isAr ? "سعّره" : "Priced by"}</th>
+                    <th>{isAr ? "التاريخ" : "Date"}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredSpareParts.map((r) => {
+                    const isPending = r.status === "PENDING";
+                    const total = r.unitPrice != null ? r.unitPrice * r.quantity : null;
+                    return (
+                      <tr key={r.id}>
+                        <td style={{ fontWeight: 600 }}>{r.partName}</td>
+                        <td>{r.machine?.name ?? "—"}</td>
+                        <td>{r.engineer.fullName}</td>
+                        <td>{r.quantity}</td>
+                        <td>{r.unitPrice != null ? `₪${r.unitPrice.toLocaleString()}` : "—"}</td>
+                        <td style={{ fontWeight: 700, color: "#7c3aed" }}>{total != null ? `₪${total.toLocaleString()}` : "—"}</td>
+                        <td><span style={{ padding: "2px 8px", borderRadius: 99, fontSize: ".72rem", fontWeight: 700, background: isPending ? "rgba(217,119,6,.12)" : "rgba(22,163,74,.12)", color: isPending ? "#b45309" : "#16a34a" }}>{r.status}</span></td>
+                        <td style={{ color: "var(--text-secondary)", fontSize: ".78rem" }}>{r.pricedBy?.fullName ?? "—"}</td>
+                        <td>{r.createdAt.slice(0, 10)}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </TableBase>
+            </TableShell>
+          )}
         </Card>
       )}
 

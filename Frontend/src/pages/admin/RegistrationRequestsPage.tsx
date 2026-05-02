@@ -312,7 +312,7 @@ export function RegistrationRequestsPage() {
                 {shifts.length === 0 ? (
                   <p style={{ fontSize: ".8rem", color: "var(--text-secondary)" }}>No shifts configured. Go to Shifts page to create shifts first.</p>
                 ) : (
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: ".5rem" }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(100px, 1fr))", gap: ".5rem" }}>
                     {shifts.map((s) => {
                       const letter = s.name.replace(/[^A-Ca-c]/g, "").toUpperCase() || s.name[0]?.toUpperCase();
                       const color = shiftColor[letter] ?? "#64748b";

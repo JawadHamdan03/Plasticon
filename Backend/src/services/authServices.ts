@@ -311,7 +311,7 @@ export const verifyEmailByToken = async (
 
 export const requestPasswordReset = async (
   email: string,
-): Promise<ServiceResult<{ message: string; resetUrl?: string }>> => {
+): Promise<ServiceResult<{ message: string }>> => {
   if (!email) {
     return { status: 400, message: "Email is required" };
   }
@@ -322,32 +322,26 @@ export const requestPasswordReset = async (
     select: { id: true, email: true },
   });
 
-  let debugResetUrl: string | undefined;
-
   if (!user) {
     console.log("forgot-password: no account matched the requested email");
   }
 
   if (user?.email) {
-    const token = generateActionToken(user.id, "reset-password", "1h");
-    const resetUrl = buildResetPasswordLink(token);
+    if (!isSmtpConfigured) {
+      console.log("forgot-password: SMTP not configured — reset link not sent for user", user.id);
+    } else {
+      const token = generateActionToken(user.id, "reset-password", "1h");
+      const resetUrl = buildResetPasswordLink(token);
 
-    const emailSent = await sendEmailSafely({
-      to: user.email,
-      subject: "Reset your Plasticon password",
-      text: `Reset your password using this link: ${resetUrl}`,
-      html: `<p>You requested a password reset.</p><p>Use this link to continue: <a href="${resetUrl}">Reset password</a></p>`,
-    });
+      const emailSent = await sendEmailSafely({
+        to: user.email,
+        subject: "Reset your Plasticon password",
+        text: `Reset your password using this link: ${resetUrl}`,
+        html: `<p>You requested a password reset.</p><p>Use this link to continue: <a href="${resetUrl}">Reset password</a></p>`,
+      });
 
-    if (!isSmtpConfigured || !emailSent) {
-      debugResetUrl = resetUrl;
+      console.log("forgot-password: reset flow executed", { userId: user.id, emailSent });
     }
-
-    console.log("forgot-password: reset flow executed", {
-      userId: user.id,
-      smtpConfigured: isSmtpConfigured,
-      emailSent,
-    });
   }
 
   return {
@@ -355,7 +349,6 @@ export const requestPasswordReset = async (
     data: {
       message:
         "If an account with this email exists, a password reset link has been sent.",
-      ...(debugResetUrl ? { resetUrl: debugResetUrl } : {}),
     },
   };
 };

@@ -125,7 +125,6 @@ function getNavSectionsBi(role: string): NavSectionBi[] {
         label: nav("Finance", "المالية"),
         items: [
           { to: "/accountant/financial-dashboard", icon: <PieChart size={17} />, label: nav("Fin. Dashboard", "لوحة المالية") },
-          { to: "/consumption", icon: <Package size={17} />, label: nav("Consumption", "الاستهلاك") },
           { to: "/accountant/invoices", icon: <FileText size={17} />, label: nav("Invoices", "الفواتير") },
           { to: "/accountant/expenses", icon: <DollarSign size={17} />, label: nav("Expenses", "المصروفات") },
           { to: "/accountant/financial-reports", icon: <BarChart3 size={17} />, label: nav("Fin. Reports", "تقارير مالية") },

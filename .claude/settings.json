@@ -46,7 +46,9 @@
       "Bash(cmd /c \"npx tsx src/app.ts > server-out.txt 2>&1\")",
       "Bash(grep -n \"NIS\\\\|\\\\\\\\$\\\\|currency\\\\|fmtMoney\\\\|formatMoney\" /c/Users/JC/OneDrive/Documents/Plasticon/Frontend/src/pages/admin/PayrollAdminPage.tsx)",
       "Bash(grep -n \"NIS\\\\|\\\\\\\\$\\\\|DollarSign\\\\|fmtMoney\\\\|totalSalary\\\\|currency\" /c/Users/JC/OneDrive/Documents/Plasticon/Frontend/src/pages/admin/PayrollAdminPage.tsx)",
-      "Bash(grep -n \"NIS\\\\|DollarSign\\\\|\\\\$[0-9]\\\\|fmtMoney\\\\|formatMoney\\\\|totalSalary\\\\|monthlyPay\\\\|dailyRate\" /c/Users/JC/OneDrive/Documents/Plasticon/Frontend/src/pages/admin/PayrollAdminPage.tsx)"
+      "Bash(grep -n \"NIS\\\\|DollarSign\\\\|\\\\$[0-9]\\\\|fmtMoney\\\\|formatMoney\\\\|totalSalary\\\\|monthlyPay\\\\|dailyRate\" /c/Users/JC/OneDrive/Documents/Plasticon/Frontend/src/pages/admin/PayrollAdminPage.tsx)",
+      "Bash(npm test *)",
+      "Bash(grep -E '\\\\.\\(ts|js\\)$')"
     ]
   }
 }

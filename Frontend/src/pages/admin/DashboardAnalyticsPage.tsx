@@ -235,10 +235,10 @@ export function DashboardAnalyticsPage() {
           </div>
 
           {/* ── Row 1: People + Production ─────────────────── */}
-          <div style={{ display: "grid", gridTemplateColumns: COL2, gap: "1rem" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(340px, 1fr))", gap: "1rem" }}>
 
             <SectionCard title="People & Attendance" icon={<Users size={16} />}>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: ".5rem" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(80px, 1fr))", gap: ".5rem" }}>
                 {(["WORKER", "ENGINEER", "ACCOUNTANT", "ADMIN"] as const).map((role) => {
                   const count = d.usersByRole.find((r) => r.role === role)?.count ?? 0;
                   return (
@@ -258,7 +258,7 @@ export function DashboardAnalyticsPage() {
             </SectionCard>
 
             <SectionCard title="Production Output" icon={<Factory size={16} />}>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: ".5rem" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(110px, 1fr))", gap: ".5rem" }}>
                 {[
                   { label: "Today", pieces: d.production.todayPieces, cartons: d.production.todayCartons },
                   { label: "This Week", pieces: d.production.weekPieces, cartons: d.production.weekCartons },
@@ -279,7 +279,7 @@ export function DashboardAnalyticsPage() {
           </div>
 
           {/* ── Row 2: Machines + Inventory ────────────────── */}
-          <div style={{ display: "grid", gridTemplateColumns: COL2, gap: "1rem" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(340px, 1fr))", gap: "1rem" }}>
 
             <SectionCard title="Machine Status" icon={<Cpu size={16} />}>
               <div style={{ display: "flex", flexDirection: "column", gap: ".4rem" }}>
@@ -306,7 +306,7 @@ export function DashboardAnalyticsPage() {
             </SectionCard>
 
             <SectionCard title="Raw Material Inventory" icon={<Package size={16} />}>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: ".5rem" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(110px, 1fr))", gap: ".5rem" }}>
                 {[
                   { label: "Total Materials", value: d.totalRawMaterials, color: "#3b82f6", bg: "rgba(59,130,246,.06)" },
                   { label: "Low Stock", value: d.lowStockMaterials.length, color: "#f97316", bg: "rgba(249,115,22,.06)" },
@@ -348,7 +348,7 @@ export function DashboardAnalyticsPage() {
             </div>
 
             {/* Sales + Purchases — two big full cards side by side */}
-            <div style={{ display: "grid", gridTemplateColumns: COL2, gap: "1rem" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "1rem" }}>
               {/* Sales */}
               <div style={{ borderRadius: 12, background: "linear-gradient(135deg,#10b981,#059669)", padding: "1.25rem 1.5rem", color: "#fff", position: "relative", overflow: "hidden" }}>
                 <div style={{ position: "absolute", right: -12, top: -12, opacity: .12, transform: "scale(3.5)" }}><TrendingUp size={40} /></div>
@@ -399,7 +399,7 @@ export function DashboardAnalyticsPage() {
             </div>
 
             {/* Expenses + Payroll + pending stats */}
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: ".75rem" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: ".75rem" }}>
               {[
                 { label: "Expenses This Month", value: d.expensesThisMonth, color: "#ef4444", icon: <ArrowDownRight size={14} />, sub: `${d.expensesPending} pending approval` },
                 { label: "Payroll This Month", value: d.payrollThisMonth, color: "#8b5cf6", icon: <UserCheck size={14} />, sub: `${d.totalShifts} shifts total` },
@@ -421,7 +421,7 @@ export function DashboardAnalyticsPage() {
           </div>
 
           {/* ── Row 4: Quality + Recent Activity ───────────── */}
-          <div style={{ display: "grid", gridTemplateColumns: COL2, gap: "1rem" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(340px, 1fr))", gap: "1rem" }}>
 
             <SectionCard title="Quality & Maintenance" icon={<CheckSquare size={16} />}>
               <div style={{ display: "flex", flexDirection: "column", gap: ".4rem" }}>
