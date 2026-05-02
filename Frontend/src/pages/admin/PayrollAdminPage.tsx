@@ -124,7 +124,10 @@ export function PayrollAdminPage() {
   const [tab, setTab] = useState<"daily" | "monthly" | "salaries" | "config">("daily");
   const today = new Date();
   const defaultDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+  const defaultMonth = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}`;
   const [dateFilter, setDateFilter] = useState(defaultDate);
+  const [monthFilter, setMonthFilter] = useState(defaultMonth);
+  const [calculatingMonthly, setCalculatingMonthly] = useState(false);
 
   // Daily
   const [daily, setDaily] = useState<DailyRecord[]>([]);
@@ -174,17 +177,43 @@ export function PayrollAdminPage() {
     finally { setDailyLoading(false); }
   }, [dateFilter]);
 
-  const loadMonthly = useCallback(async () => {
+  const loadMonthly = useCallback(async (filterMonth?: string) => {
     setMonthlyLoading(true); setMonthlyError("");
     try {
-      const [or, lr] = await Promise.all([api("/payroll/admin/overview"), api("/payroll")]);
+      const m = filterMonth ?? monthFilter;
+      const [or, lr] = await Promise.all([
+        api(`/payroll/admin/overview${m ? `?month=${m}` : ""}`),
+        api(`/payroll${m ? `?month=${m}` : ""}`),
+      ]);
       if (!or.ok) throw new Error(await readApiError(or));
       if (!lr.ok) throw new Error(await readApiError(lr));
       setOverview(await or.json());
       setMonthlyRecords(await lr.json());
     } catch (e) { setMonthlyError(e instanceof Error ? e.message : "Failed"); }
     finally { setMonthlyLoading(false); }
-  }, []);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [monthFilter]);
+
+  const calculateMonthlyPayroll = async () => {
+    if (!monthFilter) return;
+    setCalculatingMonthly(true);
+    try {
+      const res = await api("/payroll/monthly/calculate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ month: monthFilter }),
+      });
+      const data = await res.json() as { calculated?: number; message?: string };
+      if (!res.ok) { toast.error(data.message ?? "Error"); return; }
+      toast.success(
+        data.calculated === 0
+          ? (isAr ? "لا سجلات جديدة" : "No new records")
+          : (isAr ? `تم احتساب ${data.calculated} راتب` : `Calculated ${data.calculated} payroll(s)`)
+      );
+      void loadMonthly();
+    } catch (e) { toast.error(e instanceof Error ? e.message : "Failed"); }
+    finally { setCalculatingMonthly(false); }
+  };
 
   const loadConfigs = useCallback(async () => {
     setConfigLoading(true);
@@ -256,6 +285,12 @@ export function PayrollAdminPage() {
     if (tab === "config") { void loadConfigs(); void loadDeductionRules(); }
     if (tab === "salaries") void loadUserSalaries();
   }, [tab, loadDaily, loadMonthly, loadConfigs, loadDeductionRules, loadUserSalaries]);
+
+  // Reload monthly when filter changes
+  useEffect(() => {
+    if (tab === "monthly") void loadMonthly();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [monthFilter]);
 
   const confirmRecord = async (id: number) => {
     setConfirmingId(id);
@@ -553,6 +588,24 @@ export function PayrollAdminPage() {
       {tab === "monthly" && (
         <>
           {monthlyError && <div className="auth-alert auth-alert--error" style={{ marginBottom: "1rem" }}>{monthlyError}</div>}
+
+          {/* Month filter bar */}
+          <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap", marginBottom: "1.5rem", alignItems: "flex-end", background: "var(--bg-surface)", border: "1px solid var(--border-default)", borderRadius: "var(--radius-xl)", padding: "1rem 1.25rem" }}>
+            <div className="field" style={{ flex: "0 0 auto" }}>
+              <label className="field__label">{isAr ? "الشهر" : "Month"}</label>
+              <input type="month" className="field__control" value={monthFilter} onChange={(e) => setMonthFilter(e.target.value)} style={{ width: "180px" }} />
+            </div>
+            <button className="btn btn--primary btn--sm" onClick={() => void loadMonthly()}>{isAr ? "بحث" : "Search"}</button>
+            <div style={{ flex: 1 }} />
+            <div style={{ display: "flex", flexDirection: "column", gap: ".35rem", alignItems: "flex-end" }}>
+              <label className="field__label" style={{ alignSelf: "flex-start" }}>{isAr ? "احتساب رواتب الشهر المحدد" : "Calculate monthly payrolls for selected month"}</label>
+              <button className="btn btn--outline btn--sm" onClick={() => void calculateMonthlyPayroll()} disabled={calculatingMonthly} style={{ display: "flex", alignItems: "center", gap: ".4rem" }}>
+                <RefreshCw size={13} />{calculatingMonthly ? "..." : isAr ? "احسب الشهر" : "Calculate Month"}
+              </button>
+            </div>
+          </div>
+
+          {/* KPI cards */}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "1rem", marginBottom: "1.5rem" }}>
             <KpiCard label={isAr ? "سجلات الرواتب" : "Payroll Records"} value={overview?.totals.payrollCount ?? "—"}                                      gradient="linear-gradient(135deg,#3b82f6,#1d4ed8)" icon={<Users size={20} />} />
             <KpiCard label={isAr ? "إجمالي الصرف" : "Total Payout"}      value={`${(overview?.totals.totalPayout ?? 0).toLocaleString()} ₪`}              gradient="linear-gradient(135deg,#10b981,#059669)" icon={<DollarSign size={20} />} />
@@ -561,21 +614,39 @@ export function PayrollAdminPage() {
           </div>
 
           <div className="payroll-monthly-grid">
+            {/* By Role breakdown */}
             <div className="module-panel">
               <h3 style={{ margin: "0 0 1rem", fontSize: ".88rem", fontWeight: 700, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: ".06em" }}>{isAr ? "حسب الدور" : "By Role"}</h3>
               {monthlyLoading ? <div className="spinner" style={{ margin: "1rem auto" }} /> : (
                 <div style={{ display: "flex", flexDirection: "column", gap: ".5rem" }}>
-                  {(overview?.byRole ?? []).map((r) => (
-                    <div key={r.role} style={{ display: "flex", justifyContent: "space-between", padding: ".5rem .75rem", borderRadius: "var(--radius-md)", background: "var(--bg-page)", border: "1px solid var(--border-default)" }}>
-                      <span style={{ fontWeight: 600, color: ROLE_COLORS[r.role] ?? "var(--text-primary)", fontSize: ".85rem" }}>{r.role}</span>
-                      <span style={{ fontSize: ".85rem" }}>{r.totalPayout.toLocaleString()} ₪</span>
-                    </div>
-                  ))}
-                  {(overview?.byRole ?? []).length === 0 && <p style={{ color: "var(--text-secondary)", fontSize: ".85rem" }}>{isAr ? "لا بيانات" : "No data"}</p>}
+                  {(overview?.byRole ?? []).map((r) => {
+                    const pct = overview ? (r.totalPayout / (overview.totals.totalPayout || 1)) * 100 : 0;
+                    return (
+                      <div key={r.role} style={{ padding: ".65rem .75rem", borderRadius: "var(--radius-md)", background: "var(--bg-page)", border: "1px solid var(--border-default)" }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: ".35rem" }}>
+                          <span style={{ fontWeight: 700, color: ROLE_COLORS[r.role] ?? "var(--text-primary)", fontSize: ".85rem" }}>{r.role}</span>
+                          <span style={{ fontSize: ".85rem", fontWeight: 600 }}>{r.totalPayout.toLocaleString()} ₪</span>
+                        </div>
+                        <div style={{ display: "flex", alignItems: "center", gap: ".5rem" }}>
+                          <div style={{ flex: 1, height: 5, borderRadius: 99, background: "var(--border-default)", overflow: "hidden" }}>
+                            <div style={{ height: "100%", width: `${pct}%`, borderRadius: 99, background: ROLE_COLORS[r.role] ?? "#94a3b8" }} />
+                          </div>
+                          <span style={{ fontSize: ".72rem", color: "var(--text-secondary)", minWidth: 32 }}>{pct.toFixed(0)}%</span>
+                        </div>
+                        <p style={{ margin: ".25rem 0 0", fontSize: ".73rem", color: "var(--text-secondary)" }}>
+                          {r.payrollCount} {isAr ? "موظف" : "employees"}
+                        </p>
+                      </div>
+                    );
+                  })}
+                  {(overview?.byRole ?? []).length === 0 && !monthlyLoading && (
+                    <p style={{ color: "var(--text-secondary)", fontSize: ".85rem" }}>{isAr ? "لا بيانات" : "No data"}</p>
+                  )}
                 </div>
               )}
             </div>
 
+            {/* Per-employee table */}
             <div className="module-panel module-panel--full">
               {monthlyLoading ? <div className="spinner" style={{ margin: "1rem auto" }} /> : (
                 <div style={{ overflowX: "auto" }}>
@@ -586,19 +657,28 @@ export function PayrollAdminPage() {
                         <th>{isAr ? "الدور" : "Role"}</th>
                         <th>{isAr ? "الشهر" : "Month"}</th>
                         <th>{isAr ? "الساعات" : "Hours"}</th>
+                        <th>{isAr ? "الأساسي" : "Base"}</th>
+                        <th>{isAr ? "الوقت الإضافي" : "Overtime"}</th>
                         <th>{isAr ? "الإجمالي" : "Total"}</th>
                         {isAdmin && <th>{isAr ? "إجراء" : "Action"}</th>}
                       </tr>
                     </thead>
                     <tbody>
-                      {monthlyRecords.slice(0, 50).map((r) => (
+                      {monthlyRecords.slice(0, 100).map((r) => (
                         <tr key={r.id}>
-                          <td style={{ fontWeight: 600 }}>{r.user?.fullName ?? "—"}</td>
+                          <td style={{ fontWeight: 700 }}>{r.user?.fullName ?? "—"}</td>
                           <td>
                             <span className="badge" style={{ background: ROLE_COLORS[r.user?.role ?? ""] + "22", color: ROLE_COLORS[r.user?.role ?? ""], border: "none", fontSize: ".74rem" }}>{r.user?.role ?? "—"}</span>
                           </td>
-                          <td>{r.month}</td>
-                          <td>{r.totalHours?.toFixed(1) ?? "—"}h</td>
+                          <td style={{ fontSize: ".85rem", color: "var(--text-secondary)" }}>{r.month}</td>
+                          <td>
+                            <span style={{ display: "flex", alignItems: "center", gap: ".25rem" }}>
+                              <Clock size={12} style={{ opacity: .5 }} />
+                              <strong>{r.totalHours?.toFixed(1) ?? "—"}</strong>h
+                            </span>
+                          </td>
+                          <td style={{ color: "var(--text-secondary)" }}>{r.baseSalary != null ? `${r.baseSalary.toLocaleString()} ₪` : "—"}</td>
+                          <td style={{ color: "#f97316" }}>{r.overtimeSalary != null && r.overtimeSalary > 0 ? `+${r.overtimeSalary.toFixed(2)} ₪` : <span style={{ color: "var(--text-secondary)" }}>—</span>}</td>
                           <td style={{ fontWeight: 700, color: "var(--brand-primary)" }}>
                             {editMonthly?.id === r.id ? (
                               <div style={{ display: "flex", alignItems: "center", gap: ".4rem" }}>
@@ -624,7 +704,10 @@ export function PayrollAdminPage() {
                         </tr>
                       ))}
                       {monthlyRecords.length === 0 && (
-                        <tr><td colSpan={isAdmin ? 6 : 5} style={{ textAlign: "center", padding: "2rem", color: "var(--text-secondary)" }}>{isAr ? "لا توجد سجلات" : "No records"}</td></tr>
+                        <tr><td colSpan={isAdmin ? 8 : 7} style={{ textAlign: "center", padding: "2rem", color: "var(--text-secondary)" }}>
+                          <DollarSign size={28} style={{ display: "block", margin: "0 auto .5rem", opacity: .3 }} />
+                          {isAr ? "لا توجد سجلات لهذا الشهر" : "No records for this month"}
+                        </td></tr>
                       )}
                     </tbody>
                   </table>

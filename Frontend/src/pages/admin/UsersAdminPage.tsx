@@ -259,7 +259,7 @@ export function UsersAdminPage() {
                 {shifts.length === 0 ? (
                   <p style={{ fontSize: ".8rem", color: "var(--text-secondary)" }}>No shifts found. Create shifts in the Shifts page first.</p>
                 ) : (
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: ".5rem" }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(100px, 1fr))", gap: ".5rem" }}>
                     {/* No-shift option */}
                     <button type="button"
                       onClick={() => setEditShiftId("")}

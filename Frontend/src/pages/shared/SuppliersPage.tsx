@@ -342,7 +342,7 @@ export function SuppliersPage() {
 
           <form className="module-form" onSubmit={(e) => void handleSubmit(e)}>
             {/* Row 1: Supplier + Date */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "1rem" }}>
               <label style={{ display: "flex", flexDirection: "column", gap: ".3rem" }}>
                 <span style={{ fontSize: ".82rem", fontWeight: 600, color: "var(--text-secondary)" }}>
                   {nav("Supplier *", "المورد *")}

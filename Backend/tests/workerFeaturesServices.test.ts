@@ -92,15 +92,17 @@ describe("workerFeaturesServices", () => {
   });
 
   it("saves shift checklists with filtered tasks and a digital signature", async () => {
-    mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([
-      {
-        id: 2,
-        shift_phase: "END",
-        tasks_json: [{ label: "Check belts", done: true }],
-        digital_signature: "Worker A",
-        created_at: new Date().toISOString(),
-      },
-    ]);
+    mockPrisma.$queryRawUnsafe
+      .mockResolvedValueOnce([{ count: 0n }]) // duplicate check returns 0
+      .mockResolvedValueOnce([
+        {
+          id: 2,
+          shift_phase: "END",
+          tasks_json: [{ label: "Check belts", done: true }],
+          digital_signature: "Worker A",
+          created_at: new Date().toISOString(),
+        },
+      ]);
 
     const result = await saveShiftChecklist(8, {
       shiftPhase: "end",
@@ -172,16 +174,18 @@ describe("workerFeaturesServices", () => {
   });
 
   it("stores daily targets and sends an alert when the target is missed", async () => {
-    mockPrisma.$queryRawUnsafe.mockResolvedValueOnce([
-      {
-        id: 4,
-        target_date: "2026-04-07",
-        target_units: 120,
-        actual_units: 96,
-        note: "Short shift",
-        created_at: new Date().toISOString(),
-      },
-    ]);
+    mockPrisma.$queryRawUnsafe
+      .mockResolvedValueOnce([{ count: 0n }]) // duplicate check returns 0
+      .mockResolvedValueOnce([
+        {
+          id: 4,
+          target_date: "2026-04-07",
+          target_units: 120,
+          actual_units: 96,
+          note: "Short shift",
+          created_at: new Date().toISOString(),
+        },
+      ]);
 
     const result = await saveDailyTargetProgress(10, {
       targetDate: "2026-04-07",

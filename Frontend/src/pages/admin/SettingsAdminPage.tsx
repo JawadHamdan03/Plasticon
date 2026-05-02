@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Download } from "lucide-react";
+import { BarChart2, Download, Factory, LayoutDashboard, Settings2, Trash2, TrendingUp, Users2 } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 import { useLocale } from "../../context/LocaleContext";
 import { UserAvatarBadge } from "../../components/UserAvatarBadge";
@@ -75,7 +75,6 @@ type SettingsTab =
   | "trend"
   | "production"
   | "system"
-  | "kaizen"
   | "users";
 
 const settingsTabValues: SettingsTab[] = [
@@ -83,7 +82,6 @@ const settingsTabValues: SettingsTab[] = [
   "trend",
   "production",
   "system",
-  "kaizen",
   "users",
 ];
 
@@ -122,26 +120,6 @@ const emptyUserForm = (): UserFormState => ({
 
 const isSettingsTab = (value: string | null): value is SettingsTab =>
   value !== null && settingsTabValues.includes(value as SettingsTab);
-
-type AdminKaizenSuggestion = {
-  id: number;
-  user_id: number;
-  worker_name: string;
-  title: string;
-  details: string;
-  estimated_impact: string | null;
-  review_status: "PENDING" | "APPROVED" | "REJECTED";
-  review_note: string | null;
-  score: number;
-  reward_points: number;
-  created_at: string;
-};
-
-type KaizenReviewDraft = {
-  score: string;
-  rewardPoints: string;
-  reviewNote: string;
-};
 
 type OpsSnapshot = {
   id: number;
@@ -323,16 +301,6 @@ export function SettingsAdminPage() {
     null,
   );
   const [activeTab, setActiveTab] = useState<SettingsTab>("overview");
-  const [kaizenSuggestions, setKaizenSuggestions] = useState<
-    AdminKaizenSuggestion[]
-  >([]);
-  const [kaizenDrafts, setKaizenDrafts] = useState<
-    Record<number, KaizenReviewDraft>
-  >({});
-  const [kaizenFilter, setKaizenFilter] = useState<
-    "ALL" | "PENDING" | "APPROVED" | "REJECTED"
-  >("PENDING");
-  const [loadingKaizen, setLoadingKaizen] = useState(false);
 
   /* ── Users management ── */
   const [users, setUsers] = useState<AdminUser[]>([]);
@@ -345,6 +313,7 @@ export function SettingsAdminPage() {
   const [userFormError, setUserFormError] = useState("");
   const [userFormSaving, setUserFormSaving] = useState(false);
   const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
+  const [deleteSnapshotConfirmId, setDeleteSnapshotConfirmId] = useState<number | null>(null);
 
   useEffect(() => {
     const tabParam = searchParams.get("tab");
@@ -413,6 +382,9 @@ export function SettingsAdminPage() {
             deltaFromPrevious: "الفرق عن السابقة",
             exportLatest: "تصدير أحدث لقطة",
             noSnapshots: "لا توجد لقطات بعد.",
+            deleteSnapshot: "حذف اللقطة",
+            confirmDeleteSnapshot: "هل أنت متأكد من حذف هذه اللقطة؟",
+            snapshotDeleted: "تم حذف اللقطة بنجاح",
             presetBalanced: "تطبيق إعداد متوازن",
             presetStrict: "تطبيق إعداد صارم",
             presetRelaxed: "تطبيق إعداد مرن",
@@ -434,23 +406,7 @@ export function SettingsAdminPage() {
             tabTrend: "الاتجاه",
             tabProduction: "الإنتاج",
             tabSystem: "النظام",
-            tabKaizen: "كايزن",
             electricityStandalone: "صفحة الكهرباء",
-            kaizenTitle: "مراجعة اقتراحات Kaizen",
-            kaizenFilter: "فلتر الحالة",
-            kaizenApprove: "اعتماد",
-            kaizenReject: "رفض",
-            kaizenWorker: "العامل",
-            kaizenStatus: "الحالة",
-            kaizenScore: "التقييم",
-            kaizenReward: "النقاط",
-            kaizenImpact: "الأثر المتوقع",
-            kaizenCreatedAt: "تاريخ الإنشاء",
-            kaizenActions: "الإجراء",
-            kaizenNote: "ملاحظة المراجع",
-            kaizenNoItems: "لا توجد اقتراحات حالياً",
-            kaizenReviewed: "تمت مراجعة الاقتراح",
-            kaizenLoadError: "تعذر تحميل اقتراحات Kaizen",
             electricityReportTitle: "تقرير الكهرباء والتكلفة",
             totalReadings: "إجمالي القراءات",
             totalKwh: "إجمالي kWh",
@@ -512,6 +468,9 @@ export function SettingsAdminPage() {
             deltaFromPrevious: "Delta from previous",
             exportLatest: "Export latest snapshot",
             noSnapshots: "No snapshots yet.",
+            deleteSnapshot: "Delete Snapshot",
+            confirmDeleteSnapshot: "Are you sure you want to delete this snapshot?",
+            snapshotDeleted: "Snapshot deleted successfully",
             presetBalanced: "Apply balanced preset",
             presetStrict: "Apply strict preset",
             presetRelaxed: "Apply relaxed preset",
@@ -533,23 +492,7 @@ export function SettingsAdminPage() {
             tabTrend: "Trend",
             tabProduction: "Production",
             tabSystem: "System",
-            tabKaizen: "Kaizen",
             electricityStandalone: "Electricity page",
-            kaizenTitle: "Kaizen Suggestions Review",
-            kaizenFilter: "Status filter",
-            kaizenApprove: "Approve",
-            kaizenReject: "Reject",
-            kaizenWorker: "Worker",
-            kaizenStatus: "Status",
-            kaizenScore: "Score",
-            kaizenReward: "Reward points",
-            kaizenImpact: "Estimated impact",
-            kaizenCreatedAt: "Created at",
-            kaizenActions: "Actions",
-            kaizenNote: "Review note",
-            kaizenNoItems: "No suggestions found",
-            kaizenReviewed: "Suggestion reviewed successfully",
-            kaizenLoadError: "Failed to load Kaizen suggestions",
             electricityReportTitle: "Electricity Cost Report",
             totalReadings: "Total readings",
             totalKwh: "Total kWh",
@@ -568,13 +511,13 @@ export function SettingsAdminPage() {
   const getAuditFrequencyLabel = (value: "DAILY" | "WEEKLY" | "MONTHLY") =>
     copy.admin.auditFrequencyLabels[value] ?? value;
 
-  const settingsTabs: Array<{ id: SettingsTab; label: string }> = [
-    { id: "overview", label: text.tabOverview },
-    { id: "trend", label: text.tabTrend },
-    { id: "production", label: text.tabProduction },
-    { id: "system", label: text.tabSystem },
-    { id: "kaizen", label: text.tabKaizen },
-    { id: "users", label: locale === "ar" ? "المستخدمون" : "Users" },
+  const settingsTabs: Array<{ id: SettingsTab; label: string; icon: React.ReactNode }> = [
+    { id: "overview",   label: text.tabOverview,                           icon: <LayoutDashboard size={14} /> },
+    { id: "trend",      label: text.tabTrend,                              icon: <TrendingUp size={14} /> },
+    { id: "production", label: text.tabProduction,                         icon: <Factory size={14} /> },
+    { id: "system",     label: text.tabSystem,                             icon: <Settings2 size={14} /> },
+    { id: "users",      label: locale === "ar" ? "المستخدمون" : "Users",  icon: <Users2 size={14} /> },
+    { id: "snapshots",  label: locale === "ar" ? "اللقطات" : "Snapshots", icon: <BarChart2 size={14} /> },
   ];
 
   const normalizeSnapshotImagePath = (value: string | null) => {
@@ -749,117 +692,6 @@ export function SettingsAdminPage() {
     trendRange,
   ]);
 
-  const loadKaizenSuggestions = useCallback(async () => {
-    setLoadingKaizen(true);
-    try {
-      const params = new URLSearchParams();
-      if (kaizenFilter !== "ALL") {
-        params.set("reviewStatus", kaizenFilter);
-      }
-      const suffix = params.toString() ? `?${params.toString()}` : "";
-      const response = await fetchWithAdminAuth(
-        `/worker-tools/admin/kaizen${suffix}`,
-      );
-      if (!response.ok) {
-        throw new Error(await readApiError(response));
-      }
-
-      const data = (await response.json()) as AdminKaizenSuggestion[];
-      setKaizenSuggestions(data);
-      setKaizenDrafts((prev) => {
-        const next = { ...prev };
-        data.forEach((item) => {
-          if (!next[item.id]) {
-            next[item.id] = {
-              score: String(item.score ?? 0),
-              rewardPoints: String(item.reward_points ?? 0),
-              reviewNote: item.review_note ?? "",
-            };
-          }
-        });
-        return next;
-      });
-    } catch (loadError) {
-      setStatusTone("error");
-      setStatusMessage(
-        loadError instanceof Error ? loadError.message : text.kaizenLoadError,
-      );
-    } finally {
-      setLoadingKaizen(false);
-    }
-  }, [kaizenFilter, text.kaizenLoadError]);
-
-  useEffect(() => {
-    if (activeTab !== "kaizen") {
-      return;
-    }
-
-    void loadKaizenSuggestions();
-  }, [activeTab, loadKaizenSuggestions]);
-
-  useEffect(() => {
-    const socket = createUserSocket();
-    if (!socket) {
-      return;
-    }
-
-    const refreshKaizen = () => {
-      if (activeTab === "kaizen") {
-        void loadKaizenSuggestions();
-      }
-    };
-
-    socket.on("notification:new", refreshKaizen);
-
-    return () => {
-      socket.off("notification:new", refreshKaizen);
-      if (socket.connected) {
-        socket.disconnect();
-      }
-    };
-  }, [activeTab, loadKaizenSuggestions]);
-
-  const handleReviewKaizen = async (
-    suggestionId: number,
-    reviewStatus: "APPROVED" | "REJECTED",
-  ) => {
-    const draft = kaizenDrafts[suggestionId] ?? {
-      score: "0",
-      rewardPoints: reviewStatus === "APPROVED" ? "20" : "0",
-      reviewNote: "",
-    };
-
-    try {
-      const response = await fetchWithAdminAuth(
-        `/worker-tools/admin/kaizen/${suggestionId}/review`,
-        {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            reviewStatus,
-            score: Number(draft.score || "0"),
-            rewardPoints: Number(draft.rewardPoints || "0"),
-            reviewNote: draft.reviewNote,
-          }),
-        },
-      );
-
-      if (!response.ok) {
-        throw new Error(await readApiError(response));
-      }
-
-      setStatusTone("success");
-      setStatusMessage(text.kaizenReviewed);
-      await loadKaizenSuggestions();
-    } catch (reviewError) {
-      setStatusTone("error");
-      setStatusMessage(
-        reviewError instanceof Error
-          ? reviewError.message
-          : text.kaizenLoadError,
-      );
-    }
-  };
 
   const handleUpdateProductionSetting = async (productType: ProductType) => {
     const piecesPerCarton = Number(productionDrafts[productType]);
@@ -1258,6 +1090,18 @@ export function SettingsAdminPage() {
     }
   };
 
+  const handleDeleteSnapshot = async (id: number) => {
+    try {
+      const res = await fetchWithAdminAuth(`/settings/snapshots/${id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error(await readApiError(res));
+      setDeleteSnapshotConfirmId(null);
+      setSnapshotMessage(text.snapshotDeleted);
+      await loadSnapshots();
+    } catch (err) {
+      setSnapshotMessage(err instanceof Error ? err.message : "Failed to delete snapshot");
+    }
+  };
+
   const filteredUsers = users.filter((u) => {
     const q = userSearch.toLowerCase();
     const matchesSearch = !q || u.fullName.toLowerCase().includes(q) || u.email.toLowerCase().includes(q) || u.username.toLowerCase().includes(q);
@@ -1396,32 +1240,38 @@ export function SettingsAdminPage() {
   const systemHealthPercent = systemSetting ? 100 : 0;
 
   /* ── helpers ── */
-  const tabBtn = (id: SettingsTab, label: string) => (
-    <button
-      key={id}
-      type="button"
-      role="tab"
-      aria-selected={activeTab === id}
-      onClick={() => {
-        setActiveTab(id);
-        setSearchParams(id === "overview" ? {} : { tab: id }, { replace: true });
-      }}
-      style={{
-        padding: ".45rem 1.1rem",
-        borderRadius: 8,
-        border: "none",
-        cursor: "pointer",
-        fontWeight: 700,
-        fontSize: ".82rem",
-        transition: "all .15s",
-        background: activeTab === id ? "var(--orange-500,#f97316)" : "transparent",
-        color: activeTab === id ? "#fff" : "var(--text-secondary)",
-        boxShadow: activeTab === id ? "0 2px 8px rgba(249,115,22,.3)" : "none",
-      }}
-    >
-      {label}
-    </button>
-  );
+  const tabBtn = (id: SettingsTab, label: string, icon: React.ReactNode) => {
+    const active = activeTab === id;
+    return (
+      <button
+        key={id}
+        type="button"
+        role="tab"
+        aria-selected={active}
+        onClick={() => {
+          setActiveTab(id);
+          setSearchParams(id === "overview" ? {} : { tab: id }, { replace: true });
+        }}
+        style={{
+          display: "flex", alignItems: "center", gap: ".4rem",
+          padding: ".5rem 1.1rem",
+          borderRadius: 10,
+          border: active ? "none" : "1px solid transparent",
+          cursor: "pointer",
+          fontWeight: 700,
+          fontSize: ".82rem",
+          transition: "all .18s",
+          background: active ? "var(--orange-500,#f97316)" : "transparent",
+          color: active ? "#fff" : "var(--text-secondary)",
+          boxShadow: active ? "0 3px 10px rgba(249,115,22,.35)" : "none",
+          whiteSpace: "nowrap",
+        }}
+      >
+        {icon}
+        {label}
+      </button>
+    );
+  };
 
   const kpiCard = (label: string, value: string | number, sub: string, gradient: string) => (
     <div style={{
@@ -1476,15 +1326,16 @@ export function SettingsAdminPage() {
       {/* Tab bar */}
       <div style={{
         display: "flex",
-        gap: ".35rem",
-        padding: ".35rem",
-        borderRadius: 12,
+        gap: ".3rem",
+        padding: ".4rem",
+        borderRadius: 14,
         background: "var(--bg-card,#fff)",
         border: "1px solid var(--border-default,#e5e7eb)",
         width: "fit-content",
         flexWrap: "wrap",
+        boxShadow: "0 2px 8px rgba(0,0,0,.06)",
       }} role="tablist">
-        {settingsTabs.map((tab) => tabBtn(tab.id, tab.label))}
+        {settingsTabs.map((tab) => tabBtn(tab.id, tab.label, tab.icon))}
       </div>
 
       {/* ─── OVERVIEW TAB ─── */}
@@ -1634,7 +1485,17 @@ export function SettingsAdminPage() {
                   <div key={item.id} style={{ padding: "1rem 1.25rem", borderRadius: 12, border: "1px solid var(--border-default,#e5e7eb)", background: "var(--bg-card,#fff)", display: "flex", flexDirection: "column", gap: ".5rem" }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                       <strong style={{ fontSize: ".9rem" }}>{item.machineLabel}</strong>
-                      <span style={{ fontSize: ".72rem", color: "var(--text-secondary)" }}>{formatDateTime(item.createdAt, locale)}</span>
+                      <div style={{ display: "flex", alignItems: "center", gap: ".5rem" }}>
+                        <span style={{ fontSize: ".72rem", color: "var(--text-secondary)" }}>{formatDateTime(item.createdAt, locale)}</span>
+                        <button
+                          type="button"
+                          title={text.deleteSnapshot}
+                          onClick={() => setDeleteSnapshotConfirmId(item.id)}
+                          style={{ padding: ".25rem", borderRadius: 6, border: "1px solid #fecaca", background: "#fff5f5", cursor: "pointer", color: "#dc2626", display: "flex", alignItems: "center", lineHeight: 1 }}
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      </div>
                     </div>
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: ".4rem" }}>
                       <div style={{ padding: ".5rem .75rem", borderRadius: 8, background: "rgba(59,130,246,.08)", textAlign: "center" }}>
@@ -1903,60 +1764,6 @@ export function SettingsAdminPage() {
         </div>
       )}
 
-      {/* ─── KAIZEN TAB ─── */}
-      {activeTab === "kaizen" && (
-        <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: ".75rem" }}>
-            <div>
-              <h2 style={{ margin: "0 0 .2rem", fontSize: "1.1rem", fontWeight: 800 }}>{text.kaizenTitle}</h2>
-              <p style={{ margin: 0, color: "var(--text-secondary)", fontSize: ".85rem" }}>{text.kaizenFilter}</p>
-            </div>
-            <div style={{ display: "flex", gap: ".5rem", alignItems: "center" }}>
-              <select className="auth-input" style={{ paddingLeft: "1rem", width: 130 }} value={kaizenFilter} onChange={(e) => setKaizenFilter(e.target.value as "ALL" | "PENDING" | "APPROVED" | "REJECTED")}>
-                {["ALL","PENDING","APPROVED","REJECTED"].map((v) => <option key={v} value={v}>{v}</option>)}
-              </select>
-              <button type="button" onClick={() => void loadKaizenSuggestions()} style={{ padding: ".5rem 1rem", borderRadius: 8, background: "var(--orange-500,#f97316)", color: "#fff", border: "none", cursor: "pointer", fontWeight: 700, fontSize: ".82rem" }}>{copy.refresh}</button>
-            </div>
-          </div>
-
-          <div className="admin-table-wrap">
-            <table className="admin-table">
-              <thead><tr><th>{text.kaizenWorker}</th><th>{text.kaizenTitle}</th><th>{text.kaizenImpact}</th><th>{text.kaizenStatus}</th><th>{text.kaizenScore}</th><th>{text.kaizenReward}</th><th>{text.kaizenCreatedAt}</th><th>{text.kaizenActions}</th></tr></thead>
-              <tbody>
-                {loadingKaizen ? (
-                  <tr><td colSpan={8} style={{ textAlign: "center", padding: "2rem" }}><span className="spinner" style={{ margin: "0 auto" }} /></td></tr>
-                ) : kaizenSuggestions.length ? kaizenSuggestions.map((item) => {
-                  const draft = kaizenDrafts[item.id] ?? { score: String(item.score ?? 0), rewardPoints: String(item.reward_points ?? 0), reviewNote: item.review_note ?? "" };
-                  const statusColor = item.review_status === "APPROVED" ? "#16a34a" : item.review_status === "REJECTED" ? "#dc2626" : "var(--orange-600,#ea580c)";
-                  return (
-                    <tr key={item.id}>
-                      <td style={{ fontWeight: 600 }}>{item.worker_name}</td>
-                      <td><strong>{item.title}</strong><div style={{ fontSize: ".78rem", color: "var(--text-secondary)", marginTop: ".2rem" }}>{item.details}</div>{item.review_note && <div style={{ fontSize: ".75rem", color: "var(--text-secondary)", fontStyle: "italic", marginTop: ".2rem" }}>{text.kaizenNote}: {item.review_note}</div>}</td>
-                      <td style={{ fontSize: ".82rem" }}>{item.estimated_impact || "—"}</td>
-                      <td><span style={{ padding: ".2rem .65rem", borderRadius: 999, fontSize: ".72rem", fontWeight: 700, background: `${statusColor}18`, color: statusColor }}>{item.review_status}</span></td>
-                      <td>{item.review_status === "PENDING" ? <input type="number" min={0} max={100} className="auth-input" style={{ paddingLeft: "1rem", width: 70 }} value={draft.score} onChange={(e) => setKaizenDrafts((p) => ({ ...p, [item.id]: { ...draft, score: e.target.value } }))} /> : item.score}</td>
-                      <td>{item.review_status === "PENDING" ? <input type="number" min={0} className="auth-input" style={{ paddingLeft: "1rem", width: 70 }} value={draft.rewardPoints} onChange={(e) => setKaizenDrafts((p) => ({ ...p, [item.id]: { ...draft, rewardPoints: e.target.value } }))} /> : item.reward_points}</td>
-                      <td style={{ fontSize: ".78rem", color: "var(--text-secondary)" }}>{formatDateTime(item.created_at, locale)}</td>
-                      <td>
-                        {item.review_status === "PENDING" ? (
-                          <div style={{ display: "flex", flexDirection: "column", gap: ".4rem" }}>
-                            <textarea rows={2} className="auth-input" style={{ paddingLeft: "1rem", resize: "vertical", fontSize: ".78rem" }} value={draft.reviewNote} placeholder={text.kaizenNote} onChange={(e) => setKaizenDrafts((p) => ({ ...p, [item.id]: { ...draft, reviewNote: e.target.value } }))} />
-                            <div style={{ display: "flex", gap: ".4rem" }}>
-                              <button type="button" onClick={() => void handleReviewKaizen(item.id, "APPROVED")} style={{ flex: 1, padding: ".35rem .6rem", borderRadius: 7, background: "rgba(34,197,94,.1)", color: "#16a34a", border: "1px solid rgba(34,197,94,.25)", cursor: "pointer", fontWeight: 700, fontSize: ".78rem" }}>{text.kaizenApprove}</button>
-                              <button type="button" onClick={() => void handleReviewKaizen(item.id, "REJECTED")} style={{ flex: 1, padding: ".35rem .6rem", borderRadius: 7, background: "rgba(239,68,68,.08)", color: "#dc2626", border: "1px solid rgba(239,68,68,.2)", cursor: "pointer", fontWeight: 700, fontSize: ".78rem" }}>{text.kaizenReject}</button>
-                            </div>
-                          </div>
-                        ) : <span style={{ color: "var(--text-secondary)", fontSize: ".78rem" }}>—</span>}
-                      </td>
-                    </tr>
-                  );
-                }) : <tr><td colSpan={8} style={{ textAlign: "center", padding: "2rem", color: "var(--text-secondary)", fontStyle: "italic" }}>{text.kaizenNoItems}</td></tr>}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-
       {/* ─── USERS TAB ─── */}
       {activeTab === "users" && (
         <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
@@ -2147,6 +1954,29 @@ export function SettingsAdminPage() {
                 {locale === "ar" ? "إلغاء" : "Cancel"}
               </button>
               <button type="button" onClick={() => void handleDeleteUser(deleteConfirmId)} style={{ flex: 1, padding: ".5rem", borderRadius: 8, background: "#dc2626", color: "#fff", border: "none", cursor: "pointer", fontWeight: 700 }}>
+                {locale === "ar" ? "نعم، احذف" : "Yes, Delete"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ─── DELETE SNAPSHOT CONFIRM MODAL ─── */}
+      {deleteSnapshotConfirmId !== null && (
+        <div role="dialog" aria-modal="true" onClick={() => setDeleteSnapshotConfirmId(null)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: "1rem" }}>
+          <div onClick={(e) => e.stopPropagation()} style={{ background: "var(--bg-card,#fff)", borderRadius: 16, padding: "1.75rem", width: "100%", maxWidth: 380, display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+            <div style={{ textAlign: "center" }}>
+              <div style={{ width: 56, height: 56, borderRadius: "50%", background: "rgba(239,68,68,.1)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto .75rem" }}>
+                <Trash2 size={24} color="#dc2626" />
+              </div>
+              <h3 style={{ margin: "0 0 .4rem", fontSize: "1.05rem", fontWeight: 800 }}>{text.deleteSnapshot}?</h3>
+              <p style={{ margin: 0, fontSize: ".85rem", color: "var(--text-secondary)" }}>{text.confirmDeleteSnapshot}</p>
+            </div>
+            <div style={{ display: "flex", gap: ".75rem" }}>
+              <button type="button" onClick={() => setDeleteSnapshotConfirmId(null)} style={{ flex: 1, padding: ".5rem", borderRadius: 8, border: "1px solid var(--border-default)", background: "transparent", cursor: "pointer", fontWeight: 600 }}>
+                {locale === "ar" ? "إلغاء" : "Cancel"}
+              </button>
+              <button type="button" onClick={() => void handleDeleteSnapshot(deleteSnapshotConfirmId)} style={{ flex: 1, padding: ".5rem", borderRadius: 8, background: "#dc2626", color: "#fff", border: "none", cursor: "pointer", fontWeight: 700 }}>
                 {locale === "ar" ? "نعم، احذف" : "Yes, Delete"}
               </button>
             </div>

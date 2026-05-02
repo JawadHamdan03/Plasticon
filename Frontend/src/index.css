@@ -6085,3 +6085,237 @@ tbody td {
   .wt-card__body { padding: 1rem; }
   .wt-card__header { padding: 1rem; }
 }
+
+/* ═══════════════════════════════════════════════════════
+   RESPONSIVE SYSTEM — GLOBAL ADDITIONS
+   Covers: field classes, module-page, inline-grid helpers,
+   KPI grids, filter bars, and small-screen overrides
+═══════════════════════════════════════════════════════ */
+
+/* ── Field utility classes (used by payroll, attendance, etc.) ── */
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+.field__label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+/* ── ModulePageShell responsive padding ── */
+@media (max-width: 640px) {
+  .module-page-shell {
+    padding: 1rem !important;
+  }
+}
+
+/* ── Responsive 2-col & 3-col helper grids ── */
+.resp-grid-2 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1rem;
+}
+.resp-grid-3 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.75rem;
+}
+.resp-grid-4 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 0.75rem;
+}
+
+/* ── Form grid inside cards/modals ── */
+.form-grid-2 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+}
+.form-grid-3 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 0.75rem;
+}
+
+/* ── Attendance admin calendar responsive ── */
+@media (max-width: 768px) {
+  .attendance-cal-grid {
+    font-size: 0.7rem !important;
+  }
+  .attendance-cal-grid th,
+  .attendance-cal-grid td {
+    padding: 0.3rem 0.15rem !important;
+    min-width: 32px;
+  }
+}
+
+/* ── Tables: always scroll on small screens ── */
+@media (max-width: 768px) {
+  .module-panel table,
+  .admin-card table,
+  .page-section table {
+    min-width: 600px;
+  }
+  /* Ensure wrappers actually scroll */
+  .module-panel,
+  .admin-card,
+  .page-section {
+    overflow-x: auto;
+  }
+}
+
+/* ── KPI strip that should be 2-col on mobile ── */
+@media (max-width: 640px) {
+  .admin-kpi-strip {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+  .module-report-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
+@media (max-width: 400px) {
+  .admin-kpi-strip,
+  .module-report-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* ── Filter bars: stack on small screens ── */
+@media (max-width: 640px) {
+  .admin-filter-bar,
+  .module-form--inline {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .admin-filter-bar input,
+  .admin-filter-bar select,
+  .module-form--inline input,
+  .module-form--inline select {
+    width: 100% !important;
+  }
+  .module-form-controls {
+    flex-direction: column;
+  }
+  .module-form-controls .btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* ── Chat page responsive ── */
+@media (max-width: 768px) {
+  .chat-layout {
+    grid-template-columns: 1fr !important;
+  }
+  .chat-sidebar {
+    display: none !important;
+  }
+  .chat-sidebar--active {
+    display: flex !important;
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    background: var(--bg-card);
+  }
+}
+
+/* ── Dashboard analytics responsive ── */
+@media (max-width: 900px) {
+  .da-section-row {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* ── Payroll admin - daily filter bar ── */
+@media (max-width: 640px) {
+  .payroll-filter-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .payroll-filter-bar input,
+  .payroll-filter-bar select {
+    width: 100% !important;
+  }
+}
+
+/* ── Worker hub page ── */
+@media (max-width: 640px) {
+  .wh-tabs {
+    font-size: 0.72rem !important;
+    overflow-x: auto;
+  }
+  .wh-form-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* ── Settings admin tabs on mobile ── */
+@media (max-width: 640px) {
+  .settings-tab-bar {
+    flex-wrap: wrap !important;
+    gap: 0.375rem !important;
+  }
+  .settings-tab-bar button {
+    flex: 1 1 auto;
+    min-width: 80px;
+    font-size: 0.72rem;
+  }
+}
+
+/* ── Reports page tabs ── */
+@media (max-width: 768px) {
+  .reports-tabs {
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 0.375rem !important;
+  }
+}
+@media (max-width: 480px) {
+  .reports-tabs {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
+
+/* ── Topbar: hide search on very small screens ── */
+@media (max-width: 420px) {
+  .topbar-search {
+    display: none;
+  }
+  .app-topbar__actions {
+    gap: 0.25rem;
+  }
+}
+
+/* ── ModulePageShell inline-padding fix for small screens ── */
+@media (max-width: 640px) {
+  /* The shell uses inline style padding:1.5rem — override with a data attr */
+  [data-page-shell] {
+    padding: 1rem !important;
+  }
+  [data-page-shell] > header {
+    padding-bottom: 1rem !important;
+    margin-bottom: 1rem !important;
+  }
+}
+
+/* ── Generic inline-grid collapse override (fallback) ── */
+@media (max-width: 480px) {
+  /* Any inline-grid with exactly 2 columns collapses to 1 */
+  [style*="gridTemplateColumns"][style*="1fr 1fr"] {
+    grid-template-columns: 1fr !important;
+  }
+  /* Any 3-column repeat collapses to 2 */
+  [style*="repeat(3,1fr)"],
+  [style*="repeat(3, 1fr)"] {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
+@media (max-width: 360px) {
+  [style*="gridTemplateColumns"] {
+    grid-template-columns: 1fr !important;
+  }
+}
