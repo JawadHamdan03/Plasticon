@@ -239,13 +239,21 @@ model Attendance {
   checkOut        DateTime?
   lateMinutes     Int       @default(0)
   overtimeMinutes Int       @default(0)
-  leaveType       String?   // "SICK" | "ANNUAL" | "UNPAID" | null (normal work day)
+  leaveType       String?
+  notes           String?
 
   user         User         @relation(fields: [userId], references: [id])
   shift        Shift?       @relation(fields: [shiftId], references: [id])
   dailyPayroll DailyPayroll?
 
   createdAt DateTime @default(now())
+}
+
+model AttendanceSetting {
+  id                   Int      @id @default(autoincrement())
+  lateGraceMinutes     Int      @default(30)
+  overtimeGraceMinutes Int      @default(30)
+  updatedAt            DateTime @updatedAt
 }
 
 //////////////////////

@@ -3,8 +3,45 @@ import { auditAsync } from "./auditHelper";
 import { AuditAction, AuditEntityType } from "./auditServices";
 import { calculateDailyPayroll } from "./payrollServices";
 
-const LATE_GRACE_MINUTES = 30;
-const OVERTIME_GRACE_MINUTES = 30;
+// Grace period defaults — overridden by AttendanceSetting row in DB
+let LATE_GRACE_MINUTES = 30;
+let OVERTIME_GRACE_MINUTES = 30;
+
+// Load grace periods once from DB at startup
+(async () => {
+  try {
+    const setting = await prisma.attendanceSetting.findFirst();
+    if (setting) {
+      LATE_GRACE_MINUTES = setting.lateGraceMinutes;
+      OVERTIME_GRACE_MINUTES = setting.overtimeGraceMinutes;
+    }
+  } catch { /* ignore — defaults remain */ }
+})();
+
+export const getAttendanceSettings = async (): Promise<{ lateGraceMinutes: number; overtimeGraceMinutes: number }> => {
+  try {
+    let setting = await prisma.attendanceSetting.findFirst();
+    if (!setting) {
+      setting = await prisma.attendanceSetting.create({ data: { lateGraceMinutes: 30, overtimeGraceMinutes: 30 } });
+    }
+    return { lateGraceMinutes: setting.lateGraceMinutes, overtimeGraceMinutes: setting.overtimeGraceMinutes };
+  } catch { /* fallback */ }
+  return { lateGraceMinutes: LATE_GRACE_MINUTES, overtimeGraceMinutes: OVERTIME_GRACE_MINUTES };
+};
+
+export const updateAttendanceSettings = async (payload: { lateGraceMinutes?: number; overtimeGraceMinutes?: number }) => {
+  let setting = await prisma.attendanceSetting.findFirst();
+  const newLate = payload.lateGraceMinutes !== undefined ? Math.max(0, payload.lateGraceMinutes) : (setting?.lateGraceMinutes ?? LATE_GRACE_MINUTES);
+  const newOT = payload.overtimeGraceMinutes !== undefined ? Math.max(0, payload.overtimeGraceMinutes) : (setting?.overtimeGraceMinutes ?? OVERTIME_GRACE_MINUTES);
+  if (!setting) {
+    setting = await prisma.attendanceSetting.create({ data: { lateGraceMinutes: newLate, overtimeGraceMinutes: newOT } });
+  } else {
+    setting = await prisma.attendanceSetting.update({ where: { id: setting.id }, data: { lateGraceMinutes: newLate, overtimeGraceMinutes: newOT } });
+  }
+  LATE_GRACE_MINUTES = newLate;
+  OVERTIME_GRACE_MINUTES = newOT;
+  return { lateGraceMinutes: newLate, overtimeGraceMinutes: newOT };
+};
 
 const minutesBetween = (later: Date, earlier: Date): number => {
   return Math.floor((later.getTime() - earlier.getTime()) / 60000);
@@ -80,8 +117,9 @@ export const checkIn = async (
 
   let shiftId: number | null = user.shiftId ?? null;
   let lateMinutes = 0;
+  const isFriday = now.getDay() === 5;
 
-  if (user.shift) {
+  if (user.shift && !isFriday) {
     const shiftStart = new Date(user.shift.startTime);
 
     if (now.getTime() < shiftStart.getTime()) {
@@ -98,22 +136,19 @@ export const checkIn = async (
       where: {
         userId,
         shiftId: user.shift.id,
-        checkIn: {
-          gte: startOfDay,
-          lte: endOfDay,
-        },
+        checkIn: { gte: startOfDay, lte: endOfDay },
       },
     });
 
     if (todayShiftAttendance) {
-      return {
-        status: 409,
-        message: "Check-in already recorded for this shift today",
-      };
+      return { status: 409, message: "Check-in already recorded for this shift today" };
     }
 
     const minutesLateFromStart = minutesBetween(now, shiftStart);
     lateMinutes = Math.max(0, minutesLateFromStart - LATE_GRACE_MINUTES);
+  } else if (isFriday) {
+    // Friday is the weekly day off — any work is purely voluntary overtime; no late penalty
+    lateMinutes = 0;
   } else {
     shiftId = null;
     lateMinutes = 0;
@@ -212,6 +247,23 @@ export const checkOut = async (
     return { status: 404, message: "No open attendance record found" };
   }
 
+  const checkInDay = new Date(openAttendance.checkIn).getDay();
+  const isFridayShift = checkInDay === 5;
+
+  // Friday work: all hours are overtime — skip shift-end restriction and required-records check
+  if (isFridayShift) {
+    const workedMinutes = minutesBetween(now, new Date(openAttendance.checkIn));
+    const attendance = await prisma.attendance.update({
+      where: { id: openAttendance.id },
+      data: { checkOut: now, overtimeMinutes: Math.max(0, workedMinutes) },
+    });
+    auditAsync(userId, AuditAction.ATTENDANCE_CHECKED_OUT, AuditEntityType.ATTENDANCE, attendance.id);
+    calculateDailyPayroll(attendance.id, userId).catch((err) =>
+      console.error("Auto daily-payroll calculation failed:", err),
+    );
+    return { status: 200, data: attendance };
+  }
+
   if (openAttendance.shift) {
     const shiftEnd = new Date(openAttendance.shift.endTime);
 
@@ -303,16 +355,15 @@ export const getMyAttendances = async (
 
 export const getAllAttendances = async (filters?: {
   date?: string;
+  fromDate?: string;
+  toDate?: string;
   shiftId?: number;
   userId?: number;
 }): Promise<ServiceResult<unknown>> => {
   const where: {
     userId?: number;
     shiftId?: number;
-    checkIn?: {
-      gte: Date;
-      lte: Date;
-    };
+    checkIn?: { gte?: Date; lte?: Date };
   } = {};
 
   if (filters?.userId) {
@@ -329,10 +380,19 @@ export const getAllAttendances = async (filters?: {
     start.setHours(0, 0, 0, 0);
     const end = new Date(baseDate);
     end.setHours(23, 59, 59, 999);
-    where.checkIn = {
-      gte: start,
-      lte: end,
-    };
+    where.checkIn = { gte: start, lte: end };
+  } else if (filters?.fromDate || filters?.toDate) {
+    where.checkIn = {};
+    if (filters.fromDate) {
+      const from = new Date(filters.fromDate);
+      from.setHours(0, 0, 0, 0);
+      where.checkIn.gte = from;
+    }
+    if (filters.toDate) {
+      const to = new Date(filters.toDate);
+      to.setHours(23, 59, 59, 999);
+      where.checkIn.lte = to;
+    }
   }
 
   const attendances = await prisma.attendance.findMany({
@@ -400,6 +460,7 @@ export const createAttendanceForUser = async (
     checkIn: string | Date;
     checkOut?: string | Date | null;
     shiftId?: number | null;
+    notes?: string | null;
   },
 ): Promise<ServiceResult<unknown>> => {
   const user = await prisma.user.findUnique({
@@ -433,12 +494,13 @@ export const createAttendanceForUser = async (
     if (!effectiveShift) shiftId = null;
   }
 
-  const lateMinutes = effectiveShift
+  const isFriday = checkInDate.getDay() === 5;
+  const lateMinutes = isFriday ? 0 : (effectiveShift
     ? calculateLateMinutes(new Date(effectiveShift.startTime), checkInDate)
-    : 0;
-  const overtimeMinutes = effectiveShift
-    ? calculateOvertimeMinutes(new Date(effectiveShift.endTime), checkOutDate)
-    : 0;
+    : 0);
+  const overtimeMinutes = isFriday
+    ? (checkOutDate ? minutesBetween(checkOutDate, checkInDate) : 0)
+    : (effectiveShift ? calculateOvertimeMinutes(new Date(effectiveShift.endTime), checkOutDate) : 0);
 
   const attendance = await prisma.attendance.create({
     data: {
@@ -448,6 +510,7 @@ export const createAttendanceForUser = async (
       checkOut: checkOutDate,
       lateMinutes,
       overtimeMinutes,
+      notes: payload.notes ?? null,
     },
     include: {
       user: { select: { id: true, fullName: true, username: true, role: true } },
@@ -474,6 +537,7 @@ export const updateAttendance = async (
   payload: {
     checkIn?: string | Date;
     checkOut?: string | Date | null;
+    notes?: string | null;
   },
 ): Promise<ServiceResult<unknown>> => {
   const attendance = await prisma.attendance.findUnique({
@@ -518,10 +582,15 @@ export const updateAttendance = async (
   }
 
   const effectiveShift = attendance.shift ?? attendance.user.shift ?? null;
+  const isFriday = nextCheckIn.getDay() === 5;
   let lateMinutes = 0;
   let overtimeMinutes = 0;
 
-  if (effectiveShift) {
+  if (isFriday) {
+    // Friday work = all hours count as overtime, no late penalty
+    lateMinutes = 0;
+    overtimeMinutes = nextCheckOut ? minutesBetween(nextCheckOut, nextCheckIn) : 0;
+  } else if (effectiveShift) {
     const shiftStart = new Date(effectiveShift.startTime);
     const shiftEnd = new Date(effectiveShift.endTime);
     lateMinutes = calculateLateMinutes(shiftStart, nextCheckIn);
@@ -535,6 +604,7 @@ export const updateAttendance = async (
       checkOut: nextCheckOut,
       lateMinutes,
       overtimeMinutes,
+      ...(payload.notes !== undefined ? { notes: payload.notes } : {}),
     },
     include: {
       user: {

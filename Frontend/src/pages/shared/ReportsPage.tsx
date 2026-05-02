@@ -876,6 +876,41 @@ export function ReportsPage() {
     };
   }, [filteredPayrollRows]);
 
+  // ── Per-user attendance summary ──
+  const attendancePerUser = useMemo(() => {
+    if (!attendanceActivity) return [] as Array<{ userId: number; name: string; role: string; present: number; fridayOT: number; lateMinutes: number; otMinutes: number }>;
+    const map = new Map<number, { userId: number; name: string; role: string; present: number; fridayOT: number; lateMinutes: number; otMinutes: number }>();
+    for (const r of attendanceActivity.records) {
+      if (!map.has(r.userId)) {
+        map.set(r.userId, { userId: r.userId, name: r.userName, role: r.role, present: 0, fridayOT: 0, lateMinutes: 0, otMinutes: 0 });
+      }
+      const entry = map.get(r.userId)!;
+      const isFriday = new Date(r.checkIn).getDay() === 5;
+      if (isFriday) { entry.fridayOT++; } else { entry.present++; entry.lateMinutes += r.lateMinutes; }
+      entry.otMinutes += r.overtimeMinutes;
+    }
+    return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
+  }, [attendanceActivity]);
+
+  // ── Per-user payroll summary ──
+  const payrollPerUser = useMemo(() => {
+    if (!payrollActivity) return [] as Array<{ username: string; name: string; role: string; records: number; totalHours: number; otHours: number; baseSalary: number; otSalary: number; totalSalary: number }>;
+    const map = new Map<string, { username: string; name: string; role: string; records: number; totalHours: number; otHours: number; baseSalary: number; otSalary: number; totalSalary: number }>();
+    for (const r of filteredPayrollRows) {
+      if (!map.has(r.username)) {
+        map.set(r.username, { username: r.username, name: r.userName, role: r.role, records: 0, totalHours: 0, otHours: 0, baseSalary: 0, otSalary: 0, totalSalary: 0 });
+      }
+      const entry = map.get(r.username)!;
+      entry.records++;
+      entry.totalHours += r.totalHours;
+      entry.otHours += r.overtimeHours;
+      entry.baseSalary += r.baseSalary;
+      entry.otSalary += r.overtimeSalary;
+      entry.totalSalary += r.totalSalary;
+    }
+    return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
+  }, [filteredPayrollRows, payrollActivity]);
+
   const filteredExpenses = useMemo(() => {
     const fromTime = expenseFromDate
       ? new Date(`${expenseFromDate}T00:00:00`).getTime()
@@ -2032,6 +2067,41 @@ export function ReportsPage() {
               </TableBase>
             </TableShell>
           )}
+
+          {/* Per-employee attendance summary */}
+          {attendancePerUser.length > 0 && (
+            <div style={{ padding: "0 1.25rem 1.25rem" }}>
+              <p style={{ fontSize: ".78rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: ".05em", color: "var(--text-secondary)", marginBottom: ".5rem", marginTop: "1rem" }}>
+                {isAr ? "ملخص الحضور لكل موظف" : "Per-Employee Attendance Summary"}
+              </p>
+              <TableShell className="mt-0">
+                <TableBase className="admin-table">
+                  <thead>
+                    <tr>
+                      <th>{isAr ? "الموظف" : "Employee"}</th>
+                      <th>{isAr ? "الدور" : "Role"}</th>
+                      <th>{isAr ? "أيام الحضور" : "Present Days"}</th>
+                      <th>{isAr ? "أيام جمعة (إضافي)" : "Friday OT Days"}</th>
+                      <th>{isAr ? "دقائق التأخير" : "Late (min)"}</th>
+                      <th>{isAr ? "دقائق الإضافي" : "OT (min)"}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {attendancePerUser.map((row) => (
+                      <tr key={row.userId}>
+                        <td style={{ fontWeight: 600 }}>{row.name}</td>
+                        <td>{row.role}</td>
+                        <td>{row.present}</td>
+                        <td>{row.fridayOT}</td>
+                        <td>{row.lateMinutes}</td>
+                        <td style={{ color: "#7c3aed", fontWeight: 600 }}>{row.otMinutes}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </TableBase>
+              </TableShell>
+            </div>
+          )}
         </Card>
       )}
 
@@ -2233,6 +2303,43 @@ export function ReportsPage() {
                 </tbody>
               </TableBase>
             </TableShell>
+          )}
+
+          {/* Per-employee payroll summary */}
+          {payrollPerUser.length > 0 && (
+            <div style={{ padding: "0 1.25rem 1.25rem" }}>
+              <p style={{ fontSize: ".78rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: ".05em", color: "var(--text-secondary)", marginBottom: ".5rem", marginTop: "1rem" }}>
+                {isAr ? "ملخص الراتب لكل موظف" : "Per-Employee Payroll Summary"}
+              </p>
+              <TableShell className="mt-0">
+                <TableBase className="admin-table">
+                  <thead>
+                    <tr>
+                      <th>{isAr ? "الموظف" : "Employee"}</th>
+                      <th>{isAr ? "الدور" : "Role"}</th>
+                      <th>{isAr ? "ساعات العمل" : "Work Hours"}</th>
+                      <th>{isAr ? "ساعات إضافية" : "OT Hours"}</th>
+                      <th>{isAr ? "الراتب الأساسي" : "Base Salary"}</th>
+                      <th>{isAr ? "بدل الإضافي" : "OT Pay"}</th>
+                      <th>{isAr ? "الإجمالي" : "Total"}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {payrollPerUser.map((row) => (
+                      <tr key={row.username}>
+                        <td style={{ fontWeight: 600 }}>{row.name}</td>
+                        <td>{row.role}</td>
+                        <td>{row.totalHours.toFixed(1)}</td>
+                        <td>{row.otHours.toFixed(1)}</td>
+                        <td>₪{row.baseSalary.toLocaleString()}</td>
+                        <td style={{ color: "#7c3aed" }}>₪{row.otSalary.toLocaleString()}</td>
+                        <td style={{ fontWeight: 700, color: "#059669" }}>₪{row.totalSalary.toLocaleString()}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </TableBase>
+              </TableShell>
+            </div>
           )}
         </Card>
       )}
