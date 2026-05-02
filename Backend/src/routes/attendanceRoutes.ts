@@ -5,17 +5,32 @@ import {
   createAttendanceForUserHandler,
   deleteAttendance,
   getAllAttendances,
+  getAttendanceSettingsHandler,
   getMyAttendances,
   updateAttendance,
+  updateAttendanceSettingsHandler,
 } from "../controllers/attendanceController";
 import { authorizeRoles } from "../middleware/authMiddleware";
 import { UserRole } from "../config/generated/prisma/client";
 
 const router = Router();
 
+// Static routes before /:id
+router.get(
+  "/settings",
+  authorizeRoles([UserRole.ADMIN, UserRole.ACCOUNTANT]),
+  getAttendanceSettingsHandler,
+);
+
+router.put(
+  "/settings",
+  authorizeRoles([UserRole.ADMIN, UserRole.ACCOUNTANT]),
+  updateAttendanceSettingsHandler,
+);
+
 router.post(
   "/",
-  authorizeRoles([UserRole.ADMIN]),
+  authorizeRoles([UserRole.ADMIN, UserRole.ACCOUNTANT]),
   createAttendanceForUserHandler,
 );
 

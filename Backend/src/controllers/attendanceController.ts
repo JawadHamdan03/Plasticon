@@ -7,7 +7,9 @@ import {
   deleteAttendance as deleteAttendanceService,
   getAllAttendances as getAllAttendancesService,
   getMyAttendances as getMyAttendancesService,
+  getAttendanceSettings as getAttendanceSettingsService,
   updateAttendance as updateAttendanceService,
+  updateAttendanceSettings as updateAttendanceSettingsService,
 } from "../services/attendanceServices";
 
 export const createAttendanceForUserHandler = async (
@@ -27,10 +29,11 @@ export const createAttendanceForUserHandler = async (
       return;
     }
 
-    const { checkIn: checkInRaw, checkOut: checkOutRaw, shiftId } = req.body as {
+    const { checkIn: checkInRaw, checkOut: checkOutRaw, shiftId, notes } = req.body as {
       checkIn?: string;
       checkOut?: string | null;
       shiftId?: number | null;
+      notes?: string | null;
     };
 
     const result = await createAttendanceForUserService(adminId, {
@@ -38,6 +41,7 @@ export const createAttendanceForUserHandler = async (
       checkIn: checkInRaw ?? "",
       checkOut: checkOutRaw,
       shiftId: shiftId !== undefined ? (shiftId === null ? null : Number(shiftId)) : undefined,
+      notes,
     });
 
     if (result.message && result.status !== 201) {
@@ -125,6 +129,10 @@ export const getAllAttendances = async (req: Request, res: Response) => {
   try {
     const date =
       typeof req.query.date === "string" ? req.query.date.trim() : undefined;
+    const fromDate =
+      typeof req.query.fromDate === "string" ? req.query.fromDate.trim() : undefined;
+    const toDate =
+      typeof req.query.toDate === "string" ? req.query.toDate.trim() : undefined;
     const shiftIdRaw =
       typeof req.query.shiftId === "string"
         ? req.query.shiftId.trim()
@@ -171,7 +179,7 @@ export const getAllAttendances = async (req: Request, res: Response) => {
       return;
     }
 
-    const result = await getAllAttendancesService({ date, shiftId, userId });
+    const result = await getAllAttendancesService({ date, fromDate, toDate, shiftId, userId });
     res.status(result.status).json(result.data);
   } catch (error) {
     console.error("Get all attendances error:", error);
@@ -190,7 +198,8 @@ export const updateAttendance = async (
       return;
     }
 
-    const result = await updateAttendanceService(id, req.body ?? {});
+    const { checkIn, checkOut, notes } = req.body ?? {};
+    const result = await updateAttendanceService(id, { checkIn, checkOut, notes });
 
     if (result.message) {
       res.status(result.status).json({ message: result.message });
@@ -201,6 +210,30 @@ export const updateAttendance = async (
   } catch (error) {
     console.error("Update attendance error:", error);
     res.status(500).json({ message: "Failed to update attendance" });
+  }
+};
+
+export const getAttendanceSettingsHandler = async (_req: Request, res: Response) => {
+  try {
+    const data = await getAttendanceSettingsService();
+    res.status(200).json(data);
+  } catch (error) {
+    console.error("Get attendance settings error:", error);
+    res.status(500).json({ message: "Failed to fetch attendance settings" });
+  }
+};
+
+export const updateAttendanceSettingsHandler = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { lateGraceMinutes, overtimeGraceMinutes } = req.body ?? {};
+    const data = await updateAttendanceSettingsService({
+      lateGraceMinutes: lateGraceMinutes !== undefined ? Number(lateGraceMinutes) : undefined,
+      overtimeGraceMinutes: overtimeGraceMinutes !== undefined ? Number(overtimeGraceMinutes) : undefined,
+    });
+    res.status(200).json(data);
+  } catch (error) {
+    console.error("Update attendance settings error:", error);
+    res.status(500).json({ message: "Failed to update attendance settings" });
   }
 };
 
