@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+﻿import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Users,
@@ -734,7 +734,7 @@ function AccountantDashboard() {
         <StatCard
           icon={<DollarSign size={22} />}
           label="Monthly Payroll"
-          value={loading ? "…" : `$${monthPayroll.toLocaleString()}`}
+          value={loading ? "…" : `₪${monthPayroll.toLocaleString()}`}
           color="green"
           onClick={() => navigate("/admin/payroll")}
         />

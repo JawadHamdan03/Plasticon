@@ -30,7 +30,7 @@ router.get(
 
 router.get(
     "/materials",
-    authorizeRoles([UserRole.ACCOUNTANT, UserRole.ADMIN]),
+    authorizeRoles([UserRole.ACCOUNTANT, UserRole.ADMIN, UserRole.ENGINEER]),
     getRawMaterialsStockHandler
 );
 

@@ -8,12 +8,14 @@ import {
 } from "../controllers/productionController";
 import { authorizeRoles } from "../middleware/authMiddleware";
 import { UserRole } from "../config/generated/prisma/client";
+import { upload } from "../utils/uploadHandler";
 
 const router = Router();
 
 router.post(
   "/",
   authorizeRoles([UserRole.WORKER, UserRole.ENGINEER]),
+  upload.single("document"),
   createProductionHandler,
 );
 

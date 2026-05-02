@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { confirmDialog } from "../../lib/dialog";
 import { Plus, Pencil, Trash2, PieChart, X, Save } from "lucide-react";
 import { ModulePageShell } from "../../components/ModulePageShell";
@@ -96,7 +96,7 @@ export default function CostAnalysis() {
   const filtered = analyses.filter((a) => !filterPeriod || a.period === filterPeriod);
   const totalCost = analyses.reduce((s, a) => s + a.cost, 0);
   const topCategory = [...analyses].sort((a, b) => b.cost - a.cost)[0];
-  const fmtMoney = (n: number) => `$${n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  const fmtMoney = (n: number) => `₪${n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   const getCatMeta = (cat: string) => COST_CATEGORIES.find((c) => c.value === cat) ?? COST_CATEGORIES[COST_CATEGORIES.length - 1];
 
   return (

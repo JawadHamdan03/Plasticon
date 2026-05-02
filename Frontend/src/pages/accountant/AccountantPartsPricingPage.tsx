@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+﻿import { useState, useCallback, useEffect } from "react";
 import {
   DollarSign, Package, ChevronDown, ChevronUp,
   CheckCircle, Clock, Image, AlertCircle, X, Filter,
@@ -311,12 +311,12 @@ export function AccountantPartsPricingPage() {
                                     </div>
                                   ) : (
                                     <span className="font-bold text-green-600">
-                                      {item.unitPrice !== null ? `$${item.unitPrice.toFixed(2)}` : "—"}
+                                      {item.unitPrice !== null ? `₪${item.unitPrice.toFixed(2)}` : "—"}
                                     </span>
                                   )}
                                 </td>
                                 <td className="py-2.5 px-3 font-bold text-[var(--text-primary)]">
-                                  {item.unitPrice !== null ? `$${(item.unitPrice * item.quantity).toFixed(2)}` : <span className="text-[var(--text-secondary)] opacity-40">—</span>}
+                                  {item.unitPrice !== null ? `₪${(item.unitPrice * item.quantity).toFixed(2)}` : <span className="text-[var(--text-secondary)] opacity-40">—</span>}
                                 </td>
                                 <td className="py-2.5 px-3">
                                   {item.unitPrice !== null ? (

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { confirmDialog } from "../../lib/dialog";
 import { Plus, Pencil, Trash2, CheckCircle, Clock, AlertTriangle, Users, X, Save } from "lucide-react";
 import { ModulePageShell } from "../../components/ModulePageShell";
@@ -101,7 +101,7 @@ export default function CustomerReceivables() {
   const collectedAmount = receivables.filter((r) => r.status === "COLLECTED").reduce((s, r) => s + r.amount, 0);
   const overdueCount = receivables.filter((r) => r.status === "OVERDUE").length;
   const totalAmount = receivables.reduce((s, r) => s + r.amount, 0);
-  const fmtMoney = (n: number) => `$${n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  const fmtMoney = (n: number) => `₪${n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
   return (
     <ModulePageShell

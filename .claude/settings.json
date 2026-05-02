@@ -43,7 +43,10 @@
       "Read(//c/Users/JC/OneDrive/Documents/Plasticon/Backend/src/config/generated/prisma/**)",
       "PowerShell(\\(Get-NetTCPConnection -LocalPort 8080 -ErrorAction SilentlyContinue\\).OwningProcess)",
       "Bash(curl -s -X POST http://localhost:8080/spare-part-requests -H 'Content-Type: multipart/form-data' -H 'Authorization: Bearer invalid_token_for_test' -F machineId=1 -F partName=test -F quantity=1)",
-      "Bash(cmd /c \"npx tsx src/app.ts > server-out.txt 2>&1\")"
+      "Bash(cmd /c \"npx tsx src/app.ts > server-out.txt 2>&1\")",
+      "Bash(grep -n \"NIS\\\\|\\\\\\\\$\\\\|currency\\\\|fmtMoney\\\\|formatMoney\" /c/Users/JC/OneDrive/Documents/Plasticon/Frontend/src/pages/admin/PayrollAdminPage.tsx)",
+      "Bash(grep -n \"NIS\\\\|\\\\\\\\$\\\\|DollarSign\\\\|fmtMoney\\\\|totalSalary\\\\|currency\" /c/Users/JC/OneDrive/Documents/Plasticon/Frontend/src/pages/admin/PayrollAdminPage.tsx)",
+      "Bash(grep -n \"NIS\\\\|DollarSign\\\\|\\\\$[0-9]\\\\|fmtMoney\\\\|formatMoney\\\\|totalSalary\\\\|monthlyPay\\\\|dailyRate\" /c/Users/JC/OneDrive/Documents/Plasticon/Frontend/src/pages/admin/PayrollAdminPage.tsx)"
     ]
   }
 }

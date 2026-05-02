@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { confirmDialog } from "../../lib/dialog";
 import { Plus, Pencil, Trash2, FileText, CheckCircle, Clock, AlertTriangle, X, Save } from "lucide-react";
 import { ModulePageShell } from "../../components/ModulePageShell";
@@ -96,7 +96,7 @@ export default function TaxCompliance() {
   const completed = filings.filter((f) => f.status === "COMPLETED").length;
   const pending = filings.filter((f) => f.status === "PENDING").length;
   const overdue = filings.filter((f) => f.status === "OVERDUE").length;
-  const fmtMoney = (n: number) => `$${n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  const fmtMoney = (n: number) => `₪${n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
   const getTaxMeta = (type: string) => TAX_TYPES.find((t) => t.value === type) ?? TAX_TYPES[0];
 

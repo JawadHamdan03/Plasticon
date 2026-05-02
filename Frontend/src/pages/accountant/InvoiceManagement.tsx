@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { confirmDialog } from "../../lib/dialog";
 import {
   Plus, CheckCircle, Clock, Trash2, FileText, Search,
@@ -109,7 +109,7 @@ export default function InvoiceManagement() {
   const pendingAmount = invoices.filter((i) => i.paymentStatus !== "PAID").reduce((s, i) => s + i.totalAmount, 0);
   const overdueCount = invoices.filter((i) => isOverdue(i.dueDate, i.paymentStatus)).length;
 
-  const fmtMoney = (n: number) => `$${n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  const fmtMoney = (n: number) => `₪${n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
   const StatusBadge = ({ status, dueDate }: { status: string; dueDate: string }) => {
     const overdue = isOverdue(dueDate, status);

@@ -19,7 +19,8 @@ export const createProductionHandler = async (
       return;
     }
 
-    const result = await createProductionRecord(userId, req.body);
+    const documentPath = req.file?.filename ?? undefined;
+    const result = await createProductionRecord(userId, { ...req.body, documentPath });
 
     if (result.message) {
       res.status(result.status).json({ message: result.message });

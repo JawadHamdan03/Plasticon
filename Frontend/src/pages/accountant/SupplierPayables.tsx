@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { confirmDialog } from "../../lib/dialog";
 import { Plus, Pencil, Trash2, CheckCircle, Clock, AlertTriangle, Truck, X, Save } from "lucide-react";
 import { ModulePageShell } from "../../components/ModulePageShell";
@@ -101,7 +101,7 @@ export default function SupplierPayables() {
   const paidCount = payables.filter((p) => p.paymentStatus === "PAID").length;
   const overdueAmount = payables.filter((p) => p.paymentStatus === "OVERDUE").reduce((s, p) => s + p.amount, 0);
   const totalAmount = payables.reduce((s, p) => s + p.amount, 0);
-  const fmtMoney = (n: number) => `$${n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  const fmtMoney = (n: number) => `₪${n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
   return (
     <ModulePageShell

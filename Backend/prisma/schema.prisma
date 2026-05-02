@@ -364,7 +364,8 @@ model ProductionRecord {
   downtimeReason  String?
   downtimeMinutes Int?
 
-  boxesData String?
+  boxesData    String?
+  documentPath String?
 
   notes String?
 

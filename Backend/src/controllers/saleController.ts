@@ -108,22 +108,24 @@ export const createSaleHandler = async (
       return;
     }
 
-    const invoiceFile = req.file
-      ? {
-          fileName: req.file.originalname,
-          filePath: `prisma/pictures/${req.file.filename}`,
-          fileSize: req.file.size,
-          mimeType: req.file.mimetype,
-        }
-      : undefined;
+    if (!req.file) {
+      res.status(400).json({ message: "Invoice image is required for new sales" });
+      return;
+    }
+
+    const invoiceFile = {
+      fileName: req.file.originalname,
+      filePath: `prisma/pictures/${req.file.filename}`,
+      fileSize: req.file.size,
+      mimeType: req.file.mimetype,
+    };
 
     const payload = normalizeSalePayload(req.body ?? {});
 
     const result = await createSale(userId, {
       ...(payload ?? {}),
-      ...(invoiceFile
-        ? { invoiceImage: invoiceFile.filePath, invoiceFile }
-        : {}),
+      invoiceImage: invoiceFile.filePath,
+      invoiceFile,
     });
 
     if (result.message) {

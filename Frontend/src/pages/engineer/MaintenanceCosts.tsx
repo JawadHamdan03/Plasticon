@@ -131,8 +131,8 @@ export default function MaintenanceCosts() {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
         {[
           { label: nav("Total Jobs Costed", "المهام المسعّرة"), value: records.length,              icon: "🔧", color: "#1d4ed8", bg: "#dbeafe" },
-          { label: nav("Total Spares Cost", "تكلفة قطع الغيار"), value: `$${totalSpares.toLocaleString(undefined,{maximumFractionDigits:2})}`, icon: "🔩", color: "#d97706", bg: "#fef3c7" },
-          { label: nav("Total Cost",        "التكلفة الإجمالية"), value: `$${totalCost.toLocaleString(undefined,{maximumFractionDigits:2})}`,   icon: "💰", color: "#059669", bg: "#d1fae5" },
+          { label: nav("Total Spares Cost", "تكلفة قطع الغيار"), value: `₪${totalSpares.toLocaleString(undefined,{maximumFractionDigits:2})}`, icon: "🔩", color: "#d97706", bg: "#fef3c7" },
+          { label: nav("Total Cost",        "التكلفة الإجمالية"), value: `₪${totalCost.toLocaleString(undefined,{maximumFractionDigits:2})}`,   icon: "💰", color: "#059669", bg: "#d1fae5" },
         ].map(k => (
           <Card key={k.label} className="p-4 flex items-center gap-3">
             <div style={{ width: 40, height: 40, borderRadius: 10, background: k.bg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.2rem", flexShrink: 0 }}>{k.icon}</div>
@@ -166,11 +166,11 @@ export default function MaintenanceCosts() {
               <input type="number" min={0} step="0.5" className="input" value={form.laborHours} onChange={e => setForm(p => ({ ...p, laborHours: e.target.value }))} />
             </div>
             <div>
-              <label className="label">{nav("Labor Cost/hr ($)", "تكلفة العمل/ساعة ($)")}</label>
+              <label className="label">{nav("Labor Cost/hr (₪)", "تكلفة العمل/ساعة ($)")}</label>
               <input type="number" min={0} step="0.01" className="input" value={form.laborCostPerHour} onChange={e => setForm(p => ({ ...p, laborCostPerHour: e.target.value }))} />
             </div>
             <div>
-              <label className="label">{nav("Spare Parts Cost ($)", "تكلفة قطع الغيار ($)")}</label>
+              <label className="label">{nav("Spare Parts Cost (₪)", "تكلفة قطع الغيار ($)")}</label>
               <input type="number" min={0} step="0.01" className="input" value={form.sparesTotal} onChange={e => setForm(p => ({ ...p, sparesTotal: e.target.value }))} />
             </div>
             <div>
@@ -224,7 +224,7 @@ export default function MaintenanceCosts() {
                         <td>
                           {cost ? (
                             <span style={{ padding: ".2rem .6rem", borderRadius: 999, fontSize: ".75rem", fontWeight: 700, background: "#d1fae5", color: "#059669" }}>
-                              ${cost.totalCost.toFixed(2)} ✓
+                              ₪{cost.totalCost.toFixed(2)} ✓
                             </span>
                           ) : (
                             <span style={{ padding: ".2rem .6rem", borderRadius: 999, fontSize: ".75rem", fontWeight: 700, background: "#fef3c7", color: "#d97706" }}>
@@ -263,9 +263,9 @@ export default function MaintenanceCosts() {
                   <th>{nav("Machine", "الآلة")}</th>
                   <th>{nav("Parts", "القطع")}</th>
                   <th>{nav("Labor hrs", "ساعات عمل")}</th>
-                  <th>{nav("Labor $", "تكلفة عمالة")}</th>
-                  <th>{nav("Spares $", "قطع غيار")}</th>
-                  <th>{nav("Total $", "الإجمالي")}</th>
+                  <th>{nav("Labor ₪", "تكلفة عمالة")}</th>
+                  <th>{nav("Spares ₪", "قطع غيار")}</th>
+                  <th>{nav("Total ₪", "الإجمالي")}</th>
                   <th>{nav("Priced By", "سعّره")}</th>
                   <th>{nav("Date", "التاريخ")}</th>
                 </tr>
@@ -276,9 +276,9 @@ export default function MaintenanceCosts() {
                     <td className="font-medium">{r.maintenance.machine.name}</td>
                     <td style={{ color: "var(--text-secondary)", maxWidth: 180, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.maintenance.description}</td>
                     <td>{r.laborHours}h</td>
-                    <td>${r.laborTotal.toFixed(2)}</td>
-                    <td>${r.sparesTotal.toFixed(2)}</td>
-                    <td><strong style={{ color: "#059669" }}>${r.totalCost.toFixed(2)}</strong></td>
+                    <td>₪{r.laborTotal.toFixed(2)}</td>
+                    <td>₪{r.sparesTotal.toFixed(2)}</td>
+                    <td><strong style={{ color: "#059669" }}>₪{r.totalCost.toFixed(2)}</strong></td>
                     <td style={{ color: "var(--text-secondary)" }}>{r.createdBy.fullName}</td>
                     <td style={{ color: "var(--text-secondary)" }}>{new Date(r.createdAt).toLocaleDateString()}</td>
                   </tr>
@@ -288,8 +288,8 @@ export default function MaintenanceCosts() {
                 <tfoot>
                   <tr style={{ fontWeight: 700, background: "var(--bg-subtle)" }}>
                     <td colSpan={4}>{nav("Totals", "المجاميع")}</td>
-                    <td>${totalSpares.toFixed(2)}</td>
-                    <td style={{ color: "#059669" }}>${totalCost.toFixed(2)}</td>
+                    <td>₪{totalSpares.toFixed(2)}</td>
+                    <td style={{ color: "#059669" }}>₪{totalCost.toFixed(2)}</td>
                     <td colSpan={2} />
                   </tr>
                 </tfoot>
