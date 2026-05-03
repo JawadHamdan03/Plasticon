@@ -8,11 +8,9 @@ import {
 } from "react";
 import { API_BASE_URL, readApiError } from "../lib/api";
 
-// Global fetch interceptor to add Authorization header
+// Global fetch interceptor — ensures credentials (httpOnly cookie) are always sent
 const originalFetch = window.fetch.bind(window);
 window.fetch = (input: RequestInfo | URL, init?: RequestInit) => {
-  const token = localStorage.getItem("plasticon_token");
-  // Don't set Content-Type for FormData — browser must set it with the multipart boundary
   const isFormData = init?.body instanceof FormData;
 
   const modifiedInit: RequestInit = {
@@ -21,7 +19,6 @@ window.fetch = (input: RequestInfo | URL, init?: RequestInit) => {
     headers: {
       ...(isFormData ? {} : { "Content-Type": "application/json" }),
       ...(init?.headers ?? {}),
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
   };
 

@@ -959,3 +959,34 @@ export const markAttendanceLeave = async (
 
   return { status: 200, data: updated };
 };
+
+export const calculateMonthlyPayrollForAll = async (
+  calculatedById: number,
+  month: string,
+): Promise<ServiceResult<{ calculated: number; skipped: number; errors: string[] }>> => {
+  if (!month?.match(/^\d{4}-\d{2}$/)) {
+    return { status: 400, message: "month must be in YYYY-MM format" };
+  }
+
+  const users = await prisma.user.findMany({
+    where: { deletedAt: null, isActive: true, role: { not: "ADMIN" } },
+    select: { id: true, fullName: true },
+  });
+
+  let calculated = 0;
+  let skipped = 0;
+  const errors: string[] = [];
+
+  for (const user of users) {
+    const result = await calculatePayroll(calculatedById, { userId: user.id, month });
+    if (result.status === 201) {
+      calculated++;
+    } else if (result.status === 409) {
+      skipped++;
+    } else {
+      errors.push(`${user.fullName}: ${result.message ?? "unknown error"}`);
+    }
+  }
+
+  return { status: 200, data: { calculated, skipped, errors } };
+};

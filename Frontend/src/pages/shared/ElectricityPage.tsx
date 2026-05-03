@@ -539,7 +539,7 @@ export function ElectricityPage() {
 
             {editError && <div className="auth-alert auth-alert--error" style={{ marginBottom: ".75rem", fontSize: ".82rem" }}>{editError}</div>}
 
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: ".75rem", marginBottom: ".75rem" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(160px,1fr))", gap: ".75rem", marginBottom: ".75rem" }}>
               <label style={{ display: "flex", flexDirection: "column", gap: ".3rem", fontSize: ".83rem", fontWeight: 600 }}>
                 {nav("Start Reading (kWh)", "القراءة البدائية")}
                 <input type="number" className="input" value={editStart} onChange={e => setEditStart(e.target.value)} />

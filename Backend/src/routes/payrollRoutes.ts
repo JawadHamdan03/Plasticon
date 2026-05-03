@@ -20,6 +20,7 @@ import {
   markAttendanceLeaveHandler,
   getDeductionRulesHandler,
   updateDeductionRuleHandler,
+  calculateMonthlyPayrollForAllHandler,
 } from "../controllers/payrollController";
 import { authorizeRoles } from "../middleware/authMiddleware";
 
@@ -39,6 +40,14 @@ router.post(
   "/calculate",
   authorizeRoles(accountingRoles),
   calculatePayrollHandler,
+);
+
+// Bulk monthly payroll: calculate for ALL active users in a month
+// Body: { month: "YYYY-MM" }
+router.post(
+  "/monthly/calculate",
+  authorizeRoles(accountingRoles),
+  calculateMonthlyPayrollForAllHandler,
 );
 
 // ── Salary Config (must be before /:id) ──

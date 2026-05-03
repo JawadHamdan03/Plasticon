@@ -292,7 +292,7 @@ export function RegistrationRequestsPage() {
             {/* Role selector */}
             <div>
               <p style={{ margin: "0 0 .6rem", fontSize: ".83rem", fontWeight: 700 }}>Select Role</p>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: ".5rem" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(120px,1fr))", gap: ".5rem" }}>
                 {ROLES.map((role) => (
                   <button key={role} type="button"
                     onClick={() => { setSelectedRole(role); setSelectedShiftId(""); }}

@@ -163,7 +163,7 @@ export default function TechnicalDocumentation() {
           {error && <div className="auth-alert auth-alert--error mb-3">{error}</div>}
           {success && <div className="auth-alert mb-3">{success}</div>}
           <form className="module-form" onSubmit={e => void submit(e)}>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))", gap: "1rem" }}>
               <label style={{ gridColumn: "1 / -1" }}>{nav("Title", "العنوان")} *
                 <input type="text" className="input" value={form.title} onChange={e => setForm(p => ({ ...p, title: e.target.value }))} placeholder={nav("e.g. Machine A - User Manual", "مثال: دليل الآلة أ")} required />
               </label>

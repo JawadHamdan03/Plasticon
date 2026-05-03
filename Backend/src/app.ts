@@ -4,6 +4,8 @@ import { createServer } from "http";
 import path from "path";
 import { fileURLToPath } from "url";
 import cors, { type CorsOptions } from "cors";
+import helmet from "helmet";
+import rateLimit from "express-rate-limit";
 import { initializeSocketServer } from "./config/socket";
 import authRoutes from "./routes/authRoutes";
 import userRoutes from "./routes/userRoutes";
@@ -84,10 +86,11 @@ const corsOptions: CorsOptions = {
 const app = express();
 const server = createServer(app);
 
+app.use(helmet({ contentSecurityPolicy: false }));
 app.use(cors(corsOptions));
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: "2mb" }));
+app.use(express.urlencoded({ extended: true, limit: "2mb" }));
 
 // Serve static files from prisma/pictures
 app.use(
@@ -95,7 +98,14 @@ app.use(
   express.static(path.resolve(__dirname, "..", "prisma", "pictures")),
 );
 
-app.use("/auth", authRoutes);
+const authRateLimit = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: "Too many requests, please try again later." },
+});
+app.use("/auth", authRateLimit, authRoutes);
 app.use("/registration-requests", registrationRequestRoutes);
 app.use("/profile", profileRoutes);
 app.use("/users", userRoutes);

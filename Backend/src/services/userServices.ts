@@ -9,9 +9,15 @@ type ServiceResult<T> = {
   data?: T;
 };
 
+const USER_SAFE_SELECT = {
+  id: true, fullName: true, username: true, email: true, phone: true,
+  nationalId: true, role: true, isActive: true, deletedAt: true,
+  shiftId: true, createdAt: true, updatedAt: true,
+} as const;
+
 export const getUsers = async (): Promise<ServiceResult<unknown>> => {
   const users = await prisma.user.findMany({
-    include: { shift: { select: { id: true, name: true } } },
+    select: { ...USER_SAFE_SELECT, shift: { select: { id: true, name: true } } },
     orderBy: { id: "asc" },
   });
   return { status: 200, data: users };
@@ -20,11 +26,13 @@ export const getUsers = async (): Promise<ServiceResult<unknown>> => {
 export const getUserById = async (
   id: number,
 ): Promise<ServiceResult<unknown>> => {
-  const user = await prisma.user.findFirst({ where: { id: id } });
+  const user = await prisma.user.findFirst({
+    where: { id },
+    select: USER_SAFE_SELECT,
+  });
   if (!user) {
     return { status: 404, message: "there is no user with this id" };
   }
-
   return { status: 200, data: user };
 };
 
