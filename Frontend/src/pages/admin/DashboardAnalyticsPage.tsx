@@ -183,7 +183,7 @@ export function DashboardAnalyticsPage() {
 
   const profit = d ? d.salesThisMonth - d.purchasesThisMonth - d.expensesThisMonth : 0;
 
-  const COL2 = "1fr 1fr";
+  const COL2 = "repeat(auto-fit, minmax(140px, 1fr))";
 
   return (
     <ModulePageShell
@@ -212,7 +212,7 @@ export function DashboardAnalyticsPage() {
         <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
 
           {/* ── Row 0: Hero KPI Strip ──────────────────────── */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(6,1fr)", gap: "1rem" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: "1rem" }}>
             <HeroCard icon={<Users size={18} />} label="Active Users" value={d.activeUsers}
               sub={`${d.totalUsers} total · ${d.pendingRegistrations} pending`}
               gradient="linear-gradient(135deg,#3b82f6,#1d4ed8)" alert={d.pendingRegistrations > 0} />
@@ -357,7 +357,7 @@ export function DashboardAnalyticsPage() {
                   <span style={{ fontSize: ".72rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: ".05em", opacity: .9 }}>Sales Revenue</span>
                 </div>
                 <p style={{ margin: "0 0 .25rem", fontSize: "2.4rem", fontWeight: 900, lineHeight: 1 }}>SAR {fmtMoney(d.salesThisMonth)}</p>
-                <div style={{ display: "flex", alignItems: "center", gap: "1rem", marginTop: ".75rem" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "1rem", marginTop: ".75rem", flexWrap: "wrap" }}>
                   <div style={{ background: "rgba(255,255,255,.18)", borderRadius: 8, padding: ".4rem .75rem", textAlign: "center" }}>
                     <p style={{ margin: 0, fontSize: ".62rem", opacity: .85, fontWeight: 600 }}>TRANSACTIONS</p>
                     <p style={{ margin: 0, fontSize: "1.1rem", fontWeight: 900 }}>{d.salesCountThisMonth}</p>
@@ -381,7 +381,7 @@ export function DashboardAnalyticsPage() {
                   <span style={{ fontSize: ".72rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: ".05em", opacity: .9 }}>Purchases</span>
                 </div>
                 <p style={{ margin: "0 0 .25rem", fontSize: "2.4rem", fontWeight: 900, lineHeight: 1 }}>SAR {fmtMoney(d.purchasesThisMonth)}</p>
-                <div style={{ display: "flex", alignItems: "center", gap: "1rem", marginTop: ".75rem" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "1rem", marginTop: ".75rem", flexWrap: "wrap" }}>
                   <div style={{ background: "rgba(255,255,255,.18)", borderRadius: 8, padding: ".4rem .75rem", textAlign: "center" }}>
                     <p style={{ margin: 0, fontSize: ".62rem", opacity: .85, fontWeight: 600 }}>ORDERS</p>
                     <p style={{ margin: 0, fontSize: "1.1rem", fontWeight: 900 }}>{d.purchasesCountThisMonth}</p>
@@ -503,7 +503,7 @@ export function DashboardAnalyticsPage() {
                 <AlertTriangle size={18} color="#ef4444" />
                 <h3 style={{ margin: 0, fontSize: ".95rem", fontWeight: 800, color: "#ef4444" }}>Action Required — {totalAlerts} alert{totalAlerts !== 1 ? "s" : ""}</h3>
               </div>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(220px,1fr))", gap: ".6rem" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(160px,1fr))", gap: ".6rem" }}>
                 {d.outOfStockCount > 0 && <AlertItem icon={<Package size={14} />} label={`${d.outOfStockCount} material${d.outOfStockCount !== 1 ? "s" : ""} out of stock`} color="#ef4444" />}
                 {d.overdueSchedules > 0 && <AlertItem icon={<Clock size={14} />} label={`${d.overdueSchedules} overdue maintenance schedule${d.overdueSchedules !== 1 ? "s" : ""}`} color="#ef4444" />}
                 {d.invoicesOverdue > 0 && <AlertItem icon={<BarChart2 size={14} />} label={`${d.invoicesOverdue} overdue invoice${d.invoicesOverdue !== 1 ? "s" : ""}`} color="#f97316" />}

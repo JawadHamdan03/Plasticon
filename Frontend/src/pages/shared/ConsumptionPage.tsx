@@ -327,7 +327,7 @@ export function ConsumptionPage() {
                       <span style={{ width: 12, height: 12, borderRadius: "50%", background: cfg.color, flexShrink: 0 }} />
                       <span style={{ fontWeight: 700, fontSize: ".9rem", color: "var(--text-primary)" }}>{cfg.label}</span>
                     </div>
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr auto", gap: ".75rem", alignItems: "end" }}>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(110px, 1fr))", gap: ".75rem", alignItems: "end" }}>
                       <label style={{ display: "flex", flexDirection: "column", gap: ".3rem", fontSize: ".82rem", fontWeight: 600, color: "var(--text-secondary)" }}>
                         {isAr ? "عدد الأكياس" : "Number of Bags"}
                         <input type="number" min={0} step="0.5" value={cfg.bags} placeholder="0"

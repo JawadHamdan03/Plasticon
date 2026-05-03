@@ -9,6 +9,7 @@ import {
   getReadingsHandler,
   getReportHandler,
   setKwhPriceHandler,
+  updateReadingHandler,
 } from "../controllers/electricityController";
 
 const router = Router();
@@ -21,6 +22,7 @@ router.post("/kwh-price", authorizeRoles([UserRole.ADMIN]), setKwhPriceHandler);
 // Readings
 router.post("/readings", authorizeRoles([UserRole.WORKER, UserRole.ENGINEER, UserRole.ADMIN]), createReadingHandler);
 router.get("/readings", authorizeRoles([UserRole.WORKER, UserRole.ENGINEER, UserRole.ACCOUNTANT, UserRole.ADMIN]), getReadingsHandler);
+router.patch("/readings/:id", authorizeRoles([UserRole.ADMIN]), updateReadingHandler);
 router.delete("/readings/:id", authorizeRoles([UserRole.WORKER, UserRole.ENGINEER, UserRole.ADMIN]), deleteReadingHandler);
 
 // Report — admin + accountant

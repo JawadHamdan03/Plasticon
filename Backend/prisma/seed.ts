@@ -73,6 +73,8 @@ const defaultRawMaterials = [
   "ADHESIVE",
   "EMPTY_BAGS",
   "COLOR",
+  "Preform (PET)",
+  "Caps",
 ];
 
 const DEFAULT_TEST_PASSWORD = "Pass1234!";

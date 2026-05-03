@@ -49,8 +49,10 @@ function classifyProductType(value?: string | null): "PREFORM" | "CAPS" | "OTHER
   return "OTHER";
 }
 
-function classifyMaterial(name: string): "PET" | "HDPE" | "LDPE" | "UV" | "COLOR" | "OTHER" {
+function classifyMaterial(name: string): "PET" | "HDPE" | "LDPE" | "UV" | "COLOR" | "FINISHED" | "OTHER" {
   const n = name.trim().toUpperCase();
+  // Finished goods — check before raw material keywords to avoid false matches
+  if (n.includes("PREFORM") || n === "CAPS") return "FINISHED";
   if (n.includes("PET")) return "PET";
   if (n.includes("HDPE")) return "HDPE";
   if (n.includes("LDPE")) return "LDPE";
@@ -65,6 +67,7 @@ const MATERIAL_COLORS: Record<string, string> = {
   LDPE: "#f59e0b",
   UV: "#8b5cf6",
   COLOR: "#ec4899",
+  FINISHED: "#f97316",
   OTHER: "#6b7280",
 };
 
@@ -88,9 +91,9 @@ export function WarehousePage() {
     setError("");
     try {
       const [matRes, prodRes, salesRes] = await Promise.all([
-        fetch(`${API_BASE_URL}/inventory/materials`),
-        fetch(`${API_BASE_URL}/production/all`),
-        fetch(`${API_BASE_URL}/sales/all`),
+        fetch(`${API_BASE_URL}/inventory/materials`, { credentials: "include" }),
+        fetch(`${API_BASE_URL}/production/all`, { credentials: "include" }),
+        fetch(`${API_BASE_URL}/sales/all`, { credentials: "include" }),
       ]);
 
       if (matRes.ok) setMaterials(await matRes.json() as RawMaterial[]);

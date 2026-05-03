@@ -234,7 +234,7 @@ export function UsersAdminPage() {
             {/* Role picker */}
             <div>
               <p style={{ margin: "0 0 .6rem", fontSize: ".83rem", fontWeight: 700 }}>Role</p>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: ".5rem" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(110px, 1fr))", gap: ".5rem" }}>
                 {ROLES.map((r) => {
                   const color = roleColor[r];
                   const isSelected = editRole === r;

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { BarChart2, Download, Factory, LayoutDashboard, Settings2, Trash2, TrendingUp, Users2 } from "lucide-react";
+import { Factory, LayoutDashboard, Settings2, Trash2, Users2 } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 import { useLocale } from "../../context/LocaleContext";
 import { UserAvatarBadge } from "../../components/UserAvatarBadge";
@@ -71,15 +71,12 @@ type FrequencyValue = SystemFormState["inventoryAuditFrequency"];
 
 type SettingsTab =
   | "overview"
-  | "snapshots"
-  | "trend"
   | "production"
   | "system"
   | "users";
 
 const settingsTabValues: SettingsTab[] = [
   "overview",
-  "trend",
   "production",
   "system",
   "users",
@@ -120,29 +117,6 @@ const emptyUserForm = (): UserFormState => ({
 
 const isSettingsTab = (value: string | null): value is SettingsTab =>
   value !== null && settingsTabValues.includes(value as SettingsTab);
-
-type OpsSnapshot = {
-  id: number;
-  createdAt: string;
-  machineLabel: string;
-  machineCounter: number;
-  electricityKwh: number;
-  notes: string | null;
-  machineCounterImage: string | null;
-  electricityImage: string | null;
-};
-
-type SnapshotTrendPoint = {
-  bucket: string;
-  avgMachineCounter: number;
-  avgElectricityKwh: number;
-  snapshotsCount: number;
-};
-
-type SnapshotImagePreview = {
-  src: string;
-  alt: string;
-};
 
 const productionTypes: ProductType[] = ["CAPS", "PREFORM"];
 
@@ -211,45 +185,6 @@ const formatDateTime = (value: string | undefined, locale: string) => {
   }).format(new Date(value));
 };
 
-const toIsoStartOfDay = (dateValue: string) => {
-  if (!dateValue) {
-    return "";
-  }
-
-  const parsed = new Date(`${dateValue}T00:00:00`);
-  return Number.isNaN(parsed.getTime()) ? "" : parsed.toISOString();
-};
-
-const toIsoEndOfDay = (dateValue: string) => {
-  if (!dateValue) {
-    return "";
-  }
-
-  const parsed = new Date(`${dateValue}T23:59:59.999`);
-  return Number.isNaN(parsed.getTime()) ? "" : parsed.toISOString();
-};
-
-const downloadCsv = (filename: string, header: string[], rows: string[][]) => {
-  const escapeCsv = (value: string) => {
-    const safe = value.replace(/"/g, '""');
-    return `"${safe}"`;
-  };
-
-  const csv = [header, ...rows]
-    .map((line) => line.map((item) => escapeCsv(item)).join(","))
-    .join("\n");
-
-  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-  const href = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = href;
-  link.download = filename;
-  document.body.append(link);
-  link.click();
-  link.remove();
-  URL.revokeObjectURL(href);
-};
-
 async function fetchWithAdminAuth(path: string, options?: RequestInit) {
   return fetch(`${API_BASE_URL}${path}`, {
     ...options,
@@ -289,17 +224,6 @@ export function SettingsAdminPage() {
   const [initialNotificationRules, setInitialNotificationRules] =
     useState<NotificationRulesSettings>(defaultNotificationRules);
   const [savingNotificationRules, setSavingNotificationRules] = useState(false);
-  const [snapshots, setSnapshots] = useState<OpsSnapshot[]>([]);
-  const [snapshotMessage, setSnapshotMessage] = useState("");
-  const [loadingSnapshots, setLoadingSnapshots] = useState(false);
-  const [trendRange, setTrendRange] = useState<"daily" | "weekly">("daily");
-  const [snapshotTrend, setSnapshotTrend] = useState<SnapshotTrendPoint[]>([]);
-  const [loadingTrend, setLoadingTrend] = useState(false);
-  const [snapshotFromDate, setSnapshotFromDate] = useState("");
-  const [snapshotToDate, setSnapshotToDate] = useState("");
-  const [previewImage, setPreviewImage] = useState<SnapshotImagePreview | null>(
-    null,
-  );
   const [activeTab, setActiveTab] = useState<SettingsTab>("overview");
 
   /* ── Users management ── */
@@ -313,7 +237,6 @@ export function SettingsAdminPage() {
   const [userFormError, setUserFormError] = useState("");
   const [userFormSaving, setUserFormSaving] = useState(false);
   const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
-  const [deleteSnapshotConfirmId, setDeleteSnapshotConfirmId] = useState<number | null>(null);
 
   useEffect(() => {
     const tabParam = searchParams.get("tab");
@@ -368,54 +291,12 @@ export function SettingsAdminPage() {
             heroTips: "مؤشرات سريعة",
             productionHealth: "جاهزية إعدادات الإنتاج",
             systemHealth: "جاهزية إعدادات النظام",
-            snapshotTitle: "لقطة التشغيل",
-            snapshotSubtitle:
-              "سجّل قراءة عداد الماكينة والكهرباء مع ملاحظات المناوبة.",
-            machineLabel: "اسم/رمز الماكينة",
-            machineCounter: "قراءة عداد الماكينة",
-            electricityKwh: "قراءة الكهرباء (kWh)",
-            notes: "ملاحظات",
-            takeSnapshot: "حفظ اللقطة",
-            snapshotSaved: "تم حفظ اللقطة بنجاح",
-            snapshotInvalid: "أدخل اسم ماكينة وقيم رقمية صحيحة.",
-            latestSnapshots: "آخر اللقطات",
-            deltaFromPrevious: "الفرق عن السابقة",
-            exportLatest: "تصدير أحدث لقطة",
-            noSnapshots: "لا توجد لقطات بعد.",
-            deleteSnapshot: "حذف اللقطة",
-            confirmDeleteSnapshot: "هل أنت متأكد من حذف هذه اللقطة؟",
-            snapshotDeleted: "تم حذف اللقطة بنجاح",
             presetBalanced: "تطبيق إعداد متوازن",
             presetStrict: "تطبيق إعداد صارم",
             presetRelaxed: "تطبيق إعداد مرن",
-            machineCounterImage: "صورة عداد الماكينة",
-            electricityImage: "صورة العداد الكهربائي",
-            dailyTrend: "اتجاه يومي",
-            weeklyTrend: "اتجاه أسبوعي",
-            trendTitle: "تحليل اتجاه القراءات",
-            trendEmpty: "لا توجد بيانات كافية للرسم البياني.",
-            fromDate: "من تاريخ",
-            toDate: "إلى تاريخ",
-            applyFilter: "تطبيق الفلترة",
-            clearFilter: "مسح الفلترة",
-            exportReadingsCsv: "تصدير CSV للقراءات",
-            exportTrendCsv: "تصدير CSV للترند",
-            closePreview: "إغلاق المعاينة",
             tabOverview: "نظرة عامة",
-            tabSnapshots: "اللقطات",
-            tabTrend: "الاتجاه",
             tabProduction: "الإنتاج",
             tabSystem: "النظام",
-            electricityStandalone: "صفحة الكهرباء",
-            electricityReportTitle: "تقرير الكهرباء والتكلفة",
-            totalReadings: "إجمالي القراءات",
-            totalKwh: "إجمالي kWh",
-            totalCost: "إجمالي التكلفة",
-            avgKwhPerReading: "متوسط kWh لكل قراءة",
-            reportDay: "اليوم",
-            reportKwh: "kWh",
-            reportCost: "التكلفة",
-            exportCostReportCsv: "تصدير CSV للتكلفة",
           }
         : {
             title: "Settings",
@@ -454,54 +335,12 @@ export function SettingsAdminPage() {
             heroTips: "Quick indicators",
             productionHealth: "Production readiness",
             systemHealth: "System readiness",
-            snapshotTitle: "Operational Snapshot",
-            snapshotSubtitle:
-              "Capture machine counter and electricity readings with shift notes.",
-            machineLabel: "Machine name/code",
-            machineCounter: "Machine counter reading",
-            electricityKwh: "Electricity reading (kWh)",
-            notes: "Notes",
-            takeSnapshot: "Save snapshot",
-            snapshotSaved: "Snapshot saved successfully",
-            snapshotInvalid: "Enter a machine name and valid numeric readings.",
-            latestSnapshots: "Latest snapshots",
-            deltaFromPrevious: "Delta from previous",
-            exportLatest: "Export latest snapshot",
-            noSnapshots: "No snapshots yet.",
-            deleteSnapshot: "Delete Snapshot",
-            confirmDeleteSnapshot: "Are you sure you want to delete this snapshot?",
-            snapshotDeleted: "Snapshot deleted successfully",
             presetBalanced: "Apply balanced preset",
             presetStrict: "Apply strict preset",
             presetRelaxed: "Apply relaxed preset",
-            machineCounterImage: "Machine counter image",
-            electricityImage: "Electric meter image",
-            dailyTrend: "Daily trend",
-            weeklyTrend: "Weekly trend",
-            trendTitle: "Reading Trend Analysis",
-            trendEmpty: "No enough data for chart rendering.",
-            fromDate: "From date",
-            toDate: "To date",
-            applyFilter: "Apply filter",
-            clearFilter: "Clear filter",
-            exportReadingsCsv: "Export readings CSV",
-            exportTrendCsv: "Export trend CSV",
-            closePreview: "Close preview",
             tabOverview: "Overview",
-            tabSnapshots: "Snapshots",
-            tabTrend: "Trend",
             tabProduction: "Production",
             tabSystem: "System",
-            electricityStandalone: "Electricity page",
-            electricityReportTitle: "Electricity Cost Report",
-            totalReadings: "Total readings",
-            totalKwh: "Total kWh",
-            totalCost: "Total cost",
-            avgKwhPerReading: "Avg kWh per reading",
-            reportDay: "Day",
-            reportKwh: "kWh",
-            reportCost: "Cost",
-            exportCostReportCsv: "Export cost CSV",
           },
     [locale],
   );
@@ -513,24 +352,10 @@ export function SettingsAdminPage() {
 
   const settingsTabs: Array<{ id: SettingsTab; label: string; icon: React.ReactNode }> = [
     { id: "overview",   label: text.tabOverview,                           icon: <LayoutDashboard size={14} /> },
-    { id: "trend",      label: text.tabTrend,                              icon: <TrendingUp size={14} /> },
     { id: "production", label: text.tabProduction,                         icon: <Factory size={14} /> },
     { id: "system",     label: text.tabSystem,                             icon: <Settings2 size={14} /> },
     { id: "users",      label: locale === "ar" ? "المستخدمون" : "Users",  icon: <Users2 size={14} /> },
-    { id: "snapshots",  label: locale === "ar" ? "اللقطات" : "Snapshots", icon: <BarChart2 size={14} /> },
   ];
-
-  const normalizeSnapshotImagePath = (value: string | null) => {
-    if (!value) {
-      return null;
-    }
-
-    if (value.startsWith("http")) {
-      return value;
-    }
-
-    return `${API_BASE_URL}/${value.replace(/^prisma\/?pictures\//, "pictures/")}`;
-  };
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -601,97 +426,6 @@ export function SettingsAdminPage() {
   useEffect(() => {
     void loadData();
   }, [loadData]);
-
-  const loadSnapshots = useCallback(async () => {
-    setLoadingSnapshots(true);
-    try {
-      const params = new URLSearchParams({ limit: "50" });
-      const fromIso = toIsoStartOfDay(snapshotFromDate);
-      const toIso = toIsoEndOfDay(snapshotToDate);
-
-      if (fromIso) {
-        params.set("from", fromIso);
-      }
-
-      if (toIso) {
-        params.set("to", toIso);
-      }
-
-      const response = await fetchWithAdminAuth(
-        `/settings/snapshots?${params.toString()}`,
-      );
-      if (!response.ok) {
-        throw new Error(await readApiError(response));
-      }
-      const data = (await response.json()) as OpsSnapshot[];
-      setSnapshots(data);
-    } catch (loadError) {
-      setSnapshotMessage(
-        loadError instanceof Error ? loadError.message : text.snapshotInvalid,
-      );
-    } finally {
-      setLoadingSnapshots(false);
-    }
-  }, [snapshotFromDate, snapshotToDate, text.snapshotInvalid]);
-
-  const loadSnapshotTrend = useCallback(
-    async (range: "daily" | "weekly") => {
-      setLoadingTrend(true);
-      try {
-        const params = new URLSearchParams({
-          range,
-          limit: range === "weekly" ? "12" : "14",
-        });
-        const fromIso = toIsoStartOfDay(snapshotFromDate);
-        const toIso = toIsoEndOfDay(snapshotToDate);
-
-        if (fromIso) {
-          params.set("from", fromIso);
-        }
-
-        if (toIso) {
-          params.set("to", toIso);
-        }
-
-        const response = await fetchWithAdminAuth(
-          `/settings/snapshots/trend?${params.toString()}`,
-        );
-        if (!response.ok) {
-          throw new Error(await readApiError(response));
-        }
-        const data = (await response.json()) as SnapshotTrendPoint[];
-        setSnapshotTrend(data);
-      } catch {
-        setSnapshotTrend([]);
-      } finally {
-        setLoadingTrend(false);
-      }
-    },
-    [snapshotFromDate, snapshotToDate],
-  );
-
-  useEffect(() => {
-    void loadSnapshots();
-  }, [loadSnapshots]);
-
-  useEffect(() => {
-    void loadSnapshotTrend(trendRange);
-  }, [loadSnapshotTrend, trendRange]);
-
-  useEffect(() => {
-    if (snapshotFromDate || snapshotToDate) {
-      return;
-    }
-
-    void Promise.all([loadSnapshots(), loadSnapshotTrend(trendRange)]);
-  }, [
-    loadSnapshotTrend,
-    loadSnapshots,
-    snapshotFromDate,
-    snapshotToDate,
-    trendRange,
-  ]);
-
 
   const handleUpdateProductionSetting = async (productType: ProductType) => {
     const piecesPerCarton = Number(productionDrafts[productType]);
@@ -1090,18 +824,6 @@ export function SettingsAdminPage() {
     }
   };
 
-  const handleDeleteSnapshot = async (id: number) => {
-    try {
-      const res = await fetchWithAdminAuth(`/settings/snapshots/${id}`, { method: "DELETE" });
-      if (!res.ok) throw new Error(await readApiError(res));
-      setDeleteSnapshotConfirmId(null);
-      setSnapshotMessage(text.snapshotDeleted);
-      await loadSnapshots();
-    } catch (err) {
-      setSnapshotMessage(err instanceof Error ? err.message : "Failed to delete snapshot");
-    }
-  };
-
   const filteredUsers = users.filter((u) => {
     const q = userSearch.toLowerCase();
     const matchesSearch = !q || u.fullName.toLowerCase().includes(q) || u.email.toLowerCase().includes(q) || u.username.toLowerCase().includes(q);
@@ -1119,114 +841,6 @@ export function SettingsAdminPage() {
       ACCOUNTANT: "linear-gradient(135deg,#10b981,#059669)",
     };
     return map[role] ?? "linear-gradient(135deg,#94a3b8,#64748b)";
-  };
-
-  const latestSnapshot = snapshots[0] ?? null;
-  const previousSnapshot = snapshots[1] ?? null;
-
-  const deltaValues = useMemo(() => {
-    if (!latestSnapshot || !previousSnapshot) {
-      return null;
-    }
-    return {
-      machineCounter:
-        latestSnapshot.machineCounter - previousSnapshot.machineCounter,
-      electricityKwh:
-        latestSnapshot.electricityKwh - previousSnapshot.electricityKwh,
-    };
-  }, [latestSnapshot, previousSnapshot]);
-
-  const trendChartData = useMemo(() => {
-    if (!snapshotTrend.length) {
-      return [];
-    }
-
-    const maxCounter = Math.max(
-      ...snapshotTrend.map((item) => item.avgMachineCounter),
-      1,
-    );
-    const maxElectricity = Math.max(
-      ...snapshotTrend.map((item) => item.avgElectricityKwh),
-      1,
-    );
-
-    return snapshotTrend.map((item) => ({
-      ...item,
-      counterPercent: Math.max(8, (item.avgMachineCounter / maxCounter) * 100),
-      electricityPercent: Math.max(
-        8,
-        (item.avgElectricityKwh / maxElectricity) * 100,
-      ),
-    }));
-  }, [snapshotTrend]);
-
-  const exportLatestSnapshot = () => {
-    if (!latestSnapshot) {
-      return;
-    }
-    const blob = new Blob([JSON.stringify(latestSnapshot, null, 2)], {
-      type: "application/json",
-    });
-    const href = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = href;
-    link.download = `ops-snapshot-${new Date().toISOString().slice(0, 19).replace(/:/g, "-")}.json`;
-    document.body.append(link);
-    link.click();
-    link.remove();
-    URL.revokeObjectURL(href);
-  };
-
-  const exportReadingsCsv = () => {
-    const rows = snapshots.map((item) => [
-      String(item.id),
-      item.machineLabel,
-      String(item.machineCounter),
-      item.electricityKwh.toFixed(2),
-      item.notes ?? "",
-      item.createdAt,
-      item.machineCounterImage ?? "",
-      item.electricityImage ?? "",
-    ]);
-
-    downloadCsv(
-      `settings-readings-${new Date().toISOString().slice(0, 10)}.csv`,
-      [
-        "id",
-        "machineLabel",
-        "machineCounter",
-        "electricityKwh",
-        "notes",
-        "createdAt",
-        "machineCounterImage",
-        "electricityImage",
-      ],
-      rows,
-    );
-  };
-
-  const exportTrendCsv = () => {
-    const rows = snapshotTrend.map((item) => [
-      item.bucket,
-      item.avgMachineCounter.toFixed(2),
-      item.avgElectricityKwh.toFixed(2),
-      String(item.snapshotsCount),
-    ]);
-
-    downloadCsv(
-      `settings-trend-${trendRange}-${new Date().toISOString().slice(0, 10)}.csv`,
-      ["bucket", "avgMachineCounter", "avgElectricityKwh", "snapshotsCount"],
-      rows,
-    );
-  };
-
-  const applySnapshotFilter = () => {
-    void Promise.all([loadSnapshots(), loadSnapshotTrend(trendRange)]);
-  };
-
-  const clearSnapshotFilter = () => {
-    setSnapshotFromDate("");
-    setSnapshotToDate("");
   };
 
   const productionConfiguredCount = productionTypes.filter((type) =>
@@ -1418,170 +1032,6 @@ export function SettingsAdminPage() {
             >
               {copy.refresh}
             </button>
-          </div>
-        </div>
-      )}
-
-      {/* ─── SNAPSHOTS TAB ─── */}
-      {activeTab === "snapshots" && (
-        <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
-          {/* Filter bar */}
-          <div style={{
-            display: "flex", alignItems: "flex-end", gap: "1rem", flexWrap: "wrap",
-            padding: "1rem 1.25rem", borderRadius: 12,
-            background: "var(--bg-card,#fff)", border: "1px solid var(--border-default,#e5e7eb)",
-          }}>
-            {[
-              { label: text.fromDate, value: snapshotFromDate, onChange: setSnapshotFromDate },
-              { label: text.toDate, value: snapshotToDate, onChange: setSnapshotToDate },
-            ].map(({ label, value, onChange }) => (
-              <div key={label}>
-                <label style={{ display: "block", marginBottom: ".3rem", fontSize: ".78rem", fontWeight: 600, color: "var(--text-secondary)" }}>{label}</label>
-                <input
-                  type="date"
-                  className="auth-input"
-                  style={{ paddingLeft: "1rem", width: 160 }}
-                  value={value}
-                  onChange={(e) => onChange(e.target.value)}
-                />
-              </div>
-            ))}
-            <div style={{ display: "flex", gap: ".5rem", marginTop: "auto" }}>
-              <button type="button" onClick={applySnapshotFilter} style={{ padding: ".5rem 1rem", borderRadius: 8, background: "var(--orange-500,#f97316)", color: "#fff", border: "none", cursor: "pointer", fontWeight: 700, fontSize: ".82rem" }}>{text.applyFilter}</button>
-              <button type="button" onClick={clearSnapshotFilter} style={{ padding: ".5rem 1rem", borderRadius: 8, background: "transparent", border: "1px solid var(--border-default,#e5e7eb)", cursor: "pointer", fontWeight: 600, fontSize: ".82rem", color: "var(--text-secondary)" }}>{text.clearFilter}</button>
-              <button type="button" onClick={exportLatestSnapshot} disabled={!latestSnapshot} style={{ padding: ".5rem 1rem", borderRadius: 8, background: "transparent", border: "1px solid var(--border-default,#e5e7eb)", cursor: latestSnapshot ? "pointer" : "not-allowed", fontWeight: 600, fontSize: ".82rem", color: "var(--text-secondary)", display: "flex", alignItems: "center", gap: ".35rem", opacity: latestSnapshot ? 1 : .5 }}><Download size={13} /> {text.exportLatest}</button>
-              <button type="button" onClick={exportReadingsCsv} disabled={!snapshots.length} style={{ padding: ".5rem 1rem", borderRadius: 8, background: "transparent", border: "1px solid var(--border-default,#e5e7eb)", cursor: snapshots.length ? "pointer" : "not-allowed", fontWeight: 600, fontSize: ".82rem", color: "var(--text-secondary)", display: "flex", alignItems: "center", gap: ".35rem", opacity: snapshots.length ? 1 : .5 }}><Download size={13} /> {text.exportReadingsCsv}</button>
-            </div>
-          </div>
-
-          {/* Delta banner */}
-          {deltaValues && (
-            <div style={{ display: "flex", gap: "1.5rem", padding: ".75rem 1.25rem", borderRadius: 10, background: "rgba(59,130,246,.08)", border: "1px solid rgba(59,130,246,.2)", fontSize: ".85rem", fontWeight: 600 }}>
-              <span>📊 {text.deltaFromPrevious}:</span>
-              <span style={{ color: deltaValues.machineCounter >= 0 ? "#16a34a" : "#dc2626" }}>
-                {text.machineCounter}: {deltaValues.machineCounter >= 0 ? "+" : ""}{deltaValues.machineCounter}
-              </span>
-              <span style={{ color: deltaValues.electricityKwh >= 0 ? "#16a34a" : "#dc2626" }}>
-                {text.electricityKwh}: {deltaValues.electricityKwh >= 0 ? "+" : ""}{deltaValues.electricityKwh.toFixed(2)}
-              </span>
-            </div>
-          )}
-
-          {/* Info panel */}
-          <div style={{ padding: "1rem 1.25rem", borderRadius: 10, background: "rgba(249,115,22,.06)", border: "1px solid rgba(249,115,22,.15)", fontSize: ".85rem", color: "var(--text-secondary)" }}>
-            ℹ️ {locale === "ar"
-              ? "إدخال القراءات تم نقله إلى واجهة العامل. هذه الشاشة للمراجعة والتدقيق فقط."
-              : "Recording has moved to the worker interface. This screen is admin view-only for monitoring and audits."}
-          </div>
-
-          {/* Snapshot cards */}
-          <div>
-            <h3 style={{ margin: "0 0 .875rem", fontSize: ".9rem", fontWeight: 700 }}>{text.latestSnapshots}</h3>
-            {loadingSnapshots ? (
-              <div style={{ textAlign: "center", padding: "2rem" }}><span className="spinner" style={{ margin: "0 auto" }} /></div>
-            ) : snapshots.length ? (
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(280px,1fr))", gap: "1rem" }}>
-                {snapshots.slice(0, 6).map((item) => (
-                  <div key={item.id} style={{ padding: "1rem 1.25rem", borderRadius: 12, border: "1px solid var(--border-default,#e5e7eb)", background: "var(--bg-card,#fff)", display: "flex", flexDirection: "column", gap: ".5rem" }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                      <strong style={{ fontSize: ".9rem" }}>{item.machineLabel}</strong>
-                      <div style={{ display: "flex", alignItems: "center", gap: ".5rem" }}>
-                        <span style={{ fontSize: ".72rem", color: "var(--text-secondary)" }}>{formatDateTime(item.createdAt, locale)}</span>
-                        <button
-                          type="button"
-                          title={text.deleteSnapshot}
-                          onClick={() => setDeleteSnapshotConfirmId(item.id)}
-                          style={{ padding: ".25rem", borderRadius: 6, border: "1px solid #fecaca", background: "#fff5f5", cursor: "pointer", color: "#dc2626", display: "flex", alignItems: "center", lineHeight: 1 }}
-                        >
-                          <Trash2 size={13} />
-                        </button>
-                      </div>
-                    </div>
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: ".4rem" }}>
-                      <div style={{ padding: ".5rem .75rem", borderRadius: 8, background: "rgba(59,130,246,.08)", textAlign: "center" }}>
-                        <p style={{ margin: 0, fontSize: ".7rem", color: "var(--text-secondary)" }}>{text.machineCounter}</p>
-                        <p style={{ margin: 0, fontWeight: 700, fontSize: "1rem", color: "#1d4ed8" }}>{item.machineCounter.toLocaleString()}</p>
-                      </div>
-                      <div style={{ padding: ".5rem .75rem", borderRadius: 8, background: "rgba(249,115,22,.08)", textAlign: "center" }}>
-                        <p style={{ margin: 0, fontSize: ".7rem", color: "var(--text-secondary)" }}>{text.electricityKwh}</p>
-                        <p style={{ margin: 0, fontWeight: 700, fontSize: "1rem", color: "var(--orange-600,#ea580c)" }}>{item.electricityKwh.toFixed(1)}</p>
-                      </div>
-                    </div>
-                    {item.notes && <p style={{ margin: 0, fontSize: ".78rem", color: "var(--text-secondary)", fontStyle: "italic" }}>{item.notes}</p>}
-                    {(item.machineCounterImage || item.electricityImage) && (
-                      <div style={{ display: "flex", gap: ".5rem" }}>
-                        {item.machineCounterImage && (
-                          <button type="button" onClick={() => { const src = normalizeSnapshotImagePath(item.machineCounterImage); if (src) setPreviewImage({ src, alt: text.machineCounterImage }); }} style={{ flex: 1, padding: 0, border: "1px solid var(--border-default,#e5e7eb)", borderRadius: 8, overflow: "hidden", cursor: "pointer", background: "none" }}>
-                            <img src={normalizeSnapshotImagePath(item.machineCounterImage) ?? ""} alt={text.machineCounterImage} style={{ width: "100%", height: 60, objectFit: "cover" }} />
-                          </button>
-                        )}
-                        {item.electricityImage && (
-                          <button type="button" onClick={() => { const src = normalizeSnapshotImagePath(item.electricityImage); if (src) setPreviewImage({ src, alt: text.electricityImage }); }} style={{ flex: 1, padding: 0, border: "1px solid var(--border-default,#e5e7eb)", borderRadius: 8, overflow: "hidden", cursor: "pointer", background: "none" }}>
-                            <img src={normalizeSnapshotImagePath(item.electricityImage) ?? ""} alt={text.electricityImage} style={{ width: "100%", height: 60, objectFit: "cover" }} />
-                          </button>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div style={{ textAlign: "center", padding: "2.5rem", color: "var(--text-secondary)", fontSize: ".88rem", fontStyle: "italic" }}>{text.noSnapshots}</div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* ─── TREND TAB ─── */}
-      {activeTab === "trend" && (
-        <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: ".75rem" }}>
-            <div>
-              <h2 style={{ margin: "0 0 .2rem", fontSize: "1.1rem", fontWeight: 800 }}>{text.trendTitle}</h2>
-              <p style={{ margin: 0, color: "var(--text-secondary)", fontSize: ".85rem" }}>{text.snapshotSubtitle}</p>
-            </div>
-            <div style={{ display: "flex", gap: ".5rem" }}>
-              {(["daily", "weekly"] as const).map((r) => (
-                <button key={r} type="button" onClick={() => setTrendRange(r)} style={{ padding: ".45rem 1rem", borderRadius: 8, cursor: "pointer", fontWeight: 700, fontSize: ".82rem", background: trendRange === r ? "var(--orange-500,#f97316)" : "var(--bg-card,#fff)", color: trendRange === r ? "#fff" : "var(--text-secondary)", border: trendRange === r ? "none" : "1px solid var(--border-default,#e5e7eb)" }}>
-                  {r === "daily" ? text.dailyTrend : text.weeklyTrend}
-                </button>
-              ))}
-              <button type="button" onClick={exportTrendCsv} disabled={!snapshotTrend.length} style={{ padding: ".45rem .9rem", borderRadius: 8, border: "1px solid var(--border-default,#e5e7eb)", background: "transparent", cursor: snapshotTrend.length ? "pointer" : "not-allowed", fontWeight: 600, fontSize: ".82rem", color: "var(--text-secondary)", display: "flex", alignItems: "center", gap: ".35rem", opacity: snapshotTrend.length ? 1 : .5 }}><Download size={13} /> {text.exportTrendCsv}</button>
-            </div>
-          </div>
-
-          <div style={{ background: "var(--bg-card,#fff)", border: "1px solid var(--border-default,#e5e7eb)", borderRadius: 14, padding: "1.25rem 1.5rem" }}>
-            {loadingTrend ? (
-              <div style={{ textAlign: "center", padding: "2rem" }}><span className="spinner" style={{ margin: "0 auto" }} /></div>
-            ) : trendChartData.length ? (
-              <div style={{ display: "flex", flexDirection: "column", gap: ".75rem" }}>
-                <div style={{ display: "flex", gap: "1rem", marginBottom: ".5rem" }}>
-                  <span style={{ display: "flex", alignItems: "center", gap: ".4rem", fontSize: ".75rem", fontWeight: 600, color: "#3b82f6" }}><span style={{ width: 10, height: 10, borderRadius: 3, background: "#3b82f6", display: "inline-block" }} />{text.machineCounter}</span>
-                  <span style={{ display: "flex", alignItems: "center", gap: ".4rem", fontSize: ".75rem", fontWeight: 600, color: "var(--orange-500,#f97316)" }}><span style={{ width: 10, height: 10, borderRadius: 3, background: "var(--orange-500,#f97316)", display: "inline-block" }} />{text.electricityKwh}</span>
-                </div>
-                {trendChartData.map((point) => (
-                  <div key={`${point.bucket}-${point.snapshotsCount}`} style={{ display: "grid", gridTemplateColumns: "80px 1fr 1fr", gap: ".75rem", alignItems: "center" }}>
-                    <span style={{ fontSize: ".75rem", color: "var(--text-secondary)", fontWeight: 600 }}>
-                      {new Intl.DateTimeFormat(locale === "ar" ? "ar-EG" : "en-US", { month: "short", day: "numeric" }).format(new Date(point.bucket))}
-                    </span>
-                    <div style={{ display: "flex", alignItems: "center", gap: ".5rem" }}>
-                      <div style={{ flex: 1, height: 8, borderRadius: 99, background: "var(--border-color,#e5e7eb)", overflow: "hidden" }}>
-                        <div style={{ height: "100%", width: `${point.counterPercent}%`, borderRadius: 99, background: "linear-gradient(90deg,#60a5fa,#3b82f6)" }} />
-                      </div>
-                      <span style={{ fontSize: ".72rem", fontWeight: 700, color: "#3b82f6", minWidth: 40 }}>{point.avgMachineCounter.toFixed(0)}</span>
-                    </div>
-                    <div style={{ display: "flex", alignItems: "center", gap: ".5rem" }}>
-                      <div style={{ flex: 1, height: 8, borderRadius: 99, background: "var(--border-color,#e5e7eb)", overflow: "hidden" }}>
-                        <div style={{ height: "100%", width: `${point.electricityPercent}%`, borderRadius: 99, background: "linear-gradient(90deg,#fb923c,var(--orange-500,#f97316))" }} />
-                      </div>
-                      <span style={{ fontSize: ".72rem", fontWeight: 700, color: "var(--orange-600,#ea580c)", minWidth: 40 }}>{point.avgElectricityKwh.toFixed(1)}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p style={{ textAlign: "center", padding: "2rem", color: "var(--text-secondary)", fontStyle: "italic", fontSize: ".88rem" }}>{text.trendEmpty}</p>
-            )}
           </div>
         </div>
       )}
@@ -1961,40 +1411,6 @@ export function SettingsAdminPage() {
         </div>
       )}
 
-      {/* ─── DELETE SNAPSHOT CONFIRM MODAL ─── */}
-      {deleteSnapshotConfirmId !== null && (
-        <div role="dialog" aria-modal="true" onClick={() => setDeleteSnapshotConfirmId(null)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: "1rem" }}>
-          <div onClick={(e) => e.stopPropagation()} style={{ background: "var(--bg-card,#fff)", borderRadius: 16, padding: "1.75rem", width: "100%", maxWidth: 380, display: "flex", flexDirection: "column", gap: "1.25rem" }}>
-            <div style={{ textAlign: "center" }}>
-              <div style={{ width: 56, height: 56, borderRadius: "50%", background: "rgba(239,68,68,.1)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto .75rem" }}>
-                <Trash2 size={24} color="#dc2626" />
-              </div>
-              <h3 style={{ margin: "0 0 .4rem", fontSize: "1.05rem", fontWeight: 800 }}>{text.deleteSnapshot}?</h3>
-              <p style={{ margin: 0, fontSize: ".85rem", color: "var(--text-secondary)" }}>{text.confirmDeleteSnapshot}</p>
-            </div>
-            <div style={{ display: "flex", gap: ".75rem" }}>
-              <button type="button" onClick={() => setDeleteSnapshotConfirmId(null)} style={{ flex: 1, padding: ".5rem", borderRadius: 8, border: "1px solid var(--border-default)", background: "transparent", cursor: "pointer", fontWeight: 600 }}>
-                {locale === "ar" ? "إلغاء" : "Cancel"}
-              </button>
-              <button type="button" onClick={() => void handleDeleteSnapshot(deleteSnapshotConfirmId)} style={{ flex: 1, padding: ".5rem", borderRadius: 8, background: "#dc2626", color: "#fff", border: "none", cursor: "pointer", fontWeight: 700 }}>
-                {locale === "ar" ? "نعم، احذف" : "Yes, Delete"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Image preview modal */}
-      {previewImage && (
-        <div role="dialog" aria-modal="true" onClick={() => setPreviewImage(null)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.75)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 999, padding: "1rem" }}>
-          <div onClick={(e) => e.stopPropagation()} style={{ background: "var(--bg-card,#fff)", borderRadius: 16, padding: "1rem", maxWidth: "90vw", maxHeight: "90vh", display: "flex", flexDirection: "column", gap: ".75rem" }}>
-            <div style={{ display: "flex", justifyContent: "flex-end" }}>
-              <button type="button" onClick={() => setPreviewImage(null)} style={{ padding: ".4rem .9rem", borderRadius: 8, border: "1px solid var(--border-default,#e5e7eb)", background: "transparent", cursor: "pointer", fontWeight: 600, fontSize: ".82rem" }}>{text.closePreview}</button>
-            </div>
-            <img src={previewImage.src} alt={previewImage.alt} style={{ maxWidth: "100%", maxHeight: "75vh", objectFit: "contain", borderRadius: 8 }} />
-          </div>
-        </div>
-      )}
     </div>
   );
 }

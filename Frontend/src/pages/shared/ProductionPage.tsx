@@ -328,6 +328,14 @@ export function ProductionPage() {
       {/* ── Machine recording form (WORKER / ENGINEER / ADMIN) ── */}
       {canCreate && (
         <div style={{ marginBottom: "1.5rem" }}>
+          {/* Quick link to electricity recording */}
+          <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: ".75rem" }}>
+            <a href="/electricity"
+              style={{ display: "inline-flex", alignItems: "center", gap: ".4rem", padding: ".45rem 1rem", borderRadius: 8, border: "1px solid rgba(249,115,22,.35)", background: "rgba(249,115,22,.07)", color: "#ea580c", fontWeight: 700, fontSize: ".82rem", textDecoration: "none" }}>
+              ⚡ {isAr ? "تسجيل قراءة الكهرباء" : "Record Electricity Reading"}
+            </a>
+          </div>
+
           {machines.length === 0 ? (
             <div style={{ padding: "2.5rem", textAlign: "center", background: "var(--bg-card)", border: "1px dashed var(--border-default)", borderRadius: "var(--radius-xl)" }}>
               <div style={{ fontSize: "2.5rem", marginBottom: ".5rem" }}>🏭</div>

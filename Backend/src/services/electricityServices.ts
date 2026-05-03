@@ -108,6 +108,26 @@ export const createElectricityReading = async (
     return { status: 409, message: "A reading for this shift and date already exists" };
   }
 
+  // Sequential counter check: startReading must be >= last endReading (unless meter was reset)
+  if (!resetFlag) {
+    const lastReading = await prisma.electricityReading.findFirst({
+      where: {
+        OR: [
+          { date: { lt: parsedDate } },
+          { date: parsedDate, shiftId: { lt: shiftIdNum } },
+        ],
+        isMeterReset: false,
+      },
+      orderBy: [{ date: "desc" }, { shiftId: "desc" }],
+    });
+    if (lastReading && start < lastReading.endReading) {
+      return {
+        status: 400,
+        message: `Counter must be sequential. The last recorded end reading was ${lastReading.endReading}. Your start reading (${start}) is lower than the previous end reading. If the meter was physically reset, enable the "Meter Reset" option so an admin can verify and correct it.`,
+      };
+    }
+  }
+
   const respEngId = responsibleEngineerId ? Number(responsibleEngineerId) : null;
 
   const reading = await prisma.electricityReading.create({
@@ -261,6 +281,47 @@ export const getElectricityReport = async (
       summary,
     },
   };
+};
+
+// ─── Admin: correct / override a reading ────────────────────────────────────
+
+export const updateElectricityReading = async (
+  id: number,
+  payload: Record<string, unknown>,
+): Promise<ServiceResult> => {
+  const existing = await prisma.electricityReading.findUnique({ where: { id } });
+  if (!existing) return { status: 404, message: "Reading not found" };
+
+  const start = payload.startReading !== undefined ? Number(payload.startReading) : existing.startReading;
+  const end   = payload.endReading   !== undefined ? Number(payload.endReading)   : existing.endReading;
+  const reset = payload.isMeterReset !== undefined ? Boolean(payload.isMeterReset) : existing.isMeterReset;
+  const maxVal = reset ? (payload.maxMeterValue !== undefined ? Number(payload.maxMeterValue) : existing.maxMeterValue) : null;
+
+  if (!Number.isFinite(start) || start < 0) return { status: 400, message: "startReading must be a non-negative number" };
+  if (!Number.isFinite(end)   || end   < 0) return { status: 400, message: "endReading must be a non-negative number" };
+  if (!reset && end <= start) return { status: 400, message: "End reading must be greater than start reading" };
+
+  const consumption = reset && maxVal ? (maxVal - start) + end : end - start;
+  const shiftCost = consumption * existing.kwhPriceSnap;
+
+  const updated = await prisma.electricityReading.update({
+    where: { id },
+    data: {
+      startReading: start,
+      endReading: end,
+      isMeterReset: reset,
+      maxMeterValue: maxVal,
+      consumption,
+      shiftCost,
+      notes: payload.notes !== undefined ? (typeof payload.notes === "string" ? payload.notes.trim() || null : null) : existing.notes,
+    },
+    include: {
+      shift: { select: { id: true, name: true } },
+      recordedBy: { select: { fullName: true, username: true } },
+    },
+  });
+
+  return { status: 200, data: updated };
 };
 
 export const deleteElectricityReading = async (

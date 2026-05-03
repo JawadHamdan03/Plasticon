@@ -345,7 +345,7 @@ export function MachinesPage() {
                       </td>
                       <td>
                         {editingMachineId === item.id ? (
-                          <div style={{ display: "flex", gap: ".375rem" }}>
+                          <div style={{ display: "flex", gap: ".375rem", flexWrap: "wrap" }}>
                             <button
                               type="button"
                               className="btn btn--success btn--sm"
@@ -386,7 +386,7 @@ export function MachinesPage() {
                             </button>
                           </div>
                         ) : (
-                          <div style={{ display: "flex", gap: ".375rem" }}>
+                          <div style={{ display: "flex", gap: ".375rem", flexWrap: "wrap" }}>
                             <button
                               type="button"
                               className="btn btn--outline btn--sm"

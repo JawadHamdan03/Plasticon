@@ -8,6 +8,7 @@ import {
   getCurrentKwhPrice,
   getKwhPriceHistory,
   setKwhPrice,
+  updateElectricityReading,
 } from "../services/electricityServices";
 
 export const getCurrentKwhPriceHandler = async (_req: AuthenticatedRequest, res: Response) => {
@@ -60,4 +61,11 @@ export const deleteReadingHandler = async (req: AuthenticatedRequest, res: Respo
   if (!Number.isFinite(id)) { res.status(400).json({ message: "Invalid id" }); return; }
   const result = await deleteElectricityReading(id, userId, role);
   res.status(result.status).json({ message: result.message });
+};
+
+export const updateReadingHandler = async (req: AuthenticatedRequest, res: Response) => {
+  const id = Number(req.params.id);
+  if (!Number.isFinite(id)) { res.status(400).json({ message: "Invalid id" }); return; }
+  const result = await updateElectricityReading(id, req.body as Record<string, unknown>);
+  res.status(result.status).json(result.data ?? { message: result.message });
 };
