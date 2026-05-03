@@ -510,9 +510,9 @@ export function AttendanceAdminPage() {
                           {/* Check-in */}
                           <td style={{ padding:"7px 6px" }}>
                             {isEdit ? (
-                              <input type="datetime-local" value={editForm.checkIn} onChange={(e) => setEditForm(p => ({ ...p, checkIn: e.target.value }))} style={{ ...iStyle, width: 158 }} />
+                              <input type="datetime-local" value={editForm.checkIn} onChange={(e) => setEditForm(p => ({ ...p, checkIn: e.target.value }))} style={{ ...iStyle, width: "min(158px, 100%)" }} />
                             ) : isAdd ? (
-                              <input type="datetime-local" value={addForm.checkIn} onChange={(e) => setAddForm(p => ({ ...p, checkIn: e.target.value }))} style={{ ...iStyle, width: 158 }} />
+                              <input type="datetime-local" value={addForm.checkIn} onChange={(e) => setAddForm(p => ({ ...p, checkIn: e.target.value }))} style={{ ...iStyle, width: "min(158px, 100%)" }} />
                             ) : (
                               <span style={{ fontFamily:"monospace", fontSize:".82rem", fontWeight:600 }}>{rec ? fmtTime(rec.checkIn) : "—"}</span>
                             )}
@@ -521,9 +521,9 @@ export function AttendanceAdminPage() {
                           {/* Check-out */}
                           <td style={{ padding:"7px 6px" }}>
                             {isEdit ? (
-                              <input type="datetime-local" value={editForm.checkOut} onChange={(e) => setEditForm(p => ({ ...p, checkOut: e.target.value }))} style={{ ...iStyle, width: 158 }} />
+                              <input type="datetime-local" value={editForm.checkOut} onChange={(e) => setEditForm(p => ({ ...p, checkOut: e.target.value }))} style={{ ...iStyle, width: "min(158px, 100%)" }} />
                             ) : isAdd ? (
-                              <input type="datetime-local" value={addForm.checkOut} onChange={(e) => setAddForm(p => ({ ...p, checkOut: e.target.value }))} style={{ ...iStyle, width: 158 }} />
+                              <input type="datetime-local" value={addForm.checkOut} onChange={(e) => setAddForm(p => ({ ...p, checkOut: e.target.value }))} style={{ ...iStyle, width: "min(158px, 100%)" }} />
                             ) : (
                               <span style={{ fontFamily:"monospace", fontSize:".82rem", fontWeight:600 }}>{rec?.checkOut ? fmtTime(rec.checkOut) : "—"}</span>
                             )}

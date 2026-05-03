@@ -3563,6 +3563,7 @@ tbody td {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  flex-wrap: wrap;
 }
 .settings-export-button {
   display: inline-flex;
@@ -6317,5 +6318,33 @@ tbody td {
 @media (max-width: 360px) {
   [style*="gridTemplateColumns"] {
     grid-template-columns: 1fr !important;
+  }
+}
+
+/* ── Phone-specific overrides for admin pages ── */
+@media (max-width: 640px) {
+  /* Attendance/Payroll: datetime inputs take full width */
+  input[type="datetime-local"],
+  input[type="date"],
+  input[type="month"] {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+  /* Payroll filter bar inline children stretch */
+  .field__control {
+    width: 100% !important;
+  }
+  /* Reports: tab navigation scrolls horizontally */
+  [style*="overflowX"][style*="auto"] {
+    -webkit-overflow-scrolling: touch;
+  }
+  /* Admin table cells: prevent overflow */
+  .admin-table td,
+  .admin-table th {
+    white-space: nowrap;
+  }
+  /* Module panel full-width padding fix */
+  .module-panel {
+    padding: 1rem !important;
   }
 }

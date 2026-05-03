@@ -450,7 +450,7 @@ export function PayrollAdminPage() {
           <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap", marginBottom: "1.25rem", alignItems: "flex-end", background: "var(--bg-surface)", border: "1px solid var(--border-default)", borderRadius: "var(--radius-xl)", padding: "1rem 1.25rem" }}>
             <div className="field" style={{ flex: "0 0 auto" }}>
               <label className="field__label">{isAr ? "تاريخ" : "Date"}</label>
-              <input type="date" className="field__control" value={dateFilter} onChange={(e) => setDateFilter(e.target.value)} style={{ width: "180px" }} />
+              <input type="date" className="field__control" value={dateFilter} onChange={(e) => setDateFilter(e.target.value)} style={{ width: "min(180px, 100%)" }} />
             </div>
             <button className="btn btn--primary btn--sm" onClick={() => void loadDaily()}>{isAr ? "بحث" : "Search"}</button>
             <div style={{ flex: 1 }} />
@@ -593,7 +593,7 @@ export function PayrollAdminPage() {
           <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap", marginBottom: "1.5rem", alignItems: "flex-end", background: "var(--bg-surface)", border: "1px solid var(--border-default)", borderRadius: "var(--radius-xl)", padding: "1rem 1.25rem" }}>
             <div className="field" style={{ flex: "0 0 auto" }}>
               <label className="field__label">{isAr ? "الشهر" : "Month"}</label>
-              <input type="month" className="field__control" value={monthFilter} onChange={(e) => setMonthFilter(e.target.value)} style={{ width: "180px" }} />
+              <input type="month" className="field__control" value={monthFilter} onChange={(e) => setMonthFilter(e.target.value)} style={{ width: "min(180px, 100%)" }} />
             </div>
             <button className="btn btn--primary btn--sm" onClick={() => void loadMonthly()}>{isAr ? "بحث" : "Search"}</button>
             <div style={{ flex: 1 }} />

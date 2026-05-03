@@ -7,6 +7,8 @@ import {
   AlertTriangle,
   CheckCircle,
   Calculator,
+  Pencil,
+  X,
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { useLocale } from "../../context/LocaleContext";
@@ -94,6 +96,14 @@ export function ElectricityPage() {
   const [filterFromDate, setFilterFromDate] = useState("");
   const [filterToDate, setFilterToDate] = useState("");
   const [filterShift, setFilterShift] = useState("");
+  const [editingReading, setEditingReading] = useState<ElectricityReading | null>(null);
+  const [editStart, setEditStart] = useState("");
+  const [editEnd, setEditEnd] = useState("");
+  const [editReset, setEditReset] = useState(false);
+  const [editMaxVal, setEditMaxVal] = useState("");
+  const [editNotes, setEditNotes] = useState("");
+  const [editSaving, setEditSaving] = useState(false);
+  const [editError, setEditError] = useState("");
 
   // Form state
   const [fDate, setFDate] = useState(new Date().toISOString().slice(0, 10));
@@ -196,6 +206,40 @@ export function ElectricityPage() {
       setReadings((prev) => prev.filter((r) => r.id !== id));
     } catch (e) {
       setError(e instanceof Error ? e.message : nav("Delete failed", "فشل الحذف"));
+    }
+  };
+
+  const openEdit = (r: ElectricityReading) => {
+    setEditingReading(r);
+    setEditStart(String(r.startReading));
+    setEditEnd(String(r.endReading));
+    setEditReset(r.isMeterReset);
+    setEditMaxVal(r.maxMeterValue != null ? String(r.maxMeterValue) : "");
+    setEditNotes(r.notes ?? "");
+    setEditError("");
+  };
+
+  const handleEditSave = async () => {
+    if (!editingReading) return;
+    setEditSaving(true);
+    setEditError("");
+    try {
+      await api(`/electricity/readings/${editingReading.id}`, {
+        method: "PATCH",
+        body: JSON.stringify({
+          startReading: Number(editStart),
+          endReading: Number(editEnd),
+          isMeterReset: editReset,
+          maxMeterValue: editReset ? Number(editMaxVal) : undefined,
+          notes: editNotes || undefined,
+        }),
+      });
+      setEditingReading(null);
+      void loadData();
+    } catch (e) {
+      setEditError(e instanceof Error ? e.message : nav("Save failed", "فشل الحفظ"));
+    } finally {
+      setEditSaving(false);
     }
   };
 
@@ -446,14 +490,26 @@ export function ElectricityPage() {
                     </td>
                     {!readOnly && (
                       <td>
-                        <button
-                          type="button"
-                          onClick={() => void handleDelete(r.id)}
-                          style={{ background: "none", border: "none", cursor: "pointer", color: "var(--clr-danger)", padding: ".25rem" }}
-                          title={nav("Delete", "حذف")}
-                        >
-                          <Trash2 size={15} />
-                        </button>
+                        <div style={{ display: "flex", alignItems: "center", gap: ".25rem" }}>
+                          {isAdmin && (
+                            <button
+                              type="button"
+                              onClick={() => openEdit(r)}
+                              style={{ background: "none", border: "none", cursor: "pointer", color: "#2563eb", padding: ".25rem" }}
+                              title={nav("Edit / Fix reading", "تعديل القراءة")}
+                            >
+                              <Pencil size={14} />
+                            </button>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => void handleDelete(r.id)}
+                            style={{ background: "none", border: "none", cursor: "pointer", color: "var(--clr-danger)", padding: ".25rem" }}
+                            title={nav("Delete", "حذف")}
+                          >
+                            <Trash2 size={15} />
+                          </button>
+                        </div>
                       </td>
                     )}
                   </tr>
@@ -462,6 +518,67 @@ export function ElectricityPage() {
             </table>
           </div>
         </Card>
+      )}
+
+      {/* ── Admin edit modal ────────────────────────────────────── */}
+      {editingReading && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.45)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: "1rem" }}
+          onClick={() => setEditingReading(null)}>
+          <div style={{ background: "var(--bg-card)", borderRadius: 16, padding: "1.5rem", maxWidth: 480, width: "100%", boxShadow: "0 20px 60px rgba(0,0,0,.25)" }}
+            onClick={e => e.stopPropagation()}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
+              <h3 style={{ margin: 0, fontSize: "1rem", fontWeight: 700 }}>
+                {nav("Fix / Correct Reading", "تصحيح القراءة")}
+              </h3>
+              <button type="button" onClick={() => setEditingReading(null)} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-secondary)" }}><X size={18} /></button>
+            </div>
+
+            <div style={{ padding: ".65rem .875rem", background: "rgba(245,158,11,.08)", borderRadius: 8, marginBottom: "1rem", fontSize: ".8rem", color: "#92400e", fontWeight: 600 }}>
+              📅 {nav("Date", "التاريخ")}: {new Date(editingReading.date).toLocaleDateString()} — {nav("Shift", "الشفت")}: {editingReading.shift.name}
+            </div>
+
+            {editError && <div className="auth-alert auth-alert--error" style={{ marginBottom: ".75rem", fontSize: ".82rem" }}>{editError}</div>}
+
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: ".75rem", marginBottom: ".75rem" }}>
+              <label style={{ display: "flex", flexDirection: "column", gap: ".3rem", fontSize: ".83rem", fontWeight: 600 }}>
+                {nav("Start Reading (kWh)", "القراءة البدائية")}
+                <input type="number" className="input" value={editStart} onChange={e => setEditStart(e.target.value)} />
+              </label>
+              <label style={{ display: "flex", flexDirection: "column", gap: ".3rem", fontSize: ".83rem", fontWeight: 600 }}>
+                {nav("End Reading (kWh)", "القراءة النهائية")}
+                <input type="number" className="input" value={editEnd} onChange={e => setEditEnd(e.target.value)} />
+              </label>
+            </div>
+
+            <label style={{ display: "flex", alignItems: "center", gap: ".5rem", fontSize: ".85rem", fontWeight: 600, marginBottom: ".75rem", cursor: "pointer" }}>
+              <input type="checkbox" checked={editReset} onChange={e => setEditReset(e.target.checked)} />
+              {nav("Meter was reset (counter restarted)", "تمت إعادة تعيين العداد (العداد بدأ من جديد)")}
+            </label>
+
+            {editReset && (
+              <label style={{ display: "flex", flexDirection: "column", gap: ".3rem", fontSize: ".83rem", fontWeight: 600, marginBottom: ".75rem" }}>
+                {nav("Max Meter Value before reset", "أقصى قيمة للعداد قبل الإعادة")}
+                <input type="number" className="input" value={editMaxVal} onChange={e => setEditMaxVal(e.target.value)} />
+              </label>
+            )}
+
+            <label style={{ display: "flex", flexDirection: "column", gap: ".3rem", fontSize: ".83rem", fontWeight: 600, marginBottom: "1rem" }}>
+              {nav("Notes", "ملاحظات")}
+              <textarea className="input" rows={2} value={editNotes} onChange={e => setEditNotes(e.target.value)} />
+            </label>
+
+            <div style={{ display: "flex", gap: ".5rem", justifyContent: "flex-end" }}>
+              <button type="button" onClick={() => setEditingReading(null)}
+                style={{ padding: ".5rem 1rem", borderRadius: 8, border: "1px solid var(--border-default)", background: "var(--bg-surface)", color: "var(--text-secondary)", cursor: "pointer", fontSize: ".85rem", fontWeight: 600 }}>
+                {nav("Cancel", "إلغاء")}
+              </button>
+              <button type="button" disabled={editSaving} onClick={() => void handleEditSave()}
+                style={{ padding: ".5rem 1.25rem", borderRadius: 8, border: "none", background: "#2563eb", color: "#fff", cursor: "pointer", fontSize: ".85rem", fontWeight: 700 }}>
+                {editSaving ? nav("Saving…", "جاري الحفظ…") : nav("Save Correction", "حفظ التصحيح")}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </ModulePageShell>
   );

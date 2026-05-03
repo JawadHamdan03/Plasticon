@@ -185,26 +185,6 @@ const ensureOperationSnapshotsTableForReminder = async () => {
   `;
 };
 
-const hasSnapshotInShiftWindow = async (
-  userId: number,
-  shiftStartTime: Date,
-  shiftEndTime: Date,
-  reference: Date,
-) => {
-  await ensureOperationSnapshotsTableForReminder();
-
-  const shiftWindow = getShiftWindow(reference, shiftStartTime, shiftEndTime);
-  const rows = await prisma.$queryRaw<Array<{ count: bigint | number }>>`
-    SELECT COUNT(*)::bigint AS count
-    FROM operation_snapshots
-    WHERE created_by_id = ${userId}
-      AND created_at >= ${shiftWindow.start}
-      AND created_at < ${shiftWindow.end}
-  `;
-
-  return Number(rows[0]?.count ?? 0) > 0;
-};
-
 const sendShiftCounterReminderIfNeeded = async (userId: number) => {
   const user = await prisma.user.findUnique({
     where: { id: userId },
@@ -414,20 +394,6 @@ export const createProductionRecord = async (
     });
     if (!setting) {
       return { status: 400, message: `Missing ProductionSetting for ${productType}` };
-    }
-
-    // Snapshot counter check — only required when machine is used
-    const hasShiftCounters = await hasSnapshotInShiftWindow(
-      userId,
-      shift.startTime,
-      shift.endTime,
-      new Date(),
-    );
-    if (!hasShiftCounters) {
-      return {
-        status: 400,
-        message: "You must record machine and electricity counters first in this shift before saving production.",
-      };
     }
 
     // Validate boxes

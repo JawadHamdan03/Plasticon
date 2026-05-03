@@ -10,7 +10,7 @@ export function TableShell({ children, className }: TableShellProps) {
   return (
     <div
       className={cn(
-        "w-full rounded-2xl border border-(--border-default) bg-(--bg-card) overflow-hidden",
+        "w-full rounded-2xl border border-(--border-default) bg-(--bg-card) overflow-x-auto",
         className,
       )}
     >

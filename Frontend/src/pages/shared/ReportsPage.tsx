@@ -729,7 +729,7 @@ export function ReportsPage() {
 
   const loadQualityChecks = useCallback(async () => {
     try {
-      const res = await fetchWithAuth("/quality/all");
+      const res = await fetchWithAuth("/quality-checks/all");
       if (res.ok) setQualityChecks((await res.json()) as QualityCheckRecord[]);
     } catch { /* silent */ }
   }, []);
