@@ -20,6 +20,7 @@ import {
   markAttendanceLeave,
   getDeductionRules,
   updateDeductionRule,
+  calculateMonthlyPayrollForAll,
 } from "../services/payrollServices";
 
 export const calculatePayrollHandler = async (
@@ -352,5 +353,25 @@ export const markAttendanceLeaveHandler = async (
   } catch (error) {
     console.error("Mark attendance leave error:", error);
     res.status(500).json({ message: "Failed to update attendance leave type" });
+  }
+};
+
+export const calculateMonthlyPayrollForAllHandler = async (
+  req: AuthenticatedRequest,
+  res: Response,
+) => {
+  try {
+    const calculatedById = req.user?.id;
+    if (!calculatedById) { res.status(401).json({ message: "Not authorized" }); return; }
+
+    const { month } = req.body as { month?: string };
+    if (!month) { res.status(400).json({ message: "month is required (YYYY-MM)" }); return; }
+
+    const result = await calculateMonthlyPayrollForAll(calculatedById, month);
+    if (result.message) { res.status(result.status).json({ message: result.message }); return; }
+    res.status(result.status).json(result.data);
+  } catch (error) {
+    console.error("Calculate monthly payroll for all error:", error);
+    res.status(500).json({ message: "Failed to calculate monthly payroll" });
   }
 };

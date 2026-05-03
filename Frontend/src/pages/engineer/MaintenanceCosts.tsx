@@ -217,7 +217,7 @@ export default function MaintenanceCosts() {
                     return (
                       <tr key={m.id}>
                         <td className="font-medium">{m.machine?.name ?? `#${m.id}`}</td>
-                        <td style={{ color: "var(--text-secondary)", maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{m.partsUsed}</td>
+                        <td style={{ color: "var(--text-secondary)", maxWidth: "min(200px,40vw)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{m.partsUsed}</td>
                         <td style={{ color: "var(--text-secondary)", fontSize: ".8rem" }}>{m.downtimeReason?.replace(/_/g, " ")}</td>
                         <td style={{ color: "var(--text-secondary)" }}>{m.engineer?.fullName ?? "—"}</td>
                         <td style={{ color: "var(--text-secondary)" }}>{new Date(m.createdAt).toLocaleDateString()}</td>

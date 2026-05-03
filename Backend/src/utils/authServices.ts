@@ -16,7 +16,7 @@ if (!jwtSecret) {
 
 export const generateToken = (userId: number, res: Response) => {
   const payload = { id: userId };
-  const token = jwt.sign(payload, jwtSecret, { expiresIn: "1h" });
+  const token = jwt.sign(payload, jwtSecret, { expiresIn: "7d" });
   res.cookie("authToken", token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",

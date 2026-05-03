@@ -466,7 +466,7 @@ export function SalesPage() {
       }
     >
       {/* KPI Cards */}
-      <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(210px,1fr))", gap:"1rem", marginBottom:"1.75rem" }}>
+      <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(160px,1fr))", gap:"1rem", marginBottom:"1.75rem" }}>
         {[
           { icon:<Users size={18}/>, value:totals.customers, label:text.summaryCustomers, sub:isArabic?"مشترٍ فريد":"unique buyers", grad:"linear-gradient(135deg,#1e3a8a 0%,#2563eb 100%)", shadow:"rgba(37,99,235,.4)" },
           { icon:<TrendingUp size={18}/>, value:totals.sales, label:text.summarySales, sub:isArabic?"عملية بيع":"total transactions", grad:"linear-gradient(135deg,#064e3b 0%,#059669 100%)", shadow:"rgba(5,150,105,.4)" },
@@ -503,7 +503,7 @@ export function SalesPage() {
             <h3 style={{ margin:0, fontSize:".92rem", fontWeight:700, color:"var(--text-primary)" }}>{text.formTitle}</h3>
           </div>
           <form onSubmit={handleSubmit} style={{ padding:"1.25rem", display:"grid", gap:".9rem" }}>
-            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:".9rem" }}>
+            <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(200px,1fr))", gap:".9rem" }}>
               <div>
                 <label style={{ display:"block", fontSize:".78rem", fontWeight:600, color:"var(--text-secondary)", marginBottom:".3rem" }}>{text.customer}</label>
                 <input list="customers-datalist" value={saleForm.customerName} onChange={e => setSaleForm(p=>({...p,customerName:e.target.value}))} placeholder={isArabic?"اكتب اسم الزبون...":"Type customer name..."} required
@@ -526,7 +526,7 @@ export function SalesPage() {
               <div style={{ display:"grid", gap:".6rem" }}>
                 {saleForm.items.map((item,idx)=>(
                   <div key={`si-${idx}`} style={{ background:"var(--bg-subtle,rgba(0,0,0,.025))", borderRadius:10, padding:".75rem", border:"1px solid var(--border-default)" }}>
-                    <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr 1fr", gap:".5rem" }}>
+                    <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(120px,1fr))", gap:".5rem" }}>
                       {[
                         { ph:text.machineType, val:item.machineType, key:"machineType" as const },
                         { ph:text.size, val:item.size, key:"size" as const },

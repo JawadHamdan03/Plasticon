@@ -1333,7 +1333,7 @@ export function SettingsAdminPage() {
               {userModal === "add" ? (locale === "ar" ? "إضافة مستخدم جديد" : "Add New User") : (locale === "ar" ? "تعديل المستخدم" : "Edit User")}
             </h2>
 
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: ".75rem" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))", gap: ".75rem" }}>
               <label style={{ display: "flex", flexDirection: "column", gap: ".3rem", fontSize: ".82rem", fontWeight: 600 }}>
                 {locale === "ar" ? "الاسم الكامل *" : "Full Name *"}
                 <input className="auth-input" style={{ paddingLeft: "1rem" }} value={userForm.fullName} onChange={(e) => setUserForm((p) => ({ ...p, fullName: e.target.value }))} placeholder="John Doe" />

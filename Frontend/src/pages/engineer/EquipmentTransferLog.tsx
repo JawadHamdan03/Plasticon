@@ -138,7 +138,7 @@ export default function EquipmentTransferLog() {
           {error && <div className="auth-alert auth-alert--error mb-3">{error}</div>}
           {success && <div className="auth-alert mb-3">{success}</div>}
           <form className="module-form" onSubmit={e => void submit(e)}>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))", gap: "1rem" }}>
               <label>{nav("Machine", "الآلة")} *
                 <select className="input" value={form.machineId} onChange={e => setForm(p => ({ ...p, machineId: e.target.value }))} required>
                   <option value="">{nav("Select machine...", "اختر الآلة...")}</option>
