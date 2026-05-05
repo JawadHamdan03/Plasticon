@@ -1,176 +1,636 @@
 import { prisma } from "../config/lib/prisma";
 import { auditAsync } from "./auditHelper";
 import { AuditAction, AuditEntityType } from "./auditServices";
+import { calculateDailyPayroll } from "./payrollServices";
 
-const LATE_GRACE_MINUTES = 30;
-const OVERTIME_GRACE_MINUTES = 30;
+// Grace period defaults — overridden by AttendanceSetting row in DB
+let LATE_GRACE_MINUTES = 30;
+let OVERTIME_GRACE_MINUTES = 30;
+
+// Load grace periods once from DB at startup
+(async () => {
+  try {
+    const setting = await prisma.attendanceSetting.findFirst();
+    if (setting) {
+      LATE_GRACE_MINUTES = setting.lateGraceMinutes;
+      OVERTIME_GRACE_MINUTES = setting.overtimeGraceMinutes;
+    }
+  } catch { /* ignore — defaults remain */ }
+})();
+
+export const getAttendanceSettings = async (): Promise<{ lateGraceMinutes: number; overtimeGraceMinutes: number }> => {
+  try {
+    let setting = await prisma.attendanceSetting.findFirst();
+    if (!setting) {
+      setting = await prisma.attendanceSetting.create({ data: { lateGraceMinutes: 30, overtimeGraceMinutes: 30 } });
+    }
+    return { lateGraceMinutes: setting.lateGraceMinutes, overtimeGraceMinutes: setting.overtimeGraceMinutes };
+  } catch { /* fallback */ }
+  return { lateGraceMinutes: LATE_GRACE_MINUTES, overtimeGraceMinutes: OVERTIME_GRACE_MINUTES };
+};
+
+export const updateAttendanceSettings = async (payload: { lateGraceMinutes?: number; overtimeGraceMinutes?: number }) => {
+  let setting = await prisma.attendanceSetting.findFirst();
+  const newLate = payload.lateGraceMinutes !== undefined ? Math.max(0, payload.lateGraceMinutes) : (setting?.lateGraceMinutes ?? LATE_GRACE_MINUTES);
+  const newOT = payload.overtimeGraceMinutes !== undefined ? Math.max(0, payload.overtimeGraceMinutes) : (setting?.overtimeGraceMinutes ?? OVERTIME_GRACE_MINUTES);
+  if (!setting) {
+    setting = await prisma.attendanceSetting.create({ data: { lateGraceMinutes: newLate, overtimeGraceMinutes: newOT } });
+  } else {
+    setting = await prisma.attendanceSetting.update({ where: { id: setting.id }, data: { lateGraceMinutes: newLate, overtimeGraceMinutes: newOT } });
+  }
+  LATE_GRACE_MINUTES = newLate;
+  OVERTIME_GRACE_MINUTES = newOT;
+  return { lateGraceMinutes: newLate, overtimeGraceMinutes: newOT };
+};
 
 const minutesBetween = (later: Date, earlier: Date): number => {
-    return Math.floor((later.getTime() - earlier.getTime()) / 60000);
+  return Math.floor((later.getTime() - earlier.getTime()) / 60000);
+};
+
+const parseDateInput = (
+  value: string | Date | null | undefined,
+): Date | null => {
+  if (value === null || value === undefined || value === "") {
+    return null;
+  }
+
+  const parsed = value instanceof Date ? value : new Date(value);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+};
+
+const calculateLateMinutes = (shiftStart: Date, checkIn: Date): number => {
+  if (checkIn.getTime() <= shiftStart.getTime()) {
+    return 0;
+  }
+
+  return Math.max(0, minutesBetween(checkIn, shiftStart) - LATE_GRACE_MINUTES);
+};
+
+const calculateOvertimeMinutes = (
+  shiftEnd: Date,
+  checkOut: Date | null,
+): number => {
+  if (!checkOut || checkOut.getTime() <= shiftEnd.getTime()) {
+    return 0;
+  }
+
+  return Math.max(
+    0,
+    minutesBetween(checkOut, shiftEnd) - OVERTIME_GRACE_MINUTES,
+  );
 };
 
 type ServiceResult<T> = {
-    status: number;
-    message?: string;
-    data?: T;
+  status: number;
+  message?: string;
+  data?: T;
 };
 
-export const checkIn = async (userId: number): Promise<ServiceResult<unknown>> => {
-    const user = await prisma.user.findUnique({
-        where: { id: userId },
-        include: { shift: true },
-    });
+export const checkIn = async (
+  userId: number,
+): Promise<ServiceResult<unknown>> => {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    include: { shift: true },
+  });
 
-    if (!user) {
-        return { status: 404, message: "User not found" };
+  if (!user) {
+    return { status: 404, message: "User not found" };
+  }
+
+  const now = new Date();
+
+  const existingOpenAttendance = await prisma.attendance.findFirst({
+    where: {
+      userId,
+      checkOut: null,
+    },
+    orderBy: { createdAt: "desc" },
+  });
+
+  if (existingOpenAttendance) {
+    return {
+      status: 409,
+      message: "You already have an open attendance record",
+    };
+  }
+
+  let shiftId: number | null = user.shiftId ?? null;
+  let lateMinutes = 0;
+  const isFriday = now.getDay() === 5;
+
+  if (user.shift && !isFriday) {
+    const shiftStart = new Date(user.shift.startTime);
+
+    if (now.getTime() < shiftStart.getTime()) {
+      return { status: 400, message: "Early check-in is not allowed" };
     }
 
-    const now = new Date();
+    const startOfDay = new Date(now);
+    startOfDay.setHours(0, 0, 0, 0);
 
-    const existingOpenAttendance = await prisma.attendance.findFirst({
-        where: {
-            userId,
-            checkOut: null,
-        },
-        orderBy: { createdAt: "desc" },
+    const endOfDay = new Date(now);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    const todayShiftAttendance = await prisma.attendance.findFirst({
+      where: {
+        userId,
+        shiftId: user.shift.id,
+        checkIn: { gte: startOfDay, lte: endOfDay },
+      },
     });
 
-    if (existingOpenAttendance) {
-        return { status: 409, message: "You already have an open attendance record" };
+    if (todayShiftAttendance) {
+      return { status: 409, message: "Check-in already recorded for this shift today" };
     }
 
-    let shiftId: number | null = user.shiftId ?? null;
-    let lateMinutes = 0;
+    const minutesLateFromStart = minutesBetween(now, shiftStart);
+    lateMinutes = Math.max(0, minutesLateFromStart - LATE_GRACE_MINUTES);
+  } else if (isFriday) {
+    // Friday is the weekly day off — any work is purely voluntary overtime; no late penalty
+    lateMinutes = 0;
+  } else {
+    shiftId = null;
+    lateMinutes = 0;
+  }
 
-    if (user.shift) {
-        const shiftStart = new Date(user.shift.startTime);
+  const attendance = await prisma.attendance.create({
+    data: {
+      userId,
+      shiftId,
+      checkIn: now,
+      lateMinutes,
+      overtimeMinutes: 0,
+    },
+  });
 
-        if (now.getTime() < shiftStart.getTime()) {
-            return { status: 400, message: "Early check-in is not allowed" };
-        }
+  auditAsync(
+    userId,
+    AuditAction.ATTENDANCE_CHECKED_IN,
+    AuditEntityType.ATTENDANCE,
+    attendance.id,
+  );
 
-        const startOfDay = new Date(now);
-        startOfDay.setHours(0, 0, 0, 0);
-
-        const endOfDay = new Date(now);
-        endOfDay.setHours(23, 59, 59, 999);
-
-        const todayShiftAttendance = await prisma.attendance.findFirst({
-            where: {
-                userId,
-                shiftId: user.shift.id,
-                checkIn: {
-                    gte: startOfDay,
-                    lte: endOfDay,
-                },
-            },
-        });
-
-        if (todayShiftAttendance) {
-            return { status: 409, message: "Check-in already recorded for this shift today" };
-        }
-
-        const minutesLateFromStart = minutesBetween(now, shiftStart);
-        lateMinutes = Math.max(0, minutesLateFromStart - LATE_GRACE_MINUTES);
-    } else {
-        shiftId = null;
-        lateMinutes = 0;
-    }
-
-    const attendance = await prisma.attendance.create({
-        data: {
-            userId,
-            shiftId,
-            checkIn: now,
-            lateMinutes,
-            overtimeMinutes: 0,
-        },
-    });
-
-    auditAsync(userId, AuditAction.ATTENDANCE_CHECKED_IN, AuditEntityType.ATTENDANCE, attendance.id);
-
-    return { status: 201, data: attendance };
+  return { status: 201, data: attendance };
 };
 
-export const checkOut = async (userId: number): Promise<ServiceResult<unknown>> => {
-    const now = new Date();
+const validateRequiredRecords = async (
+  userId: number,
+  shiftId: number | null,
+  checkInDate: Date,
+): Promise<string | null> => {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { role: true },
+  });
+  const role = user?.role;
 
-    const openAttendance = await prisma.attendance.findFirst({
-        where: {
-            userId,
-            checkOut: null,
-        },
-        include: { shift: true },
-        orderBy: { createdAt: "desc" },
+  const dayStart = new Date(checkInDate);
+  dayStart.setHours(0, 0, 0, 0);
+  const dayEnd = new Date(checkInDate);
+  dayEnd.setHours(23, 59, 59, 999);
+
+  if (role === "WORKER" || role === "ENGINEER") {
+    const productionRecord = await prisma.productionRecord.findFirst({
+      where: {
+        userId,
+        ...(shiftId ? { shiftId } : {}),
+        createdAt: { gte: dayStart, lte: dayEnd },
+      },
     });
-
-    if (!openAttendance) {
-        return { status: 404, message: "No open attendance record found" };
+    if (!productionRecord) {
+      return "يجب تسجيل الإنتاج قبل تسجيل الخروج. / Production record required before checkout.";
     }
 
-    if (openAttendance.shift) {
-        const shiftEnd = new Date(openAttendance.shift.endTime);
-
-        if (now.getTime() < shiftEnd.getTime()) {
-            return { status: 400, message: "Early check-out is not allowed" };
-        }
-
-        const minutesAfterShiftEnd = minutesBetween(now, shiftEnd);
-        const overtimeMinutes = Math.max(0, minutesAfterShiftEnd - OVERTIME_GRACE_MINUTES);
-
-        const attendance = await prisma.attendance.update({
-            where: { id: openAttendance.id },
-            data: {
-                checkOut: now,
-                overtimeMinutes,
-            },
-        });
-
-        auditAsync(userId, AuditAction.ATTENDANCE_CHECKED_OUT, AuditEntityType.ATTENDANCE, attendance.id);
-
-        return { status: 200, data: attendance };
+    const electricityReading = await prisma.electricityReading.findFirst({
+      where: {
+        recordedById: userId,
+        ...(shiftId ? { shiftId } : {}),
+        createdAt: { gte: dayStart, lte: dayEnd },
+      },
+    });
+    if (!electricityReading) {
+      return "يجب تسجيل قراءة الكهرباء قبل تسجيل الخروج. / Electricity reading required before checkout.";
     }
+  }
+
+  if (role === "ACCOUNTANT") {
+    const inventoryTx = await prisma.inventoryTransaction.findFirst({
+      where: {
+        createdById: userId,
+        createdAt: { gte: dayStart, lte: dayEnd },
+      },
+    });
+    if (!inventoryTx) {
+      return "يجب تسجيل حركة مخزونية (الاستهلاك) قبل تسجيل الخروج. / Consumption (inventory) record required before checkout.";
+    }
+  }
+
+  return null;
+};
+
+export const checkOut = async (
+  userId: number,
+): Promise<ServiceResult<unknown>> => {
+  const now = new Date();
+
+  const openAttendance = await prisma.attendance.findFirst({
+    where: {
+      userId,
+      checkOut: null,
+    },
+    include: { shift: true },
+    orderBy: { createdAt: "desc" },
+  });
+
+  if (!openAttendance) {
+    return { status: 404, message: "No open attendance record found" };
+  }
+
+  const checkInDay = new Date(openAttendance.checkIn).getDay();
+  const isFridayShift = checkInDay === 5;
+
+  // Friday work: all hours are overtime — skip shift-end restriction and required-records check
+  if (isFridayShift) {
+    const workedMinutes = minutesBetween(now, new Date(openAttendance.checkIn));
+    const attendance = await prisma.attendance.update({
+      where: { id: openAttendance.id },
+      data: { checkOut: now, overtimeMinutes: Math.max(0, workedMinutes) },
+    });
+    auditAsync(userId, AuditAction.ATTENDANCE_CHECKED_OUT, AuditEntityType.ATTENDANCE, attendance.id);
+    calculateDailyPayroll(attendance.id, userId).catch((err) =>
+      console.error("Auto daily-payroll calculation failed:", err),
+    );
+    return { status: 200, data: attendance };
+  }
+
+  if (openAttendance.shift) {
+    const shiftEnd = new Date(openAttendance.shift.endTime);
+
+    if (now.getTime() < shiftEnd.getTime()) {
+      return { status: 400, message: "Early check-out is not allowed" };
+    }
+
+    const missingRecord = await validateRequiredRecords(
+      userId,
+      openAttendance.shiftId,
+      openAttendance.checkIn,
+    );
+    if (missingRecord) {
+      return { status: 400, message: missingRecord };
+    }
+
+    const minutesAfterShiftEnd = minutesBetween(now, shiftEnd);
+    const overtimeMinutes = Math.max(
+      0,
+      minutesAfterShiftEnd - OVERTIME_GRACE_MINUTES,
+    );
 
     const attendance = await prisma.attendance.update({
-        where: { id: openAttendance.id },
-        data: {
-            checkOut: now,
-            overtimeMinutes: 0,
-        },
+      where: { id: openAttendance.id },
+      data: {
+        checkOut: now,
+        overtimeMinutes,
+      },
     });
 
-    auditAsync(userId, AuditAction.ATTENDANCE_CHECKED_OUT, AuditEntityType.ATTENDANCE, attendance.id);
+    auditAsync(
+      userId,
+      AuditAction.ATTENDANCE_CHECKED_OUT,
+      AuditEntityType.ATTENDANCE,
+      attendance.id,
+    );
+
+    calculateDailyPayroll(attendance.id, userId).catch((err) =>
+      console.error("Auto daily-payroll calculation failed:", err),
+    );
 
     return { status: 200, data: attendance };
+  }
+
+  const missingRecord = await validateRequiredRecords(
+    userId,
+    null,
+    openAttendance.checkIn,
+  );
+  if (missingRecord) {
+    return { status: 400, message: missingRecord };
+  }
+
+  const attendance = await prisma.attendance.update({
+    where: { id: openAttendance.id },
+    data: {
+      checkOut: now,
+      overtimeMinutes: 0,
+    },
+  });
+
+  auditAsync(
+    userId,
+    AuditAction.ATTENDANCE_CHECKED_OUT,
+    AuditEntityType.ATTENDANCE,
+    attendance.id,
+  );
+
+  calculateDailyPayroll(attendance.id, userId).catch((err) =>
+    console.error("Auto daily-payroll calculation failed:", err),
+  );
+
+  return { status: 200, data: attendance };
 };
 
-export const getMyAttendances = async (userId: number): Promise<ServiceResult<unknown>> => {
-    const attendances = await prisma.attendance.findMany({
-        where: { userId },
-        include: {
-            shift: true,
-        },
-        orderBy: { checkIn: "desc" },
-    });
+export const getMyAttendances = async (
+  userId: number,
+): Promise<ServiceResult<unknown>> => {
+  const attendances = await prisma.attendance.findMany({
+    where: { userId },
+    include: {
+      shift: true,
+    },
+    orderBy: { checkIn: "desc" },
+  });
 
-    return { status: 200, data: attendances };
+  return { status: 200, data: attendances };
 };
 
-export const getAllAttendances = async (): Promise<ServiceResult<unknown>> => {
-    const attendances = await prisma.attendance.findMany({
-        include: {
-            user: {
-                select: {
-                    id: true,
-                    fullName: true,
-                    username: true,
-                    role: true,
-                },
-            },
-            shift: true,
-        },
-        orderBy: { checkIn: "desc" },
-    });
+export const getAllAttendances = async (filters?: {
+  date?: string;
+  fromDate?: string;
+  toDate?: string;
+  shiftId?: number;
+  userId?: number;
+}): Promise<ServiceResult<unknown>> => {
+  const where: {
+    userId?: number;
+    shiftId?: number;
+    checkIn?: { gte?: Date; lte?: Date };
+  } = {};
 
-    return { status: 200, data: attendances };
+  if (filters?.userId) {
+    where.userId = filters.userId;
+  }
+
+  if (filters?.shiftId) {
+    where.shiftId = filters.shiftId;
+  }
+
+  if (filters?.date) {
+    const baseDate = new Date(filters.date);
+    const start = new Date(baseDate);
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(baseDate);
+    end.setHours(23, 59, 59, 999);
+    where.checkIn = { gte: start, lte: end };
+  } else if (filters?.fromDate || filters?.toDate) {
+    where.checkIn = {};
+    if (filters.fromDate) {
+      const from = new Date(filters.fromDate);
+      from.setHours(0, 0, 0, 0);
+      where.checkIn.gte = from;
+    }
+    if (filters.toDate) {
+      const to = new Date(filters.toDate);
+      to.setHours(23, 59, 59, 999);
+      where.checkIn.lte = to;
+    }
+  }
+
+  const attendances = await prisma.attendance.findMany({
+    where,
+    include: {
+      user: {
+        select: {
+          id: true,
+          fullName: true,
+          username: true,
+          role: true,
+        },
+      },
+      shift: true,
+    },
+    orderBy: { checkIn: "desc" },
+  });
+
+  return { status: 200, data: attendances };
+};
+
+export const deleteAttendance = async (
+  attendanceId: number,
+  deletedById: number,
+): Promise<ServiceResult<{ message: string }>> => {
+  const attendance = await prisma.attendance.findUnique({
+    where: { id: attendanceId },
+    select: {
+      id: true,
+      userId: true,
+      checkIn: true,
+      checkOut: true,
+      lateMinutes: true,
+      overtimeMinutes: true,
+    },
+  });
+
+  if (!attendance) {
+    return { status: 404, message: "Attendance record not found" };
+  }
+
+  await prisma.attendance.delete({ where: { id: attendanceId } });
+
+  auditAsync(
+    deletedById,
+    AuditAction.ATTENDANCE_UPDATED,
+    AuditEntityType.ATTENDANCE,
+    attendanceId,
+    {
+      deleted: true,
+      deletedAttendance: attendance,
+    },
+  );
+
+  return {
+    status: 200,
+    data: { message: "Attendance record deleted" },
+  };
+};
+
+export const createAttendanceForUser = async (
+  adminId: number,
+  payload: {
+    userId: number;
+    checkIn: string | Date;
+    checkOut?: string | Date | null;
+    shiftId?: number | null;
+    notes?: string | null;
+  },
+): Promise<ServiceResult<unknown>> => {
+  const user = await prisma.user.findUnique({
+    where: { id: payload.userId },
+    include: { shift: true },
+  });
+
+  if (!user) return { status: 404, message: "User not found" };
+
+  const checkInDate = parseDateInput(payload.checkIn);
+  if (!checkInDate)
+    return { status: 400, message: "checkIn is required and must be a valid date" };
+
+  const checkOutDate =
+    payload.checkOut !== undefined && payload.checkOut !== null
+      ? parseDateInput(payload.checkOut)
+      : null;
+
+  if (checkOutDate && checkOutDate.getTime() < checkInDate.getTime())
+    return { status: 400, message: "checkOut cannot be earlier than checkIn" };
+
+  let shiftId: number | null =
+    payload.shiftId !== undefined ? (payload.shiftId ?? null) : (user.shiftId ?? null);
+
+  let effectiveShift: { startTime: Date; endTime: Date } | null = null;
+  if (shiftId) {
+    effectiveShift = await prisma.shift.findUnique({
+      where: { id: shiftId },
+      select: { startTime: true, endTime: true },
+    });
+    if (!effectiveShift) shiftId = null;
+  }
+
+  const isFriday = checkInDate.getDay() === 5;
+  const lateMinutes = isFriday ? 0 : (effectiveShift
+    ? calculateLateMinutes(new Date(effectiveShift.startTime), checkInDate)
+    : 0);
+  const overtimeMinutes = isFriday
+    ? (checkOutDate ? minutesBetween(checkOutDate, checkInDate) : 0)
+    : (effectiveShift ? calculateOvertimeMinutes(new Date(effectiveShift.endTime), checkOutDate) : 0);
+
+  const attendance = await prisma.attendance.create({
+    data: {
+      userId: payload.userId,
+      shiftId,
+      checkIn: checkInDate,
+      checkOut: checkOutDate,
+      lateMinutes,
+      overtimeMinutes,
+      notes: payload.notes ?? null,
+    },
+    include: {
+      user: { select: { id: true, fullName: true, username: true, role: true } },
+      shift: true,
+    },
+  });
+
+  auditAsync(adminId, AuditAction.ATTENDANCE_UPDATED, AuditEntityType.ATTENDANCE, attendance.id, {
+    action: "ADMIN_CREATED",
+    forUserId: payload.userId,
+  });
+
+  if (checkOutDate) {
+    calculateDailyPayroll(attendance.id, adminId).catch((err) =>
+      console.error("Auto daily-payroll calculation failed:", err),
+    );
+  }
+
+  return { status: 201, data: attendance };
+};
+
+export const updateAttendance = async (
+  attendanceId: number,
+  payload: {
+    checkIn?: string | Date;
+    checkOut?: string | Date | null;
+    notes?: string | null;
+  },
+): Promise<ServiceResult<unknown>> => {
+  const attendance = await prisma.attendance.findUnique({
+    where: { id: attendanceId },
+    include: {
+      user: {
+        include: {
+          shift: true,
+        },
+      },
+      shift: true,
+    },
+  });
+
+  if (!attendance) {
+    return { status: 404, message: "Attendance record not found" };
+  }
+
+  const nextCheckIn = parseDateInput(payload.checkIn) ?? attendance.checkIn;
+  if (!nextCheckIn) {
+    return { status: 400, message: "checkIn is required" };
+  }
+
+  const nextCheckOut =
+    payload.checkOut === undefined
+      ? attendance.checkOut
+      : parseDateInput(payload.checkOut);
+
+  if (
+    payload.checkOut !== null &&
+    payload.checkOut !== undefined &&
+    nextCheckOut === null
+  ) {
+    return { status: 400, message: "checkOut must be a valid date or null" };
+  }
+
+  if (nextCheckOut && nextCheckOut.getTime() < nextCheckIn.getTime()) {
+    return {
+      status: 400,
+      message: "checkOut cannot be earlier than checkIn",
+    };
+  }
+
+  const effectiveShift = attendance.shift ?? attendance.user.shift ?? null;
+  const isFriday = nextCheckIn.getDay() === 5;
+  let lateMinutes = 0;
+  let overtimeMinutes = 0;
+
+  if (isFriday) {
+    // Friday work = all hours count as overtime, no late penalty
+    lateMinutes = 0;
+    overtimeMinutes = nextCheckOut ? minutesBetween(nextCheckOut, nextCheckIn) : 0;
+  } else if (effectiveShift) {
+    const shiftStart = new Date(effectiveShift.startTime);
+    const shiftEnd = new Date(effectiveShift.endTime);
+    lateMinutes = calculateLateMinutes(shiftStart, nextCheckIn);
+    overtimeMinutes = calculateOvertimeMinutes(shiftEnd, nextCheckOut);
+  }
+
+  const updatedAttendance = await prisma.attendance.update({
+    where: { id: attendanceId },
+    data: {
+      checkIn: nextCheckIn,
+      checkOut: nextCheckOut,
+      lateMinutes,
+      overtimeMinutes,
+      ...(payload.notes !== undefined ? { notes: payload.notes } : {}),
+    },
+    include: {
+      user: {
+        select: {
+          id: true,
+          fullName: true,
+          username: true,
+          role: true,
+        },
+      },
+      shift: true,
+    },
+  });
+
+  auditAsync(
+    attendance.userId,
+    AuditAction.ATTENDANCE_UPDATED,
+    AuditEntityType.ATTENDANCE,
+    updatedAttendance.id,
+    {
+      checkIn: updatedAttendance.checkIn,
+      checkOut: updatedAttendance.checkOut,
+      lateMinutes: updatedAttendance.lateMinutes,
+      overtimeMinutes: updatedAttendance.overtimeMinutes,
+    },
+  );
+
+  return { status: 200, data: updatedAttendance };
 };
