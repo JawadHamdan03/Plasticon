@@ -6,6 +6,7 @@ import { fileURLToPath } from "url";
 import cors, { type CorsOptions } from "cors";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
+import cookieParser from "cookie-parser";
 import { initializeSocketServer } from "./config/socket";
 import authRoutes from "./routes/authRoutes";
 import userRoutes from "./routes/userRoutes";
@@ -88,13 +89,15 @@ const server = createServer(app);
 
 app.use(helmet({ contentSecurityPolicy: false }));
 app.use(cors(corsOptions));
+app.use(cookieParser());
 
 app.use(express.json({ limit: "2mb" }));
 app.use(express.urlencoded({ extended: true, limit: "2mb" }));
 
-// Serve static files from prisma/pictures
+// Serve static files — allow cross-origin image loading (frontend on different port)
 app.use(
   "/pictures",
+  (_req, res, next) => { res.setHeader("Cross-Origin-Resource-Policy", "cross-origin"); next(); },
   express.static(path.resolve(__dirname, "..", "prisma", "pictures")),
 );
 
