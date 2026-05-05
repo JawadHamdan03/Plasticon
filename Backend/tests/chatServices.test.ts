@@ -47,6 +47,13 @@ import {
 describe("chatServices", () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        // Mock getUserBasicRole by setting up prisma.user.findUnique to return valid user data
+        mockPrisma.user.findUnique.mockResolvedValue({
+            id: 1,
+            role: "ADMIN",
+            isActive: true,
+            deletedAt: null,
+        });
     });
 
     it("createChatGroup returns 400 when name is missing", async () => {

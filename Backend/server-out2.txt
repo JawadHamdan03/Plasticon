@@ -1,0 +1,4 @@
+[dotenv@17.3.1] injecting env (12) from .env -- tip: ⚡️ secrets for agents: https://dotenvx.com/as2
+[dotenv@17.3.1] injecting env (0) from .env -- tip: ⚙️  load multiple .env files with { path: ['.env.local', '.env'] }
+email service: SMTP is not configured (or using placeholder values). Emails will use fallback logging.
+server is running on port 8080

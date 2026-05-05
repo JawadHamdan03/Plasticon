@@ -1,0 +1,22 @@
+{
+  "rules": {
+    "PRODUCTION_CREATED": {
+      "enabled": true,
+      "delivery": "ADMIN_ONLY"
+    },
+    "PURCHASE_CREATED": {
+      "enabled": true,
+      "delivery": "ADMIN_ONLY"
+    },
+    "SALE_CREATED": {
+      "enabled": true,
+      "delivery": "ADMIN_ONLY"
+    },
+    "INVENTORY_TRANSACTION_CREATED": {
+      "enabled": true,
+      "delivery": "ADMIN_ONLY"
+    }
+  },
+  "updatedAt": "2026-05-05T19:28:39.353Z",
+  "updatedById": 1
+}
