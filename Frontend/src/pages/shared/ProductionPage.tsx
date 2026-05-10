@@ -5,6 +5,26 @@ import { API_BASE_URL, readApiError } from "../../lib/api";
 import { ModulePageShell } from "../../components/ModulePageShell";
 import { TruckLoader } from "../../components/TruckLoader";
 
+/* ─── Machine type / material helpers ────────────────────── */
+function decodeMachineType(raw: string | null): { typeName: string; materials: string[] } {
+  if (!raw) return { typeName: "", materials: [] };
+  const idx = raw.indexOf(":");
+  if (idx === -1) return { typeName: raw, materials: [] };
+  return {
+    typeName: raw.slice(0, idx),
+    materials: raw.slice(idx + 1).split(",").filter(Boolean),
+  };
+}
+function getMachineMaterials(type: string | null): string[] {
+  if (!type) return ["HDPE", "LDPE", "COLOR"];
+  const { materials } = decodeMachineType(type);
+  if (materials.length > 0) return materials;
+  const t = type.toUpperCase();
+  if (t.includes("PREFORM") || t.includes("PET")) return ["PET", "COLOR"];
+  if (t.includes("CAP")) return ["HDPE", "LDPE", "COLOR"];
+  return ["HDPE", "LDPE", "COLOR"];
+}
+
 /* ─── Types ─────────────────────────────────────────────── */
 type Machine = { id: number; name: string; type: string | null };
 type Shift = { id: number; name: string; startTime?: string | null; endTime?: string | null };
@@ -15,6 +35,13 @@ type MachineForm = {
   boxes: BoxEntry[];
   notes: string;
   saving: boolean; error: string; success: string;
+  // material fields
+  hdpeBags: string; hdpeKgPerBag: string;
+  ldpeBags: string; ldpeKgPerBag: string;
+  petBags: string;  petKgPerBag: string;
+  colorKg: string;
+  adhesiveKg: string;
+  emptyBags: string;
 };
 
 type ProductionItem = {
@@ -69,10 +96,16 @@ const defaultBox = (type: string | null): BoxEntry => ({
 
 const emptyForm = (type: string | null): MachineForm => ({
   cartonsCount: "",
-  showCalculator: isPreformMachine(type), // preform always uses calculator
+  showCalculator: isPreformMachine(type),
   boxes: [defaultBox(type)],
   notes: "",
   saving: false, error: "", success: "",
+  hdpeBags: "", hdpeKgPerBag: "25",
+  ldpeBags: "", ldpeKgPerBag: "25",
+  petBags: "",  petKgPerBag: "",
+  colorKg: "",
+  adhesiveKg: "",
+  emptyBags: "",
 });
 
 const boxTotal = (b: BoxEntry) =>
@@ -242,6 +275,17 @@ export function ProductionPage() {
         body.cartonsCount = n;
       }
 
+      // Append any material consumption entered for this machine
+      const hdpeBags = parseFloat(f.hdpeBags) || 0;
+      if (hdpeBags > 0) body.rawHdpeUsed = hdpeBags * (parseFloat(f.hdpeKgPerBag) || 25);
+      const ldpeBags = parseFloat(f.ldpeBags) || 0;
+      if (ldpeBags > 0) body.rawLdpeUsed = ldpeBags * (parseFloat(f.ldpeKgPerBag) || 25);
+      const petBags = parseFloat(f.petBags) || 0;
+      if (petBags > 0) body.rawPetUsed = petBags * (parseFloat(f.petKgPerBag) || 25);
+      if (parseFloat(f.colorKg) > 0) body.colorUsed = parseFloat(f.colorKg);
+      if (parseFloat(f.adhesiveKg) > 0) body.adhesiveUsed = parseFloat(f.adhesiveKg);
+      if (parseFloat(f.emptyBags) > 0) body.emptyBagsUsed = parseFloat(f.emptyBags);
+
       const res = await fetchWithAuth("/production", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -254,6 +298,16 @@ export function ProductionPage() {
       patchForm(machine.id, { saving: false, error: err instanceof Error ? err.message : "Failed to save" });
     }
   };
+
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const alreadyRecordedForMachine = (machineId: number) =>
+    currentShift !== null &&
+    myRecords.some(
+      (r) =>
+        r.machineId === machineId &&
+        r.shiftId === currentShift.id &&
+        r.createdAt.slice(0, 10) === todayStr,
+    );
 
   const myPreforms = myRecords.filter((r) => isPreformMachine(r.machine?.type));
   const myCaps = myRecords.filter((r) => isCapsMachine(r.machine?.type));
@@ -389,6 +443,21 @@ export function ProductionPage() {
                         </span>
                       </div>
 
+                      {alreadyRecordedForMachine(machine.id) && (
+                        <div style={{
+                          display: "flex", alignItems: "center", gap: ".5rem",
+                          padding: ".6rem .875rem", marginBottom: ".75rem",
+                          background: "rgba(245,158,11,.1)",
+                          border: "1px solid rgba(245,158,11,.4)",
+                          borderRadius: "var(--radius-lg)",
+                          fontSize: ".82rem", fontWeight: 600, color: "#b45309",
+                        }}>
+                          <span style={{ fontSize: "1rem" }}>⚠️</span>
+                          {isAr
+                            ? `تم تسجيل إنتاج ${machine.name} في هذا الشفت اليوم — يمكنك إضافة سجل آخر إذا لزم`
+                            : `Production for ${machine.name} already recorded this shift today — you can still add another if needed`}
+                        </div>
+                      )}
                       {f.error && <div className="auth-alert auth-alert--error" style={{ marginBottom: ".75rem", fontSize: ".82rem" }}>{f.error}</div>}
                       {f.success && <div className="auth-alert" style={{ marginBottom: ".75rem", fontSize: ".82rem" }}>{f.success}</div>}
 
@@ -506,7 +575,93 @@ export function ProductionPage() {
                           </label>
                         )}
 
-                        {/* ── Materials ── */}
+                        {/* ── Materials used this shift ── */}
+                        {(() => {
+                          const mats = getMachineMaterials(machine.type);
+                          const matConfig: Record<string, { label: string; color: string }> = {
+                            HDPE:       { label: "HDPE",              color: "#3b82f6" },
+                            LDPE:       { label: "LDPE",              color: "#06b6d4" },
+                            PET:        { label: "PET",               color: "#10b981" },
+                            COLOR:      { label: isAr ? "لون" : "Color",     color: "#f97316" },
+                            ADHESIVE:   { label: isAr ? "لاصق" : "Adhesive", color: "#8b5cf6" },
+                            EMPTY_BAGS: { label: isAr ? "أكياس فارغة" : "Empty Bags", color: "#64748b" },
+                          };
+                          const bagMats = ["HDPE", "LDPE", "PET"];
+                          const kgMats  = ["COLOR", "ADHESIVE"];
+                          const cntMats = ["EMPTY_BAGS"];
+                          const bagFields: Record<string, { bags: keyof MachineForm; kpb: keyof MachineForm; defaultKpb: string }> = {
+                            HDPE: { bags: "hdpeBags", kpb: "hdpeKgPerBag", defaultKpb: "25" },
+                            LDPE: { bags: "ldpeBags", kpb: "ldpeKgPerBag", defaultKpb: "25" },
+                            PET:  { bags: "petBags",  kpb: "petKgPerBag",  defaultKpb: "" },
+                          };
+                          const kgFields: Record<string, keyof MachineForm> = {
+                            COLOR: "colorKg", ADHESIVE: "adhesiveKg",
+                          };
+                          if (mats.length === 0) return null;
+                          return (
+                            <div style={{ background: "var(--bg-surface)", border: "1px solid var(--border-default)", borderRadius: "var(--radius-lg)", padding: ".875rem", display: "flex", flexDirection: "column", gap: ".65rem" }}>
+                              <div style={{ fontSize: ".8rem", fontWeight: 700, color: "var(--text-secondary)", display: "flex", alignItems: "center", gap: ".4rem" }}>
+                                <span>📦</span>
+                                {isAr ? "المواد المستخدمة في هذا الشفت (اختياري)" : "Materials Used This Shift (optional)"}
+                              </div>
+                              {mats.map((mat) => {
+                                const cfg = matConfig[mat];
+                                if (!cfg) return null;
+                                if (bagMats.includes(mat)) {
+                                  const bf = bagFields[mat];
+                                  const bags = parseFloat(String(f[bf.bags])) || 0;
+                                  const kpb  = parseFloat(String(f[bf.kpb]))  || 0;
+                                  const totalKg = bags > 0 && kpb > 0 ? (bags * kpb).toFixed(1) : bags > 0 ? String(bags * 25) : null;
+                                  return (
+                                    <div key={mat} style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(100px, 1fr))", gap: ".5rem", alignItems: "end" }}>
+                                      <label style={{ display: "flex", flexDirection: "column", gap: ".25rem", fontSize: ".78rem", fontWeight: 600, color: cfg.color }}>
+                                        {cfg.label} — {isAr ? "أكياس" : "Bags"}
+                                        <input type="number" min={0} step="0.5" value={String(f[bf.bags])} placeholder="0"
+                                          onChange={(e) => patchForm(machine.id, { [bf.bags]: e.target.value } as Partial<MachineForm>)}
+                                          style={{ padding: ".35rem .5rem", border: `1px solid ${cfg.color}44`, borderRadius: "var(--radius-md)", background: "var(--bg-card)", fontSize: ".85rem" }} />
+                                      </label>
+                                      <label style={{ display: "flex", flexDirection: "column", gap: ".25rem", fontSize: ".78rem", fontWeight: 600, color: "var(--text-secondary)" }}>
+                                        {isAr ? "كغ/كيس" : "kg/bag"}
+                                        <input type="number" min={0} step="0.1" value={String(f[bf.kpb])} placeholder={bf.defaultKpb || "—"}
+                                          onChange={(e) => patchForm(machine.id, { [bf.kpb]: e.target.value } as Partial<MachineForm>)}
+                                          style={{ padding: ".35rem .5rem", border: "1px solid var(--border-default)", borderRadius: "var(--radius-md)", background: "var(--bg-card)", fontSize: ".85rem" }} />
+                                      </label>
+                                      {totalKg && (
+                                        <div style={{ padding: ".35rem .5rem", background: `${cfg.color}12`, border: `1px solid ${cfg.color}33`, borderRadius: "var(--radius-md)", fontSize: ".8rem", fontWeight: 700, color: cfg.color, whiteSpace: "nowrap" }}>
+                                          = {totalKg} kg
+                                        </div>
+                                      )}
+                                    </div>
+                                  );
+                                }
+                                if (kgMats.includes(mat)) {
+                                  const kf = kgFields[mat];
+                                  return (
+                                    <label key={mat} style={{ display: "flex", flexDirection: "column", gap: ".25rem", fontSize: ".78rem", fontWeight: 600, color: cfg.color }}>
+                                      {cfg.label} (kg)
+                                      <input type="number" min={0} step="0.01" value={String(f[kf])} placeholder="0"
+                                        onChange={(e) => patchForm(machine.id, { [kf]: e.target.value } as Partial<MachineForm>)}
+                                        style={{ padding: ".35rem .5rem", border: `1px solid ${cfg.color}44`, borderRadius: "var(--radius-md)", background: "var(--bg-card)", fontSize: ".85rem", maxWidth: 160 }} />
+                                    </label>
+                                  );
+                                }
+                                if (cntMats.includes(mat)) {
+                                  return (
+                                    <label key={mat} style={{ display: "flex", flexDirection: "column", gap: ".25rem", fontSize: ".78rem", fontWeight: 600, color: cfg.color }}>
+                                      {cfg.label}
+                                      <input type="number" min={0} step="1" value={String(f.emptyBags)} placeholder="0"
+                                        onChange={(e) => patchForm(machine.id, { emptyBags: e.target.value })}
+                                        style={{ padding: ".35rem .5rem", border: `1px solid ${cfg.color}44`, borderRadius: "var(--radius-md)", background: "var(--bg-card)", fontSize: ".85rem", maxWidth: 160 }} />
+                                    </label>
+                                  );
+                                }
+                                return null;
+                              })}
+                            </div>
+                          );
+                        })()}
+
+                        {/* ── Notes ── */}
                         <label>{isAr ? "ملاحظات" : "Notes"}
                           <textarea rows={2} value={f.notes} onChange={(e) => patchForm(machine.id, { notes: e.target.value })}
                             placeholder={isAr ? "ملاحظات اختيارية..." : "Optional notes..."} />

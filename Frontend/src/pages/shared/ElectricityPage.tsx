@@ -116,6 +116,12 @@ export function ElectricityPage() {
   const [fEngineerId, setFEngineerId] = useState("");
 
   // Live preview calculations
+  const alreadyRecordedElectricity =
+    fShiftId !== "" &&
+    readings.some(
+      (r) => r.shift.id === Number(fShiftId) && r.date.slice(0, 10) === fDate,
+    );
+
   const startNum = parseFloat(fStart);
   const endNum = parseFloat(fEnd);
   const maxNum = parseFloat(fMaxVal);
@@ -307,7 +313,26 @@ export function ElectricityPage() {
                   {shifts.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
                 </select>
               </label>
+            </div>
 
+            {alreadyRecordedElectricity && (
+              <div style={{
+                display: "flex", alignItems: "center", gap: ".5rem",
+                padding: ".6rem .875rem", marginBottom: "1rem",
+                background: "rgba(245,158,11,.1)",
+                border: "1px solid rgba(245,158,11,.4)",
+                borderRadius: "var(--radius-lg)",
+                fontSize: ".82rem", fontWeight: 600, color: "#b45309",
+              }}>
+                <AlertTriangle size={15} />
+                {nav(
+                  `A reading for this shift and date already exists — submitting will add a second record`,
+                  `توجد قراءة لهذا الشفت في هذا التاريخ بالفعل — الإرسال سيضيف سجلاً ثانياً`,
+                )}
+              </div>
+            )}
+
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: "1rem", marginBottom: "1rem" }}>
               {/* Start reading */}
               <label style={{ display: "flex", flexDirection: "column", gap: ".3rem" }}>
                 <span style={{ fontSize: ".8rem", fontWeight: 600, color: "var(--text-secondary)" }}>{nav("Start Meter Reading (kWh) *", "قراءة العداد الأولية (kWh) *")}</span>

@@ -7,6 +7,7 @@ import { TruckLoader } from "../../components/TruckLoader";
 
 /* ─── Types ─────────────────────────────────────────────── */
 type Shift = { id: number; name: string; startTime?: string | null; endTime?: string | null };
+type Machine = { id: number; name: string; type?: string | null };
 
 type ConsumptionRecord = {
   id: number;
@@ -62,6 +63,8 @@ type ConsumptionForm = {
   petBags: string;
   petKgPerBag: string;
   colorKg: string;
+  adhesiveKg: string;
+  emptyBags: string;
   notes: string;
   saving: boolean;
   error: string;
@@ -79,6 +82,23 @@ async function fetchWithAuth(path: string, options?: RequestInit) {
     headers: { ...authHeaders(), ...(options?.headers ?? {}) },
     credentials: "include",
   });
+}
+
+/* ─── Machine material helpers ──────────────────────────── */
+function decodeMachineType(raw: string): { typeName: string; materials: string[] } {
+  const idx = raw.indexOf(":");
+  if (idx === -1) return { typeName: raw, materials: [] };
+  return { typeName: raw.slice(0, idx), materials: raw.slice(idx + 1).split(",").filter(Boolean) };
+}
+
+function getMachineMaterials(raw: string | null | undefined): string[] {
+  if (!raw) return [];
+  const { materials } = decodeMachineType(raw);
+  if (materials.length > 0) return materials;
+  const t = raw.toUpperCase();
+  if (t.includes("PREFORM") || t.includes("PET")) return ["PET", "COLOR"];
+  if (t.includes("CAP")) return ["HDPE", "LDPE", "COLOR"];
+  return [];
 }
 
 /* ─── Helpers ───────────────────────────────────────────── */
@@ -104,7 +124,7 @@ const emptyForm = (): ConsumptionForm => ({
   hdpeBags: "", hdpeKgPerBag: "25",
   ldpeBags: "", ldpeKgPerBag: "25",
   petBags: "", petKgPerBag: "",
-  colorKg: "",
+  colorKg: "", adhesiveKg: "", emptyBags: "",
   notes: "", saving: false, error: "", success: "",
 });
 
@@ -151,6 +171,8 @@ export function ConsumptionPage() {
   const canSeeAll = isAdmin || isAccountant || isEngineer;
 
   const [shifts, setShifts] = useState<Shift[]>([]);
+  const [machines, setMachines] = useState<Machine[]>([]);
+  const [selectedMachineId, setSelectedMachineId] = useState<string>("");
   const [myRecords, setMyRecords] = useState<ConsumptionRecord[]>([]);
   const [allRecords, setAllRecords] = useState<ConsumptionRecord[]>([]);
   const [adminOverview, setAdminOverview] = useState<AdminOverviewResponse | null>(null);
@@ -181,13 +203,18 @@ export function ConsumptionPage() {
   const loadAll = useCallback(async () => {
     setLoading(true);
     try {
-      const [shiftRes, mineRes] = await Promise.all([
+      const [shiftRes, mineRes, machinesRes] = await Promise.all([
         fetchWithAuth("/shifts"),
         fetchWithAuth("/production/me"),
+        fetchWithAuth("/machines"),
       ]);
       if (shiftRes.ok) {
         const d = await shiftRes.json();
         setShifts(Array.isArray(d) ? d : (d.data ?? []));
+      }
+      if (machinesRes.ok) {
+        const d = await machinesRes.json();
+        setMachines(Array.isArray(d) ? d : (d.data ?? []));
       }
       if (mineRes.ok) {
         const all = (await mineRes.json()) as ConsumptionRecord[];
@@ -216,7 +243,16 @@ export function ConsumptionPage() {
 
   const submitConsumption = async (e: FormEvent) => {
     e.preventDefault();
-    if (!form.hdpeBags && !form.ldpeBags && !form.petBags && !form.colorKg) {
+    const selMachine = machines.find((m) => m.id === Number(selectedMachineId));
+    const mats = selMachine ? getMachineMaterials(selMachine.type) : ["HDPE", "LDPE", "PET", "COLOR"];
+    const hasAny =
+      (mats.includes("HDPE") && !!form.hdpeBags) ||
+      (mats.includes("LDPE") && !!form.ldpeBags) ||
+      (mats.includes("PET") && !!form.petBags) ||
+      (mats.includes("COLOR") && !!form.colorKg) ||
+      (mats.includes("ADHESIVE") && !!form.adhesiveKg) ||
+      (mats.includes("EMPTY_BAGS") && !!form.emptyBags);
+    if (!hasAny) {
       patchForm({ error: isAr ? "يرجى إدخال كمية مادة واحدة على الأقل" : "Enter at least one material quantity" });
       return;
     }
@@ -230,6 +266,8 @@ export function ConsumptionPage() {
       const petBags = parseFloat(form.petBags) || 0;
       const petKgPerBag = parseFloat(form.petKgPerBag) || 0;
       const colorKg = parseFloat(form.colorKg) || 0;
+      const adhesiveKg = parseFloat(form.adhesiveKg) || 0;
+      const emptyBagsCount = parseFloat(form.emptyBags) || 0;
 
       // PET requires explicit kg/bag because weight varies (22–30 kg)
       if (petBags > 0 && petKgPerBag <= 0) {
@@ -238,11 +276,14 @@ export function ConsumptionPage() {
       }
 
       const body: Record<string, unknown> = { shiftId: autoShift?.id };
+      if (selMachine) body.machineId = selMachine.id;
       // Send KG to backend (bags × kg/bag)
       if (hdpeBags > 0) body.rawHdpeUsed = hdpeBags * hdpeKgPerBag;
       if (ldpeBags > 0) body.rawLdpeUsed = ldpeBags * ldpeKgPerBag;
       if (petBags > 0) body.rawPetUsed = petBags * petKgPerBag;
       if (colorKg > 0) body.colorUsed = colorKg;
+      if (adhesiveKg > 0) body.adhesiveUsed = adhesiveKg;
+      if (emptyBagsCount > 0) body.emptyBagsUsed = emptyBagsCount;
       if (form.notes) body.notes = form.notes;
 
       const fd = new FormData();
@@ -257,6 +298,21 @@ export function ConsumptionPage() {
       patchForm({ saving: false, error: err instanceof Error ? err.message : "Failed to save" });
     }
   };
+
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const alreadyConsumedThisShift =
+    currentShift !== null &&
+    myRecords.some(
+      (r) =>
+        r.shift?.id === currentShift.id &&
+        r.createdAt.slice(0, 10) === todayStr,
+    );
+
+  /* ── Dynamic materials for selected machine ─────────────── */
+  const selectedMachine = machines.find((m) => m.id === Number(selectedMachineId));
+  const activeMaterials: string[] = selectedMachine
+    ? getMachineMaterials(selectedMachine.type)
+    : ["HDPE", "LDPE", "PET", "COLOR"];
 
   /* ── Aggregated totals from admin overview ─────────────── */
   const shiftRawData = adminOverview?.byShiftRawUsage ?? [];
@@ -308,15 +364,49 @@ export function ConsumptionPage() {
             </span>
           </div>
           <div style={{ padding: "1.25rem" }}>
+            {alreadyConsumedThisShift && (
+              <div style={{
+                display: "flex", alignItems: "center", gap: ".5rem",
+                padding: ".6rem .875rem", marginBottom: ".75rem",
+                background: "rgba(245,158,11,.1)",
+                border: "1px solid rgba(245,158,11,.4)",
+                borderRadius: "var(--radius-lg)",
+                fontSize: ".82rem", fontWeight: 600, color: "#b45309",
+              }}>
+                <span style={{ fontSize: "1rem" }}>⚠️</span>
+                {isAr
+                  ? `تم تسجيل الاستهلاك لشفت ${currentShift?.name ?? ""} اليوم — يمكنك إضافة سجل آخر إذا لزم`
+                  : `Consumption for shift ${currentShift?.name ?? ""} already recorded today — you can still add another if needed`}
+              </div>
+            )}
             {form.error && <div className="auth-alert auth-alert--error" style={{ marginBottom: ".75rem", fontSize: ".82rem" }}>{form.error}</div>}
             {form.success && <div className="auth-alert" style={{ marginBottom: ".75rem", fontSize: ".82rem" }}>{form.success}</div>}
             <form className="module-form" onSubmit={(e) => void submitConsumption(e)}>
-              {/* HDPE row */}
-              {(["hdpe", "ldpe", "pet"] as const).map((mat) => {
+              {/* Machine selector */}
+              {machines.length > 0 && (
+                <label style={{ display: "flex", flexDirection: "column", gap: ".3rem", fontSize: ".82rem", fontWeight: 600, color: "var(--text-secondary)" }}>
+                  {isAr ? "الماكينة (اختياري)" : "Machine (optional)"}
+                  <select value={selectedMachineId} onChange={(e) => setSelectedMachineId(e.target.value)}
+                    style={{ padding: ".45rem .65rem", border: "1px solid var(--border-default)", borderRadius: "var(--radius-md)", background: "var(--bg-card)", fontSize: ".9rem" }}>
+                    <option value="">{isAr ? "— اختر ماكينة —" : "— Select machine —"}</option>
+                    {machines.map((m) => (
+                      <option key={m.id} value={m.id}>{m.name}</option>
+                    ))}
+                  </select>
+                  {selectedMachine && (
+                    <span style={{ fontSize: ".75rem", color: "var(--text-secondary)", marginTop: ".15rem" }}>
+                      {isAr ? "المواد المُعدَّة:" : "Configured materials:"} {activeMaterials.join(", ")}
+                    </span>
+                  )}
+                </label>
+              )}
+
+              {/* Bag materials: HDPE, LDPE, PET */}
+              {(["HDPE", "LDPE", "PET"] as const).filter((m) => activeMaterials.includes(m)).map((mat) => {
                 const cfg = {
-                  hdpe: { label: "HDPE", color: "#3b82f6", bg: "rgba(59,130,246,.1)", border: "rgba(59,130,246,.2)", textColor: "#1d4ed8", bags: form.hdpeBags, kpb: form.hdpeKgPerBag, defaultKpb: "25" },
-                  ldpe: { label: "LDPE", color: "#06b6d4", bg: "rgba(6,182,212,.1)", border: "rgba(6,182,212,.2)", textColor: "#0e7490", bags: form.ldpeBags, kpb: form.ldpeKgPerBag, defaultKpb: "25" },
-                  pet:  { label: "PET",  color: "#10b981", bg: "rgba(16,185,129,.1)", border: "rgba(16,185,129,.2)", textColor: "#047857", bags: form.petBags, kpb: form.petKgPerBag, defaultKpb: "" },
+                  HDPE: { label: "HDPE", color: "#3b82f6", bg: "rgba(59,130,246,.1)", border: "rgba(59,130,246,.2)", textColor: "#1d4ed8", bags: form.hdpeBags, kpb: form.hdpeKgPerBag, defaultKpb: "25" },
+                  LDPE: { label: "LDPE", color: "#06b6d4", bg: "rgba(6,182,212,.1)", border: "rgba(6,182,212,.2)", textColor: "#0e7490", bags: form.ldpeBags, kpb: form.ldpeKgPerBag, defaultKpb: "25" },
+                  PET:  { label: "PET",  color: "#10b981", bg: "rgba(16,185,129,.1)", border: "rgba(16,185,129,.2)", textColor: "#047857", bags: form.petBags, kpb: form.petKgPerBag, defaultKpb: "" },
                 }[mat];
                 const bagsNum = parseFloat(cfg.bags) || 0;
                 const kpbNum = parseFloat(cfg.kpb) || 0;
@@ -331,13 +421,13 @@ export function ConsumptionPage() {
                       <label style={{ display: "flex", flexDirection: "column", gap: ".3rem", fontSize: ".82rem", fontWeight: 600, color: "var(--text-secondary)" }}>
                         {isAr ? "عدد الأكياس" : "Number of Bags"}
                         <input type="number" min={0} step="0.5" value={cfg.bags} placeholder="0"
-                          onChange={(e) => patchForm(mat === "hdpe" ? { hdpeBags: e.target.value } : mat === "ldpe" ? { ldpeBags: e.target.value } : { petBags: e.target.value })}
+                          onChange={(e) => patchForm(mat === "HDPE" ? { hdpeBags: e.target.value } : mat === "LDPE" ? { ldpeBags: e.target.value } : { petBags: e.target.value })}
                           style={{ padding: ".45rem .65rem", border: "1px solid var(--border-default)", borderRadius: "var(--radius-md)", background: "var(--bg-card)", fontSize: ".9rem" }} />
                       </label>
                       <label style={{ display: "flex", flexDirection: "column", gap: ".3rem", fontSize: ".82rem", fontWeight: 600, color: "var(--text-secondary)" }}>
                         {isAr ? "كغ / الكيس" : "kg / bag"}
                         <input type="number" min={0} step="0.1" value={cfg.kpb} placeholder={cfg.defaultKpb || "—"}
-                          onChange={(e) => patchForm(mat === "hdpe" ? { hdpeKgPerBag: e.target.value } : mat === "ldpe" ? { ldpeKgPerBag: e.target.value } : { petKgPerBag: e.target.value })}
+                          onChange={(e) => patchForm(mat === "HDPE" ? { hdpeKgPerBag: e.target.value } : mat === "LDPE" ? { ldpeKgPerBag: e.target.value } : { petKgPerBag: e.target.value })}
                           style={{ padding: ".45rem .65rem", border: "1px solid var(--border-default)", borderRadius: "var(--radius-md)", background: "var(--bg-card)", fontSize: ".9rem" }} />
                       </label>
                       <div style={{ padding: ".45rem .65rem", background: cfg.bg, border: `1px solid ${cfg.border}`, borderRadius: "var(--radius-md)", fontSize: ".85rem", fontWeight: 700, color: cfg.textColor, whiteSpace: "nowrap", alignSelf: "end" }}>
@@ -349,18 +439,52 @@ export function ConsumptionPage() {
               })}
 
               {/* Color row */}
-              <div style={{ background: "var(--bg-surface)", border: "1px solid var(--border-default)", borderRadius: "var(--radius-lg)", padding: "1rem", display: "flex", flexDirection: "column", gap: ".5rem" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: ".5rem" }}>
-                  <span style={{ width: 12, height: 12, borderRadius: "50%", background: "#f97316", flexShrink: 0 }} />
-                  <span style={{ fontWeight: 700, fontSize: ".9rem", color: "var(--text-primary)" }}>{isAr ? "اللون (ملوّن)" : "Color (Masterbatch)"}</span>
+              {activeMaterials.includes("COLOR") && (
+                <div style={{ background: "var(--bg-surface)", border: "1px solid var(--border-default)", borderRadius: "var(--radius-lg)", padding: "1rem", display: "flex", flexDirection: "column", gap: ".5rem" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: ".5rem" }}>
+                    <span style={{ width: 12, height: 12, borderRadius: "50%", background: "#f97316", flexShrink: 0 }} />
+                    <span style={{ fontWeight: 700, fontSize: ".9rem", color: "var(--text-primary)" }}>{isAr ? "اللون (ملوّن)" : "Color (Masterbatch)"}</span>
+                  </div>
+                  <label style={{ display: "flex", flexDirection: "column", gap: ".3rem", fontSize: ".82rem", fontWeight: 600, color: "var(--text-secondary)" }}>
+                    {isAr ? "الكمية بالكيلوغرام" : "Quantity in kg"}
+                    <input type="number" min={0} step="0.01" value={form.colorKg}
+                      onChange={(e) => patchForm({ colorKg: e.target.value })} placeholder="0"
+                      style={{ padding: ".45rem .65rem", border: "1px solid var(--border-default)", borderRadius: "var(--radius-md)", background: "var(--bg-card)", fontSize: ".9rem" }} />
+                  </label>
                 </div>
-                <label style={{ display: "flex", flexDirection: "column", gap: ".3rem", fontSize: ".82rem", fontWeight: 600, color: "var(--text-secondary)" }}>
-                  {isAr ? "الكمية بالكيلوغرام" : "Quantity in kg"}
-                  <input type="number" min={0} step="0.01" value={form.colorKg}
-                    onChange={(e) => patchForm({ colorKg: e.target.value })} placeholder="0"
-                    style={{ padding: ".45rem .65rem", border: "1px solid var(--border-default)", borderRadius: "var(--radius-md)", background: "var(--bg-card)", fontSize: ".9rem" }} />
-                </label>
-              </div>
+              )}
+
+              {/* Adhesive row */}
+              {activeMaterials.includes("ADHESIVE") && (
+                <div style={{ background: "var(--bg-surface)", border: "1px solid var(--border-default)", borderRadius: "var(--radius-lg)", padding: "1rem", display: "flex", flexDirection: "column", gap: ".5rem" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: ".5rem" }}>
+                    <span style={{ width: 12, height: 12, borderRadius: "50%", background: "#8b5cf6", flexShrink: 0 }} />
+                    <span style={{ fontWeight: 700, fontSize: ".9rem", color: "var(--text-primary)" }}>{isAr ? "لاصق" : "Adhesive"}</span>
+                  </div>
+                  <label style={{ display: "flex", flexDirection: "column", gap: ".3rem", fontSize: ".82rem", fontWeight: 600, color: "var(--text-secondary)" }}>
+                    {isAr ? "الكمية بالكيلوغرام" : "Quantity in kg"}
+                    <input type="number" min={0} step="0.01" value={form.adhesiveKg}
+                      onChange={(e) => patchForm({ adhesiveKg: e.target.value })} placeholder="0"
+                      style={{ padding: ".45rem .65rem", border: "1px solid var(--border-default)", borderRadius: "var(--radius-md)", background: "var(--bg-card)", fontSize: ".9rem" }} />
+                  </label>
+                </div>
+              )}
+
+              {/* Empty bags row */}
+              {activeMaterials.includes("EMPTY_BAGS") && (
+                <div style={{ background: "var(--bg-surface)", border: "1px solid var(--border-default)", borderRadius: "var(--radius-lg)", padding: "1rem", display: "flex", flexDirection: "column", gap: ".5rem" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: ".5rem" }}>
+                    <span style={{ width: 12, height: 12, borderRadius: "50%", background: "#64748b", flexShrink: 0 }} />
+                    <span style={{ fontWeight: 700, fontSize: ".9rem", color: "var(--text-primary)" }}>{isAr ? "أكياس فارغة" : "Empty Bags"}</span>
+                  </div>
+                  <label style={{ display: "flex", flexDirection: "column", gap: ".3rem", fontSize: ".82rem", fontWeight: 600, color: "var(--text-secondary)" }}>
+                    {isAr ? "العدد" : "Count"}
+                    <input type="number" min={0} step="1" value={form.emptyBags}
+                      onChange={(e) => patchForm({ emptyBags: e.target.value })} placeholder="0"
+                      style={{ padding: ".45rem .65rem", border: "1px solid var(--border-default)", borderRadius: "var(--radius-md)", background: "var(--bg-card)", fontSize: ".9rem" }} />
+                  </label>
+                </div>
+              )}
 
               <label style={{ display: "flex", flexDirection: "column", gap: ".3rem", fontSize: ".82rem", fontWeight: 600, color: "var(--text-secondary)" }}>
                 {isAr ? "ملاحظات" : "Notes"}
