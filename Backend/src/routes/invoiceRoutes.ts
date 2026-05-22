@@ -1,27 +1,21 @@
 import { Router } from "express";
 import { UserRole } from "../config/generated/prisma/client";
 import {
-  getAllInvoicesHandler,
-  createInvoiceHandler,
-  recordInvoicePaymentHandler,
-  deleteInvoiceHandler,
+  getAllInvoicesHandler, getInvoiceByIdHandler, createInvoiceHandler,
+  updateInvoiceHandler, recordInvoicePaymentHandler, deleteInvoiceHandler,
+  confirmReceiptInvoiceHandler,
 } from "../controllers/invoiceController";
 import { authorizeRoles } from "../middleware/authMiddleware";
 
 const router = Router();
-
 const accountingRoles = [UserRole.ACCOUNTANT, UserRole.ADMIN];
 
-// Get all invoices — ACCOUNTANT/ADMIN
-router.get("/", authorizeRoles(accountingRoles), getAllInvoicesHandler);
-
-// Create new invoice — ACCOUNTANT/ADMIN
-router.post("/", authorizeRoles(accountingRoles), createInvoiceHandler);
-
-// Record invoice payment — ACCOUNTANT/ADMIN
+router.get("/",          authorizeRoles(accountingRoles), getAllInvoicesHandler);
+router.get("/:id",       authorizeRoles(accountingRoles), getInvoiceByIdHandler);
+router.post("/",         authorizeRoles(accountingRoles), createInvoiceHandler);
+router.put("/:id",       authorizeRoles(accountingRoles), updateInvoiceHandler);
 router.patch("/:id/payment", authorizeRoles(accountingRoles), recordInvoicePaymentHandler);
-
-// Delete invoice — ACCOUNTANT/ADMIN
-router.delete("/:id", authorizeRoles(accountingRoles), deleteInvoiceHandler);
+router.patch("/:id/confirm", authorizeRoles(accountingRoles), confirmReceiptInvoiceHandler);
+router.delete("/:id",    authorizeRoles(accountingRoles), deleteInvoiceHandler);
 
 export default router;

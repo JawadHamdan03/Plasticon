@@ -279,6 +279,13 @@ const EmployeePerformance = lazy(
   () => import("./pages/accountant/EmployeePerformance"),
 );
 
+// AI pages
+const InvoiceExtractionPage = lazy(() =>
+  import("./pages/ai/InvoiceExtractionPage").then((m) => ({
+    default: m.InvoiceExtractionPage,
+  })),
+);
+
 // ── Page loading fallback ─────────────────────────────────────
 function PageLoader() {
   return (
@@ -853,6 +860,16 @@ function App() {
                   <RoleProtectedRoute allowedRoles={["WORKER"]}>
                     <WorkerSnapshotsPage mode="tools" />
                   </RoleProtectedRoute>
+                }
+              />
+
+              {/* ── AI Tools (all authenticated users) ── */}
+              <Route
+                path="/ai/invoice-extract"
+                element={
+                  <ProtectedRoute>
+                    <InvoiceExtractionPage />
+                  </ProtectedRoute>
                 }
               />
 

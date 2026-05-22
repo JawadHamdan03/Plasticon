@@ -51,6 +51,7 @@ import profileRoutes from "./routes/profileRoutes";
 import registrationRequestRoutes from "./routes/registrationRequestRoutes";
 import sparePartRequestRoutes from "./routes/sparePartRequestRoutes";
 import techDocumentRoutes from "./routes/techDocumentRoutes";
+import aiRoutes from "./routes/aiRoutes";
 import { initializeEmailService } from "./utils/emailService";
 import { startShiftReminderScheduler } from "./services/shiftReminderScheduler";
 
@@ -151,6 +152,7 @@ app.use("/maintenance-costs", maintenanceCostRoutes);
 app.use("/electricity", electricityRoutes);
 app.use("/spare-part-requests", sparePartRequestRoutes);
 app.use("/tech-documents", techDocumentRoutes);
+app.use("/ai", aiRoutes);
 
 // Global JSON error handler — catches multer/middleware errors and returns JSON
 app.use((err: Error & { status?: number; code?: string }, _req: express.Request, res: express.Response, _next: express.NextFunction) => {

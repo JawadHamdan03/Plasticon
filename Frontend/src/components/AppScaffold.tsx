@@ -7,7 +7,7 @@ import {
   Wrench, CheckSquare, AlertTriangle, Lightbulb, Activity, Target,
   Factory, Shield, Calendar, Boxes, Receipt, ClipboardCheck,
   UserCheck, Layers, Search, Package, PieChart, CreditCard, Percent, Wallet, CheckCircle,
-  Truck, Award, UserPlus, Sun, Moon, Briefcase,
+  Truck, Award, UserPlus, Sun, Moon, Briefcase, Sparkles,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useLocale } from "../context/LocaleContext";
@@ -71,6 +71,8 @@ const ALL_SEARCH_ITEMS: SearchItem[] = [
   { labelAr: "تكاليف الصيانة", labelEn: "Maintenance Costs", to: "/engineer/maintenance-costs" },
   { labelAr: "إدارة الموردين", labelEn: "Supplier Management", to: "/accountant/suppliers" },
   { labelAr: "أداء الموظفين", labelEn: "Employee Performance", to: "/accountant/performance" },
+  // AI Tools
+  { labelAr: "استخراج الفواتير بالذكاء الاصطناعي", labelEn: "AI Invoice Extraction", to: "/ai/invoice-extract" },
 ];
 
 /* ── Types ─────────────────────────────────────────────────── */
@@ -163,6 +165,12 @@ function getNavSectionsBi(role: string): NavSectionBi[] {
         ],
       },
       {
+        label: nav("AI Tools", "أدوات الذكاء الاصطناعي"),
+        items: [
+          { to: "/ai/invoice-extract", icon: <Sparkles size={17} />, label: nav("Invoice Extraction", "استخراج الفواتير") },
+        ],
+      },
+      {
         label: nav("System", "النظام"),
         items: [
           { to: "/admin/audit-logs", icon: <Shield size={17} />, label: nav("Audit Logs", "سجل التدقيق") },
@@ -203,6 +211,12 @@ function getNavSectionsBi(role: string): NavSectionBi[] {
           { to: "/engineer/raw-material-alerts", icon: <AlertTriangle size={17} />, label: nav("Raw Mat. Alerts", "تنبيهات المواد") },
           { to: "/engineer/maintenance-costs", icon: <DollarSign size={17} />, label: nav("Maint. Costs", "تكاليف الصيانة") },
           { to: "/electricity", icon: <Zap size={17} />, label: nav("Electricity", "الكهرباء") },
+        ],
+      },
+      {
+        label: nav("AI Tools", "أدوات الذكاء الاصطناعي"),
+        items: [
+          { to: "/ai/invoice-extract", icon: <Sparkles size={17} />, label: nav("Invoice Extraction", "استخراج الفواتير") },
         ],
       },
       {
@@ -258,6 +272,12 @@ function getNavSectionsBi(role: string): NavSectionBi[] {
         ],
       },
       {
+        label: nav("AI Tools", "أدوات الذكاء الاصطناعي"),
+        items: [
+          { to: "/ai/invoice-extract", icon: <Sparkles size={17} />, label: nav("Invoice Extraction", "استخراج الفواتير") },
+        ],
+      },
+      {
         label: nav("Personal", "الشخصية"),
         items: [
           { to: "/attendance", icon: <ClipboardCheck size={17} />, label: nav("My Attendance", "حضوري") },
@@ -292,6 +312,12 @@ function getNavSectionsBi(role: string): NavSectionBi[] {
         { to: "/worker/tools?tab=micro", icon: <Cpu size={17} />, label: nav("Micro Stops", "توقفات مايكرو") },
         { to: "/worker/tools?tab=anomaly", icon: <Zap size={17} />, label: nav("Electricity Alerts", "تنبيهات الكهرباء") },
         { to: "/electricity", icon: <Zap size={17} />, label: nav("Electricity Record", "تسجيل الكهرباء") },
+      ],
+    },
+    {
+      label: nav("AI Tools", "أدوات الذكاء الاصطناعي"),
+      items: [
+        { to: "/ai/invoice-extract", icon: <Sparkles size={17} />, label: nav("Invoice Extraction", "استخراج الفواتير") },
       ],
     },
     {
