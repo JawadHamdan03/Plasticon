@@ -797,6 +797,33 @@ model Invoice {
 
   paymentRecordedAt    DateTime?
 
+  // Extended fields (added for AI extraction + full invoice detail)
+  issueDate            DateTime?
+  currency             String?   @default("USD")
+  subtotal             Float?
+  taxAmount            Float?
+  notes                String?
+  lineItems            String?   // JSON: [{description,quantity,unitPrice,total}]
+  aiExtracted          Boolean   @default(false)
+
+  // Vendor info
+  vendorName           String?
+  vendorPhone          String?
+  vendorEmail          String?
+  vendorAddress        String?
+
+  // Customer extended info
+  customerPhone        String?
+  customerEmail        String?
+  customerAddress      String?
+
+  // Shipment / Receipt
+  invoiceType          String    @default("REGULAR") // REGULAR | SHIPMENT | RECEIPT
+  driverName           String?
+  departureTime        DateTime?
+  confirmedAt          DateTime?
+  confirmedByName      String?
+
   customer             Customer @relation(fields: [customerId], references: [id])
   createdBy            User    @relation("InvoiceCreator", fields: [createdById], references: [id])
 
