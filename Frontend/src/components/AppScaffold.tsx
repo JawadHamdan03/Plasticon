@@ -72,6 +72,7 @@ const ALL_SEARCH_ITEMS: SearchItem[] = [
   { labelAr: "إدارة الموردين", labelEn: "Supplier Management", to: "/accountant/suppliers" },
   { labelAr: "أداء الموظفين", labelEn: "Employee Performance", to: "/accountant/performance" },
   // AI Tools
+  { labelAr: "أدوات الذكاء الاصطناعي", labelEn: "AI Tools Hub", to: "/ai" },
   { labelAr: "استخراج الفواتير بالذكاء الاصطناعي", labelEn: "AI Invoice Extraction", to: "/ai/invoice-extract" },
   { labelAr: "مساعد المصنع الذكي", labelEn: "AI Factory Assistant", to: "/ai/assistant" },
   { labelAr: "كشف شذوذ الإنتاج", labelEn: "Anomaly Detection", to: "/ai/anomaly-detection" },
@@ -172,8 +173,9 @@ function getNavSectionsBi(role: string): NavSectionBi[] {
       {
         label: nav("AI Tools", "أدوات الذكاء الاصطناعي"),
         items: [
-          { to: "/ai/invoice-extract", icon: <Sparkles size={17} />, label: nav("Invoice Extraction", "استخراج الفواتير") },
+          { to: "/ai", icon: <Sparkles size={17} />, label: nav("AI Hub", "مركز الذكاء") },
           { to: "/ai/assistant", icon: <Bot size={17} />, label: nav("AI Assistant", "المساعد الذكي") },
+          { to: "/ai/invoice-extract", icon: <Sparkles size={17} />, label: nav("Invoice Extraction", "استخراج الفواتير") },
           { to: "/ai/anomaly-detection", icon: <AlertTriangle size={17} />, label: nav("Anomaly Detection", "كشف الشذوذ") },
           { to: "/ai/maintenance-report", icon: <Wrench size={17} />, label: nav("Maint. Report", "تقرير الصيانة") },
           { to: "/ai/shift-handover", icon: <ClipboardList size={17} />, label: nav("Shift Handover", "تسليم الشفت") },
@@ -226,7 +228,7 @@ function getNavSectionsBi(role: string): NavSectionBi[] {
       {
         label: nav("AI Tools", "أدوات الذكاء الاصطناعي"),
         items: [
-          { to: "/ai/invoice-extract", icon: <Sparkles size={17} />, label: nav("Invoice Extraction", "استخراج الفواتير") },
+          { to: "/ai", icon: <Sparkles size={17} />, label: nav("AI Hub", "مركز الذكاء") },
           { to: "/ai/assistant", icon: <Bot size={17} />, label: nav("AI Assistant", "المساعد الذكي") },
           { to: "/ai/anomaly-detection", icon: <AlertTriangle size={17} />, label: nav("Anomaly Detection", "كشف الشذوذ") },
           { to: "/ai/maintenance-report", icon: <Wrench size={17} />, label: nav("Maint. Report", "تقرير الصيانة") },
@@ -287,8 +289,9 @@ function getNavSectionsBi(role: string): NavSectionBi[] {
       {
         label: nav("AI Tools", "أدوات الذكاء الاصطناعي"),
         items: [
-          { to: "/ai/invoice-extract", icon: <Sparkles size={17} />, label: nav("Invoice Extraction", "استخراج الفواتير") },
+          { to: "/ai", icon: <Sparkles size={17} />, label: nav("AI Hub", "مركز الذكاء") },
           { to: "/ai/assistant", icon: <Bot size={17} />, label: nav("AI Assistant", "المساعد الذكي") },
+          { to: "/ai/invoice-extract", icon: <Sparkles size={17} />, label: nav("Invoice Extraction", "استخراج الفواتير") },
         ],
       },
       {
@@ -331,7 +334,8 @@ function getNavSectionsBi(role: string): NavSectionBi[] {
     {
       label: nav("AI Tools", "أدوات الذكاء الاصطناعي"),
       items: [
-        { to: "/ai/invoice-extract", icon: <Sparkles size={17} />, label: nav("Invoice Extraction", "استخراج الفواتير") },
+        { to: "/ai", icon: <Sparkles size={17} />, label: nav("AI Hub", "مركز الذكاء") },
+        { to: "/ai/assistant", icon: <Bot size={17} />, label: nav("AI Assistant", "المساعد الذكي") },
       ],
     },
     {

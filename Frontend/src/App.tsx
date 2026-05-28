@@ -280,6 +280,9 @@ const EmployeePerformance = lazy(
 );
 
 // AI pages
+const AIHubPage = lazy(() =>
+  import("./pages/ai/AIHubPage").then((m) => ({ default: m.AIHubPage })),
+);
 const InvoiceExtractionPage = lazy(() =>
   import("./pages/ai/InvoiceExtractionPage").then((m) => ({
     default: m.InvoiceExtractionPage,
@@ -888,7 +891,15 @@ function App() {
                 }
               />
 
-              {/* ── AI Tools (all authenticated users) ── */}
+              {/* ── AI Tools ── */}
+              <Route
+                path="/ai"
+                element={
+                  <ProtectedRoute>
+                    <AIHubPage />
+                  </ProtectedRoute>
+                }
+              />
               <Route
                 path="/ai/invoice-extract"
                 element={

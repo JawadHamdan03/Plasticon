@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { FormEvent, KeyboardEvent, ChangeEvent } from "react";
-import { Bot, Send, Upload, BarChart2, RefreshCw, X, FileText, ChevronDown } from "lucide-react";
+import { Bot, Send, Upload, BarChart2, RefreshCw, X, FileText, ChevronDown, Trash2 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { useLocale } from "../../context/LocaleContext";
+import { RenderText as SharedRenderText } from "./_shared";
 
 const RAG_URL = "http://localhost:3001";
 
@@ -302,6 +303,11 @@ export function RAGAssistantPage() {
       {/* ── Tab: CHAT ── */}
       {tab === "chat" && (
         <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+          {/* Quick prompts — shown only on fresh chat */}
+          {messages.length === 1 && !thinking && (
+            <QuickPrompts role={role} isAr={isAr} onSelect={(p) => { setInput(p); textareaRef.current?.focus(); }} />
+          )}
+
           {/* Messages */}
           <div style={{ flex: 1, overflowY: "auto", padding: "1.25rem 1.5rem", display: "flex", flexDirection: "column", gap: ".75rem" }}>
             {messages.map((msg) => {
@@ -331,7 +337,7 @@ export function RAGAssistantPage() {
                       border: isAI ? "1px solid var(--border-default)" : "none",
                       boxShadow: "0 1px 3px rgba(0,0,0,.06)",
                     }}>
-                      {isAI ? <RenderText text={msg.text} /> : <p style={{ margin: 0, fontSize: ".9rem", lineHeight: 1.55 }}>{msg.text}</p>}
+                      {isAI ? <SharedRenderText text={msg.text} /> : <p style={{ margin: 0, fontSize: ".9rem", lineHeight: 1.55 }}>{msg.text}</p>}
                     </div>
                     <span style={{ fontSize: ".7rem", color: "var(--text-muted)" }}>{fmtTime(msg.ts)}</span>
                   </div>
@@ -360,7 +366,8 @@ export function RAGAssistantPage() {
           </div>
 
           {/* Composer */}
-          <form onSubmit={(e) => void sendMessage(e)} style={{ padding: ".75rem 1.5rem 1rem", borderTop: "1px solid var(--border-default)", background: "var(--bg-surface)", display: "flex", gap: ".6rem", alignItems: "flex-end" }}>
+          <form onSubmit={(e) => void sendMessage(e)} style={{ padding: ".6rem 1.25rem .9rem", borderTop: "1px solid var(--border-default)", background: "var(--bg-surface)", display: "flex", flexDirection: "column", gap: ".5rem" }}>
+            <div style={{ display: "flex", gap: ".5rem", alignItems: "flex-end" }}>
             <textarea
               ref={textareaRef}
               rows={1}
@@ -377,16 +384,21 @@ export function RAGAssistantPage() {
                 transition: "border-color .15s",
               }}
             />
-            <button type="submit" disabled={!input.trim() || thinking}
-              style={{
-                width: 42, height: 42, borderRadius: "50%", border: "none", cursor: "pointer",
-                background: (!input.trim() || thinking) ? "var(--bg-subtle)" : "linear-gradient(135deg,#6366f1,#8b5cf6)",
-                color: (!input.trim() || thinking) ? "var(--text-muted)" : "#fff",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                transition: "all .15s", flexShrink: 0,
-              }}>
-              <Send size={17} />
-            </button>
+              <button type="submit" disabled={!input.trim() || thinking}
+                style={{ width: 42, height: 42, borderRadius: "50%", border: "none", cursor: "pointer", background: (!input.trim() || thinking) ? "var(--bg-subtle)" : "linear-gradient(135deg,#6366f1,#8b5cf6)", color: (!input.trim() || thinking) ? "var(--text-muted)" : "#fff", display: "flex", alignItems: "center", justifyContent: "center", transition: "all .15s", flexShrink: 0, boxShadow: (!input.trim() || thinking) ? "none" : "0 2px 8px #6366f140" }}>
+                <Send size={17} />
+              </button>
+            </div>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <span style={{ fontSize: ".7rem", color: "var(--text-muted)" }}>
+                {isAr ? "Enter للإرسال · Shift+Enter لسطر جديد" : "Enter to send · Shift+Enter for new line"}
+              </span>
+              {messages.length > 1 && (
+                <button type="button" onClick={() => setMessages([messages[0]])} style={{ display: "flex", alignItems: "center", gap: ".3rem", fontSize: ".72rem", color: "var(--text-muted)", background: "none", border: "none", cursor: "pointer", padding: ".2rem .4rem", borderRadius: 5 }}>
+                  <Trash2 size={11} /> {isAr ? "مسح المحادثة" : "Clear chat"}
+                </button>
+              )}
+            </div>
           </form>
         </div>
       )}
@@ -599,6 +611,58 @@ function InfoList({ label, items, color }: { label: string; items: string[]; col
           <span>{item}</span>
         </div>
       ))}
+    </div>
+  );
+}
+
+// ── Quick prompt chips ─────────────────────────────────────────────────────────
+const QUICK_PROMPTS: Record<string, { en: string; ar: string }[]> = {
+  worker: [
+    { en: "What are today's production targets?", ar: "ما هي أهداف الإنتاج لليوم؟" },
+    { en: "How do I report a machine stop?", ar: "كيف أبلّغ عن توقف ماكينة؟" },
+    { en: "What's the safety checklist for my shift?", ar: "ما هي قائمة السلامة للشفت؟" },
+    { en: "Explain the quality check process.", ar: "اشرح لي عملية فحص الجودة." },
+  ],
+  engineer: [
+    { en: "Summarize recent maintenance issues.", ar: "لخّص لي مشاكل الصيانة الأخيرة." },
+    { en: "What are the top machines with downtime this week?", ar: "ما هي الماكينات الأكثر توقفاً هذا الأسبوع؟" },
+    { en: "What spare parts should I check?", ar: "ما هي قطع الغيار التي يجب التحقق منها؟" },
+    { en: "Explain the preventive maintenance schedule.", ar: "اشرح جدول الصيانة الوقائية." },
+  ],
+  admin: [
+    { en: "Give me a summary of today's production.", ar: "أعطني ملخص الإنتاج اليوم." },
+    { en: "Which machines are not operational?", ar: "ما هي الماكينات غير التشغيلية حالياً؟" },
+    { en: "Summarize attendance for this week.", ar: "لخّص لي الحضور هذا الأسبوع." },
+    { en: "What are the top issues to address?", ar: "ما هي أهم المشكلات التي يجب معالجتها؟" },
+  ],
+  accountant: [
+    { en: "What are the key financial metrics I should track?", ar: "ما هي المقاييس المالية الأساسية التي يجب متابعتها؟" },
+    { en: "Explain the invoice approval workflow.", ar: "اشرح لي دورة عمل الموافقة على الفواتير." },
+    { en: "How is production cost calculated?", ar: "كيف يتم احتساب تكلفة الإنتاج؟" },
+    { en: "Summarize supplier payment terms.", ar: "لخّص شروط دفع الموردين." },
+  ],
+};
+
+function QuickPrompts({ role, isAr, onSelect }: { role: string; isAr: boolean; onSelect: (p: string) => void }) {
+  const prompts = QUICK_PROMPTS[role] ?? QUICK_PROMPTS.worker;
+  return (
+    <div style={{ padding: ".75rem 1.5rem", borderBottom: "1px solid var(--border-default)", background: "var(--bg-subtle)", flexShrink: 0 }}>
+      <p style={{ margin: "0 0 .5rem", fontSize: ".72rem", fontWeight: 600, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: ".05em" }}>
+        {isAr ? "اقتراحات سريعة" : "Quick prompts"}
+      </p>
+      <div style={{ display: "flex", gap: ".45rem", flexWrap: "wrap" }}>
+        {prompts.map((p, i) => (
+          <button
+            key={i} type="button"
+            onClick={() => onSelect(isAr ? p.ar : p.en)}
+            style={{ padding: ".38rem .85rem", border: "1px solid var(--border-default)", borderRadius: 999, background: "var(--bg-surface)", color: "var(--text-secondary)", fontSize: ".8rem", cursor: "pointer", whiteSpace: "nowrap", transition: "all .14s" }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.borderColor = "#6366f1"; (e.currentTarget as HTMLButtonElement).style.color = "#6366f1"; (e.currentTarget as HTMLButtonElement).style.background = "#6366f108"; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.borderColor = "var(--border-default)"; (e.currentTarget as HTMLButtonElement).style.color = "var(--text-secondary)"; (e.currentTarget as HTMLButtonElement).style.background = "var(--bg-surface)"; }}
+          >
+            {isAr ? p.ar : p.en}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }

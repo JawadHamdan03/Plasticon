@@ -1,63 +1,27 @@
 import { useState } from "react";
-import { Wrench, RefreshCw, Copy, Check } from "lucide-react";
+import { Wrench, Settings, Clock, Package, AlertCircle, FileText } from "lucide-react";
 import { useLocale } from "../../context/LocaleContext";
 import { API_BASE_URL } from "../../lib/api";
+import { AIPageHeader, FormField, AIButton, ReportCard, AIEmptyState, inputCss, AIKeyframes } from "./_shared";
 
-type Machine = { id: number; name: string };
-
-function RenderText({ text }: { text: string }) {
-  const lines = text.split("\n");
-  return (
-    <div style={{ lineHeight: 1.7, fontSize: ".88rem" }}>
-      {lines.map((line, i) => {
-        if (!line.trim()) return <br key={i} />;
-        if (/^#{1,3}\s/.test(line)) {
-          return (
-            <p key={i} style={{ fontWeight: 700, margin: ".75rem 0 .2rem", color: "var(--text-primary)", fontSize: ".95rem" }}>
-              {line.replace(/^#+\s/, "")}
-            </p>
-          );
-        }
-        if (/^[-•*]\s/.test(line)) {
-          return (
-            <div key={i} style={{ display: "flex", gap: ".4rem", margin: ".2rem 0" }}>
-              <span style={{ color: "var(--text-muted)", flexShrink: 0 }}>•</span>
-              <span>{renderInline(line.replace(/^[-•*]\s/, ""))}</span>
-            </div>
-          );
-        }
-        return <p key={i} style={{ margin: ".2rem 0" }}>{renderInline(line)}</p>;
-      })}
-    </div>
-  );
-}
-
-function renderInline(text: string): React.ReactNode {
-  const parts = text.split(/(\*\*[^*]+\*\*)/g);
-  return parts.map((p, i) =>
-    p.startsWith("**") && p.endsWith("**")
-      ? <strong key={i}>{p.slice(2, -2)}</strong>
-      : <span key={i}>{p}</span>
-  );
-}
+type Machine = { id: number; name: string; type?: string };
 
 export function MaintenanceReportPage() {
   const { locale } = useLocale();
   const isAr = locale === "ar";
 
-  const [machineId, setMachineId]       = useState("");
-  const [whatWasDone, setWhatWasDone]   = useState("");
-  const [partsUsed, setPartsUsed]       = useState("");
-  const [duration, setDuration]         = useState("");
-  const [issueFound, setIssueFound]     = useState("");
-  const [extraNotes, setExtraNotes]     = useState("");
-  const [machines, setMachines]         = useState<Machine[]>([]);
+  const [machineId, setMachineId]     = useState("");
+  const [whatWasDone, setWhatWasDone] = useState("");
+  const [partsUsed, setPartsUsed]     = useState("");
+  const [duration, setDuration]       = useState("");
+  const [issueFound, setIssueFound]   = useState("");
+  const [extraNotes, setExtraNotes]   = useState("");
+  const [machines, setMachines]       = useState<Machine[]>([]);
   const [machinesLoaded, setMachinesLoaded] = useState(false);
 
   const [loading, setLoading] = useState(false);
   const [report, setReport]   = useState<string | null>(null);
   const [error, setError]     = useState("");
-  const [copied, setCopied]   = useState(false);
 
   const loadMachines = async () => {
     if (machinesLoaded) return;
@@ -70,29 +34,24 @@ export function MaintenanceReportPage() {
 
   const generate = async () => {
     if (!whatWasDone.trim()) return;
-    setLoading(true);
-    setError("");
-    setReport(null);
+    setLoading(true); setError(""); setReport(null);
     try {
       const body: Record<string, unknown> = { whatWasDone };
-      if (machineId) body.machineId = Number(machineId);
-      if (partsUsed.trim()) body.partsUsed = partsUsed;
-      if (duration) body.durationMinutes = Number(duration);
-      if (issueFound.trim()) body.issueFound = issueFound;
+      if (machineId)         body.machineId       = Number(machineId);
+      if (partsUsed.trim())  body.partsUsed       = partsUsed;
+      if (duration)          body.durationMinutes = Number(duration);
+      if (issueFound.trim()) body.issueFound      = issueFound;
       if (extraNotes.trim()) body.additionalNotes = extraNotes;
 
       const res = await fetch(`${API_BASE_URL}/ai/maintenance-report`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify(body),
+        method: "POST", headers: { "Content-Type": "application/json" },
+        credentials: "include", body: JSON.stringify(body),
       });
       if (!res.ok) {
-        const err = await res.json().catch(() => ({ error: res.statusText }));
-        throw new Error((err as { error?: string }).error ?? `Error ${res.status}`);
+        const e = await res.json().catch(() => ({ error: res.statusText }));
+        throw new Error((e as { error?: string }).error ?? `Error ${res.status}`);
       }
-      const data = await res.json() as { report: string };
-      setReport(data.report);
+      setReport(((await res.json()) as { report: string }).report);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed");
     } finally {
@@ -100,168 +59,150 @@ export function MaintenanceReportPage() {
     }
   };
 
-  const copy = async () => {
-    if (!report) return;
-    await navigator.clipboard.writeText(report);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
-  const Field = ({ label, children }: { label: string; children: React.ReactNode }) => (
-    <div style={{ display: "flex", flexDirection: "column", gap: ".3rem" }}>
-      <label style={{ fontSize: ".78rem", fontWeight: 600, color: "var(--text-secondary)" }}>{label}</label>
-      {children}
-    </div>
-  );
-
-  const inputStyle: React.CSSProperties = {
-    padding: ".6rem .85rem",
-    border: "1px solid var(--border-default)",
-    borderRadius: 8,
-    background: "var(--bg-surface)",
-    color: "var(--text-primary)",
-    fontSize: ".88rem",
-    fontFamily: "inherit",
-    outline: "none",
-    width: "100%",
-    boxSizing: "border-box",
-  };
+  const selectedMachine = machines.find((m) => String(m.id) === machineId);
 
   return (
-    <div dir={isAr ? "rtl" : "ltr"} style={{ padding: "1.5rem", maxWidth: 860, margin: "0 auto" }}>
-      {/* Header */}
-      <div style={{ display: "flex", alignItems: "center", gap: ".75rem", marginBottom: "1.5rem" }}>
-        <div style={{ width: 42, height: 42, borderRadius: "50%", background: "linear-gradient(135deg,#0ea5e9,#6366f1)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-          <Wrench size={21} color="#fff" />
-        </div>
-        <div>
-          <h1 style={{ margin: 0, fontSize: "1.15rem", fontWeight: 700, color: "var(--text-primary)" }}>
-            {isAr ? "مولد تقرير الصيانة" : "Maintenance Report Generator"}
-          </h1>
-          <p style={{ margin: 0, fontSize: ".78rem", color: "var(--text-muted)" }}>
-            {isAr ? "أدخل تفاصيل العمل وسيولّد الذكاء الاصطناعي تقريراً رسمياً" : "Enter what was done and AI generates a formal maintenance report"}
+    <div dir={isAr ? "rtl" : "ltr"} style={{ padding: "1.5rem", maxWidth: 1000, margin: "0 auto" }}>
+      <AIKeyframes />
+
+      <AIPageHeader
+        icon={Wrench}
+        gradient={["#0ea5e9", "#6366f1"]}
+        title={isAr ? "مولد تقرير الصيانة" : "Maintenance Report Generator"}
+        subtitle={isAr ? "أدخل تفاصيل العمل وسيولّد الذكاء الاصطناعي تقريراً رسمياً احترافياً" : "Enter what was done and AI generates a formal, professional maintenance report"}
+        badge="GPT-4o"
+      />
+
+      <div style={{ display: "grid", gridTemplateColumns: report ? "1fr 1fr" : "minmax(0,600px)", gap: "1.5rem", alignItems: "start" }}>
+        {/* ── Form ── */}
+        <div style={{ display: "flex", flexDirection: "column", gap: "1rem", background: "var(--bg-surface)", border: "1px solid var(--border-default)", borderRadius: 14, padding: "1.35rem", boxShadow: "0 2px 8px rgba(0,0,0,.06)" }}>
+          <p style={{ margin: "0 0 .25rem", fontSize: ".82rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: ".05em" }}>
+            {isAr ? "تفاصيل الصيانة" : "Maintenance Details"}
           </p>
-        </div>
-      </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: report ? "1fr 1fr" : "1fr", gap: "1.5rem", alignItems: "start" }}>
-        {/* Form */}
-        <div style={{ display: "flex", flexDirection: "column", gap: "1rem", background: "var(--bg-surface)", border: "1px solid var(--border-default)", borderRadius: 12, padding: "1.25rem" }}>
-          <Field label={isAr ? "الماكينة (اختياري)" : "Machine (optional)"}>
-            <select
-              value={machineId}
-              onChange={(e) => setMachineId(e.target.value)}
-              onFocus={() => void loadMachines()}
-              style={{ ...inputStyle, cursor: "pointer" }}
-            >
-              <option value="">{isAr ? "اختر ماكينة…" : "Select machine…"}</option>
-              {machines.map((m) => (
-                <option key={m.id} value={m.id}>{m.name}</option>
-              ))}
-            </select>
-          </Field>
+          {/* Machine */}
+          <FormField label={isAr ? "الماكينة" : "Machine"}>
+            <div style={{ position: "relative" }}>
+              <Settings size={14} style={{ position: "absolute", left: 11, top: "50%", transform: "translateY(-50%)", color: "var(--text-muted)", pointerEvents: "none" }} />
+              <select
+                value={machineId}
+                onChange={(e) => setMachineId(e.target.value)}
+                onFocus={() => void loadMachines()}
+                style={{ ...inputCss, paddingLeft: "2rem", cursor: "pointer", appearance: "none" }}
+              >
+                <option value="">{isAr ? "اختر ماكينة (اختياري)…" : "Select machine (optional)…"}</option>
+                {machines.map((m) => (
+                  <option key={m.id} value={m.id}>{m.name}{m.type ? ` — ${m.type}` : ""}</option>
+                ))}
+              </select>
+            </div>
+            {selectedMachine && (
+              <span style={{ fontSize: ".72rem", color: "#0ea5e9", fontWeight: 600 }}>✓ {selectedMachine.name}</span>
+            )}
+          </FormField>
 
-          <Field label={isAr ? "ما الذي تم إجراؤه؟ *" : "What was done? *"}>
+          {/* What was done */}
+          <FormField label={isAr ? "ما الذي تم إجراؤه؟" : "What was done?"} required hint={`${whatWasDone.length}/500`}>
             <textarea
               value={whatWasDone}
-              onChange={(e) => setWhatWasDone(e.target.value)}
-              rows={4}
-              placeholder={isAr ? "صف العمل الذي تم إجراؤه بالتفصيل…" : "Describe the work performed in detail…"}
-              style={{ ...inputStyle, resize: "vertical", lineHeight: 1.55 }}
+              onChange={(e) => setWhatWasDone(e.target.value.slice(0, 500))}
+              rows={5}
+              placeholder={isAr ? "صف خطوات العمل الذي تم إجراؤه بالتفصيل…" : "Describe the work performed step by step…"}
+              style={{ ...inputCss, resize: "vertical", lineHeight: 1.6, minHeight: 110 }}
             />
-          </Field>
+          </FormField>
 
+          {/* Parts + Duration */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: ".75rem" }}>
-            <Field label={isAr ? "القطع المستخدمة" : "Parts used"}>
-              <input
-                type="text"
-                value={partsUsed}
-                onChange={(e) => setPartsUsed(e.target.value)}
-                placeholder={isAr ? "مثال: مضخة زيت، سير…" : "e.g., oil pump, belt…"}
-                style={inputStyle}
-              />
-            </Field>
-            <Field label={isAr ? "المدة (دقائق)" : "Duration (min)"}>
-              <input
-                type="number"
-                min={0}
-                value={duration}
-                onChange={(e) => setDuration(e.target.value)}
-                placeholder="60"
-                style={inputStyle}
-              />
-            </Field>
+            <FormField label={isAr ? "القطع المستخدمة" : "Parts used"}>
+              <div style={{ position: "relative" }}>
+                <Package size={14} style={{ position: "absolute", left: 11, top: "50%", transform: "translateY(-50%)", color: "var(--text-muted)", pointerEvents: "none" }} />
+                <input
+                  type="text" value={partsUsed}
+                  onChange={(e) => setPartsUsed(e.target.value)}
+                  placeholder={isAr ? "مضخة زيت، سير…" : "oil pump, belt…"}
+                  style={{ ...inputCss, paddingLeft: "2rem" }}
+                />
+              </div>
+            </FormField>
+            <FormField label={isAr ? "المدة (دقائق)" : "Duration (min)"}>
+              <div style={{ position: "relative" }}>
+                <Clock size={14} style={{ position: "absolute", left: 11, top: "50%", transform: "translateY(-50%)", color: "var(--text-muted)", pointerEvents: "none" }} />
+                <input
+                  type="number" min={0} value={duration}
+                  onChange={(e) => setDuration(e.target.value)}
+                  placeholder="60"
+                  style={{ ...inputCss, paddingLeft: "2rem" }}
+                />
+              </div>
+            </FormField>
           </div>
 
-          <Field label={isAr ? "المشكلة المكتشفة" : "Issue found"}>
-            <input
-              type="text"
-              value={issueFound}
-              onChange={(e) => setIssueFound(e.target.value)}
-              placeholder={isAr ? "أي مشكلة اكتُشفت أثناء العمل…" : "Any issue discovered during work…"}
-              style={inputStyle}
-            />
-          </Field>
+          {/* Issue found */}
+          <FormField label={isAr ? "المشكلة المكتشفة" : "Issue found"}>
+            <div style={{ position: "relative" }}>
+              <AlertCircle size={14} style={{ position: "absolute", left: 11, top: "50%", transform: "translateY(-50%)", color: "var(--text-muted)", pointerEvents: "none" }} />
+              <input
+                type="text" value={issueFound}
+                onChange={(e) => setIssueFound(e.target.value)}
+                placeholder={isAr ? "أي مشكلة اكتُشفت أثناء العمل…" : "Any issue discovered during work…"}
+                style={{ ...inputCss, paddingLeft: "2rem" }}
+              />
+            </div>
+          </FormField>
 
-          <Field label={isAr ? "ملاحظات إضافية" : "Additional notes"}>
+          {/* Notes */}
+          <FormField label={isAr ? "ملاحظات إضافية" : "Additional notes"}>
             <textarea
               value={extraNotes}
               onChange={(e) => setExtraNotes(e.target.value)}
               rows={2}
-              placeholder={isAr ? "أي ملاحظات إضافية…" : "Any additional notes…"}
-              style={{ ...inputStyle, resize: "vertical" }}
+              placeholder={isAr ? "أي ملاحظات إضافية أو توصيات…" : "Any extra notes or recommendations…"}
+              style={{ ...inputCss, resize: "vertical" }}
             />
-          </Field>
+          </FormField>
 
           {error && (
-            <div style={{ padding: ".75rem 1rem", background: "#fee2e2", borderRadius: 8, color: "#dc2626", fontSize: ".83rem" }}>
-              {error}
+            <div style={{ padding: ".75rem .9rem", background: "#fee2e2", borderRadius: 9, color: "#dc2626", fontSize: ".83rem", border: "1px solid #fecaca" }}>
+              ⚠ {error}
             </div>
           )}
 
-          <button
-            type="button"
+          <AIButton
+            gradient={["#0ea5e9", "#6366f1"]}
             onClick={() => void generate()}
-            disabled={loading || !whatWasDone.trim()}
-            style={{
-              padding: ".65rem", border: "none", borderRadius: 8,
-              cursor: (loading || !whatWasDone.trim()) ? "default" : "pointer",
-              background: (loading || !whatWasDone.trim()) ? "var(--bg-subtle)" : "linear-gradient(135deg,#0ea5e9,#6366f1)",
-              color: (loading || !whatWasDone.trim()) ? "var(--text-muted)" : "#fff",
-              fontWeight: 600, fontSize: ".9rem",
-              display: "flex", alignItems: "center", justifyContent: "center", gap: ".4rem",
-            }}
+            disabled={!whatWasDone.trim()}
+            loading={loading}
+            loadingText={isAr ? "جارٍ التوليد…" : "Generating…"}
+            icon={FileText}
           >
-            {loading
-              ? <><RefreshCw size={15} style={{ animation: "spin 1s linear infinite" }} /> {isAr ? "جارٍ التوليد…" : "Generating…"}</>
-              : <><Wrench size={15} /> {isAr ? "توليد التقرير" : "Generate Report"}</>}
-          </button>
+            {isAr ? "توليد التقرير الرسمي" : "Generate Formal Report"}
+          </AIButton>
         </div>
 
-        {/* Report output */}
-        {report && (
-          <div style={{ background: "var(--bg-surface)", border: "1px solid var(--border-default)", borderRadius: 12, overflow: "hidden" }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: ".85rem 1rem", borderBottom: "1px solid var(--border-default)" }}>
-              <p style={{ margin: 0, fontSize: ".85rem", fontWeight: 700, color: "var(--text-primary)" }}>
-                {isAr ? "التقرير المولَّد" : "Generated Report"}
-              </p>
-              <button
-                type="button"
-                onClick={() => void copy()}
-                style={{ display: "flex", alignItems: "center", gap: ".35rem", padding: ".35rem .75rem", border: "1px solid var(--border-default)", borderRadius: 6, background: "transparent", cursor: "pointer", fontSize: ".78rem", color: copied ? "#16a34a" : "var(--text-secondary)" }}
-              >
-                {copied ? <Check size={13} /> : <Copy size={13} />}
-                {copied ? (isAr ? "تم النسخ" : "Copied!") : (isAr ? "نسخ" : "Copy")}
-              </button>
-            </div>
-            <div style={{ padding: "1.25rem", overflowY: "auto", maxHeight: "calc(100vh - 260px)" }}>
-              <RenderText text={report} />
-            </div>
+        {/* ── Report output ── */}
+        {report ? (
+          <div style={{ animation: "ai-fadein .3s" }}>
+            <ReportCard
+              title={isAr ? "تقرير الصيانة" : "Maintenance Report"}
+              subtitle={selectedMachine ? selectedMachine.name : isAr ? "بدون ماكينة محددة" : "No machine specified"}
+              report={report}
+              onRegenerate={() => void generate()}
+              loading={loading}
+              accentColor="#0ea5e9"
+            />
           </div>
+        ) : (
+          !report && (
+            <AIEmptyState
+              icon={FileText}
+              color="#0ea5e9"
+              title={isAr ? "أدخل تفاصيل الصيانة" : "Enter maintenance details"}
+              description={isAr ? "بعد إدخال ما تم إجراؤه، سيولّد الذكاء الاصطناعي تقريراً رسمياً مهيكلاً." : "After describing the work done, AI will generate a structured formal report."}
+            />
+          )
         )}
       </div>
-
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );
 }
