@@ -74,6 +74,10 @@ const ALL_SEARCH_ITEMS: SearchItem[] = [
   // AI Tools
   { labelAr: "استخراج الفواتير بالذكاء الاصطناعي", labelEn: "AI Invoice Extraction", to: "/ai/invoice-extract" },
   { labelAr: "مساعد المصنع الذكي", labelEn: "AI Factory Assistant", to: "/ai/assistant" },
+  { labelAr: "كشف شذوذ الإنتاج", labelEn: "Anomaly Detection", to: "/ai/anomaly-detection" },
+  { labelAr: "مولد تقرير الصيانة", labelEn: "Maintenance Report", to: "/ai/maintenance-report" },
+  { labelAr: "ملخص تسليم الشفت", labelEn: "Shift Handover", to: "/ai/shift-handover" },
+  { labelAr: "تدريب أداء العامل", labelEn: "Worker Coaching", to: "/ai/worker-coaching" },
 ];
 
 /* ── Types ─────────────────────────────────────────────────── */
@@ -170,6 +174,10 @@ function getNavSectionsBi(role: string): NavSectionBi[] {
         items: [
           { to: "/ai/invoice-extract", icon: <Sparkles size={17} />, label: nav("Invoice Extraction", "استخراج الفواتير") },
           { to: "/ai/assistant", icon: <Bot size={17} />, label: nav("AI Assistant", "المساعد الذكي") },
+          { to: "/ai/anomaly-detection", icon: <AlertTriangle size={17} />, label: nav("Anomaly Detection", "كشف الشذوذ") },
+          { to: "/ai/maintenance-report", icon: <Wrench size={17} />, label: nav("Maint. Report", "تقرير الصيانة") },
+          { to: "/ai/shift-handover", icon: <ClipboardList size={17} />, label: nav("Shift Handover", "تسليم الشفت") },
+          { to: "/ai/worker-coaching", icon: <Award size={17} />, label: nav("Worker Coaching", "تدريب العامل") },
         ],
       },
       {
@@ -220,6 +228,8 @@ function getNavSectionsBi(role: string): NavSectionBi[] {
         items: [
           { to: "/ai/invoice-extract", icon: <Sparkles size={17} />, label: nav("Invoice Extraction", "استخراج الفواتير") },
           { to: "/ai/assistant", icon: <Bot size={17} />, label: nav("AI Assistant", "المساعد الذكي") },
+          { to: "/ai/anomaly-detection", icon: <AlertTriangle size={17} />, label: nav("Anomaly Detection", "كشف الشذوذ") },
+          { to: "/ai/maintenance-report", icon: <Wrench size={17} />, label: nav("Maint. Report", "تقرير الصيانة") },
         ],
       },
       {

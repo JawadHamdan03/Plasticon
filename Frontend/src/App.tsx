@@ -290,6 +290,26 @@ const RAGAssistantPage = lazy(() =>
     default: m.RAGAssistantPage,
   })),
 );
+const AnomalyDetectionPage = lazy(() =>
+  import("./pages/ai/AnomalyDetectionPage").then((m) => ({
+    default: m.AnomalyDetectionPage,
+  })),
+);
+const MaintenanceReportPage = lazy(() =>
+  import("./pages/ai/MaintenanceReportPage").then((m) => ({
+    default: m.MaintenanceReportPage,
+  })),
+);
+const ShiftHandoverPage = lazy(() =>
+  import("./pages/ai/ShiftHandoverPage").then((m) => ({
+    default: m.ShiftHandoverPage,
+  })),
+);
+const WorkerCoachingPage = lazy(() =>
+  import("./pages/ai/WorkerCoachingPage").then((m) => ({
+    default: m.WorkerCoachingPage,
+  })),
+);
 
 // ── Page loading fallback ─────────────────────────────────────
 function PageLoader() {
@@ -883,6 +903,38 @@ function App() {
                   <ProtectedRoute>
                     <RAGAssistantPage />
                   </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/ai/anomaly-detection"
+                element={
+                  <RoleProtectedRoute allowedRoles={["ADMIN", "ENGINEER"]}>
+                    <AnomalyDetectionPage />
+                  </RoleProtectedRoute>
+                }
+              />
+              <Route
+                path="/ai/maintenance-report"
+                element={
+                  <RoleProtectedRoute allowedRoles={["ENGINEER", "ADMIN"]}>
+                    <MaintenanceReportPage />
+                  </RoleProtectedRoute>
+                }
+              />
+              <Route
+                path="/ai/shift-handover"
+                element={
+                  <RoleProtectedRoute allowedRoles={["ADMIN"]}>
+                    <ShiftHandoverPage />
+                  </RoleProtectedRoute>
+                }
+              />
+              <Route
+                path="/ai/worker-coaching"
+                element={
+                  <RoleProtectedRoute allowedRoles={["ADMIN"]}>
+                    <WorkerCoachingPage />
+                  </RoleProtectedRoute>
                 }
               />
 
