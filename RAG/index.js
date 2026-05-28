@@ -5,15 +5,17 @@ import multer from "multer";
 import os from "node:os";
 import path from "node:path";
 import { unlink } from "node:fs/promises";
-import { runAgent } from "./agent.js";
 import { analyzeFactoryBill } from "./billAnalysis.js";
 import { ingestData } from "./ingest.js";
+import chatRouter from "./routes/chat.js";
+import materialAnalysisRouter from "./routes/materialAnalysis.js";
+import productionSummaryRouter from "./routes/productionSummary.js";
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Multer for file uploads
+// Shared disk-storage multer for file upload endpoints
 const upload = multer({
   storage: multer.diskStorage({
     destination: os.tmpdir(),
@@ -30,34 +32,14 @@ const isPdfFile = (file) => {
   return file?.mimetype === "application/pdf" || name.endsWith(".pdf");
 };
 
-const handleChatRequest = async (req, res) => {
-  try {
-    const { message, sessionId } = req.body;
-    if (!message) return res.status(400).json({ error: "Message required" });
+// ── Chat (role-aware, with context injection) ──────────────────────────────
+app.use("/api/chat",     chatRouter);
+app.use("/api/rag/chat", chatRouter);
 
-    const answer = await runAgent({ message, sessionId });
-
-    const output = answer?.output || answer?.text || "";
-
-    if (!output || output.trim() === "") {
-      return res.json({
-        answer:
-          "I apologize, but I couldn't generate a proper response. Could you please rephrase your question?",
-      });
-    }
-
-    res.json({ answer: output });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: err.message });
-  }
-};
-
+// ── Document ingestion ─────────────────────────────────────────────────────
 const handleRagIngest = async (req, res) => {
   try {
-    if (!req.file?.path) {
-      return res.status(400).json({ error: "Missing file" });
-    }
+    if (!req.file?.path) return res.status(400).json({ error: "Missing file" });
 
     const fileType = path.extname(req.file.originalname || "").toLowerCase().slice(1) || "text";
     const result = await ingestData(req.file.path, {
@@ -66,48 +48,35 @@ const handleRagIngest = async (req, res) => {
       fileType,
     });
     await unlink(req.file.path).catch(() => undefined);
-
-    return res.json({
-      ok: true,
-      fileName: req.file.originalname,
-      ...result,
-    });
+    return res.json({ ok: true, fileName: req.file.originalname, ...result });
   } catch (err) {
-    if (req.file?.path) {
-      await unlink(req.file.path).catch(() => undefined);
-    }
+    if (req.file?.path) await unlink(req.file.path).catch(() => undefined);
     return res.status(500).json({ error: err.message });
   }
 };
 
-app.post("/api/chat", async (req, res) => handleChatRequest(req, res));
-app.post("/api/rag/chat", async (req, res) => handleChatRequest(req, res));
+app.post("/api/ingest",     upload.single("file"), handleRagIngest);
+app.post("/api/rag/ingest", upload.single("file"), handleRagIngest);
 
-app.post("/api/ingest", upload.single("file"), async (req, res) => handleRagIngest(req, res));
-app.post("/api/rag/ingest", upload.single("file"), async (req, res) => handleRagIngest(req, res));
+// ── Raw material datasheet analysis ───────────────────────────────────────
+app.use("/api/analyze-material", upload.single("file"), materialAnalysisRouter);
 
-// Factory bill analysis endpoint
+// ── Production summary (AI report from live data) ─────────────────────────
+app.use("/api/production-summary", productionSummaryRouter);
+
+// ── Factory bill analysis ──────────────────────────────────────────────────
 app.post("/api/analyze-factory-bill", upload.single("file"), async (req, res) => {
   try {
-    if (!req.file?.path) {
-      return res.status(400).json({ error: "Missing PDF file" });
-    }
-
-    if (!isPdfFile(req.file)) {
-      return res.status(400).json({ error: "Factory bill analysis requires a PDF file" });
-    }
+    if (!req.file?.path) return res.status(400).json({ error: "Missing PDF file" });
+    if (!isPdfFile(req.file)) return res.status(400).json({ error: "Factory bill analysis requires a PDF file" });
 
     const result = await analyzeFactoryBill(req.file.path);
     await unlink(req.file.path).catch(() => undefined);
-
     return res.json({ ok: true, ...result });
   } catch (err) {
-    if (req.file?.path) {
-      await unlink(req.file.path).catch(() => undefined);
-    }
-
+    if (req.file?.path) await unlink(req.file.path).catch(() => undefined);
     return res.status(500).json({ error: err.message });
   }
 });
 
-app.listen(3001, () => console.log("🚀 Server running on port 3001"));
+app.listen(3001, () => console.log("🚀 RAG server running on port 3001"));

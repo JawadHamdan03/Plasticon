@@ -6,7 +6,12 @@ import { searchKnowledgeBase } from "./tools.js";
 // Create a memory saver for persisting conversation history
 const checkpointer = new MemorySaver();
 
-export async function runAgent({ sessionId = "default", message }) {
+const DEFAULT_SYSTEM_PROMPT =
+  `You are a helpful AI assistant with access to a general knowledge base built from uploaded files.
+   When users ask questions, search the knowledge base using the available tools to find relevant information.
+   Be concise and accurate.`;
+
+export async function runAgent({ sessionId = "default", message, systemPrompt }) {
   try {
     const model = new ChatOpenAI({
       model: "gpt-4o",
@@ -17,10 +22,7 @@ export async function runAgent({ sessionId = "default", message }) {
       model,
       tools: [searchKnowledgeBase],
       checkpointer,
-      systemPrompt:
-        `You are a helpful AI assistant with access to a general knowledge base built from uploaded files.
-         When users ask questions, search the knowledge base using the available tools to find relevant information.
-         Be concise and accurate.`,
+      systemPrompt: systemPrompt ?? DEFAULT_SYSTEM_PROMPT,
     });
 
     console.log(`🤖 Running agent for: "${message}"`);

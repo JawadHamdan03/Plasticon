@@ -285,6 +285,11 @@ const InvoiceExtractionPage = lazy(() =>
     default: m.InvoiceExtractionPage,
   })),
 );
+const RAGAssistantPage = lazy(() =>
+  import("./pages/ai/RAGAssistantPage").then((m) => ({
+    default: m.RAGAssistantPage,
+  })),
+);
 
 // ── Page loading fallback ─────────────────────────────────────
 function PageLoader() {
@@ -869,6 +874,14 @@ function App() {
                 element={
                   <ProtectedRoute>
                     <InvoiceExtractionPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/ai/assistant"
+                element={
+                  <ProtectedRoute>
+                    <RAGAssistantPage />
                   </ProtectedRoute>
                 }
               />

@@ -7,7 +7,7 @@ import {
   Wrench, CheckSquare, AlertTriangle, Lightbulb, Activity, Target,
   Factory, Shield, Calendar, Boxes, Receipt, ClipboardCheck,
   UserCheck, Layers, Search, Package, PieChart, CreditCard, Percent, Wallet, CheckCircle,
-  Truck, Award, UserPlus, Sun, Moon, Briefcase, Sparkles,
+  Truck, Award, UserPlus, Sun, Moon, Briefcase, Sparkles, Bot,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { useLocale } from "../context/LocaleContext";
@@ -73,6 +73,7 @@ const ALL_SEARCH_ITEMS: SearchItem[] = [
   { labelAr: "أداء الموظفين", labelEn: "Employee Performance", to: "/accountant/performance" },
   // AI Tools
   { labelAr: "استخراج الفواتير بالذكاء الاصطناعي", labelEn: "AI Invoice Extraction", to: "/ai/invoice-extract" },
+  { labelAr: "مساعد المصنع الذكي", labelEn: "AI Factory Assistant", to: "/ai/assistant" },
 ];
 
 /* ── Types ─────────────────────────────────────────────────── */
@@ -168,6 +169,7 @@ function getNavSectionsBi(role: string): NavSectionBi[] {
         label: nav("AI Tools", "أدوات الذكاء الاصطناعي"),
         items: [
           { to: "/ai/invoice-extract", icon: <Sparkles size={17} />, label: nav("Invoice Extraction", "استخراج الفواتير") },
+          { to: "/ai/assistant", icon: <Bot size={17} />, label: nav("AI Assistant", "المساعد الذكي") },
         ],
       },
       {
@@ -217,6 +219,7 @@ function getNavSectionsBi(role: string): NavSectionBi[] {
         label: nav("AI Tools", "أدوات الذكاء الاصطناعي"),
         items: [
           { to: "/ai/invoice-extract", icon: <Sparkles size={17} />, label: nav("Invoice Extraction", "استخراج الفواتير") },
+          { to: "/ai/assistant", icon: <Bot size={17} />, label: nav("AI Assistant", "المساعد الذكي") },
         ],
       },
       {
@@ -275,6 +278,7 @@ function getNavSectionsBi(role: string): NavSectionBi[] {
         label: nav("AI Tools", "أدوات الذكاء الاصطناعي"),
         items: [
           { to: "/ai/invoice-extract", icon: <Sparkles size={17} />, label: nav("Invoice Extraction", "استخراج الفواتير") },
+          { to: "/ai/assistant", icon: <Bot size={17} />, label: nav("AI Assistant", "المساعد الذكي") },
         ],
       },
       {
