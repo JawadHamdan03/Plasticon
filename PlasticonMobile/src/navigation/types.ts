@@ -110,11 +110,14 @@ export type AccountantExpensesStackParamList = {
 };
 
 export type AccountantMoreStackParamList = {
-  AcctMore:           undefined;
-  Suppliers:          undefined;
-  PartsPricing:       undefined;
-  ApprovalWorkflows:  undefined;
+  AcctMore:            undefined;
+  Suppliers:           undefined;
+  PartsPricing:        undefined;
+  ApprovalWorkflows:   undefined;
   EmployeePerformance: undefined;
+  AIHub:               undefined;
+  Assistant:           undefined;
+  Notifications:       undefined;
 };
 
 // ─── Admin tabs ───────────────────────────────────────────────────────────────
