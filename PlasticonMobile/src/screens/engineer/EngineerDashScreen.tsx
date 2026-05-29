@@ -106,7 +106,7 @@ export function EngineerDashScreen() {
             <Text style={styles.greetSub}>Engineer Dashboard</Text>
             <Text style={styles.greetName}>{firstName} ⚙️</Text>
           </View>
-          <TouchableOpacity style={styles.analyticBtn} onPress={() => navigation.navigate('ProductionAnalytics')}>
+          <TouchableOpacity style={styles.analyticBtn} onPress={() => navigation.navigate('Engineering', { screen: 'ProductionAnalytics' })}>
             <Ionicons name="analytics" size={16} color={colors.primary} />
             <Text style={styles.analyticText}>Analytics</Text>
           </TouchableOpacity>
@@ -125,10 +125,10 @@ export function EngineerDashScreen() {
         {/* Quick links */}
         <Text style={styles.sectionLabel}>QUICK ACCESS</Text>
         <View style={styles.qlGrid}>
-          <QuickLink icon="construct-outline"       label="Maintenance"  color={colors.warning}  onPress={() => navigation.navigate('Maintenance', { screen: 'MaintMenu' })} />
-          <QuickLink icon="hardware-chip-outline"   label="Machines"     color={colors.primary}  onPress={() => navigation.navigate('Machines',    { screen: 'MachMenu'  })} />
-          <QuickLink icon="shield-checkmark-outline" label="Quality"     color={colors.success}  onPress={() => navigation.navigate('Quality',     { screen: 'QualMenu'  })} />
-          <QuickLink icon="chatbubble-ellipses-outline" label="AI Tools" color={colors.info}     onPress={() => navigation.navigate('Profile',     { screen: 'AIHub'     })} />
+          <QuickLink icon="construct-outline"       label="Maintenance"  color={colors.warning}  onPress={() => navigation.navigate('Engineering', { screen: 'MaintenancePage' })} />
+          <QuickLink icon="hardware-chip-outline"   label="Machines"     color={colors.primary}  onPress={() => navigation.navigate('Engineering', { screen: 'MachineHealth'  })} />
+          <QuickLink icon="shield-checkmark-outline" label="Quality"     color={colors.success}  onPress={() => navigation.navigate('Engineering', { screen: 'QualityChecks'  })} />
+          <QuickLink icon="chatbubble-ellipses-outline" label="AI Tools" color={colors.info}     onPress={() => navigation.navigate('AITools',     { screen: 'AIHub'     })} />
         </View>
 
         {/* Recent maintenance */}

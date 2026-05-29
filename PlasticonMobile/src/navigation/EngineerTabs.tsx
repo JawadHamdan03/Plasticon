@@ -6,113 +6,111 @@ import { colors }                     from '../theme';
 
 import {
   EngineerTabParamList,
-  EngineerDashStackParamList,
-  EngineerMaintStackParamList,
-  EngineerMachStackParamList,
-  EngineerQualStackParamList,
-  EngineerProfileStackParamList,
+  EngineerOverviewStackParamList,
+  EngineerEngStackParamList,
+  EngineerAIStackParamList,
+  EngineerPersonalStackParamList,
 } from './types';
 
-// ─── Dashboard screens ────────────────────────────────────────────────────────
+// ─── Overview screens ─────────────────────────────────────────────────────────
 import { EngineerDashScreen }       from '../screens/engineer/EngineerDashScreen';
-import { ProductionAnalyticsScreen } from '../screens/engineer/ProductionAnalyticsScreen';
 
-// ─── Maintenance screens ──────────────────────────────────────────────────────
-import { MaintMenuScreen }     from '../screens/engineer/MaintMenuScreen';
-import { MaintenancePage }     from '../screens/engineer/MaintenancePage';
-import { MaintScheduleScreen } from '../screens/engineer/MaintScheduleScreen';
-import { WorkOrdersScreen }    from '../screens/engineer/WorkOrdersScreen';
-import { MaintCostsScreen }    from '../screens/engineer/MaintCostsScreen';
+// ─── Engineering screens ──────────────────────────────────────────────────────
+import { EngineerEngMenuScreen }    from '../screens/engineer/EngineerEngMenuScreen';
+import { ProductionMonitorScreen }  from '../screens/engineer/ProductionMonitorScreen';
+import { ConsumptionScreen }        from '../screens/admin/ConsumptionScreen';
+import { WarehouseScreen }          from '../screens/admin/WarehouseScreen';
+import { QualityChecksScreen }      from '../screens/engineer/QualityChecksScreen';
+import { MaintenancePage }          from '../screens/engineer/MaintenancePage';
+import { EngInventoryScreen }       from '../screens/engineer/EngInventoryScreen';
+import { MachineHealthScreen }      from '../screens/engineer/MachineHealthScreen';
+import { WorkOrdersScreen }         from '../screens/engineer/WorkOrdersScreen';
+import { SparePartsScreen }         from '../screens/engineer/SparePartsScreen';
+import { LifecycleScreen }          from '../screens/engineer/LifecycleScreen';
+import { ProductionAnalyticsScreen }from '../screens/engineer/ProductionAnalyticsScreen';
+import { QualityTrendsScreen }      from '../screens/engineer/QualityTrendsScreen';
+import { TechDocsScreen }           from '../screens/engineer/TechDocsScreen';
+import { CalibrationScreen }        from '../screens/engineer/CalibrationScreen';
+import { TransferLogScreen }        from '../screens/engineer/TransferLogScreen';
+import { RawAlertsScreen }          from '../screens/engineer/RawAlertsScreen';
+import { MaintCostsScreen }         from '../screens/engineer/MaintCostsScreen';
+import { ElectricityScreen }        from '../screens/admin/ElectricityScreen';
 
-// ─── Machines screens ─────────────────────────────────────────────────────────
-import { MachMenuScreen }     from '../screens/engineer/MachMenuScreen';
-import { MachineHealthScreen } from '../screens/engineer/MachineHealthScreen';
-import { SparePartsScreen }    from '../screens/engineer/SparePartsScreen';
-import { EngInventoryScreen }  from '../screens/engineer/EngInventoryScreen';
-import { CalibrationScreen }   from '../screens/engineer/CalibrationScreen';
-import { LifecycleScreen }     from '../screens/engineer/LifecycleScreen';
-import { TransferLogScreen }   from '../screens/engineer/TransferLogScreen';
+// ─── AI screens ───────────────────────────────────────────────────────────────
+import { AIHubScreen }              from '../screens/shared/AIHubScreen';
+import { AssistantScreen }          from '../screens/shared/AssistantScreen';
+import { AnomalyDetectionScreen }   from '../screens/shared/AnomalyDetectionScreen';
+import { MaintenanceReportScreen }  from '../screens/shared/MaintenanceReportScreen';
 
-// ─── Quality screens ──────────────────────────────────────────────────────────
-import { QualMenuScreen }      from '../screens/engineer/QualMenuScreen';
-import { QualityChecksScreen } from '../screens/engineer/QualityChecksScreen';
-import { QualityTrendsScreen } from '../screens/engineer/QualityTrendsScreen';
-import { RawAlertsScreen }     from '../screens/engineer/RawAlertsScreen';
-import { TechDocsScreen }      from '../screens/engineer/TechDocsScreen';
+// ─── Personal screens ─────────────────────────────────────────────────────────
+import { PersonalMenuScreen }   from '../screens/worker/PersonalMenuScreen';
+import { AttendanceScreen }     from '../screens/shared/AttendanceScreen';
+import { PayrollScreen }        from '../screens/worker/PayrollScreen';
+import { NotificationsScreen }  from '../screens/shared/NotificationsScreen';
+import { ChatScreen }           from '../screens/shared/ChatScreen';
 
-// ─── Profile / More screens ───────────────────────────────────────────────────
-import { EngineerMoreScreen }  from '../screens/engineer/EngineerMoreScreen';
-import { ProfileScreen }       from '../screens/shared/ProfileScreen';
-import { AIHubScreen }         from '../screens/shared/AIHubScreen';
-import { AssistantScreen }     from '../screens/shared/AssistantScreen';
-import { NotificationsScreen } from '../screens/shared/NotificationsScreen';
-
-// ─── Stack: Dashboard tab ─────────────────────────────────────────────────────
-const DashStack = createNativeStackNavigator<EngineerDashStackParamList>();
-function DashNavigator() {
+// ─── Stack: Overview tab ─────────────────────────────────────────────────────
+const OverviewStack = createNativeStackNavigator<EngineerOverviewStackParamList>();
+function OverviewNavigator() {
   return (
-    <DashStack.Navigator screenOptions={{ headerShown: false }}>
-      <DashStack.Screen name="EngineerDash"       component={EngineerDashScreen} />
-      <DashStack.Screen name="ProductionAnalytics" component={ProductionAnalyticsScreen} />
-    </DashStack.Navigator>
+    <OverviewStack.Navigator screenOptions={{ headerShown: false }}>
+      <OverviewStack.Screen name="EngineerDash" component={EngineerDashScreen} />
+    </OverviewStack.Navigator>
   );
 }
 
-// ─── Stack: Maintenance tab ───────────────────────────────────────────────────
-const MaintStack = createNativeStackNavigator<EngineerMaintStackParamList>();
-function MaintNavigator() {
+// ─── Stack: Engineering tab ───────────────────────────────────────────────────
+const EngStack = createNativeStackNavigator<EngineerEngStackParamList>();
+function EngNavigator() {
   return (
-    <MaintStack.Navigator screenOptions={{ headerShown: false }}>
-      <MaintStack.Screen name="MaintMenu"       component={MaintMenuScreen} />
-      <MaintStack.Screen name="MaintenancePage" component={MaintenancePage} />
-      <MaintStack.Screen name="MaintSchedule"   component={MaintScheduleScreen} />
-      <MaintStack.Screen name="WorkOrders"      component={WorkOrdersScreen} />
-      <MaintStack.Screen name="MaintCosts"      component={MaintCostsScreen} />
-    </MaintStack.Navigator>
+    <EngStack.Navigator screenOptions={{ headerShown: false }}>
+      <EngStack.Screen name="EngMenu"              component={EngineerEngMenuScreen} />
+      <EngStack.Screen name="Production"           component={ProductionMonitorScreen} />
+      <EngStack.Screen name="Consumption"          component={ConsumptionScreen} />
+      <EngStack.Screen name="Warehouse"            component={WarehouseScreen} />
+      <EngStack.Screen name="QualityChecks"        component={QualityChecksScreen} />
+      <EngStack.Screen name="MaintenancePage"      component={MaintenancePage} />
+      <EngStack.Screen name="EngInventory"         component={EngInventoryScreen} />
+      <EngStack.Screen name="MachineHealth"        component={MachineHealthScreen} />
+      <EngStack.Screen name="WorkOrders"           component={WorkOrdersScreen} />
+      <EngStack.Screen name="SpareParts"           component={SparePartsScreen} />
+      <EngStack.Screen name="Lifecycle"            component={LifecycleScreen} />
+      <EngStack.Screen name="ProductionAnalytics"  component={ProductionAnalyticsScreen} />
+      <EngStack.Screen name="QualityTrends"        component={QualityTrendsScreen} />
+      <EngStack.Screen name="TechDocs"             component={TechDocsScreen} />
+      <EngStack.Screen name="Calibration"          component={CalibrationScreen} />
+      <EngStack.Screen name="TransferLog"          component={TransferLogScreen} />
+      <EngStack.Screen name="RawAlerts"            component={RawAlertsScreen} />
+      <EngStack.Screen name="MaintCosts"           component={MaintCostsScreen} />
+      <EngStack.Screen name="Electricity"          component={ElectricityScreen} />
+    </EngStack.Navigator>
   );
 }
 
-// ─── Stack: Machines tab ──────────────────────────────────────────────────────
-const MachStack = createNativeStackNavigator<EngineerMachStackParamList>();
-function MachNavigator() {
+// ─── Stack: AI Tools tab ──────────────────────────────────────────────────────
+const AIStack = createNativeStackNavigator<EngineerAIStackParamList>();
+function AINavigator() {
   return (
-    <MachStack.Navigator screenOptions={{ headerShown: false }}>
-      <MachStack.Screen name="MachMenu"      component={MachMenuScreen} />
-      <MachStack.Screen name="MachineHealth" component={MachineHealthScreen} />
-      <MachStack.Screen name="SpareParts"    component={SparePartsScreen} />
-      <MachStack.Screen name="EngInventory"  component={EngInventoryScreen} />
-      <MachStack.Screen name="Calibration"   component={CalibrationScreen} />
-      <MachStack.Screen name="Lifecycle"     component={LifecycleScreen} />
-      <MachStack.Screen name="TransferLog"   component={TransferLogScreen} />
-    </MachStack.Navigator>
+    <AIStack.Navigator screenOptions={{ headerShown: false }}>
+      <AIStack.Screen name="AIHub"             component={AIHubScreen} />
+      <AIStack.Screen name="Assistant"         component={AssistantScreen} />
+      <AIStack.Screen name="AnomalyDetection"  component={AnomalyDetectionScreen} />
+      <AIStack.Screen name="MaintenanceReport" component={MaintenanceReportScreen} />
+    </AIStack.Navigator>
   );
 }
 
-// ─── Stack: Quality tab ───────────────────────────────────────────────────────
-const QualStack = createNativeStackNavigator<EngineerQualStackParamList>();
-function QualNavigator() {
+// ─── Stack: Personal tab ─────────────────────────────────────────────────────
+const PersonalStack = createNativeStackNavigator<EngineerPersonalStackParamList>();
+function PersonalNavigator() {
   return (
-    <QualStack.Navigator screenOptions={{ headerShown: false }}>
-      <QualStack.Screen name="QualMenu"      component={QualMenuScreen} />
-      <QualStack.Screen name="QualityChecks" component={QualityChecksScreen} />
-      <QualStack.Screen name="QualityTrends" component={QualityTrendsScreen} />
-      <QualStack.Screen name="RawAlerts"     component={RawAlertsScreen} />
-      <QualStack.Screen name="TechDocs"      component={TechDocsScreen} />
-    </QualStack.Navigator>
-  );
-}
-
-// ─── Stack: Profile tab (More menu + sub-screens) ─────────────────────────────
-const ProfileStack = createNativeStackNavigator<EngineerProfileStackParamList>();
-function ProfileNavigator() {
-  return (
-    <ProfileStack.Navigator screenOptions={{ headerShown: false }}>
-      <ProfileStack.Screen name="EngineerMore"  component={EngineerMoreScreen} />
-      <ProfileStack.Screen name="Profile"       component={ProfileScreen} />
-      <ProfileStack.Screen name="AIHub"         component={AIHubScreen} />
-      <ProfileStack.Screen name="Assistant"     component={AssistantScreen} />
-      <ProfileStack.Screen name="Notifications" component={NotificationsScreen} />
-    </ProfileStack.Navigator>
+    <PersonalStack.Navigator screenOptions={{ headerShown: false }}>
+      <PersonalStack.Screen name="PersonalMenu"  component={PersonalMenuScreen} />
+      <PersonalStack.Screen name="Attendance"    component={AttendanceScreen} />
+      <PersonalStack.Screen name="Payroll"       component={PayrollScreen} />
+      <PersonalStack.Screen name="Notifications" component={NotificationsScreen} />
+      <PersonalStack.Screen name="Chat"          component={ChatScreen} />
+    </PersonalStack.Navigator>
   );
 }
 
@@ -136,22 +134,20 @@ export function EngineerTabs() {
         tabBarLabelStyle: { fontSize: 10, fontWeight: '600' },
         tabBarIcon: ({ focused, color }) => {
           const icons: Record<string, [string, string]> = {
-            Dashboard:   ['speedometer',      'speedometer-outline'],
-            Maintenance: ['construct',        'construct-outline'],
-            Machines:    ['hardware-chip',    'hardware-chip-outline'],
-            Quality:     ['shield-checkmark', 'shield-checkmark-outline'],
-            More:        ['ellipsis-horizontal', 'ellipsis-horizontal-outline'],
+            Overview:    ['grid',         'grid-outline'],
+            Engineering: ['construct',    'construct-outline'],
+            AITools:     ['hardware-chip','hardware-chip-outline'],
+            Personal:    ['person',       'person-outline'],
           };
           const [active, inactive] = icons[route.name] ?? ['ellipse', 'ellipse-outline'];
           return <Ionicons name={(focused ? active : inactive) as any} size={22} color={color} />;
         },
       })}
     >
-      <Tab.Screen name="Dashboard"   component={DashNavigator}    options={{ tabBarLabel: 'Dashboard' }}   />
-      <Tab.Screen name="Maintenance" component={MaintNavigator}   options={{ tabBarLabel: 'Maintenance' }} />
-      <Tab.Screen name="Machines"    component={MachNavigator}    options={{ tabBarLabel: 'Machines' }}    />
-      <Tab.Screen name="Quality"     component={QualNavigator}    options={{ tabBarLabel: 'Quality' }}     />
-      <Tab.Screen name="More"        component={ProfileNavigator} options={{ tabBarLabel: 'More' }}        />
+      <Tab.Screen name="Overview"    component={OverviewNavigator} options={{ tabBarLabel: 'Overview'    }} />
+      <Tab.Screen name="Engineering" component={EngNavigator}      options={{ tabBarLabel: 'Engineering' }} />
+      <Tab.Screen name="AITools"     component={AINavigator}       options={{ tabBarLabel: 'AI Tools'    }} />
+      <Tab.Screen name="Personal"    component={PersonalNavigator} options={{ tabBarLabel: 'Personal'    }} />
     </Tab.Navigator>
   );
 }

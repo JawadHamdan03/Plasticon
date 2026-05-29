@@ -61,42 +61,51 @@ export type WorkerPersonalStackParamList = {
 
 // ─── Engineer tabs ────────────────────────────────────────────────────────────
 export type EngineerTabParamList = {
-  Dashboard:   undefined;
-  Maintenance: undefined;
-  Machines:    undefined;
-  Quality:     undefined;
-  More:        undefined;
+  Overview:    undefined;
+  Engineering: undefined;
+  AITools:     undefined;
+  Personal:    undefined;
 };
 
-export type EngineerDashStackParamList = {
-  EngineerDash:      undefined;
+export type EngineerOverviewStackParamList = {
+  EngineerDash: undefined;
+};
+
+export type EngineerEngStackParamList = {
+  EngMenu:             undefined;
+  Production:          undefined;
+  Consumption:         undefined;
+  Warehouse:           undefined;
+  QualityChecks:       undefined;
+  MaintenancePage:     undefined;
+  EngInventory:        undefined;
+  MachineHealth:       undefined;
+  WorkOrders:          undefined;
+  SpareParts:          undefined;
+  Lifecycle:           undefined;
   ProductionAnalytics: undefined;
+  QualityTrends:       undefined;
+  TechDocs:            undefined;
+  Calibration:         undefined;
+  TransferLog:         undefined;
+  RawAlerts:           undefined;
+  MaintCosts:          undefined;
+  Electricity:         undefined;
 };
 
-export type EngineerMaintStackParamList = {
-  MaintMenu:        undefined;
-  MaintenancePage:  undefined;
-  MaintSchedule:    undefined;
-  WorkOrders:       undefined;
-  MaintCosts:       undefined;
+export type EngineerAIStackParamList = {
+  AIHub:             undefined;
+  Assistant:         undefined;
+  AnomalyDetection:  undefined;
+  MaintenanceReport: undefined;
 };
 
-export type EngineerMachStackParamList = {
-  MachMenu:      undefined;
-  MachineHealth: undefined;
-  SpareParts:    undefined;
-  EngInventory:  undefined;
-  Calibration:   undefined;
-  Lifecycle:     undefined;
-  TransferLog:   undefined;
-};
-
-export type EngineerQualStackParamList = {
-  QualMenu:     undefined;
-  QualityChecks: undefined;
-  QualityTrends: undefined;
-  RawAlerts:    undefined;
-  TechDocs:     undefined;
+export type EngineerPersonalStackParamList = {
+  PersonalMenu:  undefined;
+  Attendance:    undefined;
+  Payroll:       undefined;
+  Notifications: undefined;
+  Chat:          undefined;
 };
 
 // ─── Accountant tabs ──────────────────────────────────────────────────────────
@@ -244,15 +253,6 @@ export type AdminMoreStackParamList = {
   ShiftHandover:     undefined;
   WorkerCoaching:    undefined;
   Profile:           undefined;
-};
-
-// Engineer — stack inside Profile tab (More menu)
-export type EngineerProfileStackParamList = {
-  EngineerMore:  undefined;
-  Profile:       undefined;
-  AIHub:         undefined;
-  Assistant:     undefined;
-  Notifications: undefined;
 };
 
 // ─── Navigation prop helpers ──────────────────────────────────────────────────

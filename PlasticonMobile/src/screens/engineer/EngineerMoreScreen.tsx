@@ -3,14 +3,10 @@ import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-nati
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { ScreenHeader } from '../../components';
 import { colors, radius, shadow, spacing, typography } from '../../theme';
-import { EngineerProfileStackParamList } from '../../navigation/types';
 
-type Nav = NativeStackNavigationProp<EngineerProfileStackParamList>;
-
-const ITEMS: { label: string; icon: string; screen: keyof EngineerProfileStackParamList; color: string }[] = [
+const ITEMS: { label: string; icon: string; screen: string; color: string }[] = [
   { label: 'My Profile',     icon: 'person-circle',    screen: 'Profile',       color: colors.primary },
   { label: 'AI Tools',       icon: 'hardware-chip',    screen: 'AIHub',         color: '#7C3AED' },
   { label: 'Notifications',  icon: 'notifications',    screen: 'Notifications', color: colors.warning },
@@ -29,7 +25,7 @@ function MenuItem({ label, icon, color, onPress }: { label: string; icon: string
 }
 
 export function EngineerMoreScreen() {
-  const navigation = useNavigation<Nav>();
+  const navigation = useNavigation<any>();
   return (
     <SafeAreaView style={styles.safe}>
       <ScreenHeader title="More" />
