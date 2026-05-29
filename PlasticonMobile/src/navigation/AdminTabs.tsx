@@ -1,16 +1,105 @@
 import React from 'react';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Ionicons } from '@expo/vector-icons';
-import { colors } from '../theme';
-import { AdminTabParamList } from './types';
-import { PlaceholderScreen } from '../screens/shared/PlaceholderScreen';
+import { createBottomTabNavigator }   from '@react-navigation/bottom-tabs';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { Ionicons }                   from '@expo/vector-icons';
+import { colors }                     from '../theme';
 
-const Dashboard  = () => <PlaceholderScreen title="Admin Dashboard" icon="home-outline"        />;
-const People     = () => <PlaceholderScreen title="People"          icon="people-outline"      />;
-const Operations = () => <PlaceholderScreen title="Operations"      icon="settings-outline"    />;
-const Audit      = () => <PlaceholderScreen title="Audit"           icon="shield-outline"      />;
-const Profile    = () => <PlaceholderScreen title="Profile"         icon="person-outline"      />;
+import {
+  AdminTabParamList,
+  AdminDashStackParamList,
+  AdminPeopleStackParamList,
+  AdminOpsStackParamList,
+  AdminAuditStackParamList,
+} from './types';
 
+// ─── Dashboard screens ────────────────────────────────────────────────────────
+import { AdminDashScreen }      from '../screens/admin/AdminDashScreen';
+import { AdminAnalyticsScreen } from '../screens/admin/AdminAnalyticsScreen';
+
+// ─── People screens ───────────────────────────────────────────────────────────
+import { PeopleMenuScreen }        from '../screens/admin/PeopleMenuScreen';
+import { UsersAdminScreen }        from '../screens/admin/UsersAdminScreen';
+import { AttendanceAdminScreen }   from '../screens/admin/AttendanceAdminScreen';
+import { PayrollAdminScreen }      from '../screens/admin/PayrollAdminScreen';
+import { WorkerRecordsScreen }     from '../screens/admin/WorkerRecordsScreen';
+import { EngineerOverviewScreen }  from '../screens/admin/EngineerOverviewScreen';
+import { RegistrationsScreen }     from '../screens/admin/RegistrationsScreen';
+
+// ─── Operations screens ───────────────────────────────────────────────────────
+import { OpsMenuScreen }       from '../screens/admin/OpsMenuScreen';
+import { MachinesAdminScreen } from '../screens/admin/MachinesAdminScreen';
+import { ShiftsAdminScreen }   from '../screens/admin/ShiftsAdminScreen';
+import { ElectricityScreen }   from '../screens/admin/ElectricityScreen';
+import { SettingsAdminScreen } from '../screens/admin/SettingsAdminScreen';
+
+// ─── Audit screens ────────────────────────────────────────────────────────────
+import { AuditMenuScreen }  from '../screens/admin/AuditMenuScreen';
+import { AuditLogsScreen }  from '../screens/admin/AuditLogsScreen';
+import { AdminSnapsScreen } from '../screens/admin/AdminSnapsScreen';
+import { AIHubScreen }      from '../screens/shared/AIHubScreen';
+import { AssistantScreen }  from '../screens/shared/AssistantScreen';
+import { NotificationsScreen } from '../screens/shared/NotificationsScreen';
+
+// ─── Profile ─────────────────────────────────────────────────────────────────
+import { ProfileScreen } from '../screens/shared/ProfileScreen';
+
+// ─── Stack: Dashboard tab ─────────────────────────────────────────────────────
+const DashStack = createNativeStackNavigator<AdminDashStackParamList>();
+function DashNavigator() {
+  return (
+    <DashStack.Navigator screenOptions={{ headerShown: false }}>
+      <DashStack.Screen name="AdminDash"  component={AdminDashScreen} />
+      <DashStack.Screen name="Analytics"  component={AdminAnalyticsScreen} />
+    </DashStack.Navigator>
+  );
+}
+
+// ─── Stack: People tab ────────────────────────────────────────────────────────
+const PeopleStack = createNativeStackNavigator<AdminPeopleStackParamList>();
+function PeopleNavigator() {
+  return (
+    <PeopleStack.Navigator screenOptions={{ headerShown: false }}>
+      <PeopleStack.Screen name="PeopleMenu"       component={PeopleMenuScreen} />
+      <PeopleStack.Screen name="Users"            component={UsersAdminScreen} />
+      <PeopleStack.Screen name="AttendanceAdmin"  component={AttendanceAdminScreen} />
+      <PeopleStack.Screen name="PayrollAdmin"     component={PayrollAdminScreen} />
+      <PeopleStack.Screen name="WorkerRecords"    component={WorkerRecordsScreen} />
+      <PeopleStack.Screen name="EngineerOverview" component={EngineerOverviewScreen} />
+      <PeopleStack.Screen name="Registrations"    component={RegistrationsScreen} />
+    </PeopleStack.Navigator>
+  );
+}
+
+// ─── Stack: Operations tab ────────────────────────────────────────────────────
+const OpsStack = createNativeStackNavigator<AdminOpsStackParamList>();
+function OpsNavigator() {
+  return (
+    <OpsStack.Navigator screenOptions={{ headerShown: false }}>
+      <OpsStack.Screen name="OpsMenu"     component={OpsMenuScreen} />
+      <OpsStack.Screen name="Machines"    component={MachinesAdminScreen} />
+      <OpsStack.Screen name="Shifts"      component={ShiftsAdminScreen} />
+      <OpsStack.Screen name="Electricity" component={ElectricityScreen} />
+      <OpsStack.Screen name="Settings"    component={SettingsAdminScreen} />
+    </OpsStack.Navigator>
+  );
+}
+
+// ─── Stack: Audit tab ─────────────────────────────────────────────────────────
+const AuditStack = createNativeStackNavigator<AdminAuditStackParamList>();
+function AuditNavigator() {
+  return (
+    <AuditStack.Navigator screenOptions={{ headerShown: false }}>
+      <AuditStack.Screen name="AuditMenu"     component={AuditMenuScreen} />
+      <AuditStack.Screen name="AuditLogs"     component={AuditLogsScreen} />
+      <AuditStack.Screen name="AdminSnaps"    component={AdminSnapsScreen} />
+      <AuditStack.Screen name="AIHub"         component={AIHubScreen} />
+      <AuditStack.Screen name="Assistant"     component={AssistantScreen} />
+      <AuditStack.Screen name="Notifications" component={NotificationsScreen} />
+    </AuditStack.Navigator>
+  );
+}
+
+// ─── Bottom Tabs ──────────────────────────────────────────────────────────────
 const Tab = createBottomTabNavigator<AdminTabParamList>();
 
 export function AdminTabs() {
@@ -41,11 +130,11 @@ export function AdminTabs() {
         },
       })}
     >
-      <Tab.Screen name="Dashboard"  component={Dashboard}  options={{ tabBarLabel: 'Dashboard' }}  />
-      <Tab.Screen name="People"     component={People}     options={{ tabBarLabel: 'People' }}     />
-      <Tab.Screen name="Operations" component={Operations} options={{ tabBarLabel: 'Operations' }} />
-      <Tab.Screen name="Audit"      component={Audit}      options={{ tabBarLabel: 'Audit' }}      />
-      <Tab.Screen name="Profile"    component={Profile}    options={{ tabBarLabel: 'Profile' }}    />
+      <Tab.Screen name="Dashboard"  component={DashNavigator}    options={{ tabBarLabel: 'Dashboard' }}  />
+      <Tab.Screen name="People"     component={PeopleNavigator}  options={{ tabBarLabel: 'People' }}     />
+      <Tab.Screen name="Operations" component={OpsNavigator}     options={{ tabBarLabel: 'Operations' }} />
+      <Tab.Screen name="Audit"      component={AuditNavigator}   options={{ tabBarLabel: 'Audit' }}      />
+      <Tab.Screen name="Profile"    component={ProfileScreen}    options={{ tabBarLabel: 'Profile' }}    />
     </Tab.Navigator>
   );
 }

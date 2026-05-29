@@ -153,9 +153,12 @@ export type AdminOpsStackParamList = {
 };
 
 export type AdminAuditStackParamList = {
-  AuditMenu:   undefined;
-  AuditLogs:   undefined;
-  AdminSnaps:  undefined;
+  AuditMenu:     undefined;
+  AuditLogs:     undefined;
+  AdminSnaps:    undefined;
+  AIHub:         undefined;
+  Assistant:     undefined;
+  Notifications: undefined;
 };
 
 // Engineer — stack inside Profile tab (More menu)
