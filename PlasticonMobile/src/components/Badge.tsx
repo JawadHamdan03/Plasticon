@@ -47,7 +47,7 @@ const styles = StyleSheet.create({
   },
   text: {
     fontSize: 11,
-    fontWeight: '600',
+    fontWeight: '600' as const,
     letterSpacing: 0.2,
-  } as typeof typography.caption,
+  },
 });

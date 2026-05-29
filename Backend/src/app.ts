@@ -63,6 +63,8 @@ const PORT = Number(process.env.PORT) || 8080;
 const defaultFrontendOrigins = [
   "http://localhost:5173",
   "http://localhost:5174",
+  "http://localhost:8081",  // Expo web dev server
+  "http://localhost:19006", // Expo web (older versions)
 ];
 const configuredFrontendOrigins = (process.env.FRONTEND_ORIGIN ?? "")
   .split(",")
