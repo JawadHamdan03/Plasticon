@@ -4,6 +4,7 @@ import { workerSystemPrompt } from "../prompts/worker.js";
 import { engineerSystemPrompt } from "../prompts/engineer.js";
 import { supervisorSystemPrompt } from "../prompts/supervisor.js";
 import { adminSystemPrompt } from "../prompts/admin.js";
+import { accountantSystemPrompt } from "../prompts/accountant.js";
 import { generalSystemPrompt } from "../prompts/general.js";
 import { runAgent } from "../agent.js";
 import { getProductionContext } from "../services/backendAPI.js";
@@ -12,7 +13,7 @@ const router = Router();
 
 // Keywords that indicate the user is asking about live production/operational data
 const LIVE_DATA_KEYWORDS =
-  /production|shift|electricity|maintenance|incident|summary|report|tonight|صباح|مساء|ليل|إنتاج|صيانة/i;
+  /production|shift|electricity|maintenance|incident|summary|report|tonight|machine|downtime|صباح|مساء|ليل|إنتاج|صيانة|آلة|توقف|كهرباء/i;
 
 // Extract a YYYY-MM-DD date from free text if present
 const DATE_RE = /(\d{4}-\d{2}-\d{2})/;
@@ -22,11 +23,12 @@ const SHIFT_RE = /\b(morning|evening|night|صباح|مساء|ليل)\b/i;
 
 function selectSystemPrompt(role, context) {
   switch ((role ?? "").toLowerCase()) {
-    case "worker":     return workerSystemPrompt(context);
-    case "engineer":   return engineerSystemPrompt(context);
-    case "supervisor": return supervisorSystemPrompt(context);
-    case "admin":      return adminSystemPrompt(context);
-    default:           return generalSystemPrompt();
+    case "worker":      return workerSystemPrompt(context);
+    case "engineer":    return engineerSystemPrompt(context);
+    case "supervisor":  return supervisorSystemPrompt(context);
+    case "admin":       return adminSystemPrompt(context);
+    case "accountant":  return accountantSystemPrompt(context);
+    default:            return generalSystemPrompt();
   }
 }
 
@@ -34,7 +36,8 @@ function selectSystemPrompt(role, context) {
 // fetch live backend data and prepend it to the message so GPT-4o has real numbers.
 async function enrichMessageWithLiveData(message, role, context) {
   const needsLiveData =
-    (role === "admin" || role === "supervisor") && LIVE_DATA_KEYWORDS.test(message);
+    (role === "admin" || role === "supervisor" || role === "engineer") &&
+    LIVE_DATA_KEYWORDS.test(message);
 
   if (!needsLiveData) return message;
 

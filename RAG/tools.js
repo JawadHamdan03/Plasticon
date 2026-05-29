@@ -60,9 +60,12 @@ export const searchKnowledgeBase = tool(
   {
     name: "search_knowledge_base",
     description:
-      "Searches the general knowledge base for information from uploaded files. Use this when you need to find relevant context from the indexed corpus.",
+      "Searches the Plasticon factory knowledge base for information from uploaded documents. " +
+      "Use this for: machine manuals, technical procedures, raw material datasheets, safety guidelines, " +
+      "maintenance SOPs, quality standards, factory policies, and any document the user or admin has uploaded. " +
+      "Always search before answering questions about factory processes, equipment, or stored documents.",
     schema: z.object({
-      query: z.string().describe("The search query to look up in the knowledge base"),
+      query: z.string().describe("The search query — be specific about the machine, material, or procedure you need"),
     }),
   }
 );
