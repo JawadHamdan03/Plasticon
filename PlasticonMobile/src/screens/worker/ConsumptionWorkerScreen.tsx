@@ -25,9 +25,16 @@ export function ConsumptionWorkerScreen() {
 
   const load = useCallback(async () => {
     try {
-      const res = await api.get<ConsumptionRecord[] | { data: ConsumptionRecord[]; records?: ConsumptionRecord[] }>('/production/consumption');
-      const list = Array.isArray(res) ? res : (res.records ?? res.data ?? []);
-      setRecords(list);
+      const res = await api.get<{ data: { id: number; material_type: string; waste_kg: number; reason?: string; created_at: string }[] }>('/worker-tools/material-waste/mine');
+      const rows = res.data ?? [];
+      setRecords(rows.map((r) => ({
+        id:           r.id,
+        materialName: r.material_type,
+        quantity:     r.waste_kg,
+        unit:         'kg',
+        notes:        r.reason,
+        createdAt:    r.created_at,
+      })));
     } catch { setRecords([]); }
     finally { setLoading(false); setRefreshing(false); }
   }, []);

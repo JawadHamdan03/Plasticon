@@ -33,12 +33,17 @@ export function ConsumptionScreen() {
 
   const load = useCallback(async () => {
     try {
-      const res = await api.get<ConsumptionData | ConsumptionRecord[]>('/production/consumption');
-      if (Array.isArray(res)) {
-        setData({ records: res });
-      } else {
-        setData(res);
-      }
+      const res = await api.get<{ data: { id: number; type: string; quantity: number; material?: { name: string; unit: string }; createdAt: string }[] }>('/inventory/transactions/all');
+      const rows = (res.data ?? []).filter((r) => r.type === 'OUT');
+      setData({
+        records: rows.map((r) => ({
+          id:           String(r.id),
+          materialName: r.material?.name ?? `Material #${r.id}`,
+          quantity:     r.quantity,
+          unit:         r.material?.unit ?? 'units',
+          date:         r.createdAt,
+        })),
+      });
     } catch {
       setData({ records: [] });
     } finally {

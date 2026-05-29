@@ -28,7 +28,7 @@ export function ProductionMonitorScreen() {
 
   const load = useCallback(async () => {
     try {
-      const res = await api.get<ProductionRecord[] | { records: ProductionRecord[]; total?: number; data?: ProductionRecord[] }>('/production?limit=50');
+      const res = await api.get<ProductionRecord[] | { records: ProductionRecord[]; total?: number; data?: ProductionRecord[] }>('/production/all?limit=50');
       const list = Array.isArray(res) ? res : (res.records ?? res.data ?? []);
       setRecords(list);
       setTotal(Array.isArray(res) ? list.length : ((res as any).total ?? list.length));

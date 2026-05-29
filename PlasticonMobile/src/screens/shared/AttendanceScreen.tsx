@@ -86,7 +86,7 @@ export function AttendanceScreen() {
 
   const load = useCallback(async () => {
     try {
-      const res = await api.get<{ records: AttendanceRecord[] }>('/attendance/my?limit=30');
+      const res = await api.get<{ records: AttendanceRecord[] }>('/attendance/me?limit=30');
       const recs = res.records ?? [];
       const todayDate = new Date().toDateString();
       const todayRec = recs.find((r) =>

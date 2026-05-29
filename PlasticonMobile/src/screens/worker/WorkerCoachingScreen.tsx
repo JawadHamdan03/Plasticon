@@ -36,16 +36,26 @@ export function WorkerCoachingScreen() {
     const fetchStats = async () => {
       try {
         const [att, prod] = await Promise.allSettled([
-          api.get<{ summary: { presentDays: number; lateDays: number; totalDays: number } }>('/attendance/my/summary'),
-          api.get<{ total: number; avgPerDay: number }>('/production/my/stats'),
+          api.get<{ records: { status: string; checkIn: string | null }[] }>('/attendance/me?limit=60'),
+          api.get<{ records: { quantity?: number; totalPieces?: number; createdAt: string }[]; total: number }>('/production/me?limit=60'),
         ]);
-        const attData  = att.status  === 'fulfilled' ? att.value.summary  : null;
+        const attRecs  = att.status  === 'fulfilled' ? att.value.records  : [];
         const prodData = prod.status === 'fulfilled' ? prod.value         : null;
+
+        const presentDays = attRecs.filter((r) => r.status === 'PRESENT' || r.status === 'LATE').length;
+        const lateDays    = attRecs.filter((r) => r.status === 'LATE').length;
+        const totalDays   = attRecs.length || 1;
+
+        const prodTotal   = prodData?.total ?? 0;
+        const uniqueDays  = new Set(
+          (prodData?.records ?? []).map((r) => new Date(r.createdAt).toDateString())
+        ).size || 1;
+
         setStats({
-          attendanceRate:     attData ? Math.round((attData.presentDays / (attData.totalDays || 1)) * 100) : 0,
-          lateCount:          attData?.lateDays ?? 0,
-          totalProduction:    prodData?.total ?? 0,
-          avgDailyProduction: Math.round(prodData?.avgPerDay ?? 0),
+          attendanceRate:     Math.round((presentDays / totalDays) * 100),
+          lateCount:          lateDays,
+          totalProduction:    prodTotal,
+          avgDailyProduction: Math.round(prodTotal / uniqueDays),
         });
       } finally {
         setStatsLoading(false);

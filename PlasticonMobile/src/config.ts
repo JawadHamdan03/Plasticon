@@ -9,4 +9,4 @@
 // Your current local IP: 192.168.1.15
 // Run `ipconfig` (Windows) or `ifconfig` (Mac) to find it if it changes.
 export const API_BASE = 'http://192.168.1.15:8080';
-export const RAG_BASE = 'http://192.168.1.15:3001';
+export const RAG_BASE = 'http://192.168.1.15:3001/api';

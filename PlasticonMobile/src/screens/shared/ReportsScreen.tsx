@@ -50,10 +50,33 @@ export function ReportsScreen() {
 
   const load = useCallback(async () => {
     try {
-      const res = await api.get<ReportSummary>('/reports/my-summary');
-      setReport(res);
+      const [att, prod, shiftRes] = await Promise.allSettled([
+        api.get<{ records: { status: string }[] }>('/attendance/me?limit=60'),
+        api.get<{ records: { quantity?: number; totalPieces?: number }[]; total: number }>('/production/me?limit=60'),
+        api.get<{ shifts: { endTime?: string }[] }>('/shifts?limit=10'),
+      ]);
+
+      const attRecs  = att.status    === 'fulfilled' ? att.value.records         : [];
+      const prodData = prod.status   === 'fulfilled' ? prod.value                : null;
+      const shiftList= shiftRes.status === 'fulfilled' ? shiftRes.value.shifts   : [];
+
+      const present   = attRecs.filter((r) => r.status === 'PRESENT').length;
+      const late      = attRecs.filter((r) => r.status === 'LATE').length;
+      const absent    = attRecs.filter((r) => r.status === 'ABSENT').length;
+
+      const prodRecs    = prodData?.records ?? [];
+      const totalPieces = prodRecs.reduce((s, r) => s + (r.totalPieces ?? r.quantity ?? 0), 0);
+
+      const now       = new Date();
+      const upcoming  = shiftList.filter((s) => s.endTime && new Date(s.endTime) > now).length;
+      const completed = shiftList.filter((s) => s.endTime && new Date(s.endTime) <= now).length;
+
+      setReport({
+        attendance: { present, absent, late, totalDays: attRecs.length },
+        production: { totalPieces, totalLogs: prodData?.total ?? prodRecs.length, topMachine: '—' },
+        shifts:     { upcoming, completed },
+      });
     } catch {
-      // fallback: use empty report
       setReport({
         attendance: { present: 0, absent: 0, late: 0, totalDays: 0 },
         production: { totalPieces: 0, totalLogs: 0, topMachine: '—' },

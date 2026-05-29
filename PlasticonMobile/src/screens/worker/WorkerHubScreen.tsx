@@ -44,8 +44,8 @@ export function WorkerHubScreen() {
     try {
       const [shifts, attendance, production] = await Promise.allSettled([
         api.get<{ shifts: { shiftName?: string; name?: string }[] }>('/shifts?limit=1'),
-        api.get<{ records: { checkIn: string | null; checkOut: string | null }[] }>('/attendance/my?limit=1'),
-        api.get<{ records: { id: number; productName?: string; totalPieces?: number; createdAt: string }[]; total: number }>('/production/my?limit=5'),
+        api.get<{ records: { checkIn: string | null; checkOut: string | null }[] }>('/attendance/me?limit=1'),
+        api.get<{ records: { id: number; productName?: string; totalPieces?: number; createdAt: string }[]; total: number }>('/production/me?limit=5'),
       ]);
 
       const shift0  = shifts.status      === 'fulfilled' ? shifts.value.shifts?.[0]              : null;

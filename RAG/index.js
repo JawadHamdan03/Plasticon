@@ -12,8 +12,22 @@ import materialAnalysisRouter from "./routes/materialAnalysis.js";
 import productionSummaryRouter from "./routes/productionSummary.js";
 
 const app = express();
+const ragAllowedOrigins = (process.env.FRONTEND_ORIGIN ?? "")
+  .split(",").map((o) => o.trim()).filter(Boolean);
+if (!ragAllowedOrigins.length) {
+  ragAllowedOrigins.push(
+    "http://localhost:5173",
+    "http://localhost:5174",
+    "http://localhost:8081",
+    "http://localhost:8082",
+    "http://localhost:19006",
+  );
+}
 app.use(cors({
-  origin: process.env.FRONTEND_ORIGIN || "http://localhost:5173",
+  origin(origin, cb) {
+    if (!origin || ragAllowedOrigins.includes(origin)) return cb(null, true);
+    cb(new Error(`RAG: origin ${origin} not allowed`));
+  },
   credentials: true,
 }));
 app.use(express.json());

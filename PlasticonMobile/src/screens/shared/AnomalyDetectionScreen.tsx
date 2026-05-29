@@ -62,8 +62,22 @@ export function AnomalyDetectionScreen() {
 
   const loadAnomalies = useCallback(async () => {
     try {
-      const res = await api.get<Anomaly[] | { anomalies: Anomaly[]; data: Anomaly[] }>('/machine-health/anomalies');
-      setAnomalies(Array.isArray(res) ? res : (res.anomalies ?? res.data ?? []));
+      const res = await api.get<
+        { records: { id: number; operationalStatus: string; notes?: string; efficiencyRating?: number; downtimePercentage?: number; machine?: { name?: string }; recordedAt: string }[] } |
+        { id: number; operationalStatus: string; notes?: string; efficiencyRating?: number; downtimePercentage?: number; machine?: { name?: string }; recordedAt: string }[]
+      >('/machine-health');
+      const raw = Array.isArray(res) ? res : ((res as any).records ?? []);
+      const issues = raw.filter((r: any) => r.operationalStatus !== 'OPERATIONAL');
+      setAnomalies(issues.map((r: any) => ({
+        id:          String(r.id),
+        type:        r.operationalStatus,
+        description: r.notes ?? `Efficiency: ${r.efficiencyRating ?? 0}% · Downtime: ${r.downtimePercentage ?? 0}%`,
+        severity:    r.operationalStatus === 'BROKEN'      ? 'critical' :
+                     r.operationalStatus === 'MAINTENANCE' ? 'high'     :
+                     r.operationalStatus === 'OFFLINE'     ? 'medium'   : 'low',
+        machine:    r.machine?.name,
+        detectedAt: r.recordedAt,
+      })));
     } catch {
       setAnomalies([]);
     } finally {

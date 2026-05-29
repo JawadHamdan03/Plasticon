@@ -51,8 +51,8 @@ export function PayrollScreen() {
   const load = useCallback(async () => {
     try {
       const [mo, da] = await Promise.allSettled([
-        api.get<{ payroll: MonthlyPayroll[] }>('/payroll/my?limit=1'),
-        api.get<{ records: DailyPayrollRecord[] }>('/payroll/my/daily?limit=31'),
+        api.get<{ payroll: MonthlyPayroll[] }>('/payroll/me?limit=1'),
+        api.get<{ records: DailyPayrollRecord[] }>('/payroll/daily/me?limit=31'),
       ]);
       if (mo.status === 'fulfilled') setMonthly(mo.value.payroll?.[0] ?? null);
       if (da.status === 'fulfilled') setDaily(da.value.records ?? []);

@@ -153,7 +153,7 @@ export function ProductionScreen() {
 
   const load = useCallback(async () => {
     try {
-      const res = await api.get<{ records: ProductionRecord[]; total: number }>('/production/my?limit=30');
+      const res = await api.get<{ records: ProductionRecord[]; total: number }>('/production/me?limit=30');
       setRecords(res.records ?? []);
       setTotal(res.total ?? 0);
     } catch {

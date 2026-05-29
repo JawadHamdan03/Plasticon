@@ -67,7 +67,7 @@ export function BankReconciliationScreen() {
 
   const load = useCallback(async () => {
     try {
-      const res = await api.get<{ reconciliations: Reconciliation[] }>('/bank-reconciliation?limit=20');
+      const res = await api.get<{ reconciliations: Reconciliation[] }>('/bank-reconciliations?limit=20');
       setRecords(res.reconciliations ?? []);
     } finally {
       setLoading(false);

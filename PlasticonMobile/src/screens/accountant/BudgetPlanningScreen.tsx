@@ -63,7 +63,7 @@ export function BudgetPlanningScreen() {
 
   const load = useCallback(async () => {
     try {
-      const res = await api.get<{ budgets?: BudgetPlan[]; plans?: BudgetPlan[] }>('/budget-plans?limit=20');
+      const res = await api.get<{ budgets?: BudgetPlan[]; plans?: BudgetPlan[] }>('/budgets?limit=20');
       setPlans(res.budgets ?? res.plans ?? []);
     } finally {
       setLoading(false);

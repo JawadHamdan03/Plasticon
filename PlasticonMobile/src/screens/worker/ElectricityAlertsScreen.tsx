@@ -32,7 +32,7 @@ export function ElectricityAlertsScreen() {
 
   const load = useCallback(async () => {
     try {
-      const res = await api.get<ElecAlert[] | { data: ElecAlert[]; alerts?: ElecAlert[] }>('/electricity/alerts');
+      const res = await api.get<ElecAlert[] | { data: ElecAlert[]; alerts?: ElecAlert[] }>('/worker-tools/electricity-anomaly-alerts/mine');
       const list = Array.isArray(res) ? res : (res.alerts ?? res.data ?? []);
       setAlerts(list);
     } catch { setAlerts([]); }
