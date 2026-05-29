@@ -155,6 +155,15 @@ export type AdminAuditStackParamList = {
   AdminSnaps:  undefined;
 };
 
+// Engineer — stack inside Profile tab (More menu)
+export type EngineerProfileStackParamList = {
+  EngineerMore:  undefined;
+  Profile:       undefined;
+  AIHub:         undefined;
+  Assistant:     undefined;
+  Notifications: undefined;
+};
+
 // ─── Navigation prop helpers ──────────────────────────────────────────────────
 export type AuthNavProp = NativeStackNavigationProp<AuthStackParamList>;
 
