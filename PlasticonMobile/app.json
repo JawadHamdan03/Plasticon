@@ -1,0 +1,20 @@
+{
+  "expo": {
+    "name": "Plasticon",
+    "slug": "plasticon-mobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.plasticon.mobile"
+    },
+    "android": {
+      "package": "com.plasticon.mobile",
+      "adaptiveIcon": {
+        "backgroundColor": "#0D1321"
+      }
+    }
+  }
+}
