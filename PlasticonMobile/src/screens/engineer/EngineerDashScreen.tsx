@@ -57,21 +57,28 @@ export function EngineerDashScreen() {
 
   const load = useCallback(async () => {
     try {
-      const [machines, maint, quality] = await Promise.allSettled([
-        api.get<{ machines: { status: string }[] }>('/machines'),
-        api.get<{ records: DashData['recentMaint'] }>('/maintenance?limit=5'),
-        api.get<{ summary?: { passRate?: number } }>('/quality-checks/summary'),
+      const [machines, maint] = await Promise.allSettled([
+        api.get<any>('/machines'),
+        api.get<any>('/maintenance?limit=5'),
       ]);
-      const mList  = machines.status  === 'fulfilled' ? machines.value.machines  : [];
-      const mRecs  = maint.status     === 'fulfilled' ? maint.value.records      : [];
-      const qSum   = quality.status   === 'fulfilled' ? quality.value.summary    : null;
+
+      // Both endpoints return plain arrays or wrapped objects — handle both shapes
+      const rawM  = machines.status === 'fulfilled' ? machines.value : [];
+      const mList: { status: string }[] = Array.isArray(rawM)
+        ? rawM
+        : (rawM?.machines ?? rawM?.data ?? []);
+
+      const rawR  = maint.status === 'fulfilled' ? maint.value : [];
+      const mRecs: DashData['recentMaint'] = Array.isArray(rawR)
+        ? rawR
+        : (rawR?.records ?? rawR?.data ?? []);
 
       setData({
         machinesTotal:   mList.length,
         machinesOp:      mList.filter((m) => m.status === 'OPERATIONAL').length,
-        openMaintenance: mRecs.filter((r) => r.status !== 'COMPLETED').length,
-        qualityPassRate: qSum?.passRate ?? 0,
-        recentMaint:     mRecs,
+        openMaintenance: (mRecs ?? []).filter((r) => r.status !== 'COMPLETED').length,
+        qualityPassRate: 0,
+        recentMaint:     mRecs ?? [],
       });
     } finally {
       setLoading(false);

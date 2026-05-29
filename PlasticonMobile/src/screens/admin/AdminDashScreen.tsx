@@ -39,10 +39,10 @@ export function AdminDashScreen() {
   useEffect(() => { void load(); }, [load]);
 
   const shortcuts = [
-    { icon: 'people',       label: 'Users',        color: colors.primary, tab: 'People',     screen: 'Users' },
-    { icon: 'hardware-chip', label: 'Machines',    color: colors.info,    tab: 'Operations', screen: 'Machines' },
-    { icon: 'shield',       label: 'Audit',        color: colors.warning, tab: 'Audit',      screen: 'AuditLogs' },
-    { icon: 'person-add',   label: 'Requests',     color: colors.success, tab: 'People',     screen: 'Registrations' },
+    { icon: 'people',        label: 'Users',     color: colors.primary, tab: 'More',       screen: 'Users' },
+    { icon: 'hardware-chip', label: 'Machines',  color: colors.info,    tab: 'Operations', screen: 'Machines' },
+    { icon: 'shield',        label: 'Audit',     color: colors.warning, tab: 'More',       screen: 'AuditLogs' },
+    { icon: 'person-add',    label: 'Requests',  color: colors.success, tab: 'More',       screen: 'Registrations' },
   ];
 
   return (

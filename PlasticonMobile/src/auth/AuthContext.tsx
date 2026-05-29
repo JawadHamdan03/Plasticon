@@ -32,12 +32,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = useCallback(async (email: string, password: string) => {
     const data = await api.post<AuthResponse>('/auth/login', { email, password });
 
+    // Backend returns `name` not `fullName`, and no userId — decode JWT payload for id
+    let jwtId = 0;
+    try {
+      const payload = data.token.split('.')[1];
+      const decoded = JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/')));
+      jwtId = decoded.id ?? 0;
+    } catch { /* keep 0 */ }
+
     const restored: User = {
-      id:         data.userId,
-      email:      data.email,
-      username:   data.username,
-      fullName:   data.fullName,
-      role:       data.role,
+      id:       data.userId ?? jwtId,
+      email:    data.email,
+      username: data.username ?? data.email.split('@')[0],
+      fullName: data.fullName ?? data.name ?? data.email,
+      role:     data.role,
     };
 
     await saveToken(data.token);

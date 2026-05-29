@@ -140,7 +140,7 @@ export function EngineerTabs() {
             Maintenance: ['construct',        'construct-outline'],
             Machines:    ['hardware-chip',    'hardware-chip-outline'],
             Quality:     ['shield-checkmark', 'shield-checkmark-outline'],
-            Profile:     ['ellipsis-horizontal', 'ellipsis-horizontal-outline'],
+            More:        ['ellipsis-horizontal', 'ellipsis-horizontal-outline'],
           };
           const [active, inactive] = icons[route.name] ?? ['ellipse', 'ellipse-outline'];
           return <Ionicons name={(focused ? active : inactive) as any} size={22} color={color} />;
@@ -151,7 +151,7 @@ export function EngineerTabs() {
       <Tab.Screen name="Maintenance" component={MaintNavigator}   options={{ tabBarLabel: 'Maintenance' }} />
       <Tab.Screen name="Machines"    component={MachNavigator}    options={{ tabBarLabel: 'Machines' }}    />
       <Tab.Screen name="Quality"     component={QualNavigator}    options={{ tabBarLabel: 'Quality' }}     />
-      <Tab.Screen name="Profile"     component={ProfileNavigator} options={{ tabBarLabel: 'More' }}        />
+      <Tab.Screen name="More"        component={ProfileNavigator} options={{ tabBarLabel: 'More' }}        />
     </Tab.Navigator>
   );
 }

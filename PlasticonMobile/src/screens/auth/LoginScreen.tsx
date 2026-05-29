@@ -5,17 +5,24 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TouchableOpacity,
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useAuth } from '../../auth/AuthContext';
 import { Button } from '../../components/Button';
 import { Input }  from '../../components/Input';
+import { AuthStackParamList } from '../../navigation/types';
 import { colors, radius, spacing, typography } from '../../theme';
+
+type Nav = NativeStackNavigationProp<AuthStackParamList>;
 
 export function LoginScreen() {
   const { login } = useAuth();
+  const navigation = useNavigation<Nav>();
 
   const [email,    setEmail]    = useState('');
   const [password, setPassword] = useState('');
@@ -114,6 +121,28 @@ export function LoginScreen() {
             >
               Sign In
             </Button>
+          </View>
+
+          {/* Auth links */}
+          <TouchableOpacity style={styles.forgotRow} onPress={() => navigation.navigate('ForgotPassword')}>
+            <Text style={styles.forgotLink}>Forgot password?</Text>
+          </TouchableOpacity>
+
+          <View style={styles.dividerRow}>
+            <View style={styles.divider} />
+            <Text style={styles.dividerText}>or</Text>
+            <View style={styles.divider} />
+          </View>
+
+          <View style={styles.altRow}>
+            <TouchableOpacity style={styles.altBtn} onPress={() => navigation.navigate('Register')} activeOpacity={0.8}>
+              <Ionicons name="person-add-outline" size={16} color={colors.primary} />
+              <Text style={styles.altBtnText}>Create Account</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.altBtn} onPress={() => navigation.navigate('RequestAccess')} activeOpacity={0.8}>
+              <Ionicons name="shield-checkmark-outline" size={16} color={colors.success} />
+              <Text style={[styles.altBtnText, { color: colors.success }]}>Request Access</Text>
+            </TouchableOpacity>
           </View>
 
           {/* Role legend */}
@@ -248,6 +277,16 @@ const styles = StyleSheet.create({
     marginTop: spacing.sm,
     borderRadius: radius.lg,
   },
+
+  // ── Auth links ────────────────────────────────────────────────────
+  forgotRow:   { alignItems: 'flex-end', marginBottom: spacing.lg },
+  forgotLink:  { ...typography.bodySmall, color: colors.primary, fontWeight: '600' },
+  dividerRow:  { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.md },
+  divider:     { flex: 1, height: 1, backgroundColor: colors.border },
+  dividerText: { ...typography.caption, color: colors.textMuted },
+  altRow:      { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.xl },
+  altBtn:      { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 11, borderRadius: radius.lg, borderWidth: 1.5, borderColor: colors.border, backgroundColor: colors.surfaceAlt },
+  altBtnText:  { fontSize: 13, fontWeight: '700', color: colors.primary },
 
   // ── Role legend ───────────────────────────────────────────────────
   roleLegend: {

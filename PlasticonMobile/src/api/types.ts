@@ -16,12 +16,14 @@ export interface User {
 }
 
 export interface AuthResponse {
-  token: string;
-  email: string;
-  role: UserRole;
-  userId: number;
-  username: string;
-  fullName: string;
+  token:        string;
+  email:        string;
+  role:         UserRole;
+  name?:        string;
+  fullName?:    string;
+  userId?:      number;
+  username?:    string;
+  profileImage?: string;
 }
 
 export interface Machine {

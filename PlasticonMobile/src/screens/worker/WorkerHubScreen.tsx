@@ -127,7 +127,7 @@ export function WorkerHubScreen() {
             icon="time"
             label="Attendance"
             color={colors.success}
-            onPress={() => navigation.navigate('Work', { screen: 'Attendance' })}
+            onPress={() => navigation.navigate('Personal', { screen: 'Attendance' })}
           />
           <QuickAction
             icon="cube-outline"
@@ -139,7 +139,7 @@ export function WorkerHubScreen() {
             icon="cash-outline"
             label="Payroll"
             color={colors.accent}
-            onPress={() => navigation.navigate('Work', { screen: 'Payroll' })}
+            onPress={() => navigation.navigate('Personal', { screen: 'Payroll' })}
           />
           <QuickAction
             icon="chatbubble-ellipses-outline"
@@ -148,17 +148,6 @@ export function WorkerHubScreen() {
             onPress={() => navigation.navigate('AI', { screen: 'Assistant' })}
           />
         </View>
-
-        {/* Snapshots shortcut */}
-        <TouchableOpacity
-          style={styles.snapBanner}
-          onPress={() => navigation.navigate('Snapshots')}
-          activeOpacity={0.8}
-        >
-          <Ionicons name="camera-outline" size={20} color={colors.accent} />
-          <Text style={styles.snapText}>Log machine snapshot</Text>
-          <Ionicons name="chevron-forward" size={16} color={colors.accent} />
-        </TouchableOpacity>
 
         {/* Recent production */}
         <Text style={styles.sectionLabel}>RECENT PRODUCTION</Text>

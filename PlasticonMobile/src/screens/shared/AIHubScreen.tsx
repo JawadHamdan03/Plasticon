@@ -11,6 +11,7 @@ interface AITool {
   title: string;
   description: string;
   screen: string;
+  adminScreen?: string;
   color: string;
   roles: string[];
 }
@@ -30,7 +31,7 @@ const AI_TOOLS: AITool[] = [
     description: 'AI generates a structured shift handover report from your session data.',
     screen: 'ShiftHandover',
     color: colors.accent,
-    roles: ['WORKER', 'ENGINEER'],
+    roles: ['WORKER', 'ENGINEER', 'ADMIN'],
   },
   {
     icon: 'school',
@@ -38,22 +39,24 @@ const AI_TOOLS: AITool[] = [
     description: 'Get personalised performance coaching tips based on your work history.',
     screen: 'WorkerCoaching',
     color: colors.success,
-    roles: ['WORKER'],
+    roles: ['WORKER', 'ADMIN'],
   },
   {
-    icon: 'analytics',
+    icon: 'warning',
     title: 'Anomaly Detection',
     description: 'AI scans recent machine and production data to flag anomalies.',
     screen: 'Assistant',
+    adminScreen: 'AnomalyDetection',
     color: colors.danger,
     roles: ['ENGINEER', 'ADMIN'],
   },
   {
-    icon: 'document-text',
+    icon: 'construct',
     title: 'Maintenance Report',
     description: 'Generate an AI-assisted predictive maintenance report.',
     screen: 'Assistant',
-    color: colors.info,
+    adminScreen: 'MaintenanceReport',
+    color: colors.warning,
     roles: ['ENGINEER', 'ADMIN'],
   },
   {
@@ -61,17 +64,19 @@ const AI_TOOLS: AITool[] = [
     title: 'Invoice Extraction',
     description: 'Extract and structure invoice data automatically with AI.',
     screen: 'Assistant',
+    adminScreen: 'InvoiceExtraction',
     color: colors.roleAccountant,
     roles: ['ACCOUNTANT', 'ADMIN'],
   },
 ];
 
-function ToolCard({ tool }: { tool: AITool }) {
+function ToolCard({ tool, role }: { tool: AITool; role: string }) {
   const navigation = useNavigation<any>();
+  const target = role === 'ADMIN' && tool.adminScreen ? tool.adminScreen : tool.screen;
   return (
     <TouchableOpacity
       style={styles.card}
-      onPress={() => navigation.navigate(tool.screen)}
+      onPress={() => navigation.navigate(target)}
       activeOpacity={0.78}
     >
       <View style={[styles.cardIcon, { backgroundColor: `${tool.color}15` }]}>
@@ -109,7 +114,7 @@ export function AIHubScreen() {
         <Text style={styles.sectionLabel}>AVAILABLE TOOLS</Text>
         <View style={styles.grid}>
           {visibleTools.map((tool) => (
-            <ToolCard key={tool.title} tool={tool} />
+            <ToolCard key={tool.title} tool={tool} role={role} />
           ))}
         </View>
       </ScrollView>

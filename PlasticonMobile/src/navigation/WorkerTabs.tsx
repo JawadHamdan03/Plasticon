@@ -1,39 +1,55 @@
 import React from 'react';
-import { createBottomTabNavigator }    from '@react-navigation/bottom-tabs';
-import { createNativeStackNavigator }  from '@react-navigation/native-stack';
-import { Ionicons }                    from '@expo/vector-icons';
-import { colors }                      from '../theme';
+import { createBottomTabNavigator }   from '@react-navigation/bottom-tabs';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { Ionicons }                   from '@expo/vector-icons';
+import { colors }                     from '../theme';
 
 import {
   WorkerTabParamList,
-  WorkerHomeStackParamList,
+  WorkerOverviewStackParamList,
   WorkerWorkStackParamList,
   WorkerAIStackParamList,
+  WorkerPersonalStackParamList,
 } from './types';
 
-// ─── Screens ──────────────────────────────────────────────────────────────────
-import { WorkerHubScreen }      from '../screens/worker/WorkerHubScreen';
-import { SnapshotsScreen }      from '../screens/worker/SnapshotsScreen';
-import { WorkMenuScreen }       from '../screens/worker/WorkMenuScreen';
-import { ProductionScreen }     from '../screens/worker/ProductionScreen';
-import { AttendanceScreen }     from '../screens/shared/AttendanceScreen';
-import { PayrollScreen }        from '../screens/worker/PayrollScreen';
-import { ReportsScreen }        from '../screens/shared/ReportsScreen';
+// ─── Overview tab ─────────────────────────────────────────────────────────────
+import { WorkerHubScreen }         from '../screens/worker/WorkerHubScreen';
+
+// ─── Work tab ─────────────────────────────────────────────────────────────────
+import { WorkMenuScreen }           from '../screens/worker/WorkMenuScreen';
+import { ProductionScreen }         from '../screens/worker/ProductionScreen';
+import { ConsumptionWorkerScreen }  from '../screens/worker/ConsumptionWorkerScreen';
+import { ReadingsScreen }           from '../screens/worker/ReadingsScreen';
+import { MachineStopsScreen }       from '../screens/worker/MachineStopsScreen';
+import { DailyChecklistScreen }     from '../screens/worker/DailyChecklistScreen';
+import { MaterialWasteScreen }      from '../screens/worker/MaterialWasteScreen';
+import { DailyTargetsScreen }       from '../screens/worker/DailyTargetsScreen';
+import { KaizenIdeasScreen }        from '../screens/worker/KaizenIdeasScreen';
+import { QualityIssuesScreen }      from '../screens/worker/QualityIssuesScreen';
+import { MicroStopsScreen }         from '../screens/worker/MicroStopsScreen';
+import { ElectricityAlertsScreen }  from '../screens/worker/ElectricityAlertsScreen';
+import { ElectricityRecordScreen }  from '../screens/worker/ElectricityRecordScreen';
+
+// ─── AI tab ───────────────────────────────────────────────────────────────────
 import { AIHubScreen }          from '../screens/shared/AIHubScreen';
 import { AssistantScreen }      from '../screens/shared/AssistantScreen';
 import { ShiftHandoverScreen }  from '../screens/worker/ShiftHandoverScreen';
 import { WorkerCoachingScreen } from '../screens/worker/WorkerCoachingScreen';
-import { NotificationsScreen }  from '../screens/shared/NotificationsScreen';
-import { ProfileScreen }        from '../screens/shared/ProfileScreen';
 
-// ─── Stack: Home tab ─────────────────────────────────────────────────────────
-const HomeStack = createNativeStackNavigator<WorkerHomeStackParamList>();
-function HomeNavigator() {
+// ─── Personal tab ─────────────────────────────────────────────────────────────
+import { PersonalMenuScreen }   from '../screens/worker/PersonalMenuScreen';
+import { AttendanceScreen }     from '../screens/shared/AttendanceScreen';
+import { PayrollScreen }        from '../screens/worker/PayrollScreen';
+import { NotificationsScreen }  from '../screens/shared/NotificationsScreen';
+import { ChatScreen }           from '../screens/shared/ChatScreen';
+
+// ─── Stack: Overview tab ─────────────────────────────────────────────────────
+const OverviewStack = createNativeStackNavigator<WorkerOverviewStackParamList>();
+function OverviewNavigator() {
   return (
-    <HomeStack.Navigator screenOptions={{ headerShown: false }}>
-      <HomeStack.Screen name="WorkerHub"  component={WorkerHubScreen} />
-      <HomeStack.Screen name="Snapshots"  component={SnapshotsScreen} />
-    </HomeStack.Navigator>
+    <OverviewStack.Navigator screenOptions={{ headerShown: false }}>
+      <OverviewStack.Screen name="WorkerHub" component={WorkerHubScreen} />
+    </OverviewStack.Navigator>
   );
 }
 
@@ -42,11 +58,19 @@ const WorkStack = createNativeStackNavigator<WorkerWorkStackParamList>();
 function WorkNavigator() {
   return (
     <WorkStack.Navigator screenOptions={{ headerShown: false }}>
-      <WorkStack.Screen name="WorkMenu"   component={WorkMenuScreen} />
-      <WorkStack.Screen name="Production" component={ProductionScreen} />
-      <WorkStack.Screen name="Attendance" component={AttendanceScreen} />
-      <WorkStack.Screen name="Payroll"    component={PayrollScreen} />
-      <WorkStack.Screen name="Reports"    component={ReportsScreen} />
+      <WorkStack.Screen name="WorkMenu"          component={WorkMenuScreen} />
+      <WorkStack.Screen name="Production"        component={ProductionScreen} />
+      <WorkStack.Screen name="Consumption"       component={ConsumptionWorkerScreen} />
+      <WorkStack.Screen name="Readings"          component={ReadingsScreen} />
+      <WorkStack.Screen name="MachineStops"      component={MachineStopsScreen} />
+      <WorkStack.Screen name="DailyChecklist"    component={DailyChecklistScreen} />
+      <WorkStack.Screen name="MaterialWaste"     component={MaterialWasteScreen} />
+      <WorkStack.Screen name="DailyTargets"      component={DailyTargetsScreen} />
+      <WorkStack.Screen name="KaizenIdeas"       component={KaizenIdeasScreen} />
+      <WorkStack.Screen name="QualityIssues"     component={QualityIssuesScreen} />
+      <WorkStack.Screen name="MicroStops"        component={MicroStopsScreen} />
+      <WorkStack.Screen name="ElectricityAlerts" component={ElectricityAlertsScreen} />
+      <WorkStack.Screen name="ElectricityRecord" component={ElectricityRecordScreen} />
     </WorkStack.Navigator>
   );
 }
@@ -61,6 +85,20 @@ function AINavigator() {
       <AIStack.Screen name="ShiftHandover"  component={ShiftHandoverScreen} />
       <AIStack.Screen name="WorkerCoaching" component={WorkerCoachingScreen} />
     </AIStack.Navigator>
+  );
+}
+
+// ─── Stack: Personal tab ─────────────────────────────────────────────────────
+const PersonalStack = createNativeStackNavigator<WorkerPersonalStackParamList>();
+function PersonalNavigator() {
+  return (
+    <PersonalStack.Navigator screenOptions={{ headerShown: false }}>
+      <PersonalStack.Screen name="PersonalMenu"  component={PersonalMenuScreen} />
+      <PersonalStack.Screen name="Attendance"    component={AttendanceScreen} />
+      <PersonalStack.Screen name="Payroll"       component={PayrollScreen} />
+      <PersonalStack.Screen name="Notifications" component={NotificationsScreen} />
+      <PersonalStack.Screen name="Chat"          component={ChatScreen} />
+    </PersonalStack.Navigator>
   );
 }
 
@@ -84,22 +122,20 @@ export function WorkerTabs() {
         tabBarLabelStyle: { fontSize: 10, fontWeight: '600' },
         tabBarIcon: ({ focused, color }) => {
           const icons: Record<string, [string, string]> = {
-            Home:          ['grid',               'grid-outline'],
-            Work:          ['briefcase',          'briefcase-outline'],
-            AI:            ['hardware-chip',      'hardware-chip-outline'],
-            Notifications: ['notifications',      'notifications-outline'],
-            Profile:       ['person',             'person-outline'],
+            Overview: ['grid',         'grid-outline'],
+            Work:     ['briefcase',    'briefcase-outline'],
+            AI:       ['hardware-chip','hardware-chip-outline'],
+            Personal: ['person',       'person-outline'],
           };
           const [active, inactive] = icons[route.name] ?? ['ellipse', 'ellipse-outline'];
           return <Ionicons name={(focused ? active : inactive) as any} size={22} color={color} />;
         },
       })}
     >
-      <Tab.Screen name="Home"          component={HomeNavigator}        options={{ tabBarLabel: 'Home' }}          />
-      <Tab.Screen name="Work"          component={WorkNavigator}        options={{ tabBarLabel: 'My Work' }}       />
-      <Tab.Screen name="AI"            component={AINavigator}          options={{ tabBarLabel: 'AI Hub' }}        />
-      <Tab.Screen name="Notifications" component={NotificationsScreen}  options={{ tabBarLabel: 'Alerts' }}        />
-      <Tab.Screen name="Profile"       component={ProfileScreen}        options={{ tabBarLabel: 'Profile' }}       />
+      <Tab.Screen name="Overview" component={OverviewNavigator} options={{ tabBarLabel: 'Overview' }} />
+      <Tab.Screen name="Work"     component={WorkNavigator}     options={{ tabBarLabel: 'My Work'  }} />
+      <Tab.Screen name="AI"       component={AINavigator}       options={{ tabBarLabel: 'AI Tools' }} />
+      <Tab.Screen name="Personal" component={PersonalNavigator} options={{ tabBarLabel: 'Personal' }} />
     </Tab.Navigator>
   );
 }

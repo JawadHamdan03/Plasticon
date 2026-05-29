@@ -4,34 +4,45 @@ import type { CompositeNavigationProp }    from '@react-navigation/native';
 
 // ─── Auth stack ───────────────────────────────────────────────────────────────
 export type AuthStackParamList = {
-  Login: undefined;
+  Login:          undefined;
+  Register:       undefined;
+  ForgotPassword: undefined;
+  ResetPassword:  { token?: string };
+  VerifyEmail:    { email?: string };
+  RequestAccess:  undefined;
 };
 
-// ─── Worker tabs (root) ───────────────────────────────────────────────────────
+// ─── Worker tabs ─────────────────────────────────────────────────────────────
 export type WorkerTabParamList = {
-  Home:          undefined;
-  Work:          undefined;
-  AI:            undefined;
-  Notifications: undefined;
-  Profile:       undefined;
+  Overview: undefined;
+  Work:     undefined;
+  AI:       undefined;
+  Personal: undefined;
 };
 
-// Worker — stack inside Home tab
-export type WorkerHomeStackParamList = {
+// Worker — Overview tab (dashboard)
+export type WorkerOverviewStackParamList = {
   WorkerHub: undefined;
-  Snapshots: undefined;
 };
 
-// Worker — stack inside Work tab
+// Worker — Work tab (12 features)
 export type WorkerWorkStackParamList = {
-  WorkMenu:   undefined;
-  Production: undefined;
-  Attendance: undefined;
-  Payroll:    undefined;
-  Reports:    undefined;
+  WorkMenu:          undefined;
+  Production:        undefined;
+  Consumption:       undefined;
+  Readings:          undefined;
+  MachineStops:      undefined;
+  DailyChecklist:    undefined;
+  MaterialWaste:     undefined;
+  DailyTargets:      undefined;
+  KaizenIdeas:       undefined;
+  QualityIssues:     undefined;
+  MicroStops:        undefined;
+  ElectricityAlerts: undefined;
+  ElectricityRecord: undefined;
 };
 
-// Worker — stack inside AI tab
+// Worker — AI tab
 export type WorkerAIStackParamList = {
   AIHub:          undefined;
   Assistant:      undefined;
@@ -39,13 +50,22 @@ export type WorkerAIStackParamList = {
   WorkerCoaching: undefined;
 };
 
+// Worker — Personal tab
+export type WorkerPersonalStackParamList = {
+  PersonalMenu:  undefined;
+  Attendance:    undefined;
+  Payroll:       undefined;
+  Notifications: undefined;
+  Chat:          undefined;
+};
+
 // ─── Engineer tabs ────────────────────────────────────────────────────────────
 export type EngineerTabParamList = {
-  Dashboard:     undefined;
-  Maintenance:   undefined;
-  Machines:      undefined;
-  Quality:       undefined;
-  Profile:       undefined;
+  Dashboard:   undefined;
+  Maintenance: undefined;
+  Machines:    undefined;
+  Quality:     undefined;
+  More:        undefined;
 };
 
 export type EngineerDashStackParamList = {
@@ -120,45 +140,94 @@ export type AccountantMoreStackParamList = {
   Notifications:       undefined;
 };
 
-// ─── Admin tabs ───────────────────────────────────────────────────────────────
+// ─── Admin tabs (full feature parity) ────────────────────────────────────────
 export type AdminTabParamList = {
-  Dashboard:  undefined;
-  People:     undefined;
-  Operations: undefined;
-  Audit:      undefined;
-  Profile:    undefined;
+  Dashboard:   undefined;
+  Operations:  undefined;
+  Finance:     undefined;
+  Engineering: undefined;
+  More:        undefined;
 };
 
 export type AdminDashStackParamList = {
-  AdminDash:    undefined;
-  Analytics:    undefined;
-};
-
-export type AdminPeopleStackParamList = {
-  PeopleMenu:       undefined;
-  Users:            undefined;
-  AttendanceAdmin:  undefined;
-  PayrollAdmin:     undefined;
-  WorkerRecords:    undefined;
-  EngineerOverview: undefined;
-  Registrations:    undefined;
+  AdminDash: undefined;
+  Analytics: undefined;
 };
 
 export type AdminOpsStackParamList = {
-  OpsMenu:     undefined;
-  Machines:    undefined;
-  Shifts:      undefined;
-  Electricity: undefined;
-  Settings:    undefined;
+  AdminOpsMenu:    undefined;
+  Production:      undefined;
+  Consumption:     undefined;
+  AttendanceAdmin: undefined;
+  PayrollAdmin:    undefined;
+  WorkerHub:       undefined;
+  WorkerRecords:   undefined;
+  Snapshots:       undefined;
+  Electricity:     undefined;
+  Machines:        undefined;
+  Shifts:          undefined;
 };
 
-export type AdminAuditStackParamList = {
-  AuditMenu:     undefined;
-  AuditLogs:     undefined;
-  AdminSnaps:    undefined;
-  AIHub:         undefined;
-  Assistant:     undefined;
-  Notifications: undefined;
+export type AdminFinStackParamList = {
+  AdminFinMenu:        undefined;
+  FinanceDash:         undefined;
+  FinancialReports:    undefined;
+  CostAnalysis:        undefined;
+  BudgetPlanning:      undefined;
+  Invoices:            undefined;
+  CustomerReceivables: undefined;
+  SupplierPayables:    undefined;
+  Expenses:            undefined;
+  BankReconciliation:  undefined;
+  TaxCompliance:       undefined;
+  Suppliers:           undefined;
+  PartsPricing:        undefined;
+  ApprovalWorkflows:   undefined;
+  EmployeePerformance: undefined;
+  Warehouse:           undefined;
+  Inventory:           undefined;
+  Purchases:           undefined;
+  Sales:               undefined;
+  Reports:             undefined;
+};
+
+export type AdminEngStackParamList = {
+  AdminEngMenu:        undefined;
+  Maintenance:         undefined;
+  MaintSchedule:       undefined;
+  WorkOrders:          undefined;
+  MaintCosts:          undefined;
+  MachineHealth:       undefined;
+  SpareParts:          undefined;
+  EngInventory:        undefined;
+  Calibration:         undefined;
+  Lifecycle:           undefined;
+  TransferLog:         undefined;
+  QualityChecks:       undefined;
+  QualityTrends:       undefined;
+  RawAlerts:           undefined;
+  TechDocs:            undefined;
+  ProductionAnalytics: undefined;
+};
+
+export type AdminMoreStackParamList = {
+  AdminMoreMenu:     undefined;
+  Users:             undefined;
+  Registrations:     undefined;
+  EngineerOverview:  undefined;
+  AuditLogs:         undefined;
+  AdminSnaps:        undefined;
+  Settings:          undefined;
+  Notifications:     undefined;
+  Chat:              undefined;
+  AIHub:             undefined;
+  Assistant:         undefined;
+  InvoiceExtraction: undefined;
+  AnomalyDetection:  undefined;
+  MaintenanceReport: undefined;
+  ShiftHandover:     undefined;
+  WorkerCoaching:    undefined;
+  Profile:           undefined;
 };
 
 // Engineer — stack inside Profile tab (More menu)
