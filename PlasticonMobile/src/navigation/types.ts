@@ -101,43 +101,59 @@ export type EngineerQualStackParamList = {
 
 // ─── Accountant tabs ──────────────────────────────────────────────────────────
 export type AccountantTabParamList = {
-  Finance:   undefined;
-  Invoices:  undefined;
-  Expenses:  undefined;
-  More:      undefined;
-  Profile:   undefined;
+  Overview: undefined;
+  Finance:  undefined;
+  HR:       undefined;
+  AITools:  undefined;
+  Personal: undefined;
+};
+
+export type AccountantOverviewStackParamList = {
+  AcctDash: undefined;
+  Reports:  undefined;
 };
 
 export type AccountantFinanceStackParamList = {
-  FinanceDash:    undefined;
-  FinancialReports: undefined;
-  CostAnalysis:   undefined;
-  BudgetPlanning: undefined;
-};
-
-export type AccountantInvoicesStackParamList = {
-  InvoiceMenu:        undefined;
-  Invoices:           undefined;
+  AcctFinMenu:         undefined;
+  FinanceDash:         undefined;
+  Invoices:            undefined;
+  Expenses:            undefined;
+  FinancialReports:    undefined;
+  SupplierPayables:    undefined;
   CustomerReceivables: undefined;
-  SupplierPayables:   undefined;
-};
-
-export type AccountantExpensesStackParamList = {
-  ExpenseMenu:       undefined;
-  Expenses:          undefined;
-  BankReconciliation: undefined;
-  TaxCompliance:     undefined;
-};
-
-export type AccountantMoreStackParamList = {
-  AcctMore:            undefined;
-  Suppliers:           undefined;
-  PartsPricing:        undefined;
+  BudgetPlanning:      undefined;
+  TaxCompliance:       undefined;
+  BankReconciliation:  undefined;
+  CostAnalysis:        undefined;
   ApprovalWorkflows:   undefined;
+  Warehouse:           undefined;
+  Inventory:           undefined;
+  Purchases:           undefined;
+  Sales:               undefined;
+  PartsPricing:        undefined;
+  Suppliers:           undefined;
   EmployeePerformance: undefined;
-  AIHub:               undefined;
-  Assistant:           undefined;
-  Notifications:       undefined;
+  MaintCosts:          undefined;
+};
+
+export type AccountantHRStackParamList = {
+  HRMenu:     undefined;
+  Attendance: undefined;
+  Payroll:    undefined;
+};
+
+export type AccountantAIStackParamList = {
+  AIHub:             undefined;
+  Assistant:         undefined;
+  InvoiceExtraction: undefined;
+};
+
+export type AccountantPersonalStackParamList = {
+  PersonalMenu:  undefined;
+  Attendance:    undefined;
+  Payroll:       undefined;
+  Notifications: undefined;
+  Chat:          undefined;
 };
 
 // ─── Admin tabs (full feature parity) ────────────────────────────────────────
