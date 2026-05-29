@@ -5,11 +5,11 @@ import { colors } from '../theme';
 import { AdminTabParamList } from './types';
 import { PlaceholderScreen } from '../screens/shared/PlaceholderScreen';
 
-const Dashboard  = () => <PlaceholderScreen title="Admin Dashboard" icon="home-outline"                   />;
-const Operations = () => <PlaceholderScreen title="Operations"      icon="settings-outline"               />;
-const Users      = () => <PlaceholderScreen title="Users"           icon="people-outline"                 />;
-const Assistant  = () => <PlaceholderScreen title="AI Assistant"    icon="chatbubble-ellipses-outline"    />;
-const Profile    = () => <PlaceholderScreen title="Profile"         icon="person-outline"                 />;
+const Dashboard  = () => <PlaceholderScreen title="Admin Dashboard" icon="home-outline"        />;
+const People     = () => <PlaceholderScreen title="People"          icon="people-outline"      />;
+const Operations = () => <PlaceholderScreen title="Operations"      icon="settings-outline"    />;
+const Audit      = () => <PlaceholderScreen title="Audit"           icon="shield-outline"      />;
+const Profile    = () => <PlaceholderScreen title="Profile"         icon="person-outline"      />;
 
 const Tab = createBottomTabNavigator<AdminTabParamList>();
 
@@ -30,11 +30,11 @@ export function AdminTabs() {
         tabBarLabelStyle: { fontSize: 10, fontWeight: '600' },
         tabBarIcon: ({ focused, color }) => {
           const icons: Record<string, [string, string]> = {
-            Dashboard:  ['home',                 'home-outline'],
-            Operations: ['settings',             'settings-outline'],
-            Users:      ['people',               'people-outline'],
-            Assistant:  ['chatbubble-ellipses',  'chatbubble-ellipses-outline'],
-            Profile:    ['person',               'person-outline'],
+            Dashboard:  ['home',     'home-outline'],
+            People:     ['people',   'people-outline'],
+            Operations: ['settings', 'settings-outline'],
+            Audit:      ['shield',   'shield-outline'],
+            Profile:    ['person',   'person-outline'],
           };
           const [active, inactive] = icons[route.name] ?? ['ellipse', 'ellipse-outline'];
           return <Ionicons name={(focused ? active : inactive) as any} size={22} color={color} />;
@@ -42,9 +42,9 @@ export function AdminTabs() {
       })}
     >
       <Tab.Screen name="Dashboard"  component={Dashboard}  options={{ tabBarLabel: 'Dashboard' }}  />
+      <Tab.Screen name="People"     component={People}     options={{ tabBarLabel: 'People' }}     />
       <Tab.Screen name="Operations" component={Operations} options={{ tabBarLabel: 'Operations' }} />
-      <Tab.Screen name="Users"      component={Users}      options={{ tabBarLabel: 'Users' }}      />
-      <Tab.Screen name="Assistant"  component={Assistant}  options={{ tabBarLabel: 'AI Chat' }}    />
+      <Tab.Screen name="Audit"      component={Audit}      options={{ tabBarLabel: 'Audit' }}      />
       <Tab.Screen name="Profile"    component={Profile}    options={{ tabBarLabel: 'Profile' }}    />
     </Tab.Navigator>
   );

@@ -5,11 +5,11 @@ import { colors } from '../theme';
 import { EngineerTabParamList } from './types';
 import { PlaceholderScreen } from '../screens/shared/PlaceholderScreen';
 
-const Dashboard   = () => <PlaceholderScreen title="Dashboard"   icon="speedometer-outline"         />;
-const Maintenance = () => <PlaceholderScreen title="Maintenance" icon="construct-outline"            />;
-const Machines    = () => <PlaceholderScreen title="Machines"    icon="hardware-chip-outline"        />;
-const Assistant   = () => <PlaceholderScreen title="AI Assistant" icon="chatbubble-ellipses-outline" />;
-const Profile     = () => <PlaceholderScreen title="Profile"     icon="person-outline"               />;
+const Dashboard   = () => <PlaceholderScreen title="Dashboard"   icon="speedometer-outline"     />;
+const Maintenance = () => <PlaceholderScreen title="Maintenance" icon="construct-outline"        />;
+const Machines    = () => <PlaceholderScreen title="Machines"    icon="hardware-chip-outline"    />;
+const Quality     = () => <PlaceholderScreen title="Quality"     icon="shield-checkmark-outline" />;
+const Profile     = () => <PlaceholderScreen title="Profile"     icon="person-outline"           />;
 
 const Tab = createBottomTabNavigator<EngineerTabParamList>();
 
@@ -30,11 +30,11 @@ export function EngineerTabs() {
         tabBarLabelStyle: { fontSize: 10, fontWeight: '600' },
         tabBarIcon: ({ focused, color }) => {
           const icons: Record<string, [string, string]> = {
-            Dashboard:   ['speedometer',           'speedometer-outline'],
-            Maintenance: ['construct',             'construct-outline'],
-            Machines:    ['hardware-chip',         'hardware-chip-outline'],
-            Assistant:   ['chatbubble-ellipses',   'chatbubble-ellipses-outline'],
-            Profile:     ['person',                'person-outline'],
+            Dashboard:   ['speedometer',       'speedometer-outline'],
+            Maintenance: ['construct',         'construct-outline'],
+            Machines:    ['hardware-chip',     'hardware-chip-outline'],
+            Quality:     ['shield-checkmark',  'shield-checkmark-outline'],
+            Profile:     ['person',            'person-outline'],
           };
           const [active, inactive] = icons[route.name] ?? ['ellipse', 'ellipse-outline'];
           return <Ionicons name={(focused ? active : inactive) as any} size={22} color={color} />;
@@ -44,7 +44,7 @@ export function EngineerTabs() {
       <Tab.Screen name="Dashboard"   component={Dashboard}   options={{ tabBarLabel: 'Dashboard' }}   />
       <Tab.Screen name="Maintenance" component={Maintenance} options={{ tabBarLabel: 'Maintenance' }} />
       <Tab.Screen name="Machines"    component={Machines}    options={{ tabBarLabel: 'Machines' }}    />
-      <Tab.Screen name="Assistant"   component={Assistant}   options={{ tabBarLabel: 'AI Chat' }}     />
+      <Tab.Screen name="Quality"     component={Quality}     options={{ tabBarLabel: 'Quality' }}     />
       <Tab.Screen name="Profile"     component={Profile}     options={{ tabBarLabel: 'Profile' }}     />
     </Tab.Navigator>
   );
