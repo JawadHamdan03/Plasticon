@@ -24,11 +24,8 @@ import { colors, radius, shadow, spacing, typography } from '../../theme';
 interface Receivable {
   id: number;
   customerName?: string;
-  customer?: { name: string };
-  invoiceNumber?: string;
+  customer?: { id: number; name: string };
   amount: number;
-  amountPaid?: number;
-  balance?: number;
   dueDate?: string;
   status?: string;
   notes?: string;
@@ -41,13 +38,12 @@ const STATUS_OPTIONS: StatusOpt[] = ['PENDING', 'COLLECTED', 'OVERDUE'];
 interface FormState {
   customerName: string;
   amount: string;
-  amountPaid: string;
   dueDate: string;
   status: StatusOpt;
   notes: string;
 }
 
-const DEFAULT_FORM: FormState = { customerName: '', amount: '', amountPaid: '', dueDate: '', status: 'PENDING', notes: '' };
+const DEFAULT_FORM: FormState = { customerName: '', amount: '', dueDate: '', status: 'PENDING', notes: '' };
 
 function fmt(n: number) { return n.toLocaleString('en-US', { minimumFractionDigits: 2 }); }
 
@@ -101,13 +97,10 @@ function RecModal({ visible, initial, onClose, onSave, saving }: {
           <Text style={styles.sheetTitle}>{initial.customerName ? 'Edit Receivable' : 'New Receivable'}</Text>
           <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
             <Text style={styles.fieldLabel}>Customer Name *</Text>
-            <TextInput style={styles.input} value={form.customerName} onChangeText={set('customerName')} placeholder="Customer" placeholderTextColor={colors.textMuted} />
+            <TextInput style={styles.input} value={form.customerName} onChangeText={set('customerName')} placeholder="Customer name" placeholderTextColor={colors.textMuted} />
 
             <Text style={styles.fieldLabel}>Amount *</Text>
             <TextInput style={styles.input} value={form.amount} onChangeText={set('amount')} placeholder="0.00" placeholderTextColor={colors.textMuted} keyboardType="numeric" />
-
-            <Text style={styles.fieldLabel}>Amount Paid</Text>
-            <TextInput style={styles.input} value={form.amountPaid} onChangeText={set('amountPaid')} placeholder="0.00" placeholderTextColor={colors.textMuted} keyboardType="numeric" />
 
             <Text style={styles.fieldLabel}>Due Date</Text>
             <TextInput style={styles.input} value={form.dueDate} onChangeText={set('dueDate')} placeholder="YYYY-MM-DD" placeholderTextColor={colors.textMuted} />
@@ -130,21 +123,26 @@ function RecModal({ visible, initial, onClose, onSave, saving }: {
 }
 
 function RecCard({ item, onEdit, onDelete }: { item: Receivable; onEdit: () => void; onDelete: () => void }) {
-  const balance = item.balance ?? (item.amount - (item.amountPaid ?? 0));
-  const status  = item.status ?? (balance <= 0 ? 'COLLECTED' : 'PENDING');
-  const color   = STATUS_COLOR[status] ?? colors.textMuted;
+  const status  = item.status ?? 'PENDING';
+  const isPaid  = status === 'COLLECTED' || status === 'PAID';
+  const color   = STATUS_COLOR[status] ?? STATUS_COLOR['PENDING'];
   const name    = item.customerName ?? item.customer?.name ?? `Record #${item.id}`;
+  const amount  = item.amount ?? 0;
 
   return (
     <View style={styles.card}>
       <View style={styles.cardTop}>
         <View style={styles.cardLeft}>
           <Text style={styles.customer} numberOfLines={1}>{name}</Text>
-          {item.invoiceNumber && <Text style={styles.inv}>{item.invoiceNumber}</Text>}
+          {item.dueDate && (
+            <Text style={styles.inv}>
+              Due: {new Date(item.dueDate).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}
+            </Text>
+          )}
         </View>
         <View style={styles.cardRight}>
-          <Text style={[styles.balance, { color }]}>${fmt(balance)}</Text>
-          <Text style={styles.balLabel}>outstanding</Text>
+          <Text style={[styles.balance, { color: isPaid ? colors.success : color }]}>${fmt(amount)}</Text>
+          <Text style={styles.balLabel}>{isPaid ? 'collected' : 'outstanding'}</Text>
         </View>
         <View style={styles.cardActions}>
           <TouchableOpacity onPress={onEdit} style={styles.actionBtn} hitSlop={6}>
@@ -159,11 +157,7 @@ function RecCard({ item, onEdit, onDelete }: { item: Receivable; onEdit: () => v
         <View style={[styles.badge, { backgroundColor: `${color}15` }]}>
           <Text style={[styles.badgeText, { color }]}>{status}</Text>
         </View>
-      </View>
-      <View style={styles.row}>
-        <Text style={styles.detail}>Total: <Text style={styles.detailVal}>${fmt(item.amount ?? 0)}</Text></Text>
-        <Text style={styles.detail}>Paid: <Text style={styles.detailVal}>${fmt(item.amountPaid ?? 0)}</Text></Text>
-        {item.dueDate && <Text style={styles.detail}>Due: <Text style={styles.detailVal}>{new Date(item.dueDate).toLocaleDateString([], { month: 'short', day: 'numeric' })}</Text></Text>}
+        {item.notes ? <Text style={styles.notesText} numberOfLines={1}>{item.notes}</Text> : null}
       </View>
     </View>
   );
@@ -217,7 +211,6 @@ export function CustomerReceivablesScreen() {
       const body = {
         customerName: form.customerName.trim(),
         amount: Number(form.amount),
-        amountPaid: form.amountPaid ? Number(form.amountPaid) : undefined,
         dueDate: form.dueDate.trim() || undefined,
         status: form.status,
         notes: form.notes.trim() || undefined,
@@ -237,16 +230,17 @@ export function CustomerReceivablesScreen() {
     }
   };
 
-  const totalOutstanding = records.reduce((s, r) => s + (r.balance ?? (r.amount - (r.amountPaid ?? 0))), 0);
+  const totalOutstanding = records
+    .filter((r) => r.status !== 'COLLECTED' && r.status !== 'PAID')
+    .reduce((s, r) => s + (r.amount ?? 0), 0);
 
   const initialForm: FormState = editing
     ? {
         customerName: editing.customerName ?? editing.customer?.name ?? '',
         amount: String(editing.amount ?? ''),
-        amountPaid: String(editing.amountPaid ?? ''),
         dueDate: editing.dueDate ? editing.dueDate.split('T')[0] : '',
         status: (editing.status as StatusOpt) ?? 'PENDING',
-        notes: (editing as any).notes ?? '',
+        notes: editing.notes ?? '',
       }
     : DEFAULT_FORM;
 
@@ -258,7 +252,7 @@ export function CustomerReceivablesScreen() {
       ) : (
         <FlatList
           data={records}
-          keyExtractor={(i) => String(i.id)}
+          keyExtractor={(i, idx) => `${String(i.id)}-${idx}`}
           renderItem={({ item }) => <RecCard item={item} onEdit={() => openEdit(item)} onDelete={() => confirmDelete(item)} />}
           contentContainerStyle={styles.list}
           showsVerticalScrollIndicator={false}
@@ -293,12 +287,10 @@ const styles = StyleSheet.create({
   balLabel:    { ...typography.caption, color: colors.textMuted },
   cardActions: { flexDirection: 'column', gap: 4 },
   actionBtn:   { padding: 4 },
-  metaRow:     { flexDirection: 'row', marginBottom: 6 },
+  metaRow:     { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: 6 },
   badge:       { paddingHorizontal: 8, paddingVertical: 3, borderRadius: radius.full },
   badgeText:   { fontSize: 10, fontWeight: '700' },
-  row:         { flexDirection: 'row', gap: spacing.md, flexWrap: 'wrap' },
-  detail:      { ...typography.caption },
-  detailVal:   { fontWeight: '700', color: colors.text },
+  notesText:   { ...typography.caption, color: colors.textMuted, flex: 1 },
 
   empty:       { alignItems: 'center', paddingTop: 60, gap: spacing.sm },
   emptyText:   { ...typography.bodySmall, color: colors.textMuted },

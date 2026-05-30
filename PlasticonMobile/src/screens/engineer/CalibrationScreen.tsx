@@ -109,9 +109,9 @@ function CalModal({ visible, machines, onClose, onSave, saving }: {
             {machines.length > 0 ? (
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: spacing.sm }}>
                 <View style={{ flexDirection: 'row', gap: spacing.sm }}>
-                  {machines.map((m) => (
+                  {machines.map((m, idx) => (
                     <TouchableOpacity
-                      key={m.id}
+                      key={`${m.id}-${idx}`}
                       style={[ps.chip, form.machineId === String(m.id) && ps.chipActive]}
                       onPress={() => setForm((p) => ({ ...p, machineId: String(m.id) }))}
                     >
@@ -261,7 +261,7 @@ export function CalibrationScreen() {
       ) : (
         <FlatList
           data={records}
-          keyExtractor={(i) => String(i.id)}
+          keyExtractor={(i, idx) => `${String(i.id)}-${idx}`}
           renderItem={({ item }) => <CalCard item={item} />}
           contentContainerStyle={styles.list}
           showsVerticalScrollIndicator={false}

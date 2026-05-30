@@ -58,8 +58,8 @@ export function ConsumptionWorkerScreen() {
           </View>
         ) : (
           <View style={styles.list}>
-            {records.map((r) => (
-              <View key={r.id} style={styles.card}>
+            {records.map((r, idx) => (
+              <View key={`${r.id}-${idx}`} style={styles.card}>
                 <View style={styles.cardIcon}>
                   <Ionicons name="flask" size={20} color={colors.accent} />
                 </View>

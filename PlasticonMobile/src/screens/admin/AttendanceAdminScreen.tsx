@@ -250,7 +250,7 @@ export function AttendanceAdminScreen() {
       ) : (
         <FlatList
           data={records}
-          keyExtractor={(i) => String(i.id)}
+          keyExtractor={(i, idx) => `${String(i.id)}-${idx}`}
           renderItem={({ item }) => <AttCard item={item} onEdit={() => openEdit(item)} onDelete={() => confirmDelete(item)} />}
           contentContainerStyle={styles.list}
           showsVerticalScrollIndicator={false}

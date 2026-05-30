@@ -134,9 +134,9 @@ function WorkOrderModal({ visible, initial, machines, onClose, onSave, saving }:
             {machines.length > 0 ? (
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: spacing.sm }}>
                 <View style={{ flexDirection: 'row', gap: spacing.sm }}>
-                  {machines.map((m) => (
+                  {machines.map((m, idx) => (
                     <TouchableOpacity
-                      key={m.id}
+                      key={`${m.id}-${idx}`}
                       style={[ps.chip, form.machineId === String(m.id) && ps.chipActive]}
                       onPress={() => setForm((p) => ({ ...p, machineId: String(m.id) }))}
                     >
@@ -358,7 +358,7 @@ export function WorkOrdersScreen() {
       ) : (
         <FlatList
           data={orders}
-          keyExtractor={(i) => String(i.id)}
+          keyExtractor={(i, idx) => `${String(i.id)}-${idx}`}
           renderItem={({ item }) => (
             <WorkOrderCard
               item={item}

@@ -160,10 +160,10 @@ export function AnomalyDetectionScreen() {
               </View>
             ) : (
               <View style={styles.list}>
-                {anomalies.map((a) => {
+                {anomalies.map((a, idx) => {
                   const sc = sevColor(a.severity);
                   return (
-                    <View key={a.id} style={[styles.alertCard, { borderLeftColor: sc }]}>
+                    <View key={`${a.id}-${idx}`} style={[styles.alertCard, { borderLeftColor: sc }]}>
                       <View style={styles.alertTop}>
                         <Text style={[styles.alertType, { color: sc }]}>{a.type}</Text>
                         {a.severity && (

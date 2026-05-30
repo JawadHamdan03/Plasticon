@@ -77,8 +77,8 @@ export function MicroStopsScreen() {
             </View>
           ) : (
             <View style={styles.list}>
-              {stops.map((s) => (
-                <View key={s.id} style={styles.card}>
+              {stops.map((s, idx) => (
+                <View key={`${s.id}-${idx}`} style={styles.card}>
                   <View style={styles.durationBox}>
                     <Text style={styles.durationNum}>{s.duration}</Text>
                     <Text style={styles.durationUnit}>min</Text>

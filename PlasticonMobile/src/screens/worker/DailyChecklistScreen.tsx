@@ -109,8 +109,8 @@ export function DailyChecklistScreen() {
             <Text style={styles.sectionTitle}>Recent Submissions</Text>
             {loading ? <ActivityIndicator color={colors.primary} /> : (
               <View style={styles.list}>
-                {checklists.slice(0, 10).map((c) => (
-                  <View key={c.id} style={styles.histCard}>
+                {checklists.slice(0, 10).map((c, idx) => (
+                  <View key={`${c.id}-${idx}`} style={styles.histCard}>
                     <View style={[styles.histDot, { backgroundColor: c.completed ? colors.success : colors.warning }]} />
                     <View style={styles.histBody}>
                       <Text style={styles.histDate}>{new Date(c.createdAt).toLocaleDateString()}</Text>

@@ -106,7 +106,7 @@ export function SalesAdminScreen() {
             </View>
           ) : (
             <View style={styles.list}>
-              {sales.map((sale) => <SaleCard key={sale.id} item={sale} />)}
+              {sales.map((sale, idx) => <SaleCard key={`${sale.id}-${idx}`} item={sale} />)}
             </View>
           )}
         </ScrollView>

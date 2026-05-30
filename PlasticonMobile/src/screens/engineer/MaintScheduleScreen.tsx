@@ -94,7 +94,7 @@ export function MaintScheduleScreen() {
       ) : (
         <FlatList
           data={schedules}
-          keyExtractor={(i) => String(i.id)}
+          keyExtractor={(i, idx) => `${String(i.id)}-${idx}`}
           renderItem={({ item }) => <ScheduleCard item={item} />}
           contentContainerStyle={styles.list}
           showsVerticalScrollIndicator={false}

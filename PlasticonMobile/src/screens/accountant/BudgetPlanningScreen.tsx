@@ -375,7 +375,7 @@ export function BudgetPlanningScreen() {
       ) : (
         <FlatList
           data={plans}
-          keyExtractor={(i) => String(i.id)}
+          keyExtractor={(i, idx) => `${String(i.id)}-${idx}`}
           renderItem={({ item }) => (
             <BudgetCard
               item={item}

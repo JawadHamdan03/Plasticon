@@ -315,7 +315,7 @@ export function MachinesAdminScreen() {
       ) : (
         <FlatList
           data={machines}
-          keyExtractor={(i) => String(i.id)}
+          keyExtractor={(i, idx) => `${String(i.id)}-${idx}`}
           renderItem={({ item }) => (
             <MachineCard item={item} onEdit={openEdit} onDelete={confirmDelete} />
           )}

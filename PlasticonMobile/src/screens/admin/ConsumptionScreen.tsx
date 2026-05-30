@@ -92,8 +92,8 @@ export function ConsumptionScreen() {
             </View>
           ) : (
             <View style={styles.list}>
-              {records.map((r) => (
-                <View key={r.id} style={styles.card}>
+              {records.map((r, idx) => (
+                <View key={`${r.id}-${idx}`} style={styles.card}>
                   <View style={styles.cardIcon}>
                     <Ionicons name="cube" size={20} color={colors.warning} />
                   </View>

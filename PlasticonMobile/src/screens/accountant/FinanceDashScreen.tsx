@@ -8,12 +8,16 @@ import { ScreenHeader, StatCard } from '../../components';
 import { colors, radius, shadow, spacing, typography } from '../../theme';
 
 interface FinanceSummary {
-  totalRevenue:    number;
-  totalExpenses:   number;
-  netProfit:       number;
-  monthRevenue?:   number;
-  pendingInvoices?: number;
-  overdueCount?:   number;
+  revenue?:         number;
+  salesRevenue?:    number;
+  expenses?:        number;
+  approvedExpenses?: number;
+  netProfit?:       number;
+  profit?:          number;
+  cashBalance?:     number;
+  rawMaterialCost?: number;
+  electricityCost?: number;
+  salaryCost?:      number;
 }
 
 function fmt(n: number) {
@@ -24,14 +28,21 @@ export function FinanceDashScreen() {
   const [data, setData]         = useState<FinanceSummary | null>(null);
   const [loading, setLoading]   = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [invoicePending, setInvoicePending] = useState(0);
   const navigation = useNavigation<any>();
 
   const load = useCallback(async () => {
     try {
-      const res = await api.get<FinanceSummary>('/financial/summary');
-      setData(res);
+      const [finRes, invRes] = await Promise.allSettled([
+        api.get<FinanceSummary>('/financial/dashboard'),
+        api.get<any[]>('/invoices?limit=100'),
+      ]);
+      if (finRes.status === 'fulfilled') setData(finRes.value);
+      if (invRes.status === 'fulfilled' && Array.isArray(invRes.value)) {
+        setInvoicePending(invRes.value.filter((i: any) => i.paymentStatus === 'PENDING' || i.status === 'PENDING').length);
+      }
     } catch {
-      setData({ totalRevenue: 0, totalExpenses: 0, netProfit: 0 });
+      setData(null);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -40,7 +51,9 @@ export function FinanceDashScreen() {
 
   useEffect(() => { void load(); }, [load]);
 
-  const profit = data?.netProfit ?? 0;
+  const totalRevenue = data?.salesRevenue ?? data?.revenue ?? 0;
+  const totalExpenses = (data?.approvedExpenses ?? data?.expenses ?? 0) + (data?.rawMaterialCost ?? 0) + (data?.electricityCost ?? 0) + (data?.salaryCost ?? 0);
+  const profit = data?.netProfit ?? data?.profit ?? 0;
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -52,13 +65,31 @@ export function FinanceDashScreen() {
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); void load(); }} tintColor={colors.primary} />}
         >
           <View style={styles.kpiRow}>
-            <StatCard label="Total Revenue"  value={`$${fmt(data?.totalRevenue ?? 0)}`}  icon="trending-up"   color={colors.success} style={styles.kpi} />
-            <StatCard label="Total Expenses" value={`$${fmt(data?.totalExpenses ?? 0)}`} icon="trending-down" color={colors.danger}  style={styles.kpi} />
+            <StatCard label="Sales Revenue"  value={`$${fmt(totalRevenue)}`}   icon="trending-up"   color={colors.success} style={styles.kpi} />
+            <StatCard label="Total Expenses" value={`$${fmt(totalExpenses)}`}  icon="trending-down" color={colors.danger}  style={styles.kpi} />
           </View>
           <View style={styles.kpiRow}>
-            <StatCard label="Net Profit"  value={`$${fmt(profit)}`}                  icon="cash"     color={profit >= 0 ? colors.success : colors.danger} style={styles.kpi} />
-            <StatCard label="This Month"  value={`$${fmt(data?.monthRevenue ?? 0)}`} icon="calendar" color={colors.info}  style={styles.kpi} />
+            <StatCard label="Net Profit"     value={`$${fmt(profit)}`}                              icon="cash"          color={profit >= 0 ? colors.success : colors.danger} style={styles.kpi} />
+            <StatCard label="Salary Cost"    value={`$${fmt(data?.salaryCost ?? 0)}`}               icon="people"        color={colors.info}    style={styles.kpi} />
           </View>
+
+          {(data?.rawMaterialCost != null || data?.electricityCost != null) && (
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Cost Breakdown</Text>
+              {[
+                { label: 'Raw Materials', value: data?.rawMaterialCost ?? 0, color: colors.warning },
+                { label: 'Electricity',   value: data?.electricityCost ?? 0, color: colors.info },
+                { label: 'Salaries',      value: data?.salaryCost ?? 0,      color: colors.accent },
+                { label: 'Other Expenses',value: data?.approvedExpenses ?? 0, color: colors.danger },
+              ].map((row) => (
+                <View key={row.label} style={styles.alertRow}>
+                  <View style={[styles.dot, { backgroundColor: row.color }]} />
+                  <Text style={styles.alertText}>{row.label}</Text>
+                  <Text style={[styles.alertText, { fontWeight: '700', color: row.color }]}>${fmt(row.value)}</Text>
+                </View>
+              ))}
+            </View>
+          )}
 
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Quick Access</Text>
@@ -76,21 +107,13 @@ export function FinanceDashScreen() {
             </View>
           </View>
 
-          {((data?.pendingInvoices ?? 0) > 0 || (data?.overdueCount ?? 0) > 0) && (
+          {invoicePending > 0 && (
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Alerts</Text>
-              {(data?.pendingInvoices ?? 0) > 0 && (
-                <View style={styles.alertRow}>
-                  <Ionicons name="alert-circle" size={18} color={colors.warning} />
-                  <Text style={styles.alertText}>{data!.pendingInvoices} pending invoices awaiting action</Text>
-                </View>
-              )}
-              {(data?.overdueCount ?? 0) > 0 && (
-                <View style={styles.alertRow}>
-                  <Ionicons name="warning" size={18} color={colors.danger} />
-                  <Text style={styles.alertText}>{data!.overdueCount} overdue invoices require attention</Text>
-                </View>
-              )}
+              <View style={styles.alertRow}>
+                <Ionicons name="alert-circle" size={18} color={colors.warning} />
+                <Text style={styles.alertText}>{invoicePending} pending invoices awaiting action</Text>
+              </View>
             </View>
           )}
         </ScrollView>
@@ -109,6 +132,7 @@ const styles = StyleSheet.create({
   sectionTitle: { ...typography.h4, marginBottom: spacing.md },
   qlRow:        { flexDirection: 'row', gap: spacing.sm },
   ql:           { flex: 1, alignItems: 'center', gap: 6, paddingVertical: 12, borderRadius: radius.md, borderWidth: 1.5, backgroundColor: colors.surfaceAlt },
+  dot:          { width: 8, height: 8, borderRadius: 4 },
   qlLabel:      { fontSize: 11, fontWeight: '700' },
   alertRow:     { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: colors.border },
   alertText:    { ...typography.bodySmall, flex: 1 },

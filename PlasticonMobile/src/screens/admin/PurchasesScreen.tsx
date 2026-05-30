@@ -105,7 +105,7 @@ export function PurchasesScreen() {
             </View>
           ) : (
             <View style={styles.list}>
-              {items.map((p) => <PurchaseCard key={p.id} item={p} />)}
+              {items.map((p, idx) => <PurchaseCard key={`${p.id}-${idx}`} item={p} />)}
             </View>
           )}
         </ScrollView>

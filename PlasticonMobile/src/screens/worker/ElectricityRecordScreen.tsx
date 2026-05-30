@@ -116,8 +116,8 @@ export function ElectricityRecordScreen() {
             </View>
           ) : (
             <View style={styles.list}>
-              {readings.map((r) => (
-                <View key={r.id} style={styles.card}>
+              {readings.map((r, idx) => (
+                <View key={`${r.id}-${idx}`} style={styles.card}>
                   <View style={styles.cardIcon}><Ionicons name="flash" size={20} color={colors.warning} /></View>
                   <View style={styles.cardBody}>
                     <Text style={styles.cardValue}>{r.value} {r.unit ?? 'kWh'}</Text>

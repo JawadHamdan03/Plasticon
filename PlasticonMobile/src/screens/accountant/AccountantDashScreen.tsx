@@ -65,24 +65,30 @@ export function AccountantDashScreen() {
   const load = useCallback(async () => {
     try {
       const [finRes, invRes, payRes, recRes] = await Promise.allSettled([
-        api.get<any>('/financial/summary'),
-        api.get<any>('/invoices?limit=1'),
-        api.get<any>('/supplier-payables?limit=1'),
-        api.get<any>('/customer-receivables?limit=1'),
+        api.get<any>('/financial/dashboard'),
+        api.get<any[]>('/invoices?limit=100'),
+        api.get<any[]>('/supplier-payables?limit=100'),
+        api.get<any[]>('/customer-receivables?limit=100'),
       ]);
 
-      const fin = finRes.status === 'fulfilled' ? finRes.value : {};
-      const inv = invRes.status === 'fulfilled' ? invRes.value : {};
-      const pay = payRes.status === 'fulfilled' ? payRes.value : {};
-      const rec = recRes.status === 'fulfilled' ? recRes.value : {};
+      const fin = finRes.status === 'fulfilled' ? (finRes.value ?? {}) : {};
+      const invList: any[] = invRes.status === 'fulfilled' && Array.isArray(invRes.value) ? invRes.value : [];
+      const payList: any[] = payRes.status === 'fulfilled' && Array.isArray(payRes.value) ? payRes.value : [];
+      const recList: any[] = recRes.status === 'fulfilled' && Array.isArray(recRes.value) ? recRes.value : [];
+
+      const pendingInvCount = invList.filter((i) => i.paymentStatus === 'PENDING' || i.status === 'PENDING').length;
+      const openPay = payList.reduce((s, p) => s + (p.amount ?? 0), 0);
+      const openRec = recList.reduce((s, r) => s + (r.amount ?? 0), 0);
 
       setData({
-        totalRevenue:    fin.totalRevenue    ?? fin.revenue    ?? 0,
-        totalExpenses:   fin.totalExpenses   ?? fin.expenses   ?? 0,
+        totalRevenue:    fin.salesRevenue    ?? fin.revenue    ?? fin.totalRevenue    ?? 0,
+        totalExpenses:   fin.netProfit != null
+          ? ((fin.salesRevenue ?? fin.revenue ?? 0) - fin.netProfit)
+          : (fin.approvedExpenses ?? fin.expenses ?? fin.totalExpenses ?? 0),
         netProfit:       fin.netProfit       ?? fin.profit     ?? 0,
-        pendingInvoices: inv.pendingCount    ?? inv.total      ?? 0,
-        openPayables:    pay.totalAmount     ?? pay.total      ?? 0,
-        openReceivables: rec.totalAmount     ?? rec.total      ?? 0,
+        pendingInvoices: pendingInvCount,
+        openPayables:    openPay,
+        openReceivables: openRec,
       });
     } catch { /* keep null */ }
     finally { setLoading(false); setRefreshing(false); }

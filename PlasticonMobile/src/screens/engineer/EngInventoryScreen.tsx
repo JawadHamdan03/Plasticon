@@ -83,7 +83,7 @@ export function EngInventoryScreen() {
       ) : (
         <FlatList
           data={items}
-          keyExtractor={(i) => String(i.id)}
+          keyExtractor={(i, idx) => `${String(i.id)}-${idx}`}
           renderItem={({ item }) => <ItemCard item={item} />}
           contentContainerStyle={styles.list}
           showsVerticalScrollIndicator={false}

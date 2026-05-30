@@ -66,12 +66,12 @@ export function DailyTargetsScreen() {
           </View>
         ) : (
           <View style={styles.list}>
-            {targets.map((t) => {
+            {targets.map((t, idx) => {
               const actual = t.actualValue ?? 0;
               const pct = t.targetValue > 0 ? (actual / t.targetValue) * 100 : 0;
               const done = pct >= 100;
               return (
-                <View key={t.id} style={styles.card}>
+                <View key={`${t.id}-${idx}`} style={styles.card}>
                   <View style={styles.cardHeader}>
                     <View style={[styles.badge, { backgroundColor: done ? `${colors.success}20` : `${colors.primary}20` }]}>
                       <Ionicons name={done ? 'checkmark-circle' : 'flag'} size={14} color={done ? colors.success : colors.primary} />

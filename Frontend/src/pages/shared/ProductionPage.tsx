@@ -215,13 +215,13 @@ export function ProductionPage() {
       }
       if (mineRes.ok) {
         const all = (await mineRes.json()) as ProductionItem[];
-        setMyRecords(all.filter((r) => (r.cartonsCount ?? 0) > 0 || r.machine != null));
+        setMyRecords(Array.isArray(all) ? all : []);
       }
       if (canSeeAll) {
         const allRes = await fetchWithAuth("/production/all");
         if (allRes.ok) {
           const all = (await allRes.json()) as ProductionItem[];
-          setAllRecords(all.filter((r) => (r.cartonsCount ?? 0) > 0 || r.machine != null));
+          setAllRecords(Array.isArray(all) ? all : []);
         }
       }
       if (isAdmin) {
@@ -812,7 +812,7 @@ export function ProductionPage() {
           )}
 
           {adminTab === "records" && (() => {
-            const records = (adminOverview?.recentRecords ?? allRecords).filter((r) => (r.cartonsCount ?? 0) > 0 || r.machine != null);
+            const records = adminOverview?.recentRecords ?? allRecords;
             return (
               <div style={{ background: "var(--bg-card)", border: "1px solid var(--border-default)", borderRadius: "var(--radius-xl)", overflow: "hidden" }}>
                 <div style={{ padding: ".875rem 1.25rem", borderBottom: "1px solid var(--border-default)", background: "var(--bg-surface)", fontWeight: 700, fontSize: ".9rem" }}>{isAr ? `السجلات (${records.length})` : `Records (${records.length})`}</div>

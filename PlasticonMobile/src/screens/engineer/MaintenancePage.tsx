@@ -94,9 +94,9 @@ function CreateModal({ visible, machines, onClose, onSuccess }: {
           <ScrollView showsVerticalScrollIndicator={false}>
             <Text style={styles.fieldLabel}>Machine *</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: spacing.md }}>
-              {machines.map((m) => (
+              {machines.map((m, idx) => (
                 <TouchableOpacity
-                  key={m.id}
+                  key={`${m.id}-${idx}`}
                   style={[styles.machinePill, machineId === String(m.id) && styles.machinePillActive]}
                   onPress={() => setMachineId(String(m.id))}
                 >
@@ -167,7 +167,7 @@ export function MaintenancePage() {
       ) : (
         <FlatList
           data={records}
-          keyExtractor={(i) => String(i.id)}
+          keyExtractor={(i, idx) => `${String(i.id)}-${idx}`}
           renderItem={({ item }) => <RecordCard item={item} />}
           contentContainerStyle={styles.list}
           showsVerticalScrollIndicator={false}

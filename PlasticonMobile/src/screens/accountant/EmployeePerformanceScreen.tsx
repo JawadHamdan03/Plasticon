@@ -89,7 +89,7 @@ export function EmployeePerformanceScreen() {
       {loading ? <View style={styles.center}><ActivityIndicator size="large" color={colors.primary} /></View> : (
         <FlatList
           data={records}
-          keyExtractor={(i) => String(i.id)}
+          keyExtractor={(i, idx) => `${String(i.id)}-${idx}`}
           renderItem={({ item }) => <PerfCard item={item} />}
           contentContainerStyle={styles.list}
           showsVerticalScrollIndicator={false}

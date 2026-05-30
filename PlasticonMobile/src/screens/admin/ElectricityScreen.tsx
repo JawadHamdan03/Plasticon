@@ -71,7 +71,7 @@ export function ElectricityScreen() {
       {loading ? <View style={styles.center}><ActivityIndicator size="large" color={colors.primary} /></View> : (
         <FlatList
           data={readings}
-          keyExtractor={(i) => String(i.id)}
+          keyExtractor={(i, idx) => `${String(i.id)}-${idx}`}
           renderItem={({ item }) => <ReadingCard item={item} />}
           contentContainerStyle={styles.list}
           showsVerticalScrollIndicator={false}

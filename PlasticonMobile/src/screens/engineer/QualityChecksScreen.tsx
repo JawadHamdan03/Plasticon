@@ -84,8 +84,8 @@ function CreateModal({ visible, onClose, onSuccess }: { visible: boolean; onClos
               <>
                 <Text style={styles.fieldLabel}>Machine</Text>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: spacing.md }}>
-                  {machines.map((m) => (
-                    <TouchableOpacity key={m.id} style={[styles.pill, machineId === String(m.id) && styles.pillActive]} onPress={() => setMachineId(String(m.id))}>
+                  {machines.map((m, idx) => (
+                    <TouchableOpacity key={`${m.id}-${idx}`} style={[styles.pill, machineId === String(m.id) && styles.pillActive]} onPress={() => setMachineId(String(m.id))}>
                       <Text style={[styles.pillText, machineId === String(m.id) && styles.pillTextActive]}>{m.name}</Text>
                     </TouchableOpacity>
                   ))}
@@ -151,7 +151,7 @@ export function QualityChecksScreen() {
       {loading ? <View style={styles.center}><ActivityIndicator size="large" color={colors.primary} /></View> : (
         <FlatList
           data={checks}
-          keyExtractor={(i) => String(i.id)}
+          keyExtractor={(i, idx) => `${String(i.id)}-${idx}`}
           renderItem={({ item }) => <CheckCard item={item} />}
           contentContainerStyle={styles.list}
           showsVerticalScrollIndicator={false}

@@ -78,10 +78,10 @@ export function WarehouseScreen() {
             </View>
           ) : (
             <View style={styles.list}>
-              {items.map((item) => {
+              {items.map((item, idx) => {
                 const dot = statusColor(item);
                 return (
-                  <View key={item.id} style={styles.card}>
+                  <View key={`${item.id}-${idx}`} style={styles.card}>
                     <View style={[styles.dot, { backgroundColor: dot }]} />
                     <View style={styles.cardBody}>
                       <Text style={styles.cardTitle}>{item.name}</Text>

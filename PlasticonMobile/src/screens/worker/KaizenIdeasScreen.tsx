@@ -84,10 +84,10 @@ export function KaizenIdeasScreen() {
             </View>
           ) : (
             <View style={styles.list}>
-              {ideas.map((idea) => {
+              {ideas.map((idea, idx) => {
                 const statusColor = STATUS_COLOR[idea.status?.toLowerCase() ?? ''] ?? colors.textMuted;
                 return (
-                  <View key={idea.id} style={styles.card}>
+                  <View key={`${idea.id}-${idx}`} style={styles.card}>
                     <View style={styles.cardTop}>
                       <Text style={styles.cardTitle} numberOfLines={2}>{idea.title}</Text>
                       {idea.status && (

@@ -121,7 +121,7 @@ export function NotificationsScreen() {
       ) : (
         <FlatList
           data={notifs}
-          keyExtractor={(i) => String(i.id)}
+          keyExtractor={(i, idx) => `${String(i.id)}-${idx}`}
           renderItem={({ item }) => <NotifRow item={item} onRead={markRead} />}
           contentContainerStyle={styles.list}
           showsVerticalScrollIndicator={false}

@@ -87,7 +87,7 @@ export function RawAlertsScreen() {
       {loading ? <View style={styles.center}><ActivityIndicator size="large" color={colors.primary} /></View> : (
         <FlatList
           data={alerts}
-          keyExtractor={(i) => String(i.id)}
+          keyExtractor={(i, idx) => `${String(i.id)}-${idx}`}
           renderItem={({ item }) => <AlertCard item={item} />}
           contentContainerStyle={styles.list}
           showsVerticalScrollIndicator={false}

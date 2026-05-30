@@ -173,7 +173,7 @@ export function PayrollAdminScreen() {
       ) : (
         <FlatList
           data={records}
-          keyExtractor={(i) => String(i.id)}
+          keyExtractor={(i, idx) => `${String(i.id)}-${idx}`}
           renderItem={({ item }) => (
             <PayCard
               item={item}

@@ -263,7 +263,7 @@ export function ShiftsAdminScreen() {
       ) : (
         <FlatList
           data={shifts}
-          keyExtractor={(i) => String(i.id)}
+          keyExtractor={(i, idx) => `${String(i.id)}-${idx}`}
           renderItem={({ item }) => <ShiftCard item={item} onEdit={openEdit} />}
           contentContainerStyle={styles.list}
           showsVerticalScrollIndicator={false}

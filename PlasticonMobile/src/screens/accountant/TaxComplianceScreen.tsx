@@ -82,7 +82,7 @@ export function TaxComplianceScreen() {
       {loading ? <View style={styles.center}><ActivityIndicator size="large" color={colors.primary} /></View> : (
         <FlatList
           data={filings}
-          keyExtractor={(i) => String(i.id)}
+          keyExtractor={(i, idx) => `${String(i.id)}-${idx}`}
           renderItem={({ item }) => <TaxCard item={item} />}
           contentContainerStyle={styles.list}
           showsVerticalScrollIndicator={false}

@@ -55,10 +55,10 @@ export function ProductionMonitorScreen() {
           </View>
         ) : (
           <View style={styles.list}>
-            {records.map((r) => {
+            {records.map((r, idx) => {
               const qty = r.totalPieces ?? r.quantity ?? 0;
               return (
-                <View key={r.id} style={styles.card}>
+                <View key={`${r.id}-${idx}`} style={styles.card}>
                   <View style={styles.cardIcon}>
                     <Ionicons name="cube" size={18} color={colors.primary} />
                   </View>

@@ -66,10 +66,10 @@ export function InventoryAdminScreen() {
             </View>
           ) : (
             <View style={styles.list}>
-              {items.map((item) => {
+              {items.map((item, idx) => {
                 const isLow = !!(item.reorderAt && item.quantity <= item.reorderAt);
                 return (
-                  <View key={item.id} style={styles.card}>
+                  <View key={`${item.id}-${idx}`} style={styles.card}>
                     <View style={[styles.cardIcon, { backgroundColor: isLow ? `${colors.warning}15` : `${colors.primary}10` }]}>
                       <Ionicons name={isLow ? 'warning' : 'archive'} size={20} color={isLow ? colors.warning : colors.primary} />
                     </View>

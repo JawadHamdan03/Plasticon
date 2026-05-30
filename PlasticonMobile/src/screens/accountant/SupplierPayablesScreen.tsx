@@ -24,14 +24,11 @@ import { colors, radius, shadow, spacing, typography } from '../../theme';
 interface Payable {
   id: number;
   supplierName?: string;
-  supplier?: { name: string };
-  invoiceRef?: string;
+  supplier?: { id: number; name: string };
   amount: number;
-  amountPaid?: number;
-  balance?: number;
   dueDate?: string;
-  status?: string;
   paymentStatus?: string;
+  status?: string;
   notes?: string;
   createdAt: string;
 }
@@ -42,13 +39,12 @@ const STATUS_OPTIONS: StatusOpt[] = ['PENDING', 'PAID', 'OVERDUE'];
 interface FormState {
   supplierName: string;
   amount: string;
-  amountPaid: string;
   dueDate: string;
   status: StatusOpt;
   notes: string;
 }
 
-const DEFAULT_FORM: FormState = { supplierName: '', amount: '', amountPaid: '', dueDate: '', status: 'PENDING', notes: '' };
+const DEFAULT_FORM: FormState = { supplierName: '', amount: '', dueDate: '', status: 'PENDING', notes: '' };
 
 function fmt(n: number) { return n.toLocaleString('en-US', { minimumFractionDigits: 2 }); }
 
@@ -102,13 +98,10 @@ function PayModal({ visible, initial, onClose, onSave, saving }: {
           <Text style={styles.sheetTitle}>{initial.supplierName ? 'Edit Payable' : 'New Payable'}</Text>
           <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
             <Text style={styles.fieldLabel}>Supplier Name *</Text>
-            <TextInput style={styles.input} value={form.supplierName} onChangeText={set('supplierName')} placeholder="Supplier" placeholderTextColor={colors.textMuted} />
+            <TextInput style={styles.input} value={form.supplierName} onChangeText={set('supplierName')} placeholder="Supplier name" placeholderTextColor={colors.textMuted} />
 
             <Text style={styles.fieldLabel}>Amount *</Text>
             <TextInput style={styles.input} value={form.amount} onChangeText={set('amount')} placeholder="0.00" placeholderTextColor={colors.textMuted} keyboardType="numeric" />
-
-            <Text style={styles.fieldLabel}>Amount Paid</Text>
-            <TextInput style={styles.input} value={form.amountPaid} onChangeText={set('amountPaid')} placeholder="0.00" placeholderTextColor={colors.textMuted} keyboardType="numeric" />
 
             <Text style={styles.fieldLabel}>Due Date</Text>
             <TextInput style={styles.input} value={form.dueDate} onChangeText={set('dueDate')} placeholder="YYYY-MM-DD" placeholderTextColor={colors.textMuted} />
@@ -131,22 +124,28 @@ function PayModal({ visible, initial, onClose, onSave, saving }: {
 }
 
 function PayCard({ item, onEdit, onDelete }: { item: Payable; onEdit: () => void; onDelete: () => void }) {
-  const balance = item.balance ?? (item.amount - (item.amountPaid ?? 0));
-  const status  = item.status ?? item.paymentStatus ?? (balance <= 0 ? 'PAID' : 'PENDING');
-  const overdue = item.dueDate ? new Date(item.dueDate) < new Date() && balance > 0 : false;
-  const color   = STATUS_COLOR[overdue ? 'OVERDUE' : status] ?? colors.textMuted;
+  const status  = item.paymentStatus ?? item.status ?? 'PENDING';
+  const isPaid  = status === 'PAID';
+  const overdue = !isPaid && item.dueDate ? new Date(item.dueDate) < new Date() : false;
+  const displayStatus = overdue ? 'OVERDUE' : status;
+  const color   = STATUS_COLOR[displayStatus] ?? colors.textMuted;
   const name    = item.supplierName ?? item.supplier?.name ?? `Payable #${item.id}`;
+  const amount  = item.amount ?? 0;
 
   return (
     <View style={[styles.card, overdue && { borderLeftWidth: 3, borderLeftColor: colors.danger }]}>
       <View style={styles.cardTop}>
         <View style={styles.cardLeft}>
           <Text style={styles.supplier} numberOfLines={1}>{name}</Text>
-          {item.invoiceRef && <Text style={styles.ref}>{item.invoiceRef}</Text>}
+          {item.dueDate && (
+            <Text style={styles.ref}>
+              Due: {new Date(item.dueDate).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}
+            </Text>
+          )}
         </View>
         <View style={styles.cardRight}>
-          <Text style={[styles.balance, { color }]}>${fmt(balance)}</Text>
-          <Text style={styles.balLabel}>{overdue ? 'OVERDUE' : 'owed'}</Text>
+          <Text style={[styles.balance, { color: isPaid ? colors.success : color }]}>${fmt(amount)}</Text>
+          <Text style={styles.balLabel}>{isPaid ? 'paid' : 'owed'}</Text>
         </View>
         <View style={styles.cardActions}>
           <TouchableOpacity onPress={onEdit} style={styles.actionBtn} hitSlop={6}>
@@ -159,13 +158,9 @@ function PayCard({ item, onEdit, onDelete }: { item: Payable; onEdit: () => void
       </View>
       <View style={styles.metaRow}>
         <View style={[styles.badge, { backgroundColor: `${color}15` }]}>
-          <Text style={[styles.badgeText, { color }]}>{overdue ? 'OVERDUE' : status}</Text>
+          <Text style={[styles.badgeText, { color }]}>{displayStatus}</Text>
         </View>
-      </View>
-      <View style={styles.row}>
-        <Text style={styles.detail}>Total: <Text style={styles.detailVal}>${fmt(item.amount ?? 0)}</Text></Text>
-        <Text style={styles.detail}>Paid: <Text style={styles.detailVal}>${fmt(item.amountPaid ?? 0)}</Text></Text>
-        {item.dueDate && <Text style={styles.detail}>Due: <Text style={styles.detailVal}>{new Date(item.dueDate).toLocaleDateString([], { month: 'short', day: 'numeric' })}</Text></Text>}
+        {item.notes ? <Text style={styles.notesText} numberOfLines={1}>{item.notes}</Text> : null}
       </View>
     </View>
   );
@@ -219,9 +214,8 @@ export function SupplierPayablesScreen() {
       const body = {
         supplierName: form.supplierName.trim(),
         amount: Number(form.amount),
-        amountPaid: form.amountPaid ? Number(form.amountPaid) : undefined,
         dueDate: form.dueDate.trim() || undefined,
-        status: form.status,
+        paymentStatus: form.status,
         notes: form.notes.trim() || undefined,
       };
       if (editing) {
@@ -239,16 +233,17 @@ export function SupplierPayablesScreen() {
     }
   };
 
-  const totalOwed = records.reduce((s, r) => s + (r.balance ?? (r.amount - (r.amountPaid ?? 0))), 0);
+  const totalOwed = records
+    .filter((r) => (r.paymentStatus ?? r.status) !== 'PAID')
+    .reduce((s, r) => s + (r.amount ?? 0), 0);
 
   const initialForm: FormState = editing
     ? {
         supplierName: editing.supplierName ?? editing.supplier?.name ?? '',
         amount: String(editing.amount ?? ''),
-        amountPaid: String(editing.amountPaid ?? ''),
         dueDate: editing.dueDate ? editing.dueDate.split('T')[0] : '',
-        status: (editing.status as StatusOpt) ?? 'PENDING',
-        notes: (editing as any).notes ?? '',
+        status: ((editing.paymentStatus ?? editing.status) as StatusOpt) ?? 'PENDING',
+        notes: editing.notes ?? '',
       }
     : DEFAULT_FORM;
 
@@ -260,7 +255,7 @@ export function SupplierPayablesScreen() {
       ) : (
         <FlatList
           data={records}
-          keyExtractor={(i) => String(i.id)}
+          keyExtractor={(i, idx) => `${String(i.id)}-${idx}`}
           renderItem={({ item }) => <PayCard item={item} onEdit={() => openEdit(item)} onDelete={() => confirmDelete(item)} />}
           contentContainerStyle={styles.list}
           showsVerticalScrollIndicator={false}
@@ -295,12 +290,10 @@ const styles = StyleSheet.create({
   balLabel:    { ...typography.caption, color: colors.textMuted },
   cardActions: { flexDirection: 'column', gap: 4 },
   actionBtn:   { padding: 4 },
-  metaRow:     { flexDirection: 'row', marginBottom: 6 },
+  metaRow:     { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: 6 },
   badge:       { paddingHorizontal: 8, paddingVertical: 3, borderRadius: radius.full },
   badgeText:   { fontSize: 10, fontWeight: '700' },
-  row:         { flexDirection: 'row', gap: spacing.md, flexWrap: 'wrap' },
-  detail:      { ...typography.caption },
-  detailVal:   { fontWeight: '700', color: colors.text },
+  notesText:   { ...typography.caption, color: colors.textMuted, flex: 1 },
 
   empty:       { alignItems: 'center', paddingTop: 60, gap: spacing.sm },
   emptyText:   { ...typography.bodySmall, color: colors.textMuted },

@@ -84,10 +84,10 @@ export function QualityIssuesScreen() {
             </View>
           ) : (
             <View style={styles.list}>
-              {issues.map((issue) => {
+              {issues.map((issue, idx) => {
                 const sevColor = SEVERITY_COLOR[issue.severity?.toLowerCase() ?? 'medium'] ?? colors.warning;
                 return (
-                  <View key={issue.id} style={[styles.card, { borderLeftColor: sevColor }]}>
+                  <View key={`${issue.id}-${idx}`} style={[styles.card, { borderLeftColor: sevColor }]}>
                     <View style={styles.cardTop}>
                       <Text style={styles.cardDesc} numberOfLines={2}>{issue.description}</Text>
                       {issue.severity && (

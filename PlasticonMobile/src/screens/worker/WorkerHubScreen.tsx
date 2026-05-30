@@ -154,7 +154,7 @@ export function WorkerHubScreen() {
         {data?.recentLogs.length ? (
           <Card style={styles.logCard}>
             {data.recentLogs.map((log, i) => (
-              <View key={log.id} style={[styles.logRow, i < data.recentLogs.length - 1 && styles.logDivider]}>
+              <View key={`${log.id}-${i}`} style={[styles.logRow, i < data.recentLogs.length - 1 && styles.logDivider]}>
                 <View style={styles.logLeft}>
                   <View style={styles.logDot} />
                   <Text style={styles.logName} numberOfLines={1}>

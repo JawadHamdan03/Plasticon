@@ -149,8 +149,8 @@ export function AdminDashScreen() {
                 <Ionicons name="time-outline" size={16} color={colors.primary} />
                 <Text style={styles.sectionTitle}>Recent Production</Text>
               </View>
-              {data.recentProduction.slice(0, 4).map((r) => (
-                <View key={r.id} style={styles.recentRow}>
+              {data.recentProduction.slice(0, 4).map((r, idx) => (
+                <View key={`${r.id}-${idx}`} style={styles.recentRow}>
                   <Text style={styles.recentName} numberOfLines={1}>{r.machineName ?? `Record #${r.id}`}</Text>
                   <Text style={styles.recentVal}>{(r.cartonsCount ?? 0).toLocaleString()} cartons</Text>
                 </View>

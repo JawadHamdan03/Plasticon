@@ -50,10 +50,16 @@ const defaultDraft: SnapshotDraft = {
   electricityImage: null,
 };
 
+function workerAuthHeader(): Record<string, string> {
+  const token = localStorage.getItem("plasticon_token");
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
 async function fetchWithWorkerAuth(path: string, options?: RequestInit) {
   return fetch(`${API_BASE_URL}${path}`, {
     ...options,
     headers: {
+      ...workerAuthHeader(),
       ...(options?.headers ?? {}),
     },
     credentials: "include",

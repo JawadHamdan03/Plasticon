@@ -77,7 +77,7 @@ export function AuditLogsScreen() {
       {loading ? <View style={styles.center}><ActivityIndicator size="large" color={colors.primary} /></View> : (
         <FlatList
           data={logs}
-          keyExtractor={(i) => String(i.id)}
+          keyExtractor={(i, idx) => `${String(i.id)}-${idx}`}
           renderItem={({ item }) => <LogCard item={item} />}
           contentContainerStyle={styles.list}
           showsVerticalScrollIndicator={false}

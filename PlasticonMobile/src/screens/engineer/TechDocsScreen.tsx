@@ -69,7 +69,7 @@ export function TechDocsScreen() {
       {loading ? <View style={styles.center}><ActivityIndicator size="large" color={colors.primary} /></View> : (
         <FlatList
           data={docs}
-          keyExtractor={(i) => String(i.id)}
+          keyExtractor={(i, idx) => `${String(i.id)}-${idx}`}
           renderItem={({ item }) => <DocCard item={item} />}
           contentContainerStyle={styles.list}
           showsVerticalScrollIndicator={false}

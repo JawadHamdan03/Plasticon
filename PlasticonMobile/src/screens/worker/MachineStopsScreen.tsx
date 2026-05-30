@@ -77,8 +77,8 @@ export function MachineStopsScreen() {
             <View style={styles.empty}><Ionicons name="checkmark-circle-outline" size={44} color={colors.success} /><Text style={styles.emptyText}>No machine stops reported</Text></View>
           ) : (
             <View style={styles.list}>
-              {stops.map((s) => (
-                <View key={s.id} style={[styles.card, { borderLeftColor: colors.danger }]}>
+              {stops.map((s, idx) => (
+                <View key={`${s.id}-${idx}`} style={[styles.card, { borderLeftColor: colors.danger }]}>
                   <Text style={styles.cardMachine}>{s.machineName ?? 'Machine'}</Text>
                   <Text style={styles.cardReason}>{s.reason}</Text>
                   <View style={styles.cardFooter}>
@@ -101,8 +101,8 @@ export function MachineStopsScreen() {
               <>
                 <Text style={styles.label}>Machine</Text>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: spacing.md }}>
-                  {machines.map((m) => (
-                    <TouchableOpacity key={m.id} style={[styles.pill, machineId === String(m.id) && styles.pillActive]} onPress={() => setMachineId(String(m.id))}>
+                  {machines.map((m, idx) => (
+                    <TouchableOpacity key={`${m.id}-${idx}`} style={[styles.pill, machineId === String(m.id) && styles.pillActive]} onPress={() => setMachineId(String(m.id))}>
                       <Text style={[styles.pillText, machineId === String(m.id) && styles.pillTextActive]}>{m.name}</Text>
                     </TouchableOpacity>
                   ))}

@@ -84,7 +84,7 @@ export function TransferLogScreen() {
       ) : (
         <FlatList
           data={logs}
-          keyExtractor={(i) => String(i.id)}
+          keyExtractor={(i, idx) => `${String(i.id)}-${idx}`}
           renderItem={({ item }) => <TransferCard item={item} />}
           contentContainerStyle={styles.list}
           showsVerticalScrollIndicator={false}

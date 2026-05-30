@@ -210,7 +210,7 @@ export function CustomersScreen() {
       ) : (
         <FlatList
           data={filtered}
-          keyExtractor={(item) => String(item.id)}
+          keyExtractor={(item, idx) => `${String(item.id)}-${idx}`}
           renderItem={({ item }) => <CustomerCard item={item} />}
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}

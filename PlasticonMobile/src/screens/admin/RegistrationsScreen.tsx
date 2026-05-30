@@ -108,7 +108,7 @@ export function RegistrationsScreen() {
       {loading ? <View style={styles.center}><ActivityIndicator size="large" color={colors.primary} /></View> : (
         <FlatList
           data={requests}
-          keyExtractor={(i) => String(i.id)}
+          keyExtractor={(i, idx) => `${String(i.id)}-${idx}`}
           renderItem={({ item }) => <RegCard item={item} onAction={() => { setLoading(true); void load(); }} />}
           contentContainerStyle={styles.list}
           showsVerticalScrollIndicator={false}

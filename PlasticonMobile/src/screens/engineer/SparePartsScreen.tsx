@@ -278,7 +278,7 @@ export function SparePartsScreen() {
       ) : (
         <FlatList
           data={requests}
-          keyExtractor={(i) => String(i.id)}
+          keyExtractor={(i, idx) => `${String(i.id)}-${idx}`}
           renderItem={({ item }) => (
             <RequestCard
               item={item}

@@ -76,7 +76,7 @@ export function PayrollScreen() {
       ) : (
         <FlatList
           data={daily}
-          keyExtractor={(i) => String(i.id)}
+          keyExtractor={(i, idx) => `${String(i.id)}-${idx}`}
           renderItem={({ item }) => <DailyRow item={item} />}
           contentContainerStyle={styles.list}
           showsVerticalScrollIndicator={false}

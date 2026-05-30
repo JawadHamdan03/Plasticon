@@ -134,8 +134,8 @@ export function EngineerDashScreen() {
         {/* Recent maintenance */}
         <Text style={styles.sectionLabel}>RECENT MAINTENANCE</Text>
         <View style={styles.alertCard}>
-          {data?.recentMaint.length ? data.recentMaint.map((item) => (
-            <AlertRow key={item.id} item={item} />
+          {data?.recentMaint.length ? data.recentMaint.map((item, idx) => (
+            <AlertRow key={`${item.id}-${idx}`} item={item} />
           )) : (
             <View style={styles.empty}>
               <Ionicons name="checkmark-circle-outline" size={28} color={colors.success} />

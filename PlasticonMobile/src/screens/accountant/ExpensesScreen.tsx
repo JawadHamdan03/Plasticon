@@ -75,7 +75,7 @@ export function ExpensesScreen() {
       {loading ? <View style={styles.center}><ActivityIndicator size="large" color={colors.primary} /></View> : (
         <FlatList
           data={expenses}
-          keyExtractor={(i) => String(i.id)}
+          keyExtractor={(i, idx) => `${String(i.id)}-${idx}`}
           renderItem={({ item }) => <ExpenseCard item={item} />}
           contentContainerStyle={styles.list}
           showsVerticalScrollIndicator={false}

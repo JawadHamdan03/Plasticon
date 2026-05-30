@@ -27,12 +27,10 @@ interface Workflow {
   id: number;
   workflowName?: string;
   title?: string;
-  requestType?: string;
-  requester?: { fullName: string };
-  requestedBy?: string;
-  amount?: number;
   status?: string;
-  priority?: string;
+  itemsCount?: number;
+  approverCount?: number;
+  createdBy?: { fullName: string };
   createdAt: string;
 }
 
@@ -57,15 +55,6 @@ const STATUS_META: Record<string, { color: string; icon: string }> = {
   REJECTED: { color: colors.danger,  icon: 'close-circle' },
   REVIEW:   { color: colors.info,    icon: 'eye' },
 };
-
-const PRIORITY_COLOR: Record<string, string> = {
-  HIGH:     colors.danger,
-  MEDIUM:   colors.warning,
-  LOW:      colors.success,
-  CRITICAL: '#7C3AED',
-};
-
-function fmt(n: number) { return n.toLocaleString('en-US', { minimumFractionDigits: 2 }); }
 
 // ─── Inline Picker ────────────────────────────────────────────────────────────
 
@@ -122,11 +111,9 @@ function WorkflowCard({
   onEdit: () => void;
   onDelete: () => void;
 }) {
-  const status   = item.status ?? 'DRAFT';
-  const meta     = STATUS_META[status] ?? STATUS_META.DRAFT;
-  const priority = item.priority;
-  const priColor = priority ? (PRIORITY_COLOR[priority] ?? colors.textMuted) : null;
-  const name     = item.workflowName ?? item.title ?? item.requestType ?? `Workflow #${item.id}`;
+  const status = item.status ?? 'DRAFT';
+  const meta   = STATUS_META[status] ?? STATUS_META.DRAFT;
+  const name   = item.workflowName ?? item.title ?? `Workflow #${item.id}`;
 
   return (
     <View style={styles.card}>
@@ -137,7 +124,7 @@ function WorkflowCard({
         <View style={styles.cardContent}>
           <Text style={styles.title} numberOfLines={1}>{name}</Text>
           <Text style={styles.requester}>
-            {item.requester?.fullName ?? item.requestedBy ?? 'No requester'}
+            {item.createdBy?.fullName ?? 'Unknown'}
           </Text>
         </View>
         <View style={styles.cardActions}>
@@ -153,14 +140,14 @@ function WorkflowCard({
         </View>
       </View>
       <View style={styles.footer}>
-        {item.amount != null && (
+        {(item.itemsCount ?? 0) > 0 && (
           <Text style={styles.detail}>
-            Amount: <Text style={styles.detailVal}>${fmt(item.amount)}</Text>
+            Items: <Text style={styles.detailVal}>{item.itemsCount}</Text>
           </Text>
         )}
-        {priColor && (
-          <Text style={[styles.detail, { color: priColor, fontWeight: '700' }]}>
-            {priority} priority
+        {(item.approverCount ?? 0) > 0 && (
+          <Text style={styles.detail}>
+            Approvers: <Text style={styles.detailVal}>{item.approverCount}</Text>
           </Text>
         )}
         <Text style={styles.detail}>
@@ -334,9 +321,7 @@ export function ApprovalWorkflowsScreen() {
       }
     : DEFAULT_FORM;
 
-  const pending = workflows.filter(
-    (w) => w.status === 'PENDING' || w.status === 'REVIEW',
-  ).length;
+  const pending = workflows.filter((w) => w.status === 'DRAFT').length;
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -353,7 +338,7 @@ export function ApprovalWorkflowsScreen() {
       ) : (
         <FlatList
           data={workflows}
-          keyExtractor={(i) => String(i.id)}
+          keyExtractor={(i, idx) => `${String(i.id)}-${idx}`}
           renderItem={({ item }) => (
             <WorkflowCard
               item={item}

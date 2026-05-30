@@ -295,7 +295,7 @@ export function SuppliersScreen() {
       ) : (
         <FlatList
           data={suppliers}
-          keyExtractor={(i) => String(i.id)}
+          keyExtractor={(i, idx) => `${String(i.id)}-${idx}`}
           renderItem={({ item }) => (
             <SupplierCard
               item={item}

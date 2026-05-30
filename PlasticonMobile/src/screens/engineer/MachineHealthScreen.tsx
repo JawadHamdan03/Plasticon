@@ -92,8 +92,8 @@ function CreateModal({ visible, machines, onClose, onSuccess }: {
           <ScrollView showsVerticalScrollIndicator={false}>
             <Text style={styles.fieldLabel}>Machine *</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: spacing.md }}>
-              {machines.map((m) => (
-                <TouchableOpacity key={m.id} style={[styles.pill, machineId === String(m.id) && styles.pillActive]} onPress={() => setMachineId(String(m.id))}>
+              {machines.map((m, idx) => (
+                <TouchableOpacity key={`${m.id}-${idx}`} style={[styles.pill, machineId === String(m.id) && styles.pillActive]} onPress={() => setMachineId(String(m.id))}>
                   <Text style={[styles.pillText, machineId === String(m.id) && styles.pillTextActive]}>{m.name}</Text>
                 </TouchableOpacity>
               ))}
@@ -166,7 +166,7 @@ export function MachineHealthScreen() {
       ) : (
         <FlatList
           data={records}
-          keyExtractor={(i) => String(i.id)}
+          keyExtractor={(i, idx) => `${String(i.id)}-${idx}`}
           renderItem={({ item }) => <HealthCard item={item} />}
           contentContainerStyle={styles.list}
           showsVerticalScrollIndicator={false}

@@ -185,7 +185,7 @@ export function ProductionScreen() {
       ) : (
         <FlatList
           data={records}
-          keyExtractor={(i) => String(i.id)}
+          keyExtractor={(i, idx) => `${String(i.id)}-${idx}`}
           renderItem={({ item }) => <ProductionItem item={item} />}
           contentContainerStyle={styles.list}
           showsVerticalScrollIndicator={false}

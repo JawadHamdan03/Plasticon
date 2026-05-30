@@ -66,10 +66,10 @@ export function ElectricityAlertsScreen() {
               <>
                 <Text style={styles.section}>Active Alerts</Text>
                 <View style={styles.list}>
-                  {active.map((a) => {
+                  {active.map((a, idx) => {
                     const c = SEV_COLOR[a.severity?.toLowerCase() ?? 'medium'] ?? colors.warning;
                     return (
-                      <View key={a.id} style={[styles.card, { borderLeftColor: c }]}>
+                      <View key={`${a.id}-${idx}`} style={[styles.card, { borderLeftColor: c }]}>
                         <View style={styles.cardRow}>
                           <Ionicons name="flash" size={16} color={c} />
                           <Text style={[styles.cardType, { color: c }]}>{a.type ?? 'Alert'}</Text>
@@ -92,8 +92,8 @@ export function ElectricityAlertsScreen() {
               <>
                 <Text style={[styles.section, { marginTop: spacing.md }]}>Resolved</Text>
                 <View style={styles.list}>
-                  {resolved.map((a) => (
-                    <View key={a.id} style={[styles.card, styles.cardResolved]}>
+                  {resolved.map((a, idx) => (
+                    <View key={`${a.id}-${idx}`} style={[styles.card, styles.cardResolved]}>
                       <View style={styles.cardRow}>
                         <Ionicons name="checkmark-circle" size={14} color={colors.success} />
                         <Text style={styles.cardType}>{a.type ?? 'Alert'}</Text>

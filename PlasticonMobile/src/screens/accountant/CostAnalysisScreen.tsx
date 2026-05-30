@@ -66,7 +66,7 @@ export function CostAnalysisScreen() {
       {loading ? <View style={styles.center}><ActivityIndicator size="large" color={colors.primary} /></View> : (
         <FlatList
           data={costs}
-          keyExtractor={(i) => String(i.id)}
+          keyExtractor={(i, idx) => `${String(i.id)}-${idx}`}
           renderItem={({ item }) => <CostCard item={item} />}
           contentContainerStyle={styles.list}
           showsVerticalScrollIndicator={false}

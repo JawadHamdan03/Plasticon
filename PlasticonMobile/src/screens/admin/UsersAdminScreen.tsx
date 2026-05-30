@@ -258,7 +258,7 @@ export function UsersAdminScreen() {
       ) : (
         <FlatList
           data={users}
-          keyExtractor={(i) => String(i.id)}
+          keyExtractor={(i, idx) => `${String(i.id)}-${idx}`}
           renderItem={({ item }) => <UserCard item={item} onEdit={openEdit} />}
           contentContainerStyle={styles.list}
           showsVerticalScrollIndicator={false}

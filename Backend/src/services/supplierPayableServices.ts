@@ -21,31 +21,50 @@ export const getAllPayables = async (): Promise<ServiceResult<unknown>> => {
   }
 };
 
+async function resolveSupplierId(
+  supplierId?: number,
+  supplierName?: string,
+): Promise<number | null> {
+  if (supplierId) return supplierId;
+  if (!supplierName?.trim()) return null;
+
+  const name = supplierName.trim();
+  let supplier = await prisma.supplier.findFirst({
+    where: { name: { equals: name, mode: "insensitive" } },
+    select: { id: true },
+  });
+
+  if (!supplier) {
+    supplier = await prisma.supplier.create({
+      data: { name },
+      select: { id: true },
+    });
+  }
+
+  return supplier.id;
+}
+
 export const createPayable = async (
   payload: any,
 ): Promise<ServiceResult<unknown>> => {
   try {
-    const { supplierId, amount, dueDate, paymentStatus, notes } = payload;
+    const { supplierId, supplierName, amount, dueDate, paymentStatus, status, notes } = payload;
 
-    if (!supplierId || !amount || amount <= 0 || !dueDate) {
-      return { status: 400, message: "Missing required fields" };
+    if (!amount || amount <= 0) {
+      return { status: 400, message: "Amount must be a positive number" };
     }
 
-    const supplier = await prisma.supplier.findUnique({
-      where: { id: supplierId },
-      select: { id: true },
-    });
-
-    if (!supplier) {
-      return { status: 404, message: "Supplier not found" };
+    const resolvedId = await resolveSupplierId(supplierId, supplierName);
+    if (!resolvedId) {
+      return { status: 400, message: "Supplier name or ID is required" };
     }
 
     const payable = await prisma.supplierPayable.create({
       data: {
-        supplierId,
+        supplierId: resolvedId,
         amount,
-        dueDate: new Date(dueDate),
-        paymentStatus: paymentStatus || "PENDING",
+        dueDate: dueDate ? new Date(dueDate) : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+        paymentStatus: paymentStatus || status || "PENDING",
         notes: notes || null,
       },
       include: {
@@ -65,23 +84,32 @@ export const updatePayable = async (
   payload: any,
 ): Promise<ServiceResult<unknown>> => {
   try {
-    const payable = await prisma.supplierPayable.findUnique({
+    const existing = await prisma.supplierPayable.findUnique({
       where: { id },
       select: { id: true },
     });
 
-    if (!payable) {
+    if (!existing) {
       return { status: 404, message: "Payable not found" };
+    }
+
+    const updateData: any = {};
+
+    if (payload.amount !== undefined) updateData.amount = payload.amount;
+    if (payload.dueDate) updateData.dueDate = new Date(payload.dueDate);
+    if (payload.paymentStatus || payload.status) {
+      updateData.paymentStatus = payload.paymentStatus || payload.status;
+    }
+    if (payload.notes !== undefined) updateData.notes = payload.notes;
+
+    if (payload.supplierId || payload.supplierName) {
+      const resolvedId = await resolveSupplierId(payload.supplierId, payload.supplierName);
+      if (resolvedId) updateData.supplierId = resolvedId;
     }
 
     const updated = await prisma.supplierPayable.update({
       where: { id },
-      data: {
-        ...(payload.amount !== undefined && { amount: payload.amount }),
-        ...(payload.dueDate && { dueDate: new Date(payload.dueDate) }),
-        ...(payload.paymentStatus && { paymentStatus: payload.paymentStatus }),
-        ...(payload.notes !== undefined && { notes: payload.notes }),
-      },
+      data: updateData,
       include: {
         supplier: { select: { id: true, name: true, email: true, phone: true } },
       },

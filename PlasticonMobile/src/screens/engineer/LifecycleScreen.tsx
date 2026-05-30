@@ -92,7 +92,7 @@ export function LifecycleScreen() {
       ) : (
         <FlatList
           data={records}
-          keyExtractor={(i) => String(i.id)}
+          keyExtractor={(i, idx) => `${String(i.id)}-${idx}`}
           renderItem={({ item }) => <LifecycleCard item={item} />}
           contentContainerStyle={styles.list}
           showsVerticalScrollIndicator={false}

@@ -70,7 +70,7 @@ export function PartsPricingScreen() {
       {loading ? <View style={styles.center}><ActivityIndicator size="large" color={colors.primary} /></View> : (
         <FlatList
           data={parts}
-          keyExtractor={(i) => String(i.id)}
+          keyExtractor={(i, idx) => `${String(i.id)}-${idx}`}
           renderItem={({ item }) => <PartCard item={item} />}
           contentContainerStyle={styles.list}
           showsVerticalScrollIndicator={false}

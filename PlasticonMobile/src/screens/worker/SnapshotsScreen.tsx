@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import {
-  ActivityIndicator, Alert, FlatList, KeyboardAvoidingView,
+  ActivityIndicator, Alert, FlatList, Image, KeyboardAvoidingView,
   Modal, Platform, RefreshControl, StyleSheet, Text,
   TextInput, TouchableOpacity, View,
 } from 'react-native';
@@ -9,6 +9,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { api } from '../../api/client';
 import { Button, ScreenHeader } from '../../components';
 import { colors, radius, shadow, spacing, typography } from '../../theme';
+import { API_BASE } from '../../config';
 
 interface WorkerSnapshot {
   id: number;
@@ -17,6 +18,13 @@ interface WorkerSnapshot {
   machineCounter: number;
   electricityKwh: number;
   notes: string | null;
+  machineCounterImage?: string | null;
+  electricityImage?: string | null;
+}
+
+function toImageUri(stored?: string | null): string | null {
+  if (!stored) return null;
+  return `${API_BASE}/${stored.replace(/^prisma\//, '')}`;
 }
 
 function fmtDT(iso: string) {
@@ -46,6 +54,16 @@ function SnapCard({ item }: { item: WorkerSnapshot }) {
         </View>
       </View>
       {item.notes ? <Text style={styles.notes}>{item.notes}</Text> : null}
+      {(item.machineCounterImage || item.electricityImage) && (
+        <View style={styles.photoRow}>
+          {toImageUri(item.machineCounterImage) ? (
+            <Image source={{ uri: toImageUri(item.machineCounterImage)! }} style={styles.photo} resizeMode="cover" />
+          ) : null}
+          {toImageUri(item.electricityImage) ? (
+            <Image source={{ uri: toImageUri(item.electricityImage)! }} style={styles.photo} resizeMode="cover" />
+          ) : null}
+        </View>
+      )}
     </View>
   );
 }
@@ -66,7 +84,7 @@ function LogModal({ visible, onClose, onSuccess }: { visible: boolean; onClose: 
 
     setSaving(true);
     try {
-      await api.post('/worker-tools/snapshots', {
+      await api.post('/settings/snapshots', {
         machineLabel:   form.machineLabel.trim(),
         machineCounter: counter,
         electricityKwh: kwh,
@@ -127,9 +145,10 @@ export function SnapshotsScreen() {
 
   const load = useCallback(async () => {
     try {
-      const res = await api.get<{ snapshots: WorkerSnapshot[] }>('/worker-tools/snapshots?limit=30');
-      setSnaps(res.snapshots ?? []);
-    } finally {
+      const res = await api.get<WorkerSnapshot[]>('/settings/snapshots/mine?limit=30');
+      setSnaps(Array.isArray(res) ? res : []);
+    } catch { setSnaps([]); }
+    finally {
       setLoading(false);
       setRefreshing(false);
     }
@@ -148,7 +167,7 @@ export function SnapshotsScreen() {
       ) : (
         <FlatList
           data={snaps}
-          keyExtractor={(i) => String(i.id)}
+          keyExtractor={(i, idx) => `${String(i.id)}-${idx}`}
           renderItem={({ item }) => <SnapCard item={item} />}
           contentContainerStyle={styles.list}
           showsVerticalScrollIndicator={false}
@@ -195,6 +214,8 @@ const styles = StyleSheet.create({
   metricLabel:   { ...typography.caption, marginTop: 2 },
   metricDivider: { width: 1, height: 36, backgroundColor: colors.border },
   notes:         { ...typography.bodySmall, color: colors.textMuted, marginTop: spacing.sm, fontStyle: 'italic' },
+  photoRow:      { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.sm },
+  photo:         { width: '48%', aspectRatio: 4 / 3, borderRadius: radius.sm, backgroundColor: colors.border },
 
   empty:     { alignItems: 'center', paddingTop: 60, gap: spacing.sm },
   emptyText: { ...typography.bodySmall, color: colors.textMuted },
