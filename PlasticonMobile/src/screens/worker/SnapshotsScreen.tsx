@@ -36,7 +36,7 @@ function SnapCard({ item }: { item: WorkerSnapshot }) {
       </View>
       <View style={styles.metrics}>
         <View style={styles.metric}>
-          <Text style={styles.metricVal}>{item.machineCounter.toLocaleString()}</Text>
+          <Text style={styles.metricVal}>{(item.machineCounter ?? 0).toLocaleString()}</Text>
           <Text style={styles.metricLabel}>Counter</Text>
         </View>
         <View style={styles.metricDivider} />

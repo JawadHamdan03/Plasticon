@@ -221,11 +221,14 @@ export function UsersAdminScreen() {
   const load = useCallback(async () => {
     try {
       const [usersRes, shiftsRes] = await Promise.all([
-        api.get<{ users: User[] }>('/users/all'),
-        api.get<{ shifts: Shift[] }>('/shifts').catch(() => ({ shifts: [] as Shift[] })),
+        api.get<User[]>('/users/all'),
+        api.get<Shift[]>('/shifts').catch(() => [] as Shift[]),
       ]);
-      setUsers(usersRes.users ?? []);
-      setShifts((shiftsRes as any).shifts ?? []);
+      setUsers(Array.isArray(usersRes) ? usersRes : []);
+      setShifts(Array.isArray(shiftsRes) ? shiftsRes : []);
+    } catch (e: any) {
+      console.warn('UsersAdminScreen load error:', e?.message ?? e);
+      Alert.alert('Error', e?.message ?? 'Failed to load users');
     } finally {
       setLoading(false);
       setRefreshing(false);

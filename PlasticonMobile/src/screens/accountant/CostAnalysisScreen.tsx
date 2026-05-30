@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, FlatList, RefreshControl, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, FlatList, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { api } from '../../api/client';
@@ -10,8 +10,12 @@ interface CostRecord {
   id: number;
   category?: string;
   department?: string;
-  amount: number;
+  cost?: number;
+  amount?: number;
+  percentage?: number;
+  period?: string;
   description?: string;
+  notes?: string;
   date?: string;
   createdAt: string;
 }
@@ -26,10 +30,10 @@ function CostCard({ item }: { item: CostRecord }) {
           <Text style={styles.category}>{item.category ?? 'General'}</Text>
           {item.department ? <Text style={styles.dept}>{item.department}</Text> : null}
         </View>
-        <Text style={styles.amount}>${fmt(item.amount)}</Text>
+        <Text style={styles.amount}>${fmt(item.cost ?? item.amount ?? 0)}</Text>
       </View>
-      {item.description ? <Text style={styles.desc} numberOfLines={2}>{item.description}</Text> : null}
-      <Text style={styles.date}>{new Date(item.date ?? item.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}</Text>
+      {(item.description ?? item.notes) ? <Text style={styles.desc} numberOfLines={2}>{item.description ?? item.notes}</Text> : null}
+      <Text style={styles.date}>{item.period ?? new Date(item.createdAt).toLocaleDateString([], { month: 'short', year: 'numeric' })}</Text>
     </View>
   );
 }
@@ -42,10 +46,12 @@ export function CostAnalysisScreen() {
 
   const load = useCallback(async () => {
     try {
-      const res = await api.get<{ costs?: CostRecord[]; analyses?: CostRecord[]; total?: number }>('/cost-analysis?limit=30');
-      const records = res.costs ?? res.analyses ?? [];
+      const res = await api.get<CostRecord[]>('/cost-analysis?limit=30');
+      const records = Array.isArray(res) ? res : [];
       setCosts(records);
-      setTotal(res.total ?? records.reduce((s, r) => s + (r.amount ?? 0), 0));
+      setTotal(records.reduce((s, r) => s + (r.cost ?? r.amount ?? 0), 0));
+    } catch (e: any) {
+      Alert.alert('Error', e?.message ?? 'Failed to load cost analysis');
     } finally {
       setLoading(false);
       setRefreshing(false);

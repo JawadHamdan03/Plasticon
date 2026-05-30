@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, FlatList, RefreshControl, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, FlatList, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { api } from '../../api/client';
@@ -10,10 +10,11 @@ interface Expense {
   id: number;
   title?: string;
   category?: string;
-  amount: number;
+  amount?: number;
   description?: string;
   date?: string;
   submittedBy?: { fullName: string };
+  paymentStatus?: string;
   status?: string;
   createdAt: string;
 }
@@ -40,7 +41,7 @@ function ExpenseCard({ item }: { item: Expense }) {
           <Text style={styles.title} numberOfLines={1}>{item.title ?? item.category ?? `Expense #${item.id}`}</Text>
           <Text style={styles.meta}>{item.submittedBy?.fullName ?? ''} · {new Date(item.date ?? item.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric' })}</Text>
         </View>
-        <Text style={styles.amount}>${fmt(item.amount)}</Text>
+        <Text style={styles.amount}>${fmt(item.amount ?? 0)}</Text>
       </View>
       {item.description ? <Text style={styles.desc} numberOfLines={1}>{item.description}</Text> : null}
     </View>
@@ -54,8 +55,10 @@ export function ExpensesScreen() {
 
   const load = useCallback(async () => {
     try {
-      const res = await api.get<{ expenses: Expense[] }>('/expenses?limit=40');
-      setExpenses(res.expenses ?? []);
+      const res = await api.get<Expense[]>('/expenses?limit=40');
+      setExpenses(Array.isArray(res) ? res : []);
+    } catch (e: any) {
+      Alert.alert('Error', e?.message ?? 'Failed to load expenses');
     } finally {
       setLoading(false);
       setRefreshing(false);

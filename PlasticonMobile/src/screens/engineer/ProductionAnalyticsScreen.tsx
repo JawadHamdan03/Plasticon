@@ -5,39 +5,44 @@ import { api } from '../../api/client';
 import { ScreenHeader, StatCard } from '../../components';
 import { colors, radius, shadow, spacing, typography } from '../../theme';
 
-interface AnalyticsData {
-  totalPieces:    number;
-  totalLogs:      number;
-  avgPerDay:      number;
-  topMachine:     string;
-  byMachine:      { machineName: string; total: number; logs: number }[];
-  recentTrend:    { date: string; total: number }[];
+interface WeeklyReport {
+  weekStart: string;
+  weekEnd:   string;
+  totals: {
+    recordsCount:        number;
+    totalCartons:        number;
+    totalPieces:         number;
+    totalDowntimeMinutes: number;
+  };
+  byDay:     { date: string; totalCartons: number; totalPieces: number; recordsCount: number }[];
+  byShift:   unknown[];
+  byMachine: { machineName: string; totalPieces: number; recordsCount: number }[];
 }
 
-function MachineRow({ item, max }: { item: AnalyticsData['byMachine'][0]; max: number }) {
-  const pct = max > 0 ? (item.total / max) * 100 : 0;
+function MachineRow({ item, max }: { item: WeeklyReport['byMachine'][0]; max: number }) {
+  const pct = max > 0 ? ((item.totalPieces ?? 0) / max) * 100 : 0;
   return (
     <View style={styles.machRow}>
       <Text style={styles.machName} numberOfLines={1}>{item.machineName}</Text>
       <View style={styles.machBar}>
         <View style={[styles.machFill, { width: `${pct}%` }]} />
       </View>
-      <Text style={styles.machVal}>{item.total.toLocaleString()}</Text>
+      <Text style={styles.machVal}>{(item.totalPieces ?? 0).toLocaleString()}</Text>
     </View>
   );
 }
 
 export function ProductionAnalyticsScreen() {
-  const [data, setData]         = useState<AnalyticsData | null>(null);
+  const [data, setData]         = useState<WeeklyReport | null>(null);
   const [loading, setLoading]   = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
   const load = useCallback(async () => {
     try {
-      const res = await api.get<AnalyticsData>('/reports/production-summary');
+      const res = await api.get<WeeklyReport>('/reports/production/weekly');
       setData(res);
     } catch {
-      setData({ totalPieces: 0, totalLogs: 0, avgPerDay: 0, topMachine: '—', byMachine: [], recentTrend: [] });
+      setData(null);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -46,7 +51,11 @@ export function ProductionAnalyticsScreen() {
 
   useEffect(() => { void load(); }, [load]);
 
-  const maxMachProd = Math.max(...(data?.byMachine.map((m) => m.total) ?? [0]));
+  const byMachine = data?.byMachine ?? [];
+  const byDay     = data?.byDay ?? [];
+  const maxMachProd = Math.max(...byMachine.map((m) => m.totalPieces ?? 0), 0);
+  const topMachine  = [...byMachine].sort((a, b) => (b.totalPieces ?? 0) - (a.totalPieces ?? 0))[0]?.machineName ?? '—';
+  const avgPerDay   = byDay.length > 0 ? Math.round((data?.totals.totalPieces ?? 0) / byDay.length) : 0;
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -58,30 +67,30 @@ export function ProductionAnalyticsScreen() {
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); void load(); }} tintColor={colors.primary} />}
         >
           <View style={styles.kpiRow}>
-            <StatCard label="Total Pieces"   value={(data?.totalPieces ?? 0).toLocaleString()} icon="cube"       color={colors.primary} style={styles.kpi} />
-            <StatCard label="Avg / Day"       value={String(Math.round(data?.avgPerDay ?? 0))} icon="analytics"  color={colors.info}    style={styles.kpi} />
+            <StatCard label="Total Pieces"  value={(data?.totals.totalPieces ?? 0).toLocaleString()} icon="cube"          color={colors.primary} style={styles.kpi} />
+            <StatCard label="Avg / Day"      value={avgPerDay.toLocaleString()}                       icon="analytics"     color={colors.info}    style={styles.kpi} />
           </View>
           <View style={styles.kpiRow}>
-            <StatCard label="Total Logs"     value={String(data?.totalLogs ?? 0)}              icon="list"       color={colors.accent}  style={styles.kpi} />
-            <StatCard label="Top Machine"    value={data?.topMachine ?? '—'}                   icon="hardware-chip" color={colors.success} style={styles.kpi} />
+            <StatCard label="Total Logs"    value={String(data?.totals.recordsCount ?? 0)}            icon="list"          color={colors.accent}  style={styles.kpi} />
+            <StatCard label="Top Machine"   value={topMachine}                                        icon="hardware-chip" color={colors.success} style={styles.kpi} />
           </View>
 
-          {data?.byMachine && data.byMachine.length > 0 && (
+          {byMachine.length > 0 && (
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Output by Machine</Text>
-              {data.byMachine.map((m) => (
+              {byMachine.map((m) => (
                 <MachineRow key={m.machineName} item={m} max={maxMachProd} />
               ))}
             </View>
           )}
 
-          {data?.recentTrend && data.recentTrend.length > 0 && (
+          {byDay.length > 0 && (
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Recent Daily Output</Text>
-              {data.recentTrend.slice(0, 7).map((t) => (
+              <Text style={styles.sectionTitle}>Daily Output (This Week)</Text>
+              {byDay.map((t) => (
                 <View key={t.date} style={styles.trendRow}>
                   <Text style={styles.trendDate}>{new Date(t.date).toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' })}</Text>
-                  <Text style={styles.trendVal}>{t.total.toLocaleString()} units</Text>
+                  <Text style={styles.trendVal}>{(t.totalPieces ?? 0).toLocaleString()} units</Text>
                 </View>
               ))}
             </View>

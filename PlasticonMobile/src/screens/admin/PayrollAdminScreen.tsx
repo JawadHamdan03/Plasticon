@@ -22,10 +22,13 @@ interface PayrollRecord {
   baseSalary?: number;
   overtimePay?: number;
   deductions?: number;
+  deductionAmount?: number;
   totalEarnings?: number;
   netPay?: number;
+  totalDailyPay?: number;
   hoursWorked?: number;
   confirmed?: boolean;
+  isConfirmed?: boolean;
   status?: string;
   createdAt: string;
 }
@@ -41,7 +44,7 @@ function PayCard({
   onConfirm: () => void;
   confirming: boolean;
 }) {
-  const confirmed = item.confirmed ?? item.status === 'PAID';
+  const confirmed = item.isConfirmed ?? item.confirmed ?? item.status === 'PAID';
   const name      = item.user?.fullName ?? `Record #${item.id}`;
   const dateStr   = item.date
     ? new Date(item.date).toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' })
@@ -55,7 +58,7 @@ function PayCard({
           <Text style={styles.period}>{dateStr}</Text>
         </View>
         <View style={styles.right}>
-          <Text style={styles.amount}>${fmt(item.netPay ?? item.totalEarnings ?? 0)}</Text>
+          <Text style={styles.amount}>${fmt(item.totalDailyPay ?? item.netPay ?? item.totalEarnings ?? 0)}</Text>
           <View style={[styles.badge, { backgroundColor: confirmed ? `${colors.success}15` : `${colors.warning}15` }]}>
             <Text style={[styles.badgeText, { color: confirmed ? colors.success : colors.warning }]}>
               {confirmed ? 'CONFIRMED' : 'PENDING'}
@@ -64,16 +67,16 @@ function PayCard({
         </View>
       </View>
 
-      {(item.deductions != null || item.hoursWorked != null) && (
+      {((item.deductions ?? item.deductionAmount) != null || item.hoursWorked != null) && (
         <View style={styles.footer}>
           {item.hoursWorked != null && (
             <Text style={styles.detail}>Hours: <Text style={styles.detailVal}>{item.hoursWorked}h</Text></Text>
           )}
-          {item.totalEarnings != null && (
-            <Text style={styles.detail}>Gross: <Text style={styles.detailVal}>${fmt(item.totalEarnings)}</Text></Text>
+          {(item.totalEarnings ?? item.totalDailyPay) != null && (
+            <Text style={styles.detail}>Gross: <Text style={styles.detailVal}>${fmt(item.totalEarnings ?? item.totalDailyPay ?? 0)}</Text></Text>
           )}
-          {item.deductions != null && (
-            <Text style={styles.detail}>Deductions: <Text style={[styles.detailVal, { color: colors.danger }]}>${fmt(item.deductions)}</Text></Text>
+          {(item.deductions ?? item.deductionAmount) != null && (
+            <Text style={styles.detail}>Deductions: <Text style={[styles.detailVal, { color: colors.danger }]}>${fmt(item.deductions ?? item.deductionAmount ?? 0)}</Text></Text>
           )}
         </View>
       )}
@@ -107,8 +110,8 @@ export function PayrollAdminScreen() {
 
   const load = useCallback(async () => {
     try {
-      const res = await api.get<{ payrolls?: PayrollRecord[]; records?: PayrollRecord[] }>('/payroll/daily?limit=40');
-      setRecords(res.payrolls ?? res.records ?? []);
+      const res = await api.get<PayrollRecord[]>('/payroll/daily?limit=40');
+      setRecords(Array.isArray(res) ? res : []);
     } catch (e: any) {
       Alert.alert('Error', e?.message ?? 'Failed to load payroll');
     } finally {
@@ -154,8 +157,8 @@ export function PayrollAdminScreen() {
     }
   };
 
-  const totalNet      = records.reduce((s, r) => s + (r.netPay ?? r.totalEarnings ?? 0), 0);
-  const pendingCount  = records.filter((r) => !r.confirmed && r.status !== 'PAID').length;
+  const totalNet      = records.reduce((s, r) => s + (r.totalDailyPay ?? r.netPay ?? r.totalEarnings ?? 0), 0);
+  const pendingCount  = records.filter((r) => !(r.isConfirmed ?? r.confirmed) && r.status !== 'PAID').length;
 
   return (
     <SafeAreaView style={styles.safe}>

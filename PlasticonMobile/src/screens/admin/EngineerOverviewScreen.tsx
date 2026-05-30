@@ -58,8 +58,10 @@ export function EngineerOverviewScreen() {
 
   const load = useCallback(async () => {
     try {
-      const res = await api.get<{ records: HealthRecord[] }>('/machine-health?limit=30');
-      setRecords(res.records ?? []);
+      const res = await api.get<HealthRecord[]>('/machine-health?limit=30');
+      setRecords(Array.isArray(res) ? res : []);
+    } catch {
+      setRecords([]);
     } finally {
       setLoading(false);
       setRefreshing(false);

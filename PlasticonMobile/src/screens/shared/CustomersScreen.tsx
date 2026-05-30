@@ -153,10 +153,8 @@ export function CustomersScreen() {
       else setLoading(true);
       setError(null);
 
-      const res = await api.get<{ data: Sale[] } | Sale[]>('/sales/all?limit=100');
-      const raw: Sale[] = Array.isArray(res.data)
-        ? (res.data as Sale[])
-        : ((res.data as { data: Sale[] }).data ?? []);
+      const res = await api.get<Sale[]>('/sales/all?limit=100');
+      const raw: Sale[] = Array.isArray(res) ? res : [];
 
       setCustomers(groupSalesByCustomer(raw));
     } catch (err: any) {

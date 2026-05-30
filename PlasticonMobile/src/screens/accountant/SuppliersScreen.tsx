@@ -195,8 +195,8 @@ export function SuppliersScreen() {
 
   const load = useCallback(async () => {
     try {
-      const res = await api.get<{ suppliers: Supplier[] }>('/suppliers?limit=30');
-      setSuppliers(res.suppliers ?? []);
+      const res = await api.get<Supplier[]>('/suppliers?limit=30');
+      setSuppliers(Array.isArray(res) ? res : []);
     } catch (err: unknown) {
       Alert.alert('Error', err instanceof Error ? err.message : 'Failed to load suppliers.');
     } finally {

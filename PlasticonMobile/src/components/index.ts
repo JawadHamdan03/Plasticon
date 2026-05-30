@@ -6,3 +6,4 @@ export { StatCard }        from './StatCard';
 export { EmptyState }      from './EmptyState';
 export { LoadingOverlay }  from './LoadingOverlay';
 export { ScreenHeader }    from './ScreenHeader';
+export { AppTopBar }       from './AppTopBar';

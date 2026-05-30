@@ -161,7 +161,7 @@ function RecCard({ item, onEdit, onDelete }: { item: Receivable; onEdit: () => v
         </View>
       </View>
       <View style={styles.row}>
-        <Text style={styles.detail}>Total: <Text style={styles.detailVal}>${fmt(item.amount)}</Text></Text>
+        <Text style={styles.detail}>Total: <Text style={styles.detailVal}>${fmt(item.amount ?? 0)}</Text></Text>
         <Text style={styles.detail}>Paid: <Text style={styles.detailVal}>${fmt(item.amountPaid ?? 0)}</Text></Text>
         {item.dueDate && <Text style={styles.detail}>Due: <Text style={styles.detailVal}>{new Date(item.dueDate).toLocaleDateString([], { month: 'short', day: 'numeric' })}</Text></Text>}
       </View>
@@ -179,8 +179,8 @@ export function CustomerReceivablesScreen() {
 
   const load = useCallback(async () => {
     try {
-      const res = await api.get<{ receivables: Receivable[] }>('/customer-receivables?limit=30');
-      setRecords(res.receivables ?? []);
+      const res = await api.get<Receivable[]>('/customer-receivables?limit=30');
+      setRecords(Array.isArray(res) ? res : []);
     } catch (e: any) {
       Alert.alert('Error', e?.message ?? 'Failed to load receivables');
     } finally {

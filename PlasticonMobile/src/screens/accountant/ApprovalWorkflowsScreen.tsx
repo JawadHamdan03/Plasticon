@@ -261,10 +261,8 @@ export function ApprovalWorkflowsScreen() {
 
   const load = useCallback(async () => {
     try {
-      const res = await api.get<{ workflows?: Workflow[]; requests?: Workflow[] }>(
-        '/approval-workflows?limit=30',
-      );
-      setWorkflows(res.workflows ?? res.requests ?? []);
+      const res = await api.get<Workflow[]>('/approval-workflows?limit=30');
+      setWorkflows(Array.isArray(res) ? res : []);
     } catch (e: any) {
       Alert.alert('Error', e?.message ?? 'Failed to load workflows');
     } finally {

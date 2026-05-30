@@ -6,7 +6,7 @@
 //   Physical Device  → 'http://192.168.x.x:8080' (use your machine's local IP)
 //
 // For Expo Go on a physical device, set these to your machine's local IP.
-// Your current local IP: 192.168.1.15
+// Your current local IP: 192.168.1.11
 // Run `ipconfig` (Windows) or `ifconfig` (Mac) to find it if it changes.
-export const API_BASE = 'http://192.168.1.15:8080';
-export const RAG_BASE = 'http://192.168.1.15:3001/api';
+export const API_BASE = 'http://192.168.1.11:8080';
+export const RAG_BASE = 'http://192.168.1.11:3001/api';

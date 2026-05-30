@@ -34,8 +34,8 @@ export function WarehouseScreen() {
 
   const load = useCallback(async () => {
     try {
-      const res = await api.get<WarehouseItem[] | { items: WarehouseItem[] }>('/inventory?type=warehouse');
-      setItems(Array.isArray(res) ? res : (res.items ?? []));
+      const res = await api.get<WarehouseItem[]>('/inventory/materials');
+      setItems(Array.isArray(res) ? res : []);
     } catch {
       setItems([]);
     } finally {

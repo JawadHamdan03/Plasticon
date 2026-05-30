@@ -33,8 +33,8 @@ export function ConsumptionScreen() {
 
   const load = useCallback(async () => {
     try {
-      const res = await api.get<{ data: { id: number; type: string; quantity: number; material?: { name: string; unit: string }; createdAt: string }[] }>('/inventory/transactions/all');
-      const rows = (res.data ?? []).filter((r) => r.type === 'OUT');
+      const raw = await api.get<{ id: number; type: string; quantity: number; material?: { name: string; unit: string }; createdAt: string }[]>('/inventory/transactions/all');
+      const rows = (Array.isArray(raw) ? raw : []).filter((r) => r.type === 'OUT');
       setData({
         records: rows.map((r) => ({
           id:           String(r.id),

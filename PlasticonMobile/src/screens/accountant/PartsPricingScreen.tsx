@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, FlatList, RefreshControl, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, FlatList, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { api } from '../../api/client';
@@ -52,8 +52,10 @@ export function PartsPricingScreen() {
 
   const load = useCallback(async () => {
     try {
-      const res = await api.get<{ parts: SparePart[] }>('/spare-parts?limit=40');
-      setParts(res.parts ?? []);
+      const res = await api.get<SparePart[]>('/spare-parts?limit=40');
+      setParts(Array.isArray(res) ? res : []);
+    } catch (e: any) {
+      Alert.alert('Error', e?.message ?? 'Failed to load parts');
     } finally {
       setLoading(false);
       setRefreshing(false);

@@ -24,10 +24,11 @@ import { colors, radius, shadow, spacing, typography } from '../../theme';
 interface AttRecord {
   id: number;
   user?: { fullName: string; role?: string };
-  date: string;
+  date?: string;
   checkIn?: string;
   checkOut?: string;
   status?: string;
+  leaveType?: string;
   hoursWorked?: number;
 }
 
@@ -128,16 +129,17 @@ function AttModal({ visible, initial, onClose, onSave, saving }: {
 }
 
 function AttCard({ item, onEdit, onDelete }: { item: AttRecord; onEdit: () => void; onDelete: () => void }) {
-  const status = item.status ?? 'PRESENT';
-  const color  = STATUS_COLOR[status] ?? colors.textMuted;
-  const name   = item.user?.fullName ?? `Record #${item.id}`;
+  const status   = item.status ?? item.leaveType ?? 'PRESENT';
+  const color    = STATUS_COLOR[status] ?? colors.textMuted;
+  const name     = item.user?.fullName ?? `Record #${item.id}`;
+  const dateStr  = item.date ?? item.checkIn ?? '';
 
   return (
     <View style={styles.card}>
       <View style={[styles.dot, { backgroundColor: color }]} />
       <View style={styles.cardContent}>
         <Text style={styles.name}>{name}</Text>
-        <Text style={styles.date}>{new Date(item.date).toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' })}</Text>
+        <Text style={styles.date}>{dateStr ? new Date(dateStr).toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' }) : '—'}</Text>
         {(item.checkIn || item.checkOut) && (
           <Text style={styles.times}>
             {item.checkIn ? `In: ${new Date(item.checkIn).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : ''}
@@ -174,8 +176,8 @@ export function AttendanceAdminScreen() {
 
   const load = useCallback(async () => {
     try {
-      const res = await api.get<{ attendances: AttRecord[] }>('/attendance/all?limit=50');
-      setRecords(res.attendances ?? []);
+      const res = await api.get<AttRecord[]>('/attendance/all?limit=50');
+      setRecords(Array.isArray(res) ? res : []);
     } catch (e: any) {
       Alert.alert('Error', e?.message ?? 'Failed to load attendance');
     } finally {
@@ -227,15 +229,15 @@ export function AttendanceAdminScreen() {
     }
   };
 
-  const present = records.filter((r) => r.status === 'PRESENT' || !r.status).length;
-  const absent  = records.filter((r) => r.status === 'ABSENT').length;
+  const present = records.filter((r) => (r.status ?? r.leaveType ?? 'PRESENT') === 'PRESENT').length;
+  const absent  = records.filter((r) => (r.status ?? r.leaveType) === 'ABSENT').length;
 
   const initialForm: FormState = editing
     ? {
-        date: editing.date ? editing.date.split('T')[0] : '',
+        date: (editing.date ?? editing.checkIn ?? '').split('T')[0] ?? '',
         checkIn: editing.checkIn ? new Date(editing.checkIn).toTimeString().slice(0, 5) : '',
         checkOut: editing.checkOut ? new Date(editing.checkOut).toTimeString().slice(0, 5) : '',
-        status: (editing.status as StatusOpt) ?? 'PRESENT',
+        status: ((editing.status ?? editing.leaveType) as StatusOpt) ?? 'PRESENT',
         hoursWorked: editing.hoursWorked != null ? String(editing.hoursWorked) : '',
       }
     : DEFAULT_FORM;

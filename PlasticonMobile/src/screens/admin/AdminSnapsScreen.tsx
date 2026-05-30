@@ -65,8 +65,18 @@ export function AdminSnapsScreen() {
 
   const load = useCallback(async () => {
     try {
-      const res = await api.get<{ snapshots: Snapshot[] }>('/worker-tools/snapshots?limit=50');
-      setSnaps(res.snapshots ?? []);
+      const res = await api.get<{ items: any[]; summary?: any } | any[]>('/worker-tools/admin/overview?limit=50');
+      const raw = Array.isArray(res) ? res : ((res as any).items ?? []);
+      setSnaps(raw.map((r: any) => ({
+        id:            r.id,
+        submittedBy:   r.worker_name ? { fullName: r.worker_name } : undefined,
+        machineLabel:  r.title ?? undefined,
+        notes:         r.details ?? undefined,
+        shift:         r.feature,
+        createdAt:     r.created_at ?? new Date().toISOString(),
+      })));
+    } catch {
+      setSnaps([]);
     } finally {
       setLoading(false);
       setRefreshing(false);

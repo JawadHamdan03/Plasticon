@@ -9,23 +9,49 @@ import { api } from '../../api/client';
 import { ScreenHeader } from '../../components';
 import { colors, radius, shadow, spacing, typography } from '../../theme';
 
-interface Sale {
-  id:         string;
-  customer?:  string;
-  product?:   string;
-  quantity?:  number;
-  total:      number;
-  status?:    string;
-  date?:      string;
+interface SaleItem {
+  machineType: string;
+  size:        string;
+  quantity:    number;
+  pricePerUnit: number;
 }
 
-function statusColor(s?: string) {
-  if (!s) return colors.textMuted;
-  const l = s.toLowerCase();
-  if (l === 'paid' || l === 'completed') return colors.success;
-  if (l === 'pending')                   return colors.warning;
-  if (l === 'cancelled')                 return colors.danger;
-  return colors.info;
+interface Sale {
+  id:          number;
+  totalAmount: number;
+  date:        string;
+  createdAt:   string;
+  customer?:   { id: number; name?: string };
+  soldBy?:     { fullName: string };
+  items?:      SaleItem[];
+}
+
+function fmt(n: number) {
+  return n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function SaleCard({ item }: { item: Sale }) {
+  const date     = new Date(item.date ?? item.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
+  const itemDesc = item.items && item.items.length > 0
+    ? item.items.map((i) => `${i.machineType} ${i.size} ×${i.quantity}`).join(', ')
+    : null;
+
+  return (
+    <View style={styles.card}>
+      <View style={styles.cardTop}>
+        <View style={[styles.cardIcon, { backgroundColor: `${colors.success}15` }]}>
+          <Ionicons name="trending-up" size={20} color={colors.success} />
+        </View>
+        <View style={styles.cardBody}>
+          <Text style={styles.cardTitle}>{item.customer?.name ?? `Sale #${item.id}`}</Text>
+          {itemDesc && <Text style={styles.cardSub} numberOfLines={1}>{itemDesc}</Text>}
+          <Text style={styles.cardDate}>{date}</Text>
+        </View>
+        <Text style={styles.amount}>${fmt(item.totalAmount ?? 0)}</Text>
+      </View>
+      {item.soldBy && <Text style={styles.soldBy}>By: {item.soldBy.fullName}</Text>}
+    </View>
+  );
 }
 
 export function SalesAdminScreen() {
@@ -35,12 +61,8 @@ export function SalesAdminScreen() {
 
   const load = useCallback(async () => {
     try {
-      const res = await api.get<Sale[] | { data: Sale[]; sales: Sale[] }>('/sales');
-      if (Array.isArray(res)) {
-        setSales(res);
-      } else {
-        setSales(res.data ?? res.sales ?? []);
-      }
+      const res = await api.get<Sale[]>('/sales/all');
+      setSales(Array.isArray(res) ? res : []);
     } catch {
       setSales([]);
     } finally {
@@ -51,8 +73,7 @@ export function SalesAdminScreen() {
 
   useEffect(() => { void load(); }, [load]);
 
-  const totalRevenue = sales.reduce((s, sale) => s + (sale.total ?? 0), 0);
-  const pending      = sales.filter((s) => s.status?.toLowerCase() === 'pending').length;
+  const totalRevenue = sales.reduce((s, sale) => s + (sale.totalAmount ?? 0), 0);
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -71,14 +92,10 @@ export function SalesAdminScreen() {
               <Text style={styles.kpiLabel}>Orders</Text>
             </View>
             <View style={styles.kpi}>
-              <Text style={[styles.kpiVal, { color: colors.warning }]}>{pending}</Text>
-              <Text style={styles.kpiLabel}>Pending</Text>
-            </View>
-            <View style={styles.kpi}>
               <Text style={[styles.kpiVal, { color: colors.success }]}>
                 ${totalRevenue.toLocaleString('en-US', { maximumFractionDigits: 0 })}
               </Text>
-              <Text style={styles.kpiLabel}>Revenue</Text>
+              <Text style={styles.kpiLabel}>Total Revenue</Text>
             </View>
           </View>
 
@@ -89,34 +106,7 @@ export function SalesAdminScreen() {
             </View>
           ) : (
             <View style={styles.list}>
-              {sales.map((sale) => {
-                const sc = statusColor(sale.status);
-                return (
-                  <View key={sale.id} style={styles.card}>
-                    <View style={[styles.cardIcon, { backgroundColor: `${sc}15` }]}>
-                      <Ionicons name="trending-up" size={20} color={sc} />
-                    </View>
-                    <View style={styles.cardBody}>
-                      <Text style={styles.cardTitle}>{sale.customer ?? sale.product ?? `Order #${sale.id}`}</Text>
-                      <Text style={styles.cardSub}>
-                        {sale.product ? `${sale.product}` : ''}
-                        {sale.quantity ? ` · Qty ${sale.quantity}` : ''}
-                      </Text>
-                      {sale.date ? <Text style={styles.cardDate}>{new Date(sale.date).toLocaleDateString()}</Text> : null}
-                    </View>
-                    <View style={styles.rightCol}>
-                      <Text style={[styles.amount, { color: sc }]}>
-                        ${sale.total.toLocaleString('en-US', { maximumFractionDigits: 0 })}
-                      </Text>
-                      {sale.status ? (
-                        <View style={[styles.badge, { backgroundColor: `${sc}15` }]}>
-                          <Text style={[styles.badgeText, { color: sc }]}>{sale.status}</Text>
-                        </View>
-                      ) : null}
-                    </View>
-                  </View>
-                );
-              })}
+              {sales.map((sale) => <SaleCard key={sale.id} item={sale} />)}
             </View>
           )}
         </ScrollView>
@@ -136,14 +126,13 @@ const styles = StyleSheet.create({
   empty:     { alignItems: 'center', paddingVertical: spacing.xxl, gap: spacing.sm },
   emptyText: { ...typography.bodySmall, color: colors.textMuted },
   list:      { gap: spacing.sm },
-  card:      { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surface, borderRadius: radius.lg, padding: spacing.md, gap: spacing.sm, ...shadow.sm },
+  card:      { backgroundColor: colors.surface, borderRadius: radius.lg, padding: spacing.md, ...shadow.sm },
+  cardTop:   { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   cardIcon:  { width: 40, height: 40, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center' },
   cardBody:  { flex: 1 },
   cardTitle: { ...typography.h4 },
   cardSub:   { ...typography.caption, color: colors.textMuted, marginTop: 2 },
   cardDate:  { ...typography.caption, color: colors.textMuted },
-  rightCol:  { alignItems: 'flex-end', gap: 4 },
-  amount:    { ...typography.h4 },
-  badge:     { paddingHorizontal: 8, paddingVertical: 3, borderRadius: radius.sm },
-  badgeText: { fontSize: 11, fontWeight: '700' },
+  amount:    { ...typography.h4, color: colors.success },
+  soldBy:    { ...typography.caption, color: colors.textMuted, marginTop: 6, borderTopWidth: 1, borderTopColor: colors.border, paddingTop: 6 },
 });

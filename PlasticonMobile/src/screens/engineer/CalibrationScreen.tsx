@@ -210,11 +210,11 @@ export function CalibrationScreen() {
   const load = useCallback(async () => {
     try {
       const [healthRes, machinesRes] = await Promise.all([
-        api.get<{ records?: HealthRecord[]; healthRecords?: HealthRecord[] }>('/machine-health?limit=40'),
-        api.get<{ machines?: Machine[] }>('/machines').catch(() => ({ machines: [] })),
+        api.get<HealthRecord[]>('/machine-health?limit=40'),
+        api.get<Machine[]>('/machines').catch(() => [] as Machine[]),
       ]);
-      setRecords(healthRes.records ?? healthRes.healthRecords ?? []);
-      setMachines((machinesRes as any).machines ?? []);
+      setRecords(Array.isArray(healthRes) ? healthRes : []);
+      setMachines(Array.isArray(machinesRes) ? machinesRes : []);
     } catch (e: any) {
       Alert.alert('Error', e?.message ?? 'Failed to load calibration data');
     } finally {

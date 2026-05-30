@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, FlatList, RefreshControl, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, FlatList, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { api } from '../../api/client';
@@ -11,7 +11,9 @@ interface Invoice {
   invoiceNumber?: string;
   clientName?: string;
   customer?: { name: string };
-  amount: number;
+  totalAmount?: number;
+  amount?: number;
+  paymentStatus?: string;
   status?: string;
   dueDate?: string;
   issueDate?: string;
@@ -30,10 +32,11 @@ const STATUS_COLOR: Record<string, string> = {
 };
 
 function InvoiceCard({ item }: { item: Invoice }) {
-  const status = item.status ?? 'PENDING';
+  const status = item.paymentStatus ?? item.status ?? 'PENDING';
   const color  = STATUS_COLOR[status] ?? colors.textMuted;
   const client = item.clientName ?? item.customer?.name ?? `Invoice #${item.id}`;
   const due    = item.dueDate ? new Date(item.dueDate).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' }) : null;
+  const amt    = item.totalAmount ?? item.amount ?? 0;
 
   return (
     <View style={styles.card}>
@@ -43,7 +46,7 @@ function InvoiceCard({ item }: { item: Invoice }) {
           <Text style={styles.client} numberOfLines={1}>{client}</Text>
         </View>
         <View style={styles.right}>
-          <Text style={styles.amount}>${fmt(item.amount)}</Text>
+          <Text style={styles.amount}>${fmt(amt)}</Text>
           <View style={[styles.badge, { backgroundColor: `${color}15` }]}>
             <Text style={[styles.badgeText, { color }]}>{status}</Text>
           </View>
@@ -61,8 +64,10 @@ export function InvoicesScreen() {
 
   const load = useCallback(async () => {
     try {
-      const res = await api.get<{ invoices: Invoice[] }>('/invoices?limit=30');
-      setInvoices(res.invoices ?? []);
+      const res = await api.get<Invoice[]>('/invoices?limit=30');
+      setInvoices(Array.isArray(res) ? res : []);
+    } catch (e: any) {
+      Alert.alert('Error', e?.message ?? 'Failed to load invoices');
     } finally {
       setLoading(false);
       setRefreshing(false);

@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, FlatList, RefreshControl, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, FlatList, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { api } from '../../api/client';
@@ -67,8 +67,10 @@ export function BankReconciliationScreen() {
 
   const load = useCallback(async () => {
     try {
-      const res = await api.get<{ reconciliations: Reconciliation[] }>('/bank-reconciliations?limit=20');
-      setRecords(res.reconciliations ?? []);
+      const res = await api.get<Reconciliation[]>('/bank-reconciliations?limit=20');
+      setRecords(Array.isArray(res) ? res : []);
+    } catch (e: any) {
+      Alert.alert('Error', e?.message ?? 'Failed to load reconciliations');
     } finally {
       setLoading(false);
       setRefreshing(false);

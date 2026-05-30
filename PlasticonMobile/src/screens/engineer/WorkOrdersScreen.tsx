@@ -262,11 +262,11 @@ export function WorkOrdersScreen() {
   const load = useCallback(async () => {
     try {
       const [woRes, mRes] = await Promise.all([
-        api.get<{ schedules?: WorkOrder[]; workOrders?: WorkOrder[] }>('/maintenance-schedule?limit=40'),
-        api.get<{ machines?: Machine[] }>('/machines').catch(() => ({ machines: [] })),
+        api.get<WorkOrder[]>('/maintenance-schedule?limit=40'),
+        api.get<Machine[]>('/machines').catch(() => [] as Machine[]),
       ]);
-      setOrders(woRes.schedules ?? woRes.workOrders ?? []);
-      setMachines((mRes as any).machines ?? []);
+      setOrders(Array.isArray(woRes) ? woRes : []);
+      setMachines(Array.isArray(mRes) ? mRes : []);
     } catch (e: any) {
       Alert.alert('Error', e?.message ?? 'Failed to load work orders');
     } finally {

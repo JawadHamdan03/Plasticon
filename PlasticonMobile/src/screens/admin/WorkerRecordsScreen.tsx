@@ -6,61 +6,79 @@ import { api } from '../../api/client';
 import { ScreenHeader } from '../../components';
 import { colors, radius, shadow, spacing, typography } from '../../theme';
 
-interface Snapshot {
+interface WorkerItem {
   id: number;
-  worker?: { fullName: string };
-  submittedBy?: { fullName: string };
-  machineLabel?: string;
-  machineCounter?: number;
-  electricityKwh?: number;
-  notes?: string;
-  createdAt: string;
+  feature: string;
+  worker_name?: string;
+  title?: string;
+  details?: string;
+  created_at: string;
 }
 
-function SnapCard({ item }: { item: Snapshot }) {
-  const name = item.worker?.fullName ?? item.submittedBy?.fullName ?? `Record #${item.id}`;
+interface OverviewSummary {
+  stops: number;
+  checklist: number;
+  waste: number;
+  target: number;
+  kaizen: number;
+  quality: number;
+  micro: number;
+  anomaly: number;
+  total: number;
+}
+
+const FEATURE_META: Record<string, { icon: string; color: string; label: string }> = {
+  stops:     { icon: 'stop-circle', color: colors.danger,  label: 'Machine Stop' },
+  checklist: { icon: 'checkbox',    color: colors.success, label: 'Checklist' },
+  waste:     { icon: 'trash',       color: colors.warning, label: 'Material Waste' },
+  target:    { icon: 'flag',        color: colors.info,    label: 'Daily Target' },
+  kaizen:    { icon: 'bulb',        color: colors.accent,  label: 'Kaizen' },
+  quality:   { icon: 'shield',      color: colors.primary, label: 'Quality Issue' },
+  micro:     { icon: 'pause-circle',color: colors.warning, label: 'Micro Stop' },
+  anomaly:   { icon: 'warning',     color: colors.danger,  label: 'Anomaly' },
+};
+
+function ItemCard({ item }: { item: WorkerItem }) {
+  const meta = FEATURE_META[item.feature] ?? { icon: 'document', color: colors.textMuted, label: item.feature };
+  const date = new Date(item.created_at).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+
   return (
     <View style={styles.card}>
-      <View style={styles.cardTop}>
-        <View style={styles.cardLeft}>
-          <Text style={styles.worker}>{name}</Text>
-          <Text style={styles.date}>{new Date(item.createdAt).toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' })}</Text>
+      <View style={[styles.iconWrap, { backgroundColor: `${meta.color}15` }]}>
+        <Ionicons name={meta.icon as any} size={18} color={meta.color} />
+      </View>
+      <View style={styles.cardBody}>
+        <View style={styles.cardTop}>
+          <Text style={styles.worker}>{item.worker_name ?? 'Unknown'}</Text>
+          <View style={[styles.badge, { backgroundColor: `${meta.color}15` }]}>
+            <Text style={[styles.badgeText, { color: meta.color }]}>{meta.label}</Text>
+          </View>
         </View>
+        {item.title   && <Text style={styles.title}   numberOfLines={1}>{item.title}</Text>}
+        {item.details && <Text style={styles.details} numberOfLines={1}>{item.details}</Text>}
+        <Text style={styles.date}>{date}</Text>
       </View>
-      <View style={styles.metrics}>
-        {item.machineLabel && (
-          <View style={styles.metric}>
-            <Ionicons name="hardware-chip-outline" size={13} color={colors.textMuted} />
-            <Text style={styles.metricText} numberOfLines={1}>{item.machineLabel}</Text>
-          </View>
-        )}
-        {item.machineCounter != null && (
-          <View style={styles.metric}>
-            <Ionicons name="speedometer-outline" size={13} color={colors.primary} />
-            <Text style={styles.metricText}>{item.machineCounter.toLocaleString()} units</Text>
-          </View>
-        )}
-        {item.electricityKwh != null && (
-          <View style={styles.metric}>
-            <Ionicons name="flash-outline" size={13} color={colors.warning} />
-            <Text style={styles.metricText}>{item.electricityKwh} kWh</Text>
-          </View>
-        )}
-      </View>
-      {item.notes ? <Text style={styles.notes} numberOfLines={2}>{item.notes}</Text> : null}
     </View>
   );
 }
 
 export function WorkerRecordsScreen() {
-  const [snaps, setSnaps]       = useState<Snapshot[]>([]);
+  const [items, setItems]       = useState<WorkerItem[]>([]);
+  const [summary, setSummary]   = useState<OverviewSummary | null>(null);
   const [loading, setLoading]   = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
   const load = useCallback(async () => {
     try {
-      const res = await api.get<{ snapshots: Snapshot[] }>('/worker-tools/snapshots?limit=40');
-      setSnaps(res.snapshots ?? []);
+      const res = await api.get<{ summary: OverviewSummary; items: WorkerItem[] }>('/worker-tools/admin/overview?limit=100');
+      if (res && typeof res === 'object' && !Array.isArray(res)) {
+        setSummary(res.summary ?? null);
+        setItems(Array.isArray(res.items) ? res.items : []);
+      } else if (Array.isArray(res)) {
+        setItems(res as WorkerItem[]);
+      }
+    } catch {
+      setItems([]);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -71,15 +89,29 @@ export function WorkerRecordsScreen() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <ScreenHeader title="Worker Records" subtitle={`${snaps.length} snapshots`} showBack />
+      <ScreenHeader title="Worker Records" subtitle={summary ? `${summary.total} entries` : `${items.length} records`} showBack />
       {loading ? <View style={styles.center}><ActivityIndicator size="large" color={colors.primary} /></View> : (
         <FlatList
-          data={snaps}
-          keyExtractor={(i) => String(i.id)}
-          renderItem={({ item }) => <SnapCard item={item} />}
+          data={items}
+          keyExtractor={(i) => `${i.feature}-${i.id}`}
+          renderItem={({ item }) => <ItemCard item={item} />}
           contentContainerStyle={styles.list}
           showsVerticalScrollIndicator={false}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); void load(); }} tintColor={colors.primary} />}
+          ListHeaderComponent={summary ? (
+            <View style={styles.summaryWrap}>
+              {Object.entries(FEATURE_META).map(([key, meta]) => {
+                const count = (summary as any)[key] as number ?? 0;
+                if (!count) return null;
+                return (
+                  <View key={key} style={[styles.summaryChip, { backgroundColor: `${meta.color}12` }]}>
+                    <Ionicons name={meta.icon as any} size={12} color={meta.color} />
+                    <Text style={[styles.summaryChipText, { color: meta.color }]}>{count} {meta.label}</Text>
+                  </View>
+                );
+              })}
+            </View>
+          ) : null}
           ListEmptyComponent={<View style={styles.empty}><Ionicons name="document-outline" size={44} color={colors.textMuted} /><Text style={styles.emptyText}>No worker records</Text></View>}
         />
       )}
@@ -88,18 +120,22 @@ export function WorkerRecordsScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe:      { flex: 1, backgroundColor: colors.background },
-  center:    { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  list:      { padding: spacing.md, paddingBottom: 40 },
-  card:      { backgroundColor: colors.surface, borderRadius: radius.md, padding: spacing.md, marginBottom: spacing.sm, ...shadow.sm },
-  cardTop:   { marginBottom: 8 },
-  cardLeft:  {},
-  worker:    { ...typography.h4 },
-  date:      { ...typography.caption, color: colors.textMuted, marginTop: 2 },
-  metrics:   { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md, marginBottom: 4 },
-  metric:    { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  metricText: { ...typography.caption, fontWeight: '600' },
-  notes:     { ...typography.bodySmall, color: colors.textSecondary, borderTopWidth: 1, borderTopColor: colors.border, paddingTop: 6, marginTop: 2 },
-  empty:     { alignItems: 'center', paddingTop: 60, gap: spacing.sm },
-  emptyText: { ...typography.bodySmall, color: colors.textMuted },
+  safe:         { flex: 1, backgroundColor: colors.background },
+  center:       { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  list:         { padding: spacing.md, paddingBottom: 40 },
+  summaryWrap:  { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs, marginBottom: spacing.md },
+  summaryChip:  { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 8, paddingVertical: 4, borderRadius: radius.full },
+  summaryChipText: { fontSize: 11, fontWeight: '700' },
+  card:         { flexDirection: 'row', alignItems: 'flex-start', backgroundColor: colors.surface, borderRadius: radius.md, padding: spacing.md, marginBottom: spacing.sm, gap: spacing.sm, ...shadow.sm },
+  iconWrap:     { width: 36, height: 36, borderRadius: radius.sm, alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 2 },
+  cardBody:     { flex: 1 },
+  cardTop:      { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 3 },
+  worker:       { ...typography.h4, flex: 1 },
+  badge:        { paddingHorizontal: 7, paddingVertical: 2, borderRadius: radius.full, marginLeft: 4 },
+  badgeText:    { fontSize: 9, fontWeight: '800' },
+  title:        { ...typography.bodySmall, fontWeight: '600', color: colors.text, marginBottom: 2 },
+  details:      { ...typography.caption, color: colors.textSecondary, marginBottom: 2 },
+  date:         { ...typography.caption, color: colors.textMuted },
+  empty:        { alignItems: 'center', paddingTop: 60, gap: spacing.sm },
+  emptyText:    { ...typography.bodySmall, color: colors.textMuted },
 });

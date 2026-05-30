@@ -251,8 +251,11 @@ export function MachinesAdminScreen() {
 
   const load = useCallback(async () => {
     try {
-      const res = await api.get<{ machines: Machine[] }>('/machines');
-      setMachines(res.machines ?? []);
+      const res = await api.get<Machine[]>('/machines');
+      setMachines(Array.isArray(res) ? res : []);
+    } catch (e: any) {
+      console.warn('MachinesAdminScreen load error:', e?.message ?? e);
+      Alert.alert('Error', e?.message ?? 'Failed to load machines');
     } finally {
       setLoading(false);
       setRefreshing(false);

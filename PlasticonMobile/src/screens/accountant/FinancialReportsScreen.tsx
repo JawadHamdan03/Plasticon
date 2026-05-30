@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, FlatList, RefreshControl, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, FlatList, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { api } from '../../api/client';
@@ -57,8 +57,10 @@ export function FinancialReportsScreen() {
 
   const load = useCallback(async () => {
     try {
-      const res = await api.get<{ reports: FinancialReport[] }>('/financial-reports?limit=20');
-      setReports(res.reports ?? []);
+      const res = await api.get<FinancialReport[]>('/financial-reports?limit=20');
+      setReports(Array.isArray(res) ? res : []);
+    } catch (e: any) {
+      Alert.alert('Error', e?.message ?? 'Failed to load reports');
     } finally {
       setLoading(false);
       setRefreshing(false);

@@ -229,8 +229,11 @@ export function ShiftsAdminScreen() {
 
   const load = useCallback(async () => {
     try {
-      const res = await api.get<{ shifts: Shift[] }>('/shifts?limit=40');
-      setShifts(res.shifts ?? []);
+      const res = await api.get<Shift[]>('/shifts?limit=40');
+      setShifts(Array.isArray(res) ? res : []);
+    } catch (e: any) {
+      console.warn('ShiftsAdminScreen load error:', e?.message ?? e);
+      Alert.alert('Error', e?.message ?? 'Failed to load shifts');
     } finally {
       setLoading(false);
       setRefreshing(false);

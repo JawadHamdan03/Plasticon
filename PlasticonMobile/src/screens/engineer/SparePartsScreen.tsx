@@ -188,8 +188,8 @@ export function SparePartsScreen() {
 
   const load = useCallback(async () => {
     try {
-      const res = await api.get<{ requests?: SparePartRequest[]; sparePartRequests?: SparePartRequest[] }>('/spare-part-requests?limit=60');
-      setRequests(res.requests ?? res.sparePartRequests ?? []);
+      const res = await api.get<SparePartRequest[]>('/spare-part-requests?limit=60');
+      setRequests(Array.isArray(res) ? res : []);
     } catch (e: any) {
       Alert.alert('Error', e?.message ?? 'Failed to load requests');
     } finally {

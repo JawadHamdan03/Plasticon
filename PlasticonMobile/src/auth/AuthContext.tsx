@@ -22,7 +22,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser]       = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // On mount: restore session from AsyncStorage
+  // On mount: session is in-memory only, so getSavedUser always returns null.
+  // User must log in every time the app is opened.
   useEffect(() => {
     getSavedUser<User>()
       .then((saved) => { if (saved) setUser(saved); })

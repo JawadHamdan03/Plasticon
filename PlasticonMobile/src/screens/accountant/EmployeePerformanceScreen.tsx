@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, FlatList, RefreshControl, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, FlatList, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { api } from '../../api/client';
@@ -71,8 +71,10 @@ export function EmployeePerformanceScreen() {
 
   const load = useCallback(async () => {
     try {
-      const res = await api.get<{ performances?: Performance[]; records?: Performance[] }>('/performance?limit=30');
-      setRecords(res.performances ?? res.records ?? []);
+      const res = await api.get<Performance[]>('/performance?limit=30');
+      setRecords(Array.isArray(res) ? res : []);
+    } catch (e: any) {
+      Alert.alert('Error', e?.message ?? 'Failed to load performance records');
     } finally {
       setLoading(false);
       setRefreshing(false);

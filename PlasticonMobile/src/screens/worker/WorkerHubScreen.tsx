@@ -127,25 +127,25 @@ export function WorkerHubScreen() {
             icon="time"
             label="Attendance"
             color={colors.success}
-            onPress={() => navigation.navigate('Personal', { screen: 'Attendance' })}
+            onPress={() => user?.role === 'WORKER' && navigation.navigate('Personal', { screen: 'Attendance' })}
           />
           <QuickAction
             icon="cube-outline"
             label="Production"
             color={colors.primary}
-            onPress={() => navigation.navigate('Work', { screen: 'Production' })}
+            onPress={() => user?.role === 'WORKER' && navigation.navigate('Work', { screen: 'Production' })}
           />
           <QuickAction
             icon="cash-outline"
             label="Payroll"
             color={colors.accent}
-            onPress={() => navigation.navigate('Personal', { screen: 'Payroll' })}
+            onPress={() => user?.role === 'WORKER' && navigation.navigate('Personal', { screen: 'Payroll' })}
           />
           <QuickAction
             icon="chatbubble-ellipses-outline"
             label="AI Chat"
             color={colors.info}
-            onPress={() => navigation.navigate('AI', { screen: 'Assistant' })}
+            onPress={() => user?.role === 'WORKER' && navigation.navigate('AI', { screen: 'Assistant' })}
           />
         </View>
 

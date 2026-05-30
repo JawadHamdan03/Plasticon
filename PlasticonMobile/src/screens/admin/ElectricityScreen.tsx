@@ -51,8 +51,10 @@ export function ElectricityScreen() {
 
   const load = useCallback(async () => {
     try {
-      const res = await api.get<{ readings: Reading[] }>('/electricity?limit=30');
-      setReadings(res.readings ?? []);
+      const res = await api.get<Reading[]>('/electricity/readings?limit=30');
+      setReadings(Array.isArray(res) ? res : []);
+    } catch {
+      setReadings([]);
     } finally {
       setLoading(false);
       setRefreshing(false);

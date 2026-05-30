@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, FlatList, RefreshControl, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, FlatList, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { api } from '../../api/client';
@@ -62,8 +62,10 @@ export function TaxComplianceScreen() {
 
   const load = useCallback(async () => {
     try {
-      const res = await api.get<{ filings: TaxFiling[] }>('/tax-filings?limit=20');
-      setFilings(res.filings ?? []);
+      const res = await api.get<TaxFiling[]>('/tax-filings?limit=20');
+      setFilings(Array.isArray(res) ? res : []);
+    } catch (e: any) {
+      Alert.alert('Error', e?.message ?? 'Failed to load tax filings');
     } finally {
       setLoading(false);
       setRefreshing(false);

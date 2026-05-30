@@ -25,9 +25,15 @@ import { colors, radius, shadow, spacing, typography } from '../../theme';
 
 interface BudgetPlan {
   id: number;
+  // API fields
+  month?: string;
+  category?: string;
+  allocated?: number;
+  spent?: number;
+  // Optional display/legacy fields
   title?: string;
   period?: string;
-  totalBudget: number;
+  totalBudget?: number;
   totalSpent?: number;
   status?: string;
   department?: string;
@@ -121,8 +127,9 @@ function BudgetCard({
   onEdit: () => void;
   onDelete: () => void;
 }) {
-  const spent    = item.totalSpent ?? 0;
-  const pct      = item.totalBudget > 0 ? Math.min((spent / item.totalBudget) * 100, 100) : 0;
+  const budget   = item.totalBudget ?? item.allocated ?? 0;
+  const spent    = item.totalSpent ?? item.spent ?? 0;
+  const pct      = budget > 0 ? Math.min((spent / budget) * 100, 100) : 0;
   const barColor = pct >= 90 ? colors.danger : pct >= 70 ? colors.warning : colors.success;
   const status   = item.status ?? 'ACTIVE';
   const statusColor = STATUS_COLOR[status] ?? colors.textMuted;
@@ -131,8 +138,8 @@ function BudgetCard({
     <View style={styles.card}>
       <View style={styles.cardTop}>
         <View style={styles.cardLeft}>
-          <Text style={styles.title} numberOfLines={1}>{item.title ?? `Budget #${item.id}`}</Text>
-          <Text style={styles.sub}>{item.department ?? item.period ?? '—'}</Text>
+          <Text style={styles.title} numberOfLines={1}>{item.title ?? item.category ?? `Budget #${item.id}`}</Text>
+          <Text style={styles.sub}>{item.department ?? item.category ?? item.period ?? item.month ?? '—'}</Text>
         </View>
         <View style={styles.cardActions}>
           <View style={[styles.badge, { backgroundColor: `${statusColor}15` }]}>
@@ -151,7 +158,7 @@ function BudgetCard({
       </View>
       <View style={styles.nums}>
         <Text style={styles.numLabel}>Spent: <Text style={styles.numVal}>${fmt(spent)}</Text></Text>
-        <Text style={styles.numLabel}>Budget: <Text style={styles.numVal}>${fmt(item.totalBudget)}</Text></Text>
+        <Text style={styles.numLabel}>Budget: <Text style={styles.numVal}>${fmt(budget)}</Text></Text>
         <Text style={[styles.numLabel, { color: barColor }]}>{Math.round(pct)}%</Text>
       </View>
     </View>
@@ -277,8 +284,8 @@ export function BudgetPlanningScreen() {
 
   const load = useCallback(async () => {
     try {
-      const res = await api.get<{ budgets?: BudgetPlan[]; plans?: BudgetPlan[] }>('/budgets?limit=20');
-      setPlans(res.budgets ?? res.plans ?? []);
+      const res = await api.get<BudgetPlan[]>('/budgets?limit=20');
+      setPlans(Array.isArray(res) ? res : []);
     } catch (e: any) {
       Alert.alert('Error', e?.message ?? 'Failed to load budgets');
     } finally {
@@ -302,7 +309,7 @@ export function BudgetPlanningScreen() {
   const confirmDelete = (item: BudgetPlan) => {
     Alert.alert(
       'Delete Budget',
-      `Delete "${item.title ?? `Budget #${item.id}`}"? This cannot be undone.`,
+      `Delete "${item.title ?? item.category ?? `Budget #${item.id}`}"? This cannot be undone.`,
       [
         { text: 'Cancel', style: 'cancel' },
         { text: 'Delete', style: 'destructive', onPress: () => void handleDelete(item.id) },
@@ -324,11 +331,13 @@ export function BudgetPlanningScreen() {
     setSaving(true);
     try {
       const body = {
-        title:       form.title.trim(),
-        department:  form.department.trim() || undefined,
-        totalBudget: Number(form.totalBudget),
-        period:      form.period.trim() || undefined,
-        status:      form.status,
+        category:  form.title.trim() || form.department.trim() || undefined,
+        month:     form.period.trim() || undefined,
+        allocated: Number(form.totalBudget),
+        title:     form.title.trim() || undefined,
+        department:form.department.trim() || undefined,
+        period:    form.period.trim() || undefined,
+        status:    form.status,
       };
       if (editing) {
         await api.patch(`/budgets/${editing.id}`, body);
@@ -347,10 +356,10 @@ export function BudgetPlanningScreen() {
 
   const initialForm: FormState = editing
     ? {
-        title:       editing.title ?? '',
-        department:  editing.department ?? '',
-        totalBudget: String(editing.totalBudget ?? ''),
-        period:      editing.period ?? '',
+        title:       editing.title ?? editing.category ?? '',
+        department:  editing.department ?? editing.category ?? '',
+        totalBudget: String(editing.totalBudget ?? editing.allocated ?? ''),
+        period:      editing.period ?? editing.month ?? '',
         status:      (editing.status as StatusOption) ?? 'ACTIVE',
       }
     : DEFAULT_FORM;

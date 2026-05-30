@@ -88,8 +88,10 @@ export function RegistrationsScreen() {
 
   const load = useCallback(async () => {
     try {
-      const res = await api.get<{ requests: RegRequest[] }>('/registration-requests?limit=30');
-      setRequests(res.requests ?? []);
+      const res = await api.get<RegRequest[]>('/registration-requests?limit=30');
+      setRequests(Array.isArray(res) ? res : []);
+    } catch {
+      setRequests([]);
     } finally {
       setLoading(false);
       setRefreshing(false);

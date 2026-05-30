@@ -1,34 +1,30 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
+// ─── In-memory session storage ────────────────────────────────────────────────
+// Token and user are kept in memory only.
+// When the app is closed/killed, memory is cleared → user must log in again.
 
-const TOKEN_KEY = '@plasticon:token';
-const USER_KEY  = '@plasticon:user';
+let _token: string | null = null;
 
-export async function saveToken(token: string): Promise<void> {
-  await AsyncStorage.setItem(TOKEN_KEY, token);
+export function saveToken(token: string): void {
+  _token = token;
 }
 
-export async function getToken(): Promise<string | null> {
-  return AsyncStorage.getItem(TOKEN_KEY);
+export function getToken(): string | null {
+  return _token;
 }
 
-export async function removeToken(): Promise<void> {
-  await AsyncStorage.removeItem(TOKEN_KEY);
+export function removeToken(): void {
+  _token = null;
 }
 
-export async function saveUser(user: object): Promise<void> {
-  await AsyncStorage.setItem(USER_KEY, JSON.stringify(user));
+// clearSession is called on logout
+export async function clearSession(): Promise<void> {
+  _token = null;
 }
+
+// These are kept for API compatibility but do nothing — user data lives in
+// React state only, not persisted across app launches.
+export async function saveUser(_user: object): Promise<void> {}
 
 export async function getSavedUser<T>(): Promise<T | null> {
-  const raw = await AsyncStorage.getItem(USER_KEY);
-  if (!raw) return null;
-  try {
-    return JSON.parse(raw) as T;
-  } catch {
-    return null;
-  }
-}
-
-export async function clearSession(): Promise<void> {
-  await AsyncStorage.multiRemove([TOKEN_KEY, USER_KEY]);
+  return null;
 }

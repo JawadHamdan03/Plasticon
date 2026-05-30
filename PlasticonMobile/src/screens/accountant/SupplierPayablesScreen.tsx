@@ -31,6 +31,7 @@ interface Payable {
   balance?: number;
   dueDate?: string;
   status?: string;
+  paymentStatus?: string;
   notes?: string;
   createdAt: string;
 }
@@ -131,7 +132,7 @@ function PayModal({ visible, initial, onClose, onSave, saving }: {
 
 function PayCard({ item, onEdit, onDelete }: { item: Payable; onEdit: () => void; onDelete: () => void }) {
   const balance = item.balance ?? (item.amount - (item.amountPaid ?? 0));
-  const status  = item.status ?? (balance <= 0 ? 'PAID' : 'PENDING');
+  const status  = item.status ?? item.paymentStatus ?? (balance <= 0 ? 'PAID' : 'PENDING');
   const overdue = item.dueDate ? new Date(item.dueDate) < new Date() && balance > 0 : false;
   const color   = STATUS_COLOR[overdue ? 'OVERDUE' : status] ?? colors.textMuted;
   const name    = item.supplierName ?? item.supplier?.name ?? `Payable #${item.id}`;
@@ -162,7 +163,7 @@ function PayCard({ item, onEdit, onDelete }: { item: Payable; onEdit: () => void
         </View>
       </View>
       <View style={styles.row}>
-        <Text style={styles.detail}>Total: <Text style={styles.detailVal}>${fmt(item.amount)}</Text></Text>
+        <Text style={styles.detail}>Total: <Text style={styles.detailVal}>${fmt(item.amount ?? 0)}</Text></Text>
         <Text style={styles.detail}>Paid: <Text style={styles.detailVal}>${fmt(item.amountPaid ?? 0)}</Text></Text>
         {item.dueDate && <Text style={styles.detail}>Due: <Text style={styles.detailVal}>{new Date(item.dueDate).toLocaleDateString([], { month: 'short', day: 'numeric' })}</Text></Text>}
       </View>
@@ -180,8 +181,8 @@ export function SupplierPayablesScreen() {
 
   const load = useCallback(async () => {
     try {
-      const res = await api.get<{ payables: Payable[] }>('/supplier-payables?limit=30');
-      setRecords(res.payables ?? []);
+      const res = await api.get<Payable[]>('/supplier-payables?limit=30');
+      setRecords(Array.isArray(res) ? res : []);
     } catch (e: any) {
       Alert.alert('Error', e?.message ?? 'Failed to load payables');
     } finally {

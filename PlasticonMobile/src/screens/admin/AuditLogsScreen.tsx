@@ -59,8 +59,10 @@ export function AuditLogsScreen() {
 
   const load = useCallback(async () => {
     try {
-      const res = await api.get<{ logs: AuditLog[] }>('/audit-logs?limit=40');
-      setLogs(res.logs ?? []);
+      const res = await api.get<{ logs: AuditLog[] }>('/audit/logs?limit=40');
+      setLogs(Array.isArray(res) ? res : (res.logs ?? []));
+    } catch {
+      setLogs([]);
     } finally {
       setLoading(false);
       setRefreshing(false);

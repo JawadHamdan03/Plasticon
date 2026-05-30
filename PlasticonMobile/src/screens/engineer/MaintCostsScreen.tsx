@@ -11,7 +11,11 @@ interface CostRecord {
   maintenanceId?: number;
   maintenance?: { machine?: { name: string } };
   category?: string;
-  amount: number;
+  totalCost?: number;
+  amount?: number;
+  laborHours?: number;
+  sparesTotal?: number;
+  notes?: string;
   description?: string;
   createdAt: string;
 }
@@ -27,9 +31,9 @@ function CostCard({ item }: { item: CostRecord }) {
           <Text style={styles.machine} numberOfLines={1}>{item.maintenance?.machine?.name ?? `Record #${item.id}`}</Text>
           <Text style={styles.category}>{item.category ?? 'General'}</Text>
         </View>
-        <Text style={styles.amount}>${fmt(item.amount)}</Text>
+        <Text style={styles.amount}>${fmt(item.totalCost ?? item.amount ?? 0)}</Text>
       </View>
-      {item.description ? <Text style={styles.desc} numberOfLines={2}>{item.description}</Text> : null}
+      {(item.notes ?? item.description) ? <Text style={styles.desc} numberOfLines={2}>{item.notes ?? item.description}</Text> : null}
       <Text style={styles.date}>{fmtDate(item.createdAt)}</Text>
     </View>
   );
@@ -43,10 +47,12 @@ export function MaintCostsScreen() {
 
   const load = useCallback(async () => {
     try {
-      const res = await api.get<{ costs: CostRecord[]; total?: number }>('/maintenance-costs?limit=40');
-      const records = res.costs ?? [];
+      const res = await api.get<CostRecord[]>('/maintenance-costs?limit=40');
+      const records = Array.isArray(res) ? res : [];
       setCosts(records);
-      setTotal(res.total ?? records.reduce((s, r) => s + (r.amount ?? 0), 0));
+      setTotal(records.reduce((s, r) => s + (r.totalCost ?? r.amount ?? 0), 0));
+    } catch {
+      setCosts([]);
     } finally {
       setLoading(false);
       setRefreshing(false);
