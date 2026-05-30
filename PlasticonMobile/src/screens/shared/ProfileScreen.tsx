@@ -18,7 +18,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { api } from '../../api/client';
 import { ScreenHeader } from '../../components';
 import { useAuth } from '../../auth/AuthContext';
-import { colors, radius, shadow, spacing, typography, roleColor } from '../../theme';
+import { radius, shadow, spacing, typography, roleColor } from '../../theme';
+import { useAppTheme } from '../../context/ThemeContext';
+import { useLocale } from '../../context/LocaleContext';
 
 // ─── Interfaces ───────────────────────────────────────────────────────────────
 
@@ -49,11 +51,11 @@ interface EditForm {
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
-function InfoRow({ label, value }: { label: string; value: string }) {
+function InfoRow({ label, value, colors }: { label: string; value: string; colors: any }) {
   return (
-    <View style={styles.infoRow}>
-      <Text style={styles.infoLabel}>{label}</Text>
-      <Text style={styles.infoValue}>{value}</Text>
+    <View style={[styles.infoRow, { borderBottomColor: colors.border }]}>
+      <Text style={[styles.infoLabel, { color: colors.textMuted }]}>{label}</Text>
+      <Text style={[styles.infoValue, { color: colors.text }]}>{value}</Text>
     </View>
   );
 }
@@ -65,6 +67,7 @@ function FormField({
   placeholder,
   multiline,
   keyboardType,
+  colors,
 }: {
   label: string;
   value: string;
@@ -72,12 +75,17 @@ function FormField({
   placeholder?: string;
   multiline?: boolean;
   keyboardType?: 'default' | 'phone-pad' | 'email-address';
+  colors: any;
 }) {
   return (
     <View style={styles.fieldWrap}>
-      <Text style={styles.fieldLabel}>{label}</Text>
+      <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{label}</Text>
       <TextInput
-        style={[styles.input, multiline && styles.inputMulti]}
+        style={[
+          styles.input,
+          multiline && styles.inputMulti,
+          { backgroundColor: colors.surface, borderColor: colors.border, color: colors.text },
+        ]}
         value={value}
         onChangeText={onChangeText}
         placeholder={placeholder ?? label}
@@ -95,6 +103,8 @@ function FormField({
 
 export function ProfileScreen() {
   const { user, logout } = useAuth();
+  const { colors } = useAppTheme();
+  const { isAr } = useLocale();
 
   const [profile, setProfile]     = useState<Profile | null>(null);
   const [loading, setLoading]     = useState(true);
@@ -167,10 +177,14 @@ export function ProfileScreen() {
   };
 
   const handleLogout = () => {
-    Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Sign Out', style: 'destructive', onPress: () => void logout() },
-    ]);
+    Alert.alert(
+      isAr ? 'تسجيل الخروج' : 'Sign Out',
+      'Are you sure you want to sign out?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: isAr ? 'تسجيل الخروج' : 'Sign Out', style: 'destructive', onPress: () => void logout() },
+      ],
+    );
   };
 
   const display  = profile ?? (user as Profile | null);
@@ -182,11 +196,11 @@ export function ProfileScreen() {
     setForm((f) => ({ ...f, [key]: val }));
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
       <ScreenHeader
-        title="Profile"
+        title={isAr ? 'الملف الشخصي' : 'Profile'}
         showBack
-        rightLabel="Edit"
+        rightLabel={isAr ? 'تعديل' : 'Edit'}
         rightIcon="create-outline"
         onRightPress={openEdit}
       />
@@ -205,8 +219,8 @@ export function ProfileScreen() {
             <View style={[styles.avatar, { backgroundColor: `${color}22`, borderColor: color }]}>
               <Text style={[styles.avatarText, { color }]}>{initials}</Text>
             </View>
-            <Text style={styles.name}>{display?.fullName}</Text>
-            <Text style={styles.email}>{display?.email}</Text>
+            <Text style={[styles.name, { color: colors.text }]}>{display?.fullName}</Text>
+            <Text style={[styles.email, { color: colors.textMuted }]}>{display?.email}</Text>
             <View style={[styles.roleBadge, { backgroundColor: `${color}18` }]}>
               <View style={[styles.roleDot, { backgroundColor: color }]} />
               <Text style={[styles.roleText, { color }]}>{display?.role ?? ''}</Text>
@@ -214,31 +228,37 @@ export function ProfileScreen() {
           </View>
 
           {/* Account info */}
-          <View style={styles.card}>
-            <Text style={styles.sectionLabel}>ACCOUNT INFO</Text>
-            <InfoRow label="Username"   value={display?.username   ?? '—'} />
-            <InfoRow label="Role"       value={display?.role       ?? '—'} />
-            <InfoRow label="Department" value={display?.department ?? '—'} />
-            <InfoRow label="Job Title"  value={display?.jobTitle   ?? '—'} />
-            <InfoRow label="Phone"      value={display?.phone      ?? '—'} />
+          <View style={[styles.card, { backgroundColor: colors.surface }]}>
+            <Text style={[styles.sectionLabel, { color: colors.textMuted }]}>ACCOUNT INFO</Text>
+            <InfoRow label="Username"   value={display?.username   ?? '—'} colors={colors} />
+            <InfoRow label="Role"       value={display?.role       ?? '—'} colors={colors} />
+            <InfoRow label="Department" value={display?.department ?? '—'} colors={colors} />
+            <InfoRow label="Job Title"  value={display?.jobTitle   ?? '—'} colors={colors} />
+            <InfoRow label="Phone"      value={display?.phone      ?? '—'} colors={colors} />
           </View>
 
           {/* Extended info */}
           {(profile?.bio || profile?.dateOfBirth || profile?.address) && (
-            <View style={styles.card}>
-              <Text style={styles.sectionLabel}>ADDITIONAL INFO</Text>
-              {profile.bio         && <InfoRow label="Bio"           value={profile.bio} />}
-              {profile.dateOfBirth && <InfoRow label="Date of Birth" value={profile.dateOfBirth} />}
-              {profile.address     && <InfoRow label="Address"       value={profile.address} />}
+            <View style={[styles.card, { backgroundColor: colors.surface }]}>
+              <Text style={[styles.sectionLabel, { color: colors.textMuted }]}>ADDITIONAL INFO</Text>
+              {profile.bio         && <InfoRow label="Bio"           value={profile.bio}           colors={colors} />}
+              {profile.dateOfBirth && <InfoRow label="Date of Birth" value={profile.dateOfBirth}   colors={colors} />}
+              {profile.address     && <InfoRow label="Address"       value={profile.address}       colors={colors} />}
             </View>
           )}
 
-          <TouchableOpacity style={styles.signOutBtn} onPress={handleLogout} activeOpacity={0.8}>
+          <TouchableOpacity
+            style={[styles.signOutBtn, { backgroundColor: colors.surface, borderColor: `${colors.danger}40` }]}
+            onPress={handleLogout}
+            activeOpacity={0.8}
+          >
             <Ionicons name="log-out-outline" size={20} color={colors.danger} />
-            <Text style={styles.signOutText}>Sign Out</Text>
+            <Text style={[styles.signOutText, { color: colors.danger }]}>
+              {isAr ? 'تسجيل الخروج' : 'Sign Out'}
+            </Text>
           </TouchableOpacity>
 
-          <Text style={styles.version}>Plasticon Mobile v1.0.0</Text>
+          <Text style={[styles.version, { color: colors.textMuted }]}>Plasticon Mobile v1.0.0</Text>
         </ScrollView>
       )}
 
@@ -249,20 +269,22 @@ export function ProfileScreen() {
         presentationStyle="pageSheet"
         onRequestClose={() => setModalOpen(false)}
       >
-        <SafeAreaView style={styles.modalSafe}>
+        <SafeAreaView style={[styles.modalSafe, { backgroundColor: colors.background }]}>
           <KeyboardAvoidingView
             style={{ flex: 1 }}
             behavior={Platform.OS === 'ios' ? 'padding' : undefined}
           >
             {/* Modal header */}
-            <View style={styles.modalHeader}>
+            <View style={[styles.modalHeader, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
               <Pressable
                 onPress={() => setModalOpen(false)}
                 style={({ pressed }) => [styles.modalClose, pressed && { opacity: 0.6 }]}
               >
-                <Text style={styles.modalCancel}>Cancel</Text>
+                <Text style={[styles.modalCancel, { color: colors.textMuted }]}>Cancel</Text>
               </Pressable>
-              <Text style={styles.modalTitle}>Edit Profile</Text>
+              <Text style={[styles.modalTitle, { color: colors.text }]}>
+                {isAr ? 'تعديل الملف' : 'Edit Profile'}
+              </Text>
               <Pressable
                 onPress={() => void handleSave()}
                 disabled={saving}
@@ -270,7 +292,7 @@ export function ProfileScreen() {
               >
                 {saving
                   ? <ActivityIndicator size="small" color={colors.primary} />
-                  : <Text style={styles.modalSave}>Save</Text>
+                  : <Text style={[styles.modalSave, { color: colors.primary }]}>Save</Text>
                 }
               </Pressable>
             </View>
@@ -280,13 +302,13 @@ export function ProfileScreen() {
               showsVerticalScrollIndicator={false}
               keyboardShouldPersistTaps="handled"
             >
-              <FormField label="Full Name"     value={form.fullName}    onChangeText={setField('fullName')} />
-              <FormField label="Phone"         value={form.phone}       onChangeText={setField('phone')}       keyboardType="phone-pad" />
-              <FormField label="Job Title"     value={form.jobTitle}    onChangeText={setField('jobTitle')} />
-              <FormField label="Department"    value={form.department}  onChangeText={setField('department')} />
-              <FormField label="Date of Birth" value={form.dateOfBirth} onChangeText={setField('dateOfBirth')} placeholder="YYYY-MM-DD" />
-              <FormField label="Address"       value={form.address}     onChangeText={setField('address')}     multiline />
-              <FormField label="Bio"           value={form.bio}         onChangeText={setField('bio')}         multiline />
+              <FormField label="Full Name"     value={form.fullName}    onChangeText={setField('fullName')}    colors={colors} />
+              <FormField label="Phone"         value={form.phone}       onChangeText={setField('phone')}       keyboardType="phone-pad"   colors={colors} />
+              <FormField label="Job Title"     value={form.jobTitle}    onChangeText={setField('jobTitle')}    colors={colors} />
+              <FormField label="Department"    value={form.department}  onChangeText={setField('department')}  colors={colors} />
+              <FormField label="Date of Birth" value={form.dateOfBirth} onChangeText={setField('dateOfBirth')} placeholder="YYYY-MM-DD"  colors={colors} />
+              <FormField label="Address"       value={form.address}     onChangeText={setField('address')}     multiline                  colors={colors} />
+              <FormField label="Bio"           value={form.bio}         onChangeText={setField('bio')}         multiline                  colors={colors} />
             </ScrollView>
           </KeyboardAvoidingView>
         </SafeAreaView>
@@ -298,7 +320,7 @@ export function ProfileScreen() {
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
-  safe:    { flex: 1, backgroundColor: colors.background },
+  safe:    { flex: 1 },
   center:  { flex: 1, alignItems: 'center', justifyContent: 'center' },
   content: { padding: spacing.md, paddingBottom: spacing.xxl },
 
@@ -312,7 +334,7 @@ const styles = StyleSheet.create({
   },
   avatarText: { fontSize: 26, fontWeight: '700' },
   name:  { ...typography.h2, marginBottom: 4 },
-  email: { ...typography.bodySmall, color: colors.textMuted },
+  email: { ...typography.bodySmall },
   roleBadge: {
     flexDirection: 'row', alignItems: 'center', gap: 5,
     paddingHorizontal: 10, paddingVertical: 4,
@@ -323,7 +345,6 @@ const styles = StyleSheet.create({
 
   // Info card
   card: {
-    backgroundColor: colors.surface,
     borderRadius: radius.md,
     padding: spacing.md,
     marginBottom: spacing.md,
@@ -336,53 +357,47 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 10,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
   },
-  infoLabel: { ...typography.bodySmall, color: colors.textMuted, flex: 1 },
-  infoValue: { ...typography.bodySmall, fontWeight: '600', color: colors.text, flex: 2, textAlign: 'right' },
+  infoLabel: { ...typography.bodySmall, flex: 1 },
+  infoValue: { ...typography.bodySmall, fontWeight: '600', flex: 2, textAlign: 'right' },
 
   // Sign out
   signOutBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
     gap: spacing.sm,
-    backgroundColor: colors.surface,
     borderRadius: radius.md,
     padding: spacing.md,
     marginBottom: spacing.md,
     borderWidth: 1.5,
-    borderColor: `${colors.danger}40`,
     ...shadow.sm,
   },
-  signOutText: { ...typography.body, color: colors.danger, fontWeight: '700' },
+  signOutText: { ...typography.body, fontWeight: '700' },
 
   version: { ...typography.caption, textAlign: 'center', marginTop: spacing.sm },
 
   // Modal
-  modalSafe:    { flex: 1, backgroundColor: colors.background },
+  modalSafe:    { flex: 1 },
   modalHeader: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm + 2,
-    backgroundColor: colors.surface,
-    borderBottomWidth: 1, borderBottomColor: colors.border,
+    borderBottomWidth: 1,
   },
   modalTitle:  { ...typography.h3 },
   modalClose:  { padding: 4, minWidth: 60 },
-  modalCancel: { ...typography.body, color: colors.textMuted },
+  modalCancel: { ...typography.body },
   modalSaveBtn:{ padding: 4, minWidth: 60, alignItems: 'flex-end' },
-  modalSave:   { ...typography.body, color: colors.primary, fontWeight: '700' },
+  modalSave:   { ...typography.body, fontWeight: '700' },
   modalContent:{ padding: spacing.md, paddingBottom: spacing.xxl },
 
   // Form fields
   fieldWrap:  { marginBottom: spacing.md },
-  fieldLabel: { ...typography.caption, color: colors.textMuted, marginBottom: 6 },
+  fieldLabel: { ...typography.caption, marginBottom: 6 },
   input: {
-    backgroundColor: colors.surface,
-    borderWidth: 1, borderColor: colors.border,
+    borderWidth: 1,
     borderRadius: radius.sm,
     paddingHorizontal: spacing.md, paddingVertical: 10,
     ...typography.body,
-    color: colors.text,
   },
   inputMulti: { minHeight: 80, textAlignVertical: 'top', paddingTop: 10 },
 });

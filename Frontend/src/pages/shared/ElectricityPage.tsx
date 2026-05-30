@@ -32,6 +32,7 @@ type ElectricityReading = {
   kwhPriceSnap: number;
   shiftCost: number;
   notes: string | null;
+  imagePath: string | null;
   recordedBy: { fullName: string; username: string };
   responsibleEngineer: { fullName: string; username: string } | null;
   createdAt: string;
@@ -114,6 +115,7 @@ export function ElectricityPage() {
   const [fMaxVal, setFMaxVal] = useState("");
   const [fNotes, setFNotes] = useState("");
   const [fEngineerId, setFEngineerId] = useState("");
+  const [fImage, setFImage] = useState<File | null>(null);
 
   // Live preview calculations
   const alreadyRecordedElectricity =
@@ -181,21 +183,27 @@ export function ElectricityPage() {
 
     setSubmitting(true);
     try {
-      await api("/electricity/readings", {
+      const fd = new FormData();
+      fd.append("date", fDate);
+      fd.append("shiftId", String(Number(fShiftId)));
+      fd.append("startReading", fStart);
+      fd.append("endReading", fEnd);
+      fd.append("isMeterReset", String(fReset));
+      if (fReset) fd.append("maxMeterValue", fMaxVal);
+      if (fNotes) fd.append("notes", fNotes);
+      if (fEngineerId) fd.append("responsibleEngineerId", fEngineerId);
+      if (fImage) fd.append("image", fImage);
+
+      const token = localStorage.getItem("plasticon_token");
+      const res = await fetch(`${API_BASE_URL}/electricity/readings`, {
         method: "POST",
-        body: JSON.stringify({
-          date: fDate,
-          shiftId: Number(fShiftId),
-          startReading: Number(fStart),
-          endReading: Number(fEnd),
-          isMeterReset: fReset,
-          maxMeterValue: fReset ? Number(fMaxVal) : undefined,
-          notes: fNotes || undefined,
-          responsibleEngineerId: fEngineerId ? Number(fEngineerId) : undefined,
-        }),
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        body: fd,
+        credentials: "include",
       });
+      if (!res.ok) throw new Error(await readApiError(res));
       setSuccess(nav("Reading recorded successfully", "تم تسجيل القراءة بنجاح"));
-      setFStart(""); setFEnd(""); setFNotes(""); setFReset(false); setFMaxVal(""); setFEngineerId("");
+      setFStart(""); setFEnd(""); setFNotes(""); setFReset(false); setFMaxVal(""); setFEngineerId(""); setFImage(null);
       setShowForm(false);
       void loadData();
     } catch (e) {
@@ -407,6 +415,21 @@ export function ElectricityPage() {
               </div>
             )}
 
+            {/* Meter photo */}
+            <label style={{ display: "flex", flexDirection: "column", gap: ".3rem", marginBottom: "1rem" }}>
+              <span style={{ fontSize: ".8rem", fontWeight: 600, color: "var(--text-secondary)" }}>{nav("Meter Photo (optional)", "صورة العداد (اختياري)")}</span>
+              <input
+                type="file"
+                accept="image/*"
+                className="module-form__input"
+                onChange={(e) => setFImage(e.target.files?.[0] ?? null)}
+                style={{ padding: ".35rem" }}
+              />
+              {fImage && (
+                <span style={{ fontSize: ".75rem", color: "var(--text-muted)" }}>{fImage.name}</span>
+              )}
+            </label>
+
             {/* Notes */}
             <label style={{ display: "flex", flexDirection: "column", gap: ".3rem", marginBottom: "1.25rem" }}>
               <span style={{ fontSize: ".8rem", fontWeight: 600, color: "var(--text-secondary)" }}>{nav("Notes", "ملاحظات")}</span>
@@ -483,6 +506,7 @@ export function ElectricityPage() {
                   <th>{nav("Reset", "تهيئة")}</th>
                   <th>{nav("Recorded By", "سجّله")}</th>
                   <th>{nav("Notes", "ملاحظات")}</th>
+                  <th>{nav("Photo", "صورة")}</th>
                   {!readOnly && <th></th>}
                 </tr>
               </thead>
@@ -512,6 +536,17 @@ export function ElectricityPage() {
                     <td style={{ fontSize: ".85rem" }}>{r.recordedBy.fullName}</td>
                     <td style={{ fontSize: ".8rem", color: "var(--text-secondary)", maxWidth: 160, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                       {r.notes ?? "—"}
+                    </td>
+                    <td>
+                      {r.imagePath ? (
+                        <a href={`${API_BASE_URL.replace("/api", "")}/pictures/${r.imagePath}`} target="_blank" rel="noreferrer">
+                          <img
+                            src={`${API_BASE_URL.replace("/api", "")}/pictures/${r.imagePath}`}
+                            alt="meter"
+                            style={{ width: 40, height: 40, objectFit: "cover", borderRadius: 4, border: "1px solid var(--border-default)" }}
+                          />
+                        </a>
+                      ) : "—"}
                     </td>
                     {!readOnly && (
                       <td>

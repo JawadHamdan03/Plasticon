@@ -185,10 +185,16 @@ const formatDateTime = (value: string | undefined, locale: string) => {
   }).format(new Date(value));
 };
 
+function authHeaders(): Record<string, string> {
+  const token = localStorage.getItem("plasticon_token");
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
 async function fetchWithAdminAuth(path: string, options?: RequestInit) {
   return fetch(`${API_BASE_URL}${path}`, {
     ...options,
     headers: {
+      "Content-Type": "application/json",
+      ...authHeaders(),
       ...(options?.headers ?? {}),
     },
     credentials: "include",

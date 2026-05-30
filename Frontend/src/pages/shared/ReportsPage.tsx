@@ -1,4 +1,4 @@
-import {
+﻿import {
   useCallback,
   useEffect,
   useMemo,
@@ -362,10 +362,15 @@ const TABS = [
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
+function authToken(): Record<string, string> {
+  const t = localStorage.getItem("plasticon_token");
+  return t ? { Authorization: `Bearer ${t}` } : {};
+}
 async function fetchWithAuth(path: string, options?: RequestInit) {
   return fetch(`${API_BASE_URL}${path}`, {
     ...options,
     headers: {
+      ...authToken(),
       ...(options?.headers ?? {}),
     },
     credentials: "include",
@@ -3391,3 +3396,4 @@ function prettyValueLocalized(value: unknown, copy: (typeof appCopy)["en"]) {
   }
   return String(value ?? "-");
 }
+

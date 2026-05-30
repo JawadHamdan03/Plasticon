@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { BarChart3, Zap, TrendingUp, Package } from "lucide-react";
+import { BarChart3 } from "lucide-react";
 import { ModulePageShell } from "../../components/ModulePageShell";
 import { Card } from "../../components/ui/card";
 import { useLocale } from "../../context/LocaleContext";
@@ -10,57 +10,62 @@ function authHeaders(): Record<string, string> {
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
-interface ProductionData {
-  id: number; machineId: number;
+interface ProductionRecord {
+  id: number;
+  cartonsCount: number;
+  totalPieces: number;
+  downtimeMinutes: number | null;
+  downtimeReason: string | null;
+  notes: string | null;
+  createdAt: string;
+  worker?: { id: number; fullName: string };
   machine?: { id: number; name: string; type: string };
-  unitsProduced: number; efficiency: number; downtimeMinutes: number; qualityRate: number; date: string;
+  shift?: { id: number; name: string };
 }
 
 export default function ProductionAnalytics() {
   const { locale } = useLocale();
   const nav = (en: string, ar: string) => locale === "ar" ? ar : en;
-  const [data, setData] = useState<ProductionData[]>([]);
+  const [data, setData] = useState<ProductionRecord[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => { fetchData(); }, []);
+  useEffect(() => { void fetchData(); }, []);
 
   const fetchData = async () => {
     try {
-      const res = await fetch(`${API_BASE_URL}/machine-health`, { headers: { ...authHeaders() }, credentials: "include" });
+      const res = await fetch(`${API_BASE_URL}/production/all`, {
+        headers: { ...authHeaders() },
+        credentials: "include",
+      });
       if (res.ok) {
-        const records = await res.json();
-        const raw = Array.isArray(records) ? records : (records.data || []);
-        setData(raw.map((r: any) => ({
-          id: r.id, machineId: r.machineId, machine: r.machine,
-          unitsProduced: Math.round(r.efficiencyRating * 10),
-          efficiency: r.efficiencyRating,
-          downtimeMinutes: r.maintenanceHours * 60,
-          qualityRate: Math.min(100, r.efficiencyRating + 5),
-          date: r.recordedAt,
-        })));
+        const json = await res.json();
+        const raw: ProductionRecord[] = Array.isArray(json) ? json : (json.data ?? []);
+        setData(raw);
       }
-    } catch { } finally { setLoading(false); }
+    } catch { /* silent */ } finally { setLoading(false); }
   };
 
-  const totalUnits = data.reduce((s, d) => s + d.unitsProduced, 0);
-  const avgEfficiency = data.length > 0 ? (data.reduce((s, d) => s + d.efficiency, 0) / data.length).toFixed(1) : "0";
-  const totalDowntime = (data.reduce((s, d) => s + d.downtimeMinutes, 0) / 60).toFixed(1);
-  const avgQuality = data.length > 0 ? (data.reduce((s, d) => s + d.qualityRate, 0) / data.length).toFixed(1) : "0";
+  const totalPieces  = data.reduce((s, r) => s + (r.totalPieces ?? 0), 0);
+  const totalCartons = data.reduce((s, r) => s + (r.cartonsCount ?? 0), 0);
+  const totalDowntime = data.reduce((s, r) => s + (r.downtimeMinutes ?? 0), 0);
+  const uniqueMachines = new Set(data.map((r) => r.machine?.id).filter(Boolean)).size;
+
+  const kpis = [
+    { label: nav("Total Pieces", "إجمالي القطع"),   value: totalPieces.toLocaleString(),           icon: "📦", color: "#1d4ed8", bg: "#dbeafe" },
+    { label: nav("Total Cartons", "إجمالي الكراتين"), value: totalCartons.toLocaleString(),         icon: "🗃️", color: "#059669", bg: "#d1fae5" },
+    { label: nav("Total Downtime", "إجمالي التوقف"), value: `${(totalDowntime / 60).toFixed(1)}h`, icon: "⏱️", color: "#d97706", bg: "#fef3c7" },
+    { label: nav("Machines Active", "الآلات النشطة"), value: String(uniqueMachines),               icon: "⚙️", color: "#7c3aed", bg: "#ede9fe" },
+  ];
 
   return (
     <ModulePageShell
       title={nav("Production Analytics", "تحليلات الإنتاج")}
-      subtitle={nav("Analyze production metrics and performance trends", "تحليل مقاييس الإنتاج واتجاهات الأداء")}
+      subtitle={nav("Production records and output trends", "سجلات الإنتاج واتجاهات المخرجات")}
       icon={<BarChart3 size={22} />}
     >
       {/* KPIs */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
-        {[
-          { label: nav("Units Produced", "الوحدات المُنتجة"), value: totalUnits.toLocaleString(), icon: "📦", color: "#1d4ed8", bg: "#dbeafe" },
-          { label: nav("Avg Efficiency", "متوسط الكفاءة"), value: `${avgEfficiency}%`, icon: "⚡", color: "#059669", bg: "#d1fae5" },
-          { label: nav("Total Downtime", "إجمالي التوقف"), value: `${totalDowntime}h`, icon: "⏱️", color: "#d97706", bg: "#fef3c7" },
-          { label: nav("Avg Quality Rate", "متوسط معدل الجودة"), value: `${avgQuality}%`, icon: "📊", color: "#7c3aed", bg: "#ede9fe" },
-        ].map((k) => (
+        {kpis.map((k) => (
           <Card key={k.label} className="p-4 flex items-center gap-3">
             <div style={{ width: 40, height: 40, borderRadius: 10, background: k.bg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.2rem", flexShrink: 0 }}>
               {k.icon}
@@ -80,39 +85,38 @@ export default function ProductionAnalytics() {
           ) : data.length === 0 ? (
             <div className="p-10 text-center text-[var(--text-secondary)]">
               <BarChart3 size={32} className="mx-auto mb-3 opacity-30" />
-              <p className="font-medium">{nav("No production data available", "لا توجد بيانات إنتاج")}</p>
+              <p className="font-medium">{nav("No production records found", "لا توجد سجلات إنتاج")}</p>
             </div>
           ) : (
             <table className="data-table w-full">
               <thead>
                 <tr>
+                  <th>{nav("Worker", "العامل")}</th>
                   <th>{nav("Machine", "الآلة")}</th>
-                  <th>{nav("Units", "وحدات")}</th>
-                  <th>{nav("Efficiency", "الكفاءة")}</th>
+                  <th>{nav("Shift", "الشفت")}</th>
+                  <th>{nav("Pieces", "القطع")}</th>
+                  <th>{nav("Cartons", "الكراتين")}</th>
                   <th>{nav("Downtime", "التوقف")}</th>
-                  <th>{nav("Quality", "الجودة")}</th>
+                  <th>{nav("Reason", "السبب")}</th>
+                  <th>{nav("Date", "التاريخ")}</th>
                 </tr>
               </thead>
               <tbody>
-                {data.map(row => (
+                {data.map((row) => (
                   <tr key={row.id}>
-                    <td className="font-medium">{row.machine?.name || `Machine #${row.machineId}`}</td>
-                    <td>{row.unitsProduced}</td>
-                    <td>
-                      <div className="flex items-center gap-2">
-                        <div className="w-14 h-1.5 rounded-full bg-slate-200 overflow-hidden">
-                          <div className={`h-1.5 rounded-full ${row.efficiency >= 80 ? "bg-green-500" : row.efficiency >= 60 ? "bg-orange-500" : "bg-red-500"}`}
-                            style={{ width: `${row.efficiency}%` }} />
-                        </div>
-                        <span className="text-xs text-[var(--text-secondary)]">{row.efficiency.toFixed(0)}%</span>
-                      </div>
+                    <td className="font-medium">{row.worker?.fullName ?? "—"}</td>
+                    <td>{row.machine?.name ?? "—"}</td>
+                    <td>{row.shift?.name ?? "—"}</td>
+                    <td className="font-bold" style={{ color: "#1d4ed8" }}>{(row.totalPieces ?? 0).toLocaleString()}</td>
+                    <td>{(row.cartonsCount ?? 0).toLocaleString()}</td>
+                    <td className="text-sm text-[var(--text-secondary)]">
+                      {row.downtimeMinutes ? `${row.downtimeMinutes}min` : "—"}
                     </td>
-                    <td className="text-sm text-[var(--text-secondary)]">{(row.downtimeMinutes / 60).toFixed(1)}h</td>
-                    <td>
-                      <span className="inline-block px-2.5 py-1 rounded-full text-xs font-bold"
-                        style={{ background: row.qualityRate >= 95 ? "#d1fae5" : row.qualityRate >= 90 ? "#fef3c7" : "#fee2e2", color: row.qualityRate >= 95 ? "#059669" : row.qualityRate >= 90 ? "#d97706" : "#dc2626" }}>
-                        {row.qualityRate.toFixed(1)}%
-                      </span>
+                    <td className="text-sm text-[var(--text-secondary)]">
+                      {row.downtimeReason ? row.downtimeReason.replace(/_/g, " ") : "—"}
+                    </td>
+                    <td className="text-sm text-[var(--text-secondary)]">
+                      {new Date(row.createdAt).toLocaleDateString()}
                     </td>
                   </tr>
                 ))}

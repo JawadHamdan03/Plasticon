@@ -67,7 +67,7 @@ const STATUS_CFG: Record<DayStatus, { bg: string; text: string; border: string; 
 };
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
-function auth() {
+function auth(): Record<string, string> {
   const t = localStorage.getItem("plasticon_token");
   return t ? { Authorization: `Bearer ${t}` } : {};
 }

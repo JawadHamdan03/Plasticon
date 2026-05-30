@@ -107,7 +107,7 @@ export default function EquipmentTransferLog() {
       title={nav("Equipment Transfer Log", "سجل نقل المعدات")}
       subtitle={nav("Log and track equipment service and transfer events", "تسجيل وتتبع أحداث خدمة ونقل المعدات")}
       icon={<History size={22} />}
-      actions={isEngineer ? (
+      actions={(isEngineer || isAdmin) ? (
         <Button size="sm" onClick={() => setShowForm(v => !v)}>
           {showForm ? <X size={14} /> : <Plus size={14} />}
           {showForm ? nav("Cancel", "إلغاء") : nav("Log Event", "تسجيل حدث")}
@@ -132,7 +132,7 @@ export default function EquipmentTransferLog() {
       </div>
 
       {/* Add form */}
-      {isEngineer && showForm && (
+      {(isEngineer || isAdmin) && showForm && (
         <Card className="p-5 mb-5 border-2 border-(--accent)">
           <h3 style={{ margin: "0 0 1rem", fontSize: ".95rem", fontWeight: 700 }}>{nav("New Service / Transfer Record", "سجل خدمة / نقل جديد")}</h3>
           {error && <div className="auth-alert auth-alert--error mb-3">{error}</div>}
@@ -183,7 +183,7 @@ export default function EquipmentTransferLog() {
             <div className="p-10 text-center" style={{ color: "var(--text-secondary)" }}>
               <History size={32} style={{ margin: "0 auto 12px", opacity: .3, display: "block" }} />
               <p style={{ fontWeight: 600 }}>{nav("No transfer records yet", "لا توجد سجلات نقل بعد")}</p>
-              {isEngineer && <p style={{ fontSize: ".85rem", marginTop: ".25rem" }}>{nav("Click 'Log Event' to add a service record", "انقر على 'تسجيل حدث' لإضافة سجل خدمة")}</p>}
+              {(isEngineer || isAdmin) && <p style={{ fontSize: ".85rem", marginTop: ".25rem" }}>{nav("Click 'Log Event' to add a service record", "انقر على 'تسجيل حدث' لإضافة سجل خدمة")}</p>}
             </div>
           ) : (
             <table className="data-table w-full">

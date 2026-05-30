@@ -11,6 +11,7 @@ import {
   setKwhPriceHandler,
   updateReadingHandler,
 } from "../controllers/electricityController";
+import { upload } from "../utils/uploadHandler";
 
 const router = Router();
 
@@ -20,7 +21,7 @@ router.get("/kwh-price/history", authorizeRoles([UserRole.ADMIN, UserRole.ACCOUN
 router.post("/kwh-price", authorizeRoles([UserRole.ADMIN]), setKwhPriceHandler);
 
 // Readings
-router.post("/readings", authorizeRoles([UserRole.WORKER, UserRole.ENGINEER, UserRole.ADMIN]), createReadingHandler);
+router.post("/readings", authorizeRoles([UserRole.WORKER, UserRole.ENGINEER, UserRole.ADMIN]), upload.single("image"), createReadingHandler);
 router.get("/readings", authorizeRoles([UserRole.WORKER, UserRole.ENGINEER, UserRole.ACCOUNTANT, UserRole.ADMIN]), getReadingsHandler);
 router.patch("/readings/:id", authorizeRoles([UserRole.ADMIN]), updateReadingHandler);
 router.delete("/readings/:id", authorizeRoles([UserRole.WORKER, UserRole.ENGINEER, UserRole.ADMIN]), deleteReadingHandler);

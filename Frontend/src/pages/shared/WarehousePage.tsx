@@ -100,7 +100,7 @@ export function WarehousePage() {
       if (prodRes.ok) setProductions(await prodRes.json() as ProductionRecord[]);
       if (salesRes.ok) setSales(await salesRes.json() as SaleRecord[]);
 
-      if (!matRes.ok && !prodRes.ok) {
+      if (!matRes.ok || !prodRes.ok) {
         setError(loc("Failed to load warehouse data.", "فشل تحميل بيانات المستودع."));
       }
       setLastRefresh(new Date());

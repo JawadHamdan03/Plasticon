@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+﻿import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { useLocale } from "../../context/LocaleContext";
 import { appCopy } from "../../content/appCopy";
@@ -70,10 +70,15 @@ type ProductBuckets = {
   total: number;
 };
 
+function authToken(): Record<string, string> {
+  const t = localStorage.getItem("plasticon_token");
+  return t ? { Authorization: `Bearer ${t}` } : {};
+}
 async function fetchWithAuth(path: string, options?: RequestInit) {
   return fetch(`${API_BASE_URL}${path}`, {
     ...options,
     headers: {
+      ...authToken(),
       ...(options?.headers ?? {}),
     },
     credentials: "include",
@@ -502,3 +507,4 @@ export function InventoryStockPage() {
     </ModulePageShell>
   );
 }
+

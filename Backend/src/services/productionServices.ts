@@ -31,7 +31,7 @@ type CreateProductionPayload = {
   hourSlot?: string;
   cartonsCount?: number;
   workingCavities?: number;
-  boxes?: BoxEntry[];
+  boxes?: BoxEntry[] | string;
   rawHdpeUsed?: number;
   rawLdpeUsed?: number;
   rawPetUsed?: number;
@@ -41,6 +41,7 @@ type CreateProductionPayload = {
   downtimeReason?: string;
   downtimeMinutes?: number;
   notes?: string;
+  documentPath?: string;
 };
 
 type MaterialUsageEntry = {
@@ -396,6 +397,11 @@ export const createProductionRecord = async (
       return { status: 400, message: `Missing ProductionSetting for ${productType}` };
     }
 
+    // Parse boxes if it arrived as a JSON string (FormData upload)
+    if (typeof payload.boxes === "string") {
+      try { payload.boxes = JSON.parse(payload.boxes as string) as BoxEntry[]; } catch { /* ignore */ }
+    }
+
     // Validate boxes
     if (Array.isArray(payload.boxes) && payload.boxes.length > 0) {
       for (const b of payload.boxes) {
@@ -498,6 +504,7 @@ export const createProductionRecord = async (
         downtimeReason: payload.downtimeReason?.trim() || null,
         downtimeMinutes,
         notes: payload.notes?.trim() || null,
+        documentPath: payload.documentPath || null,
       },
       include: {
         machine: { select: { id: true, name: true, type: true } },

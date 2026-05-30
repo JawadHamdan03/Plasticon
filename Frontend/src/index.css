@@ -351,6 +351,7 @@ img {
 
 .app-sidebar__nav {
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
   overflow-x: hidden;
   padding: 0.625rem 0.5rem;
@@ -438,6 +439,7 @@ img {
 }
 
 .app-sidebar__footer {
+  flex-shrink: 0;
   padding: 0.625rem 0.5rem;
   border-top: 1px solid rgba(255, 255, 255, 0.07);
   display: flex;
@@ -488,6 +490,65 @@ img {
   color: rgba(255, 255, 255, 0.4);
   white-space: nowrap;
 }
+/* ── Sidebar: language + dark mode controls (top, below brand) ── */
+.app-sidebar__controls {
+  display: flex !important;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 0.75rem;
+  background: rgba(249, 115, 22, 0.18);
+  border-bottom: 1px solid rgba(249, 115, 22, 0.3);
+  flex-shrink: 0;
+}
+.app-sidebar__ctrl-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0.65rem;
+  border-radius: var(--radius-lg);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 0.73rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background var(--transition), color var(--transition);
+  flex: 1;
+  justify-content: center;
+}
+.app-sidebar__ctrl-btn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+}
+.app-sidebar__lang {
+  display: flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: var(--radius-lg);
+  padding: 3px;
+  gap: 2px;
+}
+.app-sidebar__lang-btn {
+  padding: 0.2rem 0.5rem;
+  border-radius: var(--radius-md);
+  font-size: 0.73rem;
+  font-weight: 700;
+  border: none;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.55);
+  cursor: pointer;
+  font-family: inherit;
+  transition: background var(--transition), color var(--transition);
+  line-height: 1.4;
+}
+.app-sidebar__lang-btn--active {
+  background: var(--brand-primary);
+  color: #fff;
+  box-shadow: 0 1px 4px rgba(249, 115, 22, 0.4);
+}
+
 .app-sidebar__signout {
   display: flex;
   align-items: center;
@@ -657,19 +718,19 @@ img {
   display: flex;
   align-items: center;
   gap: 2px;
-  background: var(--bg-app);
-  border: 1.5px solid var(--border-default);
+  background: var(--border-strong);
+  border: 1.5px solid var(--border-strong);
   border-radius: var(--radius-lg);
   padding: 3px;
 }
 .locale-switch-topbar__btn {
-  padding: 0.2rem 0.5rem;
+  padding: 0.2rem 0.55rem;
   border-radius: var(--radius-md);
-  font-size: 0.75rem;
+  font-size: 0.78rem;
   font-weight: 800;
   border: none;
   background: transparent;
-  color: var(--text-secondary);
+  color: var(--text-primary);
   cursor: pointer;
   transition: all var(--transition);
   font-family: inherit;
@@ -679,6 +740,49 @@ img {
   background: var(--brand-primary);
   color: #fff;
   box-shadow: 0 1px 4px rgba(249, 115, 22, 0.35);
+}
+/* Dark mode: give the locale switch a visible background */
+[data-theme="dark"] .locale-switch-topbar {
+  background: var(--gray-300);
+  border-color: var(--gray-400);
+}
+[data-theme="dark"] .locale-switch-topbar__btn {
+  color: var(--text-primary);
+}
+
+/* ── TOPBAR THEME BUTTON ── */
+.topbar-theme-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.2rem 0.65rem;
+  border-radius: var(--radius-lg);
+  border: 1.5px solid var(--border-strong);
+  background: var(--border-strong);
+  color: var(--text-primary);
+  font-size: 0.78rem;
+  font-weight: 800;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all var(--transition);
+  white-space: nowrap;
+}
+.topbar-theme-btn:hover {
+  border-color: var(--brand-primary);
+  color: var(--brand-primary);
+}
+[data-theme="dark"] .topbar-theme-btn {
+  background: var(--gray-300);
+  border-color: var(--gray-400);
+  color: var(--text-primary);
+}
+.topbar-theme-btn__label {
+  display: inline;
+}
+@media (max-width: 1024px) {
+  .topbar-theme-btn__label {
+    display: none;
+  }
 }
 
 /* ── 6. CARDS ─────────────────────────────────────────────── */
@@ -2231,6 +2335,11 @@ tbody td {
   }
 }
 
+/* ── Sidebar toggle — hidden on desktop, shown on mobile ── */
+.sidebar-toggle-btn {
+  display: none;
+}
+
 /* ── 23. RESPONSIVE ────────────────────────────────────── */
 @media (max-width: 1024px) {
   .app-sidebar {
@@ -2244,6 +2353,9 @@ tbody td {
   .app-sidebar--mobile-open {
     transform: translateX(0) !important;
     box-shadow: var(--shadow-xl);
+  }
+  .sidebar-toggle-btn {
+    display: flex !important;
   }
   .app-content {
     margin-inline-start: 0 !important;
@@ -2327,9 +2439,9 @@ tbody td {
   .topbar-search {
     max-width: 140px;
   }
-  /* Hide locale switch on very small screens to save topbar space */
+  /* Keep locale switch visible on small screens — moved to sidebar but also topbar */
   .locale-switch-topbar {
-    display: none;
+    display: flex;
   }
   /* Admin page */
   .admin-header {

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+﻿import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLocale } from "../../context/LocaleContext";
 import { API_BASE_URL, readApiError } from "../../lib/api";
 import { ModulePageShell } from "../../components/ModulePageShell";
@@ -56,10 +56,15 @@ type CustomerLedger = {
   sales: SaleRecord[];
 };
 
+function authToken(): Record<string, string> {
+  const t = localStorage.getItem("plasticon_token");
+  return t ? { Authorization: `Bearer ${t}` } : {};
+}
 async function fetchWithAuth(path: string, options?: RequestInit) {
   return fetch(`${API_BASE_URL}${path}`, {
     ...options,
     headers: {
+      ...authToken(),
       ...(options?.headers ?? {}),
     },
     credentials: "include",
@@ -391,3 +396,4 @@ export function CustomersPage() {
     </ModulePageShell>
   );
 }
+

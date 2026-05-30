@@ -345,7 +345,7 @@ export function WorkerHubPage() {
           👷
         </div>
         <div>
-          <p style={{ margin: 0, fontWeight: 700, fontSize: "1.1rem" }}>{user?.fullName ?? "Worker"}</p>
+          <p style={{ margin: 0, fontWeight: 700, fontSize: "1.1rem" }}>{user?.name ?? "Worker"}</p>
           <p style={{ margin: ".15rem 0 0", opacity: .8, fontSize: ".83rem" }}>
             {isAr ? "مركز عمليات الموظف — اعرض جميع سجلاتك الشخصية" : "Employee operation hub — view all your personal records"}
           </p>

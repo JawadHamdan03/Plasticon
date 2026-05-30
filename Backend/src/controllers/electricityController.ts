@@ -32,7 +32,8 @@ export const setKwhPriceHandler = async (req: AuthenticatedRequest, res: Respons
 export const createReadingHandler = async (req: AuthenticatedRequest, res: Response) => {
   const userId = req.user?.id;
   if (!userId) { res.status(401).json({ message: "Unauthorized" }); return; }
-  const result = await createElectricityReading(userId, req.body as Record<string, unknown>);
+  const imagePath = req.file?.filename ?? undefined;
+  const result = await createElectricityReading(userId, { ...req.body as Record<string, unknown>, imagePath });
   res.status(result.status).json(result.data ?? { message: result.message });
 };
 

@@ -18,6 +18,7 @@ import { AccountantTabs } from './AccountantTabs';
 import { AdminTabs }      from './AdminTabs';
 import { AppTopBar }      from '../components/AppTopBar';
 import { colors }         from '../theme';
+import { useAppTheme }    from '../context/ThemeContext';
 
 const Stack = createNativeStackNavigator<AuthStackParamList>();
 
@@ -45,10 +46,11 @@ function AppTabs({ role }: { role: string }) {
 }
 
 function AuthenticatedLayout({ role, user }: { role: string; user: any }) {
-  const insets = useSafeAreaInsets();
+  const insets        = useSafeAreaInsets();
+  const { colors: c } = useAppTheme();
 
   return (
-    <View style={styles.root}>
+    <View style={[styles.root, { backgroundColor: c.background }]}>
       <AppTopBar user={user} />
       {/*
         Override the top safe-area inset to 0 for all tab content.

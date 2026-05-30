@@ -74,7 +74,7 @@ function resolveStatus(order: WorkOrder): string {
 const emptyForm = {
   machineId: "",
   presetKey: "lubricate" as string,
-  description: TASK_PRESETS[0].desc,
+  description: TASK_PRESETS[0].desc as string,
   frequency: "DAILY",
   nextScheduledDate: today(),
   scheduleType: "PREVENTIVE",

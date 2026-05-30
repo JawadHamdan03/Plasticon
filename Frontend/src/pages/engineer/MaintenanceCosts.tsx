@@ -62,7 +62,7 @@ export default function MaintenanceCosts() {
   const fetchAll = async () => {
     setLoading(true);
     try {
-      const endpoint = isEngineer ? "/maintenance/all" : "/maintenance/all";
+      const endpoint = "/maintenance/all";
       const [r1, r2] = await Promise.all([
         fetch(`${API_BASE_URL}/maintenance-costs`, { headers: authHeaders(), credentials: "include" }),
         fetch(`${API_BASE_URL}${endpoint}`, { headers: authHeaders(), credentials: "include" }),

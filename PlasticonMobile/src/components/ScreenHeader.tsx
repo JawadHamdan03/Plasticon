@@ -2,7 +2,8 @@ import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
-import { colors, spacing, typography } from '../theme';
+import { useAppTheme } from '../context/ThemeContext';
+import { spacing, typography } from '../theme';
 
 interface Props {
   title: string;
@@ -15,9 +16,10 @@ interface Props {
 
 export function ScreenHeader({ title, subtitle, showBack, rightIcon, onRightPress, rightLabel }: Props) {
   const navigation = useNavigation();
+  const { colors } = useAppTheme();
 
   return (
-    <View style={styles.header}>
+    <View style={[styles.header, { backgroundColor: colors.surface }]}>
       {showBack ? (
         <Pressable
           onPress={() => navigation.goBack()}
@@ -31,8 +33,8 @@ export function ScreenHeader({ title, subtitle, showBack, rightIcon, onRightPres
       )}
 
       <View style={styles.center}>
-        <Text style={styles.title} numberOfLines={1}>{title}</Text>
-        {subtitle ? <Text style={styles.subtitle} numberOfLines={1}>{subtitle}</Text> : null}
+        <Text style={[styles.title, { color: colors.text }]} numberOfLines={1}>{title}</Text>
+        {subtitle ? <Text style={[styles.subtitle, { color: colors.textMuted }]} numberOfLines={1}>{subtitle}</Text> : null}
       </View>
 
       {(rightIcon || rightLabel) && onRightPress ? (
@@ -41,9 +43,9 @@ export function ScreenHeader({ title, subtitle, showBack, rightIcon, onRightPres
           style={({ pressed }) => [styles.rightBtn, pressed && { opacity: 0.7 }]}
         >
           {rightLabel ? (
-            <Text style={styles.rightLabel}>{rightLabel}</Text>
+            <Text style={[styles.rightLabel, { color: colors.primary }]}>{rightLabel}</Text>
           ) : rightIcon ? (
-            <View style={styles.iconBtn}>
+            <View style={[styles.iconBtn, { backgroundColor: colors.primaryLight }]}>
               <Ionicons name={rightIcon} size={20} color={colors.primary} />
             </View>
           ) : null}
@@ -65,27 +67,17 @@ const styles = StyleSheet.create({
   },
   backBtn:         { padding: 4, marginRight: 4 },
   backPlaceholder: { width: 32 },
-  center: { flex: 1, alignItems: 'center' },
+  center:          { flex: 1, alignItems: 'center' },
   title: {
     ...typography.h3,
-    color: colors.text,
     textAlign: 'center',
   },
   subtitle: {
     ...typography.caption,
-    color: colors.textMuted,
     marginTop: 1,
     textAlign: 'center',
   },
   rightBtn:   { marginLeft: spacing.sm },
-  iconBtn: {
-    width: 36, height: 36, borderRadius: 18,
-    backgroundColor: colors.primaryLight,
-    alignItems: 'center', justifyContent: 'center',
-  },
-  rightLabel: {
-    ...typography.body,
-    color: colors.primary,
-    fontWeight: '600',
-  },
+  iconBtn:    { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
+  rightLabel: { ...typography.body, fontWeight: '600' },
 });

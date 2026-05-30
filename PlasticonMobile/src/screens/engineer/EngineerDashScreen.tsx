@@ -9,7 +9,9 @@ import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '../../auth/AuthContext';
 import { StatCard } from '../../components';
 import { api } from '../../api/client';
-import { colors, radius, shadow, spacing, typography } from '../../theme';
+import { radius, shadow, spacing, typography } from '../../theme';
+import { useAppTheme } from '../../context/ThemeContext';
+import { useLocale } from '../../context/LocaleContext';
 
 interface DashData {
   machinesTotal:     number;
@@ -19,15 +21,15 @@ interface DashData {
   recentMaint:       { id: number; machine?: { name: string }; type: string; status: string; createdAt: string }[];
 }
 
-function AlertRow({ item }: { item: DashData['recentMaint'][0] }) {
+function AlertRow({ item, colors }: { item: DashData['recentMaint'][0]; colors: any }) {
   const statusColor = item.status === 'COMPLETED' ? colors.success
     : item.status === 'IN_PROGRESS' ? colors.info : colors.warning;
   return (
-    <View style={styles.alertRow}>
+    <View style={[styles.alertRow, { borderBottomColor: colors.border }]}>
       <View style={[styles.alertDot, { backgroundColor: statusColor }]} />
       <View style={styles.alertContent}>
-        <Text style={styles.alertMachine} numberOfLines={1}>{item.machine?.name ?? `Maint #${item.id}`}</Text>
-        <Text style={styles.alertType}>{item.type}</Text>
+        <Text style={[styles.alertMachine, { color: colors.text }]} numberOfLines={1}>{item.machine?.name ?? `Maint #${item.id}`}</Text>
+        <Text style={[styles.alertType, { color: colors.textMuted }]}>{item.type}</Text>
       </View>
       <View style={[styles.alertBadge, { backgroundColor: `${statusColor}18` }]}>
         <Text style={[styles.alertBadgeText, { color: statusColor }]}>{item.status}</Text>
@@ -36,9 +38,9 @@ function AlertRow({ item }: { item: DashData['recentMaint'][0] }) {
   );
 }
 
-function QuickLink({ icon, label, color, onPress }: { icon: string; label: string; color: string; onPress: () => void }) {
+function QuickLink({ icon, label, color, onPress, colors }: { icon: string; label: string; color: string; onPress: () => void; colors: any }) {
   return (
-    <TouchableOpacity style={[styles.ql, { borderColor: `${color}30` }]} onPress={onPress} activeOpacity={0.75}>
+    <TouchableOpacity style={[styles.ql, { borderColor: `${color}30`, backgroundColor: colors.surface }]} onPress={onPress} activeOpacity={0.75}>
       <View style={[styles.qlIcon, { backgroundColor: `${color}15` }]}>
         <Ionicons name={icon as any} size={20} color={color} />
       </View>
@@ -48,6 +50,8 @@ function QuickLink({ icon, label, color, onPress }: { icon: string; label: strin
 }
 
 export function EngineerDashScreen() {
+  const { colors } = useAppTheme();
+  const { isAr } = useLocale();
   const { user } = useAuth();
   const navigation = useNavigation<any>();
   const firstName = (user?.fullName ?? 'Engineer').split(' ')[0];
@@ -62,7 +66,6 @@ export function EngineerDashScreen() {
         api.get<any>('/maintenance?limit=5'),
       ]);
 
-      // Both endpoints return plain arrays or wrapped objects — handle both shapes
       const rawM  = machines.status === 'fulfilled' ? machines.value : [];
       const mList: { status: string }[] = Array.isArray(rawM)
         ? rawM
@@ -89,13 +92,13 @@ export function EngineerDashScreen() {
   useEffect(() => { void load(); }, [load]);
 
   if (loading) return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
       <View style={styles.center}><ActivityIndicator size="large" color={colors.primary} /></View>
     </SafeAreaView>
   );
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
       <ScrollView
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
@@ -103,43 +106,43 @@ export function EngineerDashScreen() {
       >
         <View style={styles.greeting}>
           <View>
-            <Text style={styles.greetSub}>Engineer Dashboard</Text>
-            <Text style={styles.greetName}>{firstName} ⚙️</Text>
+            <Text style={[styles.greetSub, { color: colors.textMuted }]}>{isAr ? 'لوحة التحكم' : 'Dashboard'}</Text>
+            <Text style={[styles.greetName, { color: colors.text }]}>{firstName} ⚙️</Text>
           </View>
-          <TouchableOpacity style={styles.analyticBtn} onPress={() => navigation.navigate('Engineering', { screen: 'ProductionAnalytics' })}>
+          <TouchableOpacity style={[styles.analyticBtn, { backgroundColor: colors.primaryLight }]} onPress={() => navigation.navigate('Engineering', { screen: 'ProductionAnalytics' })}>
             <Ionicons name="analytics" size={16} color={colors.primary} />
-            <Text style={styles.analyticText}>Analytics</Text>
+            <Text style={[styles.analyticText, { color: colors.primary }]}>{isAr ? 'تحليل الإنتاج' : 'Production Analytics'}</Text>
           </TouchableOpacity>
         </View>
 
         {/* KPI row */}
         <View style={styles.kpiRow}>
-          <StatCard label="Machines OK"   value={`${data?.machinesOp ?? 0}/${data?.machinesTotal ?? 0}`} icon="hardware-chip" color={colors.success}  style={styles.kpi} />
-          <StatCard label="Open Maint."   value={String(data?.openMaintenance ?? 0)}                     icon="construct"    color={colors.warning}  style={styles.kpi} />
+          <StatCard label={isAr ? 'الآلات بخير' : 'Machines OK'}  value={`${data?.machinesOp ?? 0}/${data?.machinesTotal ?? 0}`} icon="hardware-chip" color={colors.success}  style={styles.kpi} />
+          <StatCard label={isAr ? 'صيانة مفتوحة' : 'Open Maint.'} value={String(data?.openMaintenance ?? 0)}                     icon="construct"    color={colors.warning}  style={styles.kpi} />
         </View>
         <View style={styles.kpiRow}>
-          <StatCard label="Quality Pass"  value={`${data?.qualityPassRate ?? 0}%`}                       icon="shield-checkmark" color={colors.info}  style={styles.kpi} />
-          <StatCard label="Dept"          value={user?.department ?? '—'}                                icon="business"     color={colors.accent}   style={styles.kpi} />
+          <StatCard label={isAr ? 'نجاح الجودة' : 'Quality Pass'} value={`${data?.qualityPassRate ?? 0}%`}                       icon="shield-checkmark" color={colors.info}  style={styles.kpi} />
+          <StatCard label={isAr ? 'القسم' : 'Dept'}               value={user?.department ?? '—'}                                icon="business"     color={colors.accent}   style={styles.kpi} />
         </View>
 
         {/* Quick links */}
-        <Text style={styles.sectionLabel}>QUICK ACCESS</Text>
+        <Text style={[styles.sectionLabel, { color: colors.textMuted }]}>{isAr ? 'وصول سريع' : 'QUICK ACCESS'}</Text>
         <View style={styles.qlGrid}>
-          <QuickLink icon="construct-outline"       label="Maintenance"  color={colors.warning}  onPress={() => navigation.navigate('Engineering', { screen: 'MaintenancePage' })} />
-          <QuickLink icon="hardware-chip-outline"   label="Machines"     color={colors.primary}  onPress={() => navigation.navigate('Engineering', { screen: 'MachineHealth'  })} />
-          <QuickLink icon="shield-checkmark-outline" label="Quality"     color={colors.success}  onPress={() => navigation.navigate('Engineering', { screen: 'QualityChecks'  })} />
-          <QuickLink icon="chatbubble-ellipses-outline" label="AI Tools" color={colors.info}     onPress={() => navigation.navigate('AITools',     { screen: 'AIHub'     })} />
+          <QuickLink icon="construct-outline"        label={isAr ? 'الصيانة' : 'Maintenance'}  color={colors.warning}  onPress={() => navigation.navigate('Engineering', { screen: 'MaintenancePage' })} colors={colors} />
+          <QuickLink icon="hardware-chip-outline"    label={isAr ? 'الآلات' : 'Machines'}      color={colors.primary}  onPress={() => navigation.navigate('Engineering', { screen: 'MachineHealth'  })} colors={colors} />
+          <QuickLink icon="shield-checkmark-outline" label={isAr ? 'الجودة' : 'Quality'}       color={colors.success}  onPress={() => navigation.navigate('Engineering', { screen: 'QualityChecks'  })} colors={colors} />
+          <QuickLink icon="chatbubble-ellipses-outline" label={isAr ? 'أدوات الذكاء' : 'AI Tools'} color={colors.info} onPress={() => navigation.navigate('AITools',     { screen: 'AIHub'     })} colors={colors} />
         </View>
 
         {/* Recent maintenance */}
-        <Text style={styles.sectionLabel}>RECENT MAINTENANCE</Text>
-        <View style={styles.alertCard}>
+        <Text style={[styles.sectionLabel, { color: colors.textMuted }]}>{isAr ? 'الصيانة الأخيرة' : 'RECENT MAINTENANCE'}</Text>
+        <View style={[styles.alertCard, { backgroundColor: colors.surface }]}>
           {data?.recentMaint.length ? data.recentMaint.map((item, idx) => (
-            <AlertRow key={`${item.id}-${idx}`} item={item} />
+            <AlertRow key={`${item.id}-${idx}`} item={item} colors={colors} />
           )) : (
             <View style={styles.empty}>
               <Ionicons name="checkmark-circle-outline" size={28} color={colors.success} />
-              <Text style={styles.emptyText}>No maintenance issues</Text>
+              <Text style={[styles.emptyText, { color: colors.textMuted }]}>{isAr ? 'لا توجد مشاكل صيانة' : 'No maintenance issues'}</Text>
             </View>
           )}
         </View>
@@ -149,15 +152,15 @@ export function EngineerDashScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe:    { flex: 1, backgroundColor: colors.background },
+  safe:    { flex: 1 },
   content: { padding: spacing.md, paddingBottom: spacing.xxl },
   center:  { flex: 1, alignItems: 'center', justifyContent: 'center' },
 
   greeting:     { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.lg, paddingTop: spacing.sm },
-  greetSub:     { ...typography.bodySmall, color: colors.textMuted },
+  greetSub:     { ...typography.bodySmall },
   greetName:    { ...typography.h2 },
-  analyticBtn:  { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: colors.primaryLight, paddingHorizontal: 12, paddingVertical: 7, borderRadius: radius.full },
-  analyticText: { fontSize: 12, fontWeight: '700', color: colors.primary },
+  analyticBtn:  { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 12, paddingVertical: 7, borderRadius: radius.full },
+  analyticText: { fontSize: 12, fontWeight: '700' },
 
   kpiRow:       { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.sm },
   kpi:          { flex: 1 },
@@ -166,13 +169,13 @@ const styles = StyleSheet.create({
   qlGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginBottom: spacing.md },
   ql: {
     width: '47%', alignItems: 'center', paddingVertical: spacing.md,
-    borderRadius: radius.lg, borderWidth: 1.5, backgroundColor: colors.surface, ...shadow.sm,
+    borderRadius: radius.lg, borderWidth: 1.5, ...shadow.sm,
   },
   qlIcon:  { marginBottom: 6 },
   qlLabel: { fontSize: 11, fontWeight: '700' },
 
-  alertCard: { backgroundColor: colors.surface, borderRadius: radius.lg, overflow: 'hidden', ...shadow.sm },
-  alertRow:  { flexDirection: 'row', alignItems: 'center', padding: spacing.md, borderBottomWidth: 1, borderBottomColor: colors.border, gap: spacing.sm },
+  alertCard: { borderRadius: radius.lg, overflow: 'hidden', ...shadow.sm },
+  alertRow:  { flexDirection: 'row', alignItems: 'center', padding: spacing.md, borderBottomWidth: 1, gap: spacing.sm },
   alertDot:  { width: 8, height: 8, borderRadius: 4 },
   alertContent: { flex: 1 },
   alertMachine: { ...typography.h4 },
@@ -181,5 +184,5 @@ const styles = StyleSheet.create({
   alertBadgeText: { fontSize: 10, fontWeight: '700' },
 
   empty:     { padding: spacing.lg, alignItems: 'center', gap: spacing.sm },
-  emptyText: { ...typography.bodySmall, color: colors.textMuted },
+  emptyText: { ...typography.bodySmall },
 });

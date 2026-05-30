@@ -1,4 +1,4 @@
-import {
+﻿import {
   useCallback,
   useEffect,
   useMemo,
@@ -156,10 +156,15 @@ const getRecordInvoiceUrl = (record: {
   return toPublicFileUrl(record.invoiceImage);
 };
 
+function authToken(): Record<string, string> {
+  const t = localStorage.getItem("plasticon_token");
+  return t ? { Authorization: `Bearer ${t}` } : {};
+}
 async function fetchWithAuth(path: string, options?: RequestInit) {
   return fetch(`${API_BASE_URL}${path}`, {
     ...options,
     headers: {
+      ...authToken(),
       ...(options?.headers ?? {}),
     },
     credentials: "include",
@@ -1389,3 +1394,4 @@ export function InventoryPage() {
     </ModulePageShell>
   );
 }
+

@@ -34,6 +34,7 @@ type MachineForm = {
   showCalculator: boolean;
   boxes: BoxEntry[];
   notes: string;
+  photoFile: File | null;
   saving: boolean; error: string; success: string;
   // material fields
   hdpeBags: string; hdpeKgPerBag: string;
@@ -57,6 +58,7 @@ type ProductionItem = {
   rawPetUsed?: number | null;
   colorUsed?: number | null;
   notes?: string | null;
+  documentPath?: string | null;
   createdAt: string;
   user?: { id: number; fullName: string; role: string };
   machine?: { id: number; name: string; type?: string | null } | null;
@@ -99,6 +101,7 @@ const emptyForm = (type: string | null): MachineForm => ({
   showCalculator: isPreformMachine(type),
   boxes: [defaultBox(type)],
   notes: "",
+  photoFile: null,
   saving: false, error: "", success: "",
   hdpeBags: "", hdpeKgPerBag: "25",
   ldpeBags: "", ldpeKgPerBag: "25",
@@ -174,6 +177,7 @@ export function ProductionPage() {
   const [toDate, setToDate] = useState("");
   const [adminTab, setAdminTab] = useState<"overview" | "daily" | "shifts" | "records" | "workers">("overview");
   const [forms, setForms] = useState<Record<number, MachineForm>>({});
+  const [filterMachineId, setFilterMachineId] = useState<string>("");
   const [nowMinutes, setNowMinutes] = useState(() => {
     const d = new Date();
     return d.getUTCHours() * 60 + d.getUTCMinutes();
@@ -286,11 +290,23 @@ export function ProductionPage() {
       if (parseFloat(f.adhesiveKg) > 0) body.adhesiveUsed = parseFloat(f.adhesiveKg);
       if (parseFloat(f.emptyBags) > 0) body.emptyBagsUsed = parseFloat(f.emptyBags);
 
-      const res = await fetchWithAuth("/production", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
+      let res: Response;
+      if (f.photoFile) {
+        const fd = new FormData();
+        for (const [k, v] of Object.entries(body)) {
+          if (v !== undefined && v !== null) {
+            fd.append(k, typeof v === "object" ? JSON.stringify(v) : String(v));
+          }
+        }
+        fd.append("document", f.photoFile);
+        res = await fetchWithAuth("/production", { method: "POST", body: fd });
+      } else {
+        res = await fetchWithAuth("/production", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
+      }
       if (!res.ok) throw new Error(await readApiError(res));
       patchForm(machine.id, { ...emptyForm(machine.type), success: isAr ? "تم الحفظ ✓" : "Saved ✓" });
       void loadAll();
@@ -667,6 +683,18 @@ export function ProductionPage() {
                             placeholder={isAr ? "ملاحظات اختيارية..." : "Optional notes..."} />
                         </label>
 
+                        {/* ── Photo upload ── */}
+                        <label style={{ display: "flex", flexDirection: "column", gap: ".25rem", fontSize: ".82rem", fontWeight: 600, color: "var(--text-secondary)" }}>
+                          {isAr ? "صورة الإنتاج (اختياري)" : "Production Photo (optional)"}
+                          <input
+                            type="file"
+                            accept="image/*"
+                            style={{ padding: ".3rem", border: "1px solid var(--border-default)", borderRadius: "var(--radius-md)", background: "var(--bg-card)", fontSize: ".8rem" }}
+                            onChange={(e) => patchForm(machine.id, { photoFile: e.target.files?.[0] ?? null })}
+                          />
+                          {f.photoFile && <span style={{ fontSize: ".72rem", color: "var(--text-muted)" }}>{f.photoFile.name}</span>}
+                        </label>
+
                         <button type="submit" className="auth-button" disabled={f.saving} style={{ width: "100%" }}>
                           {f.saving
                             ? (isAr ? "جاري الحفظ..." : "Saving...")
@@ -812,16 +840,32 @@ export function ProductionPage() {
           )}
 
           {adminTab === "records" && (() => {
-            const records = adminOverview?.recentRecords ?? allRecords;
+            const allRecs = adminOverview?.recentRecords ?? allRecords;
+            const filteredRecs = filterMachineId
+              ? allRecs.filter((r) => r.machineId === Number(filterMachineId))
+              : allRecs;
             return (
               <div style={{ background: "var(--bg-card)", border: "1px solid var(--border-default)", borderRadius: "var(--radius-xl)", overflow: "hidden" }}>
-                <div style={{ padding: ".875rem 1.25rem", borderBottom: "1px solid var(--border-default)", background: "var(--bg-surface)", fontWeight: 700, fontSize: ".9rem" }}>{isAr ? `السجلات (${records.length})` : `Records (${records.length})`}</div>
-                {records.length === 0 ? <div style={{ padding: "2rem", textAlign: "center", color: "var(--text-secondary)" }}>{isAr ? "لا توجد سجلات" : "No records"}</div> : (
+                <div style={{ padding: ".875rem 1.25rem", borderBottom: "1px solid var(--border-default)", background: "var(--bg-surface)", display: "flex", alignItems: "center", gap: "1rem", flexWrap: "wrap" }}>
+                  <span style={{ fontWeight: 700, fontSize: ".9rem" }}>{isAr ? `السجلات (${filteredRecs.length})` : `Records (${filteredRecs.length})`}</span>
+                  <label style={{ display: "flex", alignItems: "center", gap: ".5rem", fontSize: ".82rem", fontWeight: 600, color: "var(--text-secondary)" }}>
+                    {isAr ? "الآلة:" : "Machine:"}
+                    <select
+                      value={filterMachineId}
+                      onChange={(e) => setFilterMachineId(e.target.value)}
+                      style={{ padding: ".3rem .6rem", borderRadius: "var(--radius-md)", border: "1px solid var(--border-default)", background: "var(--bg-input)", fontSize: ".82rem" }}
+                    >
+                      <option value="">{isAr ? "الكل" : "All"}</option>
+                      {machines.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
+                    </select>
+                  </label>
+                </div>
+                {filteredRecs.length === 0 ? <div style={{ padding: "2rem", textAlign: "center", color: "var(--text-secondary)" }}>{isAr ? "لا توجد سجلات" : "No records"}</div> : (
                   <div style={{ overflowX: "auto" }}>
                     <table className="admin-table">
-                      <thead><tr>{[isAr ? "التاريخ" : "Date", isAr ? "العامل" : "Worker", isAr ? "الآلة" : "Machine", isAr ? "الشفت" : "Shift", isAr ? "كراتين" : "Cartons", isAr ? "القطع" : "Pieces"].map((h) => <th key={h}>{h}</th>)}</tr></thead>
+                      <thead><tr>{[isAr ? "التاريخ" : "Date", isAr ? "العامل" : "Worker", isAr ? "الآلة" : "Machine", isAr ? "الشفت" : "Shift", isAr ? "كراتين" : "Cartons", isAr ? "القطع" : "Pieces", isAr ? "صورة" : "Photo"].map((h) => <th key={h}>{h}</th>)}</tr></thead>
                       <tbody>
-                        {records.slice(0, 50).map((r) => (
+                        {filteredRecs.slice(0, 50).map((r) => (
                           <tr key={r.id}>
                             <td style={{ whiteSpace: "nowrap" }}>{new Date(r.createdAt).toLocaleDateString()}</td>
                             <td style={{ fontWeight: 600 }}>{r.user?.fullName ?? "—"}</td>
@@ -829,6 +873,13 @@ export function ProductionPage() {
                             <td>{r.shift?.name ?? "—"}</td>
                             <td>{r.cartonsCount ?? 0}</td>
                             <td style={{ fontWeight: 700 }}>{fmt(r.totalPieces ?? 0)}</td>
+                            <td>
+                              {r.documentPath ? (
+                                <a href={`${API_BASE_URL.replace("/api", "")}/pictures/${r.documentPath}`} target="_blank" rel="noreferrer">
+                                  <img src={`${API_BASE_URL.replace("/api", "")}/pictures/${r.documentPath}`} alt="doc" style={{ width: 36, height: 36, objectFit: "cover", borderRadius: 4, border: "1px solid var(--border-default)" }} />
+                                </a>
+                              ) : "—"}
+                            </td>
                           </tr>
                         ))}
                       </tbody>

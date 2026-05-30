@@ -19,6 +19,11 @@ type RegistrationRequest = {
 
 type Shift = { id: number; name: string };
 
+function authHeaders(): Record<string, string> {
+  const token = localStorage.getItem("plasticon_token");
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
 const ROLES = ["WORKER", "ENGINEER", "ACCOUNTANT", "ADMIN"];
 
 const ROLES_WITH_SHIFT = ["WORKER", "ENGINEER"];
@@ -64,7 +69,7 @@ export function RegistrationRequestsPage() {
     setLoading(true);
     try {
       const qs = statusFilter !== "ALL" ? `?status=${statusFilter}` : "";
-      const res = await fetch(`${API_BASE_URL}/registration-requests${qs}`, { credentials: "include" });
+      const res = await fetch(`${API_BASE_URL}/registration-requests${qs}`, { headers: authHeaders(), credentials: "include" });
       if (!res.ok) throw new Error(await readApiError(res));
       setRequests((await res.json()) as RegistrationRequest[]);
     } catch (err) {
@@ -77,7 +82,7 @@ export function RegistrationRequestsPage() {
 
   // Load shifts once
   useEffect(() => {
-    fetch(`${API_BASE_URL}/shifts`, { credentials: "include" })
+    fetch(`${API_BASE_URL}/shifts`, { headers: authHeaders(), credentials: "include" })
       .then(async (r) => { if (r.ok) setShifts((await r.json()) as Shift[]); })
       .catch(() => {});
   }, []);
@@ -102,7 +107,7 @@ export function RegistrationRequestsPage() {
       }
       const res = await fetch(`${API_BASE_URL}/registration-requests/${approveModal.id}/approve`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...authHeaders() },
         credentials: "include",
         body: JSON.stringify(body),
       });
@@ -125,7 +130,7 @@ export function RegistrationRequestsPage() {
     try {
       const res = await fetch(`${API_BASE_URL}/registration-requests/${id}/reject`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", ...authHeaders() },
         credentials: "include",
         body: JSON.stringify({ reviewNote: note || "" }),
       });

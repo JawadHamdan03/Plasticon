@@ -8,8 +8,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { api } from '../../api/client';
 import { Button, ScreenHeader } from '../../components';
-import { colors, radius, shadow, spacing, typography } from '../../theme';
+import { radius, shadow, spacing, typography } from '../../theme';
 import { API_BASE } from '../../config';
+import { useAppTheme } from '../../context/ThemeContext';
+import { useLocale } from '../../context/LocaleContext';
 
 interface WorkerSnapshot {
   id: number;
@@ -32,35 +34,35 @@ function fmtDT(iso: string) {
   return `${d.toLocaleDateString([], { month: 'short', day: 'numeric' })} · ${d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
 }
 
-function SnapCard({ item }: { item: WorkerSnapshot }) {
+function SnapCard({ item, colors }: { item: WorkerSnapshot; colors: any }) {
   return (
-    <View style={styles.card}>
+    <View style={[styles.card, { backgroundColor: colors.surface }]}>
       <View style={styles.cardTop}>
-        <View style={styles.machinePill}>
+        <View style={[styles.machinePill, { backgroundColor: colors.primaryLight }]}>
           <Ionicons name="hardware-chip-outline" size={13} color={colors.primary} />
-          <Text style={styles.machineText}>{item.machineLabel}</Text>
+          <Text style={[styles.machineText, { color: colors.primary }]}>{item.machineLabel}</Text>
         </View>
-        <Text style={styles.cardTime}>{fmtDT(item.createdAt)}</Text>
+        <Text style={[styles.cardTime, { color: colors.textMuted }]}>{fmtDT(item.createdAt)}</Text>
       </View>
       <View style={styles.metrics}>
         <View style={styles.metric}>
-          <Text style={styles.metricVal}>{(item.machineCounter ?? 0).toLocaleString()}</Text>
-          <Text style={styles.metricLabel}>Counter</Text>
+          <Text style={[styles.metricVal, { color: colors.primary }]}>{(item.machineCounter ?? 0).toLocaleString()}</Text>
+          <Text style={[styles.metricLabel, { color: colors.textMuted }]}>Counter</Text>
         </View>
-        <View style={styles.metricDivider} />
+        <View style={[styles.metricDivider, { backgroundColor: colors.border }]} />
         <View style={styles.metric}>
           <Text style={[styles.metricVal, { color: colors.accent }]}>{item.electricityKwh}</Text>
-          <Text style={styles.metricLabel}>kWh</Text>
+          <Text style={[styles.metricLabel, { color: colors.textMuted }]}>kWh</Text>
         </View>
       </View>
-      {item.notes ? <Text style={styles.notes}>{item.notes}</Text> : null}
+      {item.notes ? <Text style={[styles.notes, { color: colors.textMuted }]}>{item.notes}</Text> : null}
       {(item.machineCounterImage || item.electricityImage) && (
         <View style={styles.photoRow}>
           {toImageUri(item.machineCounterImage) ? (
-            <Image source={{ uri: toImageUri(item.machineCounterImage)! }} style={styles.photo} resizeMode="cover" />
+            <Image source={{ uri: toImageUri(item.machineCounterImage)! }} style={[styles.photo, { backgroundColor: colors.border }]} resizeMode="cover" />
           ) : null}
           {toImageUri(item.electricityImage) ? (
-            <Image source={{ uri: toImageUri(item.electricityImage)! }} style={styles.photo} resizeMode="cover" />
+            <Image source={{ uri: toImageUri(item.electricityImage)! }} style={[styles.photo, { backgroundColor: colors.border }]} resizeMode="cover" />
           ) : null}
         </View>
       )}
@@ -70,7 +72,15 @@ function SnapCard({ item }: { item: WorkerSnapshot }) {
 
 interface SnapForm { machineLabel: string; machineCounter: string; electricityKwh: string; notes: string; }
 
-function LogModal({ visible, onClose, onSuccess }: { visible: boolean; onClose: () => void; onSuccess: () => void }) {
+function LogModal({
+  visible, onClose, onSuccess, colors, isAr,
+}: {
+  visible: boolean;
+  onClose: () => void;
+  onSuccess: () => void;
+  colors: any;
+  isAr: boolean;
+}) {
   const [form, setForm] = useState<SnapForm>({ machineLabel: '', machineCounter: '', electricityKwh: '', notes: '' });
   const [saving, setSaving] = useState(false);
 
@@ -102,9 +112,9 @@ function LogModal({ visible, onClose, onSuccess }: { visible: boolean; onClose: 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={() => { reset(); onClose(); }}>
       <KeyboardAvoidingView style={styles.overlay} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-        <View style={styles.sheet}>
-          <View style={styles.handle} />
-          <Text style={styles.sheetTitle}>New Snapshot</Text>
+        <View style={[styles.sheet, { backgroundColor: colors.surface }]}>
+          <View style={[styles.handle, { backgroundColor: colors.border }]} />
+          <Text style={[styles.sheetTitle, { color: colors.text }]}>New Snapshot</Text>
 
           {[
             { label: 'Machine Label *', key: 'machineLabel', placeholder: 'e.g. Extruder A3' },
@@ -113,9 +123,13 @@ function LogModal({ visible, onClose, onSuccess }: { visible: boolean; onClose: 
             { label: 'Notes', key: 'notes', placeholder: 'Optional remarks...' },
           ].map((f) => (
             <View key={f.key} style={styles.field}>
-              <Text style={styles.fieldLabel}>{f.label}</Text>
+              <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{f.label}</Text>
               <TextInput
-                style={[styles.input, f.key === 'notes' && styles.inputMulti]}
+                style={[
+                  styles.input,
+                  f.key === 'notes' && styles.inputMulti,
+                  { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt },
+                ]}
                 placeholder={f.placeholder}
                 placeholderTextColor={colors.textMuted}
                 keyboardType={f.keyboard ?? 'default'}
@@ -128,8 +142,12 @@ function LogModal({ visible, onClose, onSuccess }: { visible: boolean; onClose: 
           ))}
 
           <View style={styles.actions}>
-            <Button variant="ghost" onPress={() => { reset(); onClose(); }} style={styles.actionBtn}>Cancel</Button>
-            <Button onPress={submit} loading={saving} style={styles.actionBtn}>Save</Button>
+            <Button variant="ghost" onPress={() => { reset(); onClose(); }} style={styles.actionBtn}>
+              Cancel
+            </Button>
+            <Button onPress={submit} loading={saving} style={styles.actionBtn}>
+              {isAr ? 'حفظ' : 'Save'}
+            </Button>
           </View>
         </View>
       </KeyboardAvoidingView>
@@ -138,6 +156,9 @@ function LogModal({ visible, onClose, onSuccess }: { visible: boolean; onClose: 
 }
 
 export function SnapshotsScreen() {
+  const { colors } = useAppTheme();
+  const { isAr } = useLocale();
+
   const [snaps, setSnaps]       = useState<WorkerSnapshot[]>([]);
   const [loading, setLoading]   = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -157,7 +178,7 @@ export function SnapshotsScreen() {
   useEffect(() => { void load(); }, [load]);
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
       <ScreenHeader title="Snapshots" subtitle="Machine & electricity readings" showBack />
 
       {loading ? (
@@ -168,20 +189,28 @@ export function SnapshotsScreen() {
         <FlatList
           data={snaps}
           keyExtractor={(i, idx) => `${String(i.id)}-${idx}`}
-          renderItem={({ item }) => <SnapCard item={item} />}
+          renderItem={({ item }) => <SnapCard item={item} colors={colors} />}
           contentContainerStyle={styles.list}
           showsVerticalScrollIndicator={false}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); void load(); }} tintColor={colors.primary} />}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={() => { setRefreshing(true); void load(); }}
+              tintColor={colors.primary}
+            />
+          }
           ListEmptyComponent={
             <View style={styles.empty}>
               <Ionicons name="camera-outline" size={44} color={colors.textMuted} />
-              <Text style={styles.emptyText}>No snapshots yet</Text>
+              <Text style={[styles.emptyText, { color: colors.textMuted }]}>
+                {isAr ? 'لا توجد بيانات' : 'No snapshots yet'}
+              </Text>
             </View>
           }
         />
       )}
 
-      <TouchableOpacity style={styles.fab} onPress={() => setModal(true)} activeOpacity={0.85}>
+      <TouchableOpacity style={[styles.fab, { backgroundColor: colors.primary }]} onPress={() => setModal(true)} activeOpacity={0.85}>
         <Ionicons name="add" size={28} color="#fff" />
       </TouchableOpacity>
 
@@ -189,58 +218,59 @@ export function SnapshotsScreen() {
         visible={modal}
         onClose={() => setModal(false)}
         onSuccess={() => { setModal(false); setLoading(true); void load(); }}
+        colors={colors}
+        isAr={isAr}
       />
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safe:   { flex: 1, backgroundColor: colors.background },
+  safe:   { flex: 1 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   list:   { padding: spacing.md, paddingBottom: 100 },
 
   card: {
-    backgroundColor: colors.surface, borderRadius: radius.lg,
+    borderRadius: radius.lg,
     padding: spacing.md, marginBottom: spacing.sm, ...shadow.sm,
   },
   cardTop:     { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.sm },
-  machinePill: { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: colors.primaryLight, paddingHorizontal: 10, paddingVertical: 4, borderRadius: radius.full },
-  machineText: { fontSize: 12, fontWeight: '700', color: colors.primary },
+  machinePill: { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 10, paddingVertical: 4, borderRadius: radius.full },
+  machineText: { fontSize: 12, fontWeight: '700' },
   cardTime:    { ...typography.caption },
 
   metrics:       { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-around', paddingVertical: spacing.sm },
   metric:        { alignItems: 'center' },
-  metricVal:     { fontSize: 22, fontWeight: '800', color: colors.primary },
+  metricVal:     { fontSize: 22, fontWeight: '800' },
   metricLabel:   { ...typography.caption, marginTop: 2 },
-  metricDivider: { width: 1, height: 36, backgroundColor: colors.border },
-  notes:         { ...typography.bodySmall, color: colors.textMuted, marginTop: spacing.sm, fontStyle: 'italic' },
+  metricDivider: { width: 1, height: 36 },
+  notes:         { ...typography.bodySmall, marginTop: spacing.sm, fontStyle: 'italic' },
   photoRow:      { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.sm },
-  photo:         { width: '48%', aspectRatio: 4 / 3, borderRadius: radius.sm, backgroundColor: colors.border },
+  photo:         { width: '48%', aspectRatio: 4 / 3, borderRadius: radius.sm },
 
   empty:     { alignItems: 'center', paddingTop: 60, gap: spacing.sm },
-  emptyText: { ...typography.bodySmall, color: colors.textMuted },
+  emptyText: { ...typography.bodySmall },
 
   fab: {
     position: 'absolute', bottom: 24, right: 20,
     width: 56, height: 56, borderRadius: 28,
-    backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center',
+    alignItems: 'center', justifyContent: 'center',
     ...shadow.lg,
   },
 
   overlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.45)' },
   sheet: {
-    backgroundColor: colors.surface,
     borderTopLeftRadius: radius.xl, borderTopRightRadius: radius.xl,
     padding: spacing.lg, paddingBottom: 40,
   },
-  handle:     { width: 40, height: 4, borderRadius: 2, backgroundColor: colors.border, alignSelf: 'center', marginBottom: spacing.md },
+  handle:     { width: 40, height: 4, borderRadius: 2, alignSelf: 'center', marginBottom: spacing.md },
   sheetTitle: { ...typography.h2, marginBottom: spacing.md },
   field:      { marginBottom: spacing.md },
   fieldLabel: { ...typography.caption, marginBottom: 6 },
   input: {
-    borderWidth: 1.5, borderColor: colors.border, borderRadius: radius.sm,
+    borderWidth: 1.5, borderRadius: radius.sm,
     paddingHorizontal: spacing.md, paddingVertical: 11,
-    fontSize: 15, color: colors.text, backgroundColor: colors.surfaceAlt,
+    fontSize: 15,
   },
   inputMulti: { height: 80, textAlignVertical: 'top' },
   actions:    { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.sm },

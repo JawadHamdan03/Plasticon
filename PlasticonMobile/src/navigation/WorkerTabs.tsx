@@ -2,7 +2,8 @@ import React from 'react';
 import { createBottomTabNavigator }   from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons }                   from '@expo/vector-icons';
-import { colors }                     from '../theme';
+import { useAppTheme }                from '../context/ThemeContext';
+import { useLocale }                  from '../context/LocaleContext';
 
 import {
   WorkerTabParamList,
@@ -106,6 +107,8 @@ function PersonalNavigator() {
 const Tab = createBottomTabNavigator<WorkerTabParamList>();
 
 export function WorkerTabs() {
+  const { colors } = useAppTheme();
+  const { isAr }   = useLocale();
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -132,10 +135,10 @@ export function WorkerTabs() {
         },
       })}
     >
-      <Tab.Screen name="Overview" component={OverviewNavigator} options={{ tabBarLabel: 'Overview' }} />
-      <Tab.Screen name="Work"     component={WorkNavigator}     options={{ tabBarLabel: 'My Work'  }} />
-      <Tab.Screen name="AI"       component={AINavigator}       options={{ tabBarLabel: 'AI Tools' }} />
-      <Tab.Screen name="Personal" component={PersonalNavigator} options={{ tabBarLabel: 'Personal' }} />
+      <Tab.Screen name="Overview" component={OverviewNavigator} options={{ tabBarLabel: isAr ? 'نظرة عامة' : 'Overview' }} />
+      <Tab.Screen name="Work"     component={WorkNavigator}     options={{ tabBarLabel: isAr ? 'عملي'      : 'My Work'  }} />
+      <Tab.Screen name="AI"       component={AINavigator}       options={{ tabBarLabel: isAr ? 'الذكاء'    : 'AI Tools' }} />
+      <Tab.Screen name="Personal" component={PersonalNavigator} options={{ tabBarLabel: isAr ? 'شخصي'      : 'Personal' }} />
     </Tab.Navigator>
   );
 }

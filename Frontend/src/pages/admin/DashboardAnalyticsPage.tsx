@@ -145,6 +145,11 @@ function StatPill({ label, value, color }: { label: string; value: number; color
   );
 }
 
+function authHeaders(): Record<string, string> {
+  const token = localStorage.getItem("plasticon_token");
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
 /* ── Page ─────────────────────────────────────────────────── */
 export function DashboardAnalyticsPage() {
   const [data, setData] = useState<Overview | null>(null);
@@ -155,7 +160,7 @@ export function DashboardAnalyticsPage() {
     setLoading(true);
     setError("");
     try {
-      const res = await fetch(`${API_BASE_URL}/dashboard/overview`, { credentials: "include" });
+      const res = await fetch(`${API_BASE_URL}/dashboard/overview`, { headers: authHeaders(), credentials: "include" });
       if (!res.ok) throw new Error(await readApiError(res));
       setData((await res.json()) as Overview);
     } catch (e) {

@@ -26,14 +26,16 @@ interface MaterialAlert {
 export default function RawMaterialAlerts() {
   const { locale } = useLocale();
   const { user } = useAuth();
-  const isAdmin = user?.role === "ADMIN";
+  const isAdmin    = user?.role === "ADMIN";
+  const isEngineer = user?.role === "ENGINEER";
+  const canEdit    = isAdmin || isEngineer;
   const nav = (en: string, ar: string) => locale === "ar" ? ar : en;
 
   const [materials, setMaterials] = useState<MaterialAlert[]>([]);
   const [loading, setLoading] = useState(true);
   const [stockInputs, setStockInputs] = useState<Record<number, string>>({});
   const [thresholdInputs, setThresholdInputs] = useState<Record<number, string>>({});
-  const [saving, setSaving] = useState<Record<number, boolean>>({});
+  const [saving, setSaving] = useState<Record<string | number, boolean>>({});
 
   useEffect(() => { fetchMaterials(); }, []);
 
@@ -144,8 +146,8 @@ export default function RawMaterialAlerts() {
                   <th>{nav("Current Stock", "المخزون الحالي")}</th>
                   <th>{nav("Min Threshold", "الحد الأدنى")}</th>
                   <th>{nav("Status", "الحالة")}</th>
-                  {!isAdmin && <th>{nav("Update Stock", "تحديث المخزون")}</th>}
-                  {!isAdmin && <th>{nav("Set Threshold", "تحديد الحد")}</th>}
+                  {canEdit && <th>{nav("Update Stock", "تحديث المخزون")}</th>}
+                  {canEdit && <th>{nav("Set Threshold", "تحديد الحد")}</th>}
                 </tr>
               </thead>
               <tbody>
@@ -158,7 +160,7 @@ export default function RawMaterialAlerts() {
                     <td>
                       <span style={{ padding: ".2rem .6rem", borderRadius: 999, fontSize: ".75rem", fontWeight: 700, ...statusBadge(m.status) }}>{m.status}</span>
                     </td>
-                    {!isAdmin && (
+                    {canEdit && (
                       <td>
                         <div className="flex items-center gap-2">
                           <input
@@ -173,14 +175,14 @@ export default function RawMaterialAlerts() {
                             size="sm"
                             variant="outline"
                             onClick={() => handleSaveStock(m.id)}
-                            disabled={saving[m.id]}
+                            disabled={!!saving[m.id]}
                           >
                             <Save size={13} />
                           </Button>
                         </div>
                       </td>
                     )}
-                    {!isAdmin && (
+                    {canEdit && (
                       <td>
                         <div className="flex items-center gap-2">
                           <input
@@ -195,7 +197,7 @@ export default function RawMaterialAlerts() {
                             size="sm"
                             variant="outline"
                             onClick={() => handleSaveThreshold(m.id)}
-                            disabled={saving[`t_${m.id}` as unknown as number]}
+                            disabled={!!saving[`t_${m.id}`]}
                           >
                             <Save size={13} />
                           </Button>

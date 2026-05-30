@@ -8,16 +8,18 @@ import {
 } from "react";
 import { API_BASE_URL, readApiError } from "../lib/api";
 
-// Global fetch interceptor — ensures credentials (httpOnly cookie) are always sent
+// Global fetch interceptor — ensures credentials and Bearer token are always sent
 const originalFetch = window.fetch.bind(window);
 window.fetch = (input: RequestInfo | URL, init?: RequestInit) => {
   const isFormData = init?.body instanceof FormData;
+  const token = window.localStorage.getItem("plasticon_token");
 
   const modifiedInit: RequestInit = {
     ...(init ?? {}),
     credentials: "include",
     headers: {
       ...(isFormData ? {} : { "Content-Type": "application/json" }),
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...(init?.headers ?? {}),
     },
   };

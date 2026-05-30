@@ -2,7 +2,8 @@ import React from 'react';
 import { createBottomTabNavigator }   from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons }                   from '@expo/vector-icons';
-import { colors }                     from '../theme';
+import { useAppTheme }                from '../context/ThemeContext';
+import { useLocale }                  from '../context/LocaleContext';
 
 import {
   AdminTabParamList,
@@ -205,6 +206,8 @@ function MoreNavigator() {
 const Tab = createBottomTabNavigator<AdminTabParamList>();
 
 export function AdminTabs() {
+  const { colors } = useAppTheme();
+  const { isAr }   = useLocale();
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -232,11 +235,11 @@ export function AdminTabs() {
         },
       })}
     >
-      <Tab.Screen name="Dashboard"   component={DashNavigator}  options={{ tabBarLabel: 'Dashboard' }}   />
-      <Tab.Screen name="Operations"  component={OpsNavigator}   options={{ tabBarLabel: 'Operations' }}  />
-      <Tab.Screen name="Finance"     component={FinNavigator}   options={{ tabBarLabel: 'Finance' }}     />
-      <Tab.Screen name="Engineering" component={EngNavigator}   options={{ tabBarLabel: 'Engineering' }} />
-      <Tab.Screen name="More"        component={MoreNavigator}  options={{ tabBarLabel: 'More' }}        />
+      <Tab.Screen name="Dashboard"   component={DashNavigator}  options={{ tabBarLabel: isAr ? 'الرئيسية'  : 'Dashboard'   }} />
+      <Tab.Screen name="Operations"  component={OpsNavigator}   options={{ tabBarLabel: isAr ? 'العمليات'  : 'Operations'  }} />
+      <Tab.Screen name="Finance"     component={FinNavigator}   options={{ tabBarLabel: isAr ? 'المالية'   : 'Finance'     }} />
+      <Tab.Screen name="Engineering" component={EngNavigator}   options={{ tabBarLabel: isAr ? 'الهندسة'   : 'Engineering' }} />
+      <Tab.Screen name="More"        component={MoreNavigator}  options={{ tabBarLabel: isAr ? 'المزيد'    : 'More'        }} />
     </Tab.Navigator>
   );
 }

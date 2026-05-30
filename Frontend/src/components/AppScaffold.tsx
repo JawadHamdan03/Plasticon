@@ -490,7 +490,32 @@ export function AppScaffold({ children }: { children: ReactNode }) {
           <img src={logo} alt="Plasticon" className="app-sidebar__logo" />
           <div className="app-sidebar__brand-text">
             <span className="app-sidebar__brand-name">Plasticon</span>
-            <span className="app-sidebar__brand-sub">Factory Management</span>
+            <span className="app-sidebar__brand-sub">{isAr ? "إدارة المصنع" : "Factory Management"}</span>
+          </div>
+        </div>
+
+        {/* Language + Dark mode controls — top of sidebar */}
+        <div className="app-sidebar__controls">
+          <button
+            type="button"
+            className="app-sidebar__ctrl-btn"
+            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+            title={theme === "dark" ? (isAr ? "الوضع الفاتح" : "Light mode") : (isAr ? "الوضع الداكن" : "Dark mode")}
+          >
+            {theme === "dark" ? <Sun size={15} /> : <Moon size={15} />}
+            <span>{theme === "dark" ? (isAr ? "فاتح" : "Light") : (isAr ? "داكن" : "Dark")}</span>
+          </button>
+          <div className="app-sidebar__lang">
+            <button
+              type="button"
+              className={`app-sidebar__lang-btn${locale === "en" ? " app-sidebar__lang-btn--active" : ""}`}
+              onClick={() => setLocale("en")}
+            >EN</button>
+            <button
+              type="button"
+              className={`app-sidebar__lang-btn${locale === "ar" ? " app-sidebar__lang-btn--active" : ""}`}
+              onClick={() => setLocale("ar")}
+            >ع</button>
           </div>
         </div>
 
@@ -536,6 +561,7 @@ export function AppScaffold({ children }: { children: ReactNode }) {
               <p className="app-sidebar__user-role">{roleLabel(role, locale)}</p>
             </div>
           </div>
+
           <button
             className="app-sidebar__signout"
             onClick={() => { signOut(); navigate("/login"); }}
@@ -552,8 +578,7 @@ export function AppScaffold({ children }: { children: ReactNode }) {
         <header className="app-topbar">
           {/* Mobile menu toggle */}
           <button
-            className="btn btn--ghost btn--icon"
-            style={{ display: "none" }}
+            className="btn btn--ghost btn--icon sidebar-toggle-btn"
             id="sidebar-toggle"
             onClick={() => setSidebarOpen((v) => !v)}
             aria-label="Toggle sidebar"
@@ -612,12 +637,17 @@ export function AppScaffold({ children }: { children: ReactNode }) {
             {/* Dark mode toggle */}
             <button
               type="button"
-              className="btn btn--ghost btn--icon"
+              className="topbar-theme-btn"
               onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
               aria-label="Toggle dark mode"
-              title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+              title={theme === "dark"
+                ? (isAr ? "الوضع الفاتح" : "Switch to light mode")
+                : (isAr ? "الوضع الداكن" : "Switch to dark mode")}
             >
-              {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
+              {theme === "dark" ? <Sun size={15} /> : <Moon size={15} />}
+              <span className="topbar-theme-btn__label">
+                {theme === "dark" ? (isAr ? "فاتح" : "Light") : (isAr ? "داكن" : "Dark")}
+              </span>
             </button>
             {/* Notifications */}
             <div style={{ position: "relative" }} ref={notifRef}>
@@ -678,17 +708,19 @@ export function AppScaffold({ children }: { children: ReactNode }) {
                   >
                     <div>
                       <p style={{ margin: 0, fontSize: ".88rem", fontWeight: 700, color: "var(--text-primary)" }}>
-                        Notifications
+                        {isAr ? "الإشعارات" : "Notifications"}
                       </p>
                       <p style={{ margin: 0, fontSize: ".75rem", color: "var(--text-secondary)" }}>
-                        {unread > 0 ? `${unread} unread` : "All caught up"}
+                        {unread > 0
+                          ? isAr ? `${unread} غير مقروء` : `${unread} unread`
+                          : isAr ? "لا يوجد جديد" : "All caught up"}
                       </p>
                     </div>
                     <button
                       className="btn btn--ghost btn--sm"
                       onClick={() => { setNotifOpen(false); navigate("/notifications"); }}
                     >
-                      View all
+                      {isAr ? "عرض الكل" : "View all"}
                     </button>
                   </div>
 
@@ -722,7 +754,7 @@ export function AppScaffold({ children }: { children: ReactNode }) {
                     ) : (
                       <div className="empty-state" style={{ padding: "1.5rem" }}>
                         <Bell size={28} style={{ color: "var(--gray-300)" }} />
-                        <p className="empty-state__title" style={{ fontSize: ".88rem" }}>No notifications</p>
+                        <p className="empty-state__title" style={{ fontSize: ".88rem" }}>{isAr ? "لا توجد إشعارات" : "No notifications"}</p>
                       </div>
                     )}
                   </div>
@@ -770,8 +802,14 @@ export function AppScaffold({ children }: { children: ReactNode }) {
           }}>
             <div style={{ display: "flex", alignItems: "center", gap: ".6rem", fontSize: ".84rem" }}>
               <span style={{ fontSize: "1rem" }}>👋</span>
-              <span style={{ fontWeight: 600, color: "var(--text-primary)" }}>Complete your profile</span>
-              <span style={{ color: "var(--text-secondary)" }}>— Add your personal info, photo, and documents to help your team know you better.</span>
+              <span style={{ fontWeight: 600, color: "var(--text-primary)" }}>
+                {isAr ? "أكمل ملفك الشخصي" : "Complete your profile"}
+              </span>
+              <span style={{ color: "var(--text-secondary)" }}>
+                {isAr
+                  ? "— أضف معلوماتك الشخصية وصورتك ووثائقك لمساعدة فريقك على التعرف عليك."
+                  : "— Add your personal info, photo, and documents to help your team know you better."}
+              </span>
             </div>
             <Link
               to="/profile"
@@ -782,7 +820,7 @@ export function AppScaffold({ children }: { children: ReactNode }) {
                 whiteSpace: "nowrap", flexShrink: 0,
               }}
             >
-              Complete Now →
+              {isAr ? "أكمل الآن ←" : "Complete Now →"}
             </Link>
           </div>
         )}

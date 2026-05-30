@@ -8,7 +8,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '../../auth/AuthContext';
 import { api } from '../../api/client';
-import { colors, radius, shadow, spacing, typography } from '../../theme';
+import { radius, shadow, spacing, typography } from '../../theme';
+import { useAppTheme } from '../../context/ThemeContext';
+import { useLocale } from '../../context/LocaleContext';
 
 interface DashData {
   totalRevenue:    number;
@@ -25,26 +27,26 @@ function fmt(n: number) {
   return `$${n.toLocaleString()}`;
 }
 
-function KpiCard({ label, value, icon, color, onPress }: {
-  label: string; value: string; icon: string; color: string; onPress?: () => void;
+function KpiCard({ label, value, icon, color, onPress, colors }: {
+  label: string; value: string; icon: string; color: string; onPress?: () => void; colors: any;
 }) {
   const Wrap = onPress ? TouchableOpacity : View;
   return (
-    <Wrap style={[styles.kpi, { borderLeftColor: color }]} onPress={onPress} activeOpacity={0.8}>
+    <Wrap style={[styles.kpi, { borderLeftColor: color, backgroundColor: colors.surface }]} onPress={onPress} activeOpacity={0.8}>
       <View style={[styles.kpiIcon, { backgroundColor: `${color}15` }]}>
         <Ionicons name={icon as any} size={18} color={color} />
       </View>
       <Text style={[styles.kpiValue, { color }]}>{value}</Text>
-      <Text style={styles.kpiLabel}>{label}</Text>
+      <Text style={[styles.kpiLabel, { color: colors.textMuted }]}>{label}</Text>
     </Wrap>
   );
 }
 
-function QuickLink({ icon, label, color, onPress }: {
-  icon: string; label: string; color: string; onPress: () => void;
+function QuickLink({ icon, label, color, onPress, colors }: {
+  icon: string; label: string; color: string; onPress: () => void; colors: any;
 }) {
   return (
-    <TouchableOpacity style={styles.ql} onPress={onPress} activeOpacity={0.75}>
+    <TouchableOpacity style={[styles.ql, { backgroundColor: colors.surface }]} onPress={onPress} activeOpacity={0.75}>
       <View style={[styles.qlIcon, { backgroundColor: `${color}15` }]}>
         <Ionicons name={icon as any} size={22} color={color} />
       </View>
@@ -54,6 +56,8 @@ function QuickLink({ icon, label, color, onPress }: {
 }
 
 export function AccountantDashScreen() {
+  const { colors } = useAppTheme();
+  const { isAr } = useLocale();
   const { user }    = useAuth();
   const navigation  = useNavigation<any>();
   const firstName   = (user?.fullName ?? 'Accountant').split(' ')[0];
@@ -97,7 +101,7 @@ export function AccountantDashScreen() {
   useEffect(() => { void load(); }, [load]);
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
       <ScrollView
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
@@ -106,12 +110,16 @@ export function AccountantDashScreen() {
         {/* Header */}
         <View style={styles.header}>
           <View>
-            <Text style={styles.greetSub}>Finance Overview</Text>
-            <Text style={styles.greetName}>Hello, {firstName}</Text>
+            <Text style={[styles.greetSub, { color: colors.textMuted }]}>{isAr ? 'نظرة عامة' : 'Overview'}</Text>
+            <Text style={[styles.greetName, { color: colors.text }]}>{isAr ? `مرحباً، ${firstName}` : `Hello, ${firstName}`}</Text>
           </View>
-          <TouchableOpacity style={styles.reportBtn} onPress={() => navigation.navigate('Reports')} activeOpacity={0.8}>
+          <TouchableOpacity
+            style={[styles.reportBtn, { backgroundColor: `${colors.accent}15`, borderColor: `${colors.accent}30` }]}
+            onPress={() => navigation.navigate('Reports')}
+            activeOpacity={0.8}
+          >
             <Ionicons name="bar-chart" size={16} color={colors.accent} />
-            <Text style={styles.reportBtnText}>Reports</Text>
+            <Text style={[styles.reportBtnText, { color: colors.accent }]}>{isAr ? 'تقارير مالية' : 'Financial Reports'}</Text>
           </TouchableOpacity>
         </View>
 
@@ -120,23 +128,23 @@ export function AccountantDashScreen() {
         ) : (
           <>
             {/* KPI grid */}
-            <Text style={styles.sectionLabel}>FINANCIAL SUMMARY</Text>
+            <Text style={[styles.sectionLabel, { color: colors.textMuted }]}>{isAr ? 'الملخص المالي' : 'FINANCIAL SUMMARY'}</Text>
             <View style={styles.kpiGrid}>
-              <KpiCard label="Total Revenue"   value={fmt(data?.totalRevenue ?? 0)}    icon="trending-up"    color={colors.success}  onPress={() => navigation.navigate('Finance', { screen: 'FinanceDash' })} />
-              <KpiCard label="Total Expenses"  value={fmt(data?.totalExpenses ?? 0)}   icon="trending-down"  color={colors.danger}   onPress={() => navigation.navigate('Finance', { screen: 'Expenses' })} />
-              <KpiCard label="Net Profit"      value={fmt(data?.netProfit ?? 0)}       icon="cash"           color={(data?.netProfit ?? 0) >= 0 ? colors.success : colors.danger} />
-              <KpiCard label="Open Receivables" value={fmt(data?.openReceivables ?? 0)} icon="arrow-down-circle" color={colors.primary} onPress={() => navigation.navigate('Finance', { screen: 'CustomerReceivables' })} />
-              <KpiCard label="Open Payables"   value={fmt(data?.openPayables ?? 0)}    icon="arrow-up-circle" color={colors.warning}  onPress={() => navigation.navigate('Finance', { screen: 'SupplierPayables' })} />
-              <KpiCard label="Invoices"        value={String(data?.pendingInvoices ?? 0)} icon="document-text" color={colors.info}  onPress={() => navigation.navigate('Finance', { screen: 'Invoices' })} />
+              <KpiCard label={isAr ? 'إجمالي الإيرادات' : 'Total Revenue'}    value={fmt(data?.totalRevenue ?? 0)}     icon="trending-up"       color={colors.success} onPress={() => navigation.navigate('Finance', { screen: 'FinanceDash' })}           colors={colors} />
+              <KpiCard label={isAr ? 'إجمالي المصروفات' : 'Total Expenses'}   value={fmt(data?.totalExpenses ?? 0)}    icon="trending-down"     color={colors.danger}  onPress={() => navigation.navigate('Finance', { screen: 'Expenses' })}              colors={colors} />
+              <KpiCard label={isAr ? 'صافي الربح' : 'Net Profit'}             value={fmt(data?.netProfit ?? 0)}        icon="cash"              color={(data?.netProfit ?? 0) >= 0 ? colors.success : colors.danger}                                          colors={colors} />
+              <KpiCard label={isAr ? 'مستقبلات العملاء' : 'Customer Receivables'} value={fmt(data?.openReceivables ?? 0)} icon="arrow-down-circle" color={colors.primary} onPress={() => navigation.navigate('Finance', { screen: 'CustomerReceivables' })} colors={colors} />
+              <KpiCard label={isAr ? 'مستحقات الموردين' : 'Supplier Payables'}    value={fmt(data?.openPayables ?? 0)}    icon="arrow-up-circle"   color={colors.warning} onPress={() => navigation.navigate('Finance', { screen: 'SupplierPayables' })}    colors={colors} />
+              <KpiCard label={isAr ? 'الفواتير' : 'Invoices'}                value={String(data?.pendingInvoices ?? 0)} icon="document-text"    color={colors.info}    onPress={() => navigation.navigate('Finance', { screen: 'Invoices' })}              colors={colors} />
             </View>
 
             {/* Quick links */}
-            <Text style={styles.sectionLabel}>QUICK ACCESS</Text>
+            <Text style={[styles.sectionLabel, { color: colors.textMuted }]}>{isAr ? 'وصول سريع' : 'QUICK ACCESS'}</Text>
             <View style={styles.qlGrid}>
-              <QuickLink icon="document-text"   label="Invoices"    color={colors.primary} onPress={() => navigation.navigate('Finance', { screen: 'Invoices' })} />
-              <QuickLink icon="receipt"         label="Expenses"    color={colors.danger}  onPress={() => navigation.navigate('Finance', { screen: 'Expenses' })} />
-              <QuickLink icon="checkmark-done"  label="Approvals"   color={colors.success} onPress={() => navigation.navigate('Finance', { screen: 'ApprovalWorkflows' })} />
-              <QuickLink icon="hardware-chip"   label="AI Tools"    color={colors.info}    onPress={() => navigation.navigate('AITools', { screen: 'AIHub' })} />
+              <QuickLink icon="document-text"  label={isAr ? 'الفواتير' : 'Invoices'}              color={colors.primary} onPress={() => navigation.navigate('Finance', { screen: 'Invoices' })}           colors={colors} />
+              <QuickLink icon="receipt"        label={isAr ? 'المصروفات' : 'Expenses'}             color={colors.danger}  onPress={() => navigation.navigate('Finance', { screen: 'Expenses' })}           colors={colors} />
+              <QuickLink icon="checkmark-done" label={isAr ? 'سير الموافقات' : 'Approval Workflows'} color={colors.success} onPress={() => navigation.navigate('Finance', { screen: 'ApprovalWorkflows' })} colors={colors} />
+              <QuickLink icon="hardware-chip"  label={isAr ? 'أدوات الذكاء' : 'AI Tools'}          color={colors.info}    onPress={() => navigation.navigate('AITools', { screen: 'AIHub' })}              colors={colors} />
             </View>
           </>
         )}
@@ -146,21 +154,21 @@ export function AccountantDashScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe:         { flex: 1, backgroundColor: colors.background },
+  safe:         { flex: 1 },
   content:      { padding: spacing.md, paddingBottom: 40 },
   header:       { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.lg, paddingTop: spacing.sm },
-  greetSub:     { ...typography.caption, color: colors.textMuted },
+  greetSub:     { ...typography.caption },
   greetName:    { ...typography.h2 },
-  reportBtn:    { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 12, paddingVertical: 7, borderRadius: radius.full, backgroundColor: `${colors.accent}15`, borderWidth: 1, borderColor: `${colors.accent}30` },
-  reportBtnText:{ fontSize: 12, fontWeight: '700', color: colors.accent },
-  sectionLabel: { ...typography.caption, color: colors.textMuted, marginBottom: spacing.sm, textTransform: 'uppercase', letterSpacing: 0.8 },
+  reportBtn:    { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 12, paddingVertical: 7, borderRadius: radius.full, borderWidth: 1 },
+  reportBtnText:{ fontSize: 12, fontWeight: '700' },
+  sectionLabel: { ...typography.caption, marginBottom: spacing.sm, textTransform: 'uppercase', letterSpacing: 0.8 },
   kpiGrid:      { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginBottom: spacing.lg },
-  kpi:          { width: '47.5%', backgroundColor: colors.surface, borderRadius: radius.lg, padding: spacing.md, borderLeftWidth: 3, ...shadow.sm },
+  kpi:          { width: '47.5%', borderRadius: radius.lg, padding: spacing.md, borderLeftWidth: 3, ...shadow.sm },
   kpiIcon:      { width: 32, height: 32, borderRadius: radius.sm, alignItems: 'center', justifyContent: 'center', marginBottom: spacing.sm },
   kpiValue:     { fontSize: 20, fontWeight: '800', marginBottom: 2 },
-  kpiLabel:     { ...typography.caption, color: colors.textMuted },
+  kpiLabel:     { ...typography.caption },
   qlGrid:       { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
-  ql:           { width: '47.5%', alignItems: 'center', backgroundColor: colors.surface, borderRadius: radius.lg, paddingVertical: spacing.md, ...shadow.sm },
+  ql:           { width: '47.5%', alignItems: 'center', borderRadius: radius.lg, paddingVertical: spacing.md, ...shadow.sm },
   qlIcon:       { width: 44, height: 44, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center', marginBottom: 6 },
   qlLabel:      { fontSize: 11, fontWeight: '700' },
 });
