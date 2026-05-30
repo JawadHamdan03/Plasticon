@@ -253,6 +253,7 @@ export type AdminMoreStackParamList = {
   ShiftHandover:     undefined;
   WorkerCoaching:    undefined;
   Profile:           undefined;
+  Customers:         undefined;
 };
 
 // ─── Navigation prop helpers ──────────────────────────────────────────────────

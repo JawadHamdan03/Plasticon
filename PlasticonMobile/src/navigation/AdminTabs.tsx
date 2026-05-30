@@ -87,6 +87,7 @@ import { MaintenanceReportScreen }   from '../screens/shared/MaintenanceReportSc
 import { ShiftHandoverScreen }       from '../screens/worker/ShiftHandoverScreen';
 import { WorkerCoachingScreen }      from '../screens/worker/WorkerCoachingScreen';
 import { ProfileScreen }             from '../screens/shared/ProfileScreen';
+import { CustomersScreen }           from '../screens/shared/CustomersScreen';
 
 // ─── Stack: Dashboard ─────────────────────────────────────────────────────────
 const DashStack = createNativeStackNavigator<AdminDashStackParamList>();
@@ -195,6 +196,7 @@ function MoreNavigator() {
       <MoreStack.Screen name="ShiftHandover"     component={ShiftHandoverScreen} />
       <MoreStack.Screen name="WorkerCoaching"    component={WorkerCoachingScreen} />
       <MoreStack.Screen name="Profile"           component={ProfileScreen} />
+      <MoreStack.Screen name="Customers"         component={CustomersScreen} />
     </MoreStack.Navigator>
   );
 }

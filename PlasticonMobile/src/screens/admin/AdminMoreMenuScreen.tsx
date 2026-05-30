@@ -12,6 +12,7 @@ const SECTIONS = [
       { icon: 'people',          label: 'Users',               desc: 'Manage all user accounts and roles',          screen: 'Users',              color: colors.primary },
       { icon: 'person-add',      label: 'Registrations',       desc: 'Pending access requests and approvals',       screen: 'Registrations',      color: colors.warning },
       { icon: 'briefcase',       label: 'Engineer Overview',   desc: 'Engineering team performance review',         screen: 'EngineerOverview',   color: colors.roleEngineer },
+      { icon: 'people',          label: 'Customers',           desc: 'Customer accounts derived from sales records', screen: 'Customers',          color: colors.info },
     ],
   },
   {
