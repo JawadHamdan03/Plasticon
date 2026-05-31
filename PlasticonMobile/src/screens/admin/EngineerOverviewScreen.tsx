@@ -4,7 +4,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { api } from '../../api/client';
 import { ScreenHeader, StatCard } from '../../components';
-import { colors, radius, shadow, spacing, typography } from '../../theme';
+import { radius, shadow, spacing, typography } from '../../theme';
+import { useAppTheme } from '../../context/ThemeContext';
+import { useLocale } from '../../context/LocaleContext';
 
 interface HealthRecord {
   id: number;
@@ -18,16 +20,19 @@ interface HealthRecord {
 }
 
 function HealthCard({ item }: { item: HealthRecord }) {
+  const { colors } = useAppTheme();
+  const { isAr } = useLocale();
+
   const eff   = item.efficiencyRating ?? 0;
   const color = eff >= 90 ? colors.success : eff >= 70 ? colors.warning : colors.danger;
-  const name  = item.machine?.name ?? item.machineName ?? `Machine #${item.id}`;
+  const name  = item.machine?.name ?? item.machineName ?? `${isAr ? 'آلة' : 'Machine'} #${item.id}`;
 
   return (
-    <View style={styles.card}>
+    <View style={[styles.card, { backgroundColor: colors.surface }]}>
       <View style={styles.cardTop}>
         <View style={styles.cardContent}>
-          <Text style={styles.machine}>{name}</Text>
-          <Text style={styles.date}>{new Date(item.recordedAt ?? item.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric' })}</Text>
+          <Text style={[styles.machine, { color: colors.text }]}>{name}</Text>
+          <Text style={[styles.date, { color: colors.textMuted }]}>{new Date(item.recordedAt ?? item.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric' })}</Text>
         </View>
         <View style={[styles.effBadge, { backgroundColor: `${color}15` }]}>
           <Text style={[styles.effText, { color }]}>{eff}%</Text>
@@ -35,16 +40,16 @@ function HealthCard({ item }: { item: HealthRecord }) {
       </View>
       <View style={styles.metrics}>
         <View style={styles.metric}>
-          <Text style={styles.metricLabel}>Efficiency</Text>
-          <View style={styles.barTrack}>
+          <Text style={[styles.metricLabel, { color: colors.text }]}>{isAr ? 'الكفاءة' : 'Efficiency'}</Text>
+          <View style={[styles.barTrack, { backgroundColor: colors.border }]}>
             <View style={[styles.barFill, { width: `${eff}%`, backgroundColor: color }]} />
           </View>
         </View>
         {item.downtimePercentage != null && (
-          <Text style={styles.detail}>Downtime: <Text style={styles.detailVal}>{item.downtimePercentage}%</Text></Text>
+          <Text style={[styles.detail, { color: colors.text }]}>{isAr ? 'وقت التوقف:' : 'Downtime:'} <Text style={[styles.detailVal, { color: colors.text }]}>{item.downtimePercentage}%</Text></Text>
         )}
         {item.maintenanceHours != null && (
-          <Text style={styles.detail}>Maint Hours: <Text style={styles.detailVal}>{item.maintenanceHours}h</Text></Text>
+          <Text style={[styles.detail, { color: colors.text }]}>{isAr ? 'ساعات الصيانة:' : 'Maint Hours:'} <Text style={[styles.detailVal, { color: colors.text }]}>{item.maintenanceHours}h</Text></Text>
         )}
       </View>
     </View>
@@ -52,6 +57,9 @@ function HealthCard({ item }: { item: HealthRecord }) {
 }
 
 export function EngineerOverviewScreen() {
+  const { colors } = useAppTheme();
+  const { isAr } = useLocale();
+
   const [records, setRecords]   = useState<HealthRecord[]>([]);
   const [loading, setLoading]   = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -73,18 +81,39 @@ export function EngineerOverviewScreen() {
   const avgEff = records.length > 0 ? Math.round(records.reduce((s, r) => s + (r.efficiencyRating ?? 0), 0) / records.length) : 0;
 
   return (
-    <SafeAreaView style={styles.safe}>
-      <ScreenHeader title="Engineer Overview" showBack />
-      {loading ? <View style={styles.center}><ActivityIndicator size="large" color={colors.primary} /></View> : (
+    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
+      <ScreenHeader title={isAr ? 'نظرة المهندس' : 'Engineer Overview'} showBack />
+      {loading ? (
+        <View style={styles.center}><ActivityIndicator size="large" color={colors.primary} /></View>
+      ) : (
         <FlatList
           data={records}
           keyExtractor={(i, idx) => `${String(i.id)}-${idx}`}
           renderItem={({ item }) => <HealthCard item={item} />}
           contentContainerStyle={styles.list}
           showsVerticalScrollIndicator={false}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); void load(); }} tintColor={colors.primary} />}
-          ListHeaderComponent={<StatCard label="Avg Machine Efficiency" value={`${avgEff}%`} icon="speedometer" color={avgEff >= 80 ? colors.success : colors.warning} style={styles.header} />}
-          ListEmptyComponent={<View style={styles.empty}><Ionicons name="hardware-chip-outline" size={44} color={colors.textMuted} /><Text style={styles.emptyText}>No health records</Text></View>}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={() => { setRefreshing(true); void load(); }}
+              tintColor={colors.primary}
+            />
+          }
+          ListHeaderComponent={
+            <StatCard
+              label={isAr ? 'متوسط كفاءة الآلات' : 'Avg Machine Efficiency'}
+              value={`${avgEff}%`}
+              icon="speedometer"
+              color={avgEff >= 80 ? colors.success : colors.warning}
+              style={styles.header}
+            />
+          }
+          ListEmptyComponent={
+            <View style={styles.empty}>
+              <Ionicons name="hardware-chip-outline" size={44} color={colors.textMuted} />
+              <Text style={[styles.emptyText, { color: colors.textMuted }]}>{isAr ? 'لا توجد سجلات صحة' : 'No health records'}</Text>
+            </View>
+          }
         />
       )}
     </SafeAreaView>
@@ -92,24 +121,24 @@ export function EngineerOverviewScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe:        { flex: 1, backgroundColor: colors.background },
+  safe:        { flex: 1 },
   center:      { flex: 1, alignItems: 'center', justifyContent: 'center' },
   list:        { padding: spacing.md, paddingBottom: 40 },
   header:      { marginBottom: spacing.md },
-  card:        { backgroundColor: colors.surface, borderRadius: radius.md, padding: spacing.md, marginBottom: spacing.sm, ...shadow.sm },
+  card:        { borderRadius: radius.md, padding: spacing.md, marginBottom: spacing.sm, ...shadow.sm },
   cardTop:     { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
   cardContent: { flex: 1 },
   machine:     { ...typography.h4 },
-  date:        { ...typography.caption, color: colors.textMuted, marginTop: 2 },
+  date:        { ...typography.caption, marginTop: 2 },
   effBadge:    { paddingHorizontal: 10, paddingVertical: 4, borderRadius: radius.md },
   effText:     { fontSize: 15, fontWeight: '800' },
   metrics:     { gap: 4 },
   metric:      { gap: 4 },
   metricLabel: { ...typography.caption },
-  barTrack:    { height: 6, backgroundColor: colors.border, borderRadius: 3, overflow: 'hidden' },
+  barTrack:    { height: 6, borderRadius: 3, overflow: 'hidden' },
   barFill:     { height: '100%', borderRadius: 3 },
   detail:      { ...typography.caption },
-  detailVal:   { fontWeight: '700', color: colors.text },
+  detailVal:   { fontWeight: '700' },
   empty:       { alignItems: 'center', paddingTop: 60, gap: spacing.sm },
-  emptyText:   { ...typography.bodySmall, color: colors.textMuted },
+  emptyText:   { ...typography.bodySmall },
 });

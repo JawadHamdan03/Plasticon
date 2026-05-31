@@ -7,7 +7,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { api } from '../../api/client';
 import { ScreenHeader } from '../../components';
-import { colors, radius, shadow, spacing, typography } from '../../theme';
+import { radius, shadow, spacing, typography } from '../../theme';
+import { useAppTheme } from '../../context/ThemeContext';
+import { useLocale } from '../../context/LocaleContext';
 
 interface ElecAlert {
   id:        number;
@@ -18,17 +20,19 @@ interface ElecAlert {
   createdAt: string;
 }
 
-const SEV_COLOR: Record<string, string> = {
-  low:      colors.success,
-  medium:   colors.warning,
-  high:     colors.danger,
-  critical: '#9B0000',
-};
-
 export function ElectricityAlertsScreen() {
+  const { colors } = useAppTheme();
+  const { isAr } = useLocale();
   const [alerts,     setAlerts]     = useState<ElecAlert[]>([]);
   const [loading,    setLoading]    = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+
+  const SEV_COLOR: Record<string, string> = {
+    low:      colors.success,
+    medium:   colors.warning,
+    high:     colors.danger,
+    critical: '#9B0000',
+  };
 
   const load = useCallback(async () => {
     try {
@@ -45,8 +49,8 @@ export function ElectricityAlertsScreen() {
   const resolved = alerts.filter((a) => a.resolved);
 
   return (
-    <SafeAreaView style={styles.safe}>
-      <ScreenHeader title="Electricity Alerts" subtitle={`${active.length} active`} showBack />
+    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
+      <ScreenHeader title={isAr ? 'تنبيهات الكهرباء' : 'Electricity Alerts'} subtitle={`${active.length} ${isAr ? 'نشط' : 'active'}`} showBack />
       <ScrollView
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
@@ -57,30 +61,30 @@ export function ElectricityAlertsScreen() {
         ) : alerts.length === 0 ? (
           <View style={styles.empty}>
             <Ionicons name="flash-outline" size={48} color={colors.success} />
-            <Text style={styles.emptyText}>No electricity alerts</Text>
-            <Text style={styles.emptyHint}>All systems operating normally</Text>
+            <Text style={[styles.emptyText, { color: colors.text }]}>{isAr ? 'لا توجد تنبيهات كهرباء' : 'No electricity alerts'}</Text>
+            <Text style={[styles.emptyHint, { color: colors.textMuted }]}>{isAr ? 'جميع الأنظمة تعمل بشكل طبيعي' : 'All systems operating normally'}</Text>
           </View>
         ) : (
           <>
             {active.length > 0 && (
               <>
-                <Text style={styles.section}>Active Alerts</Text>
+                <Text style={[styles.section, { color: colors.textMuted }]}>{isAr ? 'التنبيهات النشطة' : 'Active Alerts'}</Text>
                 <View style={styles.list}>
                   {active.map((a, idx) => {
                     const c = SEV_COLOR[a.severity?.toLowerCase() ?? 'medium'] ?? colors.warning;
                     return (
-                      <View key={`${a.id}-${idx}`} style={[styles.card, { borderLeftColor: c }]}>
+                      <View key={`${a.id}-${idx}`} style={[styles.card, { backgroundColor: colors.surface, borderLeftColor: c }]}>
                         <View style={styles.cardRow}>
                           <Ionicons name="flash" size={16} color={c} />
-                          <Text style={[styles.cardType, { color: c }]}>{a.type ?? 'Alert'}</Text>
+                          <Text style={[styles.cardType, { color: c }]}>{a.type ?? (isAr ? 'تنبيه' : 'Alert')}</Text>
                           {a.severity && (
                             <View style={[styles.badge, { backgroundColor: `${c}20` }]}>
                               <Text style={[styles.badgeText, { color: c }]}>{a.severity}</Text>
                             </View>
                           )}
                         </View>
-                        <Text style={styles.cardMsg}>{a.message}</Text>
-                        <Text style={styles.cardDate}>{new Date(a.createdAt).toLocaleString()}</Text>
+                        <Text style={[styles.cardMsg, { color: colors.text }]}>{a.message}</Text>
+                        <Text style={[styles.cardDate, { color: colors.textMuted }]}>{new Date(a.createdAt).toLocaleString()}</Text>
                       </View>
                     );
                   })}
@@ -90,16 +94,16 @@ export function ElectricityAlertsScreen() {
 
             {resolved.length > 0 && (
               <>
-                <Text style={[styles.section, { marginTop: spacing.md }]}>Resolved</Text>
+                <Text style={[styles.section, { marginTop: spacing.md, color: colors.textMuted }]}>{isAr ? 'تم الحل' : 'Resolved'}</Text>
                 <View style={styles.list}>
                   {resolved.map((a, idx) => (
-                    <View key={`${a.id}-${idx}`} style={[styles.card, styles.cardResolved]}>
+                    <View key={`${a.id}-${idx}`} style={[styles.card, styles.cardResolved, { backgroundColor: colors.surface, borderLeftColor: colors.border }]}>
                       <View style={styles.cardRow}>
                         <Ionicons name="checkmark-circle" size={14} color={colors.success} />
-                        <Text style={styles.cardType}>{a.type ?? 'Alert'}</Text>
+                        <Text style={[styles.cardType, { color: colors.textMuted }]}>{a.type ?? (isAr ? 'تنبيه' : 'Alert')}</Text>
                       </View>
                       <Text style={[styles.cardMsg, { color: colors.textMuted }]}>{a.message}</Text>
-                      <Text style={styles.cardDate}>{new Date(a.createdAt).toLocaleString()}</Text>
+                      <Text style={[styles.cardDate, { color: colors.textMuted }]}>{new Date(a.createdAt).toLocaleString()}</Text>
                     </View>
                   ))}
                 </View>
@@ -113,19 +117,19 @@ export function ElectricityAlertsScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe:         { flex: 1, backgroundColor: colors.background },
+  safe:         { flex: 1 },
   content:      { padding: spacing.md, paddingBottom: 40 },
   empty:        { alignItems: 'center', paddingVertical: 80, gap: spacing.xs },
   emptyText:    { ...typography.h4 },
-  emptyHint:    { ...typography.bodySmall, color: colors.textMuted },
-  section:      { ...typography.caption, color: colors.textMuted, marginBottom: spacing.sm, textTransform: 'uppercase', letterSpacing: 0.8 },
+  emptyHint:    { ...typography.bodySmall },
+  section:      { ...typography.caption, marginBottom: spacing.sm, textTransform: 'uppercase', letterSpacing: 0.8 },
   list:         { gap: spacing.sm, marginBottom: spacing.sm },
-  card:         { backgroundColor: colors.surface, borderRadius: radius.lg, padding: spacing.md, borderLeftWidth: 3, borderLeftColor: colors.border, ...shadow.sm },
+  card:         { borderRadius: radius.lg, padding: spacing.md, borderLeftWidth: 3, ...shadow.sm },
   cardResolved: { opacity: 0.65 },
   cardRow:      { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4 },
   cardType:     { ...typography.caption, fontWeight: '700', flex: 1 },
   badge:        { paddingHorizontal: 8, paddingVertical: 2, borderRadius: radius.sm },
   badgeText:    { fontSize: 10, fontWeight: '700', textTransform: 'capitalize' },
   cardMsg:      { ...typography.bodySmall, marginBottom: 4 },
-  cardDate:     { ...typography.caption, color: colors.textMuted },
+  cardDate:     { ...typography.caption },
 });

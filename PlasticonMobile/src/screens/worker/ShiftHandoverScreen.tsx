@@ -7,9 +7,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { ragApi } from '../../api/client';
 import { Button, ScreenHeader } from '../../components';
-import { colors, radius, shadow, spacing, typography } from '../../theme';
+import { radius, shadow, spacing, typography } from '../../theme';
+import { useAppTheme } from '../../context/ThemeContext';
+import { useLocale } from '../../context/LocaleContext';
 
 export function ShiftHandoverScreen() {
+  const { colors } = useAppTheme();
+  const { isAr } = useLocale();
   const [notes, setNotes]     = useState('');
   const [report, setReport]   = useState('');
   const [loading, setLoading] = useState(false);
@@ -31,36 +35,33 @@ Additional notes from operator: ${notes.trim() || 'None provided.'}
 Please use the Plasticon factory context and keep it concise and structured.`,
         role: 'worker',
       });
-      setReport(res.reply ?? res.response ?? 'Could not generate report. Try again.');
+      setReport(res.reply ?? res.response ?? (isAr ? 'تعذر إنشاء التقرير. حاول مرة أخرى.' : 'Could not generate report. Try again.'));
     } catch (err: any) {
-      setReport(`Error: ${err.message ?? 'Could not reach AI service.'}`);
+      setReport(`${isAr ? 'خطأ: ' : 'Error: '}${err.message ?? (isAr ? 'تعذر الوصول إلى خدمة الذكاء الاصطناعي.' : 'Could not reach AI service.')}`);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <SafeAreaView style={styles.safe}>
-      <ScreenHeader title="Shift Handover" subtitle="AI-generated handover report" showBack />
+    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
+      <ScreenHeader title={isAr ? 'تسليم الوردية' : 'Shift Handover'} subtitle={isAr ? 'تقرير تسليم بالذكاء الاصطناعي' : 'AI-generated handover report'} showBack />
 
-      <KeyboardAvoidingView
-        style={styles.flex}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      >
+      <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-          {/* Info banner */}
-          <View style={styles.infoBanner}>
+          <View style={[styles.infoBanner, { backgroundColor: colors.infoLight, borderLeftColor: colors.info }]}>
             <Ionicons name="information-circle-outline" size={18} color={colors.info} />
-            <Text style={styles.infoText}>
-              Add any notes from your shift. The AI will generate a structured handover report for the next team.
+            <Text style={[styles.infoText, { color: colors.info }]}>
+              {isAr
+                ? 'أضف ملاحظات من وردية عملك. سيُنشئ الذكاء الاصطناعي تقرير تسليم منظماً للفريق التالي.'
+                : 'Add any notes from your shift. The AI will generate a structured handover report for the next team.'}
             </Text>
           </View>
 
-          {/* Notes input */}
-          <Text style={styles.label}>Shift Notes (optional)</Text>
+          <Text style={[styles.label, { color: colors.textMuted }]}>{isAr ? 'ملاحظات الوردية (اختياري)' : 'Shift Notes (optional)'}</Text>
           <TextInput
-            style={styles.notesInput}
-            placeholder="E.g. Machine A stopped at 14:00, waste higher than usual on Line 3..."
+            style={[styles.notesInput, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surface }]}
+            placeholder={isAr ? 'مثال: توقفت آلة A الساعة 14:00، هدر أعلى من المعتاد في خط 3...' : 'E.g. Machine A stopped at 14:00, waste higher than usual on Line 3...'}
             placeholderTextColor={colors.textMuted}
             multiline
             numberOfLines={5}
@@ -69,23 +70,22 @@ Please use the Plasticon factory context and keep it concise and structured.`,
           />
 
           <Button onPress={generate} loading={loading} fullWidth size="lg" style={styles.btn}>
-            Generate Report
+            {isAr ? 'إنشاء التقرير' : 'Generate Report'}
           </Button>
 
-          {/* Output */}
           {(loading || report) ? (
-            <View style={styles.reportCard}>
+            <View style={[styles.reportCard, { backgroundColor: colors.surface, borderTopColor: colors.primary }]}>
               <View style={styles.reportHeader}>
                 <Ionicons name="document-text" size={16} color={colors.primary} />
-                <Text style={styles.reportTitle}>Handover Report</Text>
+                <Text style={[styles.reportTitle, { color: colors.primary }]}>{isAr ? 'تقرير التسليم' : 'Handover Report'}</Text>
               </View>
               {loading ? (
                 <View style={styles.generating}>
                   <ActivityIndicator color={colors.primary} />
-                  <Text style={styles.generatingText}>Generating report…</Text>
+                  <Text style={[styles.generatingText, { color: colors.primary }]}>{isAr ? 'جارٍ إنشاء التقرير…' : 'Generating report…'}</Text>
                 </View>
               ) : (
-                <Text style={styles.reportText}>{report}</Text>
+                <Text style={[styles.reportText, { color: colors.text }]}>{report}</Text>
               )}
             </View>
           ) : null}
@@ -96,35 +96,35 @@ Please use the Plasticon factory context and keep it concise and structured.`,
 }
 
 const styles = StyleSheet.create({
-  safe:    { flex: 1, backgroundColor: colors.background },
+  safe:    { flex: 1 },
   flex:    { flex: 1 },
   content: { padding: spacing.md, paddingBottom: 40 },
 
   infoBanner: {
     flexDirection: 'row', alignItems: 'flex-start', gap: 10,
-    backgroundColor: colors.infoLight, borderRadius: radius.md,
+    borderRadius: radius.md,
     padding: spacing.md, marginBottom: spacing.lg,
-    borderLeftWidth: 3, borderLeftColor: colors.info,
+    borderLeftWidth: 3,
   },
-  infoText: { ...typography.bodySmall, color: colors.info, flex: 1, lineHeight: 20 },
+  infoText: { ...typography.bodySmall, flex: 1, lineHeight: 20 },
 
   label: { ...typography.caption, marginBottom: 6 },
   notesInput: {
-    borderWidth: 1.5, borderColor: colors.border, borderRadius: radius.md,
-    padding: spacing.md, fontSize: 15, color: colors.text,
-    backgroundColor: colors.surface, height: 120, textAlignVertical: 'top',
+    borderWidth: 1.5, borderRadius: radius.md,
+    padding: spacing.md, fontSize: 15,
+    height: 120, textAlignVertical: 'top',
     marginBottom: spacing.md,
   },
   btn: { marginBottom: spacing.lg },
 
   reportCard: {
-    backgroundColor: colors.surface, borderRadius: radius.lg,
+    borderRadius: radius.lg,
     padding: spacing.md, ...shadow.sm,
-    borderTopWidth: 3, borderTopColor: colors.primary,
+    borderTopWidth: 3,
   },
-  reportHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: spacing.sm },
-  reportTitle:  { ...typography.h4, color: colors.primary },
-  generating:   { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: spacing.sm },
-  generatingText: { ...typography.bodySmall, color: colors.primary },
-  reportText:   { ...typography.body, lineHeight: 24, color: colors.text },
+  reportHeader:   { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: spacing.sm },
+  reportTitle:    { ...typography.h4 },
+  generating:     { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: spacing.sm },
+  generatingText: { ...typography.bodySmall },
+  reportText:     { ...typography.body, lineHeight: 24 },
 });

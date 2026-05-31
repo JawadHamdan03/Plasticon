@@ -19,7 +19,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { api } from '../../api/client';
 import { ScreenHeader } from '../../components';
-import { colors, radius, shadow, spacing, typography } from '../../theme';
+import { radius, shadow, spacing, typography } from '../../theme';
+import { useAppTheme } from '../../context/ThemeContext';
+import { useLocale } from '../../context/LocaleContext';
 
 // ─── Interfaces ───────────────────────────────────────────────────────────────
 
@@ -45,13 +47,6 @@ interface Shift {
 const ROLES = ['WORKER', 'ENGINEER', 'ACCOUNTANT', 'ADMIN'] as const;
 type Role = typeof ROLES[number];
 
-const ROLE_COLOR: Record<string, string> = {
-  ADMIN:      '#7C3AED',
-  ENGINEER:   colors.info,
-  ACCOUNTANT: colors.success,
-  WORKER:     colors.accent,
-};
-
 // ─── Edit Modal ───────────────────────────────────────────────────────────────
 
 interface EditModalProps {
@@ -63,6 +58,16 @@ interface EditModalProps {
 }
 
 function EditModal({ user, shifts, visible, onClose, onSaved }: EditModalProps) {
+  const { colors } = useAppTheme();
+  const { isAr } = useLocale();
+
+  const ROLE_COLOR: Record<string, string> = {
+    ADMIN:      '#7C3AED',
+    ENGINEER:   colors.info,
+    ACCOUNTANT: colors.success,
+    WORKER:     colors.accent,
+  };
+
   const [role, setRole]       = useState<Role>('WORKER');
   const [shiftId, setShiftId] = useState('');
   const [saving, setSaving]   = useState(false);
@@ -90,7 +95,7 @@ function EditModal({ user, shifts, visible, onClose, onSaved }: EditModalProps) 
       onSaved();
       onClose();
     } catch (err: any) {
-      Alert.alert('Error', err?.message ?? 'Failed to update user');
+      Alert.alert(isAr ? 'خطأ' : 'Error', err?.message ?? 'Failed to update user');
     } finally {
       setSaving(false);
     }
@@ -103,26 +108,30 @@ function EditModal({ user, shifts, visible, onClose, onSaved }: EditModalProps) 
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.sheetWrap}
       >
-        <View style={styles.sheet}>
+        <View style={[styles.sheet, { backgroundColor: colors.surface }]}>
           {/* Handle */}
-          <View style={styles.handle} />
+          <View style={[styles.handle, { backgroundColor: colors.border }]} />
 
-          <Text style={styles.sheetTitle}>Edit User</Text>
+          <Text style={[styles.sheetTitle, { color: colors.text }]}>{isAr ? 'تعديل المستخدم' : 'Edit User'}</Text>
           {user && (
-            <Text style={styles.sheetSub}>{user.fullName} · {user.email}</Text>
+            <Text style={[styles.sheetSub, { color: colors.textMuted }]}>{user.fullName} · {user.email}</Text>
           )}
 
           {/* Role picker */}
-          <Text style={styles.label}>Role</Text>
+          <Text style={[styles.label, { color: colors.text }]}>{isAr ? 'الدور' : 'Role'}</Text>
           <View style={styles.roleRow}>
             {ROLES.map((r) => (
               <TouchableOpacity
                 key={r}
-                style={[styles.roleChip, role === r && { backgroundColor: ROLE_COLOR[r] ?? colors.primary, borderColor: ROLE_COLOR[r] ?? colors.primary }]}
+                style={[
+                  styles.roleChip,
+                  { borderColor: colors.border, backgroundColor: colors.surfaceAlt },
+                  role === r && { backgroundColor: ROLE_COLOR[r] ?? colors.primary, borderColor: ROLE_COLOR[r] ?? colors.primary },
+                ]}
                 onPress={() => setRole(r)}
                 activeOpacity={0.75}
               >
-                <Text style={[styles.roleChipText, role === r && styles.roleChipTextActive]}>{r}</Text>
+                <Text style={[styles.roleChipText, { color: colors.textSecondary }, role === r && { color: colors.textInverse }]}>{r}</Text>
               </TouchableOpacity>
             ))}
           </View>
@@ -130,14 +139,14 @@ function EditModal({ user, shifts, visible, onClose, onSaved }: EditModalProps) 
           {/* Shift input — only for WORKER / ENGINEER */}
           {needsShift && (
             <>
-              <Text style={styles.label}>
-                Shift{shifts.length > 0 ? ` (${shifts.map((s) => `${s.id}: ${s.name ?? s.shiftType}`).join(', ')})` : ' ID'}
+              <Text style={[styles.label, { color: colors.text }]}>
+                {isAr ? 'الوردية' : 'Shift'}{shifts.length > 0 ? ` (${shifts.map((s) => `${s.id}: ${s.name ?? s.shiftType}`).join(', ')})` : ' ID'}
               </Text>
               <TextInput
-                style={styles.input}
+                style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
                 value={shiftId}
                 onChangeText={setShiftId}
-                placeholder="Enter shift ID"
+                placeholder={isAr ? 'أدخل رقم الوردية' : 'Enter shift ID'}
                 placeholderTextColor={colors.textMuted}
                 keyboardType="number-pad"
               />
@@ -145,18 +154,18 @@ function EditModal({ user, shifts, visible, onClose, onSaved }: EditModalProps) 
           )}
 
           <TouchableOpacity
-            style={[styles.saveBtn, saving && styles.saveBtnDisabled]}
+            style={[styles.saveBtn, { backgroundColor: colors.primary }, saving && styles.saveBtnDisabled]}
             onPress={save}
             disabled={saving}
             activeOpacity={0.8}
           >
             {saving
               ? <ActivityIndicator size="small" color={colors.textInverse} />
-              : <Text style={styles.saveBtnText}>Save Changes</Text>}
+              : <Text style={[styles.saveBtnText, { color: colors.textInverse }]}>{isAr ? 'حفظ التغييرات' : 'Save Changes'}</Text>}
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.cancelBtn} onPress={onClose} activeOpacity={0.7}>
-            <Text style={styles.cancelText}>Cancel</Text>
+            <Text style={[styles.cancelText, { color: colors.textMuted }]}>{isAr ? 'إلغاء' : 'Cancel'}</Text>
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
@@ -172,18 +181,28 @@ interface UserCardProps {
 }
 
 function UserCard({ item, onEdit }: UserCardProps) {
+  const { colors } = useAppTheme();
+  const { isAr } = useLocale();
+
+  const ROLE_COLOR: Record<string, string> = {
+    ADMIN:      '#7C3AED',
+    ENGINEER:   colors.info,
+    ACCOUNTANT: colors.success,
+    WORKER:     colors.accent,
+  };
+
   const roleColor = ROLE_COLOR[item.role ?? ''] ?? colors.textMuted;
   const initials  = item.fullName.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase();
 
   return (
-    <View style={[styles.card, !item.isActive && styles.cardInactive]}>
+    <View style={[styles.card, { backgroundColor: colors.surface }, !item.isActive && styles.cardInactive]}>
       <View style={[styles.avatar, { backgroundColor: `${roleColor}20` }]}>
         <Text style={[styles.avatarText, { color: roleColor }]}>{initials}</Text>
       </View>
       <View style={styles.cardContent}>
-        <Text style={styles.name}>{item.fullName}</Text>
-        <Text style={styles.email} numberOfLines={1}>{item.email}</Text>
-        {item.department && <Text style={styles.dept}>{item.department}</Text>}
+        <Text style={[styles.name, { color: colors.text }]}>{item.fullName}</Text>
+        <Text style={[styles.email, { color: colors.textMuted }]} numberOfLines={1}>{item.email}</Text>
+        {item.department && <Text style={[styles.dept, { color: colors.textSecondary }]}>{item.department}</Text>}
       </View>
       <View style={styles.right}>
         {item.role && (
@@ -192,12 +211,12 @@ function UserCard({ item, onEdit }: UserCardProps) {
           </View>
         )}
         {item.isActive === false && (
-          <View style={styles.inactiveBadge}>
-            <Text style={styles.inactiveText}>Inactive</Text>
+          <View style={[styles.inactiveBadge, { backgroundColor: `${colors.textMuted}20` }]}>
+            <Text style={[styles.inactiveText, { color: colors.textMuted }]}>{isAr ? 'غير نشط' : 'Inactive'}</Text>
           </View>
         )}
         <TouchableOpacity
-          style={styles.editBtn}
+          style={[styles.editBtn, { backgroundColor: `${colors.primary}10` }]}
           onPress={() => onEdit(item)}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
@@ -211,6 +230,9 @@ function UserCard({ item, onEdit }: UserCardProps) {
 // ─── Screen ───────────────────────────────────────────────────────────────────
 
 export function UsersAdminScreen() {
+  const { colors } = useAppTheme();
+  const { isAr } = useLocale();
+
   const [users, setUsers]         = useState<User[]>([]);
   const [shifts, setShifts]       = useState<Shift[]>([]);
   const [loading, setLoading]     = useState(true);
@@ -228,7 +250,7 @@ export function UsersAdminScreen() {
       setShifts(Array.isArray(shiftsRes) ? shiftsRes : []);
     } catch (e: any) {
       console.warn('UsersAdminScreen load error:', e?.message ?? e);
-      Alert.alert('Error', e?.message ?? 'Failed to load users');
+      Alert.alert(isAr ? 'خطأ' : 'Error', e?.message ?? 'Failed to load users');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -248,8 +270,12 @@ export function UsersAdminScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.safe}>
-      <ScreenHeader title="Users" subtitle={`${users.length} accounts`} showBack />
+    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
+      <ScreenHeader
+        title={isAr ? 'المستخدمون' : 'Users'}
+        subtitle={`${users.length} ${isAr ? 'حساب' : 'accounts'}`}
+        showBack
+      />
 
       {loading ? (
         <View style={styles.center}>
@@ -272,7 +298,7 @@ export function UsersAdminScreen() {
           ListEmptyComponent={
             <View style={styles.empty}>
               <Ionicons name="people-outline" size={44} color={colors.textMuted} />
-              <Text style={styles.emptyText}>No users found</Text>
+              <Text style={[styles.emptyText, { color: colors.textMuted }]}>{isAr ? 'لا يوجد مستخدمون' : 'No users found'}</Text>
             </View>
           }
         />
@@ -292,48 +318,47 @@ export function UsersAdminScreen() {
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
-  safe:            { flex: 1, backgroundColor: colors.background },
+  safe:            { flex: 1 },
   center:          { flex: 1, alignItems: 'center', justifyContent: 'center' },
   list:            { padding: spacing.md, paddingBottom: 40 },
 
   // Card
-  card:            { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surface, borderRadius: radius.md, padding: spacing.md, marginBottom: spacing.sm, gap: spacing.md, ...shadow.sm },
+  card:            { flexDirection: 'row', alignItems: 'center', borderRadius: radius.md, padding: spacing.md, marginBottom: spacing.sm, gap: spacing.md, ...shadow.sm },
   cardInactive:    { opacity: 0.55 },
   avatar:          { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
   avatarText:      { fontSize: 16, fontWeight: '700' },
   cardContent:     { flex: 1 },
   name:            { ...typography.h4 },
-  email:           { ...typography.caption, color: colors.textMuted, marginTop: 2 },
-  dept:            { ...typography.caption, color: colors.textSecondary, marginTop: 1 },
+  email:           { ...typography.caption, marginTop: 2 },
+  dept:            { ...typography.caption, marginTop: 1 },
   right:           { alignItems: 'flex-end', gap: 4 },
   roleBadge:       { paddingHorizontal: 8, paddingVertical: 3, borderRadius: radius.full },
   roleText:        { fontSize: 10, fontWeight: '700' },
-  inactiveBadge:   { paddingHorizontal: 8, paddingVertical: 2, borderRadius: radius.full, backgroundColor: `${colors.textMuted}20` },
-  inactiveText:    { fontSize: 9, fontWeight: '700', color: colors.textMuted },
-  editBtn:         { padding: 4, borderRadius: radius.sm, backgroundColor: `${colors.primary}10` },
+  inactiveBadge:   { paddingHorizontal: 8, paddingVertical: 2, borderRadius: radius.full },
+  inactiveText:    { fontSize: 9, fontWeight: '700' },
+  editBtn:         { padding: 4, borderRadius: radius.sm },
   empty:           { alignItems: 'center', paddingTop: 60, gap: spacing.sm },
-  emptyText:       { ...typography.bodySmall, color: colors.textMuted },
+  emptyText:       { ...typography.bodySmall },
 
   // Modal sheet
   backdrop:        { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.45)' },
   sheetWrap:       { flex: 1, justifyContent: 'flex-end' },
-  sheet:           { backgroundColor: colors.surface, borderTopLeftRadius: radius.xl, borderTopRightRadius: radius.xl, padding: spacing.lg, paddingBottom: spacing.xxl, ...shadow.lg },
-  handle:          { width: 40, height: 4, borderRadius: 2, backgroundColor: colors.border, alignSelf: 'center', marginBottom: spacing.md },
+  sheet:           { borderTopLeftRadius: radius.xl, borderTopRightRadius: radius.xl, padding: spacing.lg, paddingBottom: spacing.xxl, ...shadow.lg },
+  handle:          { width: 40, height: 4, borderRadius: 2, alignSelf: 'center', marginBottom: spacing.md },
   sheetTitle:      { ...typography.h2, marginBottom: 4 },
-  sheetSub:        { ...typography.bodySmall, color: colors.textMuted, marginBottom: spacing.lg },
+  sheetSub:        { ...typography.bodySmall, marginBottom: spacing.lg },
 
   // Form
   label:           { ...typography.sectionLabel, marginBottom: spacing.xs, marginTop: spacing.md },
-  input:           { backgroundColor: colors.surfaceAlt, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, paddingHorizontal: spacing.md, paddingVertical: Platform.OS === 'ios' ? 12 : 8, fontSize: 15, color: colors.text },
+  input:           { borderRadius: radius.md, borderWidth: 1, paddingHorizontal: spacing.md, paddingVertical: Platform.OS === 'ios' ? 12 : 8, fontSize: 15 },
   roleRow:         { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginTop: 2 },
-  roleChip:        { paddingHorizontal: 14, paddingVertical: 7, borderRadius: radius.full, borderWidth: 1.5, borderColor: colors.border, backgroundColor: colors.surfaceAlt },
-  roleChipText:    { fontSize: 12, fontWeight: '700', color: colors.textSecondary },
-  roleChipTextActive: { color: colors.textInverse },
+  roleChip:        { paddingHorizontal: 14, paddingVertical: 7, borderRadius: radius.full, borderWidth: 1.5 },
+  roleChipText:    { fontSize: 12, fontWeight: '700' },
 
   // Buttons
-  saveBtn:         { backgroundColor: colors.primary, borderRadius: radius.md, paddingVertical: 14, alignItems: 'center', marginTop: spacing.lg },
+  saveBtn:         { borderRadius: radius.md, paddingVertical: 14, alignItems: 'center', marginTop: spacing.lg },
   saveBtnDisabled: { opacity: 0.6 },
-  saveBtnText:     { color: colors.textInverse, fontSize: 15, fontWeight: '700' },
+  saveBtnText:     { fontSize: 15, fontWeight: '700' },
   cancelBtn:       { alignItems: 'center', paddingVertical: 12, marginTop: spacing.sm },
-  cancelText:      { ...typography.body, color: colors.textMuted },
+  cancelText:      { ...typography.body },
 });

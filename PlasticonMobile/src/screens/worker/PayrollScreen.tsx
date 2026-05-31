@@ -8,7 +8,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { api } from '../../api/client';
 import { ScreenHeader, StatCard } from '../../components';
 import { DailyPayrollRecord, MonthlyPayroll } from '../../api/types';
-import { colors, radius, shadow, spacing, typography } from '../../theme';
+import { radius, shadow, spacing, typography } from '../../theme';
+import { useAppTheme } from '../../context/ThemeContext';
+import { useLocale } from '../../context/LocaleContext';
 
 function fmt(n: number) {
   return n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -18,23 +20,23 @@ function fmtDate(d: string) {
 }
 
 function DailyRow({ item }: { item: DailyPayrollRecord }) {
+  const { colors } = useAppTheme();
+  const { isAr } = useLocale();
   return (
-    <View style={[styles.row, !item.isConfirmed && styles.rowPending]}>
+    <View style={[
+      styles.row,
+      { backgroundColor: colors.surface },
+      !item.isConfirmed && { borderLeftWidth: 3, borderLeftColor: colors.warning },
+    ]}>
       <View style={styles.rowLeft}>
-        <Text style={styles.rowDate}>{fmtDate(item.date)}</Text>
-        <Text style={styles.rowHours}>{item.hoursWorked.toFixed(1)} hrs</Text>
+        <Text style={[styles.rowDate, { color: colors.text }]}>{fmtDate(item.date)}</Text>
+        <Text style={[styles.rowHours, { color: colors.textMuted }]}>{item.hoursWorked.toFixed(1)} {isAr ? 'ساعة' : 'hrs'}</Text>
       </View>
       <View style={styles.rowRight}>
-        <Text style={styles.rowPay}>${fmt(item.totalDailyPay)}</Text>
-        <View style={[
-          styles.badge,
-          item.isConfirmed ? styles.badgeConfirmed : styles.badgePending,
-        ]}>
-          <Text style={[
-            styles.badgeText,
-            { color: item.isConfirmed ? colors.success : colors.warning },
-          ]}>
-            {item.isConfirmed ? 'Confirmed' : 'Pending'}
+        <Text style={[styles.rowPay, { color: colors.text }]}>${fmt(item.totalDailyPay)}</Text>
+        <View style={[styles.badge, { backgroundColor: item.isConfirmed ? colors.successLight : colors.warningLight }]}>
+          <Text style={[styles.badgeText, { color: item.isConfirmed ? colors.success : colors.warning }]}>
+            {item.isConfirmed ? (isAr ? 'مؤكد' : 'Confirmed') : (isAr ? 'معلق' : 'Pending')}
           </Text>
         </View>
       </View>
@@ -43,9 +45,11 @@ function DailyRow({ item }: { item: DailyPayrollRecord }) {
 }
 
 export function PayrollScreen() {
-  const [monthly, setMonthly]     = useState<MonthlyPayroll | null>(null);
-  const [daily, setDaily]         = useState<DailyPayrollRecord[]>([]);
-  const [loading, setLoading]     = useState(true);
+  const { colors } = useAppTheme();
+  const { isAr } = useLocale();
+  const [monthly, setMonthly]       = useState<MonthlyPayroll | null>(null);
+  const [daily, setDaily]           = useState<DailyPayrollRecord[]>([]);
+  const [loading, setLoading]       = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
   const load = useCallback(async () => {
@@ -66,8 +70,8 @@ export function PayrollScreen() {
   const onRefresh = () => { setRefreshing(true); void load(); };
 
   return (
-    <SafeAreaView style={styles.safe}>
-      <ScreenHeader title="My Payroll" showBack />
+    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
+      <ScreenHeader title={isAr ? 'راتبي' : 'My Payroll'} showBack />
 
       {loading ? (
         <View style={styles.center}>
@@ -84,17 +88,17 @@ export function PayrollScreen() {
           ListHeaderComponent={
             monthly ? (
               <View style={styles.header}>
-                <Text style={styles.monthLabel}>{monthly.month}</Text>
+                <Text style={[styles.monthLabel, { color: colors.text }]}>{monthly.month}</Text>
                 <View style={styles.statRow}>
                   <StatCard
-                    label="Total Salary"
+                    label={isAr ? 'الراتب الكلي' : 'Total Salary'}
                     value={`$${fmt(monthly.totalSalary)}`}
                     icon="cash"
                     color={colors.success}
                     style={styles.stat}
                   />
                   <StatCard
-                    label="Total Hours"
+                    label={isAr ? 'إجمالي الساعات' : 'Total Hours'}
                     value={`${monthly.totalHours ?? 0}h`}
                     icon="time"
                     color={colors.primary}
@@ -104,13 +108,13 @@ export function PayrollScreen() {
                 {monthly.overtimeSalary ? (
                   <View style={styles.overtimeRow}>
                     <Ionicons name="trending-up" size={14} color={colors.accent} />
-                    <Text style={styles.overtimeText}>
-                      Overtime bonus: ${fmt(monthly.overtimeSalary)}
+                    <Text style={[styles.overtimeText, { color: colors.accent }]}>
+                      {isAr ? `مكافأة إضافية: $${fmt(monthly.overtimeSalary)}` : `Overtime bonus: $${fmt(monthly.overtimeSalary)}`}
                     </Text>
                   </View>
                 ) : null}
-                <Text style={[typography.sectionLabel, { marginBottom: spacing.sm, marginTop: spacing.md }]}>
-                  DAILY RECORDS
+                <Text style={[typography.sectionLabel, { color: colors.textMuted, marginBottom: spacing.sm, marginTop: spacing.md }]}>
+                  {isAr ? 'السجلات اليومية' : 'DAILY RECORDS'}
                 </Text>
               </View>
             ) : null
@@ -118,7 +122,7 @@ export function PayrollScreen() {
           ListEmptyComponent={
             <View style={styles.empty}>
               <Ionicons name="cash-outline" size={44} color={colors.textMuted} />
-              <Text style={styles.emptyText}>No payroll records yet</Text>
+              <Text style={[styles.emptyText, { color: colors.textMuted }]}>{isAr ? 'لا توجد سجلات رواتب بعد' : 'No payroll records yet'}</Text>
             </View>
           }
         />
@@ -128,36 +132,30 @@ export function PayrollScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe:   { flex: 1, backgroundColor: colors.background },
+  safe:   { flex: 1 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   list:   { padding: spacing.md, paddingBottom: 40 },
 
-  header:    {},
-  monthLabel: { ...typography.h2, marginBottom: spacing.md },
-  statRow:   { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.sm },
-  stat:      { flex: 1 },
-  overtimeRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 },
-  overtimeText: { ...typography.bodySmall, color: colors.accent, fontWeight: '600' },
+  header:       {},
+  monthLabel:   { ...typography.h2, marginBottom: spacing.md },
+  statRow:      { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.sm },
+  stat:         { flex: 1 },
+  overtimeRow:  { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 },
+  overtimeText: { ...typography.bodySmall, fontWeight: '600' },
 
   row: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    backgroundColor: colors.surface, borderRadius: radius.md,
+    borderRadius: radius.md,
     padding: spacing.md, marginBottom: spacing.sm, ...shadow.sm,
   },
-  rowPending: { borderLeftWidth: 3, borderLeftColor: colors.warning },
   rowLeft:  {},
   rowDate:  { ...typography.h4 },
   rowHours: { ...typography.caption, marginTop: 2 },
   rowRight: { alignItems: 'flex-end' },
-  rowPay:   { fontSize: 17, fontWeight: '700', color: colors.text },
-  badge: {
-    paddingHorizontal: 8, paddingVertical: 3,
-    borderRadius: radius.full, marginTop: 4,
-  },
-  badgeConfirmed: { backgroundColor: colors.successLight },
-  badgePending:   { backgroundColor: colors.warningLight },
+  rowPay:   { fontSize: 17, fontWeight: '700' },
+  badge:    { paddingHorizontal: 8, paddingVertical: 3, borderRadius: radius.full, marginTop: 4 },
   badgeText: { fontSize: 11, fontWeight: '700' },
 
   empty:     { alignItems: 'center', paddingTop: 60, gap: spacing.sm },
-  emptyText: { ...typography.bodySmall, color: colors.textMuted },
+  emptyText: { ...typography.bodySmall },
 });

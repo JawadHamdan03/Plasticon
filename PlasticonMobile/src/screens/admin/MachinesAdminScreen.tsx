@@ -18,7 +18,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { api } from '../../api/client';
 import { ScreenHeader, StatCard } from '../../components';
-import { colors, radius, shadow, spacing, typography } from '../../theme';
+import { radius, shadow, spacing, typography } from '../../theme';
+import { useAppTheme } from '../../context/ThemeContext';
+import { useLocale } from '../../context/LocaleContext';
 
 // ─── Interfaces ───────────────────────────────────────────────────────────────
 
@@ -37,20 +39,28 @@ interface Machine {
 const STATUSES = ['OPERATIONAL', 'UNDER_MAINTENANCE', 'BROKEN', 'OFFLINE', 'DECOMMISSIONED'] as const;
 type MachineStatus = typeof STATUSES[number];
 
-const STATUS_META: Record<string, { color: string; icon: string }> = {
-  OPERATIONAL:      { color: colors.success, icon: 'checkmark-circle' },
-  UNDER_MAINTENANCE: { color: colors.warning, icon: 'construct' },
-  BROKEN:           { color: colors.danger,  icon: 'close-circle' },
-  OFFLINE:          { color: colors.textMuted, icon: 'pause-circle' },
-  DECOMMISSIONED:   { color: '#6B7280', icon: 'archive' },
+const STATUS_ICONS: Record<string, string> = {
+  OPERATIONAL:       'checkmark-circle',
+  UNDER_MAINTENANCE: 'construct',
+  BROKEN:            'close-circle',
+  OFFLINE:           'pause-circle',
+  DECOMMISSIONED:    'archive',
 };
 
-const STATUS_LABELS: Record<string, string> = {
+const STATUS_LABELS_EN: Record<string, string> = {
   OPERATIONAL:       'Operational',
   UNDER_MAINTENANCE: 'Maintenance',
   BROKEN:            'Broken',
   OFFLINE:           'Offline',
   DECOMMISSIONED:    'Decommissioned',
+};
+
+const STATUS_LABELS_AR: Record<string, string> = {
+  OPERATIONAL:       'تشغيل',
+  UNDER_MAINTENANCE: 'صيانة',
+  BROKEN:            'معطل',
+  OFFLINE:           'غير متصل',
+  DECOMMISSIONED:    'مستبعد',
 };
 
 // ─── Machine Form Modal ───────────────────────────────────────────────────────
@@ -63,6 +73,17 @@ interface FormModalProps {
 }
 
 function FormModal({ machine, visible, onClose, onSaved }: FormModalProps) {
+  const { colors } = useAppTheme();
+  const { isAr } = useLocale();
+
+  const STATUS_META: Record<string, { color: string; icon: string }> = {
+    OPERATIONAL:       { color: colors.success,   icon: STATUS_ICONS.OPERATIONAL },
+    UNDER_MAINTENANCE: { color: colors.warning,   icon: STATUS_ICONS.UNDER_MAINTENANCE },
+    BROKEN:            { color: colors.danger,    icon: STATUS_ICONS.BROKEN },
+    OFFLINE:           { color: colors.textMuted, icon: STATUS_ICONS.OFFLINE },
+    DECOMMISSIONED:    { color: '#6B7280',         icon: STATUS_ICONS.DECOMMISSIONED },
+  };
+
   const isEdit = machine !== null;
 
   const [name, setName]     = useState('');
@@ -84,7 +105,7 @@ function FormModal({ machine, visible, onClose, onSaved }: FormModalProps) {
 
   async function save() {
     if (!name.trim()) {
-      Alert.alert('Validation', 'Machine name is required.');
+      Alert.alert(isAr ? 'تحقق' : 'Validation', isAr ? 'اسم الآلة مطلوب.' : 'Machine name is required.');
       return;
     }
     setSaving(true);
@@ -98,11 +119,13 @@ function FormModal({ machine, visible, onClose, onSaved }: FormModalProps) {
       onSaved();
       onClose();
     } catch (err: any) {
-      Alert.alert('Error', err?.message ?? 'Failed to save machine');
+      Alert.alert(isAr ? 'خطأ' : 'Error', err?.message ?? 'Failed to save machine');
     } finally {
       setSaving(false);
     }
   }
+
+  const STATUS_LABELS = isAr ? STATUS_LABELS_AR : STATUS_LABELS_EN;
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
@@ -111,33 +134,35 @@ function FormModal({ machine, visible, onClose, onSaved }: FormModalProps) {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.sheetWrap}
       >
-        <View style={styles.sheet}>
-          <View style={styles.handle} />
+        <View style={[styles.sheet, { backgroundColor: colors.surface }]}>
+          <View style={[styles.handle, { backgroundColor: colors.border }]} />
 
-          <Text style={styles.sheetTitle}>{isEdit ? 'Edit Machine' : 'New Machine'}</Text>
+          <Text style={[styles.sheetTitle, { color: colors.text }]}>
+            {isEdit ? (isAr ? 'تعديل الآلة' : 'Edit Machine') : (isAr ? 'آلة جديدة' : 'New Machine')}
+          </Text>
 
           {/* Name */}
-          <Text style={styles.label}>Name *</Text>
+          <Text style={[styles.label, { color: colors.text }]}>{isAr ? 'الاسم *' : 'Name *'}</Text>
           <TextInput
-            style={styles.input}
+            style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
             value={name}
             onChangeText={setName}
-            placeholder="e.g. Extruder A"
+            placeholder={isAr ? 'مثال: طارد أ' : 'e.g. Extruder A'}
             placeholderTextColor={colors.textMuted}
           />
 
           {/* Type */}
-          <Text style={styles.label}>Type</Text>
+          <Text style={[styles.label, { color: colors.text }]}>{isAr ? 'النوع' : 'Type'}</Text>
           <TextInput
-            style={styles.input}
+            style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
             value={type}
             onChangeText={setType}
-            placeholder="e.g. Injection Molder"
+            placeholder={isAr ? 'مثال: حاقن قوالب' : 'e.g. Injection Molder'}
             placeholderTextColor={colors.textMuted}
           />
 
           {/* Status picker */}
-          <Text style={styles.label}>Status</Text>
+          <Text style={[styles.label, { color: colors.text }]}>{isAr ? 'الحالة' : 'Status'}</Text>
           <View style={styles.statusGrid}>
             {STATUSES.map((s) => {
               const meta = STATUS_META[s];
@@ -147,13 +172,14 @@ function FormModal({ machine, visible, onClose, onSaved }: FormModalProps) {
                   key={s}
                   style={[
                     styles.statusChip,
+                    { borderColor: colors.border, backgroundColor: colors.surfaceAlt },
                     active && { backgroundColor: `${meta.color}20`, borderColor: meta.color },
                   ]}
                   onPress={() => setStatus(s)}
                   activeOpacity={0.75}
                 >
                   <Ionicons name={meta.icon as any} size={13} color={active ? meta.color : colors.textMuted} />
-                  <Text style={[styles.statusChipText, active && { color: meta.color }]}>
+                  <Text style={[styles.statusChipText, { color: colors.textMuted }, active && { color: meta.color }]}>
                     {STATUS_LABELS[s]}
                   </Text>
                 </TouchableOpacity>
@@ -162,18 +188,20 @@ function FormModal({ machine, visible, onClose, onSaved }: FormModalProps) {
           </View>
 
           <TouchableOpacity
-            style={[styles.saveBtn, saving && styles.saveBtnDisabled]}
+            style={[styles.saveBtn, { backgroundColor: colors.primary }, saving && styles.saveBtnDisabled]}
             onPress={save}
             disabled={saving}
             activeOpacity={0.8}
           >
             {saving
               ? <ActivityIndicator size="small" color={colors.textInverse} />
-              : <Text style={styles.saveBtnText}>{isEdit ? 'Save Changes' : 'Create Machine'}</Text>}
+              : <Text style={[styles.saveBtnText, { color: colors.textInverse }]}>
+                  {isEdit ? (isAr ? 'حفظ التغييرات' : 'Save Changes') : (isAr ? 'إنشاء آلة' : 'Create Machine')}
+                </Text>}
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.cancelBtn} onPress={onClose} activeOpacity={0.7}>
-            <Text style={styles.cancelText}>Cancel</Text>
+            <Text style={[styles.cancelText, { color: colors.textMuted }]}>{isAr ? 'إلغاء' : 'Cancel'}</Text>
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
@@ -190,19 +218,32 @@ interface MachineCardProps {
 }
 
 function MachineCard({ item, onEdit, onDelete }: MachineCardProps) {
+  const { colors } = useAppTheme();
+  const { isAr } = useLocale();
+
+  const STATUS_META: Record<string, { color: string; icon: string }> = {
+    OPERATIONAL:       { color: colors.success,   icon: STATUS_ICONS.OPERATIONAL },
+    UNDER_MAINTENANCE: { color: colors.warning,   icon: STATUS_ICONS.UNDER_MAINTENANCE },
+    BROKEN:            { color: colors.danger,    icon: STATUS_ICONS.BROKEN },
+    OFFLINE:           { color: colors.textMuted, icon: STATUS_ICONS.OFFLINE },
+    DECOMMISSIONED:    { color: '#6B7280',         icon: STATUS_ICONS.DECOMMISSIONED },
+  };
+
+  const STATUS_LABELS = isAr ? STATUS_LABELS_AR : STATUS_LABELS_EN;
+
   const status = item.status ?? 'OPERATIONAL';
   const meta   = STATUS_META[status] ?? STATUS_META.OPERATIONAL;
 
   return (
-    <View style={styles.card}>
+    <View style={[styles.card, { backgroundColor: colors.surface }]}>
       <View style={styles.cardTop}>
         <View style={[styles.iconWrap, { backgroundColor: `${meta.color}15` }]}>
           <Ionicons name={meta.icon as any} size={20} color={meta.color} />
         </View>
         <View style={styles.cardContent}>
-          <Text style={styles.name}>{item.name}</Text>
-          <Text style={styles.type}>
-            {item.type ?? 'Machine'}{item.location ? ` · ${item.location}` : ''}
+          <Text style={[styles.name, { color: colors.text }]}>{item.name}</Text>
+          <Text style={[styles.type, { color: colors.textMuted }]}>
+            {item.type ?? (isAr ? 'آلة' : 'Machine')}{item.location ? ` · ${item.location}` : ''}
           </Text>
         </View>
         <View style={[styles.badge, { backgroundColor: `${meta.color}15` }]}>
@@ -211,13 +252,13 @@ function MachineCard({ item, onEdit, onDelete }: MachineCardProps) {
       </View>
 
       {(item.serialNumber || item.lastMaintenance) && (
-        <View style={styles.detailRow}>
+        <View style={[styles.detailRow, { borderTopColor: colors.border }]}>
           {item.serialNumber && (
-            <Text style={styles.detail}>SN: <Text style={styles.detailVal}>{item.serialNumber}</Text></Text>
+            <Text style={[styles.detail, { color: colors.text }]}>{isAr ? 'رقم المسلسل:' : 'SN:'} <Text style={[styles.detailVal, { color: colors.text }]}>{item.serialNumber}</Text></Text>
           )}
           {item.lastMaintenance && (
-            <Text style={styles.detail}>
-              Last maint: <Text style={styles.detailVal}>
+            <Text style={[styles.detail, { color: colors.text }]}>
+              {isAr ? 'آخر صيانة:' : 'Last maint:'} <Text style={[styles.detailVal, { color: colors.text }]}>
                 {new Date(item.lastMaintenance).toLocaleDateString([], { month: 'short', day: 'numeric' })}
               </Text>
             </Text>
@@ -225,15 +266,15 @@ function MachineCard({ item, onEdit, onDelete }: MachineCardProps) {
         </View>
       )}
 
-      <View style={styles.cardActions}>
+      <View style={[styles.cardActions, { borderTopColor: colors.border }]}>
         <TouchableOpacity style={styles.actionBtn} onPress={() => onEdit(item)} activeOpacity={0.75}>
           <Ionicons name="pencil-outline" size={14} color={colors.primary} />
-          <Text style={[styles.actionText, { color: colors.primary }]}>Edit</Text>
+          <Text style={[styles.actionText, { color: colors.primary }]}>{isAr ? 'تعديل' : 'Edit'}</Text>
         </TouchableOpacity>
-        <View style={styles.actionDivider} />
+        <View style={[styles.actionDivider, { backgroundColor: colors.border }]} />
         <TouchableOpacity style={styles.actionBtn} onPress={() => onDelete(item)} activeOpacity={0.75}>
           <Ionicons name="trash-outline" size={14} color={colors.danger} />
-          <Text style={[styles.actionText, { color: colors.danger }]}>Delete</Text>
+          <Text style={[styles.actionText, { color: colors.danger }]}>{isAr ? 'حذف' : 'Delete'}</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -243,6 +284,9 @@ function MachineCard({ item, onEdit, onDelete }: MachineCardProps) {
 // ─── Screen ───────────────────────────────────────────────────────────────────
 
 export function MachinesAdminScreen() {
+  const { colors } = useAppTheme();
+  const { isAr } = useLocale();
+
   const [machines, setMachines]     = useState<Machine[]>([]);
   const [loading, setLoading]       = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -255,7 +299,7 @@ export function MachinesAdminScreen() {
       setMachines(Array.isArray(res) ? res : []);
     } catch (e: any) {
       console.warn('MachinesAdminScreen load error:', e?.message ?? e);
-      Alert.alert('Error', e?.message ?? 'Failed to load machines');
+      Alert.alert(isAr ? 'خطأ' : 'Error', e?.message ?? 'Failed to load machines');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -281,19 +325,19 @@ export function MachinesAdminScreen() {
 
   function confirmDelete(m: Machine) {
     Alert.alert(
-      'Delete Machine',
-      `Are you sure you want to delete "${m.name}"? This action cannot be undone.`,
+      isAr ? 'حذف الآلة' : 'Delete Machine',
+      isAr ? `هل أنت متأكد أنك تريد حذف "${m.name}"؟ لا يمكن التراجع عن هذا الإجراء.` : `Are you sure you want to delete "${m.name}"? This action cannot be undone.`,
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: isAr ? 'إلغاء' : 'Cancel', style: 'cancel' },
         {
-          text: 'Delete',
+          text: isAr ? 'حذف' : 'Delete',
           style: 'destructive',
           onPress: async () => {
             try {
               await api.delete(`/machines/${m.id}`);
               void load();
             } catch (err: any) {
-              Alert.alert('Error', err?.message ?? 'Failed to delete machine');
+              Alert.alert(isAr ? 'خطأ' : 'Error', err?.message ?? 'Failed to delete machine');
             }
           },
         },
@@ -305,8 +349,12 @@ export function MachinesAdminScreen() {
   const maintenance = machines.filter((m) => m.status === 'UNDER_MAINTENANCE').length;
 
   return (
-    <SafeAreaView style={styles.safe}>
-      <ScreenHeader title="Machines" subtitle={`${machines.length} total`} showBack />
+    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
+      <ScreenHeader
+        title={isAr ? 'الآلات' : 'Machines'}
+        subtitle={`${machines.length} ${isAr ? 'إجمالي' : 'total'}`}
+        showBack
+      />
 
       {loading ? (
         <View style={styles.center}>
@@ -330,21 +378,21 @@ export function MachinesAdminScreen() {
           }
           ListHeaderComponent={
             <View style={styles.statsRow}>
-              <StatCard label="Operational" value={String(operational)} icon="checkmark-circle" color={colors.success} style={styles.stat} />
-              <StatCard label="Maintenance"  value={String(maintenance)}  icon="construct"        color={colors.warning} style={styles.stat} />
+              <StatCard label={isAr ? 'يعمل' : 'Operational'} value={String(operational)} icon="checkmark-circle" color={colors.success} style={styles.stat} />
+              <StatCard label={isAr ? 'صيانة' : 'Maintenance'}  value={String(maintenance)}  icon="construct"        color={colors.warning} style={styles.stat} />
             </View>
           }
           ListEmptyComponent={
             <View style={styles.empty}>
               <Ionicons name="hardware-chip-outline" size={44} color={colors.textMuted} />
-              <Text style={styles.emptyText}>No machines</Text>
+              <Text style={[styles.emptyText, { color: colors.textMuted }]}>{isAr ? 'لا توجد آلات' : 'No machines'}</Text>
             </View>
           }
         />
       )}
 
       {/* FAB */}
-      <TouchableOpacity style={styles.fab} onPress={openCreate} activeOpacity={0.85}>
+      <TouchableOpacity style={[styles.fab, { backgroundColor: colors.primary }]} onPress={openCreate} activeOpacity={0.85}>
         <Ionicons name="add" size={28} color={colors.textInverse} />
       </TouchableOpacity>
 
@@ -361,54 +409,54 @@ export function MachinesAdminScreen() {
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
-  safe:        { flex: 1, backgroundColor: colors.background },
+  safe:        { flex: 1 },
   center:      { flex: 1, alignItems: 'center', justifyContent: 'center' },
   list:        { padding: spacing.md, paddingBottom: 100 },
   statsRow:    { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.md },
   stat:        { flex: 1 },
 
   // Card
-  card:        { backgroundColor: colors.surface, borderRadius: radius.md, padding: spacing.md, marginBottom: spacing.sm, ...shadow.sm },
+  card:        { borderRadius: radius.md, padding: spacing.md, marginBottom: spacing.sm, ...shadow.sm },
   cardTop:     { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: 4 },
   iconWrap:    { width: 40, height: 40, borderRadius: radius.sm, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
   cardContent: { flex: 1 },
   name:        { ...typography.h4 },
-  type:        { ...typography.caption, color: colors.textMuted, marginTop: 2 },
+  type:        { ...typography.caption, marginTop: 2 },
   badge:       { paddingHorizontal: 8, paddingVertical: 3, borderRadius: radius.full },
   badgeText:   { fontSize: 10, fontWeight: '700' },
-  detailRow:   { flexDirection: 'row', gap: spacing.lg, borderTopWidth: 1, borderTopColor: colors.border, paddingTop: 6, marginTop: 4 },
+  detailRow:   { flexDirection: 'row', gap: spacing.lg, borderTopWidth: 1, paddingTop: 6, marginTop: 4 },
   detail:      { ...typography.caption },
-  detailVal:   { fontWeight: '700', color: colors.text },
-  cardActions: { flexDirection: 'row', borderTopWidth: 1, borderTopColor: colors.border, marginTop: spacing.sm, paddingTop: spacing.sm },
+  detailVal:   { fontWeight: '700' },
+  cardActions: { flexDirection: 'row', borderTopWidth: 1, marginTop: spacing.sm, paddingTop: spacing.sm },
   actionBtn:   { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5, paddingVertical: 4 },
   actionText:  { fontSize: 13, fontWeight: '600' },
-  actionDivider: { width: 1, backgroundColor: colors.border },
+  actionDivider: { width: 1 },
 
   // FAB
-  fab:         { position: 'absolute', bottom: 32, right: 24, width: 56, height: 56, borderRadius: 28, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center', ...shadow.md },
+  fab:         { position: 'absolute', bottom: 32, right: 24, width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center', ...shadow.md },
 
   // Modal sheet
   backdrop:    { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.45)' },
   sheetWrap:   { flex: 1, justifyContent: 'flex-end' },
-  sheet:       { backgroundColor: colors.surface, borderTopLeftRadius: radius.xl, borderTopRightRadius: radius.xl, padding: spacing.lg, paddingBottom: spacing.xxl, ...shadow.lg },
-  handle:      { width: 40, height: 4, borderRadius: 2, backgroundColor: colors.border, alignSelf: 'center', marginBottom: spacing.md },
+  sheet:       { borderTopLeftRadius: radius.xl, borderTopRightRadius: radius.xl, padding: spacing.lg, paddingBottom: spacing.xxl, ...shadow.lg },
+  handle:      { width: 40, height: 4, borderRadius: 2, alignSelf: 'center', marginBottom: spacing.md },
   sheetTitle:  { ...typography.h2, marginBottom: spacing.lg },
 
   // Form
   label:       { ...typography.sectionLabel, marginBottom: spacing.xs, marginTop: spacing.md },
-  input:       { backgroundColor: colors.surfaceAlt, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, paddingHorizontal: spacing.md, paddingVertical: Platform.OS === 'ios' ? 12 : 8, fontSize: 15, color: colors.text },
+  input:       { borderRadius: radius.md, borderWidth: 1, paddingHorizontal: spacing.md, paddingVertical: Platform.OS === 'ios' ? 12 : 8, fontSize: 15 },
   statusGrid:  { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginTop: 4 },
-  statusChip:  { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 12, paddingVertical: 7, borderRadius: radius.full, borderWidth: 1.5, borderColor: colors.border, backgroundColor: colors.surfaceAlt },
-  statusChipText: { fontSize: 12, fontWeight: '600', color: colors.textMuted },
+  statusChip:  { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 12, paddingVertical: 7, borderRadius: radius.full, borderWidth: 1.5 },
+  statusChipText: { fontSize: 12, fontWeight: '600' },
 
   // Buttons
-  saveBtn:         { backgroundColor: colors.primary, borderRadius: radius.md, paddingVertical: 14, alignItems: 'center', marginTop: spacing.lg },
+  saveBtn:         { borderRadius: radius.md, paddingVertical: 14, alignItems: 'center', marginTop: spacing.lg },
   saveBtnDisabled: { opacity: 0.6 },
-  saveBtnText:     { color: colors.textInverse, fontSize: 15, fontWeight: '700' },
+  saveBtnText:     { fontSize: 15, fontWeight: '700' },
   cancelBtn:       { alignItems: 'center', paddingVertical: 12, marginTop: spacing.sm },
-  cancelText:      { ...typography.body, color: colors.textMuted },
+  cancelText:      { ...typography.body },
 
   // Empty
   empty:       { alignItems: 'center', paddingTop: 60, gap: spacing.sm },
-  emptyText:   { ...typography.bodySmall, color: colors.textMuted },
+  emptyText:   { ...typography.bodySmall },
 });

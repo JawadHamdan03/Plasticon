@@ -19,7 +19,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { api } from '../../api/client';
 import { ScreenHeader } from '../../components';
-import { colors, radius, shadow, spacing, typography } from '../../theme';
+import { radius, shadow, spacing, typography } from '../../theme';
+import { useAppTheme } from '../../context/ThemeContext';
+import { useLocale } from '../../context/LocaleContext';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -65,13 +67,6 @@ function fmt(n: number) {
   return n.toLocaleString('en-US', { minimumFractionDigits: 0 });
 }
 
-const STATUS_COLOR: Record<string, string> = {
-  ACTIVE:   colors.success,
-  DRAFT:    colors.textMuted,
-  CLOSED:   colors.primary,
-  EXCEEDED: colors.danger,
-};
-
 // ─── Inline Picker ────────────────────────────────────────────────────────────
 
 function InlinePicker<T extends string>({
@@ -85,18 +80,27 @@ function InlinePicker<T extends string>({
   options: T[];
   onChange: (v: T) => void;
 }) {
+  const { colors } = useAppTheme();
   return (
     <View style={pickerStyles.wrap}>
-      <Text style={pickerStyles.label}>{label}</Text>
+      <Text style={[pickerStyles.label, { color: colors.text }]}>{label}</Text>
       <View style={pickerStyles.row}>
         {options.map((opt) => (
           <TouchableOpacity
             key={opt}
-            style={[pickerStyles.chip, value === opt && pickerStyles.chipActive]}
+            style={[
+              pickerStyles.chip,
+              { borderColor: colors.border, backgroundColor: colors.surface },
+              value === opt && { borderColor: colors.primary, backgroundColor: colors.primaryLight },
+            ]}
             onPress={() => onChange(opt)}
             activeOpacity={0.7}
           >
-            <Text style={[pickerStyles.chipText, value === opt && pickerStyles.chipTextActive]}>
+            <Text style={[
+              pickerStyles.chipText,
+              { color: colors.textSecondary },
+              value === opt && { color: colors.primary },
+            ]}>
               {opt}
             </Text>
           </TouchableOpacity>
@@ -107,13 +111,11 @@ function InlinePicker<T extends string>({
 }
 
 const pickerStyles = StyleSheet.create({
-  wrap:          { marginBottom: spacing.md },
-  label:         { ...typography.caption, marginBottom: 6 },
-  row:           { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
-  chip:          { paddingHorizontal: 14, paddingVertical: 7, borderRadius: radius.full, borderWidth: 1.5, borderColor: colors.border, backgroundColor: colors.surface },
-  chipActive:    { borderColor: colors.primary, backgroundColor: colors.primaryLight },
-  chipText:      { fontSize: 13, fontWeight: '600', color: colors.textSecondary },
-  chipTextActive:{ color: colors.primary },
+  wrap:  { marginBottom: spacing.md },
+  label: { ...typography.caption, marginBottom: 6 },
+  row:   { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
+  chip:  { paddingHorizontal: 14, paddingVertical: 7, borderRadius: radius.full, borderWidth: 1.5 },
+  chipText: { fontSize: 13, fontWeight: '600' },
 });
 
 // ─── Budget Card ─────────────────────────────────────────────────────────────
@@ -127,6 +129,16 @@ function BudgetCard({
   onEdit: () => void;
   onDelete: () => void;
 }) {
+  const { colors } = useAppTheme();
+  const { isAr } = useLocale();
+
+  const STATUS_COLOR: Record<string, string> = {
+    ACTIVE:   colors.success,
+    DRAFT:    colors.textMuted,
+    CLOSED:   colors.primary,
+    EXCEEDED: colors.danger,
+  };
+
   const budget   = item.totalBudget ?? item.allocated ?? 0;
   const spent    = item.totalSpent ?? item.spent ?? 0;
   const pct      = budget > 0 ? Math.min((spent / budget) * 100, 100) : 0;
@@ -135,11 +147,11 @@ function BudgetCard({
   const statusColor = STATUS_COLOR[status] ?? colors.textMuted;
 
   return (
-    <View style={styles.card}>
+    <View style={[styles.card, { backgroundColor: colors.surface }]}>
       <View style={styles.cardTop}>
         <View style={styles.cardLeft}>
-          <Text style={styles.title} numberOfLines={1}>{item.title ?? item.category ?? `Budget #${item.id}`}</Text>
-          <Text style={styles.sub}>{item.department ?? item.category ?? item.period ?? item.month ?? '—'}</Text>
+          <Text style={[styles.title, { color: colors.text }]} numberOfLines={1}>{item.title ?? item.category ?? `${isAr ? 'ميزانية' : 'Budget'} #${item.id}`}</Text>
+          <Text style={[styles.sub, { color: colors.textMuted }]}>{item.department ?? item.category ?? item.period ?? item.month ?? '—'}</Text>
         </View>
         <View style={styles.cardActions}>
           <View style={[styles.badge, { backgroundColor: `${statusColor}15` }]}>
@@ -153,12 +165,12 @@ function BudgetCard({
           </TouchableOpacity>
         </View>
       </View>
-      <View style={styles.track}>
+      <View style={[styles.track, { backgroundColor: colors.border }]}>
         <View style={[styles.fill, { width: `${pct}%` as any, backgroundColor: barColor }]} />
       </View>
       <View style={styles.nums}>
-        <Text style={styles.numLabel}>Spent: <Text style={styles.numVal}>${fmt(spent)}</Text></Text>
-        <Text style={styles.numLabel}>Budget: <Text style={styles.numVal}>${fmt(budget)}</Text></Text>
+        <Text style={[styles.numLabel, { color: colors.text }]}>{isAr ? 'المنفق:' : 'Spent:'} <Text style={[styles.numVal, { color: colors.text }]}>${fmt(spent)}</Text></Text>
+        <Text style={[styles.numLabel, { color: colors.text }]}>{isAr ? 'الميزانية:' : 'Budget:'} <Text style={[styles.numVal, { color: colors.text }]}>${fmt(budget)}</Text></Text>
         <Text style={[styles.numLabel, { color: barColor }]}>{Math.round(pct)}%</Text>
       </View>
     </View>
@@ -180,6 +192,8 @@ function BudgetFormModal({
   onSave: (f: FormState) => Promise<void>;
   saving: boolean;
 }) {
+  const { colors } = useAppTheme();
+  const { isAr } = useLocale();
   const [form, setForm] = useState<FormState>(initial);
 
   useEffect(() => {
@@ -189,9 +203,9 @@ function BudgetFormModal({
   const set = (k: keyof FormState) => (v: string) => setForm((p) => ({ ...p, [k]: v }));
 
   const handleSave = async () => {
-    if (!form.title.trim()) return Alert.alert('Validation', 'Title is required.');
+    if (!form.title.trim()) return Alert.alert(isAr ? 'تحقق' : 'Validation', isAr ? 'العنوان مطلوب.' : 'Title is required.');
     if (!form.totalBudget.trim() || isNaN(Number(form.totalBudget)))
-      return Alert.alert('Validation', 'Total budget must be a number.');
+      return Alert.alert(isAr ? 'تحقق' : 'Validation', isAr ? 'يجب أن تكون الميزانية رقماً.' : 'Total budget must be a number.');
     await onSave(form);
   };
 
@@ -202,32 +216,32 @@ function BudgetFormModal({
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <Pressable style={styles.overlayBg} onPress={onClose} />
-        <View style={styles.sheet}>
-          <View style={styles.sheetHandle} />
-          <Text style={styles.sheetTitle}>{initial.title ? 'Edit Budget' : 'New Budget'}</Text>
+        <View style={[styles.sheet, { backgroundColor: colors.surface }]}>
+          <View style={[styles.sheetHandle, { backgroundColor: colors.border }]} />
+          <Text style={[styles.sheetTitle, { color: colors.text }]}>{initial.title ? (isAr ? 'تعديل الميزانية' : 'Edit Budget') : (isAr ? 'ميزانية جديدة' : 'New Budget')}</Text>
 
           <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-            <Text style={styles.fieldLabel}>Title *</Text>
+            <Text style={[styles.fieldLabel, { color: colors.text }]}>{isAr ? 'العنوان *' : 'Title *'}</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
               value={form.title}
               onChangeText={set('title')}
-              placeholder="e.g. Q1 Operations"
+              placeholder={isAr ? 'مثال: عمليات الربع الأول' : 'e.g. Q1 Operations'}
               placeholderTextColor={colors.textMuted}
             />
 
-            <Text style={styles.fieldLabel}>Department</Text>
+            <Text style={[styles.fieldLabel, { color: colors.text }]}>{isAr ? 'القسم' : 'Department'}</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
               value={form.department}
               onChangeText={set('department')}
-              placeholder="e.g. Production"
+              placeholder={isAr ? 'مثال: الإنتاج' : 'e.g. Production'}
               placeholderTextColor={colors.textMuted}
             />
 
-            <Text style={styles.fieldLabel}>Total Budget *</Text>
+            <Text style={[styles.fieldLabel, { color: colors.text }]}>{isAr ? 'إجمالي الميزانية *' : 'Total Budget *'}</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
               value={form.totalBudget}
               onChangeText={set('totalBudget')}
               placeholder="0"
@@ -235,17 +249,17 @@ function BudgetFormModal({
               keyboardType="numeric"
             />
 
-            <Text style={styles.fieldLabel}>Period</Text>
+            <Text style={[styles.fieldLabel, { color: colors.text }]}>{isAr ? 'الفترة' : 'Period'}</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
               value={form.period}
               onChangeText={set('period')}
-              placeholder="e.g. 2025-Q1"
+              placeholder={isAr ? 'مثال: 2025-Q1' : 'e.g. 2025-Q1'}
               placeholderTextColor={colors.textMuted}
             />
 
             <InlinePicker
-              label="Status"
+              label={isAr ? 'الحالة' : 'Status'}
               value={form.status}
               options={STATUS_OPTIONS}
               onChange={(v) => setForm((p) => ({ ...p, status: v }))}
@@ -253,17 +267,17 @@ function BudgetFormModal({
           </ScrollView>
 
           <View style={styles.sheetActions}>
-            <TouchableOpacity style={styles.cancelBtn} onPress={onClose}>
-              <Text style={styles.cancelText}>Cancel</Text>
+            <TouchableOpacity style={[styles.cancelBtn, { borderColor: colors.border }]} onPress={onClose}>
+              <Text style={[styles.cancelText, { color: colors.textSecondary }]}>{isAr ? 'إلغاء' : 'Cancel'}</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.saveBtn, saving && { opacity: 0.6 }]}
+              style={[styles.saveBtn, { backgroundColor: colors.primary }, saving && { opacity: 0.6 }]}
               onPress={handleSave}
               disabled={saving}
             >
               {saving
                 ? <ActivityIndicator size="small" color={colors.textInverse} />
-                : <Text style={styles.saveText}>Save</Text>}
+                : <Text style={[styles.saveText, { color: colors.textInverse }]}>{isAr ? 'حفظ' : 'Save'}</Text>}
             </TouchableOpacity>
           </View>
         </View>
@@ -275,6 +289,9 @@ function BudgetFormModal({
 // ─── Screen ───────────────────────────────────────────────────────────────────
 
 export function BudgetPlanningScreen() {
+  const { colors } = useAppTheme();
+  const { isAr } = useLocale();
+
   const [plans, setPlans]           = useState<BudgetPlan[]>([]);
   const [loading, setLoading]       = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -287,12 +304,12 @@ export function BudgetPlanningScreen() {
       const res = await api.get<BudgetPlan[]>('/budgets?limit=20');
       setPlans(Array.isArray(res) ? res : []);
     } catch (e: any) {
-      Alert.alert('Error', e?.message ?? 'Failed to load budgets');
+      Alert.alert(isAr ? 'خطأ' : 'Error', e?.message ?? (isAr ? 'فشل تحميل الميزانيات' : 'Failed to load budgets'));
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  }, []);
+  }, [isAr]);
 
   useEffect(() => { void load(); }, [load]);
 
@@ -308,11 +325,11 @@ export function BudgetPlanningScreen() {
 
   const confirmDelete = (item: BudgetPlan) => {
     Alert.alert(
-      'Delete Budget',
-      `Delete "${item.title ?? item.category ?? `Budget #${item.id}`}"? This cannot be undone.`,
+      isAr ? 'حذف الميزانية' : 'Delete Budget',
+      `${isAr ? 'حذف' : 'Delete'} "${item.title ?? item.category ?? `${isAr ? 'ميزانية' : 'Budget'} #${item.id}`}"? ${isAr ? 'لا يمكن التراجع عن هذا.' : 'This cannot be undone.'}`,
       [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Delete', style: 'destructive', onPress: () => void handleDelete(item.id) },
+        { text: isAr ? 'إلغاء' : 'Cancel', style: 'cancel' },
+        { text: isAr ? 'حذف' : 'Delete', style: 'destructive', onPress: () => void handleDelete(item.id) },
       ],
     );
   };
@@ -323,7 +340,7 @@ export function BudgetPlanningScreen() {
       setRefreshing(true);
       await load();
     } catch (e: any) {
-      Alert.alert('Error', e?.message ?? 'Failed to delete');
+      Alert.alert(isAr ? 'خطأ' : 'Error', e?.message ?? (isAr ? 'فشل الحذف' : 'Failed to delete'));
     }
   };
 
@@ -348,7 +365,7 @@ export function BudgetPlanningScreen() {
       setRefreshing(true);
       await load();
     } catch (e: any) {
-      Alert.alert('Error', e?.message ?? 'Failed to save');
+      Alert.alert(isAr ? 'خطأ' : 'Error', e?.message ?? (isAr ? 'فشل الحفظ' : 'Failed to save'));
     } finally {
       setSaving(false);
     }
@@ -365,8 +382,8 @@ export function BudgetPlanningScreen() {
     : DEFAULT_FORM;
 
   return (
-    <SafeAreaView style={styles.safe}>
-      <ScreenHeader title="Budget Planning" subtitle={`${plans.length} plans`} showBack />
+    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
+      <ScreenHeader title={isAr ? 'تخطيط الميزانية' : 'Budget Planning'} subtitle={`${plans.length} ${isAr ? 'خطط' : 'plans'}`} showBack />
 
       {loading ? (
         <View style={styles.center}>
@@ -395,14 +412,14 @@ export function BudgetPlanningScreen() {
           ListEmptyComponent={
             <View style={styles.empty}>
               <Ionicons name="wallet-outline" size={44} color={colors.textMuted} />
-              <Text style={styles.emptyText}>No budget plans</Text>
+              <Text style={[styles.emptyText, { color: colors.textMuted }]}>{isAr ? 'لا توجد خطط ميزانية' : 'No budget plans'}</Text>
             </View>
           }
         />
       )}
 
       {/* FAB */}
-      <TouchableOpacity style={styles.fab} onPress={openCreate} activeOpacity={0.85}>
+      <TouchableOpacity style={[styles.fab, { backgroundColor: colors.primary }]} onPress={openCreate} activeOpacity={0.85}>
         <Ionicons name="add" size={28} color={colors.textInverse} />
       </TouchableOpacity>
 
@@ -420,43 +437,43 @@ export function BudgetPlanningScreen() {
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
-  safe:        { flex: 1, backgroundColor: colors.background },
+  safe:        { flex: 1 },
   center:      { flex: 1, alignItems: 'center', justifyContent: 'center' },
   list:        { padding: spacing.md, paddingBottom: 100 },
 
-  card:        { backgroundColor: colors.surface, borderRadius: radius.lg, padding: spacing.md, marginBottom: spacing.sm, ...shadow.sm },
+  card:        { borderRadius: radius.lg, padding: spacing.md, marginBottom: spacing.sm, ...shadow.sm },
   cardTop:     { flexDirection: 'row', alignItems: 'flex-start', marginBottom: spacing.sm },
   cardLeft:    { flex: 1, marginRight: spacing.sm },
   cardActions: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   title:       { ...typography.h4 },
-  sub:         { ...typography.caption, color: colors.textMuted, marginTop: 2 },
+  sub:         { ...typography.caption, marginTop: 2 },
   badge:       { paddingHorizontal: 8, paddingVertical: 3, borderRadius: radius.full },
   badgeText:   { fontSize: 10, fontWeight: '700' },
   actionBtn:   { padding: 4 },
-  track:       { height: 8, backgroundColor: colors.border, borderRadius: 4, overflow: 'hidden', marginBottom: spacing.sm },
+  track:       { height: 8, borderRadius: 4, overflow: 'hidden', marginBottom: spacing.sm },
   fill:        { height: '100%', borderRadius: 4 },
   nums:        { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   numLabel:    { ...typography.caption, flex: 1 },
-  numVal:      { fontWeight: '700', color: colors.text },
+  numVal:      { fontWeight: '700' },
 
   empty:       { alignItems: 'center', paddingTop: 60, gap: spacing.sm },
-  emptyText:   { ...typography.bodySmall, color: colors.textMuted },
+  emptyText:   { ...typography.bodySmall },
 
-  fab:         { position: 'absolute', bottom: 28, right: 24, width: 56, height: 56, borderRadius: 28, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center', ...shadow.lg },
+  fab:         { position: 'absolute', bottom: 28, right: 24, width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center', ...shadow.lg },
 
   // Modal / Sheet
   overlay:     { flex: 1, justifyContent: 'flex-end' },
   overlayBg:   { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.45)' },
-  sheet:       { backgroundColor: colors.surface, borderTopLeftRadius: radius.xl, borderTopRightRadius: radius.xl, padding: spacing.lg, paddingBottom: spacing.xl, maxHeight: '90%' },
-  sheetHandle: { width: 36, height: 4, backgroundColor: colors.border, borderRadius: 2, alignSelf: 'center', marginBottom: spacing.md },
+  sheet:       { borderTopLeftRadius: radius.xl, borderTopRightRadius: radius.xl, padding: spacing.lg, paddingBottom: spacing.xl, maxHeight: '90%' },
+  sheetHandle: { width: 36, height: 4, borderRadius: 2, alignSelf: 'center', marginBottom: spacing.md },
   sheetTitle:  { ...typography.h3, textAlign: 'center', marginBottom: spacing.lg },
 
   fieldLabel:  { ...typography.caption, marginBottom: 6, marginTop: spacing.sm },
-  input:       { backgroundColor: colors.surfaceAlt, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, paddingHorizontal: spacing.md, paddingVertical: 11, ...typography.body, marginBottom: 4 },
+  input:       { borderRadius: radius.md, borderWidth: 1, paddingHorizontal: spacing.md, paddingVertical: 11, ...typography.body, marginBottom: 4 },
 
   sheetActions:{ flexDirection: 'row', gap: spacing.sm, marginTop: spacing.lg },
-  cancelBtn:   { flex: 1, paddingVertical: 13, borderRadius: radius.md, borderWidth: 1.5, borderColor: colors.border, alignItems: 'center' },
-  cancelText:  { ...typography.body, fontWeight: '600', color: colors.textSecondary },
-  saveBtn:     { flex: 2, paddingVertical: 13, borderRadius: radius.md, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center' },
-  saveText:    { ...typography.body, fontWeight: '700', color: colors.textInverse },
+  cancelBtn:   { flex: 1, paddingVertical: 13, borderRadius: radius.md, borderWidth: 1.5, alignItems: 'center' },
+  cancelText:  { ...typography.body, fontWeight: '600' },
+  saveBtn:     { flex: 2, paddingVertical: 13, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center' },
+  saveText:    { ...typography.body, fontWeight: '700' },
 });

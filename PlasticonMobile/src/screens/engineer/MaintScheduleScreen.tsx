@@ -4,7 +4,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { api } from '../../api/client';
 import { ScreenHeader } from '../../components';
-import { colors, radius, shadow, spacing, typography } from '../../theme';
+import { radius, shadow, spacing, typography } from '../../theme';
+import { useAppTheme } from '../../context/ThemeContext';
+import { useLocale } from '../../context/LocaleContext';
 
 interface Schedule {
   id: number;
@@ -18,13 +20,6 @@ interface Schedule {
   assignedEngineer?: { fullName: string } | null;
 }
 
-const STATUS_COLOR: Record<string, string> = {
-  PENDING:     colors.warning,
-  IN_PROGRESS: colors.info,
-  COMPLETED:   colors.success,
-  OVERDUE:     colors.danger,
-};
-
 function fmtDate(d?: string) {
   if (!d) return '—';
   return new Date(d).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
@@ -36,33 +31,43 @@ function isPast(d?: string) {
 }
 
 function ScheduleCard({ item }: { item: Schedule }) {
-  const status = item.status ?? 'PENDING';
+  const { colors } = useAppTheme();
+  const { isAr } = useLocale();
+
+  const STATUS_COLOR: Record<string, string> = {
+    PENDING:     colors.warning,
+    IN_PROGRESS: colors.info,
+    COMPLETED:   colors.success,
+    OVERDUE:     colors.danger,
+  };
+
+  const status  = item.status ?? 'PENDING';
   const overdue = status === 'PENDING' && isPast(item.nextScheduledDate);
-  const color = overdue ? colors.danger : (STATUS_COLOR[status] ?? colors.textMuted);
+  const color   = overdue ? colors.danger : (STATUS_COLOR[status] ?? colors.textMuted);
 
   return (
-    <View style={[styles.card, overdue && styles.cardOverdue]}>
+    <View style={[styles.card, { backgroundColor: colors.surface }, overdue && { borderLeftWidth: 3, borderLeftColor: colors.danger }]}>
       <View style={styles.cardTop}>
-        <Text style={styles.machineName} numberOfLines={1}>{item.machine?.name ?? `Schedule #${item.id}`}</Text>
+        <Text style={[styles.machineName, { color: colors.text }]} numberOfLines={1}>{item.machine?.name ?? `Schedule #${item.id}`}</Text>
         <View style={[styles.badge, { backgroundColor: `${color}15` }]}>
-          <Text style={[styles.badgeText, { color }]}>{overdue ? 'OVERDUE' : status}</Text>
+          <Text style={[styles.badgeText, { color }]}>{overdue ? (isAr ? 'متأخر' : 'OVERDUE') : status}</Text>
         </View>
       </View>
-      {item.scheduleType && <Text style={styles.type}>{item.scheduleType} · {item.frequency}</Text>}
+      {item.scheduleType && <Text style={[styles.type, { color: colors.textMuted }]}>{item.scheduleType} · {item.frequency}</Text>}
       <View style={styles.dates}>
         <View style={styles.dateBlock}>
-          <Text style={styles.dateLabel}>Next Due</Text>
-          <Text style={[styles.dateValue, overdue && { color: colors.danger }]}>{fmtDate(item.nextScheduledDate)}</Text>
+          <Text style={[styles.dateLabel, { color: colors.textMuted }]}>{isAr ? 'الموعد القادم' : 'Next Due'}</Text>
+          <Text style={[styles.dateValue, { color: colors.text }, overdue && { color: colors.danger }]}>{fmtDate(item.nextScheduledDate)}</Text>
         </View>
         <View style={styles.dateBlock}>
-          <Text style={styles.dateLabel}>Last Done</Text>
-          <Text style={styles.dateValue}>{fmtDate(item.lastScheduledDate ?? undefined)}</Text>
+          <Text style={[styles.dateLabel, { color: colors.textMuted }]}>{isAr ? 'آخر تنفيذ' : 'Last Done'}</Text>
+          <Text style={[styles.dateValue, { color: colors.text }]}>{fmtDate(item.lastScheduledDate ?? undefined)}</Text>
         </View>
       </View>
       {item.assignedEngineer && (
         <View style={styles.engineerRow}>
           <Ionicons name="person-outline" size={12} color={colors.textMuted} />
-          <Text style={styles.engineerName}>{item.assignedEngineer.fullName}</Text>
+          <Text style={[styles.engineerName, { color: colors.textMuted }]}>{item.assignedEngineer.fullName}</Text>
         </View>
       )}
     </View>
@@ -70,6 +75,8 @@ function ScheduleCard({ item }: { item: Schedule }) {
 }
 
 export function MaintScheduleScreen() {
+  const { colors } = useAppTheme();
+  const { isAr } = useLocale();
   const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [loading, setLoading]     = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -87,8 +94,8 @@ export function MaintScheduleScreen() {
   useEffect(() => { void load(); }, [load]);
 
   return (
-    <SafeAreaView style={styles.safe}>
-      <ScreenHeader title="PM Schedule" subtitle="Preventive maintenance" showBack />
+    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
+      <ScreenHeader title={isAr ? 'جدول الصيانة الوقائية' : 'PM Schedule'} subtitle={isAr ? 'الصيانة الوقائية' : 'Preventive maintenance'} showBack />
       {loading ? (
         <View style={styles.center}><ActivityIndicator size="large" color={colors.primary} /></View>
       ) : (
@@ -99,7 +106,12 @@ export function MaintScheduleScreen() {
           contentContainerStyle={styles.list}
           showsVerticalScrollIndicator={false}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); void load(); }} tintColor={colors.primary} />}
-          ListEmptyComponent={<View style={styles.empty}><Ionicons name="calendar-outline" size={44} color={colors.textMuted} /><Text style={styles.emptyText}>No schedules</Text></View>}
+          ListEmptyComponent={
+            <View style={styles.empty}>
+              <Ionicons name="calendar-outline" size={44} color={colors.textMuted} />
+              <Text style={[styles.emptyText, { color: colors.textMuted }]}>{isAr ? 'لا توجد جداول' : 'No schedules'}</Text>
+            </View>
+          }
         />
       )}
     </SafeAreaView>
@@ -107,16 +119,15 @@ export function MaintScheduleScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe:   { flex: 1, backgroundColor: colors.background },
+  safe:   { flex: 1 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   list:   { padding: spacing.md, paddingBottom: 40 },
-  card:   { backgroundColor: colors.surface, borderRadius: radius.lg, padding: spacing.md, marginBottom: spacing.sm, ...shadow.sm },
-  cardOverdue: { borderLeftWidth: 3, borderLeftColor: colors.danger },
+  card:   { borderRadius: radius.lg, padding: spacing.md, marginBottom: spacing.sm, ...shadow.sm },
   cardTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 },
   machineName: { ...typography.h4, flex: 1, marginRight: spacing.sm },
   badge:     { paddingHorizontal: 8, paddingVertical: 3, borderRadius: radius.full },
   badgeText: { fontSize: 10, fontWeight: '700' },
-  type:      { ...typography.bodySmall, color: colors.textMuted, marginBottom: spacing.sm },
+  type:      { ...typography.bodySmall, marginBottom: spacing.sm },
   dates:     { flexDirection: 'row', gap: spacing.xl },
   dateBlock: {},
   dateLabel: { ...typography.caption, marginBottom: 2 },
@@ -124,5 +135,5 @@ const styles = StyleSheet.create({
   engineerRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: spacing.sm },
   engineerName: { ...typography.caption },
   empty:     { alignItems: 'center', paddingTop: 60, gap: spacing.sm },
-  emptyText: { ...typography.bodySmall, color: colors.textMuted },
+  emptyText: { ...typography.bodySmall },
 });

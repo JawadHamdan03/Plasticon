@@ -4,7 +4,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { api } from '../../api/client';
 import { ScreenHeader, StatCard } from '../../components';
-import { colors, radius, shadow, spacing, typography } from '../../theme';
+import { radius, shadow, spacing, typography } from '../../theme';
+import { useAppTheme } from '../../context/ThemeContext';
+import { useLocale } from '../../context/LocaleContext';
 
 interface CostRecord {
   id: number;
@@ -24,22 +26,26 @@ function fmt(n: number) { return n.toLocaleString('en-US', { minimumFractionDigi
 function fmtDate(d: string) { return new Date(d).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' }); }
 
 function CostCard({ item }: { item: CostRecord }) {
+  const { colors } = useAppTheme();
+  const { isAr } = useLocale();
   return (
-    <View style={styles.card}>
+    <View style={[styles.card, { backgroundColor: colors.surface }]}>
       <View style={styles.cardTop}>
         <View style={styles.cardLeft}>
-          <Text style={styles.machine} numberOfLines={1}>{item.maintenance?.machine?.name ?? `Record #${item.id}`}</Text>
-          <Text style={styles.category}>{item.category ?? 'General'}</Text>
+          <Text style={[styles.machine, { color: colors.text }]} numberOfLines={1}>{item.maintenance?.machine?.name ?? `Record #${item.id}`}</Text>
+          <Text style={[styles.category, { color: colors.textMuted }]}>{item.category ?? (isAr ? 'عام' : 'General')}</Text>
         </View>
-        <Text style={styles.amount}>${fmt(item.totalCost ?? item.amount ?? 0)}</Text>
+        <Text style={[styles.amount, { color: colors.danger }]}>${fmt(item.totalCost ?? item.amount ?? 0)}</Text>
       </View>
-      {(item.notes ?? item.description) ? <Text style={styles.desc} numberOfLines={2}>{item.notes ?? item.description}</Text> : null}
-      <Text style={styles.date}>{fmtDate(item.createdAt)}</Text>
+      {(item.notes ?? item.description) ? <Text style={[styles.desc, { color: colors.textSecondary }]} numberOfLines={2}>{item.notes ?? item.description}</Text> : null}
+      <Text style={[styles.date, { color: colors.textMuted }]}>{fmtDate(item.createdAt)}</Text>
     </View>
   );
 }
 
 export function MaintCostsScreen() {
+  const { colors } = useAppTheme();
+  const { isAr } = useLocale();
   const [costs, setCosts]       = useState<CostRecord[]>([]);
   const [total, setTotal]       = useState(0);
   const [loading, setLoading]   = useState(true);
@@ -62,8 +68,8 @@ export function MaintCostsScreen() {
   useEffect(() => { void load(); }, [load]);
 
   return (
-    <SafeAreaView style={styles.safe}>
-      <ScreenHeader title="Maintenance Costs" showBack />
+    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
+      <ScreenHeader title={isAr ? 'تكاليف الصيانة' : 'Maintenance Costs'} showBack />
       {loading ? (
         <View style={styles.center}><ActivityIndicator size="large" color={colors.primary} /></View>
       ) : (
@@ -75,9 +81,14 @@ export function MaintCostsScreen() {
           showsVerticalScrollIndicator={false}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); void load(); }} tintColor={colors.primary} />}
           ListHeaderComponent={
-            <StatCard label="Total Maintenance Cost" value={`$${fmt(total)}`} icon="cash" color={colors.danger} style={styles.totalCard} />
+            <StatCard label={isAr ? 'إجمالي تكاليف الصيانة' : 'Total Maintenance Cost'} value={`$${fmt(total)}`} icon="cash" color={colors.danger} style={styles.totalCard} />
           }
-          ListEmptyComponent={<View style={styles.empty}><Ionicons name="cash-outline" size={44} color={colors.textMuted} /><Text style={styles.emptyText}>No cost records</Text></View>}
+          ListEmptyComponent={
+            <View style={styles.empty}>
+              <Ionicons name="cash-outline" size={44} color={colors.textMuted} />
+              <Text style={[styles.emptyText, { color: colors.textMuted }]}>{isAr ? 'لا توجد سجلات تكاليف' : 'No cost records'}</Text>
+            </View>
+          }
         />
       )}
     </SafeAreaView>
@@ -85,18 +96,18 @@ export function MaintCostsScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe:      { flex: 1, backgroundColor: colors.background },
+  safe:      { flex: 1 },
   center:    { flex: 1, alignItems: 'center', justifyContent: 'center' },
   list:      { padding: spacing.md, paddingBottom: 40 },
   totalCard: { marginBottom: spacing.md },
-  card:      { backgroundColor: colors.surface, borderRadius: radius.md, padding: spacing.md, marginBottom: spacing.sm, ...shadow.sm },
+  card:      { borderRadius: radius.md, padding: spacing.md, marginBottom: spacing.sm, ...shadow.sm },
   cardTop:   { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 4 },
   cardLeft:  { flex: 1, marginRight: spacing.sm },
   machine:   { ...typography.h4 },
-  category:  { ...typography.caption, color: colors.textMuted, marginTop: 2 },
-  amount:    { fontSize: 18, fontWeight: '800', color: colors.danger },
-  desc:      { ...typography.bodySmall, color: colors.textSecondary, marginBottom: 4 },
+  category:  { ...typography.caption, marginTop: 2 },
+  amount:    { fontSize: 18, fontWeight: '800' },
+  desc:      { ...typography.bodySmall, marginBottom: 4 },
   date:      { ...typography.caption },
   empty:     { alignItems: 'center', paddingTop: 60, gap: spacing.sm },
-  emptyText: { ...typography.bodySmall, color: colors.textMuted },
+  emptyText: { ...typography.bodySmall },
 });

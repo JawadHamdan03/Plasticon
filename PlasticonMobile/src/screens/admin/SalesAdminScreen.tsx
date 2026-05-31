@@ -7,7 +7,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { api } from '../../api/client';
 import { ScreenHeader } from '../../components';
-import { colors, radius, shadow, spacing, typography } from '../../theme';
+import { radius, shadow, spacing, typography } from '../../theme';
+import { useAppTheme } from '../../context/ThemeContext';
+import { useLocale } from '../../context/LocaleContext';
 
 interface SaleItem {
   machineType: string;
@@ -31,30 +33,38 @@ function fmt(n: number) {
 }
 
 function SaleCard({ item }: { item: Sale }) {
+  const { colors } = useAppTheme();
+  const { isAr } = useLocale();
   const date     = new Date(item.date ?? item.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
   const itemDesc = item.items && item.items.length > 0
     ? item.items.map((i) => `${i.machineType} ${i.size} ×${i.quantity}`).join(', ')
     : null;
 
   return (
-    <View style={styles.card}>
+    <View style={[styles.card, { backgroundColor: colors.surface }]}>
       <View style={styles.cardTop}>
         <View style={[styles.cardIcon, { backgroundColor: `${colors.success}15` }]}>
           <Ionicons name="trending-up" size={20} color={colors.success} />
         </View>
         <View style={styles.cardBody}>
-          <Text style={styles.cardTitle}>{item.customer?.name ?? `Sale #${item.id}`}</Text>
-          {itemDesc && <Text style={styles.cardSub} numberOfLines={1}>{itemDesc}</Text>}
-          <Text style={styles.cardDate}>{date}</Text>
+          <Text style={[styles.cardTitle, { color: colors.text }]}>{item.customer?.name ?? `${isAr ? 'بيع' : 'Sale'} #${item.id}`}</Text>
+          {itemDesc && <Text style={[styles.cardSub, { color: colors.textMuted }]} numberOfLines={1}>{itemDesc}</Text>}
+          <Text style={[styles.cardDate, { color: colors.textMuted }]}>{date}</Text>
         </View>
-        <Text style={styles.amount}>${fmt(item.totalAmount ?? 0)}</Text>
+        <Text style={[styles.amount, { color: colors.success }]}>${fmt(item.totalAmount ?? 0)}</Text>
       </View>
-      {item.soldBy && <Text style={styles.soldBy}>By: {item.soldBy.fullName}</Text>}
+      {item.soldBy && (
+        <Text style={[styles.soldBy, { color: colors.textMuted, borderTopColor: colors.border }]}>
+          {isAr ? 'بواسطة' : 'By'}: {item.soldBy.fullName}
+        </Text>
+      )}
     </View>
   );
 }
 
 export function SalesAdminScreen() {
+  const { colors } = useAppTheme();
+  const { isAr } = useLocale();
   const [sales,      setSales]      = useState<Sale[]>([]);
   const [loading,    setLoading]    = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -76,8 +86,8 @@ export function SalesAdminScreen() {
   const totalRevenue = sales.reduce((s, sale) => s + (sale.totalAmount ?? 0), 0);
 
   return (
-    <SafeAreaView style={styles.safe}>
-      <ScreenHeader title="Sales" subtitle="Sales orders and revenue" />
+    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
+      <ScreenHeader title={isAr ? 'المبيعات' : 'Sales'} subtitle={isAr ? 'طلبات البيع والإيرادات' : 'Sales orders and revenue'} />
       {loading ? (
         <View style={styles.center}><ActivityIndicator size="large" color={colors.primary} /></View>
       ) : (
@@ -86,23 +96,23 @@ export function SalesAdminScreen() {
           showsVerticalScrollIndicator={false}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); void load(); }} tintColor={colors.primary} />}
         >
-          <View style={styles.kpiRow}>
+          <View style={[styles.kpiRow, { backgroundColor: colors.surface }]}>
             <View style={styles.kpi}>
-              <Text style={styles.kpiVal}>{sales.length}</Text>
-              <Text style={styles.kpiLabel}>Orders</Text>
+              <Text style={[styles.kpiVal, { color: colors.primary }]}>{sales.length}</Text>
+              <Text style={[styles.kpiLabel, { color: colors.textMuted }]}>{isAr ? 'الطلبات' : 'Orders'}</Text>
             </View>
             <View style={styles.kpi}>
               <Text style={[styles.kpiVal, { color: colors.success }]}>
                 ${totalRevenue.toLocaleString('en-US', { maximumFractionDigits: 0 })}
               </Text>
-              <Text style={styles.kpiLabel}>Total Revenue</Text>
+              <Text style={[styles.kpiLabel, { color: colors.textMuted }]}>{isAr ? 'إجمالي الإيرادات' : 'Total Revenue'}</Text>
             </View>
           </View>
 
           {sales.length === 0 ? (
             <View style={styles.empty}>
               <Ionicons name="bar-chart-outline" size={44} color={colors.textMuted} />
-              <Text style={styles.emptyText}>No sales records found</Text>
+              <Text style={[styles.emptyText, { color: colors.textMuted }]}>{isAr ? 'لا توجد سجلات مبيعات' : 'No sales records found'}</Text>
             </View>
           ) : (
             <View style={styles.list}>
@@ -116,23 +126,23 @@ export function SalesAdminScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe:      { flex: 1, backgroundColor: colors.background },
+  safe:      { flex: 1 },
   center:    { flex: 1, alignItems: 'center', justifyContent: 'center' },
   content:   { padding: spacing.md, paddingBottom: 40 },
-  kpiRow:    { flexDirection: 'row', backgroundColor: colors.surface, borderRadius: radius.lg, padding: spacing.md, marginBottom: spacing.lg, ...shadow.sm },
+  kpiRow:    { flexDirection: 'row', borderRadius: radius.lg, padding: spacing.md, marginBottom: spacing.lg, ...shadow.sm },
   kpi:       { flex: 1, alignItems: 'center' },
-  kpiVal:    { ...typography.h2, color: colors.primary },
-  kpiLabel:  { ...typography.caption, color: colors.textMuted, marginTop: 2 },
+  kpiVal:    { ...typography.h2 },
+  kpiLabel:  { ...typography.caption, marginTop: 2 },
   empty:     { alignItems: 'center', paddingVertical: spacing.xxl, gap: spacing.sm },
-  emptyText: { ...typography.bodySmall, color: colors.textMuted },
+  emptyText: { ...typography.bodySmall },
   list:      { gap: spacing.sm },
-  card:      { backgroundColor: colors.surface, borderRadius: radius.lg, padding: spacing.md, ...shadow.sm },
+  card:      { borderRadius: radius.lg, padding: spacing.md, ...shadow.sm },
   cardTop:   { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   cardIcon:  { width: 40, height: 40, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center' },
   cardBody:  { flex: 1 },
   cardTitle: { ...typography.h4 },
-  cardSub:   { ...typography.caption, color: colors.textMuted, marginTop: 2 },
-  cardDate:  { ...typography.caption, color: colors.textMuted },
-  amount:    { ...typography.h4, color: colors.success },
-  soldBy:    { ...typography.caption, color: colors.textMuted, marginTop: 6, borderTopWidth: 1, borderTopColor: colors.border, paddingTop: 6 },
+  cardSub:   { ...typography.caption, marginTop: 2 },
+  cardDate:  { ...typography.caption },
+  amount:    { ...typography.h4 },
+  soldBy:    { ...typography.caption, marginTop: 6, borderTopWidth: 1, paddingTop: 6 },
 });

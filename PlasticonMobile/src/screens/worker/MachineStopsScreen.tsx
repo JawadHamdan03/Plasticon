@@ -7,7 +7,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { api } from '../../api/client';
 import { ScreenHeader } from '../../components';
-import { colors, radius, shadow, spacing, typography } from '../../theme';
+import { radius, shadow, spacing, typography } from '../../theme';
+import { useAppTheme } from '../../context/ThemeContext';
+import { useLocale } from '../../context/LocaleContext';
 
 interface MachineStop {
   id:          number;
@@ -19,6 +21,8 @@ interface MachineStop {
 }
 
 export function MachineStopsScreen() {
+  const { colors } = useAppTheme();
+  const { isAr } = useLocale();
   const [stops,      setStops]      = useState<MachineStop[]>([]);
   const [machines,   setMachines]   = useState<{ id: number; name: string }[]>([]);
   const [loading,    setLoading]    = useState(true);
@@ -46,7 +50,7 @@ export function MachineStopsScreen() {
   useEffect(() => { void load(); }, [load]);
 
   const submit = async () => {
-    if (!reason.trim()) { Alert.alert('Required', 'Please describe the stop reason.'); return; }
+    if (!reason.trim()) { Alert.alert(isAr ? 'مطلوب' : 'Required', isAr ? 'يرجى وصف سبب التوقف.' : 'Please describe the stop reason.'); return; }
     setSaving(true);
     try {
       await api.post('/worker-tools/machine-stop-alerts', {
@@ -57,33 +61,36 @@ export function MachineStopsScreen() {
       setModal(false); setReason(''); setDuration(''); setMachineId('');
       setLoading(true); void load();
     } catch (e: any) {
-      Alert.alert('Error', e.message ?? 'Failed to report stop.');
+      Alert.alert(isAr ? 'خطأ' : 'Error', e.message ?? (isAr ? 'فشل الإبلاغ عن التوقف.' : 'Failed to report stop.'));
     } finally { setSaving(false); }
   };
 
   return (
-    <SafeAreaView style={styles.safe}>
-      <ScreenHeader title="Machine Stops" subtitle={`${stops.length} reports`} showBack />
+    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
+      <ScreenHeader title={isAr ? 'توقفات الآلات' : 'Machine Stops'} subtitle={`${stops.length} ${isAr ? 'تقرير' : 'reports'}`} showBack />
       {loading ? <View style={styles.center}><ActivityIndicator size="large" color={colors.danger} /></View> : (
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); void load(); }} tintColor={colors.danger} />}
         >
-          <TouchableOpacity style={styles.reportBtn} onPress={() => setModal(true)} activeOpacity={0.8}>
+          <TouchableOpacity style={[styles.reportBtn, { backgroundColor: colors.danger }]} onPress={() => setModal(true)} activeOpacity={0.8}>
             <Ionicons name="warning" size={18} color="#fff" />
-            <Text style={styles.reportText}>Report Machine Stop</Text>
+            <Text style={styles.reportText}>{isAr ? 'الإبلاغ عن توقف آلة' : 'Report Machine Stop'}</Text>
           </TouchableOpacity>
 
           {stops.length === 0 ? (
-            <View style={styles.empty}><Ionicons name="checkmark-circle-outline" size={44} color={colors.success} /><Text style={styles.emptyText}>No machine stops reported</Text></View>
+            <View style={styles.empty}>
+              <Ionicons name="checkmark-circle-outline" size={44} color={colors.success} />
+              <Text style={[styles.emptyText, { color: colors.textMuted }]}>{isAr ? 'لم يتم الإبلاغ عن توقفات' : 'No machine stops reported'}</Text>
+            </View>
           ) : (
             <View style={styles.list}>
               {stops.map((s, idx) => (
-                <View key={`${s.id}-${idx}`} style={[styles.card, { borderLeftColor: colors.danger }]}>
-                  <Text style={styles.cardMachine}>{s.machineName ?? 'Machine'}</Text>
-                  <Text style={styles.cardReason}>{s.reason}</Text>
+                <View key={`${s.id}-${idx}`} style={[styles.card, { backgroundColor: colors.surface, borderLeftColor: colors.danger }]}>
+                  <Text style={[styles.cardMachine, { color: colors.danger }]}>{s.machineName ?? (isAr ? 'آلة' : 'Machine')}</Text>
+                  <Text style={[styles.cardReason, { color: colors.text }]}>{s.reason}</Text>
                   <View style={styles.cardFooter}>
-                    {s.duration ? <Text style={styles.cardMeta}>{s.duration} min</Text> : null}
-                    <Text style={styles.cardMeta}>{new Date(s.reportedAt).toLocaleString()}</Text>
+                    {s.duration ? <Text style={[styles.cardMeta, { color: colors.textMuted }]}>{s.duration} {isAr ? 'دقيقة' : 'min'}</Text> : null}
+                    <Text style={[styles.cardMeta, { color: colors.textMuted }]}>{new Date(s.reportedAt).toLocaleString()}</Text>
                   </View>
                 </View>
               ))}
@@ -94,29 +101,31 @@ export function MachineStopsScreen() {
 
       <Modal visible={modal} transparent animationType="slide" onRequestClose={() => setModal(false)}>
         <View style={styles.overlay}>
-          <View style={styles.sheet}>
-            <View style={styles.handle} />
-            <Text style={styles.sheetTitle}>Report Machine Stop</Text>
+          <View style={[styles.sheet, { backgroundColor: colors.surface }]}>
+            <View style={[styles.handle, { backgroundColor: colors.border }]} />
+            <Text style={[styles.sheetTitle, { color: colors.text }]}>{isAr ? 'الإبلاغ عن توقف آلة' : 'Report Machine Stop'}</Text>
             {machines.length > 0 && (
               <>
-                <Text style={styles.label}>Machine</Text>
+                <Text style={[styles.label, { color: colors.textMuted }]}>{isAr ? 'الآلة' : 'Machine'}</Text>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: spacing.md }}>
                   {machines.map((m, idx) => (
-                    <TouchableOpacity key={`${m.id}-${idx}`} style={[styles.pill, machineId === String(m.id) && styles.pillActive]} onPress={() => setMachineId(String(m.id))}>
-                      <Text style={[styles.pillText, machineId === String(m.id) && styles.pillTextActive]}>{m.name}</Text>
+                    <TouchableOpacity key={`${m.id}-${idx}`} style={[styles.pill, { backgroundColor: colors.surfaceAlt, borderColor: colors.border }, machineId === String(m.id) && { backgroundColor: colors.danger, borderColor: colors.danger }]} onPress={() => setMachineId(String(m.id))}>
+                      <Text style={[styles.pillText, { color: colors.text }, machineId === String(m.id) && { color: '#fff' }]}>{m.name}</Text>
                     </TouchableOpacity>
                   ))}
                 </ScrollView>
               </>
             )}
-            <Text style={styles.label}>Stop Reason *</Text>
-            <TextInput style={[styles.input, styles.inputMulti]} placeholder="Describe why the machine stopped…" placeholderTextColor={colors.textMuted} value={reason} onChangeText={setReason} multiline numberOfLines={3} />
-            <Text style={styles.label}>Duration (minutes)</Text>
-            <TextInput style={styles.input} placeholder="e.g. 30" placeholderTextColor={colors.textMuted} value={duration} onChangeText={setDuration} keyboardType="numeric" />
+            <Text style={[styles.label, { color: colors.textMuted }]}>{isAr ? 'سبب التوقف *' : 'Stop Reason *'}</Text>
+            <TextInput style={[styles.input, styles.inputMulti, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]} placeholder={isAr ? 'اشرح سبب توقف الآلة…' : 'Describe why the machine stopped…'} placeholderTextColor={colors.textMuted} value={reason} onChangeText={setReason} multiline numberOfLines={3} />
+            <Text style={[styles.label, { color: colors.textMuted }]}>{isAr ? 'المدة (بالدقائق)' : 'Duration (minutes)'}</Text>
+            <TextInput style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]} placeholder={isAr ? 'مثال: 30' : 'e.g. 30'} placeholderTextColor={colors.textMuted} value={duration} onChangeText={setDuration} keyboardType="numeric" />
             <View style={styles.actions}>
-              <TouchableOpacity style={styles.cancelBtn} onPress={() => setModal(false)}><Text style={styles.cancelText}>Cancel</Text></TouchableOpacity>
-              <TouchableOpacity style={styles.submitBtn} onPress={submit} disabled={saving}>
-                {saving ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.submitText}>Report</Text>}
+              <TouchableOpacity style={[styles.cancelBtn, { borderColor: colors.border }]} onPress={() => setModal(false)}>
+                <Text style={[styles.cancelText, { color: colors.textMuted }]}>{isAr ? 'إلغاء' : 'Cancel'}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[styles.submitBtn, { backgroundColor: colors.danger }]} onPress={submit} disabled={saving}>
+                {saving ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.submitText}>{isAr ? 'إبلاغ' : 'Report'}</Text>}
               </TouchableOpacity>
             </View>
           </View>
@@ -127,33 +136,31 @@ export function MachineStopsScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe:        { flex: 1, backgroundColor: colors.background },
+  safe:        { flex: 1 },
   center:      { flex: 1, alignItems: 'center', justifyContent: 'center' },
   content:     { padding: spacing.md, paddingBottom: 40 },
-  reportBtn:   { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: colors.danger, borderRadius: radius.lg, paddingVertical: 12, marginBottom: spacing.md },
+  reportBtn:   { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, borderRadius: radius.lg, paddingVertical: 12, marginBottom: spacing.md },
   reportText:  { ...typography.bodySmall, fontWeight: '700', color: '#fff' },
   empty:       { alignItems: 'center', paddingVertical: spacing.xxl, gap: spacing.sm },
-  emptyText:   { ...typography.bodySmall, color: colors.textMuted },
+  emptyText:   { ...typography.bodySmall },
   list:        { gap: spacing.sm },
-  card:        { backgroundColor: colors.surface, borderRadius: radius.lg, padding: spacing.md, borderLeftWidth: 3, ...shadow.sm },
-  cardMachine: { ...typography.h4, color: colors.danger },
+  card:        { borderRadius: radius.lg, padding: spacing.md, borderLeftWidth: 3, ...shadow.sm },
+  cardMachine: { ...typography.h4 },
   cardReason:  { ...typography.bodySmall, marginTop: 4 },
   cardFooter:  { flexDirection: 'row', gap: spacing.md, marginTop: 6 },
-  cardMeta:    { ...typography.caption, color: colors.textMuted },
+  cardMeta:    { ...typography.caption },
   overlay:     { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.45)' },
-  sheet:       { backgroundColor: colors.surface, borderTopLeftRadius: radius.xl, borderTopRightRadius: radius.xl, padding: spacing.lg, paddingBottom: 40 },
-  handle:      { width: 40, height: 4, borderRadius: 2, backgroundColor: colors.border, alignSelf: 'center', marginBottom: spacing.md },
+  sheet:       { borderTopLeftRadius: radius.xl, borderTopRightRadius: radius.xl, padding: spacing.lg, paddingBottom: 40 },
+  handle:      { width: 40, height: 4, borderRadius: 2, alignSelf: 'center', marginBottom: spacing.md },
   sheetTitle:  { ...typography.h2, marginBottom: spacing.md },
   label:       { ...typography.caption, marginBottom: 6 },
-  input:       { borderWidth: 1.5, borderColor: colors.border, borderRadius: radius.sm, paddingHorizontal: spacing.md, paddingVertical: 10, fontSize: 15, color: colors.text, backgroundColor: colors.surfaceAlt, marginBottom: spacing.md },
+  input:       { borderWidth: 1.5, borderRadius: radius.sm, paddingHorizontal: spacing.md, paddingVertical: 10, fontSize: 15, marginBottom: spacing.md },
   inputMulti:  { height: 80, textAlignVertical: 'top' },
-  pill:        { paddingHorizontal: 14, paddingVertical: 7, borderRadius: radius.full, backgroundColor: colors.surfaceAlt, borderWidth: 1.5, borderColor: colors.border, marginRight: spacing.sm },
-  pillActive:  { backgroundColor: colors.danger, borderColor: colors.danger },
-  pillText:    { fontSize: 13, fontWeight: '600', color: colors.text },
-  pillTextActive: { color: '#fff' },
+  pill:        { paddingHorizontal: 14, paddingVertical: 7, borderRadius: radius.full, borderWidth: 1.5, marginRight: spacing.sm },
+  pillText:    { fontSize: 13, fontWeight: '600' },
   actions:     { flexDirection: 'row', gap: spacing.sm },
-  cancelBtn:   { flex: 1, alignItems: 'center', paddingVertical: 12, borderRadius: radius.md, borderWidth: 1.5, borderColor: colors.border },
-  cancelText:  { fontWeight: '700', color: colors.textMuted },
-  submitBtn:   { flex: 1, alignItems: 'center', paddingVertical: 12, borderRadius: radius.md, backgroundColor: colors.danger },
+  cancelBtn:   { flex: 1, alignItems: 'center', paddingVertical: 12, borderRadius: radius.md, borderWidth: 1.5 },
+  cancelText:  { fontWeight: '700' },
+  submitBtn:   { flex: 1, alignItems: 'center', paddingVertical: 12, borderRadius: radius.md },
   submitText:  { fontWeight: '700', color: '#fff' },
 });

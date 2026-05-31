@@ -11,10 +11,10 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { api } from '../../api/client';
-import { colors, radius, shadow, spacing, typography } from '../../theme';
+import { radius, shadow, spacing, typography } from '../../theme';
 import { ScreenHeader } from '../../components';
-
-// ─── Types ────────────────────────────────────────────────────────────────────
+import { useAppTheme } from '../../context/ThemeContext';
+import { useLocale } from '../../context/LocaleContext';
 
 interface Sale {
   id: number;
@@ -40,22 +40,16 @@ interface CustomerEntry {
   lastSaleDate: string;
 }
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
 function groupSalesByCustomer(sales: Sale[]): CustomerEntry[] {
   const map = new Map<number, CustomerEntry>();
-
   for (const sale of sales) {
     const c = sale.customer;
     if (!c?.id) continue;
-
     const existing = map.get(c.id);
     if (existing) {
       existing.totalDebt += sale.totalAmount ?? 0;
       existing.salesCount += 1;
-      if (sale.date > existing.lastSaleDate) {
-        existing.lastSaleDate = sale.date;
-      }
+      if (sale.date > existing.lastSaleDate) existing.lastSaleDate = sale.date;
     } else {
       map.set(c.id, {
         id: c.id,
@@ -69,18 +63,13 @@ function groupSalesByCustomer(sales: Sale[]): CustomerEntry[] {
       });
     }
   }
-
   return Array.from(map.values()).sort((a, b) => b.totalDebt - a.totalDebt);
 }
 
 function formatDate(dateStr: string): string {
   if (!dateStr) return '—';
   try {
-    return new Date(dateStr).toLocaleDateString('en-GB', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric',
-    });
+    return new Date(dateStr).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
   } catch {
     return dateStr;
   }
@@ -90,25 +79,25 @@ function formatCurrency(amount: number): string {
   return amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
-// ─── Customer Card ────────────────────────────────────────────────────────────
-
 function CustomerCard({ item }: { item: CustomerEntry }) {
+  const { colors } = useAppTheme();
+  const { isAr } = useLocale();
   return (
-    <View style={styles.card}>
+    <View style={[styles.card, { backgroundColor: colors.surface }]}>
       <View style={styles.cardHeader}>
-        <View style={styles.avatarWrap}>
+        <View style={[styles.avatarWrap, { backgroundColor: `${colors.info}15` }]}>
           <Ionicons name="person" size={22} color={colors.info} />
         </View>
         <View style={styles.cardHeaderText}>
-          <Text style={styles.customerName} numberOfLines={1}>{item.name}</Text>
+          <Text style={[styles.customerName, { color: colors.text }]} numberOfLines={1}>{item.name}</Text>
           {item.phone ? (
-            <Text style={styles.metaLine} numberOfLines={1}>
+            <Text style={[styles.metaLine, { color: colors.textMuted }]} numberOfLines={1}>
               <Ionicons name="call-outline" size={12} color={colors.textMuted} />
               {'  '}{item.phone}
             </Text>
           ) : null}
           {item.email ? (
-            <Text style={styles.metaLine} numberOfLines={1}>
+            <Text style={[styles.metaLine, { color: colors.textMuted }]} numberOfLines={1}>
               <Ionicons name="mail-outline" size={12} color={colors.textMuted} />
               {'  '}{item.email}
             </Text>
@@ -116,54 +105,51 @@ function CustomerCard({ item }: { item: CustomerEntry }) {
         </View>
       </View>
 
-      <View style={styles.divider} />
+      <View style={[styles.divider, { backgroundColor: colors.border }]} />
 
       <View style={styles.statsRow}>
         <View style={styles.statItem}>
-          <Text style={styles.statLabel}>Total Debt</Text>
-          <Text style={[styles.statValue, { color: colors.danger }]}>
-            ${formatCurrency(item.totalDebt)}
-          </Text>
+          <Text style={[styles.statLabel, { color: colors.textMuted }]}>{isAr ? 'إجمالي الدين' : 'Total Debt'}</Text>
+          <Text style={[styles.statValue, { color: colors.danger }]}>${formatCurrency(item.totalDebt)}</Text>
         </View>
         <View style={styles.statItem}>
-          <Text style={styles.statLabel}>Sales</Text>
-          <Text style={styles.statValue}>{item.salesCount}</Text>
+          <Text style={[styles.statLabel, { color: colors.textMuted }]}>{isAr ? 'المبيعات' : 'Sales'}</Text>
+          <Text style={[styles.statValue, { color: colors.text }]}>{item.salesCount}</Text>
         </View>
         <View style={styles.statItem}>
-          <Text style={styles.statLabel}>Last Sale</Text>
-          <Text style={styles.statValue}>{formatDate(item.lastSaleDate)}</Text>
+          <Text style={[styles.statLabel, { color: colors.textMuted }]}>{isAr ? 'آخر بيع' : 'Last Sale'}</Text>
+          <Text style={[styles.statValue, { color: colors.text }]}>{formatDate(item.lastSaleDate)}</Text>
         </View>
       </View>
     </View>
   );
 }
 
-// ─── Screen ───────────────────────────────────────────────────────────────────
-
 export function CustomersScreen() {
-  const [customers, setCustomers] = useState<CustomerEntry[]>([]);
-  const [loading, setLoading]     = useState(true);
+  const { colors } = useAppTheme();
+  const { isAr } = useLocale();
+
+  const [customers, setCustomers]   = useState<CustomerEntry[]>([]);
+  const [loading, setLoading]       = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [error, setError]         = useState<string | null>(null);
-  const [search, setSearch]       = useState('');
+  const [error, setError]           = useState<string | null>(null);
+  const [search, setSearch]         = useState('');
 
   const fetchCustomers = useCallback(async (isRefresh = false) => {
     try {
       if (isRefresh) setRefreshing(true);
       else setLoading(true);
       setError(null);
-
       const res = await api.get<Sale[]>('/sales/all?limit=100');
       const raw: Sale[] = Array.isArray(res) ? res : [];
-
       setCustomers(groupSalesByCustomer(raw));
     } catch (err: any) {
-      setError(err?.message ?? 'Failed to load customers.');
+      setError(err?.message ?? (isAr ? 'فشل تحميل العملاء.' : 'Failed to load customers.'));
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  }, []);
+  }, [isAr]);
 
   useEffect(() => { fetchCustomers(); }, [fetchCustomers]);
 
@@ -179,15 +165,14 @@ export function CustomersScreen() {
   }, [customers, search]);
 
   return (
-    <SafeAreaView style={styles.safe}>
-      <ScreenHeader title="Customers" showBack />
+    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
+      <ScreenHeader title={isAr ? 'العملاء' : 'Customers'} showBack />
 
-      {/* Search bar */}
-      <View style={styles.searchWrap}>
+      <View style={[styles.searchWrap, { backgroundColor: colors.surface }]}>
         <Ionicons name="search-outline" size={18} color={colors.textMuted} style={styles.searchIcon} />
         <TextInput
-          style={styles.searchInput}
-          placeholder="Search by name, phone or email…"
+          style={[styles.searchInput, { color: colors.text }]}
+          placeholder={isAr ? 'البحث بالاسم أو الهاتف أو البريد…' : 'Search by name, phone or email…'}
           placeholderTextColor={colors.textMuted}
           value={search}
           onChangeText={setSearch}
@@ -200,12 +185,12 @@ export function CustomersScreen() {
       {loading && !refreshing ? (
         <View style={styles.center}>
           <ActivityIndicator size="large" color={colors.primary} />
-          <Text style={styles.loadingText}>Loading customers…</Text>
+          <Text style={[styles.loadingText, { color: colors.textMuted }]}>{isAr ? 'جارٍ تحميل العملاء…' : 'Loading customers…'}</Text>
         </View>
       ) : error ? (
         <View style={styles.center}>
           <Ionicons name="alert-circle-outline" size={48} color={colors.danger} />
-          <Text style={styles.errorText}>{error}</Text>
+          <Text style={[styles.errorText, { color: colors.danger }]}>{error}</Text>
         </View>
       ) : (
         <FlatList
@@ -225,8 +210,10 @@ export function CustomersScreen() {
           ListEmptyComponent={
             <View style={styles.center}>
               <Ionicons name="people-outline" size={48} color={colors.textMuted} />
-              <Text style={styles.emptyText}>
-                {search ? 'No customers match your search.' : 'No customers found.'}
+              <Text style={[styles.emptyText, { color: colors.textMuted }]}>
+                {search
+                  ? (isAr ? 'لا يوجد عملاء يطابقون البحث.' : 'No customers match your search.')
+                  : (isAr ? 'لا يوجد عملاء.' : 'No customers found.')}
               </Text>
             </View>
           }
@@ -236,15 +223,12 @@ export function CustomersScreen() {
   );
 }
 
-// ─── Styles ───────────────────────────────────────────────────────────────────
-
 const styles = StyleSheet.create({
-  safe:         { flex: 1, backgroundColor: colors.background },
+  safe: { flex: 1 },
 
-  searchWrap:   {
+  searchWrap: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.surface,
     marginHorizontal: spacing.md,
     marginTop: spacing.sm,
     marginBottom: spacing.xs,
@@ -252,45 +236,27 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.sm,
     ...shadow.sm,
   },
-  searchIcon:   { marginRight: spacing.xs },
-  searchInput:  {
-    flex: 1,
-    height: 42,
-    ...typography.body,
-    color: colors.text,
-  },
+  searchIcon:  { marginRight: spacing.xs },
+  searchInput: { flex: 1, height: 42, ...typography.body },
 
-  listContent:  { padding: spacing.md, paddingTop: spacing.sm, paddingBottom: spacing.xxl },
+  listContent: { padding: spacing.md, paddingTop: spacing.sm, paddingBottom: spacing.xxl },
 
-  card:         {
-    backgroundColor: colors.surface,
-    borderRadius: radius.lg,
-    padding: spacing.md,
-    marginBottom: spacing.sm,
-    ...shadow.sm,
-  },
-  cardHeader:   { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.sm },
-  avatarWrap:   {
-    width: 44,
-    height: 44,
-    borderRadius: radius.md,
-    backgroundColor: `${colors.info}15`,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+  card:           { borderRadius: radius.lg, padding: spacing.md, marginBottom: spacing.sm, ...shadow.sm },
+  cardHeader:     { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.sm },
+  avatarWrap:     { width: 44, height: 44, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center' },
   cardHeaderText: { flex: 1 },
-  customerName: { ...typography.h4, marginBottom: 2 },
-  metaLine:     { ...typography.bodySmall, color: colors.textMuted, marginTop: 2 },
+  customerName:   { ...typography.h4, marginBottom: 2 },
+  metaLine:       { ...typography.bodySmall, marginTop: 2 },
 
-  divider:      { height: 1, backgroundColor: colors.border, marginVertical: spacing.sm },
+  divider: { height: 1, marginVertical: spacing.sm },
 
-  statsRow:     { flexDirection: 'row', justifyContent: 'space-between' },
-  statItem:     { alignItems: 'center', flex: 1 },
-  statLabel:    { ...typography.bodySmall, color: colors.textMuted, marginBottom: 2 },
-  statValue:    { ...typography.h4 },
+  statsRow:  { flexDirection: 'row', justifyContent: 'space-between' },
+  statItem:  { alignItems: 'center', flex: 1 },
+  statLabel: { ...typography.bodySmall, marginBottom: 2 },
+  statValue: { ...typography.h4 },
 
-  center:       { flex: 1, alignItems: 'center', justifyContent: 'center', padding: spacing.xl, marginTop: spacing.xxl },
-  loadingText:  { ...typography.body, color: colors.textMuted, marginTop: spacing.sm },
-  errorText:    { ...typography.body, color: colors.danger, marginTop: spacing.sm, textAlign: 'center' },
-  emptyText:    { ...typography.body, color: colors.textMuted, marginTop: spacing.sm, textAlign: 'center' },
+  center:      { flex: 1, alignItems: 'center', justifyContent: 'center', padding: spacing.xl, marginTop: spacing.xxl },
+  loadingText: { ...typography.body, marginTop: spacing.sm },
+  errorText:   { ...typography.body, marginTop: spacing.sm, textAlign: 'center' },
+  emptyText:   { ...typography.body, marginTop: spacing.sm, textAlign: 'center' },
 });

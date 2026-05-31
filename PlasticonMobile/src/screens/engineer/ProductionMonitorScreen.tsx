@@ -7,20 +7,24 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { api } from '../../api/client';
 import { ScreenHeader } from '../../components';
-import { colors, radius, shadow, spacing, typography } from '../../theme';
+import { radius, shadow, spacing, typography } from '../../theme';
+import { useAppTheme } from '../../context/ThemeContext';
+import { useLocale } from '../../context/LocaleContext';
 
 interface ProductionRecord {
-  id:          number;
+  id:           number;
   productName?: string;
-  quantity?:   number;
+  quantity?:    number;
   totalPieces?: number;
-  notes?:      string;
-  createdAt:   string;
-  user?:       { fullName?: string };
-  shift?:      { name?: string };
+  notes?:       string;
+  createdAt:    string;
+  user?:        { fullName?: string };
+  shift?:       { name?: string };
 }
 
 export function ProductionMonitorScreen() {
+  const { colors } = useAppTheme();
+  const { isAr } = useLocale();
   const [records,    setRecords]    = useState<ProductionRecord[]>([]);
   const [total,      setTotal]      = useState(0);
   const [loading,    setLoading]    = useState(true);
@@ -39,8 +43,12 @@ export function ProductionMonitorScreen() {
   useEffect(() => { void load(); }, [load]);
 
   return (
-    <SafeAreaView style={styles.safe}>
-      <ScreenHeader title="Production" subtitle={`${total} total records`} showBack />
+    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
+      <ScreenHeader
+        title={isAr ? 'الإنتاج' : 'Production'}
+        subtitle={`${total} ${isAr ? 'سجل إجمالي' : 'total records'}`}
+        showBack
+      />
       <ScrollView
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
@@ -51,26 +59,34 @@ export function ProductionMonitorScreen() {
         ) : records.length === 0 ? (
           <View style={styles.empty}>
             <Ionicons name="cube-outline" size={48} color={colors.textMuted} />
-            <Text style={styles.emptyText}>No production records found</Text>
+            <Text style={[styles.emptyText, { color: colors.textMuted }]}>
+              {isAr ? 'لا توجد سجلات إنتاج' : 'No production records found'}
+            </Text>
           </View>
         ) : (
           <View style={styles.list}>
             {records.map((r, idx) => {
               const qty = r.totalPieces ?? r.quantity ?? 0;
               return (
-                <View key={`${r.id}-${idx}`} style={styles.card}>
-                  <View style={styles.cardIcon}>
+                <View key={`${r.id}-${idx}`} style={[styles.card, { backgroundColor: colors.surface }]}>
+                  <View style={[styles.cardIcon, { backgroundColor: `${colors.primary}15` }]}>
                     <Ionicons name="cube" size={18} color={colors.primary} />
                   </View>
                   <View style={styles.cardBody}>
-                    <Text style={styles.cardName}>{r.productName ?? `Record #${r.id}`}</Text>
-                    {r.user?.fullName && <Text style={styles.cardWorker}>{r.user.fullName}{r.shift?.name ? ` · ${r.shift.name}` : ''}</Text>}
-                    {r.notes ? <Text style={styles.cardNotes} numberOfLines={1}>{r.notes}</Text> : null}
-                    <Text style={styles.cardDate}>{new Date(r.createdAt).toLocaleString()}</Text>
+                    <Text style={[styles.cardName, { color: colors.text }]}>
+                      {r.productName ?? `${isAr ? 'سجل #' : 'Record #'}${r.id}`}
+                    </Text>
+                    {r.user?.fullName && (
+                      <Text style={[styles.cardWorker, { color: colors.primary }]}>
+                        {r.user.fullName}{r.shift?.name ? ` · ${r.shift.name}` : ''}
+                      </Text>
+                    )}
+                    {r.notes ? <Text style={[styles.cardNotes, { color: colors.textMuted }]} numberOfLines={1}>{r.notes}</Text> : null}
+                    <Text style={[styles.cardDate, { color: colors.textMuted }]}>{new Date(r.createdAt).toLocaleString()}</Text>
                   </View>
                   <View style={styles.qtyBox}>
-                    <Text style={styles.qty}>{qty}</Text>
-                    <Text style={styles.qtyLabel}>units</Text>
+                    <Text style={[styles.qty, { color: colors.primary }]}>{qty}</Text>
+                    <Text style={[styles.qtyLabel, { color: colors.textMuted }]}>{isAr ? 'وحدات' : 'units'}</Text>
                   </View>
                 </View>
               );
@@ -83,19 +99,19 @@ export function ProductionMonitorScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe:      { flex: 1, backgroundColor: colors.background },
-  content:   { padding: spacing.md, paddingBottom: 40 },
-  empty:     { alignItems: 'center', paddingVertical: 80, gap: spacing.sm },
-  emptyText: { ...typography.bodySmall, color: colors.textMuted },
-  list:      { gap: spacing.sm },
-  card:      { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surface, borderRadius: radius.lg, padding: spacing.md, gap: spacing.sm, ...shadow.sm },
-  cardIcon:  { width: 38, height: 38, borderRadius: radius.md, backgroundColor: `${colors.primary}15`, alignItems: 'center', justifyContent: 'center' },
-  cardBody:  { flex: 1 },
-  cardName:  { ...typography.h4 },
-  cardWorker:{ ...typography.caption, color: colors.primary, fontWeight: '600' },
-  cardNotes: { ...typography.caption, color: colors.textMuted },
-  cardDate:  { ...typography.caption, color: colors.textMuted },
-  qtyBox:    { alignItems: 'flex-end' },
-  qty:       { fontSize: 20, fontWeight: '800', color: colors.primary },
-  qtyLabel:  { ...typography.caption, color: colors.textMuted },
+  safe:       { flex: 1 },
+  content:    { padding: spacing.md, paddingBottom: 40 },
+  empty:      { alignItems: 'center', paddingVertical: 80, gap: spacing.sm },
+  emptyText:  { ...typography.bodySmall },
+  list:       { gap: spacing.sm },
+  card:       { flexDirection: 'row', alignItems: 'center', borderRadius: radius.lg, padding: spacing.md, gap: spacing.sm, ...shadow.sm },
+  cardIcon:   { width: 38, height: 38, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center' },
+  cardBody:   { flex: 1 },
+  cardName:   { ...typography.h4 },
+  cardWorker: { ...typography.caption, fontWeight: '600' },
+  cardNotes:  { ...typography.caption },
+  cardDate:   { ...typography.caption },
+  qtyBox:     { alignItems: 'flex-end' },
+  qty:        { fontSize: 20, fontWeight: '800' },
+  qtyLabel:   { ...typography.caption },
 });

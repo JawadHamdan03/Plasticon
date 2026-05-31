@@ -7,7 +7,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { api } from '../../api/client';
 import { ScreenHeader } from '../../components';
-import { colors, radius, shadow, spacing, typography } from '../../theme';
+import { radius, shadow, spacing, typography } from '../../theme';
+import { useAppTheme } from '../../context/ThemeContext';
+import { useLocale } from '../../context/LocaleContext';
 
 interface Target {
   id:          number;
@@ -20,21 +22,9 @@ interface Target {
   createdAt:   string;
 }
 
-function ProgressBar({ pct }: { pct: number }) {
-  const clamped = Math.min(pct, 100);
-  const color = clamped >= 100 ? colors.success : clamped >= 60 ? colors.warning : colors.danger;
-  return (
-    <View style={bar.track}>
-      <View style={[bar.fill, { width: `${clamped}%` as any, backgroundColor: color }]} />
-    </View>
-  );
-}
-const bar = StyleSheet.create({
-  track: { height: 6, borderRadius: 3, backgroundColor: colors.border, overflow: 'hidden', marginTop: 6 },
-  fill:  { height: '100%', borderRadius: 3 },
-});
-
 export function DailyTargetsScreen() {
+  const { colors } = useAppTheme();
+  const { isAr } = useLocale();
   const [targets,    setTargets]    = useState<Target[]>([]);
   const [loading,    setLoading]    = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -50,8 +40,8 @@ export function DailyTargetsScreen() {
   useEffect(() => { void load(); }, [load]);
 
   return (
-    <SafeAreaView style={styles.safe}>
-      <ScreenHeader title="Daily Targets" subtitle="Today's production goals" showBack />
+    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
+      <ScreenHeader title={isAr ? 'أهداف اليوم' : 'Daily Targets'} subtitle={isAr ? 'أهداف الإنتاج اليومية' : "Today's production goals"} showBack />
       <ScrollView
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
@@ -62,7 +52,7 @@ export function DailyTargetsScreen() {
         ) : targets.length === 0 ? (
           <View style={styles.empty}>
             <Ionicons name="flag-outline" size={48} color={colors.textMuted} />
-            <Text style={styles.emptyText}>No targets assigned for today</Text>
+            <Text style={[styles.emptyText, { color: colors.textMuted }]}>{isAr ? 'لا توجد أهداف مخصصة لليوم' : 'No targets assigned for today'}</Text>
           </View>
         ) : (
           <View style={styles.list}>
@@ -70,25 +60,28 @@ export function DailyTargetsScreen() {
               const actual = t.actualValue ?? 0;
               const pct = t.targetValue > 0 ? (actual / t.targetValue) * 100 : 0;
               const done = pct >= 100;
+              const barColor = pct >= 100 ? colors.success : pct >= 60 ? colors.warning : colors.danger;
               return (
-                <View key={`${t.id}-${idx}`} style={styles.card}>
+                <View key={`${t.id}-${idx}`} style={[styles.card, { backgroundColor: colors.surface }]}>
                   <View style={styles.cardHeader}>
                     <View style={[styles.badge, { backgroundColor: done ? `${colors.success}20` : `${colors.primary}20` }]}>
                       <Ionicons name={done ? 'checkmark-circle' : 'flag'} size={14} color={done ? colors.success : colors.primary} />
                       <Text style={[styles.badgeText, { color: done ? colors.success : colors.primary }]}>
-                        {done ? 'Achieved' : 'In Progress'}
+                        {done ? (isAr ? 'محقق' : 'Achieved') : (isAr ? 'جاري' : 'In Progress')}
                       </Text>
                     </View>
-                    {t.date && <Text style={styles.dateText}>{new Date(t.date).toLocaleDateString()}</Text>}
+                    {t.date && <Text style={[styles.dateText, { color: colors.textMuted }]}>{new Date(t.date).toLocaleDateString()}</Text>}
                   </View>
-                  <Text style={styles.desc}>{t.description}</Text>
+                  <Text style={[styles.desc, { color: colors.text }]}>{t.description}</Text>
                   <View style={styles.progress}>
-                    <Text style={styles.progressLabel}>
-                      {actual} / {t.targetValue} {t.unit ?? 'units'}
+                    <Text style={[styles.progressLabel, { color: colors.textMuted }]}>
+                      {actual} / {t.targetValue} {t.unit ?? (isAr ? 'وحدة' : 'units')}
                     </Text>
-                    <Text style={styles.progressPct}>{Math.round(pct)}%</Text>
+                    <Text style={[styles.progressPct, { color: colors.text }]}>{Math.round(pct)}%</Text>
                   </View>
-                  <ProgressBar pct={pct} />
+                  <View style={[styles.track, { backgroundColor: colors.border }]}>
+                    <View style={[styles.fill, { width: `${Math.min(pct, 100)}%` as any, backgroundColor: barColor }]} />
+                  </View>
                 </View>
               );
             })}
@@ -100,18 +93,20 @@ export function DailyTargetsScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe:          { flex: 1, backgroundColor: colors.background },
+  safe:          { flex: 1 },
   content:       { padding: spacing.md, paddingBottom: 40 },
   empty:         { alignItems: 'center', paddingVertical: 80, gap: spacing.sm },
-  emptyText:     { ...typography.bodySmall, color: colors.textMuted },
+  emptyText:     { ...typography.bodySmall },
   list:          { gap: spacing.sm },
-  card:          { backgroundColor: colors.surface, borderRadius: radius.lg, padding: spacing.md, ...shadow.sm },
+  card:          { borderRadius: radius.lg, padding: spacing.md, ...shadow.sm },
   cardHeader:    { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.sm },
   badge:         { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 8, paddingVertical: 3, borderRadius: radius.sm },
   badgeText:     { fontSize: 11, fontWeight: '700' },
-  dateText:      { ...typography.caption, color: colors.textMuted },
+  dateText:      { ...typography.caption },
   desc:          { ...typography.bodySmall, marginBottom: spacing.sm },
   progress:      { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  progressLabel: { ...typography.caption, color: colors.textMuted },
-  progressPct:   { ...typography.caption, fontWeight: '700', color: colors.text },
+  progressLabel: { ...typography.caption },
+  progressPct:   { ...typography.caption, fontWeight: '700' },
+  track:         { height: 6, borderRadius: 3, overflow: 'hidden', marginTop: 6 },
+  fill:          { height: '100%', borderRadius: 3 },
 });

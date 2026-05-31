@@ -7,7 +7,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { api } from '../../api/client';
 import { ScreenHeader } from '../../components';
-import { colors, radius, shadow, spacing, typography } from '../../theme';
+import { radius, shadow, spacing, typography } from '../../theme';
+import { useAppTheme } from '../../context/ThemeContext';
+import { useLocale } from '../../context/LocaleContext';
 
 interface Reading {
   id:        number;
@@ -19,6 +21,8 @@ interface Reading {
 }
 
 export function ReadingsScreen() {
+  const { colors } = useAppTheme();
+  const { isAr } = useLocale();
   const [readings,   setReadings]   = useState<Reading[]>([]);
   const [loading,    setLoading]    = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -39,62 +43,83 @@ export function ReadingsScreen() {
 
   const submit = async () => {
     if (!value.trim() || isNaN(Number(value))) {
-      Alert.alert('Required', 'Please enter a valid reading value.');
+      Alert.alert(isAr ? 'مطلوب' : 'Required', isAr ? 'أدخل قيمة قراءة صالحة.' : 'Please enter a valid reading value.');
       return;
     }
     setSaving(true);
     try {
       await api.post('/electricity/readings', {
-        value:  parseFloat(value),
-        notes:  notes.trim() || undefined,
+        value: parseFloat(value),
+        notes: notes.trim() || undefined,
       });
       setValue(''); setNotes(''); setShowForm(false);
       setLoading(true); void load();
     } catch (e: any) {
-      Alert.alert('Error', e.message ?? 'Failed to save reading.');
+      Alert.alert(isAr ? 'خطأ' : 'Error', e.message ?? (isAr ? 'فشل حفظ القراءة.' : 'Failed to save reading.'));
     } finally { setSaving(false); }
   };
 
   return (
-    <SafeAreaView style={styles.safe}>
-      <ScreenHeader title="Readings" subtitle="Electricity meter readings" showBack />
+    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
+      <ScreenHeader title={isAr ? 'القراءات' : 'Readings'} subtitle={isAr ? 'قراءات عداد الكهرباء' : 'Electricity meter readings'} showBack />
       <ScrollView
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); void load(); }} tintColor={colors.primary} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); void load(); }} tintColor={colors.warning} />}
       >
-        {/* Log form */}
         {showForm ? (
-          <View style={styles.form}>
-            <Text style={styles.formTitle}>Log New Reading</Text>
-            <TextInput style={styles.input} placeholder="Meter value (kWh)" placeholderTextColor={colors.textMuted} value={value} onChangeText={setValue} keyboardType="numeric" />
-            <TextInput style={[styles.input, styles.inputMulti]} placeholder="Notes (optional)" placeholderTextColor={colors.textMuted} value={notes} onChangeText={setNotes} multiline numberOfLines={2} />
+          <View style={[styles.form, { backgroundColor: colors.surface }]}>
+            <Text style={[styles.formTitle, { color: colors.text }]}>{isAr ? 'تسجيل قراءة جديدة' : 'Log New Reading'}</Text>
+            <TextInput
+              style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
+              placeholder={isAr ? 'قيمة العداد (كيلوواط/ساعة)' : 'Meter value (kWh)'}
+              placeholderTextColor={colors.textMuted}
+              value={value}
+              onChangeText={setValue}
+              keyboardType="numeric"
+            />
+            <TextInput
+              style={[styles.input, styles.inputMulti, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
+              placeholder={isAr ? 'ملاحظات (اختياري)' : 'Notes (optional)'}
+              placeholderTextColor={colors.textMuted}
+              value={notes}
+              onChangeText={setNotes}
+              multiline
+              numberOfLines={2}
+            />
             <View style={styles.formRow}>
-              <TouchableOpacity style={styles.cancelBtn} onPress={() => setShowForm(false)}><Text style={styles.cancelText}>Cancel</Text></TouchableOpacity>
-              <TouchableOpacity style={styles.saveBtn} onPress={submit} disabled={saving}>
-                {saving ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.saveText}>Save</Text>}
+              <TouchableOpacity style={[styles.cancelBtn, { borderColor: colors.border }]} onPress={() => setShowForm(false)}>
+                <Text style={[styles.cancelText, { color: colors.textMuted }]}>{isAr ? 'إلغاء' : 'Cancel'}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[styles.saveBtn, { backgroundColor: colors.warning }]} onPress={submit} disabled={saving}>
+                {saving ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.saveText}>{isAr ? 'حفظ' : 'Save'}</Text>}
               </TouchableOpacity>
             </View>
           </View>
         ) : (
-          <TouchableOpacity style={styles.addBtn} onPress={() => setShowForm(true)} activeOpacity={0.8}>
+          <TouchableOpacity style={[styles.addBtn, { backgroundColor: colors.warning }]} onPress={() => setShowForm(true)} activeOpacity={0.8}>
             <Ionicons name="add-circle" size={20} color="#fff" />
-            <Text style={styles.addText}>Log Reading</Text>
+            <Text style={styles.addText}>{isAr ? 'تسجيل قراءة' : 'Log Reading'}</Text>
           </TouchableOpacity>
         )}
 
-        {loading ? <ActivityIndicator style={{ marginTop: 40 }} color={colors.primary} /> : (
+        {loading ? <ActivityIndicator style={{ marginTop: 40 }} color={colors.warning} /> : (
           readings.length === 0 ? (
-            <View style={styles.empty}><Ionicons name="flash-outline" size={44} color={colors.textMuted} /><Text style={styles.emptyText}>No readings logged</Text></View>
+            <View style={styles.empty}>
+              <Ionicons name="flash-outline" size={44} color={colors.textMuted} />
+              <Text style={[styles.emptyText, { color: colors.textMuted }]}>{isAr ? 'لا توجد قراءات مسجلة' : 'No readings logged'}</Text>
+            </View>
           ) : (
             <View style={styles.list}>
               {readings.map((r, idx) => (
-                <View key={`${r.id}-${idx}`} style={styles.card}>
-                  <View style={styles.cardIcon}><Ionicons name="flash" size={20} color={colors.warning} /></View>
+                <View key={`${r.id}-${idx}`} style={[styles.card, { backgroundColor: colors.surface }]}>
+                  <View style={[styles.cardIcon, { backgroundColor: `${colors.warning}15` }]}>
+                    <Ionicons name="flash" size={20} color={colors.warning} />
+                  </View>
                   <View style={styles.cardBody}>
-                    <Text style={styles.cardValue}>{r.value} {r.unit ?? 'kWh'}</Text>
-                    {r.notes ? <Text style={styles.cardNotes}>{r.notes}</Text> : null}
-                    <Text style={styles.cardDate}>{new Date(r.createdAt).toLocaleString()}</Text>
+                    <Text style={[styles.cardValue, { color: colors.text }]}>{r.value} {r.unit ?? 'kWh'}</Text>
+                    {r.notes ? <Text style={[styles.cardNotes, { color: colors.textMuted }]}>{r.notes}</Text> : null}
+                    <Text style={[styles.cardDate, { color: colors.textMuted }]}>{new Date(r.createdAt).toLocaleString()}</Text>
                   </View>
                 </View>
               ))}
@@ -107,26 +132,26 @@ export function ReadingsScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe:       { flex: 1, backgroundColor: colors.background },
+  safe:       { flex: 1 },
   content:    { padding: spacing.md, paddingBottom: 40 },
-  form:       { backgroundColor: colors.surface, borderRadius: radius.lg, padding: spacing.md, marginBottom: spacing.md, ...shadow.sm },
+  form:       { borderRadius: radius.lg, padding: spacing.md, marginBottom: spacing.md, ...shadow.sm },
   formTitle:  { ...typography.h4, marginBottom: spacing.sm },
-  input:      { borderWidth: 1.5, borderColor: colors.border, borderRadius: radius.sm, paddingHorizontal: spacing.md, paddingVertical: 10, fontSize: 15, color: colors.text, backgroundColor: colors.surfaceAlt, marginBottom: spacing.sm },
+  input:      { borderWidth: 1.5, borderRadius: radius.sm, paddingHorizontal: spacing.md, paddingVertical: 10, fontSize: 15, marginBottom: spacing.sm },
   inputMulti: { height: 64, textAlignVertical: 'top' },
   formRow:    { flexDirection: 'row', gap: spacing.sm },
-  cancelBtn:  { flex: 1, alignItems: 'center', paddingVertical: 11, borderRadius: radius.md, borderWidth: 1.5, borderColor: colors.border },
-  cancelText: { ...typography.bodySmall, fontWeight: '700', color: colors.textMuted },
-  saveBtn:    { flex: 1, alignItems: 'center', paddingVertical: 11, borderRadius: radius.md, backgroundColor: colors.warning },
+  cancelBtn:  { flex: 1, alignItems: 'center', paddingVertical: 11, borderRadius: radius.md, borderWidth: 1.5 },
+  cancelText: { ...typography.bodySmall, fontWeight: '700' },
+  saveBtn:    { flex: 1, alignItems: 'center', paddingVertical: 11, borderRadius: radius.md },
   saveText:   { ...typography.bodySmall, fontWeight: '700', color: '#fff' },
-  addBtn:     { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: colors.warning, borderRadius: radius.lg, paddingVertical: 12, marginBottom: spacing.md },
+  addBtn:     { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, borderRadius: radius.lg, paddingVertical: 12, marginBottom: spacing.md },
   addText:    { ...typography.bodySmall, fontWeight: '700', color: '#fff' },
   empty:      { alignItems: 'center', paddingVertical: spacing.xxl, gap: spacing.sm },
-  emptyText:  { ...typography.bodySmall, color: colors.textMuted },
+  emptyText:  { ...typography.bodySmall },
   list:       { gap: spacing.sm },
-  card:       { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surface, borderRadius: radius.lg, padding: spacing.md, gap: spacing.sm, ...shadow.sm },
-  cardIcon:   { width: 40, height: 40, borderRadius: radius.md, backgroundColor: `${colors.warning}15`, alignItems: 'center', justifyContent: 'center' },
+  card:       { flexDirection: 'row', alignItems: 'center', borderRadius: radius.lg, padding: spacing.md, gap: spacing.sm, ...shadow.sm },
+  cardIcon:   { width: 40, height: 40, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center' },
   cardBody:   { flex: 1 },
   cardValue:  { ...typography.h4 },
-  cardNotes:  { ...typography.caption, color: colors.textMuted },
-  cardDate:   { ...typography.caption, color: colors.textMuted },
+  cardNotes:  { ...typography.caption },
+  cardDate:   { ...typography.caption },
 });

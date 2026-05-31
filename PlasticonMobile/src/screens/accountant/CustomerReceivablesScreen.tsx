@@ -19,7 +19,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { api } from '../../api/client';
 import { ScreenHeader, StatCard } from '../../components';
-import { colors, radius, shadow, spacing, typography } from '../../theme';
+import { radius, shadow, spacing, typography } from '../../theme';
+import { useAppTheme } from '../../context/ThemeContext';
+import { useLocale } from '../../context/LocaleContext';
 
 interface Receivable {
   id: number;
@@ -47,18 +49,20 @@ const DEFAULT_FORM: FormState = { customerName: '', amount: '', dueDate: '', sta
 
 function fmt(n: number) { return n.toLocaleString('en-US', { minimumFractionDigits: 2 }); }
 
-const STATUS_COLOR: Record<string, string> = {
-  PENDING: colors.warning, COLLECTED: colors.success, OVERDUE: colors.danger,
-};
-
 function InlinePicker<T extends string>({ label, value, options, onChange }: { label: string; value: T; options: T[]; onChange: (v: T) => void }) {
+  const { colors } = useAppTheme();
   return (
     <View style={ps.wrap}>
-      <Text style={ps.label}>{label}</Text>
+      <Text style={[ps.label, { color: colors.text }]}>{label}</Text>
       <View style={ps.row}>
         {options.map((opt) => (
-          <TouchableOpacity key={opt} style={[ps.chip, value === opt && ps.chipActive]} onPress={() => onChange(opt)} activeOpacity={0.7}>
-            <Text style={[ps.chipText, value === opt && ps.chipTextActive]}>{opt}</Text>
+          <TouchableOpacity
+            key={opt}
+            style={[ps.chip, { borderColor: colors.border, backgroundColor: colors.surface }, value === opt && { borderColor: colors.primary, backgroundColor: colors.primaryLight }]}
+            onPress={() => onChange(opt)}
+            activeOpacity={0.7}
+          >
+            <Text style={[ps.chipText, { color: colors.textSecondary }, value === opt && { color: colors.primary }]}>{opt}</Text>
           </TouchableOpacity>
         ))}
       </View>
@@ -66,25 +70,25 @@ function InlinePicker<T extends string>({ label, value, options, onChange }: { l
   );
 }
 const ps = StyleSheet.create({
-  wrap: { marginBottom: spacing.md },
+  wrap:  { marginBottom: spacing.md },
   label: { ...typography.caption, marginBottom: 6 },
-  row: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
-  chip: { paddingHorizontal: 14, paddingVertical: 7, borderRadius: radius.full, borderWidth: 1.5, borderColor: colors.border, backgroundColor: colors.surface },
-  chipActive: { borderColor: colors.primary, backgroundColor: colors.primaryLight },
-  chipText: { fontSize: 13, fontWeight: '600', color: colors.textSecondary },
-  chipTextActive: { color: colors.primary },
+  row:   { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
+  chip:  { paddingHorizontal: 14, paddingVertical: 7, borderRadius: radius.full, borderWidth: 1.5 },
+  chipText: { fontSize: 13, fontWeight: '600' },
 });
 
 function RecModal({ visible, initial, onClose, onSave, saving }: {
   visible: boolean; initial: FormState; onClose: () => void; onSave: (f: FormState) => Promise<void>; saving: boolean;
 }) {
+  const { colors } = useAppTheme();
+  const { isAr } = useLocale();
   const [form, setForm] = useState<FormState>(initial);
   useEffect(() => { if (visible) setForm(initial); }, [visible, initial]);
   const set = (k: keyof FormState) => (v: string) => setForm((p) => ({ ...p, [k]: v }));
 
   const handleSave = async () => {
-    if (!form.customerName.trim()) return Alert.alert('Validation', 'Customer name is required.');
-    if (!form.amount.trim() || isNaN(Number(form.amount))) return Alert.alert('Validation', 'Amount must be a number.');
+    if (!form.customerName.trim()) return Alert.alert(isAr ? 'تحقق' : 'Validation', isAr ? 'اسم العميل مطلوب.' : 'Customer name is required.');
+    if (!form.amount.trim() || isNaN(Number(form.amount))) return Alert.alert(isAr ? 'تحقق' : 'Validation', isAr ? 'يجب أن يكون المبلغ رقماً.' : 'Amount must be a number.');
     await onSave(form);
   };
 
@@ -92,28 +96,28 @@ function RecModal({ visible, initial, onClose, onSave, saving }: {
     <Modal visible={visible} animationType="slide" transparent presentationStyle="overFullScreen">
       <KeyboardAvoidingView style={styles.overlay} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <Pressable style={styles.overlayBg} onPress={onClose} />
-        <View style={styles.sheet}>
-          <View style={styles.sheetHandle} />
-          <Text style={styles.sheetTitle}>{initial.customerName ? 'Edit Receivable' : 'New Receivable'}</Text>
+        <View style={[styles.sheet, { backgroundColor: colors.surface }]}>
+          <View style={[styles.sheetHandle, { backgroundColor: colors.border }]} />
+          <Text style={[styles.sheetTitle, { color: colors.text }]}>{initial.customerName ? (isAr ? 'تعديل المستحق' : 'Edit Receivable') : (isAr ? 'مستحق جديد' : 'New Receivable')}</Text>
           <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-            <Text style={styles.fieldLabel}>Customer Name *</Text>
-            <TextInput style={styles.input} value={form.customerName} onChangeText={set('customerName')} placeholder="Customer name" placeholderTextColor={colors.textMuted} />
+            <Text style={[styles.fieldLabel, { color: colors.text }]}>{isAr ? 'اسم العميل *' : 'Customer Name *'}</Text>
+            <TextInput style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]} value={form.customerName} onChangeText={set('customerName')} placeholder={isAr ? 'اسم العميل' : 'Customer name'} placeholderTextColor={colors.textMuted} />
 
-            <Text style={styles.fieldLabel}>Amount *</Text>
-            <TextInput style={styles.input} value={form.amount} onChangeText={set('amount')} placeholder="0.00" placeholderTextColor={colors.textMuted} keyboardType="numeric" />
+            <Text style={[styles.fieldLabel, { color: colors.text }]}>{isAr ? 'المبلغ *' : 'Amount *'}</Text>
+            <TextInput style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]} value={form.amount} onChangeText={set('amount')} placeholder="0.00" placeholderTextColor={colors.textMuted} keyboardType="numeric" />
 
-            <Text style={styles.fieldLabel}>Due Date</Text>
-            <TextInput style={styles.input} value={form.dueDate} onChangeText={set('dueDate')} placeholder="YYYY-MM-DD" placeholderTextColor={colors.textMuted} />
+            <Text style={[styles.fieldLabel, { color: colors.text }]}>{isAr ? 'تاريخ الاستحقاق' : 'Due Date'}</Text>
+            <TextInput style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]} value={form.dueDate} onChangeText={set('dueDate')} placeholder="YYYY-MM-DD" placeholderTextColor={colors.textMuted} />
 
-            <InlinePicker label="Status" value={form.status} options={STATUS_OPTIONS} onChange={(v) => setForm((p) => ({ ...p, status: v }))} />
+            <InlinePicker label={isAr ? 'الحالة' : 'Status'} value={form.status} options={STATUS_OPTIONS} onChange={(v) => setForm((p) => ({ ...p, status: v }))} />
 
-            <Text style={styles.fieldLabel}>Notes</Text>
-            <TextInput style={[styles.input, styles.multiline]} value={form.notes} onChangeText={set('notes')} placeholder="Optional notes" placeholderTextColor={colors.textMuted} multiline numberOfLines={3} textAlignVertical="top" />
+            <Text style={[styles.fieldLabel, { color: colors.text }]}>{isAr ? 'ملاحظات' : 'Notes'}</Text>
+            <TextInput style={[styles.input, styles.multiline, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]} value={form.notes} onChangeText={set('notes')} placeholder={isAr ? 'ملاحظات اختيارية' : 'Optional notes'} placeholderTextColor={colors.textMuted} multiline numberOfLines={3} textAlignVertical="top" />
           </ScrollView>
           <View style={styles.sheetActions}>
-            <TouchableOpacity style={styles.cancelBtn} onPress={onClose}><Text style={styles.cancelText}>Cancel</Text></TouchableOpacity>
-            <TouchableOpacity style={[styles.saveBtn, saving && { opacity: 0.6 }]} onPress={handleSave} disabled={saving}>
-              {saving ? <ActivityIndicator size="small" color={colors.textInverse} /> : <Text style={styles.saveText}>Save</Text>}
+            <TouchableOpacity style={[styles.cancelBtn, { borderColor: colors.border }]} onPress={onClose}><Text style={[styles.cancelText, { color: colors.textSecondary }]}>{isAr ? 'إلغاء' : 'Cancel'}</Text></TouchableOpacity>
+            <TouchableOpacity style={[styles.saveBtn, { backgroundColor: colors.primary }, saving && { opacity: 0.6 }]} onPress={handleSave} disabled={saving}>
+              {saving ? <ActivityIndicator size="small" color={colors.textInverse} /> : <Text style={[styles.saveText, { color: colors.textInverse }]}>{isAr ? 'حفظ' : 'Save'}</Text>}
             </TouchableOpacity>
           </View>
         </View>
@@ -123,26 +127,33 @@ function RecModal({ visible, initial, onClose, onSave, saving }: {
 }
 
 function RecCard({ item, onEdit, onDelete }: { item: Receivable; onEdit: () => void; onDelete: () => void }) {
+  const { colors } = useAppTheme();
+  const { isAr } = useLocale();
+
+  const STATUS_COLOR: Record<string, string> = {
+    PENDING: colors.warning, COLLECTED: colors.success, OVERDUE: colors.danger,
+  };
+
   const status  = item.status ?? 'PENDING';
   const isPaid  = status === 'COLLECTED' || status === 'PAID';
   const color   = STATUS_COLOR[status] ?? STATUS_COLOR['PENDING'];
-  const name    = item.customerName ?? item.customer?.name ?? `Record #${item.id}`;
+  const name    = item.customerName ?? item.customer?.name ?? `${isAr ? 'سجل' : 'Record'} #${item.id}`;
   const amount  = item.amount ?? 0;
 
   return (
-    <View style={styles.card}>
+    <View style={[styles.card, { backgroundColor: colors.surface }]}>
       <View style={styles.cardTop}>
         <View style={styles.cardLeft}>
-          <Text style={styles.customer} numberOfLines={1}>{name}</Text>
+          <Text style={[styles.customer, { color: colors.text }]} numberOfLines={1}>{name}</Text>
           {item.dueDate && (
-            <Text style={styles.inv}>
-              Due: {new Date(item.dueDate).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}
+            <Text style={[styles.inv, { color: colors.textMuted }]}>
+              {isAr ? 'تاريخ الاستحقاق:' : 'Due:'} {new Date(item.dueDate).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}
             </Text>
           )}
         </View>
         <View style={styles.cardRight}>
           <Text style={[styles.balance, { color: isPaid ? colors.success : color }]}>${fmt(amount)}</Text>
-          <Text style={styles.balLabel}>{isPaid ? 'collected' : 'outstanding'}</Text>
+          <Text style={[styles.balLabel, { color: colors.textMuted }]}>{isPaid ? (isAr ? 'محصل' : 'collected') : (isAr ? 'متبقي' : 'outstanding')}</Text>
         </View>
         <View style={styles.cardActions}>
           <TouchableOpacity onPress={onEdit} style={styles.actionBtn} hitSlop={6}>
@@ -157,13 +168,16 @@ function RecCard({ item, onEdit, onDelete }: { item: Receivable; onEdit: () => v
         <View style={[styles.badge, { backgroundColor: `${color}15` }]}>
           <Text style={[styles.badgeText, { color }]}>{status}</Text>
         </View>
-        {item.notes ? <Text style={styles.notesText} numberOfLines={1}>{item.notes}</Text> : null}
+        {item.notes ? <Text style={[styles.notesText, { color: colors.textMuted }]} numberOfLines={1}>{item.notes}</Text> : null}
       </View>
     </View>
   );
 }
 
 export function CustomerReceivablesScreen() {
+  const { colors } = useAppTheme();
+  const { isAr } = useLocale();
+
   const [records, setRecords]       = useState<Receivable[]>([]);
   const [loading, setLoading]       = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -176,12 +190,12 @@ export function CustomerReceivablesScreen() {
       const res = await api.get<Receivable[]>('/customer-receivables?limit=30');
       setRecords(Array.isArray(res) ? res : []);
     } catch (e: any) {
-      Alert.alert('Error', e?.message ?? 'Failed to load receivables');
+      Alert.alert(isAr ? 'خطأ' : 'Error', e?.message ?? (isAr ? 'فشل تحميل المستحقات' : 'Failed to load receivables'));
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  }, []);
+  }, [isAr]);
 
   useEffect(() => { void load(); }, [load]);
 
@@ -189,10 +203,14 @@ export function CustomerReceivablesScreen() {
   const openEdit   = (item: Receivable) => { setEditing(item); setModalVisible(true); };
 
   const confirmDelete = (item: Receivable) => {
-    Alert.alert('Delete Receivable', `Delete record for "${item.customerName ?? item.customer?.name ?? `#${item.id}`}"?`, [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Delete', style: 'destructive', onPress: () => void handleDelete(item.id) },
-    ]);
+    Alert.alert(
+      isAr ? 'حذف المستحق' : 'Delete Receivable',
+      `${isAr ? 'حذف سجل لـ' : 'Delete record for'} "${item.customerName ?? item.customer?.name ?? `#${item.id}`}"?`,
+      [
+        { text: isAr ? 'إلغاء' : 'Cancel', style: 'cancel' },
+        { text: isAr ? 'حذف' : 'Delete', style: 'destructive', onPress: () => void handleDelete(item.id) },
+      ],
+    );
   };
 
   const handleDelete = async (id: number) => {
@@ -201,7 +219,7 @@ export function CustomerReceivablesScreen() {
       setRefreshing(true);
       await load();
     } catch (e: any) {
-      Alert.alert('Error', e?.message ?? 'Failed to delete');
+      Alert.alert(isAr ? 'خطأ' : 'Error', e?.message ?? (isAr ? 'فشل الحذف' : 'Failed to delete'));
     }
   };
 
@@ -224,7 +242,7 @@ export function CustomerReceivablesScreen() {
       setRefreshing(true);
       await load();
     } catch (e: any) {
-      Alert.alert('Error', e?.message ?? 'Failed to save');
+      Alert.alert(isAr ? 'خطأ' : 'Error', e?.message ?? (isAr ? 'فشل الحفظ' : 'Failed to save'));
     } finally {
       setSaving(false);
     }
@@ -245,8 +263,8 @@ export function CustomerReceivablesScreen() {
     : DEFAULT_FORM;
 
   return (
-    <SafeAreaView style={styles.safe}>
-      <ScreenHeader title="Customer Receivables" showBack />
+    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
+      <ScreenHeader title={isAr ? 'مستحقات العملاء' : 'Customer Receivables'} showBack />
       {loading ? (
         <View style={styles.center}><ActivityIndicator size="large" color={colors.primary} /></View>
       ) : (
@@ -257,12 +275,12 @@ export function CustomerReceivablesScreen() {
           contentContainerStyle={styles.list}
           showsVerticalScrollIndicator={false}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); void load(); }} tintColor={colors.primary} />}
-          ListHeaderComponent={<StatCard label="Total Outstanding" value={`$${fmt(totalOutstanding)}`} icon="people" color={colors.warning} style={styles.statHeader} />}
-          ListEmptyComponent={<View style={styles.empty}><Ionicons name="people-outline" size={44} color={colors.textMuted} /><Text style={styles.emptyText}>No receivables</Text></View>}
+          ListHeaderComponent={<StatCard label={isAr ? 'إجمالي المتبقي' : 'Total Outstanding'} value={`$${fmt(totalOutstanding)}`} icon="people" color={colors.warning} style={styles.statHeader} />}
+          ListEmptyComponent={<View style={styles.empty}><Ionicons name="people-outline" size={44} color={colors.textMuted} /><Text style={[styles.emptyText, { color: colors.textMuted }]}>{isAr ? 'لا توجد مستحقات' : 'No receivables'}</Text></View>}
         />
       )}
 
-      <TouchableOpacity style={styles.fab} onPress={openCreate} activeOpacity={0.85}>
+      <TouchableOpacity style={[styles.fab, { backgroundColor: colors.primary }]} onPress={openCreate} activeOpacity={0.85}>
         <Ionicons name="add" size={28} color={colors.textInverse} />
       </TouchableOpacity>
 
@@ -272,42 +290,42 @@ export function CustomerReceivablesScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe:        { flex: 1, backgroundColor: colors.background },
+  safe:        { flex: 1 },
   center:      { flex: 1, alignItems: 'center', justifyContent: 'center' },
   list:        { padding: spacing.md, paddingBottom: 100 },
   statHeader:  { marginBottom: spacing.md },
 
-  card:        { backgroundColor: colors.surface, borderRadius: radius.md, padding: spacing.md, marginBottom: spacing.sm, ...shadow.sm },
+  card:        { borderRadius: radius.md, padding: spacing.md, marginBottom: spacing.sm, ...shadow.sm },
   cardTop:     { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 4 },
   cardLeft:    { flex: 1, marginRight: spacing.sm },
   customer:    { ...typography.h4 },
-  inv:         { ...typography.caption, color: colors.textMuted, marginTop: 2 },
+  inv:         { ...typography.caption, marginTop: 2 },
   cardRight:   { alignItems: 'flex-end', marginRight: spacing.sm },
   balance:     { fontSize: 18, fontWeight: '800' },
-  balLabel:    { ...typography.caption, color: colors.textMuted },
+  balLabel:    { ...typography.caption },
   cardActions: { flexDirection: 'column', gap: 4 },
   actionBtn:   { padding: 4 },
   metaRow:     { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: 6 },
   badge:       { paddingHorizontal: 8, paddingVertical: 3, borderRadius: radius.full },
   badgeText:   { fontSize: 10, fontWeight: '700' },
-  notesText:   { ...typography.caption, color: colors.textMuted, flex: 1 },
+  notesText:   { ...typography.caption, flex: 1 },
 
   empty:       { alignItems: 'center', paddingTop: 60, gap: spacing.sm },
-  emptyText:   { ...typography.bodySmall, color: colors.textMuted },
+  emptyText:   { ...typography.bodySmall },
 
-  fab:         { position: 'absolute', bottom: 28, right: 24, width: 56, height: 56, borderRadius: 28, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center', ...shadow.lg },
+  fab:         { position: 'absolute', bottom: 28, right: 24, width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center', ...shadow.lg },
 
   overlay:     { flex: 1, justifyContent: 'flex-end' },
   overlayBg:   { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.45)' },
-  sheet:       { backgroundColor: colors.surface, borderTopLeftRadius: radius.xl, borderTopRightRadius: radius.xl, padding: spacing.lg, paddingBottom: spacing.xl, maxHeight: '90%' },
-  sheetHandle: { width: 36, height: 4, backgroundColor: colors.border, borderRadius: 2, alignSelf: 'center', marginBottom: spacing.md },
+  sheet:       { borderTopLeftRadius: radius.xl, borderTopRightRadius: radius.xl, padding: spacing.lg, paddingBottom: spacing.xl, maxHeight: '90%' },
+  sheetHandle: { width: 36, height: 4, borderRadius: 2, alignSelf: 'center', marginBottom: spacing.md },
   sheetTitle:  { ...typography.h3, textAlign: 'center', marginBottom: spacing.lg },
   fieldLabel:  { ...typography.caption, marginBottom: 6, marginTop: spacing.sm },
-  input:       { backgroundColor: colors.surfaceAlt, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, paddingHorizontal: spacing.md, paddingVertical: 11, ...typography.body, marginBottom: 4 },
+  input:       { borderRadius: radius.md, borderWidth: 1, paddingHorizontal: spacing.md, paddingVertical: 11, ...typography.body, marginBottom: 4 },
   multiline:   { height: 80, paddingTop: 10 },
   sheetActions:{ flexDirection: 'row', gap: spacing.sm, marginTop: spacing.lg },
-  cancelBtn:   { flex: 1, paddingVertical: 13, borderRadius: radius.md, borderWidth: 1.5, borderColor: colors.border, alignItems: 'center' },
-  cancelText:  { ...typography.body, fontWeight: '600', color: colors.textSecondary },
-  saveBtn:     { flex: 2, paddingVertical: 13, borderRadius: radius.md, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center' },
-  saveText:    { ...typography.body, fontWeight: '700', color: colors.textInverse },
+  cancelBtn:   { flex: 1, paddingVertical: 13, borderRadius: radius.md, borderWidth: 1.5, alignItems: 'center' },
+  cancelText:  { ...typography.body, fontWeight: '600' },
+  saveBtn:     { flex: 2, paddingVertical: 13, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center' },
+  saveText:    { ...typography.body, fontWeight: '700' },
 });

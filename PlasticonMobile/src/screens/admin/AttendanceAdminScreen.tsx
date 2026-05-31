@@ -19,7 +19,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { api } from '../../api/client';
 import { ScreenHeader, StatCard } from '../../components';
-import { colors, radius, shadow, spacing, typography } from '../../theme';
+import { radius, shadow, spacing, typography } from '../../theme';
+import { useAppTheme } from '../../context/ThemeContext';
+import { useLocale } from '../../context/LocaleContext';
 
 interface AttRecord {
   id: number;
@@ -51,21 +53,20 @@ const DEFAULT_FORM: FormState = {
   hoursWorked: '',
 };
 
-const STATUS_COLOR: Record<string, string> = {
-  PRESENT:  colors.success,
-  ABSENT:   colors.danger,
-  LATE:     colors.warning,
-  HALF_DAY: colors.info,
-};
-
 function InlinePicker<T extends string>({ label, value, options, onChange }: { label: string; value: T; options: T[]; onChange: (v: T) => void }) {
+  const { colors } = useAppTheme();
   return (
     <View style={ps.wrap}>
-      <Text style={ps.label}>{label}</Text>
+      <Text style={[ps.label, { color: colors.textSecondary }]}>{label}</Text>
       <View style={ps.row}>
         {options.map((opt) => (
-          <TouchableOpacity key={opt} style={[ps.chip, value === opt && ps.chipActive]} onPress={() => onChange(opt)} activeOpacity={0.7}>
-            <Text style={[ps.chipText, value === opt && ps.chipTextActive]}>{opt.replace('_', ' ')}</Text>
+          <TouchableOpacity
+            key={opt}
+            style={[ps.chip, { borderColor: colors.border, backgroundColor: colors.surface }, value === opt && { borderColor: colors.primary, backgroundColor: colors.primaryLight }]}
+            onPress={() => onChange(opt)}
+            activeOpacity={0.7}
+          >
+            <Text style={[ps.chipText, { color: colors.textSecondary }, value === opt && { color: colors.primary }]}>{opt.replace('_', ' ')}</Text>
           </TouchableOpacity>
         ))}
       </View>
@@ -76,21 +77,21 @@ const ps = StyleSheet.create({
   wrap: { marginBottom: spacing.md },
   label: { ...typography.caption, marginBottom: 6 },
   row: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
-  chip: { paddingHorizontal: 12, paddingVertical: 7, borderRadius: radius.full, borderWidth: 1.5, borderColor: colors.border, backgroundColor: colors.surface },
-  chipActive: { borderColor: colors.primary, backgroundColor: colors.primaryLight },
-  chipText: { fontSize: 12, fontWeight: '600', color: colors.textSecondary },
-  chipTextActive: { color: colors.primary },
+  chip: { paddingHorizontal: 12, paddingVertical: 7, borderRadius: radius.full, borderWidth: 1.5 },
+  chipText: { fontSize: 12, fontWeight: '600' },
 });
 
 function AttModal({ visible, initial, onClose, onSave, saving }: {
   visible: boolean; initial: FormState; onClose: () => void; onSave: (f: FormState) => Promise<void>; saving: boolean;
 }) {
+  const { colors } = useAppTheme();
+  const { isAr } = useLocale();
   const [form, setForm] = useState<FormState>(initial);
   useEffect(() => { if (visible) setForm(initial); }, [visible, initial]);
   const set = (k: keyof FormState) => (v: string) => setForm((p) => ({ ...p, [k]: v }));
 
   const handleSave = async () => {
-    if (!form.date.trim()) return Alert.alert('Validation', 'Date is required.');
+    if (!form.date.trim()) return Alert.alert(isAr ? 'تحقق' : 'Validation', isAr ? 'التاريخ مطلوب.' : 'Date is required.');
     await onSave(form);
   };
 
@@ -98,28 +99,55 @@ function AttModal({ visible, initial, onClose, onSave, saving }: {
     <Modal visible={visible} animationType="slide" transparent presentationStyle="overFullScreen">
       <KeyboardAvoidingView style={styles.overlay} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <Pressable style={styles.overlayBg} onPress={onClose} />
-        <View style={styles.sheet}>
-          <View style={styles.sheetHandle} />
-          <Text style={styles.sheetTitle}>Edit Attendance</Text>
+        <View style={[styles.sheet, { backgroundColor: colors.surface }]}>
+          <View style={[styles.sheetHandle, { backgroundColor: colors.border }]} />
+          <Text style={[styles.sheetTitle, { color: colors.text }]}>{isAr ? 'تعديل الحضور' : 'Edit Attendance'}</Text>
           <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-            <Text style={styles.fieldLabel}>Date *</Text>
-            <TextInput style={styles.input} value={form.date} onChangeText={set('date')} placeholder="YYYY-MM-DD" placeholderTextColor={colors.textMuted} />
+            <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>{isAr ? 'التاريخ *' : 'Date *'}</Text>
+            <TextInput
+              style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
+              value={form.date}
+              onChangeText={set('date')}
+              placeholder="YYYY-MM-DD"
+              placeholderTextColor={colors.textMuted}
+            />
 
-            <Text style={styles.fieldLabel}>Check In</Text>
-            <TextInput style={styles.input} value={form.checkIn} onChangeText={set('checkIn')} placeholder="HH:MM" placeholderTextColor={colors.textMuted} />
+            <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>{isAr ? 'وقت الدخول' : 'Check In'}</Text>
+            <TextInput
+              style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
+              value={form.checkIn}
+              onChangeText={set('checkIn')}
+              placeholder="HH:MM"
+              placeholderTextColor={colors.textMuted}
+            />
 
-            <Text style={styles.fieldLabel}>Check Out</Text>
-            <TextInput style={styles.input} value={form.checkOut} onChangeText={set('checkOut')} placeholder="HH:MM" placeholderTextColor={colors.textMuted} />
+            <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>{isAr ? 'وقت الخروج' : 'Check Out'}</Text>
+            <TextInput
+              style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
+              value={form.checkOut}
+              onChangeText={set('checkOut')}
+              placeholder="HH:MM"
+              placeholderTextColor={colors.textMuted}
+            />
 
-            <Text style={styles.fieldLabel}>Hours Worked</Text>
-            <TextInput style={styles.input} value={form.hoursWorked} onChangeText={set('hoursWorked')} placeholder="e.g. 8" placeholderTextColor={colors.textMuted} keyboardType="numeric" />
+            <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>{isAr ? 'ساعات العمل' : 'Hours Worked'}</Text>
+            <TextInput
+              style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
+              value={form.hoursWorked}
+              onChangeText={set('hoursWorked')}
+              placeholder={isAr ? 'مثال: 8' : 'e.g. 8'}
+              placeholderTextColor={colors.textMuted}
+              keyboardType="numeric"
+            />
 
-            <InlinePicker label="Status" value={form.status} options={STATUS_OPTIONS} onChange={(v) => setForm((p) => ({ ...p, status: v }))} />
+            <InlinePicker label={isAr ? 'الحالة' : 'Status'} value={form.status} options={STATUS_OPTIONS} onChange={(v) => setForm((p) => ({ ...p, status: v }))} />
           </ScrollView>
           <View style={styles.sheetActions}>
-            <TouchableOpacity style={styles.cancelBtn} onPress={onClose}><Text style={styles.cancelText}>Cancel</Text></TouchableOpacity>
-            <TouchableOpacity style={[styles.saveBtn, saving && { opacity: 0.6 }]} onPress={handleSave} disabled={saving}>
-              {saving ? <ActivityIndicator size="small" color={colors.textInverse} /> : <Text style={styles.saveText}>Save</Text>}
+            <TouchableOpacity style={[styles.cancelBtn, { borderColor: colors.border }]} onPress={onClose}>
+              <Text style={[styles.cancelText, { color: colors.textSecondary }]}>{isAr ? 'إلغاء' : 'Cancel'}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={[styles.saveBtn, { backgroundColor: colors.primary }, saving && { opacity: 0.6 }]} onPress={handleSave} disabled={saving}>
+              {saving ? <ActivityIndicator size="small" color={colors.textInverse} /> : <Text style={[styles.saveText, { color: colors.textInverse }]}>{isAr ? 'حفظ' : 'Save'}</Text>}
             </TouchableOpacity>
           </View>
         </View>
@@ -129,30 +157,47 @@ function AttModal({ visible, initial, onClose, onSave, saving }: {
 }
 
 function AttCard({ item, onEdit, onDelete }: { item: AttRecord; onEdit: () => void; onDelete: () => void }) {
+  const { colors } = useAppTheme();
+  const { isAr } = useLocale();
+
+  const STATUS_COLOR: Record<string, string> = {
+    PRESENT:  colors.success,
+    ABSENT:   colors.danger,
+    LATE:     colors.warning,
+    HALF_DAY: colors.info,
+  };
+
   const status   = item.status ?? item.leaveType ?? 'PRESENT';
   const color    = STATUS_COLOR[status] ?? colors.textMuted;
-  const name     = item.user?.fullName ?? `Record #${item.id}`;
+  const name     = item.user?.fullName ?? `${isAr ? 'سجل' : 'Record'} #${item.id}`;
   const dateStr  = item.date ?? item.checkIn ?? '';
 
+  const statusLabel: Record<string, string> = {
+    PRESENT:  isAr ? 'حاضر' : 'Present',
+    ABSENT:   isAr ? 'غائب' : 'Absent',
+    LATE:     isAr ? 'متأخر' : 'Late',
+    HALF_DAY: isAr ? 'نصف يوم' : 'Half Day',
+  };
+
   return (
-    <View style={styles.card}>
+    <View style={[styles.card, { backgroundColor: colors.surface }]}>
       <View style={[styles.dot, { backgroundColor: color }]} />
       <View style={styles.cardContent}>
-        <Text style={styles.name}>{name}</Text>
-        <Text style={styles.date}>{dateStr ? new Date(dateStr).toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' }) : '—'}</Text>
+        <Text style={[styles.name, { color: colors.text }]}>{name}</Text>
+        <Text style={[styles.date, { color: colors.textMuted }]}>{dateStr ? new Date(dateStr).toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' }) : '—'}</Text>
         {(item.checkIn || item.checkOut) && (
-          <Text style={styles.times}>
-            {item.checkIn ? `In: ${new Date(item.checkIn).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : ''}
+          <Text style={[styles.times, { color: colors.textSecondary }]}>
+            {item.checkIn ? `${isAr ? 'دخول' : 'In'}: ${new Date(item.checkIn).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : ''}
             {item.checkIn && item.checkOut ? '  ' : ''}
-            {item.checkOut ? `Out: ${new Date(item.checkOut).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : ''}
+            {item.checkOut ? `${isAr ? 'خروج' : 'Out'}: ${new Date(item.checkOut).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : ''}
           </Text>
         )}
       </View>
       <View style={styles.right}>
         <View style={[styles.badge, { backgroundColor: `${color}15` }]}>
-          <Text style={[styles.badgeText, { color }]}>{status.replace('_', ' ')}</Text>
+          <Text style={[styles.badgeText, { color }]}>{statusLabel[status] ?? status.replace('_', ' ')}</Text>
         </View>
-        {item.hoursWorked != null && <Text style={styles.hours}>{item.hoursWorked}h</Text>}
+        {item.hoursWorked != null && <Text style={[styles.hours, { color: colors.text }]}>{item.hoursWorked}h</Text>}
         <View style={styles.cardActions}>
           <TouchableOpacity onPress={onEdit} style={styles.actionBtn} hitSlop={6}>
             <Ionicons name="pencil-outline" size={14} color={colors.primary} />
@@ -167,6 +212,8 @@ function AttCard({ item, onEdit, onDelete }: { item: AttRecord; onEdit: () => vo
 }
 
 export function AttendanceAdminScreen() {
+  const { colors } = useAppTheme();
+  const { isAr } = useLocale();
   const [records, setRecords]       = useState<AttRecord[]>([]);
   const [loading, setLoading]       = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -179,22 +226,26 @@ export function AttendanceAdminScreen() {
       const res = await api.get<AttRecord[]>('/attendance/all?limit=50');
       setRecords(Array.isArray(res) ? res : []);
     } catch (e: any) {
-      Alert.alert('Error', e?.message ?? 'Failed to load attendance');
+      Alert.alert(isAr ? 'خطأ' : 'Error', e?.message ?? (isAr ? 'فشل تحميل الحضور' : 'Failed to load attendance'));
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  }, []);
+  }, [isAr]);
 
   useEffect(() => { void load(); }, [load]);
 
   const openEdit = (item: AttRecord) => { setEditing(item); setModalVisible(true); };
 
   const confirmDelete = (item: AttRecord) => {
-    Alert.alert('Delete Record', `Delete attendance for "${item.user?.fullName ?? `#${item.id}`}"?`, [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Delete', style: 'destructive', onPress: () => void handleDelete(item.id) },
-    ]);
+    Alert.alert(
+      isAr ? 'حذف السجل' : 'Delete Record',
+      `${isAr ? 'حذف حضور' : 'Delete attendance for'} "${item.user?.fullName ?? `#${item.id}`}"?`,
+      [
+        { text: isAr ? 'إلغاء' : 'Cancel', style: 'cancel' },
+        { text: isAr ? 'حذف' : 'Delete', style: 'destructive', onPress: () => void handleDelete(item.id) },
+      ]
+    );
   };
 
   const handleDelete = async (id: number) => {
@@ -203,7 +254,7 @@ export function AttendanceAdminScreen() {
       setRefreshing(true);
       await load();
     } catch (e: any) {
-      Alert.alert('Error', e?.message ?? 'Failed to delete');
+      Alert.alert(isAr ? 'خطأ' : 'Error', e?.message ?? (isAr ? 'فشل الحذف' : 'Failed to delete'));
     }
   };
 
@@ -223,7 +274,7 @@ export function AttendanceAdminScreen() {
       setRefreshing(true);
       await load();
     } catch (e: any) {
-      Alert.alert('Error', e?.message ?? 'Failed to save');
+      Alert.alert(isAr ? 'خطأ' : 'Error', e?.message ?? (isAr ? 'فشل الحفظ' : 'Failed to save'));
     } finally {
       setSaving(false);
     }
@@ -243,8 +294,8 @@ export function AttendanceAdminScreen() {
     : DEFAULT_FORM;
 
   return (
-    <SafeAreaView style={styles.safe}>
-      <ScreenHeader title="Attendance Admin" showBack />
+    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
+      <ScreenHeader title={isAr ? 'الحضور' : 'Attendance'} showBack />
       {loading ? (
         <View style={styles.center}><ActivityIndicator size="large" color={colors.primary} /></View>
       ) : (
@@ -257,11 +308,16 @@ export function AttendanceAdminScreen() {
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); void load(); }} tintColor={colors.primary} />}
           ListHeaderComponent={
             <View style={styles.header}>
-              <StatCard label="Present" value={String(present)} icon="checkmark-circle" color={colors.success} style={styles.stat} />
-              <StatCard label="Absent"  value={String(absent)}  icon="close-circle"     color={colors.danger}  style={styles.stat} />
+              <StatCard label={isAr ? 'حاضر' : 'Present'} value={String(present)} icon="checkmark-circle" color={colors.success} style={styles.stat} />
+              <StatCard label={isAr ? 'غائب' : 'Absent'}  value={String(absent)}  icon="close-circle"     color={colors.danger}  style={styles.stat} />
             </View>
           }
-          ListEmptyComponent={<View style={styles.empty}><Ionicons name="calendar-outline" size={44} color={colors.textMuted} /><Text style={styles.emptyText}>No attendance records</Text></View>}
+          ListEmptyComponent={
+            <View style={styles.empty}>
+              <Ionicons name="calendar-outline" size={44} color={colors.textMuted} />
+              <Text style={[styles.emptyText, { color: colors.textMuted }]}>{isAr ? 'لا توجد سجلات حضور' : 'No attendance records'}</Text>
+            </View>
+          }
         />
       )}
 
@@ -271,17 +327,17 @@ export function AttendanceAdminScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe:        { flex: 1, backgroundColor: colors.background },
+  safe:        { flex: 1 },
   center:      { flex: 1, alignItems: 'center', justifyContent: 'center' },
   list:        { padding: spacing.md, paddingBottom: 40 },
   header:      { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.md },
   stat:        { flex: 1 },
-  card:        { flexDirection: 'row', alignItems: 'flex-start', backgroundColor: colors.surface, borderRadius: radius.md, padding: spacing.md, marginBottom: spacing.sm, gap: spacing.sm, ...shadow.sm },
+  card:        { flexDirection: 'row', alignItems: 'flex-start', borderRadius: radius.md, padding: spacing.md, marginBottom: spacing.sm, gap: spacing.sm, ...shadow.sm },
   dot:         { width: 10, height: 10, borderRadius: 5, flexShrink: 0, marginTop: 4 },
   cardContent: { flex: 1 },
   name:        { ...typography.h4 },
-  date:        { ...typography.caption, color: colors.textMuted, marginTop: 2 },
-  times:       { ...typography.caption, color: colors.textSecondary, marginTop: 2 },
+  date:        { ...typography.caption, marginTop: 2 },
+  times:       { ...typography.caption, marginTop: 2 },
   right:       { alignItems: 'flex-end', gap: 4 },
   badge:       { paddingHorizontal: 8, paddingVertical: 3, borderRadius: radius.full },
   badgeText:   { fontSize: 10, fontWeight: '700' },
@@ -289,18 +345,18 @@ const styles = StyleSheet.create({
   cardActions: { flexDirection: 'row', gap: 2 },
   actionBtn:   { padding: 3 },
   empty:       { alignItems: 'center', paddingTop: 60, gap: spacing.sm },
-  emptyText:   { ...typography.bodySmall, color: colors.textMuted },
+  emptyText:   { ...typography.bodySmall },
 
   overlay:     { flex: 1, justifyContent: 'flex-end' },
   overlayBg:   { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.45)' },
-  sheet:       { backgroundColor: colors.surface, borderTopLeftRadius: radius.xl, borderTopRightRadius: radius.xl, padding: spacing.lg, paddingBottom: spacing.xl, maxHeight: '85%' },
-  sheetHandle: { width: 36, height: 4, backgroundColor: colors.border, borderRadius: 2, alignSelf: 'center', marginBottom: spacing.md },
+  sheet:       { borderTopLeftRadius: radius.xl, borderTopRightRadius: radius.xl, padding: spacing.lg, paddingBottom: spacing.xl, maxHeight: '85%' },
+  sheetHandle: { width: 36, height: 4, borderRadius: 2, alignSelf: 'center', marginBottom: spacing.md },
   sheetTitle:  { ...typography.h3, textAlign: 'center', marginBottom: spacing.lg },
   fieldLabel:  { ...typography.caption, marginBottom: 6, marginTop: spacing.sm },
-  input:       { backgroundColor: colors.surfaceAlt, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, paddingHorizontal: spacing.md, paddingVertical: 11, ...typography.body, marginBottom: 4 },
+  input:       { borderRadius: radius.md, borderWidth: 1, paddingHorizontal: spacing.md, paddingVertical: 11, ...typography.body, marginBottom: 4 },
   sheetActions:{ flexDirection: 'row', gap: spacing.sm, marginTop: spacing.lg },
-  cancelBtn:   { flex: 1, paddingVertical: 13, borderRadius: radius.md, borderWidth: 1.5, borderColor: colors.border, alignItems: 'center' },
-  cancelText:  { ...typography.body, fontWeight: '600', color: colors.textSecondary },
-  saveBtn:     { flex: 2, paddingVertical: 13, borderRadius: radius.md, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center' },
-  saveText:    { ...typography.body, fontWeight: '700', color: colors.textInverse },
+  cancelBtn:   { flex: 1, paddingVertical: 13, borderRadius: radius.md, borderWidth: 1.5, alignItems: 'center' },
+  cancelText:  { ...typography.body, fontWeight: '600' },
+  saveBtn:     { flex: 2, paddingVertical: 13, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center' },
+  saveText:    { ...typography.body, fontWeight: '700' },
 });

@@ -19,7 +19,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { api } from '../../api/client';
 import { ScreenHeader } from '../../components';
-import { colors, radius, shadow, spacing, typography } from '../../theme';
+import { radius, shadow, spacing, typography } from '../../theme';
+import { useAppTheme } from '../../context/ThemeContext';
+import { useLocale } from '../../context/LocaleContext';
 
 interface WorkOrder {
   id: number;
@@ -42,7 +44,6 @@ interface Machine {
 
 type StatusOpt = 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
 const STATUS_OPTIONS: StatusOpt[] = ['PENDING', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'];
-
 const SCHEDULE_TYPES = ['lubricate', 'mold', 'clean_cavity', 'oil_change', 'belt_check', 'cooling', 'electrical', 'custom'];
 const FREQUENCIES     = ['daily', 'weekly', 'monthly', 'quarterly', 'yearly'];
 
@@ -60,13 +61,6 @@ const DEFAULT_FORM: FormState = {
   nextScheduledDate: '', description: '', status: 'PENDING',
 };
 
-const STATUS_META: Record<string, { color: string; icon: string }> = {
-  PENDING:     { color: colors.warning,   icon: 'time-outline' },
-  IN_PROGRESS: { color: colors.info,      icon: 'play-circle-outline' },
-  COMPLETED:   { color: colors.success,   icon: 'checkmark-circle-outline' },
-  CANCELLED:   { color: colors.textMuted, icon: 'close-circle-outline' },
-};
-
 const TASK_ICONS: Record<string, string> = {
   lubricate: '🛢️', mold: '🔩', clean_cavity: '🧹', oil_change: '🔧',
   belt_check: '⚙️', cooling: '❄️', electrical: '⚡', custom: '✏️',
@@ -77,17 +71,27 @@ function fmtDate(d?: string) {
   return new Date(d).toLocaleDateString([], { month: 'short', day: 'numeric' });
 }
 
-// ─── Chip row helper ──────────────────────────────────────────────────────────
-
 function ChipRow({ label, value, options, onChange }: { label: string; value: string; options: string[]; onChange: (v: string) => void }) {
+  const { colors } = useAppTheme();
   return (
-    <View style={ps.wrap}>
-      <Text style={ps.label}>{label}</Text>
+    <View style={styles.wrap}>
+      <Text style={[styles.chipLabel, { color: colors.textMuted }]}>{label}</Text>
       <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-        <View style={ps.row}>
+        <View style={styles.chipRow}>
           {options.map((opt) => (
-            <TouchableOpacity key={opt} style={[ps.chip, value === opt && ps.chipActive]} onPress={() => onChange(opt)} activeOpacity={0.7}>
-              <Text style={[ps.chipText, value === opt && ps.chipTextActive]}>{opt.replace('_', ' ')}</Text>
+            <TouchableOpacity
+              key={opt}
+              style={[styles.chip,
+                { borderColor: colors.border, backgroundColor: colors.surface },
+                value === opt && { borderColor: colors.primary, backgroundColor: colors.primaryLight },
+              ]}
+              onPress={() => onChange(opt)}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.chipText,
+                { color: colors.textSecondary },
+                value === opt && { color: colors.primary },
+              ]}>{opt.replace('_', ' ')}</Text>
             </TouchableOpacity>
           ))}
         </View>
@@ -95,29 +99,20 @@ function ChipRow({ label, value, options, onChange }: { label: string; value: st
     </View>
   );
 }
-const ps = StyleSheet.create({
-  wrap: { marginBottom: spacing.md },
-  label: { ...typography.caption, marginBottom: 6 },
-  row: { flexDirection: 'row', gap: spacing.sm },
-  chip: { paddingHorizontal: 12, paddingVertical: 7, borderRadius: radius.full, borderWidth: 1.5, borderColor: colors.border, backgroundColor: colors.surface },
-  chipActive: { borderColor: colors.primary, backgroundColor: colors.primaryLight },
-  chipText: { fontSize: 12, fontWeight: '600', color: colors.textSecondary },
-  chipTextActive: { color: colors.primary },
-});
-
-// ─── Form Modal ───────────────────────────────────────────────────────────────
 
 function WorkOrderModal({ visible, initial, machines, onClose, onSave, saving }: {
   visible: boolean; initial: FormState; machines: Machine[]; onClose: () => void;
   onSave: (f: FormState) => Promise<void>; saving: boolean;
 }) {
+  const { colors } = useAppTheme();
+  const { isAr } = useLocale();
   const [form, setForm] = useState<FormState>(initial);
   useEffect(() => { if (visible) setForm(initial); }, [visible, initial]);
   const set = (k: keyof FormState) => (v: string) => setForm((p) => ({ ...p, [k]: v }));
   const isEdit = initial.machineId !== '' || initial.description !== '';
 
   const handleSave = async () => {
-    if (!form.machineId.trim()) return Alert.alert('Validation', 'Machine is required.');
+    if (!form.machineId.trim()) return Alert.alert(isAr ? 'تحقق' : 'Validation', isAr ? 'الآلة مطلوبة.' : 'Machine is required.');
     await onSave(form);
   };
 
@@ -125,44 +120,51 @@ function WorkOrderModal({ visible, initial, machines, onClose, onSave, saving }:
     <Modal visible={visible} animationType="slide" transparent presentationStyle="overFullScreen">
       <KeyboardAvoidingView style={styles.overlay} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <Pressable style={styles.overlayBg} onPress={onClose} />
-        <View style={styles.sheet}>
-          <View style={styles.sheetHandle} />
-          <Text style={styles.sheetTitle}>{isEdit ? 'Edit Work Order' : 'New Work Order'}</Text>
+        <View style={[styles.sheet, { backgroundColor: colors.surface }]}>
+          <View style={[styles.sheetHandle, { backgroundColor: colors.border }]} />
+          <Text style={[styles.sheetTitle, { color: colors.text }]}>{isEdit ? (isAr ? 'تعديل أمر العمل' : 'Edit Work Order') : (isAr ? 'أمر عمل جديد' : 'New Work Order')}</Text>
           <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-
-            <Text style={styles.fieldLabel}>Machine *</Text>
+            <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{isAr ? 'الآلة *' : 'Machine *'}</Text>
             {machines.length > 0 ? (
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: spacing.sm }}>
                 <View style={{ flexDirection: 'row', gap: spacing.sm }}>
                   {machines.map((m, idx) => (
                     <TouchableOpacity
                       key={`${m.id}-${idx}`}
-                      style={[ps.chip, form.machineId === String(m.id) && ps.chipActive]}
+                      style={[styles.chip,
+                        { borderColor: colors.border, backgroundColor: colors.surface },
+                        form.machineId === String(m.id) && { borderColor: colors.primary, backgroundColor: colors.primaryLight },
+                      ]}
                       onPress={() => setForm((p) => ({ ...p, machineId: String(m.id) }))}
                     >
-                      <Text style={[ps.chipText, form.machineId === String(m.id) && ps.chipTextActive]}>{m.name}</Text>
+                      <Text style={[styles.chipText,
+                        { color: colors.textSecondary },
+                        form.machineId === String(m.id) && { color: colors.primary },
+                      ]}>{m.name}</Text>
                     </TouchableOpacity>
                   ))}
                 </View>
               </ScrollView>
             ) : (
-              <TextInput style={styles.input} value={form.machineId} onChangeText={set('machineId')} placeholder="Machine ID" placeholderTextColor={colors.textMuted} keyboardType="numeric" />
+              <TextInput style={[styles.input, { backgroundColor: colors.surfaceAlt, borderColor: colors.border, color: colors.text }]} value={form.machineId} onChangeText={set('machineId')} placeholder={isAr ? 'رقم الآلة' : 'Machine ID'} placeholderTextColor={colors.textMuted} keyboardType="numeric" />
             )}
 
-            <ChipRow label="Task Type" value={form.scheduleType} options={SCHEDULE_TYPES} onChange={(v) => setForm((p) => ({ ...p, scheduleType: v }))} />
-            <ChipRow label="Frequency" value={form.frequency} options={FREQUENCIES} onChange={(v) => setForm((p) => ({ ...p, frequency: v }))} />
-            <ChipRow label="Status" value={form.status} options={STATUS_OPTIONS} onChange={(v) => setForm((p) => ({ ...p, status: v as StatusOpt }))} />
+            <ChipRow label={isAr ? 'نوع المهمة' : 'Task Type'} value={form.scheduleType} options={SCHEDULE_TYPES} onChange={(v) => setForm((p) => ({ ...p, scheduleType: v }))} />
+            <ChipRow label={isAr ? 'التكرار' : 'Frequency'} value={form.frequency} options={FREQUENCIES} onChange={(v) => setForm((p) => ({ ...p, frequency: v }))} />
+            <ChipRow label={isAr ? 'الحالة' : 'Status'} value={form.status} options={STATUS_OPTIONS} onChange={(v) => setForm((p) => ({ ...p, status: v as StatusOpt }))} />
 
-            <Text style={styles.fieldLabel}>Next Scheduled Date</Text>
-            <TextInput style={styles.input} value={form.nextScheduledDate} onChangeText={set('nextScheduledDate')} placeholder="YYYY-MM-DD" placeholderTextColor={colors.textMuted} />
+            <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{isAr ? 'تاريخ الجدولة التالي' : 'Next Scheduled Date'}</Text>
+            <TextInput style={[styles.input, { backgroundColor: colors.surfaceAlt, borderColor: colors.border, color: colors.text }]} value={form.nextScheduledDate} onChangeText={set('nextScheduledDate')} placeholder="YYYY-MM-DD" placeholderTextColor={colors.textMuted} />
 
-            <Text style={styles.fieldLabel}>Description</Text>
-            <TextInput style={[styles.input, styles.multiline]} value={form.description} onChangeText={set('description')} placeholder="Optional description" placeholderTextColor={colors.textMuted} multiline numberOfLines={3} textAlignVertical="top" />
+            <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{isAr ? 'الوصف' : 'Description'}</Text>
+            <TextInput style={[styles.input, styles.multiline, { backgroundColor: colors.surfaceAlt, borderColor: colors.border, color: colors.text }]} value={form.description} onChangeText={set('description')} placeholder={isAr ? 'وصف اختياري' : 'Optional description'} placeholderTextColor={colors.textMuted} multiline numberOfLines={3} textAlignVertical="top" />
           </ScrollView>
           <View style={styles.sheetActions}>
-            <TouchableOpacity style={styles.cancelBtn} onPress={onClose}><Text style={styles.cancelText}>Cancel</Text></TouchableOpacity>
-            <TouchableOpacity style={[styles.saveBtn, saving && { opacity: 0.6 }]} onPress={handleSave} disabled={saving}>
-              {saving ? <ActivityIndicator size="small" color={colors.textInverse} /> : <Text style={styles.saveText}>Save</Text>}
+            <TouchableOpacity style={[styles.cancelBtn, { borderColor: colors.border }]} onPress={onClose}>
+              <Text style={[styles.cancelText, { color: colors.textSecondary }]}>{isAr ? 'إلغاء' : 'Cancel'}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={[styles.saveBtn, { backgroundColor: colors.primary }, saving && { opacity: 0.6 }]} onPress={handleSave} disabled={saving}>
+              {saving ? <ActivityIndicator size="small" color={colors.textInverse} /> : <Text style={[styles.saveText, { color: colors.textInverse }]}>{isAr ? 'حفظ' : 'Save'}</Text>}
             </TouchableOpacity>
           </View>
         </View>
@@ -171,8 +173,6 @@ function WorkOrderModal({ visible, initial, machines, onClose, onSave, saving }:
   );
 }
 
-// ─── Card ─────────────────────────────────────────────────────────────────────
-
 function WorkOrderCard({ item, onEdit, onDelete, onChangeStatus, updatingId }: {
   item: WorkOrder;
   onEdit: () => void;
@@ -180,18 +180,28 @@ function WorkOrderCard({ item, onEdit, onDelete, onChangeStatus, updatingId }: {
   onChangeStatus: (id: number, status: StatusOpt) => void;
   updatingId: number | null;
 }) {
+  const { colors } = useAppTheme();
+  const { isAr } = useLocale();
+
+  const STATUS_META: Record<string, { color: string; icon: string }> = {
+    PENDING:     { color: colors.warning,   icon: 'time-outline' },
+    IN_PROGRESS: { color: colors.info,      icon: 'play-circle-outline' },
+    COMPLETED:   { color: colors.success,   icon: 'checkmark-circle-outline' },
+    CANCELLED:   { color: colors.textMuted, icon: 'close-circle-outline' },
+  };
+
   const status   = (item.status ?? 'PENDING') as StatusOpt;
   const meta     = STATUS_META[status] ?? STATUS_META.PENDING;
   const taskIcon = item.scheduleType ? (TASK_ICONS[item.scheduleType] ?? '🔧') : '🔧';
   const updating = updatingId === item.id;
 
   return (
-    <View style={styles.card}>
+    <View style={[styles.card, { backgroundColor: colors.surface }]}>
       <View style={styles.cardTop}>
         <Text style={styles.taskIcon}>{taskIcon}</Text>
         <View style={styles.cardMain}>
-          <Text style={styles.machineName} numberOfLines={1}>{item.machine?.name ?? `WO #${item.id}`}</Text>
-          <Text style={styles.scheduleType}>{item.scheduleType ?? 'Task'} · {item.frequency}</Text>
+          <Text style={[styles.machineName, { color: colors.text }]} numberOfLines={1}>{item.machine?.name ?? `WO #${item.id}`}</Text>
+          <Text style={[styles.scheduleType, { color: colors.textMuted }]}>{item.scheduleType ?? 'Task'} · {item.frequency}</Text>
         </View>
         <View style={[styles.badge, { backgroundColor: `${meta.color}15` }]}>
           <Ionicons name={meta.icon as any} size={12} color={meta.color} />
@@ -207,37 +217,36 @@ function WorkOrderCard({ item, onEdit, onDelete, onChangeStatus, updatingId }: {
         </View>
       </View>
 
-      {item.description ? <Text style={styles.desc} numberOfLines={2}>{item.description}</Text> : null}
+      {item.description ? <Text style={[styles.desc, { color: colors.textSecondary }]} numberOfLines={2}>{item.description}</Text> : null}
 
       <View style={styles.footer}>
-        <Text style={styles.dueLabel}>Due: <Text style={styles.dueDate}>{fmtDate(item.nextScheduledDate)}</Text></Text>
+        <Text style={[styles.dueLabel, { color: colors.textMuted }]}>{isAr ? 'الموعد: ' : 'Due: '}<Text style={[styles.dueDate, { color: colors.text }]}>{fmtDate(item.nextScheduledDate)}</Text></Text>
         {item.assignedEngineer ? (
           <View style={styles.assignee}>
             <Ionicons name="person" size={11} color={colors.textMuted} />
-            <Text style={styles.assigneeText}>{item.assignedEngineer.fullName}</Text>
+            <Text style={[styles.assigneeText, { color: colors.textMuted }]}>{item.assignedEngineer.fullName}</Text>
           </View>
         ) : null}
       </View>
 
-      {/* Quick status actions */}
       {!updating && (
         <View style={styles.statusBtns}>
           {status === 'PENDING' && (
             <TouchableOpacity style={[styles.statusBtn, { backgroundColor: `${colors.info}15` }]} onPress={() => onChangeStatus(item.id, 'IN_PROGRESS')}>
               <Ionicons name="play-circle" size={13} color={colors.info} />
-              <Text style={[styles.statusBtnText, { color: colors.info }]}>Start</Text>
+              <Text style={[styles.statusBtnText, { color: colors.info }]}>{isAr ? 'ابدأ' : 'Start'}</Text>
             </TouchableOpacity>
           )}
           {status === 'IN_PROGRESS' && (
             <TouchableOpacity style={[styles.statusBtn, { backgroundColor: `${colors.success}15` }]} onPress={() => onChangeStatus(item.id, 'COMPLETED')}>
               <Ionicons name="checkmark-circle" size={13} color={colors.success} />
-              <Text style={[styles.statusBtnText, { color: colors.success }]}>Complete</Text>
+              <Text style={[styles.statusBtnText, { color: colors.success }]}>{isAr ? 'أكمل' : 'Complete'}</Text>
             </TouchableOpacity>
           )}
           {status === 'COMPLETED' && (
             <TouchableOpacity style={[styles.statusBtn, { backgroundColor: `${colors.warning}15` }]} onPress={() => onChangeStatus(item.id, 'PENDING')}>
               <Ionicons name="refresh-circle" size={13} color={colors.warning} />
-              <Text style={[styles.statusBtnText, { color: colors.warning }]}>Reopen</Text>
+              <Text style={[styles.statusBtnText, { color: colors.warning }]}>{isAr ? 'إعادة فتح' : 'Reopen'}</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -247,9 +256,9 @@ function WorkOrderCard({ item, onEdit, onDelete, onChangeStatus, updatingId }: {
   );
 }
 
-// ─── Screen ───────────────────────────────────────────────────────────────────
-
 export function WorkOrdersScreen() {
+  const { colors } = useAppTheme();
+  const { isAr } = useLocale();
   const [orders, setOrders]         = useState<WorkOrder[]>([]);
   const [machines, setMachines]     = useState<Machine[]>([]);
   const [loading, setLoading]       = useState(true);
@@ -268,12 +277,12 @@ export function WorkOrdersScreen() {
       setOrders(Array.isArray(woRes) ? woRes : []);
       setMachines(Array.isArray(mRes) ? mRes : []);
     } catch (e: any) {
-      Alert.alert('Error', e?.message ?? 'Failed to load work orders');
+      Alert.alert(isAr ? 'خطأ' : 'Error', e?.message ?? (isAr ? 'فشل تحميل أوامر العمل' : 'Failed to load work orders'));
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  }, []);
+  }, [isAr]);
 
   useEffect(() => { void load(); }, [load]);
 
@@ -281,10 +290,14 @@ export function WorkOrdersScreen() {
   const openEdit   = (item: WorkOrder) => { setEditing(item); setModalVisible(true); };
 
   const confirmDelete = (item: WorkOrder) => {
-    Alert.alert('Delete Work Order', `Delete "${item.machine?.name ?? `WO #${item.id}`}"?`, [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Delete', style: 'destructive', onPress: () => void handleDelete(item.id) },
-    ]);
+    Alert.alert(
+      isAr ? 'حذف أمر العمل' : 'Delete Work Order',
+      `${isAr ? 'حذف' : 'Delete'} "${item.machine?.name ?? `WO #${item.id}`}"?`,
+      [
+        { text: isAr ? 'إلغاء' : 'Cancel', style: 'cancel' },
+        { text: isAr ? 'حذف' : 'Delete', style: 'destructive', onPress: () => void handleDelete(item.id) },
+      ],
+    );
   };
 
   const handleDelete = async (id: number) => {
@@ -293,7 +306,7 @@ export function WorkOrdersScreen() {
       setRefreshing(true);
       await load();
     } catch (e: any) {
-      Alert.alert('Error', e?.message ?? 'Failed to delete');
+      Alert.alert(isAr ? 'خطأ' : 'Error', e?.message ?? (isAr ? 'فشل الحذف' : 'Failed to delete'));
     }
   };
 
@@ -303,7 +316,7 @@ export function WorkOrdersScreen() {
       await api.patch(`/maintenance-schedule/${id}`, { status });
       await load();
     } catch (e: any) {
-      Alert.alert('Error', e?.message ?? 'Failed to update status');
+      Alert.alert(isAr ? 'خطأ' : 'Error', e?.message ?? (isAr ? 'فشل تحديث الحالة' : 'Failed to update status'));
     } finally {
       setUpdatingId(null);
     }
@@ -320,7 +333,6 @@ export function WorkOrdersScreen() {
       };
       if (form.nextScheduledDate.trim()) body.nextScheduledDate = form.nextScheduledDate.trim();
       if (form.description.trim()) body.description = form.description.trim();
-
       if (editing) {
         await api.patch(`/maintenance-schedule/${editing.id}`, body);
       } else {
@@ -330,7 +342,7 @@ export function WorkOrdersScreen() {
       setRefreshing(true);
       await load();
     } catch (e: any) {
-      Alert.alert('Error', e?.message ?? 'Failed to save');
+      Alert.alert(isAr ? 'خطأ' : 'Error', e?.message ?? (isAr ? 'فشل الحفظ' : 'Failed to save'));
     } finally {
       setSaving(false);
     }
@@ -351,8 +363,8 @@ export function WorkOrdersScreen() {
     : DEFAULT_FORM;
 
   return (
-    <SafeAreaView style={styles.safe}>
-      <ScreenHeader title="Work Orders" subtitle={`${pending} active · ${completed} done`} showBack />
+    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
+      <ScreenHeader title={isAr ? 'أوامر العمل' : 'Work Orders'} subtitle={`${pending} ${isAr ? 'نشط' : 'active'} · ${completed} ${isAr ? 'مكتمل' : 'done'}`} showBack />
       {loading ? (
         <View style={styles.center}><ActivityIndicator size="large" color={colors.primary} /></View>
       ) : (
@@ -371,11 +383,16 @@ export function WorkOrdersScreen() {
           contentContainerStyle={styles.list}
           showsVerticalScrollIndicator={false}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); void load(); }} tintColor={colors.primary} />}
-          ListEmptyComponent={<View style={styles.empty}><Ionicons name="clipboard-outline" size={44} color={colors.textMuted} /><Text style={styles.emptyText}>No work orders</Text></View>}
+          ListEmptyComponent={
+            <View style={styles.empty}>
+              <Ionicons name="clipboard-outline" size={44} color={colors.textMuted} />
+              <Text style={[styles.emptyText, { color: colors.textMuted }]}>{isAr ? 'لا توجد أوامر عمل' : 'No work orders'}</Text>
+            </View>
+          }
         />
       )}
 
-      <TouchableOpacity style={styles.fab} onPress={openCreate} activeOpacity={0.85}>
+      <TouchableOpacity style={[styles.fab, { backgroundColor: colors.primary }]} onPress={openCreate} activeOpacity={0.85}>
         <Ionicons name="add" size={28} color={colors.textInverse} />
       </TouchableOpacity>
 
@@ -391,14 +408,12 @@ export function WorkOrdersScreen() {
   );
 }
 
-// ─── Styles ───────────────────────────────────────────────────────────────────
-
 const styles = StyleSheet.create({
-  safe:   { flex: 1, backgroundColor: colors.background },
+  safe:   { flex: 1 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   list:   { padding: spacing.md, paddingBottom: 100 },
 
-  card:        { backgroundColor: colors.surface, borderRadius: radius.lg, padding: spacing.md, marginBottom: spacing.sm, ...shadow.sm },
+  card:        { borderRadius: radius.lg, padding: spacing.md, marginBottom: spacing.sm, ...shadow.sm },
   cardTop:     { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: 8 },
   taskIcon:    { fontSize: 22, width: 36, textAlign: 'center' },
   cardMain:    { flex: 1 },
@@ -408,10 +423,10 @@ const styles = StyleSheet.create({
   badgeText:   { fontSize: 10, fontWeight: '700' },
   cardActions: { flexDirection: 'column', gap: 2 },
   actionBtn:   { padding: 3 },
-  desc:        { ...typography.bodySmall, color: colors.textSecondary, marginBottom: 8 },
+  desc:        { ...typography.bodySmall, marginBottom: 8 },
   footer:      { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
   dueLabel:    { ...typography.caption },
-  dueDate:     { fontWeight: '700', color: colors.text },
+  dueDate:     { fontWeight: '700' },
   assignee:    { flexDirection: 'row', alignItems: 'center', gap: 3 },
   assigneeText:{ ...typography.caption },
   statusBtns:  { flexDirection: 'row', gap: spacing.sm },
@@ -419,21 +434,27 @@ const styles = StyleSheet.create({
   statusBtnText:{ fontSize: 12, fontWeight: '700' },
 
   empty:    { alignItems: 'center', paddingTop: 60, gap: spacing.sm },
-  emptyText:{ ...typography.bodySmall, color: colors.textMuted },
+  emptyText:{ ...typography.bodySmall },
 
-  fab:         { position: 'absolute', bottom: 28, right: 24, width: 56, height: 56, borderRadius: 28, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center', ...shadow.lg },
+  fab: { position: 'absolute', bottom: 28, right: 24, width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center', ...shadow.lg },
 
-  overlay:     { flex: 1, justifyContent: 'flex-end' },
-  overlayBg:   { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.45)' },
-  sheet:       { backgroundColor: colors.surface, borderTopLeftRadius: radius.xl, borderTopRightRadius: radius.xl, padding: spacing.lg, paddingBottom: spacing.xl, maxHeight: '92%' },
-  sheetHandle: { width: 36, height: 4, backgroundColor: colors.border, borderRadius: 2, alignSelf: 'center', marginBottom: spacing.md },
+  overlay:  { flex: 1, justifyContent: 'flex-end' },
+  overlayBg:{ ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.45)' },
+  sheet:    { borderTopLeftRadius: radius.xl, borderTopRightRadius: radius.xl, padding: spacing.lg, paddingBottom: spacing.xl, maxHeight: '92%' },
+  sheetHandle: { width: 36, height: 4, borderRadius: 2, alignSelf: 'center', marginBottom: spacing.md },
   sheetTitle:  { ...typography.h3, textAlign: 'center', marginBottom: spacing.lg },
   fieldLabel:  { ...typography.caption, marginBottom: 6, marginTop: spacing.sm },
-  input:       { backgroundColor: colors.surfaceAlt, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, paddingHorizontal: spacing.md, paddingVertical: 11, ...typography.body, marginBottom: 4 },
+  input:       { borderRadius: radius.md, borderWidth: 1, paddingHorizontal: spacing.md, paddingVertical: 11, ...typography.body, marginBottom: 4 },
   multiline:   { height: 80, paddingTop: 10 },
   sheetActions:{ flexDirection: 'row', gap: spacing.sm, marginTop: spacing.lg },
-  cancelBtn:   { flex: 1, paddingVertical: 13, borderRadius: radius.md, borderWidth: 1.5, borderColor: colors.border, alignItems: 'center' },
-  cancelText:  { ...typography.body, fontWeight: '600', color: colors.textSecondary },
-  saveBtn:     { flex: 2, paddingVertical: 13, borderRadius: radius.md, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center' },
-  saveText:    { ...typography.body, fontWeight: '700', color: colors.textInverse },
+  cancelBtn:   { flex: 1, paddingVertical: 13, borderRadius: radius.md, borderWidth: 1.5, alignItems: 'center' },
+  cancelText:  { ...typography.body, fontWeight: '600' },
+  saveBtn:     { flex: 2, paddingVertical: 13, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center' },
+  saveText:    { ...typography.body, fontWeight: '700' },
+
+  wrap:     { marginBottom: spacing.md },
+  chipLabel:{ ...typography.caption, marginBottom: 6 },
+  chipRow:  { flexDirection: 'row', gap: spacing.sm },
+  chip:     { paddingHorizontal: 12, paddingVertical: 7, borderRadius: radius.full, borderWidth: 1.5 },
+  chipText: { fontSize: 12, fontWeight: '600' },
 });

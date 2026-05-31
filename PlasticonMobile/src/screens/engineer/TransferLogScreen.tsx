@@ -4,7 +4,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { api } from '../../api/client';
 import { ScreenHeader } from '../../components';
-import { colors, radius, shadow, spacing, typography } from '../../theme';
+import { radius, shadow, spacing, typography } from '../../theme';
+import { useAppTheme } from '../../context/ThemeContext';
+import { useLocale } from '../../context/LocaleContext';
 
 interface TransferRecord {
   id: number;
@@ -25,34 +27,36 @@ function fmtDate(d?: string) {
 }
 
 function TransferCard({ item }: { item: TransferRecord }) {
+  const { colors } = useAppTheme();
+  const { isAr } = useLocale();
   const name = item.item?.name ?? item.itemName ?? `Transfer #${item.id}`;
   return (
-    <View style={styles.card}>
+    <View style={[styles.card, { backgroundColor: colors.surface }]}>
       <View style={styles.cardTop}>
-        <Text style={styles.itemName} numberOfLines={1}>{name}</Text>
-        <Text style={styles.date}>{fmtDate(item.transferDate ?? item.createdAt)}</Text>
+        <Text style={[styles.itemName, { color: colors.text }]} numberOfLines={1}>{name}</Text>
+        <Text style={[styles.date, { color: colors.textMuted }]}>{fmtDate(item.transferDate ?? item.createdAt)}</Text>
       </View>
       <View style={styles.route}>
         <View style={styles.location}>
-          <Text style={styles.locationLabel}>From</Text>
-          <Text style={styles.locationValue}>{item.fromLocation ?? '—'}</Text>
+          <Text style={[styles.locationLabel, { color: colors.textMuted }]}>{isAr ? 'من' : 'From'}</Text>
+          <Text style={[styles.locationValue, { color: colors.text }]}>{item.fromLocation ?? '—'}</Text>
         </View>
         <Ionicons name="arrow-forward" size={16} color={colors.primary} />
         <View style={styles.location}>
-          <Text style={styles.locationLabel}>To</Text>
-          <Text style={styles.locationValue}>{item.toLocation ?? '—'}</Text>
+          <Text style={[styles.locationLabel, { color: colors.textMuted }]}>{isAr ? 'إلى' : 'To'}</Text>
+          <Text style={[styles.locationValue, { color: colors.text }]}>{item.toLocation ?? '—'}</Text>
         </View>
         {item.quantity != null && (
           <View style={styles.qty}>
-            <Text style={styles.qtyVal}>{item.quantity}</Text>
-            <Text style={styles.qtyLabel}>units</Text>
+            <Text style={[styles.qtyVal, { color: colors.primary }]}>{item.quantity}</Text>
+            <Text style={[styles.qtyLabel, { color: colors.textMuted }]}>{isAr ? 'وحدة' : 'units'}</Text>
           </View>
         )}
       </View>
       {item.transferredBy && (
         <View style={styles.byRow}>
           <Ionicons name="person-outline" size={11} color={colors.textMuted} />
-          <Text style={styles.byText}>{item.transferredBy.fullName}</Text>
+          <Text style={[styles.byText, { color: colors.textMuted }]}>{item.transferredBy.fullName}</Text>
         </View>
       )}
     </View>
@@ -60,6 +64,8 @@ function TransferCard({ item }: { item: TransferRecord }) {
 }
 
 export function TransferLogScreen() {
+  const { colors } = useAppTheme();
+  const { isAr } = useLocale();
   const [logs, setLogs]         = useState<TransferRecord[]>([]);
   const [loading, setLoading]   = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -77,8 +83,8 @@ export function TransferLogScreen() {
   useEffect(() => { void load(); }, [load]);
 
   return (
-    <SafeAreaView style={styles.safe}>
-      <ScreenHeader title="Transfer Log" subtitle="Equipment movement history" showBack />
+    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
+      <ScreenHeader title={isAr ? 'سجل النقل' : 'Transfer Log'} subtitle={isAr ? 'سجل حركة المعدات' : 'Equipment movement history'} showBack />
       {loading ? (
         <View style={styles.center}><ActivityIndicator size="large" color={colors.primary} /></View>
       ) : (
@@ -89,7 +95,12 @@ export function TransferLogScreen() {
           contentContainerStyle={styles.list}
           showsVerticalScrollIndicator={false}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); void load(); }} tintColor={colors.primary} />}
-          ListEmptyComponent={<View style={styles.empty}><Ionicons name="swap-horizontal-outline" size={44} color={colors.textMuted} /><Text style={styles.emptyText}>No transfer records</Text></View>}
+          ListEmptyComponent={
+            <View style={styles.empty}>
+              <Ionicons name="swap-horizontal-outline" size={44} color={colors.textMuted} />
+              <Text style={[styles.emptyText, { color: colors.textMuted }]}>{isAr ? 'لا توجد سجلات نقل' : 'No transfer records'}</Text>
+            </View>
+          }
         />
       )}
     </SafeAreaView>
@@ -97,10 +108,10 @@ export function TransferLogScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe:    { flex: 1, backgroundColor: colors.background },
+  safe:    { flex: 1 },
   center:  { flex: 1, alignItems: 'center', justifyContent: 'center' },
   list:    { padding: spacing.md, paddingBottom: 40 },
-  card:    { backgroundColor: colors.surface, borderRadius: radius.md, padding: spacing.md, marginBottom: spacing.sm, ...shadow.sm },
+  card:    { borderRadius: radius.md, padding: spacing.md, marginBottom: spacing.sm, ...shadow.sm },
   cardTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.sm },
   itemName: { ...typography.h4, flex: 1, marginRight: spacing.sm },
   date:     { ...typography.caption },
@@ -109,10 +120,10 @@ const styles = StyleSheet.create({
   locationLabel: { ...typography.caption },
   locationValue: { ...typography.h4, fontSize: 14 },
   qty:      { alignItems: 'center' },
-  qtyVal:   { fontSize: 18, fontWeight: '800', color: colors.primary },
+  qtyVal:   { fontSize: 18, fontWeight: '800' },
   qtyLabel: { ...typography.caption },
   byRow:    { flexDirection: 'row', alignItems: 'center', gap: 4 },
   byText:   { ...typography.caption },
   empty:    { alignItems: 'center', paddingTop: 60, gap: spacing.sm },
-  emptyText: { ...typography.bodySmall, color: colors.textMuted },
+  emptyText: { ...typography.bodySmall },
 });

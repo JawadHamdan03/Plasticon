@@ -7,7 +7,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { api } from '../../api/client';
 import { ScreenHeader } from '../../components';
-import { colors, radius, shadow, spacing, typography } from '../../theme';
+import { radius, shadow, spacing, typography } from '../../theme';
+import { useAppTheme } from '../../context/ThemeContext';
+import { useLocale } from '../../context/LocaleContext';
 
 interface ConsumptionRecord {
   id:           number;
@@ -19,6 +21,8 @@ interface ConsumptionRecord {
 }
 
 export function ConsumptionWorkerScreen() {
+  const { colors } = useAppTheme();
+  const { isAr } = useLocale();
   const [records,   setRecords]   = useState<ConsumptionRecord[]>([]);
   const [loading,   setLoading]   = useState(true);
   const [refreshing,setRefreshing]= useState(false);
@@ -42,8 +46,8 @@ export function ConsumptionWorkerScreen() {
   useEffect(() => { void load(); }, [load]);
 
   return (
-    <SafeAreaView style={styles.safe}>
-      <ScreenHeader title="Consumption" subtitle="Material usage records" showBack />
+    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
+      <ScreenHeader title={isAr ? 'الاستهلاك' : 'Consumption'} subtitle={isAr ? 'سجلات استخدام المواد' : 'Material usage records'} showBack />
       <ScrollView
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
@@ -54,23 +58,23 @@ export function ConsumptionWorkerScreen() {
         ) : records.length === 0 ? (
           <View style={styles.empty}>
             <Ionicons name="flask-outline" size={48} color={colors.textMuted} />
-            <Text style={styles.emptyText}>No consumption records</Text>
+            <Text style={[styles.emptyText, { color: colors.textMuted }]}>{isAr ? 'لا توجد سجلات استهلاك' : 'No consumption records'}</Text>
           </View>
         ) : (
           <View style={styles.list}>
             {records.map((r, idx) => (
-              <View key={`${r.id}-${idx}`} style={styles.card}>
-                <View style={styles.cardIcon}>
+              <View key={`${r.id}-${idx}`} style={[styles.card, { backgroundColor: colors.surface }]}>
+                <View style={[styles.cardIcon, { backgroundColor: `${colors.accent}15` }]}>
                   <Ionicons name="flask" size={20} color={colors.accent} />
                 </View>
                 <View style={styles.cardBody}>
-                  <Text style={styles.cardName}>{r.materialName}</Text>
-                  {r.notes ? <Text style={styles.cardNotes}>{r.notes}</Text> : null}
-                  <Text style={styles.cardDate}>{new Date(r.createdAt).toLocaleDateString()}</Text>
+                  <Text style={[styles.cardName, { color: colors.text }]}>{r.materialName}</Text>
+                  {r.notes ? <Text style={[styles.cardNotes, { color: colors.textMuted }]}>{r.notes}</Text> : null}
+                  <Text style={[styles.cardDate, { color: colors.textMuted }]}>{new Date(r.createdAt).toLocaleDateString()}</Text>
                 </View>
                 <View style={styles.qtyBox}>
-                  <Text style={styles.qty}>{r.quantity}</Text>
-                  <Text style={styles.unit}>{r.unit ?? 'kg'}</Text>
+                  <Text style={[styles.qty, { color: colors.accent }]}>{r.quantity}</Text>
+                  <Text style={[styles.unit, { color: colors.textMuted }]}>{r.unit ?? 'kg'}</Text>
                 </View>
               </View>
             ))}
@@ -82,18 +86,18 @@ export function ConsumptionWorkerScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe:     { flex: 1, backgroundColor: colors.background },
+  safe:     { flex: 1 },
   content:  { padding: spacing.md, paddingBottom: 40 },
   empty:    { alignItems: 'center', paddingVertical: 80, gap: spacing.sm },
-  emptyText:{ ...typography.bodySmall, color: colors.textMuted },
+  emptyText:{ ...typography.bodySmall },
   list:     { gap: spacing.sm },
-  card:     { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surface, borderRadius: radius.lg, padding: spacing.md, gap: spacing.sm, ...shadow.sm },
-  cardIcon: { width: 40, height: 40, borderRadius: radius.md, backgroundColor: `${colors.accent}15`, alignItems: 'center', justifyContent: 'center' },
+  card:     { flexDirection: 'row', alignItems: 'center', borderRadius: radius.lg, padding: spacing.md, gap: spacing.sm, ...shadow.sm },
+  cardIcon: { width: 40, height: 40, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center' },
   cardBody: { flex: 1 },
   cardName: { ...typography.h4 },
-  cardNotes:{ ...typography.caption, color: colors.textMuted },
-  cardDate: { ...typography.caption, color: colors.textMuted },
+  cardNotes:{ ...typography.caption },
+  cardDate: { ...typography.caption },
   qtyBox:   { alignItems: 'flex-end' },
-  qty:      { fontSize: 18, fontWeight: '800', color: colors.accent },
-  unit:     { ...typography.caption, color: colors.textMuted },
+  qty:      { fontSize: 18, fontWeight: '800' },
+  unit:     { ...typography.caption },
 });

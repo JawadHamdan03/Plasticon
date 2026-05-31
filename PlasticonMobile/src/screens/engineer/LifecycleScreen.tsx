@@ -4,7 +4,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { api } from '../../api/client';
 import { ScreenHeader } from '../../components';
-import { colors, radius, shadow, spacing, typography } from '../../theme';
+import { radius, shadow, spacing, typography } from '../../theme';
+import { useAppTheme } from '../../context/ThemeContext';
+import { useLocale } from '../../context/LocaleContext';
 
 interface HealthRecord {
   id: number;
@@ -17,50 +19,59 @@ interface HealthRecord {
   recordedAt: string;
 }
 
-const STATUS_META: Record<string, { color: string; label: string }> = {
-  OPERATIONAL:       { color: colors.success, label: 'Operational' },
-  MAINTENANCE:       { color: colors.warning, label: 'Maintenance' },
-  UNDER_MAINTENANCE: { color: colors.warning, label: 'Under Maintenance' },
-  BROKEN:            { color: colors.danger,  label: 'Broken' },
-  OFFLINE:           { color: colors.textMuted, label: 'Offline' },
-};
-
 function healthScore(rec: HealthRecord): number {
   return Math.round(rec.efficiencyRating * 0.6 + (100 - rec.downtimePercentage) * 0.4);
 }
 
 function LifecycleCard({ item }: { item: HealthRecord }) {
+  const { colors } = useAppTheme();
+  const { isAr } = useLocale();
+
+  const STATUS_META: Record<string, { color: string; label: string; labelAr: string }> = {
+    OPERATIONAL:       { color: colors.success, label: 'Operational',       labelAr: 'تشغيلي' },
+    MAINTENANCE:       { color: colors.warning, label: 'Maintenance',       labelAr: 'صيانة' },
+    UNDER_MAINTENANCE: { color: colors.warning, label: 'Under Maintenance', labelAr: 'تحت الصيانة' },
+    BROKEN:            { color: colors.danger,  label: 'Broken',            labelAr: 'معطل' },
+    OFFLINE:           { color: colors.textMuted, label: 'Offline',         labelAr: 'غير متصل' },
+  };
+
   const meta  = STATUS_META[item.operationalStatus] ?? STATUS_META.OFFLINE;
   const score = healthScore(item);
   const scoreColor = score >= 80 ? colors.success : score >= 60 ? colors.warning : colors.danger;
 
   return (
-    <View style={styles.card}>
+    <View style={[styles.card, { backgroundColor: colors.surface }]}>
       <View style={styles.header}>
         <View style={styles.headerLeft}>
-          <Text style={styles.machineName} numberOfLines={1}>{item.machine?.name ?? `Machine #${item.id}`}</Text>
-          {item.machine?.type ? <Text style={styles.machineType}>{item.machine.type}</Text> : null}
+          <Text style={[styles.machineName, { color: colors.text }]} numberOfLines={1}>{item.machine?.name ?? `Machine #${item.id}`}</Text>
+          {item.machine?.type ? <Text style={[styles.machineType, { color: colors.textMuted }]}>{item.machine.type}</Text> : null}
         </View>
         <View style={[styles.scoreBadge, { backgroundColor: `${scoreColor}18`, borderColor: `${scoreColor}40` }]}>
           <Text style={[styles.scoreText, { color: scoreColor }]}>{score}</Text>
-          <Text style={styles.scoreLabel}>score</Text>
+          <Text style={[styles.scoreLabel, { color: colors.textMuted }]}>{isAr ? 'نقاط' : 'score'}</Text>
         </View>
       </View>
 
       <View style={styles.barRow}>
-        <Text style={styles.barLabel}>Health</Text>
-        <View style={styles.barTrack}>
+        <Text style={[styles.barLabel, { color: colors.textMuted }]}>{isAr ? 'الصحة' : 'Health'}</Text>
+        <View style={[styles.barTrack, { backgroundColor: colors.border }]}>
           <View style={[styles.barFill, { width: `${score}%`, backgroundColor: scoreColor }]} />
         </View>
         <Text style={[styles.barValue, { color: scoreColor }]}>{score}%</Text>
       </View>
 
-      <View style={styles.metrics}>
-        <View style={styles.metric}><Text style={styles.metricVal}>{item.efficiencyRating}%</Text><Text style={styles.metricLabel}>Efficiency</Text></View>
-        <View style={styles.metric}><Text style={styles.metricVal}>{item.maintenanceHours}h</Text><Text style={styles.metricLabel}>Maint. Hrs</Text></View>
+      <View style={[styles.metrics, { borderTopColor: colors.border }]}>
+        <View style={styles.metric}>
+          <Text style={[styles.metricVal, { color: colors.text }]}>{item.efficiencyRating}%</Text>
+          <Text style={[styles.metricLabel, { color: colors.textMuted }]}>{isAr ? 'الكفاءة' : 'Efficiency'}</Text>
+        </View>
+        <View style={styles.metric}>
+          <Text style={[styles.metricVal, { color: colors.text }]}>{item.maintenanceHours}h</Text>
+          <Text style={[styles.metricLabel, { color: colors.textMuted }]}>{isAr ? 'ساعات الصيانة' : 'Maint. Hrs'}</Text>
+        </View>
         <View style={styles.metric}>
           <View style={[styles.statusDot, { backgroundColor: meta.color }]} />
-          <Text style={[styles.metricLabel, { color: meta.color, fontWeight: '600' }]}>{meta.label}</Text>
+          <Text style={[styles.metricLabel, { color: meta.color, fontWeight: '600' }]}>{isAr ? meta.labelAr : meta.label}</Text>
         </View>
       </View>
     </View>
@@ -68,6 +79,8 @@ function LifecycleCard({ item }: { item: HealthRecord }) {
 }
 
 export function LifecycleScreen() {
+  const { colors } = useAppTheme();
+  const { isAr } = useLocale();
   const [records, setRecords]   = useState<HealthRecord[]>([]);
   const [loading, setLoading]   = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -85,8 +98,8 @@ export function LifecycleScreen() {
   useEffect(() => { void load(); }, [load]);
 
   return (
-    <SafeAreaView style={styles.safe}>
-      <ScreenHeader title="Lifecycle Tracking" subtitle="Equipment health scores" showBack />
+    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
+      <ScreenHeader title={isAr ? 'تتبع دورة الحياة' : 'Lifecycle Tracking'} subtitle={isAr ? 'نقاط صحة المعدات' : 'Equipment health scores'} showBack />
       {loading ? (
         <View style={styles.center}><ActivityIndicator size="large" color={colors.primary} /></View>
       ) : (
@@ -97,7 +110,12 @@ export function LifecycleScreen() {
           contentContainerStyle={styles.list}
           showsVerticalScrollIndicator={false}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); void load(); }} tintColor={colors.primary} />}
-          ListEmptyComponent={<View style={styles.empty}><Ionicons name="refresh-circle-outline" size={44} color={colors.textMuted} /><Text style={styles.emptyText}>No lifecycle data</Text></View>}
+          ListEmptyComponent={
+            <View style={styles.empty}>
+              <Ionicons name="refresh-circle-outline" size={44} color={colors.textMuted} />
+              <Text style={[styles.emptyText, { color: colors.textMuted }]}>{isAr ? 'لا توجد بيانات دورة حياة' : 'No lifecycle data'}</Text>
+            </View>
+          }
         />
       )}
     </SafeAreaView>
@@ -105,27 +123,27 @@ export function LifecycleScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe:    { flex: 1, backgroundColor: colors.background },
+  safe:    { flex: 1 },
   center:  { flex: 1, alignItems: 'center', justifyContent: 'center' },
   list:    { padding: spacing.md, paddingBottom: 40 },
-  card:    { backgroundColor: colors.surface, borderRadius: radius.lg, padding: spacing.md, marginBottom: spacing.sm, ...shadow.sm },
+  card:    { borderRadius: radius.lg, padding: spacing.md, marginBottom: spacing.sm, ...shadow.sm },
   header:  { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: spacing.sm },
   headerLeft: { flex: 1, marginRight: spacing.sm },
   machineName: { ...typography.h3 },
-  machineType: { ...typography.caption, color: colors.textMuted, marginTop: 2 },
+  machineType: { ...typography.caption, marginTop: 2 },
   scoreBadge: { alignItems: 'center', paddingHorizontal: 10, paddingVertical: 6, borderRadius: radius.md, borderWidth: 1 },
   scoreText:  { fontSize: 22, fontWeight: '800' },
   scoreLabel: { ...typography.caption, marginTop: 1 },
   barRow:    { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.sm },
   barLabel:  { ...typography.caption, width: 40 },
-  barTrack:  { flex: 1, height: 6, backgroundColor: colors.border, borderRadius: 3, overflow: 'hidden' },
+  barTrack:  { flex: 1, height: 6, borderRadius: 3, overflow: 'hidden' },
   barFill:   { height: '100%', borderRadius: 3 },
   barValue:  { ...typography.caption, fontWeight: '700', width: 32, textAlign: 'right' },
-  metrics:   { flexDirection: 'row', justifyContent: 'space-around', paddingTop: spacing.sm, borderTopWidth: 1, borderTopColor: colors.border },
+  metrics:   { flexDirection: 'row', justifyContent: 'space-around', paddingTop: spacing.sm, borderTopWidth: 1 },
   metric:    { alignItems: 'center', gap: 2 },
   metricVal: { ...typography.h4 },
   metricLabel: { ...typography.caption },
   statusDot: { width: 8, height: 8, borderRadius: 4 },
   empty:     { alignItems: 'center', paddingTop: 60, gap: spacing.sm },
-  emptyText: { ...typography.bodySmall, color: colors.textMuted },
+  emptyText: { ...typography.bodySmall },
 });

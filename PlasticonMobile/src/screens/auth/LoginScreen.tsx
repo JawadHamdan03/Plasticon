@@ -16,22 +16,33 @@ import { useAuth } from '../../auth/AuthContext';
 import { Button } from '../../components/Button';
 import { Input }  from '../../components/Input';
 import { AuthStackParamList } from '../../navigation/types';
-import { colors, radius, spacing, typography } from '../../theme';
+import { radius, spacing, typography } from '../../theme';
+import { useAppTheme } from '../../context/ThemeContext';
+import { useLocale } from '../../context/LocaleContext';
 
 type Nav = NativeStackNavigationProp<AuthStackParamList>;
 
 export function LoginScreen() {
   const { login } = useAuth();
   const navigation = useNavigation<Nav>();
+  const { colors } = useAppTheme();
+  const { isAr } = useLocale();
 
   const [email,    setEmail]    = useState('');
   const [password, setPassword] = useState('');
   const [loading,  setLoading]  = useState(false);
   const [error,    setError]    = useState('');
 
+  const ROLE_PILLS = [
+    { label: isAr ? 'مدير' : 'Admin',      color: colors.roleAdmin      },
+    { label: isAr ? 'مهندس' : 'Engineer',   color: colors.roleEngineer   },
+    { label: isAr ? 'محاسب' : 'Accountant', color: colors.roleAccountant },
+    { label: isAr ? 'عامل' : 'Worker',     color: colors.roleWorker     },
+  ];
+
   const handleLogin = async () => {
     if (!email.trim() || !password) {
-      setError('Please enter your email and password.');
+      setError(isAr ? 'يرجى إدخال البريد الإلكتروني وكلمة المرور.' : 'Please enter your email and password.');
       return;
     }
     setError('');
@@ -39,32 +50,34 @@ export function LoginScreen() {
     try {
       await login(email.trim().toLowerCase(), password);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Login failed. Please try again.');
+      setError(err instanceof Error ? err.message : (isAr ? 'فشل تسجيل الدخول. يرجى المحاولة مرة أخرى.' : 'Login failed. Please try again.'));
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <SafeAreaView style={styles.safe} edges={['top']}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: colors.tabBar }]} edges={['top']}>
       <KeyboardAvoidingView
         style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
         {/* ── Brand header ─────────────────────────────────────────── */}
-        <View style={styles.header}>
+        <View style={[styles.header, { backgroundColor: colors.tabBar }]}>
           <View style={styles.logoWrap}>
             <Ionicons name="business" size={32} color={colors.accent} />
           </View>
           <Text style={styles.brandName}>PLASTICON</Text>
-          <Text style={styles.brandTagline}>Factory Management System</Text>
+          <Text style={[styles.brandTagline, { color: colors.tabInactive }]}>
+            {isAr ? 'نظام إدارة المصنع' : 'Factory Management System'}
+          </Text>
 
           {/* Decorative dots */}
           <View style={styles.dots}>
             {[0, 1, 2, 3, 4].map((i) => (
               <View
                 key={i}
-                style={[styles.dot, i === 2 && styles.dotActive]}
+                style={[styles.dot, i === 2 && { width: 18, backgroundColor: colors.accent }]}
               />
             ))}
           </View>
@@ -72,19 +85,23 @@ export function LoginScreen() {
 
         {/* ── Login form ───────────────────────────────────────────── */}
         <ScrollView
-          style={styles.formSheet}
+          style={[styles.formSheet, { backgroundColor: colors.background }]}
           contentContainerStyle={styles.formContent}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          <View style={styles.formHandle} />
+          <View style={[styles.formHandle, { backgroundColor: colors.border }]} />
 
-          <Text style={styles.welcomeTitle}>Welcome back</Text>
-          <Text style={styles.welcomeSub}>Sign in to continue to your dashboard</Text>
+          <Text style={[styles.welcomeTitle, { color: colors.text }]}>
+            {isAr ? 'مرحباً بعودتك' : 'Welcome back'}
+          </Text>
+          <Text style={[styles.welcomeSub, { color: colors.textMuted }]}>
+            {isAr ? 'تسجيل الدخول للمتابعة إلى لوحتك' : 'Sign in to continue to your dashboard'}
+          </Text>
 
           <View style={styles.form}>
             <Input
-              label="Email address"
+              label={isAr ? 'البريد الإلكتروني' : 'Email address'}
               value={email}
               onChangeText={setEmail}
               keyboardType="email-address"
@@ -95,20 +112,20 @@ export function LoginScreen() {
             />
 
             <Input
-              label="Password"
+              label={isAr ? 'كلمة المرور' : 'Password'}
               value={password}
               onChangeText={setPassword}
               isPassword
-              placeholder="Enter your password"
+              placeholder={isAr ? 'أدخل كلمة المرور' : 'Enter your password'}
               icon="lock-closed-outline"
               returnKeyType="done"
               onSubmitEditing={handleLogin}
             />
 
             {error ? (
-              <View style={styles.errorBox}>
+              <View style={[styles.errorBox, { backgroundColor: colors.dangerLight }]}>
                 <Ionicons name="alert-circle-outline" size={15} color={colors.danger} />
-                <Text style={styles.errorText}>{error}</Text>
+                <Text style={[styles.errorText, { color: colors.danger }]}>{error}</Text>
               </View>
             ) : null}
 
@@ -119,35 +136,39 @@ export function LoginScreen() {
               size="lg"
               style={styles.signInBtn}
             >
-              Sign In
+              {isAr ? 'تسجيل الدخول' : 'Sign In'}
             </Button>
           </View>
 
           {/* Auth links */}
           <TouchableOpacity style={styles.forgotRow} onPress={() => navigation.navigate('ForgotPassword')}>
-            <Text style={styles.forgotLink}>Forgot password?</Text>
+            <Text style={[styles.forgotLink, { color: colors.primary }]}>
+              {isAr ? 'نسيت كلمة المرور؟' : 'Forgot password?'}
+            </Text>
           </TouchableOpacity>
 
           <View style={styles.dividerRow}>
-            <View style={styles.divider} />
-            <Text style={styles.dividerText}>or</Text>
-            <View style={styles.divider} />
+            <View style={[styles.divider, { backgroundColor: colors.border }]} />
+            <Text style={[styles.dividerText, { color: colors.textMuted }]}>{isAr ? 'أو' : 'or'}</Text>
+            <View style={[styles.divider, { backgroundColor: colors.border }]} />
           </View>
 
           <View style={styles.altRow}>
-            <TouchableOpacity style={styles.altBtn} onPress={() => navigation.navigate('Register')} activeOpacity={0.8}>
+            <TouchableOpacity style={[styles.altBtn, { borderColor: colors.border, backgroundColor: colors.surfaceAlt }]} onPress={() => navigation.navigate('Register')} activeOpacity={0.8}>
               <Ionicons name="person-add-outline" size={16} color={colors.primary} />
-              <Text style={styles.altBtnText}>Create Account</Text>
+              <Text style={[styles.altBtnText, { color: colors.primary }]}>{isAr ? 'إنشاء حساب' : 'Create Account'}</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.altBtn} onPress={() => navigation.navigate('RequestAccess')} activeOpacity={0.8}>
+            <TouchableOpacity style={[styles.altBtn, { borderColor: colors.border, backgroundColor: colors.surfaceAlt }]} onPress={() => navigation.navigate('RequestAccess')} activeOpacity={0.8}>
               <Ionicons name="shield-checkmark-outline" size={16} color={colors.success} />
-              <Text style={[styles.altBtnText, { color: colors.success }]}>Request Access</Text>
+              <Text style={[styles.altBtnText, { color: colors.success }]}>{isAr ? 'طلب الوصول' : 'Request Access'}</Text>
             </TouchableOpacity>
           </View>
 
           {/* Role legend */}
           <View style={styles.roleLegend}>
-            <Text style={styles.legendTitle}>ACCESS LEVELS</Text>
+            <Text style={[styles.legendTitle, { color: colors.textMuted }]}>
+              {isAr ? 'مستويات الوصول' : 'ACCESS LEVELS'}
+            </Text>
             <View style={styles.roleRow}>
               {ROLE_PILLS.map((r) => (
                 <View key={r.label} style={[styles.rolePill, { backgroundColor: `${r.color}18` }]}>
@@ -158,22 +179,15 @@ export function LoginScreen() {
             </View>
           </View>
 
-          <Text style={styles.version}>v1.0.0 · Plasticon Mobile</Text>
+          <Text style={[styles.version, { color: colors.textMuted }]}>v1.0.0 · Plasticon Mobile</Text>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
 
-const ROLE_PILLS = [
-  { label: 'Admin',      color: colors.roleAdmin      },
-  { label: 'Engineer',   color: colors.roleEngineer   },
-  { label: 'Accountant', color: colors.roleAccountant },
-  { label: 'Worker',     color: colors.roleWorker     },
-];
-
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.tabBar },
+  safe: { flex: 1 },
   flex: { flex: 1 },
 
   // ── Brand header ─────────────────────────────────────────────────
@@ -182,7 +196,6 @@ const styles = StyleSheet.create({
     paddingTop: spacing.xl,
     paddingBottom: spacing.xl,
     paddingHorizontal: spacing.xl,
-    backgroundColor: colors.tabBar,
   },
   logoWrap: {
     width: 64,
@@ -204,7 +217,6 @@ const styles = StyleSheet.create({
   },
   brandTagline: {
     fontSize: 12,
-    color: colors.tabInactive,
     letterSpacing: 0.5,
     fontWeight: '500',
     marginBottom: spacing.lg,
@@ -219,15 +231,10 @@ const styles = StyleSheet.create({
     borderRadius: 3,
     backgroundColor: '#2D3F55',
   },
-  dotActive: {
-    width: 18,
-    backgroundColor: colors.accent,
-  },
 
   // ── Form sheet ────────────────────────────────────────────────────
   formSheet: {
     flex: 1,
-    backgroundColor: colors.background,
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
   },
@@ -239,7 +246,6 @@ const styles = StyleSheet.create({
     width: 36,
     height: 4,
     borderRadius: 2,
-    backgroundColor: colors.border,
     alignSelf: 'center',
     marginBottom: spacing.lg,
   },
@@ -250,7 +256,6 @@ const styles = StyleSheet.create({
   },
   welcomeSub: {
     ...typography.bodySmall,
-    color: colors.textMuted,
     marginBottom: spacing.xl,
   },
 
@@ -262,7 +267,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: colors.dangerLight,
     borderRadius: radius.md,
     padding: spacing.md,
     marginBottom: spacing.md,
@@ -270,7 +274,6 @@ const styles = StyleSheet.create({
   errorText: {
     flex: 1,
     ...typography.bodySmall,
-    color: colors.danger,
   },
 
   signInBtn: {
@@ -280,13 +283,13 @@ const styles = StyleSheet.create({
 
   // ── Auth links ────────────────────────────────────────────────────
   forgotRow:   { alignItems: 'flex-end', marginBottom: spacing.lg },
-  forgotLink:  { ...typography.bodySmall, color: colors.primary, fontWeight: '600' },
+  forgotLink:  { ...typography.bodySmall, fontWeight: '600' },
   dividerRow:  { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: spacing.md },
-  divider:     { flex: 1, height: 1, backgroundColor: colors.border },
-  dividerText: { ...typography.caption, color: colors.textMuted },
+  divider:     { flex: 1, height: 1 },
+  dividerText: { ...typography.caption },
   altRow:      { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.xl },
-  altBtn:      { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 11, borderRadius: radius.lg, borderWidth: 1.5, borderColor: colors.border, backgroundColor: colors.surfaceAlt },
-  altBtnText:  { fontSize: 13, fontWeight: '700', color: colors.primary },
+  altBtn:      { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 11, borderRadius: radius.lg, borderWidth: 1.5 },
+  altBtnText:  { fontSize: 13, fontWeight: '700' },
 
   // ── Role legend ───────────────────────────────────────────────────
   roleLegend: {
