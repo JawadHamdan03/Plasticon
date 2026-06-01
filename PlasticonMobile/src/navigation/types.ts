@@ -40,6 +40,7 @@ export type WorkerWorkStackParamList = {
   MicroStops:        undefined;
   ElectricityAlerts: undefined;
   ElectricityRecord: undefined;
+  Snapshots:         undefined;
 };
 
 // Worker — AI tab

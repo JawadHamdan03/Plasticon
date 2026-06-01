@@ -30,6 +30,7 @@ import { QualityIssuesScreen }      from '../screens/worker/QualityIssuesScreen'
 import { MicroStopsScreen }         from '../screens/worker/MicroStopsScreen';
 import { ElectricityAlertsScreen }  from '../screens/worker/ElectricityAlertsScreen';
 import { ElectricityRecordScreen }  from '../screens/worker/ElectricityRecordScreen';
+import { SnapshotsScreen }          from '../screens/worker/SnapshotsScreen';
 
 // ─── AI tab ───────────────────────────────────────────────────────────────────
 import { AIHubScreen }          from '../screens/shared/AIHubScreen';
@@ -72,6 +73,7 @@ function WorkNavigator() {
       <WorkStack.Screen name="MicroStops"        component={MicroStopsScreen} />
       <WorkStack.Screen name="ElectricityAlerts" component={ElectricityAlertsScreen} />
       <WorkStack.Screen name="ElectricityRecord" component={ElectricityRecordScreen} />
+      <WorkStack.Screen name="Snapshots"         component={SnapshotsScreen} />
     </WorkStack.Navigator>
   );
 }

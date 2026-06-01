@@ -53,7 +53,7 @@ async function request<T>(
 
 // ─── Multipart upload (for file fields) ──────────────────────────────────────
 
-export async function uploadForm<T>(path: string, form: FormData): Promise<T> {
+export async function uploadForm<T>(path: string, form: FormData, method: 'POST' | 'PUT' = 'POST'): Promise<T> {
   const token = getToken();
   const headers: Record<string, string> = {};
   if (token) headers['Authorization'] = `Bearer ${token}`;
@@ -63,7 +63,7 @@ export async function uploadForm<T>(path: string, form: FormData): Promise<T> {
 
   let res: Response;
   try {
-    res = await fetch(`${API_BASE}${path}`, { method: 'POST', headers, body: form, signal: controller.signal });
+    res = await fetch(`${API_BASE}${path}`, { method, headers, body: form, signal: controller.signal });
   } catch (err: any) {
     if (err?.name === 'AbortError') throw new Error('Upload timed out.');
     throw new Error('Network error.');

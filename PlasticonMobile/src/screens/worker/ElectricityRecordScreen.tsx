@@ -1,173 +1,571 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import {
-  ActivityIndicator, Alert, RefreshControl, ScrollView,
-  StyleSheet, Text, TextInput, TouchableOpacity, View,
+  ActivityIndicator, Alert, FlatList, Image, KeyboardAvoidingView,
+  Modal, Platform, RefreshControl, ScrollView, StyleSheet, Switch,
+  Text, TextInput, TouchableOpacity, View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { api } from '../../api/client';
+import * as ImagePicker from 'expo-image-picker';
+import { api, uploadForm } from '../../api/client';
 import { ScreenHeader } from '../../components';
 import { radius, shadow, spacing, typography } from '../../theme';
+import { API_BASE } from '../../config';
 import { useAppTheme } from '../../context/ThemeContext';
 import { useLocale } from '../../context/LocaleContext';
 
-interface Reading {
-  id:        number;
-  value:     number;
-  unit?:     string;
-  notes?:    string;
-  createdAt: string;
-  user?:     { fullName: string };
+interface Shift { id: number; name: string; }
+
+interface ElectricityReading {
+  id: number;
+  date?: string;
+  readingDate?: string;
+  shift?: { id: number; name: string } | null;
+  shiftId?: number;
+  startReading: number;
+  endReading: number;
+  isMeterReset: boolean;
+  maxMeterValue?: number | null;
+  consumption?: number | null;
+  kwhPriceSnap?: number | null;
+  shiftCost?: number | null;
+  notes?: string | null;
+  imagePath?: string | null;
 }
 
-export function ElectricityRecordScreen() {
-  const { colors } = useAppTheme();
-  const { isAr } = useLocale();
-  const [readings,   setReadings]   = useState<Reading[]>([]);
-  const [loading,    setLoading]    = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [showForm,   setShowForm]   = useState(false);
-  const [value,      setValue]      = useState('');
-  const [notes,      setNotes]      = useState('');
-  const [saving,     setSaving]     = useState(false);
+interface PickedImage {
+  uri: string;
+  fileName?: string;
+  mimeType?: string;
+}
 
-  const load = useCallback(async () => {
-    try {
-      const res = await api.get<Reading[] | { data: Reading[] }>('/electricity/readings');
-      setReadings(Array.isArray(res) ? res : (res.data ?? []));
-    } catch { setReadings([]); }
-    finally { setLoading(false); setRefreshing(false); }
-  }, []);
+function toImageUri(stored?: string | null): string | null {
+  if (!stored) return null;
+  return `${API_BASE}/${stored.replace(/^prisma\/?pictures\//, 'pictures/')}`;
+}
 
-  useEffect(() => { void load(); }, [load]);
+function fmtDate(iso: string) {
+  return new Date(iso).toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' });
+}
 
-  const latest = readings[0];
-  const prev   = readings[1];
-  const delta  = latest && prev ? latest.value - prev.value : null;
+function calcConsumption(start: number, end: number, isMeterReset: boolean, maxMeterValue?: number) {
+  if (isNaN(start) || isNaN(end)) return null;
+  if (isMeterReset && maxMeterValue != null && !isNaN(maxMeterValue)) {
+    return (maxMeterValue - start) + end;
+  }
+  return end - start;
+}
+
+// ─── Reading Card (worker view — no edit button) ───────────────────────────────
+
+function ReadingCard({
+  item, colors, isAr, onImagePress,
+}: {
+  item: ElectricityReading; colors: any; isAr: boolean;
+  onImagePress: (uri: string) => void;
+}) {
+  const dateStr = item.date ?? item.readingDate;
+  const consumption = item.consumption ?? calcConsumption(item.startReading, item.endReading, item.isMeterReset, item.maxMeterValue ?? undefined);
+
+  return (
+    <View style={[styles.card, { backgroundColor: colors.surface }]}>
+      <View style={styles.cardHeader}>
+        <View style={[styles.iconWrap, { backgroundColor: `${colors.warning}15` }]}>
+          <Ionicons name="flash" size={20} color={colors.warning} />
+        </View>
+        <View style={styles.cardInfo}>
+          {dateStr && <Text style={[styles.cardDate, { color: colors.text }]}>{fmtDate(dateStr)}</Text>}
+          {item.shift?.name && <Text style={[styles.cardShift, { color: colors.textMuted }]}>{item.shift.name}</Text>}
+        </View>
+        {consumption != null && (
+          <Text style={[styles.consumptionBadge, { color: colors.warning }]}>
+            {consumption.toFixed(2)} kWh
+          </Text>
+        )}
+      </View>
+
+      <View style={[styles.readingRow, { borderTopColor: colors.border }]}>
+        <View style={styles.readingItem}>
+          <Text style={[styles.readingLbl, { color: colors.textMuted }]}>{isAr ? 'بداية' : 'Start'}</Text>
+          <Text style={[styles.readingVal, { color: colors.text }]}>{item.startReading}</Text>
+        </View>
+        <Ionicons name="arrow-forward" size={14} color={colors.textMuted} />
+        <View style={styles.readingItem}>
+          <Text style={[styles.readingLbl, { color: colors.textMuted }]}>{isAr ? 'نهاية' : 'End'}</Text>
+          <Text style={[styles.readingVal, { color: colors.text }]}>{item.endReading}</Text>
+        </View>
+        {item.shiftCost != null && item.shiftCost > 0 && (
+          <>
+            <View style={[styles.readingDivider, { backgroundColor: colors.border }]} />
+            <View style={styles.readingItem}>
+              <Text style={[styles.readingLbl, { color: colors.textMuted }]}>{isAr ? 'تكلفة' : 'Cost'}</Text>
+              <Text style={[styles.readingVal, { color: colors.success }]}>${item.shiftCost.toFixed(2)}</Text>
+            </View>
+          </>
+        )}
+      </View>
+
+      {item.isMeterReset && (
+        <View style={[styles.resetBadge, { backgroundColor: `${colors.danger}15` }]}>
+          <Ionicons name="refresh-circle" size={12} color={colors.danger} />
+          <Text style={[styles.resetText, { color: colors.danger }]}>{isAr ? 'إعادة ضبط العداد' : 'Meter Reset'}</Text>
+        </View>
+      )}
+
+      {item.notes ? <Text style={[styles.notes, { color: colors.textMuted }]} numberOfLines={2}>{item.notes}</Text> : null}
+
+      {toImageUri(item.imagePath) && (
+        <TouchableOpacity onPress={() => onImagePress(toImageUri(item.imagePath)!)}>
+          <Image
+            source={{ uri: toImageUri(item.imagePath)! }}
+            style={[styles.cardImage, { backgroundColor: colors.border }]}
+            resizeMode="cover"
+          />
+        </TouchableOpacity>
+      )}
+    </View>
+  );
+}
+
+// ─── Log Form Modal ────────────────────────────────────────────────────────────
+
+function LogForm({
+  visible, shifts, kwhPrice, onClose, onSuccess, colors, isAr,
+}: {
+  visible: boolean;
+  shifts: Shift[];
+  kwhPrice: number;
+  onClose: () => void;
+  onSuccess: () => void;
+  colors: any;
+  isAr: boolean;
+}) {
+  const today = new Date().toISOString().split('T')[0];
+  const [date, setDate]           = useState(today);
+  const [shiftId, setShiftId]     = useState<number | null>(null);
+  const [startReading, setStart]  = useState('');
+  const [endReading, setEnd]      = useState('');
+  const [isMeterReset, setReset]  = useState(false);
+  const [maxMeterVal, setMaxVal]  = useState('');
+  const [notes, setNotes]         = useState('');
+  const [image, setImage]         = useState<PickedImage | null>(null);
+  const [saving, setSaving]       = useState(false);
+
+  useEffect(() => {
+    if (!visible) return;
+    setDate(today);
+    setShiftId(shifts[0]?.id ?? null);
+    setStart(''); setEnd(''); setReset(false); setMaxVal(''); setNotes(''); setImage(null);
+  }, [visible]);
+
+  const start = parseFloat(startReading);
+  const end   = parseFloat(endReading);
+  const max   = parseFloat(maxMeterVal);
+  const consumption = calcConsumption(start, end, isMeterReset, isMeterReset && !isNaN(max) ? max : undefined);
+  const cost = consumption != null && kwhPrice > 0 ? consumption * kwhPrice : null;
 
   const submit = async () => {
-    if (!value.trim() || isNaN(Number(value))) {
-      Alert.alert(isAr ? 'مطلوب' : 'Required', isAr ? 'يرجى إدخال قراءة عداد صالحة.' : 'Please enter a valid meter reading.');
+    if (!date || isNaN(start) || isNaN(end)) {
+      Alert.alert(isAr ? 'مطلوب' : 'Required', isAr ? 'التاريخ وقراءات البداية والنهاية مطلوبة' : 'Date, start and end readings are required.');
       return;
     }
     setSaving(true);
     try {
-      await api.post('/electricity/readings', {
-        value: parseFloat(value),
-        notes: notes.trim() || undefined,
-      });
-      setValue(''); setNotes(''); setShowForm(false);
-      setLoading(true); void load();
-    } catch (e: any) {
-      Alert.alert(isAr ? 'خطأ' : 'Error', e.message ?? (isAr ? 'فشل حفظ القراءة.' : 'Failed to save reading.'));
-    } finally { setSaving(false); }
+      const fd = new FormData();
+      fd.append('date', date);
+      if (shiftId != null) fd.append('shiftId', String(shiftId));
+      fd.append('startReading', String(start));
+      fd.append('endReading', String(end));
+      fd.append('isMeterReset', isMeterReset ? 'true' : 'false');
+      if (isMeterReset && !isNaN(max)) fd.append('maxMeterValue', String(max));
+      fd.append('notes', notes.trim());
+      if (image) {
+        fd.append('image', {
+          uri: image.uri, name: image.fileName ?? 'electricity.jpg', type: image.mimeType ?? 'image/jpeg',
+        } as any);
+      }
+      await uploadForm('/electricity/readings', fd);
+      onSuccess();
+    } catch (err: any) {
+      Alert.alert(isAr ? 'خطأ' : 'Error', err.message ?? (isAr ? 'فشل الحفظ' : 'Failed to save.'));
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
-      <ScreenHeader title={isAr ? 'سجل الكهرباء' : 'Electricity Record'} subtitle={isAr ? 'سجل قراءات العداد' : 'Meter readings log'} showBack />
-      <ScrollView
-        contentContainerStyle={styles.content}
-        showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); void load(); }} tintColor={colors.warning} />}
-      >
-        {/* Latest reading summary */}
-        {latest && (
-          <View style={[styles.summary, { backgroundColor: colors.surface }]}>
-            <View style={styles.summaryRow}>
-              <View style={styles.summaryItem}>
-                <Text style={[styles.summaryLabel, { color: colors.textMuted }]}>{isAr ? 'آخر قراءة' : 'Latest Reading'}</Text>
-                <Text style={[styles.summaryValue, { color: colors.warning }]}>{latest.value} <Text style={[styles.summaryUnit, { color: colors.textMuted }]}>{latest.unit ?? 'kWh'}</Text></Text>
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+      <KeyboardAvoidingView style={styles.overlay} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+        <ScrollView
+          style={[styles.sheet, { backgroundColor: colors.surface }]}
+          contentContainerStyle={styles.sheetContent}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={[styles.handle, { backgroundColor: colors.border }]} />
+          <Text style={[styles.sheetTitle, { color: colors.text }]}>
+            {isAr ? 'تسجيل قراءة' : 'Log Reading'}
+          </Text>
+
+          <View style={styles.field}>
+            <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{isAr ? 'التاريخ *' : 'Date *'}</Text>
+            <TextInput
+              style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
+              placeholder="YYYY-MM-DD"
+              placeholderTextColor={colors.textMuted}
+              value={date}
+              onChangeText={setDate}
+            />
+          </View>
+
+          {shifts.length > 0 && (
+            <View style={styles.field}>
+              <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{isAr ? 'الوردية' : 'Shift'}</Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                <View style={styles.chipRow}>
+                  {shifts.map((s) => (
+                    <TouchableOpacity
+                      key={s.id}
+                      style={[styles.chip, { borderColor: colors.border }, shiftId === s.id && { backgroundColor: colors.warning, borderColor: colors.warning }]}
+                      onPress={() => setShiftId(s.id)}
+                    >
+                      <Text style={[styles.chipText, { color: shiftId === s.id ? '#fff' : colors.textMuted }]}>{s.name}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </ScrollView>
+            </View>
+          )}
+
+          <View style={styles.rowFields}>
+            <View style={[styles.field, { flex: 1 }]}>
+              <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{isAr ? 'بداية (kWh) *' : 'Start kWh *'}</Text>
+              <TextInput
+                style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
+                placeholder="0"
+                placeholderTextColor={colors.textMuted}
+                keyboardType="decimal-pad"
+                value={startReading}
+                onChangeText={setStart}
+              />
+            </View>
+            <View style={[styles.field, { flex: 1 }]}>
+              <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{isAr ? 'نهاية (kWh) *' : 'End kWh *'}</Text>
+              <TextInput
+                style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
+                placeholder="0"
+                placeholderTextColor={colors.textMuted}
+                keyboardType="decimal-pad"
+                value={endReading}
+                onChangeText={setEnd}
+              />
+            </View>
+          </View>
+
+          <View style={[styles.field, styles.switchRow]}>
+            <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{isAr ? 'إعادة ضبط العداد؟' : 'Meter Reset?'}</Text>
+            <Switch
+              value={isMeterReset}
+              onValueChange={setReset}
+              trackColor={{ false: colors.border, true: `${colors.danger}60` }}
+              thumbColor={isMeterReset ? colors.danger : colors.textMuted}
+            />
+          </View>
+
+          {isMeterReset && (
+            <View style={styles.field}>
+              <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{isAr ? 'الحد الأقصى للعداد' : 'Max Meter Value'}</Text>
+              <TextInput
+                style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
+                placeholder={isAr ? 'القيمة القصوى قبل الإعادة' : 'Max value before reset'}
+                placeholderTextColor={colors.textMuted}
+                keyboardType="decimal-pad"
+                value={maxMeterVal}
+                onChangeText={setMaxVal}
+              />
+            </View>
+          )}
+
+          {consumption != null && !isNaN(consumption) && (
+            <View style={[styles.preview, { backgroundColor: `${colors.warning}12`, borderColor: `${colors.warning}30` }]}>
+              <View style={styles.previewItem}>
+                <Text style={[styles.previewLbl, { color: colors.textMuted }]}>{isAr ? 'الاستهلاك' : 'Consumption'}</Text>
+                <Text style={[styles.previewVal, { color: colors.warning }]}>{consumption.toFixed(2)} kWh</Text>
               </View>
-              {delta !== null && (
-                <View style={styles.summaryItem}>
-                  <Text style={[styles.summaryLabel, { color: colors.textMuted }]}>{isAr ? 'مقارنة بالسابق' : 'vs Previous'}</Text>
-                  <Text style={[styles.summaryValue, { color: delta > 0 ? colors.danger : colors.success }]}>
-                    {delta > 0 ? '+' : ''}{delta.toFixed(1)} {latest.unit ?? 'kWh'}
-                  </Text>
+              {cost != null && (
+                <View style={styles.previewItem}>
+                  <Text style={[styles.previewLbl, { color: colors.textMuted }]}>{isAr ? 'التكلفة التقديرية' : 'Est. Cost'}</Text>
+                  <Text style={[styles.previewVal, { color: colors.success }]}>${cost.toFixed(2)}</Text>
                 </View>
               )}
             </View>
-            <Text style={[styles.summaryDate, { color: colors.textMuted }]}>{new Date(latest.createdAt).toLocaleString()}</Text>
-          </View>
-        )}
+          )}
 
-        {/* Log form */}
-        {showForm ? (
-          <View style={[styles.form, { backgroundColor: colors.surface }]}>
-            <Text style={[styles.formTitle, { color: colors.text }]}>{isAr ? 'تسجيل قراءة جديدة' : 'Log New Reading'}</Text>
-            <TextInput style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]} placeholder={isAr ? 'قيمة العداد (kWh)' : 'Meter value (kWh)'} placeholderTextColor={colors.textMuted} value={value} onChangeText={setValue} keyboardType="numeric" />
-            <TextInput style={[styles.input, styles.inputMulti, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]} placeholder={isAr ? 'ملاحظات (اختياري)' : 'Notes (optional)'} placeholderTextColor={colors.textMuted} value={notes} onChangeText={setNotes} multiline numberOfLines={2} />
-            <View style={styles.formRow}>
-              <TouchableOpacity style={[styles.cancelBtn, { borderColor: colors.border }]} onPress={() => setShowForm(false)}>
-                <Text style={[styles.cancelText, { color: colors.textMuted }]}>{isAr ? 'إلغاء' : 'Cancel'}</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={[styles.saveBtn, { backgroundColor: colors.warning }]} onPress={submit} disabled={saving}>
-                {saving ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.saveText}>{isAr ? 'حفظ' : 'Save'}</Text>}
-              </TouchableOpacity>
+          <View style={styles.field}>
+            <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{isAr ? 'ملاحظات' : 'Notes'}</Text>
+            <TextInput
+              style={[styles.input, styles.inputMulti, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
+              placeholder={isAr ? 'ملاحظات اختيارية...' : 'Optional notes...'}
+              placeholderTextColor={colors.textMuted}
+              multiline numberOfLines={2}
+              value={notes}
+              onChangeText={setNotes}
+            />
+          </View>
+
+          <View style={styles.field}>
+            <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{isAr ? 'صورة' : 'Photo'}</Text>
+            <TouchableOpacity
+              style={[styles.imgPicker, { borderColor: colors.border, backgroundColor: colors.surfaceAlt }]}
+              onPress={async () => {
+                const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+                if (status !== 'granted') return;
+                const res = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.8 });
+                if (!res.canceled && res.assets[0]) {
+                  const a = res.assets[0];
+                  setImage({ uri: a.uri, fileName: a.fileName ?? undefined, mimeType: a.mimeType ?? undefined });
+                }
+              }}
+              activeOpacity={0.8}
+            >
+              {image ? (
+                <Image source={{ uri: image.uri }} style={styles.imgPickerPreview} resizeMode="cover" />
+              ) : (
+                <View style={styles.imgPickerPlaceholder}>
+                  <Ionicons name="camera-outline" size={22} color={colors.textMuted} />
+                  <Text style={[styles.imgPickerText, { color: colors.textMuted }]}>{isAr ? 'اختر صورة' : 'Select photo'}</Text>
+                </View>
+              )}
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.formActions}>
+            <TouchableOpacity style={[styles.cancelBtn, { borderColor: colors.border }]} onPress={onClose}>
+              <Text style={[styles.cancelText, { color: colors.textMuted }]}>{isAr ? 'إلغاء' : 'Cancel'}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={[styles.saveBtn, { backgroundColor: colors.warning }]} onPress={submit} disabled={saving}>
+              {saving ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.saveText}>{isAr ? 'حفظ' : 'Save'}</Text>}
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </Modal>
+  );
+}
+
+// ─── Main Screen ───────────────────────────────────────────────────────────────
+
+export function ElectricityRecordScreen() {
+  const { colors } = useAppTheme();
+  const { isAr } = useLocale();
+  const [readings, setReadings]     = useState<ElectricityReading[]>([]);
+  const [shifts, setShifts]         = useState<Shift[]>([]);
+  const [kwhPrice, setKwhPrice]     = useState(0);
+  const [loading, setLoading]       = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [showForm, setShowForm]     = useState(false);
+  const [fullImage, setFullImage]   = useState<string | null>(null);
+
+  const load = useCallback(async () => {
+    try {
+      const [readingsRes, shiftsRes, priceRes] = await Promise.all([
+        api.get<ElectricityReading[] | { data: ElectricityReading[] }>('/electricity/readings'),
+        api.get<Shift[]>('/shifts').catch(() => [] as Shift[]),
+        api.get<{ price: number } | number>('/electricity/kwh-price').catch(() => 0),
+      ]);
+      setReadings(Array.isArray(readingsRes) ? readingsRes : ((readingsRes as any).data ?? []));
+      setShifts(Array.isArray(shiftsRes) ? shiftsRes : []);
+      if (typeof priceRes === 'number') setKwhPrice(priceRes);
+      else if (priceRes && typeof (priceRes as any).price === 'number') setKwhPrice((priceRes as any).price);
+    } catch {
+      setReadings([]);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, []);
+
+  useEffect(() => { void load(); }, [load]);
+
+  const totalConsumption = readings.reduce((s, r) => {
+    const c = r.consumption ?? calcConsumption(r.startReading, r.endReading, r.isMeterReset, r.maxMeterValue ?? undefined);
+    return s + (c ?? 0);
+  }, 0);
+
+  const latest = readings[0];
+  const prev   = readings[1];
+  const latestConsumption = latest
+    ? (latest.consumption ?? calcConsumption(latest.startReading, latest.endReading, latest.isMeterReset, latest.maxMeterValue ?? undefined))
+    : null;
+  const prevConsumption = prev
+    ? (prev.consumption ?? calcConsumption(prev.startReading, prev.endReading, prev.isMeterReset, prev.maxMeterValue ?? undefined))
+    : null;
+  const delta = latestConsumption != null && prevConsumption != null
+    ? latestConsumption - prevConsumption : null;
+
+  return (
+    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
+      <ScreenHeader
+        title={isAr ? 'سجل الكهرباء' : 'Electricity Record'}
+        subtitle={isAr ? 'سجل قراءات الوردية' : 'Shift meter readings'}
+        showBack
+      />
+
+      {loading ? (
+        <View style={styles.center}><ActivityIndicator size="large" color={colors.primary} /></View>
+      ) : (
+        <FlatList
+          data={readings}
+          keyExtractor={(item, idx) => `${item.id}-${idx}`}
+          renderItem={({ item }) => (
+            <ReadingCard
+              item={item}
+              colors={colors}
+              isAr={isAr}
+              onImagePress={(uri) => setFullImage(uri)}
+            />
+          )}
+          contentContainerStyle={styles.list}
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); void load(); }} tintColor={colors.warning} />
+          }
+          ListHeaderComponent={
+            <View style={styles.summaryCard}>
+              <View style={[styles.summaryBg, { backgroundColor: colors.surface }]}>
+                <View style={styles.summaryRow}>
+                  <View style={styles.summaryItem}>
+                    <Text style={[styles.summaryLbl, { color: colors.textMuted }]}>{isAr ? 'إجمالي الاستهلاك' : 'Total Usage'}</Text>
+                    <Text style={[styles.summaryVal, { color: colors.warning }]}>{totalConsumption.toFixed(1)} kWh</Text>
+                  </View>
+                  {delta !== null && (
+                    <View style={styles.summaryItem}>
+                      <Text style={[styles.summaryLbl, { color: colors.textMuted }]}>{isAr ? 'مقارنة بالسابق' : 'vs Previous'}</Text>
+                      <Text style={[styles.summaryVal, { color: delta > 0 ? colors.danger : colors.success }]}>
+                        {delta > 0 ? '+' : ''}{delta.toFixed(1)} kWh
+                      </Text>
+                    </View>
+                  )}
+                </View>
+              </View>
             </View>
-          </View>
-        ) : (
-          <TouchableOpacity style={[styles.addBtn, { backgroundColor: colors.warning }]} onPress={() => setShowForm(true)} activeOpacity={0.8}>
-            <Ionicons name="add-circle" size={20} color="#fff" />
-            <Text style={styles.addText}>{isAr ? 'تسجيل قراءة' : 'Log Reading'}</Text>
-          </TouchableOpacity>
-        )}
-
-        {loading ? <ActivityIndicator style={{ marginTop: 40 }} color={colors.warning} /> : (
-          readings.length === 0 ? (
+          }
+          ListEmptyComponent={
             <View style={styles.empty}>
               <Ionicons name="flash-outline" size={44} color={colors.textMuted} />
-              <Text style={[styles.emptyText, { color: colors.textMuted }]}>{isAr ? 'لا توجد قراءات مسجلة' : 'No readings logged'}</Text>
+              <Text style={[styles.emptyText, { color: colors.textMuted }]}>
+                {isAr ? 'لا توجد قراءات مسجلة' : 'No readings logged yet'}
+              </Text>
             </View>
-          ) : (
-            <View style={styles.list}>
-              {readings.map((r, idx) => (
-                <View key={`${r.id}-${idx}`} style={[styles.card, { backgroundColor: colors.surface }]}>
-                  <View style={[styles.cardIcon, { backgroundColor: `${colors.warning}15` }]}><Ionicons name="flash" size={20} color={colors.warning} /></View>
-                  <View style={styles.cardBody}>
-                    <Text style={[styles.cardValue, { color: colors.text }]}>{r.value} {r.unit ?? 'kWh'}</Text>
-                    {r.notes ? <Text style={[styles.cardNotes, { color: colors.textMuted }]}>{r.notes}</Text> : null}
-                    <Text style={[styles.cardDate, { color: colors.textMuted }]}>{new Date(r.createdAt).toLocaleString()}</Text>
-                  </View>
-                </View>
-              ))}
-            </View>
-          )
-        )}
-      </ScrollView>
+          }
+        />
+      )}
+
+      <TouchableOpacity
+        style={[styles.fab, { backgroundColor: colors.warning }]}
+        onPress={() => setShowForm(true)}
+        activeOpacity={0.85}
+      >
+        <Ionicons name="add" size={28} color="#fff" />
+      </TouchableOpacity>
+
+      <LogForm
+        visible={showForm}
+        shifts={shifts}
+        kwhPrice={kwhPrice}
+        onClose={() => setShowForm(false)}
+        onSuccess={() => { setShowForm(false); setLoading(true); void load(); }}
+        colors={colors}
+        isAr={isAr}
+      />
+
+      <Modal visible={!!fullImage} transparent animationType="fade" onRequestClose={() => setFullImage(null)}>
+        <View style={styles.imgOverlay}>
+          <TouchableOpacity style={styles.imgClose} onPress={() => setFullImage(null)}>
+            <Ionicons name="close-circle" size={36} color="#fff" />
+          </TouchableOpacity>
+          {fullImage && <Image source={{ uri: fullImage }} style={styles.fullImg} resizeMode="contain" />}
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safe:        { flex: 1 },
-  content:     { padding: spacing.md, paddingBottom: 40 },
-  summary:     { borderRadius: radius.lg, padding: spacing.md, marginBottom: spacing.md, ...shadow.sm },
-  summaryRow:  { flexDirection: 'row', gap: spacing.lg, marginBottom: 6 },
-  summaryItem: { flex: 1 },
-  summaryLabel:{ ...typography.caption, marginBottom: 2 },
-  summaryValue:{ fontSize: 22, fontWeight: '800' },
-  summaryUnit: { fontSize: 14, fontWeight: '400' },
-  summaryDate: { ...typography.caption },
-  form:        { borderRadius: radius.lg, padding: spacing.md, marginBottom: spacing.md, ...shadow.sm },
-  formTitle:   { ...typography.h4, marginBottom: spacing.sm },
-  input:       { borderWidth: 1.5, borderRadius: radius.sm, paddingHorizontal: spacing.md, paddingVertical: 10, fontSize: 15, marginBottom: spacing.sm },
-  inputMulti:  { height: 64, textAlignVertical: 'top' },
-  formRow:     { flexDirection: 'row', gap: spacing.sm },
-  cancelBtn:   { flex: 1, alignItems: 'center', paddingVertical: 11, borderRadius: radius.md, borderWidth: 1.5 },
+  safe:   { flex: 1 },
+  center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  list:   { padding: spacing.md, paddingBottom: 100 },
+
+  summaryCard: { marginBottom: spacing.md },
+  summaryBg:   { borderRadius: radius.lg, padding: spacing.md, ...shadow.sm },
+  summaryRow:  { flexDirection: 'row', justifyContent: 'space-around' },
+  summaryItem: { alignItems: 'center' },
+  summaryLbl:  { ...typography.caption, marginBottom: 2 },
+  summaryVal:  { fontSize: 20, fontWeight: '800' },
+
+  card:           { borderRadius: radius.lg, padding: spacing.md, marginBottom: spacing.sm, ...shadow.sm },
+  cardHeader:     { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.sm, marginBottom: 8 },
+  iconWrap:       { width: 38, height: 38, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
+  cardInfo:       { flex: 1, gap: 2 },
+  cardDate:       { ...typography.h4 },
+  cardShift:      { ...typography.caption },
+  consumptionBadge: { fontSize: 14, fontWeight: '800' },
+
+  readingRow:    { flexDirection: 'row', alignItems: 'center', gap: 10, borderTopWidth: 1, paddingTop: 8, flexWrap: 'wrap' },
+  readingItem:   { alignItems: 'center' },
+  readingLbl:    { ...typography.caption, marginBottom: 2 },
+  readingVal:    { fontSize: 13, fontWeight: '700' },
+  readingDivider:{ width: 1, height: 28 },
+
+  resetBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 99, alignSelf: 'flex-start', marginTop: 6 },
+  resetText:  { fontSize: 11, fontWeight: '700' },
+  notes:      { ...typography.bodySmall, marginTop: 6, fontStyle: 'italic' },
+  cardImage:  { width: '100%', height: 120, borderRadius: radius.sm, marginTop: 8 },
+
+  empty:     { alignItems: 'center', paddingTop: 60, gap: spacing.sm },
+  emptyText: { ...typography.bodySmall },
+
+  fab: {
+    position: 'absolute', bottom: 24, right: 20,
+    width: 56, height: 56, borderRadius: 28,
+    alignItems: 'center', justifyContent: 'center',
+    ...shadow.lg,
+  },
+
+  overlay:      { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.45)' },
+  sheet:        { maxHeight: '92%', borderTopLeftRadius: radius.xl, borderTopRightRadius: radius.xl },
+  sheetContent: { padding: spacing.lg, paddingBottom: 40 },
+  handle:       { width: 40, height: 4, borderRadius: 2, alignSelf: 'center', marginBottom: spacing.md },
+  sheetTitle:   { ...typography.h2, marginBottom: spacing.md },
+
+  field:      { marginBottom: spacing.md },
+  fieldLabel: { ...typography.caption, marginBottom: 6 },
+  input:      { borderWidth: 1.5, borderRadius: radius.sm, paddingHorizontal: spacing.md, paddingVertical: 11, fontSize: 15 },
+  inputMulti: { height: 70, textAlignVertical: 'top' },
+  rowFields:  { flexDirection: 'row', gap: spacing.sm },
+  switchRow:  { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+
+  chipRow: { flexDirection: 'row', gap: 8, paddingVertical: 2 },
+  chip:    { paddingHorizontal: 14, paddingVertical: 7, borderRadius: 20, borderWidth: 1.5 },
+  chipText:{ fontSize: 13, fontWeight: '600' },
+
+  preview:     { flexDirection: 'row', justifyContent: 'space-around', borderRadius: radius.md, borderWidth: 1, padding: spacing.sm, marginBottom: spacing.md },
+  previewItem: { alignItems: 'center' },
+  previewLbl:  { ...typography.caption, marginBottom: 2 },
+  previewVal:  { fontSize: 16, fontWeight: '800' },
+
+  imgPicker:        { height: 90, borderRadius: radius.sm, borderWidth: 1.5, borderStyle: 'dashed', overflow: 'hidden' },
+  imgPickerPreview: { width: '100%', height: '100%' },
+  imgPickerPlaceholder: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 4 },
+  imgPickerText:    { ...typography.caption },
+
+  formActions: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.sm },
+  cancelBtn:   { flex: 1, alignItems: 'center', paddingVertical: 12, borderRadius: radius.md, borderWidth: 1.5 },
   cancelText:  { ...typography.bodySmall, fontWeight: '700' },
-  saveBtn:     { flex: 1, alignItems: 'center', paddingVertical: 11, borderRadius: radius.md },
+  saveBtn:     { flex: 1, alignItems: 'center', paddingVertical: 12, borderRadius: radius.md },
   saveText:    { ...typography.bodySmall, fontWeight: '700', color: '#fff' },
-  addBtn:      { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, borderRadius: radius.lg, paddingVertical: 12, marginBottom: spacing.md },
-  addText:     { ...typography.bodySmall, fontWeight: '700', color: '#fff' },
-  empty:       { alignItems: 'center', paddingVertical: 60, gap: spacing.sm },
-  emptyText:   { ...typography.bodySmall },
-  list:        { gap: spacing.sm },
-  card:        { flexDirection: 'row', alignItems: 'center', borderRadius: radius.lg, padding: spacing.md, gap: spacing.sm, ...shadow.sm },
-  cardIcon:    { width: 40, height: 40, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center' },
-  cardBody:    { flex: 1 },
-  cardValue:   { ...typography.h4 },
-  cardNotes:   { ...typography.caption },
-  cardDate:    { ...typography.caption },
+
+  imgOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.9)', justifyContent: 'center', alignItems: 'center' },
+  imgClose:   { position: 'absolute', top: 50, right: 20, zIndex: 10 },
+  fullImg:    { width: '100%', height: '80%' },
 });
