@@ -28,8 +28,9 @@ import { WorkerHubScreen }       from '../screens/worker/WorkerHubScreen';
 import { WorkerRecordsScreen }   from '../screens/admin/WorkerRecordsScreen';
 import { AdminSnapsScreen }      from '../screens/admin/AdminSnapsScreen';
 import { ElectricityScreen }     from '../screens/admin/ElectricityScreen';
-import { MachinesAdminScreen }   from '../screens/admin/MachinesAdminScreen';
-import { ShiftsAdminScreen }     from '../screens/admin/ShiftsAdminScreen';
+import { MachinesAdminScreen }        from '../screens/admin/MachinesAdminScreen';
+import { ShiftsAdminScreen }          from '../screens/admin/ShiftsAdminScreen';
+import { AdminMachineStopsScreen }    from '../screens/admin/AdminMachineStopsScreen';
 
 // ─── Finance ──────────────────────────────────────────────────────────────────
 import { AdminFinMenuScreen }        from '../screens/admin/AdminFinMenuScreen';
@@ -117,6 +118,7 @@ function OpsNavigator() {
       <OpsStack.Screen name="Electricity"     component={ElectricityScreen} />
       <OpsStack.Screen name="Machines"        component={MachinesAdminScreen} />
       <OpsStack.Screen name="Shifts"          component={ShiftsAdminScreen} />
+      <OpsStack.Screen name="MachineStops"    component={AdminMachineStopsScreen} />
     </OpsStack.Navigator>
   );
 }

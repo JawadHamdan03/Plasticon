@@ -253,6 +253,12 @@ export const createMachineStopAlert = async (
     };
   }
 
+  const worker = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { fullName: true, username: true },
+  });
+  const workerName = worker?.fullName ?? worker?.username ?? `Worker #${userId}`;
+
   const rows = (await prisma.$queryRawUnsafe(
     `INSERT INTO worker_machine_stop_alerts (user_id, machine_label, priority, reason)
      VALUES ($1, $2, $3, $4)
@@ -263,13 +269,79 @@ export const createMachineStopAlert = async (
     reason,
   )) as Array<Record<string, unknown>>;
 
+  const priorityLabel = priority === "CRITICAL" ? "🔴 CRITICAL" : priority === "HIGH" ? "🟠 HIGH" : "🟡 NORMAL";
   await notifyAdmins(
-    "Machine Stop Alert",
-    `Worker #${userId} reported ${priority} stop on ${machineLabel}: ${reason}`,
+    `Machine Stop — ${priorityLabel}`,
+    `${workerName} reported a ${priority} stop on "${machineLabel}": ${reason}`,
     NotificationType.MAINTENANCE_URGENT,
   );
 
   return { status: 201, data: rows[0] };
+};
+
+export const getAllMachineStopAlerts = async (filters?: {
+  status?: "open" | "resolved" | "all";
+  priority?: string;
+}): Promise<ServiceResult<unknown>> => {
+  await ensureWorkerFeaturesTables();
+
+  const statusFilter = filters?.status ?? "all";
+  const priorityFilter = filters?.priority?.toUpperCase();
+
+  let whereClause = "";
+  const params: unknown[] = [];
+
+  if (statusFilter === "open") {
+    whereClause += " AND a.resolved_at IS NULL";
+  } else if (statusFilter === "resolved") {
+    whereClause += " AND a.resolved_at IS NOT NULL";
+  }
+
+  if (priorityFilter && ["CRITICAL", "HIGH", "NORMAL"].includes(priorityFilter)) {
+    params.push(priorityFilter);
+    whereClause += ` AND a.priority = $${params.length}`;
+  }
+
+  const rows = (await prisma.$queryRawUnsafe(
+    `SELECT a.id, a.machine_label, a.priority, a.reason,
+            a.started_at, a.resolved_at, a.response_minutes, a.created_at,
+            u.id AS worker_id, u."fullName" AS worker_name, u.username AS worker_username
+     FROM worker_machine_stop_alerts a
+     LEFT JOIN "User" u ON u.id = a.user_id
+     WHERE 1=1${whereClause}
+     ORDER BY
+       CASE a.priority WHEN 'CRITICAL' THEN 1 WHEN 'HIGH' THEN 2 ELSE 3 END,
+       a.created_at DESC
+     LIMIT 200`,
+    ...params,
+  )) as Array<Record<string, unknown>>;
+
+  return { status: 200, data: rows };
+};
+
+export const resolveAnyMachineStopAlert = async (
+  alertId: number,
+): Promise<ServiceResult<unknown>> => {
+  await ensureWorkerFeaturesTables();
+
+  if (!Number.isInteger(alertId) || alertId <= 0) {
+    return { status: 400, message: "Invalid alert id" };
+  }
+
+  const rows = (await prisma.$queryRawUnsafe(
+    `UPDATE worker_machine_stop_alerts
+     SET resolved_at = NOW(),
+         response_minutes = EXTRACT(EPOCH FROM (NOW() - started_at)) / 60.0
+     WHERE id = $1
+     RETURNING id, machine_label, priority, reason, started_at, resolved_at, response_minutes, created_at`,
+    alertId,
+  )) as Array<Record<string, unknown>>;
+
+  if (!rows.length) {
+    return { status: 404, message: "Stop alert not found" };
+  }
+
+  return { status: 200, data: rows[0] };
 };
 
 export const getMyMachineStopAlerts = async (userId: number) => {

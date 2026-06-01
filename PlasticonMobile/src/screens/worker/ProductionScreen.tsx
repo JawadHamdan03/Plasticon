@@ -1,17 +1,8 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import {
-  ActivityIndicator,
-  Alert,
-  FlatList,
-  KeyboardAvoidingView,
-  Modal,
-  Platform,
-  RefreshControl,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+  ActivityIndicator, Alert, FlatList, KeyboardAvoidingView,
+  Modal, Platform, RefreshControl, ScrollView, StyleSheet,
+  Text, TextInput, TouchableOpacity, View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -21,35 +12,136 @@ import { radius, shadow, spacing, typography } from '../../theme';
 import { useAppTheme } from '../../context/ThemeContext';
 import { useLocale } from '../../context/LocaleContext';
 
+interface Shift { id: number; name: string; }
+interface Machine { id: number; name: string; type: string; }
 interface ProductionRecord {
   id: number;
-  productName: string;
-  quantity: number;
-  notes?: string;
+  machineId?: number | null;
+  machine?: { id: number; name: string; type: string } | null;
+  shift?: { id: number; name: string } | null;
+  shiftId?: number;
+  cartonsCount: number;
+  piecesPerCarton: number;
+  totalPieces: number;
+  damagedPieces?: number;
+  netGoodPieces?: number;
+  capColor?: string | null;
+  preformType?: string | null;
+  rawHdpeUsed?: number | null;
+  rawLdpeUsed?: number | null;
+  rawPetUsed?: number | null;
+  colorUsed?: number | null;
+  notes?: string | null;
+  date?: string | null;
   createdAt: string;
-  status?: string;
 }
 
-interface LogForm { productName: string; quantity: string; notes: string; }
+type ProductType = 'CAPS' | 'PREFORMS';
+
+interface FormState {
+  productType: ProductType;
+  machineId: string;
+  shiftId: string;
+  date: string;
+  cartonsCount: string;
+  damagedPieces: string;
+  capColor: string;
+  preformType: string;
+  // preforms
+  cavities: string;
+  cycles: string;
+  numberOfBoxes: string;
+  // materials
+  rawHdpeUsed: string;
+  rawLdpeUsed: string;
+  rawPetUsed: string;
+  colorUsed: string;
+  notes: string;
+}
+
+const EMPTY_FORM: FormState = {
+  productType: 'CAPS',
+  machineId: '',
+  shiftId: '',
+  date: new Date().toISOString().slice(0, 10),
+  cartonsCount: '',
+  damagedPieces: '0',
+  capColor: '',
+  preformType: '',
+  cavities: '',
+  cycles: '',
+  numberOfBoxes: '',
+  rawHdpeUsed: '',
+  rawLdpeUsed: '',
+  rawPetUsed: '',
+  colorUsed: '',
+  notes: '',
+};
+
+function todayISO() { return new Date().toISOString().slice(0, 10); }
+
+function fmtDate(iso: string) {
+  return new Date(iso).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
+}
+function fmtTime(iso: string) {
+  return new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
+
+function calcPreformPieces(cavities: string, cycles: string, numberOfBoxes: string): number {
+  const c = parseInt(cavities) || 0;
+  const cy = parseInt(cycles) || 0;
+  const nb = parseInt(numberOfBoxes) || 0;
+  return c * cy * nb;
+}
+
+function calcCapPieces(cartons: string, piecesPerCarton: number): number {
+  return (parseInt(cartons) || 0) * piecesPerCarton;
+}
 
 export function ProductionScreen() {
   const { colors } = useAppTheme();
   const { isAr } = useLocale();
-  const [records, setRecords]   = useState<ProductionRecord[]>([]);
-  const [total, setTotal]       = useState(0);
-  const [loading, setLoading]   = useState(true);
+  const [records, setRecords] = useState<ProductionRecord[]>([]);
+  const [shifts, setShifts] = useState<Shift[]>([]);
+  const [machines, setMachines] = useState<Machine[]>([]);
+  const [capsPerCarton, setCapsPerCarton] = useState(6000);
+  const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
-  const [form, setForm]     = useState<LogForm>({ productName: '', quantity: '', notes: '' });
+  const [form, setForm] = useState<FormState>({ ...EMPTY_FORM, date: todayISO() });
   const [saving, setSaving] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
+
+  const setF = (key: keyof FormState, value: string) =>
+    setForm(prev => ({ ...prev, [key]: value }));
+
+  const filteredMachines = machines.filter(m => {
+    const t = m.type.trim().toUpperCase();
+    if (form.productType === 'CAPS') return t === 'CAPS' || t.includes('CAP');
+    return t === 'PREFORM' || t.includes('PREFORM') || t.includes('PET');
+  });
+
+  const totalPieces = form.productType === 'CAPS'
+    ? calcCapPieces(form.cartonsCount, capsPerCarton)
+    : calcPreformPieces(form.cavities, form.cycles, form.numberOfBoxes);
+  const damaged = parseInt(form.damagedPieces) || 0;
+  const netGood = Math.max(0, totalPieces - damaged);
 
   const load = useCallback(async () => {
     try {
-      const res = await api.get<{ records: ProductionRecord[]; total: number }>('/production/me?limit=30');
-      setRecords(res.records ?? []);
-      setTotal(res.total ?? 0);
+      const [recs, sh, mach, settings] = await Promise.all([
+        api.get<ProductionRecord[]>('/production/me'),
+        api.get<Shift[]>('/shifts'),
+        api.get<Machine[]>('/machines'),
+        api.get<Array<{ productType: string; piecesPerCarton: number }>>('/settings/production').catch(() => []),
+      ]);
+      setRecords(Array.isArray(recs) ? recs : []);
+      setShifts(Array.isArray(sh) ? sh : []);
+      setMachines(Array.isArray(mach) ? mach : []);
+      const capsSetting = Array.isArray(settings) ? settings.find(s => s.productType === 'CAPS') : null;
+      if (capsSetting?.piecesPerCarton) setCapsPerCarton(capsSetting.piecesPerCarton);
     } catch {
-      // keep last state
+      /* keep last state */
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -58,141 +150,541 @@ export function ProductionScreen() {
 
   useEffect(() => { void load(); }, [load]);
 
-  const onRefresh = () => { setRefreshing(true); void load(); };
+  const handleClose = () => {
+    setForm({ ...EMPTY_FORM, date: todayISO() });
+    setEditingId(null);
+    setModalOpen(false);
+  };
 
-  const handleClose = () => { setForm({ productName: '', quantity: '', notes: '' }); setModalOpen(false); };
+  const openEdit = (record: ProductionRecord) => {
+    const machineType = record.machine?.type?.trim().toUpperCase() ?? '';
+    const isPreform = machineType === 'PREFORM' || machineType.includes('PREFORM');
+    setForm({
+      productType: isPreform ? 'PREFORMS' : 'CAPS',
+      machineId: String(record.machineId ?? ''),
+      shiftId: String(record.shift?.id ?? record.shiftId ?? ''),
+      date: (record.date ?? record.createdAt).slice(0, 10),
+      cartonsCount: String(record.cartonsCount ?? ''),
+      damagedPieces: String(record.damagedPieces ?? 0),
+      capColor: record.capColor ?? '',
+      preformType: record.preformType ?? '',
+      cavities: '',
+      cycles: '',
+      numberOfBoxes: String(record.cartonsCount ?? ''),
+      rawHdpeUsed: record.rawHdpeUsed != null ? String(record.rawHdpeUsed) : '',
+      rawLdpeUsed: record.rawLdpeUsed != null ? String(record.rawLdpeUsed) : '',
+      rawPetUsed: record.rawPetUsed != null ? String(record.rawPetUsed) : '',
+      colorUsed: record.colorUsed != null ? String(record.colorUsed) : '',
+      notes: record.notes ?? '',
+    });
+    setEditingId(record.id);
+    setModalOpen(true);
+  };
+
+  const handleDelete = (record: ProductionRecord) => {
+    Alert.alert(
+      isAr ? 'حذف السجل' : 'Delete Record',
+      isAr ? 'هل أنت متأكد من حذف هذا السجل؟' : 'Are you sure you want to delete this record?',
+      [
+        { text: isAr ? 'إلغاء' : 'Cancel', style: 'cancel' },
+        {
+          text: isAr ? 'حذف' : 'Delete', style: 'destructive',
+          onPress: async () => {
+            try {
+              await api.delete(`/production/${record.id}`);
+              setRecords(prev => prev.filter(r => r.id !== record.id));
+            } catch (e: any) {
+              Alert.alert(isAr ? 'خطأ' : 'Error', e.message ?? 'Failed to delete');
+            }
+          },
+        },
+      ],
+    );
+  };
 
   const handleSubmit = async () => {
-    if (!form.productName.trim()) { Alert.alert(isAr ? 'مطلوب' : 'Required', isAr ? 'اسم المنتج مطلوب.' : 'Product name is required.'); return; }
-    const qty = parseInt(form.quantity, 10);
-    if (!qty || qty <= 0) { Alert.alert(isAr ? 'مطلوب' : 'Required', isAr ? 'أدخل كمية صالحة.' : 'Enter a valid quantity.'); return; }
+    if (!form.shiftId) {
+      Alert.alert(isAr ? 'مطلوب' : 'Required', isAr ? 'اختر الشفت' : 'Select a shift');
+      return;
+    }
+
+    if (form.productType === 'CAPS') {
+      if (!form.cartonsCount || parseInt(form.cartonsCount) <= 0) {
+        Alert.alert(isAr ? 'مطلوب' : 'Required', isAr ? 'أدخل عدد الكراتين' : 'Enter cartons count');
+        return;
+      }
+    } else {
+      if (!form.cavities || !form.cycles || !form.numberOfBoxes) {
+        Alert.alert(isAr ? 'مطلوب' : 'Required', isAr ? 'أدخل بيانات الصناديق' : 'Enter box data');
+        return;
+      }
+    }
 
     setSaving(true);
     try {
-      await api.post('/production', {
-        productName: form.productName.trim(),
-        quantity:    qty,
-        notes:       form.notes.trim() || undefined,
-      });
-      setForm({ productName: '', quantity: '', notes: '' });
-      setModalOpen(false);
+      if (editingId) {
+        await api.patch(`/production/${editingId}`, {
+          damagedPieces: parseInt(form.damagedPieces) || 0,
+          capColor: form.capColor.trim() || undefined,
+          preformType: form.preformType.trim() || undefined,
+          notes: form.notes.trim() || undefined,
+          date: form.date,
+        });
+      } else {
+        const body: Record<string, unknown> = {
+          shiftId: parseInt(form.shiftId),
+          date: form.date,
+          damagedPieces: parseInt(form.damagedPieces) || 0,
+          notes: form.notes.trim() || undefined,
+        };
+        if (form.machineId) body.machineId = parseInt(form.machineId);
+        if (form.productType === 'CAPS') {
+          body.cartonsCount = parseInt(form.cartonsCount);
+          if (form.capColor.trim()) body.capColor = form.capColor.trim();
+          if (form.rawHdpeUsed) body.rawHdpeUsed = parseFloat(form.rawHdpeUsed);
+          if (form.rawLdpeUsed) body.rawLdpeUsed = parseFloat(form.rawLdpeUsed);
+          if (form.colorUsed) body.colorUsed = parseFloat(form.colorUsed);
+        } else {
+          body.boxes = [{
+            cavities: parseInt(form.cavities),
+            cycles: parseInt(form.cycles),
+            numberOfBoxes: parseInt(form.numberOfBoxes),
+          }];
+          if (form.preformType.trim()) body.preformType = form.preformType.trim();
+          if (form.rawPetUsed) body.rawPetUsed = parseFloat(form.rawPetUsed);
+          if (form.colorUsed) body.colorUsed = parseFloat(form.colorUsed);
+        }
+        await api.post('/production', body);
+      }
+      handleClose();
       setLoading(true);
       void load();
-    } catch (err: any) {
-      Alert.alert(isAr ? 'خطأ' : 'Error', err.message ?? (isAr ? 'فشل حفظ السجل.' : 'Failed to save log.'));
+    } catch (e: any) {
+      Alert.alert(isAr ? 'خطأ' : 'Error', e.message ?? 'Failed to save');
     } finally {
       setSaving(false);
     }
   };
 
-  const renderItem = ({ item }: { item: ProductionRecord }) => {
-    const date = new Date(item.createdAt);
-    const timeStr = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    const dateStr = date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+  const renderRecord = ({ item }: { item: ProductionRecord }) => {
+    const machineType = item.machine?.type?.trim().toUpperCase() ?? '';
+    const isCaps = machineType === 'CAPS' || machineType.includes('CAP');
+    const accentColor = isCaps ? colors.primary : colors.info;
+    const typeLabel = isCaps
+      ? (isAr ? 'كابات' : 'Caps')
+      : (isAr ? 'بريفورم' : 'Preforms');
+
     return (
-      <View style={[styles.item, { backgroundColor: colors.surface }]}>
-        <View style={styles.itemLeft}>
-          <View style={[styles.itemIconBg, { backgroundColor: colors.primaryLight }]}>
-            <Ionicons name="cube" size={18} color={colors.primary} />
+      <View style={[styles.card, { backgroundColor: colors.surface }]}>
+        <View style={styles.cardTop}>
+          <View style={[styles.typeTag, { backgroundColor: accentColor + '20' }]}>
+            <Ionicons name={isCaps ? 'layers-outline' : 'cube-outline'} size={13} color={accentColor} />
+            <Text style={[styles.typeTagText, { color: accentColor }]}>{typeLabel}</Text>
           </View>
-          <View style={styles.itemMeta}>
-            <Text style={[styles.itemName, { color: colors.text }]} numberOfLines={1}>{item.productName}</Text>
-            {item.notes ? <Text style={[styles.itemNotes, { color: colors.textMuted }]} numberOfLines={1}>{item.notes}</Text> : null}
-            <Text style={[styles.itemTime, { color: colors.textMuted }]}>{dateStr} · {timeStr}</Text>
+          <View style={styles.cardActions}>
+            <TouchableOpacity onPress={() => openEdit(item)} style={styles.cardActionBtn} activeOpacity={0.7}>
+              <Ionicons name="pencil" size={16} color={colors.textMuted} />
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => handleDelete(item)} style={styles.cardActionBtn} activeOpacity={0.7}>
+              <Ionicons name="trash-outline" size={16} color={colors.danger} />
+            </TouchableOpacity>
           </View>
         </View>
-        <View style={styles.itemRight}>
-          <Text style={[styles.itemQty, { color: colors.primary }]}>{item.quantity}</Text>
-          <Text style={[styles.itemUnit, { color: colors.textMuted }]}>{isAr ? 'وحدة' : 'units'}</Text>
+
+        <View style={styles.metricsRow}>
+          <View style={[styles.metric, { backgroundColor: accentColor + '10' }]}>
+            <Text style={[styles.metricVal, { color: accentColor }]}>{(item.totalPieces ?? 0).toLocaleString()}</Text>
+            <Text style={[styles.metricLbl, { color: colors.textMuted }]}>{isAr ? 'إجمالي' : 'Total'}</Text>
+          </View>
+          {(item.damagedPieces ?? 0) > 0 && (
+            <View style={[styles.metric, { backgroundColor: colors.danger + '10' }]}>
+              <Text style={[styles.metricVal, { color: colors.danger }]}>{item.damagedPieces}</Text>
+              <Text style={[styles.metricLbl, { color: colors.textMuted }]}>{isAr ? 'تالف' : 'Damaged'}</Text>
+            </View>
+          )}
+          <View style={[styles.metric, { backgroundColor: colors.success + '10' }]}>
+            <Text style={[styles.metricVal, { color: colors.success }]}>{(item.netGoodPieces ?? item.totalPieces ?? 0).toLocaleString()}</Text>
+            <Text style={[styles.metricLbl, { color: colors.textMuted }]}>{isAr ? 'صالح' : 'Good'}</Text>
+          </View>
         </View>
+
+        <View style={styles.cardFooter}>
+          {item.machine && (
+            <Text style={[styles.footerText, { color: colors.textMuted }]}>
+              <Ionicons name="hardware-chip-outline" size={11} /> {item.machine.name}
+            </Text>
+          )}
+          {item.shift && (
+            <Text style={[styles.footerText, { color: colors.textMuted }]}>
+              <Ionicons name="time-outline" size={11} /> {item.shift.name}
+            </Text>
+          )}
+          {(item.capColor || item.preformType) && (
+            <Text style={[styles.footerText, { color: colors.textMuted }]}>
+              {item.capColor ?? item.preformType}
+            </Text>
+          )}
+          <Text style={[styles.footerDate, { color: colors.textMuted }]}>
+            {fmtDate(item.date ?? item.createdAt)} · {fmtTime(item.createdAt)}
+          </Text>
+        </View>
+
+        {item.notes ? (
+          <Text style={[styles.notes, { color: colors.textMuted, borderTopColor: colors.border }]} numberOfLines={2}>
+            {item.notes}
+          </Text>
+        ) : null}
       </View>
     );
   };
 
+  const totalGood = records.reduce((s, r) => s + (r.netGoodPieces ?? r.totalPieces ?? 0), 0);
+  const totalDamaged = records.reduce((s, r) => s + (r.damagedPieces ?? 0), 0);
+
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
-      <ScreenHeader title={isAr ? 'الإنتاج' : 'Production'} subtitle={`${total} ${isAr ? 'سجل' : 'total records'}`} />
+      <ScreenHeader
+        title={isAr ? 'الإنتاج' : 'Production'}
+        subtitle={`${records.length} ${isAr ? 'سجل' : 'records'}`}
+        showBack
+      />
 
       {loading ? (
-        <View style={styles.center}>
-          <ActivityIndicator size="large" color={colors.primary} />
-        </View>
+        <View style={styles.center}><ActivityIndicator size="large" color={colors.primary} /></View>
       ) : (
         <FlatList
           data={records}
-          keyExtractor={(i, idx) => `${String(i.id)}-${idx}`}
-          renderItem={renderItem}
+          keyExtractor={(item, idx) => `${item.id}-${idx}`}
+          renderItem={renderRecord}
           contentContainerStyle={styles.list}
           showsVerticalScrollIndicator={false}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); void load(); }} tintColor={colors.primary} />
+          }
+          ListHeaderComponent={
+            <View style={styles.statsRow}>
+              <View style={[styles.statCard, { backgroundColor: colors.surface }]}>
+                <Ionicons name="checkmark-circle" size={20} color={colors.success} />
+                <Text style={[styles.statVal, { color: colors.success }]}>{totalGood.toLocaleString()}</Text>
+                <Text style={[styles.statLbl, { color: colors.textMuted }]}>{isAr ? 'قطعة صالحة' : 'Good Pieces'}</Text>
+              </View>
+              <View style={[styles.statCard, { backgroundColor: colors.surface }]}>
+                <Ionicons name="close-circle" size={20} color={colors.danger} />
+                <Text style={[styles.statVal, { color: colors.danger }]}>{totalDamaged.toLocaleString()}</Text>
+                <Text style={[styles.statLbl, { color: colors.textMuted }]}>{isAr ? 'قطعة تالفة' : 'Damaged'}</Text>
+              </View>
+            </View>
+          }
           ListEmptyComponent={
             <View style={styles.empty}>
-              <Ionicons name="cube-outline" size={48} color={colors.textMuted} />
-              <Text style={[styles.emptyTitle, { color: colors.text }]}>{isAr ? 'لا توجد سجلات إنتاج بعد' : 'No production logs yet'}</Text>
-              <Text style={[styles.emptyText, { color: colors.textMuted }]}>{isAr ? 'اضغط على الزر أدناه لتسجيل أول إدخال.' : 'Tap the button below to log your first entry.'}</Text>
+              <Ionicons name="cube-outline" size={44} color={colors.textMuted} />
+              <Text style={[styles.emptyText, { color: colors.textMuted }]}>
+                {isAr ? 'لا توجد سجلات إنتاج' : 'No production records yet'}
+              </Text>
             </View>
           }
         />
       )}
 
-      {/* FAB */}
-      <TouchableOpacity style={[styles.fab, { backgroundColor: colors.primary }]} onPress={() => setModalOpen(true)} activeOpacity={0.85}>
-        <Ionicons name="add" size={28} color={colors.textInverse} />
+      <TouchableOpacity
+        style={[styles.fab, { backgroundColor: colors.primary }]}
+        onPress={() => { setForm({ ...EMPTY_FORM, date: todayISO() }); setEditingId(null); setModalOpen(true); }}
+        activeOpacity={0.85}
+      >
+        <Ionicons name="add" size={28} color="#fff" />
       </TouchableOpacity>
 
+      {/* ── Form Modal ── */}
       <Modal visible={modalOpen} transparent animationType="slide" onRequestClose={handleClose}>
-        <KeyboardAvoidingView
-          style={styles.modalOverlay}
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        >
-          <View style={[styles.modalSheet, { backgroundColor: colors.surface }]}>
+        <KeyboardAvoidingView style={styles.overlay} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+          <View style={[styles.sheet, { backgroundColor: colors.surface }]}>
             <View style={[styles.handle, { backgroundColor: colors.border }]} />
-            <Text style={[styles.modalTitle, { color: colors.text }]}>{isAr ? 'تسجيل الإنتاج' : 'Log Production'}</Text>
+            <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+              <Text style={[styles.sheetTitle, { color: colors.text }]}>
+                {editingId
+                  ? (isAr ? 'تعديل السجل' : 'Edit Record')
+                  : (isAr ? 'تسجيل الإنتاج' : 'Log Production')}
+              </Text>
 
-            <View style={styles.field}>
-              <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{isAr ? 'اسم المنتج *' : 'Product Name *'}</Text>
-              <TextInput
-                style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
-                placeholder={isAr ? 'مثال: أنبوب PVC 50mm' : 'e.g. PVC Pipe 50mm'}
-                placeholderTextColor={colors.textMuted}
-                value={form.productName}
-                onChangeText={(t) => setForm((p) => ({ ...p, productName: t }))}
-              />
-            </View>
+              {/* Product type tabs — only for new records */}
+              {!editingId && (
+                <View style={[styles.typeTabs, { borderColor: colors.border }]}>
+                  {(['CAPS', 'PREFORMS'] as ProductType[]).map(t => (
+                    <TouchableOpacity
+                      key={t}
+                      style={[styles.typeTab, form.productType === t && { backgroundColor: colors.primary }]}
+                      onPress={() => setF('productType', t)}
+                      activeOpacity={0.8}
+                    >
+                      <Text style={[styles.typeTabText, { color: form.productType === t ? '#fff' : colors.textMuted }]}>
+                        {t === 'CAPS' ? (isAr ? 'كابات' : 'Caps') : (isAr ? 'بريفورم' : 'Preforms')}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
 
-            <View style={styles.field}>
-              <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{isAr ? 'الكمية (وحدات) *' : 'Quantity (units) *'}</Text>
-              <TextInput
-                style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
-                placeholder="e.g. 120"
-                placeholderTextColor={colors.textMuted}
-                keyboardType="numeric"
-                value={form.quantity}
-                onChangeText={(t) => setForm((p) => ({ ...p, quantity: t }))}
-              />
-            </View>
+              {/* Date */}
+              <Field label={isAr ? 'التاريخ' : 'Date'}>
+                <TextInput
+                  style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
+                  value={form.date}
+                  onChangeText={v => setF('date', v)}
+                  placeholder="YYYY-MM-DD"
+                  placeholderTextColor={colors.textMuted}
+                />
+              </Field>
 
-            <View style={styles.field}>
-              <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{isAr ? 'ملاحظات (اختياري)' : 'Notes (optional)'}</Text>
-              <TextInput
-                style={[styles.input, styles.inputMulti, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
-                placeholder={isAr ? 'أي ملاحظات...' : 'Any remarks...'}
-                placeholderTextColor={colors.textMuted}
-                multiline
-                numberOfLines={3}
-                value={form.notes}
-                onChangeText={(t) => setForm((p) => ({ ...p, notes: t }))}
-              />
-            </View>
+              {/* Shift picker */}
+              {!editingId && (
+                <Field label={isAr ? 'الشفت *' : 'Shift *'}>
+                  <View style={styles.chipRow}>
+                    {shifts.map(s => (
+                      <TouchableOpacity
+                        key={s.id}
+                        style={[styles.chip, { borderColor: colors.border }, form.shiftId === String(s.id) && { backgroundColor: colors.primary, borderColor: colors.primary }]}
+                        onPress={() => setF('shiftId', String(s.id))}
+                        activeOpacity={0.8}
+                      >
+                        <Text style={[styles.chipText, { color: form.shiftId === String(s.id) ? '#fff' : colors.textMuted }]}>{s.name}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </Field>
+              )}
 
-            <View style={styles.modalActions}>
-              <Button variant="ghost" onPress={handleClose} style={styles.actionBtn}>{isAr ? 'إلغاء' : 'Cancel'}</Button>
-              <Button onPress={handleSubmit} loading={saving} style={styles.actionBtn}>{isAr ? 'حفظ السجل' : 'Save Log'}</Button>
-            </View>
+              {/* Machine picker */}
+              {!editingId && (
+                <Field label={isAr ? 'الماكينة (اختياري)' : 'Machine (optional)'}>
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipRow}>
+                    <TouchableOpacity
+                      style={[styles.chip, { borderColor: colors.border }, form.machineId === '' && { backgroundColor: colors.border }]}
+                      onPress={() => setF('machineId', '')}
+                      activeOpacity={0.8}
+                    >
+                      <Text style={[styles.chipText, { color: colors.textMuted }]}>{isAr ? 'بلا' : 'None'}</Text>
+                    </TouchableOpacity>
+                    {filteredMachines.map(m => (
+                      <TouchableOpacity
+                        key={m.id}
+                        style={[styles.chip, { borderColor: colors.border }, form.machineId === String(m.id) && { backgroundColor: colors.primary, borderColor: colors.primary }]}
+                        onPress={() => setF('machineId', String(m.id))}
+                        activeOpacity={0.8}
+                      >
+                        <Text style={[styles.chipText, { color: form.machineId === String(m.id) ? '#fff' : colors.textMuted }]}>{m.name}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </ScrollView>
+                </Field>
+              )}
+
+              {/* Caps-specific fields */}
+              {(form.productType === 'CAPS' || editingId) && (
+                <>
+                  {!editingId && (
+                    <Field label={isAr ? 'عدد الكراتين *' : 'Cartons Count *'}>
+                      <TextInput
+                        style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
+                        value={form.cartonsCount}
+                        onChangeText={v => setF('cartonsCount', v)}
+                        keyboardType="numeric"
+                        placeholder="e.g. 10"
+                        placeholderTextColor={colors.textMuted}
+                      />
+                      {form.cartonsCount ? (
+                        <Text style={[styles.calcHint, { color: colors.primary }]}>
+                          = {calcCapPieces(form.cartonsCount, capsPerCarton).toLocaleString()} {isAr ? 'قطعة' : 'pcs'}
+                        </Text>
+                      ) : null}
+                    </Field>
+                  )}
+                  <Field label={isAr ? 'لون الكاب (اختياري)' : 'Cap Color (optional)'}>
+                    <TextInput
+                      style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
+                      value={form.capColor}
+                      onChangeText={v => setF('capColor', v)}
+                      placeholder={isAr ? 'مثال: أبيض' : 'e.g. White'}
+                      placeholderTextColor={colors.textMuted}
+                    />
+                  </Field>
+                </>
+              )}
+
+              {/* Preforms-specific fields */}
+              {form.productType === 'PREFORMS' && !editingId && (
+                <>
+                  <Field label={isAr ? 'نوع البريفورم (اختياري)' : 'Preform Type (optional)'}>
+                    <TextInput
+                      style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
+                      value={form.preformType}
+                      onChangeText={v => setF('preformType', v)}
+                      placeholder={isAr ? 'مثال: 28g 28mm' : 'e.g. 28g 28mm'}
+                      placeholderTextColor={colors.textMuted}
+                    />
+                  </Field>
+                  <View style={styles.row3}>
+                    <View style={styles.flex1}>
+                      <Field label={isAr ? 'تجاويف' : 'Cavities'}>
+                        <TextInput
+                          style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
+                          value={form.cavities}
+                          onChangeText={v => setF('cavities', v)}
+                          keyboardType="numeric"
+                          placeholder="32"
+                          placeholderTextColor={colors.textMuted}
+                        />
+                      </Field>
+                    </View>
+                    <View style={styles.flex1}>
+                      <Field label={isAr ? 'دورات' : 'Cycles'}>
+                        <TextInput
+                          style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
+                          value={form.cycles}
+                          onChangeText={v => setF('cycles', v)}
+                          keyboardType="numeric"
+                          placeholder="100"
+                          placeholderTextColor={colors.textMuted}
+                        />
+                      </Field>
+                    </View>
+                    <View style={styles.flex1}>
+                      <Field label={isAr ? 'صناديق' : 'Boxes'}>
+                        <TextInput
+                          style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
+                          value={form.numberOfBoxes}
+                          onChangeText={v => setF('numberOfBoxes', v)}
+                          keyboardType="numeric"
+                          placeholder="1"
+                          placeholderTextColor={colors.textMuted}
+                        />
+                      </Field>
+                    </View>
+                  </View>
+                  {(form.cavities && form.cycles && form.numberOfBoxes) ? (
+                    <Text style={[styles.calcHint, { color: colors.primary, marginBottom: spacing.sm }]}>
+                      = {calcPreformPieces(form.cavities, form.cycles, form.numberOfBoxes).toLocaleString()} {isAr ? 'قطعة' : 'pcs'}
+                    </Text>
+                  ) : null}
+                </>
+              )}
+
+              {/* Damaged pieces */}
+              <Field label={isAr ? 'القطع التالفة' : 'Damaged Pieces'}>
+                <TextInput
+                  style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
+                  value={form.damagedPieces}
+                  onChangeText={v => setF('damagedPieces', v)}
+                  keyboardType="numeric"
+                  placeholder="0"
+                  placeholderTextColor={colors.textMuted}
+                />
+              </Field>
+
+              {/* Net good preview */}
+              {totalPieces > 0 && (
+                <View style={[styles.preview, { backgroundColor: colors.success + '12', borderColor: colors.success + '30' }]}>
+                  <Text style={[styles.previewLabel, { color: colors.textMuted }]}>
+                    {isAr ? 'الإنتاج الصالح' : 'Net Good'}: {' '}
+                    <Text style={{ color: colors.success, fontWeight: '800' }}>{netGood.toLocaleString()}</Text>
+                    {' '}{isAr ? 'قطعة' : 'pcs'}
+                  </Text>
+                </View>
+              )}
+
+              {/* Raw materials — only for new records */}
+              {!editingId && (
+                <>
+                  <Text style={[styles.sectionTitle, { color: colors.text }]}>
+                    {isAr ? 'المواد الخام (اختياري)' : 'Raw Materials (optional)'}
+                  </Text>
+                  {form.productType === 'CAPS' ? (
+                    <View style={styles.row2}>
+                      <View style={styles.flex1}>
+                        <Field label={isAr ? 'HDPE (كيس)' : 'HDPE (bags)'}>
+                          <TextInput
+                            style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
+                            value={form.rawHdpeUsed}
+                            onChangeText={v => setF('rawHdpeUsed', v)}
+                            keyboardType="decimal-pad"
+                            placeholder="0"
+                            placeholderTextColor={colors.textMuted}
+                          />
+                        </Field>
+                      </View>
+                      <View style={styles.flex1}>
+                        <Field label={isAr ? 'LDPE (كيس)' : 'LDPE (bags)'}>
+                          <TextInput
+                            style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
+                            value={form.rawLdpeUsed}
+                            onChangeText={v => setF('rawLdpeUsed', v)}
+                            keyboardType="decimal-pad"
+                            placeholder="0"
+                            placeholderTextColor={colors.textMuted}
+                          />
+                        </Field>
+                      </View>
+                    </View>
+                  ) : (
+                    <Field label={isAr ? 'PET (كيس)' : 'PET (bags)'}>
+                      <TextInput
+                        style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
+                        value={form.rawPetUsed}
+                        onChangeText={v => setF('rawPetUsed', v)}
+                        keyboardType="decimal-pad"
+                        placeholder="0"
+                        placeholderTextColor={colors.textMuted}
+                      />
+                    </Field>
+                  )}
+                  <Field label={isAr ? 'ملوّن (كجم)' : 'Colorant (kg)'}>
+                    <TextInput
+                      style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
+                      value={form.colorUsed}
+                      onChangeText={v => setF('colorUsed', v)}
+                      keyboardType="decimal-pad"
+                      placeholder="0"
+                      placeholderTextColor={colors.textMuted}
+                    />
+                  </Field>
+                </>
+              )}
+
+              {/* Notes */}
+              <Field label={isAr ? 'ملاحظات (اختياري)' : 'Notes (optional)'}>
+                <TextInput
+                  style={[styles.input, styles.inputMulti, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
+                  value={form.notes}
+                  onChangeText={v => setF('notes', v)}
+                  placeholder={isAr ? 'أي ملاحظات...' : 'Any remarks...'}
+                  placeholderTextColor={colors.textMuted}
+                  multiline
+                  numberOfLines={3}
+                />
+              </Field>
+
+              <View style={styles.modalActions}>
+                <Button variant="ghost" onPress={handleClose} style={styles.actionBtn}>
+                  {isAr ? 'إلغاء' : 'Cancel'}
+                </Button>
+                <Button onPress={handleSubmit} loading={saving} style={styles.actionBtn}>
+                  {isAr ? 'حفظ' : 'Save'}
+                </Button>
+              </View>
+            </ScrollView>
           </View>
         </KeyboardAvoidingView>
       </Modal>
     </SafeAreaView>
+  );
+}
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  const { colors } = useAppTheme();
+  return (
+    <View style={styles.field}>
+      <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{label}</Text>
+      {children}
+    </View>
   );
 }
 
@@ -201,30 +693,30 @@ const styles = StyleSheet.create({
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   list:   { padding: spacing.md, paddingBottom: 100 },
 
-  item: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    borderRadius: radius.md,
-    padding: spacing.md,
-    marginBottom: spacing.sm,
-    ...shadow.sm,
-  },
-  itemLeft:  { flexDirection: 'row', alignItems: 'center', flex: 1, marginRight: spacing.sm },
-  itemIconBg: {
-    width: 38, height: 38, borderRadius: radius.sm,
-    alignItems: 'center', justifyContent: 'center',
-    marginRight: spacing.sm,
-  },
-  itemMeta:  { flex: 1 },
-  itemName:  { ...typography.h4 },
-  itemNotes: { ...typography.caption, marginTop: 1 },
-  itemTime:  { ...typography.caption, marginTop: 2 },
-  itemRight: { alignItems: 'flex-end' },
-  itemQty:   { fontSize: 20, fontWeight: '800' },
-  itemUnit:  { ...typography.caption },
+  statsRow: { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.md },
+  statCard: { flex: 1, borderRadius: radius.lg, padding: spacing.md, alignItems: 'center', gap: 4, ...shadow.sm },
+  statVal:  { fontSize: 20, fontWeight: '800' },
+  statLbl:  { ...typography.caption, textAlign: 'center' },
 
-  empty:      { flex: 1, alignItems: 'center', justifyContent: 'center', paddingTop: 80, gap: spacing.sm },
-  emptyTitle: { ...typography.h3 },
-  emptyText:  { ...typography.bodySmall, textAlign: 'center' },
+  card:       { borderRadius: radius.lg, padding: spacing.md, marginBottom: spacing.sm, ...shadow.sm },
+  cardTop:    { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 },
+  typeTag:    { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 99 },
+  typeTagText:{ fontSize: 11, fontWeight: '700' },
+  cardActions:{ flexDirection: 'row', gap: 4 },
+  cardActionBtn: { padding: 6 },
+
+  metricsRow: { flexDirection: 'row', gap: spacing.sm, marginBottom: 8 },
+  metric:     { flex: 1, alignItems: 'center', paddingVertical: 8, borderRadius: radius.md, gap: 2 },
+  metricVal:  { fontSize: 18, fontWeight: '800' },
+  metricLbl:  { ...typography.caption },
+
+  cardFooter: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 2 },
+  footerText: { ...typography.caption },
+  footerDate: { ...typography.caption },
+  notes:      { ...typography.bodySmall, borderTopWidth: 1, paddingTop: 6, marginTop: 6, fontStyle: 'italic' },
+
+  empty:     { alignItems: 'center', paddingTop: 60, gap: spacing.sm },
+  emptyText: { ...typography.bodySmall },
 
   fab: {
     position: 'absolute', bottom: 24, right: 20,
@@ -233,27 +725,39 @@ const styles = StyleSheet.create({
     ...shadow.lg,
   },
 
-  modalOverlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.45)' },
-  modalSheet: {
-    borderTopLeftRadius: radius.xl,
-    borderTopRightRadius: radius.xl,
-    padding: spacing.lg,
-    paddingBottom: 40,
+  overlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.45)' },
+  sheet: {
+    borderTopLeftRadius: radius.xl, borderTopRightRadius: radius.xl,
+    padding: spacing.lg, paddingBottom: 40, maxHeight: '90%',
   },
-  handle: {
-    width: 40, height: 4, borderRadius: 2,
-    alignSelf: 'center', marginBottom: spacing.md,
-  },
-  modalTitle: { ...typography.h2, marginBottom: spacing.md },
+  handle:     { width: 40, height: 4, borderRadius: 2, alignSelf: 'center', marginBottom: spacing.md },
+  sheetTitle: { ...typography.h2, marginBottom: spacing.md },
 
-  field:       { marginBottom: spacing.md },
-  fieldLabel:  { ...typography.caption, marginBottom: 6 },
+  typeTabs:   { flexDirection: 'row', borderWidth: 1, borderRadius: radius.md, overflow: 'hidden', marginBottom: spacing.md },
+  typeTab:    { flex: 1, paddingVertical: 10, alignItems: 'center' },
+  typeTabText:{ fontSize: 13, fontWeight: '700' },
+
+  field:      { marginBottom: spacing.md },
+  fieldLabel: { ...typography.caption, marginBottom: 6 },
   input: {
     borderWidth: 1.5, borderRadius: radius.sm,
     paddingHorizontal: spacing.md, paddingVertical: 11,
     fontSize: 15,
   },
   inputMulti: { height: 80, textAlignVertical: 'top' },
+
+  chipRow:    { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+  chip:       { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 99, borderWidth: 1 },
+  chipText:   { fontSize: 12, fontWeight: '600' },
+
+  calcHint:   { fontSize: 12, fontWeight: '700', marginTop: 4 },
+  preview:    { borderWidth: 1, borderRadius: radius.md, padding: spacing.sm, marginBottom: spacing.md },
+  previewLabel:{ fontSize: 13 },
+
+  sectionTitle: { ...typography.h4, marginBottom: spacing.sm },
+  row2:   { flexDirection: 'row', gap: spacing.sm },
+  row3:   { flexDirection: 'row', gap: spacing.sm },
+  flex1:  { flex: 1 },
 
   modalActions: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.sm },
   actionBtn:    { flex: 1 },

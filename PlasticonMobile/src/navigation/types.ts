@@ -192,6 +192,7 @@ export type AdminOpsStackParamList = {
   Electricity:     undefined;
   Machines:        undefined;
   Shifts:          undefined;
+  MachineStops:    undefined;
 };
 
 export type AdminFinStackParamList = {

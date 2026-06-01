@@ -9,6 +9,7 @@ import {
   createQualityIssueReport,
   deleteMyWorkerFeatureEntry,
   getAdminKaizenSuggestions,
+  getAllMachineStopAlerts,
   getAdminWorkerToolsOverview,
   getMyDailyTargets,
   getMyElectricityAnomalyAlerts,
@@ -20,6 +21,7 @@ import {
   getMyShiftChecklists,
   reviewKaizenSuggestion,
   resolveMachineStopAlert,
+  resolveAnyMachineStopAlert,
   saveDailyTargetProgress,
   saveShiftChecklist,
 } from "../services/workerFeaturesServices";
@@ -72,6 +74,22 @@ export const resolveMachineStopAlertHandler = async (
   await handle(res, () =>
     resolveMachineStopAlert(userId, Number(req.params.id)),
   );
+};
+
+export const getAdminMachineStopAlertsHandler = async (
+  req: AuthenticatedRequest,
+  res: Response,
+) => {
+  const status = typeof req.query.status === "string" ? req.query.status as "open" | "resolved" | "all" : "all";
+  const priority = typeof req.query.priority === "string" ? req.query.priority : undefined;
+  await handle(res, () => getAllMachineStopAlerts({ status, priority }));
+};
+
+export const resolveAnyMachineStopAlertHandler = async (
+  req: AuthenticatedRequest,
+  res: Response,
+) => {
+  await handle(res, () => resolveAnyMachineStopAlert(Number(req.params.id)));
 };
 
 export const saveShiftChecklistHandler = async (

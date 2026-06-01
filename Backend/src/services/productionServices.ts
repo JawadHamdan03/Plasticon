@@ -42,6 +42,10 @@ type CreateProductionPayload = {
   downtimeMinutes?: number;
   notes?: string;
   documentPath?: string;
+  damagedPieces?: number;
+  capColor?: string;
+  preformType?: string;
+  date?: string;
 };
 
 type MaterialUsageEntry = {
@@ -483,6 +487,9 @@ export const createProductionRecord = async (
     // If material not found in inventory, skip deduction silently
   }
 
+  const damagedPieces = Math.max(0, Number(payload.damagedPieces ?? 0));
+  const netGoodPieces = Math.max(0, totalPieces - damagedPieces);
+
   const production = await prisma.$transaction(async (tx) => {
     const created = await tx.productionRecord.create({
       data: {
@@ -493,6 +500,10 @@ export const createProductionRecord = async (
         cartonsCount,
         piecesPerCarton,
         totalPieces,
+        damagedPieces,
+        netGoodPieces,
+        capColor: payload.capColor?.trim() || null,
+        preformType: payload.preformType?.trim() || null,
         workingCavities: resolvedWorkingCavities,
         boxesData: resolvedBoxes ? JSON.stringify(resolvedBoxes) : null,
         rawHdpeUsed: asNonNegativeNumber(payload.rawHdpeUsed),
@@ -505,6 +516,7 @@ export const createProductionRecord = async (
         downtimeMinutes,
         notes: payload.notes?.trim() || null,
         documentPath: payload.documentPath || null,
+        date: payload.date ? new Date(payload.date) : new Date(),
       },
       include: {
         machine: { select: { id: true, name: true, type: true } },
@@ -874,6 +886,66 @@ export const getProductionAdminOverview = async (
       recentRecords: records.slice(0, 25),
     },
   };
+};
+
+export const updateProductionRecord = async (
+  userId: number,
+  recordId: number,
+  payload: Partial<CreateProductionPayload>,
+  isAdmin: boolean,
+): Promise<ServiceResult<unknown>> => {
+  const record = await prisma.productionRecord.findUnique({ where: { id: recordId } });
+  if (!record) return { status: 404, message: "Production record not found" };
+  if (!isAdmin && record.userId !== userId) {
+    return { status: 403, message: "You can only edit your own production records" };
+  }
+
+  const damagedPieces = payload.damagedPieces !== undefined
+    ? Math.max(0, Number(payload.damagedPieces))
+    : record.damagedPieces;
+  const baseTotalPieces = payload.cartonsCount !== undefined
+    ? Number(payload.cartonsCount) * record.piecesPerCarton
+    : record.totalPieces;
+  const netGoodPieces = Math.max(0, baseTotalPieces - damagedPieces);
+
+  const updated = await prisma.productionRecord.update({
+    where: { id: recordId },
+    data: {
+      ...(payload.notes !== undefined && { notes: payload.notes?.trim() || null }),
+      ...(payload.damagedPieces !== undefined && { damagedPieces, netGoodPieces }),
+      ...(payload.capColor !== undefined && { capColor: payload.capColor?.trim() || null }),
+      ...(payload.preformType !== undefined && { preformType: payload.preformType?.trim() || null }),
+      ...(payload.downtimeReason !== undefined && { downtimeReason: payload.downtimeReason?.trim() || null }),
+      ...(payload.downtimeMinutes !== undefined && { downtimeMinutes: Number(payload.downtimeMinutes) }),
+      ...(payload.date !== undefined && { date: new Date(payload.date) }),
+    },
+    include: {
+      machine: { select: { id: true, name: true, type: true } },
+      shift: true,
+    },
+  });
+
+  auditAsync(userId, AuditAction.PRODUCTION_RECORD_UPDATED, AuditEntityType.PRODUCTION_RECORD, recordId, { damagedPieces, netGoodPieces });
+
+  return { status: 200, data: updated };
+};
+
+export const deleteProductionRecord = async (
+  userId: number,
+  recordId: number,
+  isAdmin: boolean,
+): Promise<ServiceResult<unknown>> => {
+  const record = await prisma.productionRecord.findUnique({ where: { id: recordId } });
+  if (!record) return { status: 404, message: "Production record not found" };
+  if (!isAdmin && record.userId !== userId) {
+    return { status: 403, message: "You can only delete your own production records" };
+  }
+
+  await prisma.productionRecord.delete({ where: { id: recordId } });
+
+  auditAsync(userId, AuditAction.PRODUCTION_RECORD_DELETED, AuditEntityType.PRODUCTION_RECORD, recordId, {});
+
+  return { status: 200, message: "Production record deleted" };
 };
 
 export const getDailyRawDeductionFromInventoryTransactions = async (

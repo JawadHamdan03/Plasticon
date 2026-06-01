@@ -12,6 +12,7 @@ import {
   deleteMyWorkerFeatureEntryHandler,
   getMyDailyTargetsHandler,
   getAdminKaizenSuggestionsHandler,
+  getAdminMachineStopAlertsHandler,
   getAdminWorkerToolsOverviewHandler,
   getMyElectricityAnomalyAlertsHandler,
   getMyKaizenSuggestionsHandler,
@@ -22,25 +23,22 @@ import {
   getMyShiftChecklistsHandler,
   reviewKaizenSuggestionHandler,
   resolveMachineStopAlertHandler,
+  resolveAnyMachineStopAlertHandler,
   saveDailyTargetProgressHandler,
   saveShiftChecklistHandler,
 } from "../controllers/workerFeaturesController";
 
 const router = Router();
 const workerOnly = authorizeRoles([UserRole.WORKER]);
-const adminOnly = authorizeRoles([UserRole.ADMIN]);
+const adminOnly  = authorizeRoles([UserRole.ADMIN]);
+const adminOrEngineer = authorizeRoles([UserRole.ADMIN, UserRole.ENGINEER]);
 
 router.post("/machine-stop-alerts", workerOnly, createMachineStopAlertHandler);
-router.get(
-  "/machine-stop-alerts/mine",
-  workerOnly,
-  getMyMachineStopAlertsHandler,
-);
-router.patch(
-  "/machine-stop-alerts/:id/resolve",
-  workerOnly,
-  resolveMachineStopAlertHandler,
-);
+router.get("/machine-stop-alerts/mine", workerOnly, getMyMachineStopAlertsHandler);
+router.patch("/machine-stop-alerts/:id/resolve", workerOnly, resolveMachineStopAlertHandler);
+
+router.get("/admin/machine-stop-alerts", adminOrEngineer, getAdminMachineStopAlertsHandler);
+router.patch("/admin/machine-stop-alerts/:id/resolve", adminOrEngineer, resolveAnyMachineStopAlertHandler);
 
 router.post("/shift-checklists", workerOnly, saveShiftChecklistHandler);
 router.get("/shift-checklists/mine", workerOnly, getMyShiftChecklistsHandler);

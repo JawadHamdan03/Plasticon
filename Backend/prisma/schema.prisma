@@ -369,6 +369,11 @@ model ProductionRecord {
   emptyBagsUsed Float?
   colorUsed     Float?
 
+  damagedPieces   Int     @default(0)
+  netGoodPieces   Int     @default(0)
+  capColor        String?
+  preformType     String?
+
   downtimeReason  String?
   downtimeMinutes Int?
 
@@ -376,6 +381,8 @@ model ProductionRecord {
   documentPath String?
 
   notes String?
+
+  date DateTime @default(now())
 
   machine Machine? @relation(fields: [machineId], references: [id])
   user    User     @relation(fields: [userId], references: [id])
@@ -386,6 +393,7 @@ model ProductionRecord {
   createdAt DateTime @default(now())
 
   @@index([createdAt])
+  @@index([date])
 }
 
 //////////////////////

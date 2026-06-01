@@ -1,10 +1,12 @@
 import { Router } from "express";
 import {
   createProductionHandler,
+  deleteProductionHandler,
   getDailyRawDeductionsHandler,
   getProductionAdminOverviewHandler,
   getAllProductionHandler,
   getMyProductionHandler,
+  updateProductionHandler,
 } from "../controllers/productionController";
 import { authorizeRoles } from "../middleware/authMiddleware";
 import { UserRole } from "../config/generated/prisma/client";
@@ -46,6 +48,18 @@ router.get(
   "/admin/raw-deductions-daily",
   authorizeRoles([UserRole.ADMIN]),
   getDailyRawDeductionsHandler,
+);
+
+router.patch(
+  "/:id",
+  authorizeRoles([UserRole.WORKER, UserRole.ENGINEER, UserRole.ADMIN]),
+  updateProductionHandler,
+);
+
+router.delete(
+  "/:id",
+  authorizeRoles([UserRole.WORKER, UserRole.ENGINEER, UserRole.ADMIN]),
+  deleteProductionHandler,
 );
 
 export default router;

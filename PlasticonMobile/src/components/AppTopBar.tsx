@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { CommonActions, useNavigation } from '@react-navigation/native';
+import { useNavigation } from '@react-navigation/native';
 import { User } from '../api/types';
 import { api } from '../api/client';
 import { useAppTheme } from '../context/ThemeContext';
@@ -38,12 +38,20 @@ export function AppTopBar({ user }: Props) {
         .catch(() => {});
     };
     fetchUnread();
-    const interval = setInterval(fetchUnread, 30_000);
+    const interval = setInterval(fetchUnread, 15_000);
     return () => clearInterval(interval);
   }, []);
 
   const openNotifications = () => {
-    navigation.dispatch(CommonActions.navigate({ name: 'Notifications' }));
+    // navigation is inside a nested stack — get the parent tab navigator so we
+    // can switch tabs, then push Notifications in the correct tab's stack.
+    const tabNav = navigation.getParent<any>();
+    const nav    = tabNav ?? navigation;
+    if (user.role === 'ADMIN') {
+      nav.navigate('More', { screen: 'Notifications' });
+    } else {
+      nav.navigate('Personal', { screen: 'Notifications' });
+    }
   };
 
   return (
