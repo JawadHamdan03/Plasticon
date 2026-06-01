@@ -1,14 +1,8 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  ActivityIndicator,
-  FlatList,
-  KeyboardAvoidingView,
-  Platform,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+  ActivityIndicator, FlatList, KeyboardAvoidingView,
+  Modal, Platform, RefreshControl, ScrollView, StyleSheet, Text, TextInput,
+  TouchableOpacity, View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -18,69 +12,468 @@ import { radius, shadow, spacing, typography } from '../../theme';
 import { useAppTheme } from '../../context/ThemeContext';
 import { useLocale } from '../../context/LocaleContext';
 
-interface ChatMessage {
-  id:        string;
-  userId?:   string;
-  userName?: string;
-  userRole?: string;
-  message:   string;
+interface ChatGroup {
+  id: number;
+  name: string;
+  description?: string;
+  unreadCount?: number;
+  _count?: { members: number; messages: number };
+  lastMessage?: {
+    id: number;
+    content: string;
+    createdAt: string;
+    sender?: { fullName: string };
+  } | null;
+}
+
+interface GroupMessage {
+  id: number;
+  content: string;
+  senderId: number;
+  sender?: { id: number; fullName: string; username: string; role?: string };
   createdAt: string;
+}
+
+interface AdminTarget {
+  usersByShift: { shiftId: number | null; shiftName: string; members: { id: number; fullName: string }[] }[];
+  shifts:       { shiftId: number; shiftName: string; membersCount: number }[];
+  audiences:    { key: string; label: string; membersCount: number }[];
 }
 
 function initials(name?: string) {
   if (!name) return '?';
-  return name.split(' ').map((p) => p[0]).join('').toUpperCase().slice(0, 2);
+  return name.split(' ').map(p => p[0]).join('').toUpperCase().slice(0, 2);
 }
+
+function fmtTime(iso: string) {
+  return new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
+
+function fmtDate(iso: string, isAr: boolean) {
+  const d = new Date(iso);
+  const now = new Date();
+  const today    = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  const msgDay   = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+  const diff = today - msgDay;
+  if (diff === 0)         return isAr ? 'اليوم'    : 'Today';
+  if (diff === 86400000)  return isAr ? 'أمس'       : 'Yesterday';
+  return d.toLocaleDateString([], { month: 'short', day: 'numeric' });
+}
+
+// ─── Group card ───────────────────────────────────────────────────────────────
+
+function GroupCard({ group, onPress }: { group: ChatGroup; onPress: () => void }) {
+  const { colors } = useAppTheme();
+  const { isAr } = useLocale();
+  const hasUnread = (group.unreadCount ?? 0) > 0;
+
+  return (
+    <TouchableOpacity
+      style={[styles.groupCard, { backgroundColor: colors.surface }]}
+      onPress={onPress}
+      activeOpacity={0.75}
+    >
+      <View style={[styles.groupAvatar, { backgroundColor: `${colors.primary}20` }]}>
+        <Ionicons name="people" size={20} color={colors.primary} />
+      </View>
+      <View style={styles.groupInfo}>
+        <View style={styles.groupTop}>
+          <Text style={[styles.groupName, { color: colors.text, fontWeight: hasUnread ? '700' : '600' }]} numberOfLines={1}>
+            {group.name}
+          </Text>
+          {group.lastMessage && (
+            <Text style={[styles.groupTime, { color: colors.textMuted }]}>
+              {fmtTime(group.lastMessage.createdAt)}
+            </Text>
+          )}
+        </View>
+        <View style={styles.groupBottom}>
+          <Text style={[styles.groupPreview, { color: colors.textMuted }]} numberOfLines={1}>
+            {group.lastMessage
+              ? `${group.lastMessage.sender?.fullName ?? ''}: ${group.lastMessage.content}`
+              : (isAr ? 'لا توجد رسائل بعد' : 'No messages yet')}
+          </Text>
+          {hasUnread && (
+            <View style={[styles.unreadBadge, { backgroundColor: colors.primary }]}>
+              <Text style={styles.unreadBadgeText}>
+                {(group.unreadCount ?? 0) > 99 ? '99+' : group.unreadCount}
+              </Text>
+            </View>
+          )}
+        </View>
+      </View>
+    </TouchableOpacity>
+  );
+}
+
+// ─── Admin targeted message modal ─────────────────────────────────────────────
+
+function AdminChatModal({
+  visible, onClose, onSent,
+}: { visible: boolean; onClose: () => void; onSent: () => void }) {
+  const { colors } = useAppTheme();
+  const { isAr } = useLocale();
+  const [targets,    setTargets]    = useState<AdminTarget | null>(null);
+  const [targetType, setTargetType] = useState<'AUDIENCE' | 'USER' | 'SHIFT'>('AUDIENCE');
+  const [targetUserId, setTargetUserId] = useState('');
+  const [shiftId,    setShiftId]    = useState('');
+  const [audienceKey,setAudienceKey]= useState('ALL_EMPLOYEES');
+  const [content,    setContent]    = useState('');
+  const [sending,    setSending]    = useState(false);
+
+  useEffect(() => {
+    if (!visible) return;
+    api.get<AdminTarget>('/chat/admin/targets').then(r => setTargets(r)).catch(() => {});
+  }, [visible]);
+
+  const send = async () => {
+    if (!content.trim()) return;
+    setSending(true);
+    try {
+      const body: any = { targetType, content: content.trim() };
+      if (targetType === 'USER'     && targetUserId) body.targetUserId = Number(targetUserId);
+      if (targetType === 'SHIFT'    && shiftId)      body.shiftId      = Number(shiftId);
+      if (targetType === 'AUDIENCE')                 body.audienceKey  = audienceKey;
+      await api.post('/chat/admin/send', body);
+      setContent('');
+      onSent();
+    } catch {} finally { setSending(false); }
+  };
+
+  const chip = (active: boolean) => ({
+    paddingHorizontal: 12, paddingVertical: 6, borderRadius: radius.full,
+    backgroundColor: active ? colors.primary : colors.surfaceAlt,
+    borderWidth: 1, borderColor: active ? colors.primary : colors.border,
+    marginRight: 6,
+  });
+  const chipTxt = (active: boolean): any => ({
+    fontSize: 12, fontWeight: '600', color: active ? '#fff' : colors.textMuted,
+  });
+
+  const allMembers = targets?.usersByShift.flatMap(b => b.members) ?? [];
+
+  return (
+    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
+      <View style={styles.overlay}>
+        <SafeAreaView style={[styles.sheet, { backgroundColor: colors.surface }]} edges={['bottom']}>
+          <View style={[styles.sheetHandle, { backgroundColor: colors.border }]} />
+          <View style={styles.sheetHeader}>
+            <Text style={[styles.sheetTitle, { color: colors.text }]}>
+              {isAr ? 'إرسال رسالة مستهدفة' : 'Send Targeted Message'}
+            </Text>
+            <TouchableOpacity onPress={onClose}>
+              <Ionicons name="close" size={22} color={colors.textMuted} />
+            </TouchableOpacity>
+          </View>
+          <ScrollView contentContainerStyle={{ padding: spacing.md }} showsVerticalScrollIndicator={false}>
+            <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>{isAr ? 'الهدف' : 'Target'}</Text>
+            <View style={{ flexDirection: 'row', marginBottom: spacing.md }}>
+              {(['AUDIENCE', 'USER', 'SHIFT'] as const).map(t => (
+                <TouchableOpacity key={t} style={chip(targetType === t)} onPress={() => setTargetType(t)}>
+                  <Text style={chipTxt(targetType === t)}>
+                    {t === 'AUDIENCE' ? (isAr ? 'الجمهور' : 'Audience')
+                      : t === 'USER'  ? (isAr ? 'مستخدم' : 'User')
+                      :                  (isAr ? 'وردية'  : 'Shift')}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            {targetType === 'AUDIENCE' && (targets?.audiences ?? []).length > 0 && (
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: spacing.md }}>
+                <View style={{ flexDirection: 'row' }}>
+                  {targets!.audiences.map(a => (
+                    <TouchableOpacity key={a.key} style={chip(audienceKey === a.key)} onPress={() => setAudienceKey(a.key)}>
+                      <Text style={chipTxt(audienceKey === a.key)}>{a.label} ({a.membersCount})</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </ScrollView>
+            )}
+
+            {targetType === 'USER' && allMembers.length > 0 && (
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: spacing.md }}>
+                <View style={{ flexDirection: 'row' }}>
+                  {allMembers.map(u => (
+                    <TouchableOpacity key={u.id} style={chip(targetUserId === String(u.id))} onPress={() => setTargetUserId(String(u.id))}>
+                      <Text style={chipTxt(targetUserId === String(u.id))}>{u.fullName}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </ScrollView>
+            )}
+
+            {targetType === 'SHIFT' && (targets?.shifts ?? []).length > 0 && (
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: spacing.md }}>
+                <View style={{ flexDirection: 'row' }}>
+                  {targets!.shifts.map(s => (
+                    <TouchableOpacity key={s.shiftId} style={chip(shiftId === String(s.shiftId))} onPress={() => setShiftId(String(s.shiftId))}>
+                      <Text style={chipTxt(shiftId === String(s.shiftId))}>{s.shiftName} ({s.membersCount})</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </ScrollView>
+            )}
+
+            <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>{isAr ? 'الرسالة *' : 'Message *'}</Text>
+            <TextInput
+              style={[styles.input, styles.textarea, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
+              value={content}
+              onChangeText={setContent}
+              placeholder={isAr ? 'اكتب رسالتك هنا' : 'Write your message here'}
+              placeholderTextColor={colors.textMuted}
+              multiline
+              numberOfLines={4}
+            />
+
+            <View style={styles.modalActions}>
+              <TouchableOpacity style={[styles.modalBtn, { borderColor: colors.border, borderWidth: 1.5 }]} onPress={onClose}>
+                <Text style={{ color: colors.textMuted, fontWeight: '600' }}>{isAr ? 'إلغاء' : 'Cancel'}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[styles.modalBtn, { flex: 2, backgroundColor: colors.primary }]} onPress={send} disabled={sending}>
+                {sending
+                  ? <ActivityIndicator size="small" color="#fff" />
+                  : <Text style={{ color: '#fff', fontWeight: '700' }}>{isAr ? 'إرسال' : 'Send'}</Text>
+                }
+              </TouchableOpacity>
+            </View>
+          </ScrollView>
+        </SafeAreaView>
+      </View>
+    </Modal>
+  );
+}
+
+// ─── Create group modal ───────────────────────────────────────────────────────
+
+function CreateGroupModal({
+  visible, onClose, onCreate,
+}: { visible: boolean; onClose: () => void; onCreate: () => void }) {
+  const { colors } = useAppTheme();
+  const { isAr } = useLocale();
+  const [name,    setName]    = useState('');
+  const [desc,    setDesc]    = useState('');
+  const [creating,setCreating]= useState(false);
+
+  const create = async () => {
+    if (!name.trim()) return;
+    setCreating(true);
+    try {
+      await api.post('/chat/groups', { name: name.trim(), description: desc.trim() });
+      setName(''); setDesc('');
+      onCreate();
+    } catch {} finally { setCreating(false); }
+  };
+
+  return (
+    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
+      <View style={styles.overlay}>
+        <SafeAreaView style={[styles.sheet, { backgroundColor: colors.surface }]} edges={['bottom']}>
+          <View style={[styles.sheetHandle, { backgroundColor: colors.border }]} />
+          <View style={styles.sheetHeader}>
+            <Text style={[styles.sheetTitle, { color: colors.text }]}>{isAr ? 'إنشاء مجموعة' : 'Create Group'}</Text>
+            <TouchableOpacity onPress={onClose}>
+              <Ionicons name="close" size={22} color={colors.textMuted} />
+            </TouchableOpacity>
+          </View>
+          <View style={{ padding: spacing.md }}>
+            <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>{isAr ? 'اسم المجموعة *' : 'Group Name *'}</Text>
+            <TextInput
+              style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
+              value={name}
+              onChangeText={setName}
+              placeholder={isAr ? 'اسم المجموعة' : 'Group name'}
+              placeholderTextColor={colors.textMuted}
+            />
+            <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>{isAr ? 'الوصف' : 'Description'}</Text>
+            <TextInput
+              style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
+              value={desc}
+              onChangeText={setDesc}
+              placeholder={isAr ? 'وصف اختياري' : 'Optional description'}
+              placeholderTextColor={colors.textMuted}
+            />
+            <View style={[styles.modalActions, { marginTop: spacing.md }]}>
+              <TouchableOpacity style={[styles.modalBtn, { borderColor: colors.border, borderWidth: 1.5 }]} onPress={onClose}>
+                <Text style={{ color: colors.textMuted, fontWeight: '600' }}>{isAr ? 'إلغاء' : 'Cancel'}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[styles.modalBtn, { flex: 2, backgroundColor: colors.primary }]} onPress={create} disabled={creating}>
+                {creating
+                  ? <ActivityIndicator size="small" color="#fff" />
+                  : <Text style={{ color: '#fff', fontWeight: '700' }}>{isAr ? 'إنشاء' : 'Create'}</Text>
+                }
+              </TouchableOpacity>
+            </View>
+          </View>
+        </SafeAreaView>
+      </View>
+    </Modal>
+  );
+}
+
+// ─── Direct message modal ─────────────────────────────────────────────────────
+
+function DirectMessageModal({
+  visible, onClose, onSent,
+}: { visible: boolean; onClose: () => void; onSent: () => void }) {
+  const { colors } = useAppTheme();
+  const { isAr } = useLocale();
+  const [users,    setUsers]    = useState<{ id: number; fullName: string }[]>([]);
+  const [targetId, setTargetId] = useState('');
+  const [content,  setContent]  = useState('');
+  const [sending,  setSending]  = useState(false);
+
+  useEffect(() => {
+    if (!visible) return;
+    api.get<any>('/chat/members-by-shift').then(r => {
+      const list = r?.usersByShift
+        ? (r.usersByShift as any[]).flatMap((b: any) => b.members as { id: number; fullName: string }[])
+        : (Array.isArray(r) ? r : []);
+      setUsers(list);
+    }).catch(() => {});
+  }, [visible]);
+
+  const send = async () => {
+    if (!targetId || !content.trim()) return;
+    setSending(true);
+    try {
+      await api.post('/chat/direct', { targetUserId: Number(targetId), content: content.trim() });
+      setContent(''); setTargetId('');
+      onSent();
+    } catch {} finally { setSending(false); }
+  };
+
+  const chip = (active: boolean) => ({
+    paddingHorizontal: 10, paddingVertical: 5, borderRadius: radius.full,
+    backgroundColor: active ? colors.primary : colors.surfaceAlt,
+    borderWidth: 1, borderColor: active ? colors.primary : colors.border,
+    marginRight: 6,
+  });
+  const chipTxt = (active: boolean): any => ({
+    fontSize: 11, fontWeight: '600', color: active ? '#fff' : colors.textMuted,
+  });
+
+  return (
+    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
+      <View style={styles.overlay}>
+        <SafeAreaView style={[styles.sheet, { backgroundColor: colors.surface }]} edges={['bottom']}>
+          <View style={[styles.sheetHandle, { backgroundColor: colors.border }]} />
+          <View style={styles.sheetHeader}>
+            <Text style={[styles.sheetTitle, { color: colors.text }]}>{isAr ? 'رسالة مباشرة' : 'Direct Message'}</Text>
+            <TouchableOpacity onPress={onClose}>
+              <Ionicons name="close" size={22} color={colors.textMuted} />
+            </TouchableOpacity>
+          </View>
+          <ScrollView contentContainerStyle={{ padding: spacing.md }} showsVerticalScrollIndicator={false}>
+            <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>{isAr ? 'إلى' : 'To'}</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: spacing.md }}>
+              <View style={{ flexDirection: 'row' }}>
+                {users.map(u => (
+                  <TouchableOpacity key={u.id} style={chip(targetId === String(u.id))} onPress={() => setTargetId(String(u.id))}>
+                    <Text style={chipTxt(targetId === String(u.id))}>{u.fullName}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </ScrollView>
+
+            <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>{isAr ? 'الرسالة *' : 'Message *'}</Text>
+            <TextInput
+              style={[styles.input, styles.textarea, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
+              value={content}
+              onChangeText={setContent}
+              placeholder={isAr ? 'اكتب رسالتك' : 'Write your message'}
+              placeholderTextColor={colors.textMuted}
+              multiline
+              numberOfLines={3}
+            />
+
+            <View style={[styles.modalActions, { marginTop: spacing.sm }]}>
+              <TouchableOpacity style={[styles.modalBtn, { borderColor: colors.border, borderWidth: 1.5 }]} onPress={onClose}>
+                <Text style={{ color: colors.textMuted, fontWeight: '600' }}>{isAr ? 'إلغاء' : 'Cancel'}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[styles.modalBtn, { flex: 2, backgroundColor: colors.primary }]} onPress={send} disabled={sending}>
+                {sending
+                  ? <ActivityIndicator size="small" color="#fff" />
+                  : <Text style={{ color: '#fff', fontWeight: '700' }}>{isAr ? 'إرسال' : 'Send'}</Text>
+                }
+              </TouchableOpacity>
+            </View>
+          </ScrollView>
+        </SafeAreaView>
+      </View>
+    </Modal>
+  );
+}
+
+// ─── Main screen ──────────────────────────────────────────────────────────────
 
 export function ChatScreen() {
   const { colors } = useAppTheme();
   const { isAr } = useLocale();
   const { user } = useAuth();
+  const isAdmin = user?.role === 'ADMIN';
 
-  function roleColor(role?: string) {
-    if (!role) return colors.textMuted;
-    switch (role.toUpperCase()) {
-      case 'ADMIN':      return colors.roleAdmin;
-      case 'ENGINEER':   return colors.roleEngineer;
-      case 'ACCOUNTANT': return colors.roleAccountant;
-      default:           return colors.roleWorker;
-    }
-  }
+  const [view,        setView]        = useState<'groups' | 'messages'>('groups');
+  const [groups,      setGroups]      = useState<ChatGroup[]>([]);
+  const [activeGroup, setActiveGroup] = useState<ChatGroup | null>(null);
+  const [messages,    setMessages]    = useState<GroupMessage[]>([]);
+  const [input,       setInput]       = useState('');
+  const [loadingGroups, setLoadingGroups] = useState(true);
+  const [loadingMsgs,   setLoadingMsgs]   = useState(false);
+  const [sending,       setSending]       = useState(false);
+  const [refreshing,    setRefreshing]    = useState(false);
+  const [showAdminSend,   setShowAdminSend]   = useState(false);
+  const [showCreateGroup, setShowCreateGroup] = useState(false);
+  const [showDirect,      setShowDirect]      = useState(false);
+  const [fabOpen,         setFabOpen]         = useState(false);
+  const listRef = useRef<FlatList<GroupMessage>>(null);
 
-  const [messages,   setMessages]   = useState<ChatMessage[]>([]);
-  const [input,      setInput]      = useState('');
-  const [loading,    setLoading]    = useState(true);
-  const [sending,    setSending]    = useState(false);
-  const listRef = useRef<FlatList<ChatMessage>>(null);
-
-  const load = useCallback(async () => {
+  const loadGroups = useCallback(async () => {
     try {
-      const res = await api.get<ChatMessage[] | { messages: ChatMessage[] }>('/chat');
-      const msgs = Array.isArray(res) ? res : (res.messages ?? []);
-      setMessages(msgs.slice(-100));
-    } catch {
-      setMessages([]);
+      const res = await api.get<ChatGroup[]>('/chat/groups');
+      setGroups(Array.isArray(res) ? res : []);
     } finally {
-      setLoading(false);
+      setLoadingGroups(false);
+      setRefreshing(false);
     }
   }, []);
 
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => { void loadGroups(); }, [loadGroups]);
 
-  useEffect(() => {
-    if (messages.length > 0) {
-      setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), 100);
+  const openGroup = async (group: ChatGroup) => {
+    setActiveGroup(group);
+    setView('messages');
+    setLoadingMsgs(true);
+    try {
+      const res = await api.get<any>(`/chat/groups/${group.id}/messages?limit=50`);
+      const msgs: GroupMessage[] = res?.messages ?? (Array.isArray(res) ? res : []);
+      setMessages([...msgs].reverse()); // API returns newest-first; reverse for chronological display
+    } finally {
+      setLoadingMsgs(false);
     }
-  }, [messages]);
+    api.patch(`/chat/groups/${group.id}/mark-as-read`, {}).catch(() => {});
+    setGroups(prev => prev.map(g => g.id === group.id ? { ...g, unreadCount: 0 } : g));
+  };
+
+  const goBack = () => {
+    setView('groups');
+    setActiveGroup(null);
+    setMessages([]);
+    void loadGroups();
+  };
 
   const send = async () => {
     const text = input.trim();
-    if (!text || sending) return;
+    if (!text || sending || !activeGroup) return;
     setInput('');
     setSending(true);
     try {
-      const sent = await api.post<ChatMessage>('/chat', { message: text });
-      setMessages((prev) => [...prev, sent]);
+      const res = await api.post<any>(`/chat/groups/${activeGroup.id}/messages`, { content: text });
+      const newMsg: GroupMessage = res?.message ?? res;
+      if (newMsg?.id) {
+        setMessages(prev => [...prev, newMsg]);
+        setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), 100);
+      }
     } catch {
       setInput(text);
     } finally {
@@ -88,24 +481,159 @@ export function ChatScreen() {
     }
   };
 
-  const isMe = (msg: ChatMessage) => msg.userId === user?.id;
+  function roleColor(role?: string) {
+    switch ((role ?? '').toUpperCase()) {
+      case 'ADMIN':      return colors.roleAdmin;
+      case 'ENGINEER':   return colors.roleEngineer;
+      case 'ACCOUNTANT': return colors.roleAccountant;
+      default:           return colors.roleWorker;
+    }
+  }
 
+  // ── Groups view ────────────────────────────────────────────────────────────
+  if (view === 'groups') {
+    return (
+      <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
+        <View style={[styles.header, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
+          <View style={[styles.headerIcon, { backgroundColor: colors.primaryLight }]}>
+            <Ionicons name="chatbubbles" size={18} color={colors.primary} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.headerTitle, { color: colors.text }]}>{isAr ? 'المحادثات' : 'Chat'}</Text>
+            <Text style={[styles.headerSub, { color: colors.textMuted }]}>
+              {groups.length} {isAr ? 'مجموعة' : 'groups'}
+            </Text>
+          </View>
+        </View>
+
+        {loadingGroups ? (
+          <View style={styles.center}><ActivityIndicator size="large" color={colors.primary} /></View>
+        ) : (
+          <FlatList
+            data={groups}
+            keyExtractor={g => String(g.id)}
+            renderItem={({ item }) => <GroupCard group={item} onPress={() => openGroup(item)} />}
+            contentContainerStyle={styles.list}
+            showsVerticalScrollIndicator={false}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={() => { setRefreshing(true); void loadGroups(); }}
+                tintColor={colors.primary}
+              />
+            }
+            ListEmptyComponent={
+              <View style={styles.empty}>
+                <Ionicons name="chatbubbles-outline" size={44} color={colors.textMuted} />
+                <Text style={[styles.emptyText, { color: colors.textMuted }]}>
+                  {isAr ? 'لا توجد مجموعات بعد' : 'No groups yet'}
+                </Text>
+                <Text style={[styles.emptyHint, { color: colors.textMuted }]}>
+                  {isAr ? 'ينشئ المديرون مجموعات الدردشة' : 'Admins create chat groups'}
+                </Text>
+              </View>
+            }
+          />
+        )}
+
+        {/* FAB backdrop */}
+        {fabOpen && (
+          <TouchableOpacity
+            style={styles.fabBackdrop}
+            onPress={() => setFabOpen(false)}
+            activeOpacity={1}
+          />
+        )}
+
+        {/* FAB menu */}
+        {fabOpen && (
+          <View style={styles.fabMenu}>
+            {isAdmin && (
+              <TouchableOpacity
+                style={[styles.fabItem, { backgroundColor: colors.surface }]}
+                onPress={() => { setFabOpen(false); setShowCreateGroup(true); }}
+              >
+                <Ionicons name="add-circle-outline" size={18} color={colors.primary} />
+                <Text style={[styles.fabItemText, { color: colors.text }]}>
+                  {isAr ? 'إنشاء مجموعة' : 'Create Group'}
+                </Text>
+              </TouchableOpacity>
+            )}
+            {isAdmin && (
+              <TouchableOpacity
+                style={[styles.fabItem, { backgroundColor: colors.surface }]}
+                onPress={() => { setFabOpen(false); setShowAdminSend(true); }}
+              >
+                <Ionicons name="megaphone-outline" size={18} color={colors.warning} />
+                <Text style={[styles.fabItemText, { color: colors.text }]}>
+                  {isAr ? 'رسالة مستهدفة' : 'Targeted Message'}
+                </Text>
+              </TouchableOpacity>
+            )}
+            {!isAdmin && (
+              <TouchableOpacity
+                style={[styles.fabItem, { backgroundColor: colors.surface }]}
+                onPress={() => { setFabOpen(false); setShowDirect(true); }}
+              >
+                <Ionicons name="chatbubble-outline" size={18} color={colors.primary} />
+                <Text style={[styles.fabItemText, { color: colors.text }]}>
+                  {isAr ? 'رسالة مباشرة' : 'Direct Message'}
+                </Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        )}
+
+        <TouchableOpacity
+          style={[styles.fab, { backgroundColor: fabOpen ? colors.danger : colors.primary }]}
+          onPress={() => setFabOpen(v => !v)}
+          activeOpacity={0.85}
+        >
+          <Ionicons name={fabOpen ? 'close' : 'add'} size={26} color="#fff" />
+        </TouchableOpacity>
+
+        <AdminChatModal
+          visible={showAdminSend}
+          onClose={() => setShowAdminSend(false)}
+          onSent={() => { setShowAdminSend(false); void loadGroups(); }}
+        />
+        <CreateGroupModal
+          visible={showCreateGroup}
+          onClose={() => setShowCreateGroup(false)}
+          onCreate={() => { setShowCreateGroup(false); void loadGroups(); }}
+        />
+        <DirectMessageModal
+          visible={showDirect}
+          onClose={() => setShowDirect(false)}
+          onSent={() => { setShowDirect(false); }}
+        />
+      </SafeAreaView>
+    );
+  }
+
+  // ── Messages view ──────────────────────────────────────────────────────────
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
       <View style={[styles.header, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
-        <View style={[styles.headerIcon, { backgroundColor: colors.primaryLight }]}>
-          <Ionicons name="chatbubbles" size={18} color={colors.primary} />
-        </View>
-        <View>
-          <Text style={[styles.headerTitle, { color: colors.text }]}>{isAr ? 'محادثة الفريق' : 'Team Chat'}</Text>
-          <Text style={[styles.headerSub, { color: colors.textMuted }]}>{isAr ? 'محادثة عامة للشركة' : 'Company-wide conversation'}</Text>
-        </View>
-        <TouchableOpacity onPress={load} style={styles.refreshBtn}>
-          <Ionicons name="refresh-outline" size={20} color={colors.textMuted} />
+        <TouchableOpacity style={styles.backBtn} onPress={goBack}>
+          <Ionicons name="arrow-back" size={22} color={colors.text} />
         </TouchableOpacity>
+        <View style={[styles.headerIcon, { backgroundColor: `${colors.primary}20` }]}>
+          <Ionicons name="people" size={18} color={colors.primary} />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={[styles.headerTitle, { color: colors.text }]} numberOfLines={1}>
+            {activeGroup?.name}
+          </Text>
+          {activeGroup?._count && (
+            <Text style={[styles.headerSub, { color: colors.textMuted }]}>
+              {activeGroup._count.members} {isAr ? 'عضو' : 'members'}
+            </Text>
+          )}
+        </View>
       </View>
 
-      {loading ? (
+      {loadingMsgs ? (
         <View style={styles.center}><ActivityIndicator size="large" color={colors.primary} /></View>
       ) : (
         <KeyboardAvoidingView
@@ -116,44 +644,62 @@ export function ChatScreen() {
           <FlatList
             ref={listRef}
             data={messages}
-            keyExtractor={(m) => m.id}
+            keyExtractor={m => String(m.id)}
             contentContainerStyle={styles.messageList}
             showsVerticalScrollIndicator={false}
+            onContentSizeChange={() => listRef.current?.scrollToEnd({ animated: false })}
             ListEmptyComponent={
               <View style={styles.empty}>
                 <Ionicons name="chatbubbles-outline" size={44} color={colors.textMuted} />
-                <Text style={[styles.emptyText, { color: colors.textMuted }]}>{isAr ? 'لا توجد رسائل بعد. ابدأ المحادثة!' : 'No messages yet. Start the conversation!'}</Text>
+                <Text style={[styles.emptyText, { color: colors.textMuted }]}>
+                  {isAr ? 'لا توجد رسائل بعد. ابدأ المحادثة!' : 'No messages yet. Start the conversation!'}
+                </Text>
               </View>
             }
-            renderItem={({ item: msg }) => {
-              const me = isMe(msg);
-              const rc = roleColor(msg.userRole);
+            renderItem={({ item: msg, index }) => {
+              const me = msg.senderId === user?.id || msg.sender?.id === user?.id;
+              const rc = roleColor(msg.sender?.role);
+              const showDateSep = index === 0
+                || fmtDate(msg.createdAt, false) !== fmtDate(messages[index - 1].createdAt, false);
               return (
-                <View style={[styles.row, me && styles.rowMe]}>
-                  {!me && (
-                    <View style={[styles.avatar, { backgroundColor: `${rc}20` }]}>
-                      <Text style={[styles.avatarText, { color: rc }]}>{initials(msg.userName)}</Text>
+                <>
+                  {showDateSep && (
+                    <View style={styles.dateSep}>
+                      <View style={[styles.dateLine, { backgroundColor: colors.border }]} />
+                      <Text style={[styles.dateLabel, { color: colors.textMuted, backgroundColor: colors.background }]}>
+                        {fmtDate(msg.createdAt, isAr)}
+                      </Text>
+                      <View style={[styles.dateLine, { backgroundColor: colors.border }]} />
                     </View>
                   )}
-                  <View style={styles.bubble}>
+                  <View style={[styles.msgRow, me && styles.msgRowMe]}>
                     {!me && (
-                      <Text style={[styles.bubbleName, { color: rc }]}>
-                        {msg.userName ?? 'Unknown'}{msg.userRole ? ` · ${msg.userRole}` : ''}
-                      </Text>
+                      <View style={[styles.msgAvatar, { backgroundColor: `${rc}20` }]}>
+                        <Text style={[styles.msgAvatarText, { color: rc }]}>{initials(msg.sender?.fullName)}</Text>
+                      </View>
                     )}
-                    <View style={[
-                      styles.bubbleBody,
-                      me
-                        ? [styles.bodyMe, { backgroundColor: colors.primary }]
-                        : [styles.bodyThem, { backgroundColor: colors.surface, borderColor: colors.border }],
-                    ]}>
-                      <Text style={[styles.bubbleText, { color: colors.text }, me && styles.textMe]}>{msg.message}</Text>
+                    <View style={[styles.msgBubble, me && styles.msgBubbleMe]}>
+                      {!me && msg.sender && (
+                        <Text style={[styles.msgSender, { color: rc }]}>
+                          {msg.sender.fullName}{msg.sender.role ? ` · ${msg.sender.role}` : ''}
+                        </Text>
+                      )}
+                      <View style={[
+                        styles.msgBody,
+                        me
+                          ? [styles.msgBodyMe,   { backgroundColor: colors.primary }]
+                          : [styles.msgBodyThem, { backgroundColor: colors.surface, borderColor: colors.border }],
+                      ]}>
+                        <Text style={[styles.msgText, { color: me ? '#fff' : colors.text }]}>
+                          {msg.content}
+                        </Text>
+                      </View>
+                      <Text style={[styles.msgTime, { color: colors.textMuted }, me && { textAlign: 'right' }]}>
+                        {fmtTime(msg.createdAt)}
+                      </Text>
                     </View>
-                    <Text style={[styles.timestamp, { color: colors.textMuted }, me && { textAlign: 'right' }]}>
-                      {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                    </Text>
                   </View>
-                </View>
+                </>
               );
             }}
           />
@@ -166,16 +712,18 @@ export function ChatScreen() {
               value={input}
               onChangeText={setInput}
               multiline
-              maxLength={500}
-              returnKeyType="send"
+              maxLength={2000}
             />
             <TouchableOpacity
-              style={[styles.sendBtn, { backgroundColor: colors.primary }, (!input.trim() || sending) && { backgroundColor: colors.textMuted }]}
+              style={[styles.sendBtn, { backgroundColor: (!input.trim() || sending) ? colors.textMuted : colors.primary }]}
               onPress={send}
               disabled={!input.trim() || sending}
               activeOpacity={0.8}
             >
-              {sending ? <ActivityIndicator size="small" color="#fff" /> : <Ionicons name="send" size={18} color="#fff" />}
+              {sending
+                ? <ActivityIndicator size="small" color="#fff" />
+                : <Ionicons name="send" size={18} color="#fff" />
+              }
             </TouchableOpacity>
           </View>
         </KeyboardAvoidingView>
@@ -185,30 +733,71 @@ export function ChatScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe:        { flex: 1 },
-  flex:        { flex: 1 },
-  center:      { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  safe:   { flex: 1 },
+  flex:   { flex: 1 },
+  center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+
   header:      { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingHorizontal: spacing.md, paddingVertical: 12, borderBottomWidth: 1 },
   headerIcon:  { width: 36, height: 36, borderRadius: radius.sm, alignItems: 'center', justifyContent: 'center' },
   headerTitle: { ...typography.h4 },
   headerSub:   { ...typography.caption },
-  refreshBtn:  { marginLeft: 'auto', padding: 8 },
+  backBtn:     { padding: 4, marginRight: 4 },
+
+  // Groups list
+  list:         { padding: spacing.md, paddingBottom: 100 },
+  groupCard:    { flexDirection: 'row', alignItems: 'center', borderRadius: radius.md, padding: spacing.md, marginBottom: spacing.sm, gap: spacing.sm, ...shadow.sm },
+  groupAvatar:  { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
+  groupInfo:    { flex: 1 },
+  groupTop:     { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 3 },
+  groupName:    { flex: 1, fontSize: 15 },
+  groupTime:    { ...typography.caption, flexShrink: 0 },
+  groupBottom:  { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  groupPreview: { ...typography.caption, flex: 1, marginRight: 8 },
+  unreadBadge:  { minWidth: 18, height: 18, borderRadius: 9, paddingHorizontal: 4, alignItems: 'center', justifyContent: 'center' },
+  unreadBadgeText: { color: '#fff', fontSize: 10, fontWeight: '700' },
+
+  // Messages
   messageList: { padding: spacing.md, paddingBottom: spacing.lg },
-  empty:       { alignItems: 'center', paddingVertical: spacing.xxl, gap: spacing.sm },
-  emptyText:   { ...typography.bodySmall, textAlign: 'center' },
-  row:         { flexDirection: 'row', marginBottom: spacing.sm, gap: 8 },
-  rowMe:       { flexDirection: 'row-reverse' },
-  avatar:      { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center', alignSelf: 'flex-end' },
-  avatarText:  { fontSize: 12, fontWeight: '700' },
-  bubble:      { flex: 1, maxWidth: '80%' },
-  bubbleName:  { ...typography.caption, fontWeight: '700', marginBottom: 3, marginLeft: 2 },
-  bubbleBody:  { borderRadius: radius.lg, paddingHorizontal: 14, paddingVertical: 10, ...shadow.sm },
-  bodyThem:    { borderBottomLeftRadius: 4, borderWidth: 1 },
-  bodyMe:      { borderBottomRightRadius: 4 },
-  bubbleText:  { fontSize: 15, lineHeight: 22 },
-  textMe:      { color: '#fff' },
-  timestamp:   { ...typography.caption, marginTop: 3, marginHorizontal: 4 },
+  dateSep:     { flexDirection: 'row', alignItems: 'center', marginVertical: 12, gap: 8 },
+  dateLine:    { flex: 1, height: 1 },
+  dateLabel:   { ...typography.caption, paddingHorizontal: 8 },
+  msgRow:      { flexDirection: 'row', marginBottom: 10, gap: 8 },
+  msgRowMe:    { flexDirection: 'row-reverse' },
+  msgAvatar:   { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center', alignSelf: 'flex-end' },
+  msgAvatarText:{ fontSize: 12, fontWeight: '700' },
+  msgBubble:   { flex: 1, maxWidth: '80%' },
+  msgBubbleMe: { alignItems: 'flex-end' },
+  msgSender:   { ...typography.caption, fontWeight: '700', marginBottom: 3, marginLeft: 2 },
+  msgBody:     { borderRadius: radius.lg, paddingHorizontal: 14, paddingVertical: 10, ...shadow.sm },
+  msgBodyThem: { borderBottomLeftRadius: 4, borderWidth: 1 },
+  msgBodyMe:   { borderBottomRightRadius: 4 },
+  msgText:     { fontSize: 15, lineHeight: 22 },
+  msgTime:     { ...typography.caption, marginTop: 3, marginHorizontal: 4 },
   inputBar:    { flexDirection: 'row', alignItems: 'flex-end', paddingHorizontal: spacing.md, paddingVertical: 10, borderTopWidth: 1, gap: spacing.sm },
   textInput:   { flex: 1, borderWidth: 1.5, borderRadius: radius.lg, paddingHorizontal: 14, paddingVertical: 10, fontSize: 15, maxHeight: 100 },
   sendBtn:     { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
+
+  // FAB
+  fab:         { position: 'absolute', bottom: 28, right: 24, width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center', ...shadow.sm },
+  fabBackdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'transparent', zIndex: 1 },
+  fabMenu:     { position: 'absolute', bottom: 92, right: 24, gap: 8, zIndex: 2 },
+  fabItem:     { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 16, paddingVertical: 12, borderRadius: radius.md, ...shadow.sm },
+  fabItemText: { fontSize: 14, fontWeight: '600' },
+
+  // Shared modal
+  overlay:     { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
+  sheet:       { borderTopLeftRadius: 24, borderTopRightRadius: 24, maxHeight: '85%' },
+  sheetHandle: { width: 36, height: 4, borderRadius: 2, alignSelf: 'center', marginTop: 10, marginBottom: 4 },
+  sheetHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: spacing.md, paddingBottom: spacing.sm },
+  sheetTitle:  { ...typography.h3 },
+  fieldLabel:  { ...typography.caption, fontWeight: '600', marginBottom: 6, marginTop: spacing.sm },
+  input:       { borderWidth: 1.5, borderRadius: radius.md, paddingHorizontal: 14, paddingVertical: 10, fontSize: 15, marginBottom: spacing.md },
+  textarea:    { minHeight: 80, textAlignVertical: 'top' },
+  modalActions:{ flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.md },
+  modalBtn:    { flex: 1, paddingVertical: 12, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center' },
+
+  // Empty
+  empty:     { alignItems: 'center', paddingVertical: spacing.xxl, gap: spacing.sm },
+  emptyText: { ...typography.bodySmall, textAlign: 'center' },
+  emptyHint: { ...typography.caption, textAlign: 'center' },
 });

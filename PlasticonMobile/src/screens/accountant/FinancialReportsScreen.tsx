@@ -4,7 +4,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { api } from '../../api/client';
 import { ScreenHeader } from '../../components';
-import { colors, radius, shadow, spacing, typography } from '../../theme';
+import { radius, shadow, spacing, typography } from '../../theme';
+import { useAppTheme } from '../../context/ThemeContext';
+import { useLocale } from '../../context/LocaleContext';
 
 interface FinancialReport {
   id: number;
@@ -16,25 +18,33 @@ interface FinancialReport {
   createdAt: string;
 }
 
-const TYPE_COLOR: Record<string, string> = {
-  'P&L':          colors.success,
-  BalanceSheet:   colors.primary,
-  CashFlow:       colors.info,
-  TaxReport:      colors.warning,
-  Payroll:        colors.accent,
-};
-
 function ReportCard({ item }: { item: FinancialReport }) {
+  const { colors } = useAppTheme();
+  const { isAr } = useLocale();
+
+  const TYPE_COLOR: Record<string, string> = {
+    'P&L':        colors.success,
+    BalanceSheet: colors.primary,
+    CashFlow:     colors.info,
+    TaxReport:    colors.warning,
+    Payroll:      colors.accent,
+  };
+
   const color = TYPE_COLOR[item.reportType ?? ''] ?? colors.textMuted;
+
   return (
-    <View style={styles.card}>
+    <View style={[styles.card, { backgroundColor: colors.surface }]}>
       <View style={styles.cardTop}>
         <View style={[styles.iconWrap, { backgroundColor: `${color}15` }]}>
           <Ionicons name="document-text" size={20} color={color} />
         </View>
         <View style={styles.cardContent}>
-          <Text style={styles.title} numberOfLines={1}>{item.title ?? item.reportType ?? `Report #${item.id}`}</Text>
-          <Text style={styles.period}>{item.period ?? new Date(item.createdAt).toLocaleDateString([], { month: 'long', year: 'numeric' })}</Text>
+          <Text style={[styles.title, { color: colors.text }]} numberOfLines={1}>
+            {item.title ?? item.reportType ?? `${isAr ? 'تقرير #' : 'Report #'}${item.id}`}
+          </Text>
+          <Text style={[styles.period, { color: colors.textMuted }]}>
+            {item.period ?? new Date(item.createdAt).toLocaleDateString([], { month: 'long', year: 'numeric' })}
+          </Text>
         </View>
         {item.reportType && (
           <View style={[styles.typeBadge, { backgroundColor: `${color}15` }]}>
@@ -42,16 +52,16 @@ function ReportCard({ item }: { item: FinancialReport }) {
           </View>
         )}
       </View>
-      <View style={styles.footer}>
+      <View style={[styles.footer, { borderTopColor: colors.border }]}>
         <Ionicons name="time-outline" size={12} color={colors.textMuted} />
-        <Text style={styles.meta}>
+        <Text style={[styles.meta, { color: colors.textMuted }]}>
           {new Date(item.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}
           {item.generatedBy ? ` · ${item.generatedBy.fullName}` : ''}
         </Text>
         {item.pdfPath && (
-          <View style={styles.pdfBadge}>
+          <View style={[styles.pdfBadge, { backgroundColor: `${colors.primary}15` }]}>
             <Ionicons name="attach-outline" size={12} color={colors.primary} />
-            <Text style={styles.pdfText}>PDF</Text>
+            <Text style={[styles.pdfText, { color: colors.primary }]}>PDF</Text>
           </View>
         )}
       </View>
@@ -60,6 +70,8 @@ function ReportCard({ item }: { item: FinancialReport }) {
 }
 
 export function FinancialReportsScreen() {
+  const { colors } = useAppTheme();
+  const { isAr } = useLocale();
   const [reports, setReports]   = useState<FinancialReport[]>([]);
   const [loading, setLoading]   = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -69,18 +81,20 @@ export function FinancialReportsScreen() {
       const res = await api.get<FinancialReport[]>('/financial-reports?limit=30');
       setReports(Array.isArray(res) ? res : []);
     } catch (e: any) {
-      Alert.alert('Error', e?.message ?? 'Failed to load reports');
+      Alert.alert(isAr ? 'خطأ' : 'Error', e?.message ?? (isAr ? 'فشل تحميل التقارير' : 'Failed to load reports'));
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  }, []);
+  }, [isAr]);
 
   useEffect(() => { void load(); }, [load]);
 
+  const subtitle = `${reports.length} ${isAr ? 'تقرير' : `report${reports.length !== 1 ? 's' : ''}`}`;
+
   return (
-    <SafeAreaView style={styles.safe}>
-      <ScreenHeader title="Financial Reports" subtitle={`${reports.length} report${reports.length !== 1 ? 's' : ''}`} showBack />
+    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
+      <ScreenHeader title={isAr ? 'التقارير المالية' : 'Financial Reports'} subtitle={subtitle} showBack />
       {loading ? <View style={styles.center}><ActivityIndicator size="large" color={colors.primary} /></View> : (
         <FlatList
           data={reports}
@@ -92,8 +106,12 @@ export function FinancialReportsScreen() {
           ListEmptyComponent={
             <View style={styles.empty}>
               <Ionicons name="document-outline" size={44} color={colors.textMuted} />
-              <Text style={styles.emptyText}>No reports available</Text>
-              <Text style={styles.emptyHint}>Reports are generated by finance managers on the web dashboard</Text>
+              <Text style={[styles.emptyText, { color: colors.textMuted }]}>
+                {isAr ? 'لا توجد تقارير' : 'No reports available'}
+              </Text>
+              <Text style={[styles.emptyHint, { color: colors.textMuted }]}>
+                {isAr ? 'يتم إنشاء التقارير بواسطة مديري المالية على لوحة الويب' : 'Reports are generated by finance managers on the web dashboard'}
+              </Text>
             </View>
           }
         />
@@ -103,22 +121,22 @@ export function FinancialReportsScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe:        { flex: 1, backgroundColor: colors.background },
+  safe:        { flex: 1 },
   center:      { flex: 1, alignItems: 'center', justifyContent: 'center' },
   list:        { padding: spacing.md, paddingBottom: 40 },
-  card:        { backgroundColor: colors.surface, borderRadius: radius.lg, padding: spacing.md, marginBottom: spacing.sm, ...shadow.sm },
+  card:        { borderRadius: radius.lg, padding: spacing.md, marginBottom: spacing.sm, ...shadow.sm },
   cardTop:     { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.sm, marginBottom: spacing.sm },
   iconWrap:    { width: 40, height: 40, borderRadius: radius.sm, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
   cardContent: { flex: 1 },
   title:       { ...typography.h4 },
-  period:      { ...typography.caption, color: colors.textMuted, marginTop: 2 },
+  period:      { ...typography.caption, marginTop: 2 },
   typeBadge:   { paddingHorizontal: 8, paddingVertical: 3, borderRadius: radius.full, flexShrink: 0 },
   typeText:    { fontSize: 10, fontWeight: '700' },
-  footer:      { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, borderTopWidth: 1, borderTopColor: colors.border, paddingTop: spacing.sm },
-  meta:        { ...typography.caption, color: colors.textMuted, flex: 1 },
-  pdfBadge:    { flexDirection: 'row', alignItems: 'center', gap: 3, paddingHorizontal: 6, paddingVertical: 2, borderRadius: radius.sm, backgroundColor: `${colors.primary}15` },
-  pdfText:     { fontSize: 10, fontWeight: '700', color: colors.primary },
+  footer:      { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, borderTopWidth: 1, paddingTop: spacing.sm },
+  meta:        { ...typography.caption, flex: 1 },
+  pdfBadge:    { flexDirection: 'row', alignItems: 'center', gap: 3, paddingHorizontal: 6, paddingVertical: 2, borderRadius: radius.sm },
+  pdfText:     { fontSize: 10, fontWeight: '700' },
   empty:       { alignItems: 'center', paddingTop: 60, gap: spacing.sm, paddingHorizontal: spacing.lg },
-  emptyText:   { ...typography.bodySmall, color: colors.textMuted },
-  emptyHint:   { ...typography.caption, color: colors.textMuted, textAlign: 'center' },
+  emptyText:   { ...typography.bodySmall },
+  emptyHint:   { ...typography.caption, textAlign: 'center' },
 });

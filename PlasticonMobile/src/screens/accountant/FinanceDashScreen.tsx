@@ -5,19 +5,21 @@ import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { api } from '../../api/client';
 import { ScreenHeader, StatCard } from '../../components';
-import { colors, radius, shadow, spacing, typography } from '../../theme';
+import { radius, shadow, spacing, typography } from '../../theme';
+import { useAppTheme } from '../../context/ThemeContext';
+import { useLocale } from '../../context/LocaleContext';
 
 interface FinanceSummary {
-  revenue?:         number;
-  salesRevenue?:    number;
-  expenses?:        number;
+  revenue?:          number;
+  salesRevenue?:     number;
+  expenses?:         number;
   approvedExpenses?: number;
-  netProfit?:       number;
-  profit?:          number;
-  cashBalance?:     number;
-  rawMaterialCost?: number;
-  electricityCost?: number;
-  salaryCost?:      number;
+  netProfit?:        number;
+  profit?:           number;
+  cashBalance?:      number;
+  rawMaterialCost?:  number;
+  electricityCost?:  number;
+  salaryCost?:       number;
 }
 
 function fmt(n: number) {
@@ -25,6 +27,8 @@ function fmt(n: number) {
 }
 
 export function FinanceDashScreen() {
+  const { colors } = useAppTheme();
+  const { isAr } = useLocale();
   const [data, setData]         = useState<FinanceSummary | null>(null);
   const [loading, setLoading]   = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -51,13 +55,26 @@ export function FinanceDashScreen() {
 
   useEffect(() => { void load(); }, [load]);
 
-  const totalRevenue = data?.salesRevenue ?? data?.revenue ?? 0;
+  const totalRevenue  = data?.salesRevenue ?? data?.revenue ?? 0;
   const totalExpenses = (data?.approvedExpenses ?? data?.expenses ?? 0) + (data?.rawMaterialCost ?? 0) + (data?.electricityCost ?? 0) + (data?.salaryCost ?? 0);
-  const profit = data?.netProfit ?? data?.profit ?? 0;
+  const profit        = data?.netProfit ?? data?.profit ?? 0;
+
+  const quickLinks = [
+    { icon: 'document-text', label: isAr ? 'التقارير'  : 'Reports',  color: colors.primary, screen: 'FinancialReports' },
+    { icon: 'analytics',     label: isAr ? 'التحليل'   : 'Analysis', color: colors.info,    screen: 'CostAnalysis' },
+    { icon: 'wallet',        label: isAr ? 'الميزانية' : 'Budget',   color: colors.success, screen: 'BudgetPlanning' },
+  ];
+
+  const costBreakdown = [
+    { label: isAr ? 'المواد الخام'    : 'Raw Materials',    value: data?.rawMaterialCost ?? 0,    color: colors.warning },
+    { label: isAr ? 'الكهرباء'        : 'Electricity',       value: data?.electricityCost ?? 0,    color: colors.info },
+    { label: isAr ? 'الرواتب'         : 'Salaries',          value: data?.salaryCost ?? 0,          color: colors.accent },
+    { label: isAr ? 'مصروفات أخرى'   : 'Other Expenses',    value: data?.approvedExpenses ?? 0,   color: colors.danger },
+  ];
 
   return (
-    <SafeAreaView style={styles.safe}>
-      <ScreenHeader title="Finance Dashboard" />
+    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
+      <ScreenHeader title={isAr ? 'لوحة المالية' : 'Finance Dashboard'} />
       {loading ? <View style={styles.center}><ActivityIndicator size="large" color={colors.primary} /></View> : (
         <ScrollView
           contentContainerStyle={styles.content}
@@ -65,41 +82,41 @@ export function FinanceDashScreen() {
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); void load(); }} tintColor={colors.primary} />}
         >
           <View style={styles.kpiRow}>
-            <StatCard label="Sales Revenue"  value={`$${fmt(totalRevenue)}`}   icon="trending-up"   color={colors.success} style={styles.kpi} />
-            <StatCard label="Total Expenses" value={`$${fmt(totalExpenses)}`}  icon="trending-down" color={colors.danger}  style={styles.kpi} />
+            <StatCard label={isAr ? 'إيرادات المبيعات' : 'Sales Revenue'}  value={`$${fmt(totalRevenue)}`}   icon="trending-up"   color={colors.success} style={styles.kpi} />
+            <StatCard label={isAr ? 'إجمالي المصروفات' : 'Total Expenses'} value={`$${fmt(totalExpenses)}`}  icon="trending-down" color={colors.danger}  style={styles.kpi} />
           </View>
           <View style={styles.kpiRow}>
-            <StatCard label="Net Profit"     value={`$${fmt(profit)}`}                              icon="cash"          color={profit >= 0 ? colors.success : colors.danger} style={styles.kpi} />
-            <StatCard label="Salary Cost"    value={`$${fmt(data?.salaryCost ?? 0)}`}               icon="people"        color={colors.info}    style={styles.kpi} />
+            <StatCard label={isAr ? 'صافي الربح'     : 'Net Profit'}    value={`$${fmt(profit)}`}                         icon="cash"    color={profit >= 0 ? colors.success : colors.danger} style={styles.kpi} />
+            <StatCard label={isAr ? 'تكلفة الرواتب'  : 'Salary Cost'}   value={`$${fmt(data?.salaryCost ?? 0)}`}          icon="people"  color={colors.info} style={styles.kpi} />
           </View>
 
           {(data?.rawMaterialCost != null || data?.electricityCost != null) && (
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Cost Breakdown</Text>
-              {[
-                { label: 'Raw Materials', value: data?.rawMaterialCost ?? 0, color: colors.warning },
-                { label: 'Electricity',   value: data?.electricityCost ?? 0, color: colors.info },
-                { label: 'Salaries',      value: data?.salaryCost ?? 0,      color: colors.accent },
-                { label: 'Other Expenses',value: data?.approvedExpenses ?? 0, color: colors.danger },
-              ].map((row) => (
-                <View key={row.label} style={styles.alertRow}>
+            <View style={[styles.section, { backgroundColor: colors.surface }]}>
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>
+                {isAr ? 'توزيع التكاليف' : 'Cost Breakdown'}
+              </Text>
+              {costBreakdown.map((row) => (
+                <View key={row.label} style={[styles.alertRow, { borderBottomColor: colors.border }]}>
                   <View style={[styles.dot, { backgroundColor: row.color }]} />
-                  <Text style={styles.alertText}>{row.label}</Text>
+                  <Text style={[styles.alertText, { color: colors.textSecondary }]}>{row.label}</Text>
                   <Text style={[styles.alertText, { fontWeight: '700', color: row.color }]}>${fmt(row.value)}</Text>
                 </View>
               ))}
             </View>
           )}
 
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Quick Access</Text>
+          <View style={[styles.section, { backgroundColor: colors.surface }]}>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>
+              {isAr ? 'الوصول السريع' : 'Quick Access'}
+            </Text>
             <View style={styles.qlRow}>
-              {[
-                { icon: 'document-text', label: 'Reports',  color: colors.primary, screen: 'FinancialReports' },
-                { icon: 'analytics',     label: 'Analysis', color: colors.info,    screen: 'CostAnalysis' },
-                { icon: 'wallet',        label: 'Budget',   color: colors.success, screen: 'BudgetPlanning' },
-              ].map((q) => (
-                <TouchableOpacity key={q.screen} style={[styles.ql, { borderColor: `${q.color}40` }]} onPress={() => navigation.navigate(q.screen)} activeOpacity={0.75}>
+              {quickLinks.map((q) => (
+                <TouchableOpacity
+                  key={q.screen}
+                  style={[styles.ql, { borderColor: `${q.color}40`, backgroundColor: colors.surfaceAlt }]}
+                  onPress={() => navigation.navigate(q.screen)}
+                  activeOpacity={0.75}
+                >
                   <Ionicons name={q.icon as any} size={20} color={q.color} />
                   <Text style={[styles.qlLabel, { color: q.color }]}>{q.label}</Text>
                 </TouchableOpacity>
@@ -108,11 +125,17 @@ export function FinanceDashScreen() {
           </View>
 
           {invoicePending > 0 && (
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Alerts</Text>
-              <View style={styles.alertRow}>
+            <View style={[styles.section, { backgroundColor: colors.surface }]}>
+              <Text style={[styles.sectionTitle, { color: colors.text }]}>
+                {isAr ? 'تنبيهات' : 'Alerts'}
+              </Text>
+              <View style={[styles.alertRow, { borderBottomColor: colors.border }]}>
                 <Ionicons name="alert-circle" size={18} color={colors.warning} />
-                <Text style={styles.alertText}>{invoicePending} pending invoices awaiting action</Text>
+                <Text style={[styles.alertText, { color: colors.textSecondary }]}>
+                  {isAr
+                    ? `${invoicePending} فاتورة معلقة تنتظر الإجراء`
+                    : `${invoicePending} pending invoices awaiting action`}
+                </Text>
               </View>
             </View>
           )}
@@ -123,17 +146,17 @@ export function FinanceDashScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe:         { flex: 1, backgroundColor: colors.background },
+  safe:         { flex: 1 },
   center:       { flex: 1, alignItems: 'center', justifyContent: 'center' },
   content:      { padding: spacing.md, paddingBottom: 40 },
   kpiRow:       { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.sm },
   kpi:          { flex: 1 },
-  section:      { backgroundColor: colors.surface, borderRadius: radius.lg, padding: spacing.md, marginTop: spacing.md, ...shadow.sm },
+  section:      { borderRadius: radius.lg, padding: spacing.md, marginTop: spacing.md, ...shadow.sm },
   sectionTitle: { ...typography.h4, marginBottom: spacing.md },
   qlRow:        { flexDirection: 'row', gap: spacing.sm },
-  ql:           { flex: 1, alignItems: 'center', gap: 6, paddingVertical: 12, borderRadius: radius.md, borderWidth: 1.5, backgroundColor: colors.surfaceAlt },
+  ql:           { flex: 1, alignItems: 'center', gap: 6, paddingVertical: 12, borderRadius: radius.md, borderWidth: 1.5 },
   dot:          { width: 8, height: 8, borderRadius: 4 },
   qlLabel:      { fontSize: 11, fontWeight: '700' },
-  alertRow:     { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: colors.border },
+  alertRow:     { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingVertical: 8, borderBottomWidth: 1 },
   alertText:    { ...typography.bodySmall, flex: 1 },
 });

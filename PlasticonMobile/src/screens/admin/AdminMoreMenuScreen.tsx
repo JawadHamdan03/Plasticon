@@ -14,34 +14,130 @@ export function AdminMoreMenuScreen() {
 
   const SECTIONS = [
     {
-      title: 'User Management',
+      title: isAr ? 'إدارة المستخدمين' : 'User Management',
       items: [
-        { icon: 'people',          label: 'Users',               desc: 'Manage all user accounts and roles',          screen: 'Users',              color: colors.primary },
-        { icon: 'person-add',      label: 'Registrations',       desc: 'Pending access requests and approvals',       screen: 'Registrations',      color: colors.warning },
-        { icon: 'briefcase',       label: 'Engineer Overview',   desc: 'Engineering team performance review',         screen: 'EngineerOverview',   color: colors.roleEngineer },
-        { icon: 'people',          label: 'Customers',           desc: 'Customer accounts derived from sales records', screen: 'Customers',          color: colors.info },
+        {
+          icon: 'people',
+          label: isAr ? 'المستخدمون' : 'Users',
+          desc:  isAr ? 'إدارة جميع حسابات المستخدمين والأدوار' : 'Manage all user accounts and roles',
+          screen: 'Users',
+          color: colors.primary,
+        },
+        {
+          icon: 'person-add',
+          label: isAr ? 'طلبات التسجيل' : 'Registrations',
+          desc:  isAr ? 'طلبات الوصول المعلقة والموافقات' : 'Pending access requests and approvals',
+          screen: 'Registrations',
+          color: colors.warning,
+        },
+        {
+          icon: 'briefcase',
+          label: isAr ? 'نظرة عامة على المهندسين' : 'Engineer Overview',
+          desc:  isAr ? 'مراجعة أداء الفريق الهندسي' : 'Engineering team performance review',
+          screen: 'EngineerOverview',
+          color: colors.roleEngineer,
+        },
+        {
+          icon: 'people',
+          label: isAr ? 'العملاء' : 'Customers',
+          desc:  isAr ? 'حسابات العملاء المستمدة من سجلات المبيعات' : 'Customer accounts derived from sales records',
+          screen: 'Customers',
+          color: colors.info,
+        },
       ],
     },
     {
-      title: 'AI Tools',
+      title: isAr ? 'أدوات الذكاء الاصطناعي' : 'AI Tools',
       items: [
-        { icon: 'hardware-chip',   label: 'AI Assistant',        desc: 'General-purpose factory AI assistant',        screen: 'AIHub',              color: colors.primary },
-        { icon: 'document-text',   label: 'Invoice Extraction',  desc: 'Extract data from invoices using AI',         screen: 'InvoiceExtraction',  color: colors.success },
-        { icon: 'warning',         label: 'Anomaly Detection',   desc: 'Detect production and equipment anomalies',   screen: 'AnomalyDetection',   color: colors.danger },
-        { icon: 'construct',       label: 'Maintenance Report',  desc: 'AI-generated maintenance summaries',          screen: 'MaintenanceReport',  color: colors.warning },
-        { icon: 'swap-horizontal', label: 'Shift Handover',      desc: 'AI-assisted shift handover notes',            screen: 'ShiftHandover',      color: colors.info },
-        { icon: 'school',          label: 'Worker Coaching',     desc: 'AI coaching and guidance for workers',        screen: 'WorkerCoaching',     color: colors.accent },
+        {
+          icon: 'hardware-chip',
+          label: isAr ? 'المساعد الذكي' : 'AI Assistant',
+          desc:  isAr ? 'مساعد ذكي متعدد الأغراض للمصنع' : 'General-purpose factory AI assistant',
+          screen: 'AIHub',
+          color: colors.primary,
+        },
+        {
+          icon: 'document-text',
+          label: isAr ? 'استخراج الفواتير' : 'Invoice Extraction',
+          desc:  isAr ? 'استخراج البيانات من الفواتير بالذكاء الاصطناعي' : 'Extract data from invoices using AI',
+          screen: 'InvoiceExtraction',
+          color: colors.success,
+        },
+        {
+          icon: 'warning',
+          label: isAr ? 'كشف الانحرافات' : 'Anomaly Detection',
+          desc:  isAr ? 'الكشف عن الانحرافات في الإنتاج والمعدات' : 'Detect production and equipment anomalies',
+          screen: 'AnomalyDetection',
+          color: colors.danger,
+        },
+        {
+          icon: 'construct',
+          label: isAr ? 'تقرير الصيانة' : 'Maintenance Report',
+          desc:  isAr ? 'ملخصات الصيانة المولدة بالذكاء الاصطناعي' : 'AI-generated maintenance summaries',
+          screen: 'MaintenanceReport',
+          color: colors.warning,
+        },
+        {
+          icon: 'swap-horizontal',
+          label: isAr ? 'تسليم الوردية' : 'Shift Handover',
+          desc:  isAr ? 'ملاحظات تسليم الوردية بمساعدة الذكاء الاصطناعي' : 'AI-assisted shift handover notes',
+          screen: 'ShiftHandover',
+          color: colors.info,
+        },
+        {
+          icon: 'school',
+          label: isAr ? 'تدريب العمال' : 'Worker Coaching',
+          desc:  isAr ? 'التدريب والتوجيه الذكي للعمال' : 'AI coaching and guidance for workers',
+          screen: 'WorkerCoaching',
+          color: colors.accent,
+        },
       ],
     },
     {
-      title: 'System',
+      title: isAr ? 'النظام' : 'System',
       items: [
-        { icon: 'shield',          label: isAr ? 'سجلات التدقيق' : 'Audit Logs',   desc: 'All system actions and audit trail',          screen: 'AuditLogs',      color: colors.info },
-        { icon: 'camera',          label: 'Admin Snapshots',     desc: 'Administrative snapshots and archives',       screen: 'AdminSnaps',         color: colors.textMuted },
-        { icon: 'settings',        label: isAr ? 'الإعدادات' : 'Settings',          desc: 'System-wide configuration and preferences',   screen: 'Settings',       color: colors.textMuted },
-        { icon: 'chatbubbles',     label: isAr ? 'الدردشة' : 'Chat',                desc: 'Company-wide messaging and discussion',       screen: 'Chat',           color: colors.primary },
-        { icon: 'notifications',   label: isAr ? 'الإشعارات' : 'Notifications',    desc: 'System alerts and notification history',      screen: 'Notifications',  color: colors.accent },
-        { icon: 'person',          label: isAr ? 'ملفي الشخصي' : 'My Profile',     desc: 'Your account settings and preferences',       screen: 'Profile',        color: colors.success },
+        {
+          icon: 'shield',
+          label: isAr ? 'سجلات التدقيق' : 'Audit Logs',
+          desc:  isAr ? 'جميع إجراءات النظام وسجل التدقيق' : 'All system actions and audit trail',
+          screen: 'AuditLogs',
+          color: colors.info,
+        },
+        {
+          icon: 'camera',
+          label: isAr ? 'لقطات المدير' : 'Admin Snapshots',
+          desc:  isAr ? 'اللقطات والأرشيفات الإدارية' : 'Administrative snapshots and archives',
+          screen: 'AdminSnaps',
+          color: colors.textMuted,
+        },
+        {
+          icon: 'settings',
+          label: isAr ? 'الإعدادات' : 'Settings',
+          desc:  isAr ? 'إعدادات النظام والتفضيلات' : 'System-wide configuration and preferences',
+          screen: 'Settings',
+          color: colors.textMuted,
+        },
+        {
+          icon: 'chatbubbles',
+          label: isAr ? 'الدردشة' : 'Chat',
+          desc:  isAr ? 'المراسلة والنقاش على مستوى الشركة' : 'Company-wide messaging and discussion',
+          screen: 'Chat',
+          color: colors.primary,
+        },
+        {
+          icon: 'notifications',
+          label: isAr ? 'الإشعارات' : 'Notifications',
+          desc:  isAr ? 'تنبيهات النظام وسجل الإشعارات' : 'System alerts and notification history',
+          screen: 'Notifications',
+          color: colors.accent,
+        },
+        {
+          icon: 'person',
+          label: isAr ? 'ملفي الشخصي' : 'My Profile',
+          desc:  isAr ? 'إعدادات حسابك وتفضيلاتك' : 'Your account settings and preferences',
+          screen: 'Profile',
+          color: colors.success,
+        },
       ],
     },
   ];
@@ -53,7 +149,7 @@ export function AdminMoreMenuScreen() {
           {isAr ? 'المزيد' : 'More Options'}
         </Text>
         <Text style={[styles.sub, { color: colors.textMuted }]}>
-          User management, AI tools and system settings
+          {isAr ? 'إدارة المستخدمين وأدوات الذكاء الاصطناعي وإعدادات النظام' : 'User management, AI tools and system settings'}
         </Text>
         {SECTIONS.map((section) => (
           <View key={section.title} style={styles.section}>

@@ -1,6 +1,5 @@
 // ─── Plasticon Mobile Design System ─────────────────────────────────────────
-// Industrial-clean aesthetic: dark navy tabs, amber active, blue primary.
-// Deliberately different from the web app's indigo/purple sidebar design.
+
 
 export const colors = {
   // Primary — strong blue (not indigo like the web)
@@ -67,28 +66,18 @@ export const radius = {
   full: 9999,
 };
 
+import { Platform } from 'react-native';
+
 export const shadow = {
-  sm: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  md: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  lg: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.1,
-    shadowRadius: 16,
-    elevation: 8,
-  },
+  sm: Platform.OS === 'web'
+    ? ({ boxShadow: '0 1px 4px rgba(0,0,0,0.06)' } as any)
+    : { shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 4, elevation: 2 },
+  md: Platform.OS === 'web'
+    ? ({ boxShadow: '0 3px 8px rgba(0,0,0,0.08)' } as any)
+    : { shadowColor: '#000', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.08, shadowRadius: 8, elevation: 4 },
+  lg: Platform.OS === 'web'
+    ? ({ boxShadow: '0 6px 16px rgba(0,0,0,0.10)' } as any)
+    : { shadowColor: '#000', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.1, shadowRadius: 16, elevation: 8 },
 };
 
 export const typography = {

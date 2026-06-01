@@ -4,7 +4,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { api } from '../../api/client';
 import { ScreenHeader } from '../../components';
-import { colors, radius, shadow, spacing, typography } from '../../theme';
+import { radius, shadow, spacing, typography } from '../../theme';
+import { useAppTheme } from '../../context/ThemeContext';
+import { useLocale } from '../../context/LocaleContext';
 
 interface AuditLog {
   id: number;
@@ -18,41 +20,45 @@ interface AuditLog {
   createdAt: string;
 }
 
-const ACTION_COLOR: Record<string, string> = {
-  CREATE: colors.success,
-  UPDATE: colors.info,
-  DELETE: colors.danger,
-  LOGIN:  colors.primary,
-  LOGOUT: colors.textMuted,
-  APPROVE: colors.success,
-  REJECT:  colors.danger,
-};
-
 function LogCard({ item }: { item: AuditLog }) {
+  const { colors } = useAppTheme();
+
+  const ACTION_COLOR: Record<string, string> = {
+    CREATE:  colors.success,
+    UPDATE:  colors.info,
+    DELETE:  colors.danger,
+    LOGIN:   colors.primary,
+    LOGOUT:  colors.textMuted,
+    APPROVE: colors.success,
+    REJECT:  colors.danger,
+  };
+
   const action = item.action ?? 'ACTION';
   const color  = ACTION_COLOR[action] ?? colors.textMuted;
   const actor  = item.user?.fullName ?? item.performedBy?.fullName ?? 'System';
   const time   = new Date(item.createdAt).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
 
   return (
-    <View style={styles.log}>
+    <View style={[styles.log, { backgroundColor: colors.surface }]}>
       <View style={[styles.actionDot, { backgroundColor: color }]} />
       <View style={styles.logContent}>
         <View style={styles.logTop}>
           <View style={[styles.actionBadge, { backgroundColor: `${color}15` }]}>
             <Text style={[styles.actionText, { color }]}>{action}</Text>
           </View>
-          {item.entity && <Text style={styles.entity}>{item.entity}{item.entityId ? ` #${item.entityId}` : ''}</Text>}
+          {item.entity && <Text style={[styles.entity, { color: colors.text }]}>{item.entity}{item.entityId ? ` #${item.entityId}` : ''}</Text>}
         </View>
-        <Text style={styles.actor}>{actor}</Text>
-        {item.details && <Text style={styles.details} numberOfLines={2}>{item.details}</Text>}
-        <Text style={styles.time}>{time}</Text>
+        <Text style={[styles.actor, { color: colors.textMuted }]}>{actor}</Text>
+        {item.details && <Text style={[styles.details, { color: colors.textSecondary }]} numberOfLines={2}>{item.details}</Text>}
+        <Text style={[styles.time, { color: colors.textMuted }]}>{time}</Text>
       </View>
     </View>
   );
 }
 
 export function AuditLogsScreen() {
+  const { colors } = useAppTheme();
+  const { isAr } = useLocale();
   const [logs, setLogs]         = useState<AuditLog[]>([]);
   const [loading, setLoading]   = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -72,8 +78,8 @@ export function AuditLogsScreen() {
   useEffect(() => { void load(); }, [load]);
 
   return (
-    <SafeAreaView style={styles.safe}>
-      <ScreenHeader title="Audit Logs" subtitle={`${logs.length} entries`} showBack />
+    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
+      <ScreenHeader title={isAr ? 'سجلات التدقيق' : 'Audit Logs'} subtitle={`${logs.length} ${isAr ? 'إدخال' : 'entries'}`} showBack />
       {loading ? <View style={styles.center}><ActivityIndicator size="large" color={colors.primary} /></View> : (
         <FlatList
           data={logs}
@@ -82,7 +88,14 @@ export function AuditLogsScreen() {
           contentContainerStyle={styles.list}
           showsVerticalScrollIndicator={false}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); void load(); }} tintColor={colors.primary} />}
-          ListEmptyComponent={<View style={styles.empty}><Ionicons name="shield-outline" size={44} color={colors.textMuted} /><Text style={styles.emptyText}>No audit logs</Text></View>}
+          ListEmptyComponent={
+            <View style={styles.empty}>
+              <Ionicons name="shield-outline" size={44} color={colors.textMuted} />
+              <Text style={[styles.emptyText, { color: colors.textMuted }]}>
+                {isAr ? 'لا توجد سجلات تدقيق' : 'No audit logs'}
+              </Text>
+            </View>
+          }
         />
       )}
     </SafeAreaView>
@@ -90,19 +103,19 @@ export function AuditLogsScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe:         { flex: 1, backgroundColor: colors.background },
-  center:       { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  list:         { padding: spacing.md, paddingBottom: 40 },
-  log:          { flexDirection: 'row', gap: spacing.sm, backgroundColor: colors.surface, borderRadius: radius.md, padding: spacing.md, marginBottom: spacing.sm, ...shadow.sm },
-  actionDot:    { width: 8, height: 8, borderRadius: 4, marginTop: 6, flexShrink: 0 },
-  logContent:   { flex: 1, gap: 3 },
-  logTop:       { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, flexWrap: 'wrap' },
-  actionBadge:  { paddingHorizontal: 8, paddingVertical: 2, borderRadius: radius.full },
-  actionText:   { fontSize: 10, fontWeight: '800' },
-  entity:       { ...typography.caption, fontWeight: '600' },
-  actor:        { ...typography.caption, color: colors.textMuted },
-  details:      { ...typography.bodySmall, color: colors.textSecondary },
-  time:         { ...typography.caption, color: colors.textMuted },
-  empty:        { alignItems: 'center', paddingTop: 60, gap: spacing.sm },
-  emptyText:    { ...typography.bodySmall, color: colors.textMuted },
+  safe:        { flex: 1 },
+  center:      { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  list:        { padding: spacing.md, paddingBottom: 40 },
+  log:         { flexDirection: 'row', gap: spacing.sm, borderRadius: radius.md, padding: spacing.md, marginBottom: spacing.sm, ...shadow.sm },
+  actionDot:   { width: 8, height: 8, borderRadius: 4, marginTop: 6, flexShrink: 0 },
+  logContent:  { flex: 1, gap: 3 },
+  logTop:      { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, flexWrap: 'wrap' },
+  actionBadge: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: radius.full },
+  actionText:  { fontSize: 10, fontWeight: '800' },
+  entity:      { ...typography.caption, fontWeight: '600' },
+  actor:       { ...typography.caption },
+  details:     { ...typography.bodySmall },
+  time:        { ...typography.caption },
+  empty:       { alignItems: 'center', paddingTop: 60, gap: spacing.sm },
+  emptyText:   { ...typography.bodySmall },
 });
