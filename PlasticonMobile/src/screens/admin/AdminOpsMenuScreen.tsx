@@ -31,6 +31,7 @@ export function AdminOpsMenuScreen() {
         { icon: 'hardware-chip', label: isAr ? 'الآلات' : 'Machines',          desc: isAr ? 'إعداد الآلات وحالتها' : 'Machine configuration and status',          screen: 'Machines',        color: colors.info },
         { icon: 'time',          label: isAr ? 'الورديات' : 'Shifts',          desc: isAr ? 'جداول الورديات والتعيينات' : 'Shift schedules and assignments',       screen: 'Shifts',          color: colors.success },
         { icon: 'flash',         label: isAr ? 'الكهرباء' : 'Electricity',     desc: isAr ? 'مراقبة استهلاك الطاقة' : 'Power consumption monitoring',             screen: 'Electricity',     color: colors.warning },
+        { icon: 'warning',       label: isAr ? 'توقفات الآلات' : 'Machine Stops', desc: isAr ? 'تنبيهات توقف الآلات من العمال' : 'Worker-reported machine stop alerts', screen: 'MachineStops', color: colors.danger },
       ],
     },
   ];

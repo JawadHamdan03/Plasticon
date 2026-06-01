@@ -127,6 +127,7 @@ function getNavSectionsBi(role: string): NavSectionBi[] {
           { to: "/admin/snapshots", icon: <Camera size={17} />, label: nav("Snapshots", "القراءات") },
           { to: "/admin/worker-records", icon: <Briefcase size={17} />, label: nav("Worker Hub", "مركز العمال") },
           { to: "/admin/settings/electricity", icon: <Zap size={17} />, label: nav("Electricity", "الكهرباء") },
+          { to: "/admin/machine-stops", icon: <AlertTriangle size={17} />, label: nav("Machine Stops", "توقفات الآلات") },
         ],
       },
       {

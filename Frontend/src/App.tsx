@@ -175,6 +175,11 @@ const DashboardAnalyticsPage = lazy(() =>
 const EngineerOverviewPage = lazy(
   () => import("./pages/admin/EngineerOverviewPage"),
 );
+const AdminMachineStopsPage = lazy(() =>
+  import("./pages/admin/AdminMachineStopsPage").then((m) => ({
+    default: m.AdminMachineStopsPage,
+  })),
+);
 
 // Worker pages
 const WorkerSnapshotsPage = lazy(() =>
@@ -477,6 +482,14 @@ function App() {
                 element={
                   <AdminOnlyRoute>
                     <AuditLogsPage />
+                  </AdminOnlyRoute>
+                }
+              />
+              <Route
+                path="/admin/machine-stops"
+                element={
+                  <AdminOnlyRoute>
+                    <AdminMachineStopsPage />
                   </AdminOnlyRoute>
                 }
               />
