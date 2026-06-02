@@ -88,14 +88,15 @@ function InlinePicker<T extends string>({ label, value, options, onChange }: {
   );
 }
 
-function CalModal({ visible, machines, onClose, onSave, saving }: {
+function CalModal({ visible, machines, onClose, onSave, saving, initialForm, isEdit }: {
   visible: boolean; machines: Machine[]; onClose: () => void;
   onSave: (f: FormState) => Promise<void>; saving: boolean;
+  initialForm?: FormState; isEdit?: boolean;
 }) {
   const { colors } = useAppTheme();
   const { isAr } = useLocale();
-  const [form, setForm] = useState<FormState>(DEFAULT_FORM);
-  useEffect(() => { if (visible) setForm(DEFAULT_FORM); }, [visible]);
+  const [form, setForm] = useState<FormState>(initialForm ?? DEFAULT_FORM);
+  useEffect(() => { if (visible) setForm(initialForm ?? DEFAULT_FORM); }, [visible, initialForm]);
   const set = (k: keyof FormState) => (v: string) => setForm((p) => ({ ...p, [k]: v }));
 
   const handleSave = async () => {
@@ -117,7 +118,7 @@ function CalModal({ visible, machines, onClose, onSave, saving }: {
         <View style={[styles.sheet, { backgroundColor: colors.surface }]}>
           <View style={[styles.sheetHandle, { backgroundColor: colors.border }]} />
           <Text style={[styles.sheetTitle, { color: colors.text }]}>
-            {isAr ? 'سجل معايرة جديد' : 'New Calibration Record'}
+            {isEdit ? (isAr ? 'تعديل سجل المعايرة' : 'Edit Calibration Record') : (isAr ? 'سجل معايرة جديد' : 'New Calibration Record')}
           </Text>
           <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
             <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{isAr ? 'الآلة *' : 'Machine *'}</Text>
@@ -207,7 +208,7 @@ function CalModal({ visible, machines, onClose, onSave, saving }: {
   );
 }
 
-function CalCard({ item }: { item: HealthRecord }) {
+function CalCard({ item, onEdit }: { item: HealthRecord; onEdit: () => void }) {
   const { colors } = useAppTheme();
   const { isAr } = useLocale();
 
@@ -239,6 +240,9 @@ function CalCard({ item }: { item: HealthRecord }) {
             <Ionicons name={icon} size={11} color={color} />
             <Text style={[styles.badgeText, { color }]}>{label}</Text>
           </View>
+          <TouchableOpacity onPress={onEdit} hitSlop={8} style={{ padding: 3 }}>
+            <Ionicons name="pencil-outline" size={15} color={colors.primary} />
+          </TouchableOpacity>
         </View>
       </View>
       <View style={styles.details}>
@@ -272,6 +276,7 @@ export function CalibrationScreen() {
   const [loading, setLoading]       = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
+  const [editing, setEditing]       = useState<HealthRecord | null>(null);
   const [saving, setSaving]         = useState(false);
 
   const load = useCallback(async () => {
@@ -292,6 +297,9 @@ export function CalibrationScreen() {
 
   useEffect(() => { void load(); }, [load]);
 
+  const openCreate = () => { setEditing(null); setModalVisible(true); };
+  const openEdit   = (item: HealthRecord) => { setEditing(item); setModalVisible(true); };
+
   const handleSave = async (form: FormState) => {
     setSaving(true);
     try {
@@ -303,8 +311,13 @@ export function CalibrationScreen() {
       };
       if (form.downtimePercentage.trim()) body.downtimePercentage = Number(form.downtimePercentage);
       if (form.notes.trim()) body.notes = form.notes.trim();
-      await api.post('/machine-health', body);
+      if (editing) {
+        await api.patch(`/machine-health/${editing.id}`, body);
+      } else {
+        await api.post('/machine-health', body);
+      }
       setModalVisible(false);
+      setEditing(null);
       setRefreshing(true);
       await load();
     } catch (e: any) {
@@ -313,6 +326,17 @@ export function CalibrationScreen() {
       setSaving(false);
     }
   };
+
+  const editForm: FormState = editing
+    ? {
+        machineId: editing.machineId ? String(editing.machineId) : (editing.machine?.id ? String(editing.machine.id) : ''),
+        operationalStatus: editing.operationalStatus as OpsStatus,
+        efficiencyRating: String(editing.efficiencyRating),
+        maintenanceHours: String(editing.maintenanceHours),
+        downtimePercentage: editing.downtimePercentage != null ? String(editing.downtimePercentage) : '0',
+        notes: editing.notes ?? '',
+      }
+    : DEFAULT_FORM;
 
   const expiredCount = records.filter((r) => r.efficiencyRating < 75).length;
   const subtitle = expiredCount
@@ -328,7 +352,7 @@ export function CalibrationScreen() {
         <FlatList
           data={records}
           keyExtractor={(i, idx) => `${String(i.id)}-${idx}`}
-          renderItem={({ item }) => <CalCard item={item} />}
+          renderItem={({ item }) => <CalCard item={item} onEdit={() => openEdit(item)} />}
           contentContainerStyle={styles.list}
           showsVerticalScrollIndicator={false}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); void load(); }} tintColor={colors.primary} />}
@@ -344,12 +368,20 @@ export function CalibrationScreen() {
       )}
       <TouchableOpacity
         style={[styles.fab, { backgroundColor: colors.primary }]}
-        onPress={() => setModalVisible(true)}
+        onPress={openCreate}
         activeOpacity={0.85}
       >
         <Ionicons name="add" size={28} color="#fff" />
       </TouchableOpacity>
-      <CalModal visible={modalVisible} machines={machines} onClose={() => setModalVisible(false)} onSave={handleSave} saving={saving} />
+      <CalModal
+        visible={modalVisible}
+        machines={machines}
+        onClose={() => { setModalVisible(false); setEditing(null); }}
+        onSave={handleSave}
+        saving={saving}
+        initialForm={editForm}
+        isEdit={editing != null}
+      />
     </SafeAreaView>
   );
 }

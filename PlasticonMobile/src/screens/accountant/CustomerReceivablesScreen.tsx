@@ -181,6 +181,7 @@ export function CustomerReceivablesScreen() {
   const [records, setRecords]       = useState<Receivable[]>([]);
   const [loading, setLoading]       = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<string>('ALL');
   const [modalVisible, setModalVisible] = useState(false);
   const [editing, setEditing]       = useState<Receivable | null>(null);
   const [saving, setSaving]         = useState(false);
@@ -248,9 +249,12 @@ export function CustomerReceivablesScreen() {
     }
   };
 
-  const totalOutstanding = records
-    .filter((r) => r.status !== 'COLLECTED' && r.status !== 'PAID')
-    .reduce((s, r) => s + (r.amount ?? 0), 0);
+  const STAT_FILTERS = ['ALL', 'PENDING', 'COLLECTED', 'OVERDUE'] as const;
+  const visible = statusFilter === 'ALL' ? records : records.filter((r) => r.status === statusFilter);
+  const totalAmt    = records.reduce((s, r) => s + (Number(r.amount) || 0), 0);
+  const pendingAmt  = records.filter((r) => r.status === 'PENDING').reduce((s, r) => s + (Number(r.amount) || 0), 0);
+  const collectedAmt= records.filter((r) => r.status === 'COLLECTED').reduce((s, r) => s + (Number(r.amount) || 0), 0);
+  const overdueCount= records.filter((r) => r.status === 'OVERDUE').length;
 
   const initialForm: FormState = editing
     ? {
@@ -269,13 +273,35 @@ export function CustomerReceivablesScreen() {
         <View style={styles.center}><ActivityIndicator size="large" color={colors.primary} /></View>
       ) : (
         <FlatList
-          data={records}
+          data={visible}
           keyExtractor={(i, idx) => `${String(i.id)}-${idx}`}
           renderItem={({ item }) => <RecCard item={item} onEdit={() => openEdit(item)} onDelete={() => confirmDelete(item)} />}
           contentContainerStyle={styles.list}
           showsVerticalScrollIndicator={false}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); void load(); }} tintColor={colors.primary} />}
-          ListHeaderComponent={<StatCard label={isAr ? 'إجمالي المتبقي' : 'Total Outstanding'} value={`$${fmt(totalOutstanding)}`} icon="people" color={colors.warning} style={styles.statHeader} />}
+          ListHeaderComponent={
+            <View>
+              <View style={styles.kpiRow}>
+                <StatCard label={isAr ? 'الإجمالي' : 'Total'} value={`$${fmt(totalAmt)}`} icon="people" color={colors.primary} style={styles.kpi} />
+                <StatCard label={isAr ? 'معلق' : 'Pending'} value={`$${fmt(pendingAmt)}`} icon="time" color={colors.warning} style={styles.kpi} />
+              </View>
+              <View style={[styles.kpiRow, { marginBottom: spacing.sm }]}>
+                <StatCard label={isAr ? 'محصل' : 'Collected'} value={`$${fmt(collectedAmt)}`} icon="checkmark-circle" color={colors.success} style={styles.kpi} />
+                <StatCard label={isAr ? 'متأخر' : 'Overdue'} value={String(overdueCount)} icon="alert-circle" color={colors.danger} style={styles.kpi} />
+              </View>
+              <View style={[styles.filterRow, { marginBottom: spacing.sm }]}>
+                {STAT_FILTERS.map((f) => (
+                  <TouchableOpacity key={f}
+                    style={[styles.filterChip, statusFilter === f && { backgroundColor: colors.primary, borderColor: colors.primary }]}
+                    onPress={() => setStatusFilter(f)}>
+                    <Text style={[styles.filterText, { color: statusFilter === f ? '#fff' : colors.textMuted }]}>
+                      {isAr ? (f === 'ALL' ? 'الكل' : f === 'PENDING' ? 'معلق' : f === 'COLLECTED' ? 'محصل' : 'متأخر') : (f === 'ALL' ? 'All' : f)}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+          }
           ListEmptyComponent={<View style={styles.empty}><Ionicons name="people-outline" size={44} color={colors.textMuted} /><Text style={[styles.emptyText, { color: colors.textMuted }]}>{isAr ? 'لا توجد مستحقات' : 'No receivables'}</Text></View>}
         />
       )}
@@ -293,7 +319,11 @@ const styles = StyleSheet.create({
   safe:        { flex: 1 },
   center:      { flex: 1, alignItems: 'center', justifyContent: 'center' },
   list:        { padding: spacing.md, paddingBottom: 100 },
-  statHeader:  { marginBottom: spacing.md },
+  kpiRow:      { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.sm },
+  kpi:         { flex: 1 },
+  filterRow:   { flexDirection: 'row', gap: spacing.xs, flexWrap: 'wrap' },
+  filterChip:  { paddingHorizontal: 12, paddingVertical: 6, borderRadius: radius.full, borderWidth: 1.5, borderColor: '#E2E8F0' },
+  filterText:  { fontSize: 12, fontWeight: '600' as const },
 
   card:        { borderRadius: radius.md, padding: spacing.md, marginBottom: spacing.sm, ...shadow.sm },
   cardTop:     { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 4 },

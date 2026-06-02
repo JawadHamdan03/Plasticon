@@ -58,6 +58,7 @@ export type WorkerPersonalStackParamList = {
   Payroll:       undefined;
   Notifications: undefined;
   Chat:          undefined;
+  Profile:       undefined;
 };
 
 // ─── Engineer tabs ────────────────────────────────────────────────────────────
@@ -107,6 +108,7 @@ export type EngineerPersonalStackParamList = {
   Payroll:       undefined;
   Notifications: undefined;
   Chat:          undefined;
+  Profile:       undefined;
 };
 
 // ─── Accountant tabs ──────────────────────────────────────────────────────────
@@ -164,6 +166,7 @@ export type AccountantPersonalStackParamList = {
   Payroll:       undefined;
   Notifications: undefined;
   Chat:          undefined;
+  Profile:       undefined;
 };
 
 // ─── Admin tabs (full feature parity) ────────────────────────────────────────

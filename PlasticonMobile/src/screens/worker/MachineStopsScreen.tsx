@@ -129,6 +129,27 @@ export function MachineStopsScreen() {
     );
   };
 
+  const handleDelete = (stop: StopAlert) => {
+    Alert.alert(
+      isAr ? 'حذف التنبيه' : 'Delete Alert',
+      isAr ? 'هل أنت متأكد من الحذف؟' : 'Are you sure you want to delete this alert?',
+      [
+        { text: isAr ? 'إلغاء' : 'Cancel', style: 'cancel' },
+        {
+          text: isAr ? 'حذف' : 'Delete', style: 'destructive',
+          onPress: async () => {
+            try {
+              await api.delete(`/worker-tools/entries/stops/${stop.id}`);
+              setStops((prev) => prev.filter((s) => s.id !== stop.id));
+            } catch (e: any) {
+              Alert.alert(isAr ? 'خطأ' : 'Error', e.message ?? 'Failed');
+            }
+          },
+        },
+      ],
+    );
+  };
+
   const openCount = stops.filter(s => !s.resolved_at).length;
 
   const renderStop = ({ item }: { item: StopAlert }) => {
@@ -164,16 +185,21 @@ export function MachineStopsScreen() {
           <Text style={[styles.timeText, { color: colors.textMuted }]}>
             {new Date(item.created_at).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
           </Text>
-          {!resolved && (
-            <TouchableOpacity
-              style={[styles.resolveBtn, { backgroundColor: colors.success + '15', borderColor: colors.success }]}
-              onPress={() => handleResolve(item)}
-              activeOpacity={0.7}
-            >
-              <Ionicons name="checkmark" size={14} color={colors.success} />
-              <Text style={[styles.resolveBtnText, { color: colors.success }]}>{isAr ? 'حُل' : 'Resolve'}</Text>
+          <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
+            {!resolved && (
+              <TouchableOpacity
+                style={[styles.resolveBtn, { backgroundColor: colors.success + '15', borderColor: colors.success }]}
+                onPress={() => handleResolve(item)}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="checkmark" size={14} color={colors.success} />
+                <Text style={[styles.resolveBtnText, { color: colors.success }]}>{isAr ? 'حُل' : 'Resolve'}</Text>
+              </TouchableOpacity>
+            )}
+            <TouchableOpacity onPress={() => handleDelete(item)} hitSlop={8}>
+              <Ionicons name="trash-outline" size={16} color={colors.danger} />
             </TouchableOpacity>
-          )}
+          </View>
         </View>
       </View>
     );

@@ -47,7 +47,7 @@ function DailyRow({ item }: { item: DailyPayrollRecord }) {
 export function PayrollScreen() {
   const { colors } = useAppTheme();
   const { isAr } = useLocale();
-  const [monthly, setMonthly]       = useState<MonthlyPayroll | null>(null);
+  const [monthlies, setMonthlies]   = useState<MonthlyPayroll[]>([]);
   const [daily, setDaily]           = useState<DailyPayrollRecord[]>([]);
   const [loading, setLoading]       = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -55,10 +55,10 @@ export function PayrollScreen() {
   const load = useCallback(async () => {
     try {
       const [mo, da] = await Promise.allSettled([
-        api.get<{ payroll: MonthlyPayroll[] }>('/payroll/me?limit=1'),
+        api.get<{ payroll: MonthlyPayroll[] }>('/payroll/me?limit=12'),
         api.get<{ records: DailyPayrollRecord[] }>('/payroll/daily/me?limit=31'),
       ]);
-      if (mo.status === 'fulfilled') setMonthly(mo.value.payroll?.[0] ?? null);
+      if (mo.status === 'fulfilled') setMonthlies(mo.value.payroll ?? []);
       if (da.status === 'fulfilled') setDaily(da.value.records ?? []);
     } finally {
       setLoading(false);
@@ -86,38 +86,45 @@ export function PayrollScreen() {
           showsVerticalScrollIndicator={false}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
           ListHeaderComponent={
-            monthly ? (
-              <View style={styles.header}>
-                <Text style={[styles.monthLabel, { color: colors.text }]}>{monthly.month}</Text>
-                <View style={styles.statRow}>
-                  <StatCard
-                    label={isAr ? 'الراتب الكلي' : 'Total Salary'}
-                    value={`$${fmt(monthly.totalSalary)}`}
-                    icon="cash"
-                    color={colors.success}
-                    style={styles.stat}
-                  />
-                  <StatCard
-                    label={isAr ? 'إجمالي الساعات' : 'Total Hours'}
-                    value={`${monthly.totalHours ?? 0}h`}
-                    icon="time"
-                    color={colors.primary}
-                    style={styles.stat}
-                  />
-                </View>
-                {monthly.overtimeSalary ? (
-                  <View style={styles.overtimeRow}>
-                    <Ionicons name="trending-up" size={14} color={colors.accent} />
-                    <Text style={[styles.overtimeText, { color: colors.accent }]}>
-                      {isAr ? `مكافأة إضافية: $${fmt(monthly.overtimeSalary)}` : `Overtime bonus: $${fmt(monthly.overtimeSalary)}`}
-                    </Text>
-                  </View>
-                ) : null}
-                <Text style={[typography.sectionLabel, { color: colors.textMuted, marginBottom: spacing.sm, marginTop: spacing.md }]}>
-                  {isAr ? 'السجلات اليومية' : 'DAILY RECORDS'}
-                </Text>
-              </View>
-            ) : null
+            <View style={styles.header}>
+              {monthlies.length > 0 && (
+                <>
+                  <Text style={[styles.sectionLabel, { color: colors.textMuted }]}>{isAr ? 'الرواتب الشهرية' : 'MONTHLY PAYROLL'}</Text>
+                  {monthlies.map((mo, i) => (
+                    <View key={`${mo.month ?? i}`} style={[styles.monthCard, { backgroundColor: colors.surface }]}>
+                      <Text style={[styles.monthLabel, { color: colors.text }]}>{mo.month}</Text>
+                      <View style={styles.statRow}>
+                        <StatCard
+                          label={isAr ? 'الراتب الكلي' : 'Total Salary'}
+                          value={`$${fmt(mo.totalSalary)}`}
+                          icon="cash"
+                          color={colors.success}
+                          style={styles.stat}
+                        />
+                        <StatCard
+                          label={isAr ? 'إجمالي الساعات' : 'Total Hours'}
+                          value={`${mo.totalHours ?? 0}h`}
+                          icon="time"
+                          color={colors.primary}
+                          style={styles.stat}
+                        />
+                      </View>
+                      {mo.overtimeSalary ? (
+                        <View style={styles.overtimeRow}>
+                          <Ionicons name="trending-up" size={14} color={colors.accent} />
+                          <Text style={[styles.overtimeText, { color: colors.accent }]}>
+                            {isAr ? `مكافأة إضافية: $${fmt(mo.overtimeSalary)}` : `Overtime bonus: $${fmt(mo.overtimeSalary)}`}
+                          </Text>
+                        </View>
+                      ) : null}
+                    </View>
+                  ))}
+                </>
+              )}
+              <Text style={[styles.sectionLabel, { color: colors.textMuted, marginTop: spacing.md }]}>
+                {isAr ? 'السجلات اليومية' : 'DAILY RECORDS'}
+              </Text>
+            </View>
           }
           ListEmptyComponent={
             <View style={styles.empty}>
@@ -137,7 +144,9 @@ const styles = StyleSheet.create({
   list:   { padding: spacing.md, paddingBottom: 40 },
 
   header:       {},
-  monthLabel:   { ...typography.h2, marginBottom: spacing.md },
+  sectionLabel: { ...typography.sectionLabel, marginBottom: spacing.sm },
+  monthCard:    { borderRadius: radius.lg, padding: spacing.md, marginBottom: spacing.sm, ...shadow.sm },
+  monthLabel:   { ...typography.h4, marginBottom: spacing.sm },
   statRow:      { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.sm },
   stat:         { flex: 1 },
   overtimeRow:  { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 },

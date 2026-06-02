@@ -12,12 +12,15 @@ import { useAppTheme } from '../../context/ThemeContext';
 import { useLocale } from '../../context/LocaleContext';
 
 interface KaizenIdea {
-  id:          number;
-  title:       string;
-  description: string;
-  category?:   string;
-  status?:     string;
-  createdAt:   string;
+  id: number;
+  title: string;
+  details: string;
+  estimated_impact?: string | null;
+  review_status?: string;
+  review_note?: string | null;
+  reward_points?: number;
+  score?: number;
+  created_at: string;
 }
 
 export function KaizenIdeasScreen() {
@@ -28,38 +31,70 @@ export function KaizenIdeasScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [modal,      setModal]      = useState(false);
   const [title,      setTitle]      = useState('');
-  const [desc,       setDesc]       = useState('');
-  const [category,   setCategory]   = useState('');
+  const [details,    setDetails]    = useState('');
+  const [impact,     setImpact]     = useState('');
   const [saving,     setSaving]     = useState(false);
 
   const STATUS_COLOR: Record<string, string> = {
-    pending:  colors.warning,
-    approved: colors.success,
-    rejected: colors.danger,
-    implemented: colors.primary,
+    PENDING:     colors.warning,
+    APPROVED:    colors.success,
+    REJECTED:    colors.danger,
+    pending:     colors.warning,
+    approved:    colors.success,
+    rejected:    colors.danger,
+  };
+
+  const statusLabel = (s: string) => {
+    if (isAr) {
+      if (s.toUpperCase() === 'PENDING') return 'قيد المراجعة';
+      if (s.toUpperCase() === 'APPROVED') return 'مقبول';
+      if (s.toUpperCase() === 'REJECTED') return 'مرفوض';
+    }
+    return s;
   };
 
   const load = useCallback(async () => {
     try {
       const res = await api.get<KaizenIdea[] | { data: KaizenIdea[] }>('/worker-tools/kaizen/mine');
-      setIdeas(Array.isArray(res) ? res : (res.data ?? []));
+      setIdeas(Array.isArray(res) ? res : ((res as any).data ?? []));
     } catch { setIdeas([]); }
     finally { setLoading(false); setRefreshing(false); }
   }, []);
 
   useEffect(() => { void load(); }, [load]);
 
+  const handleDelete = (idea: KaizenIdea) => {
+    Alert.alert(
+      isAr ? 'حذف الفكرة' : 'Delete Idea',
+      isAr ? 'هل أنت متأكد؟' : 'Are you sure?',
+      [
+        { text: isAr ? 'إلغاء' : 'Cancel', style: 'cancel' },
+        {
+          text: isAr ? 'حذف' : 'Delete', style: 'destructive',
+          onPress: async () => {
+            try {
+              await api.delete(`/worker-tools/entries/kaizen/${idea.id}`);
+              setIdeas((prev) => prev.filter((i) => i.id !== idea.id));
+            } catch (e: any) {
+              Alert.alert(isAr ? 'خطأ' : 'Error', e.message ?? 'Failed');
+            }
+          },
+        },
+      ],
+    );
+  };
+
   const submit = async () => {
     if (!title.trim()) { Alert.alert(isAr ? 'مطلوب' : 'Required', isAr ? 'أدخل عنوان الفكرة.' : 'Enter an idea title.'); return; }
-    if (!desc.trim())  { Alert.alert(isAr ? 'مطلوب' : 'Required', isAr ? 'اشرح فكرتك.' : 'Describe your idea.'); return; }
+    if (!details.trim()) { Alert.alert(isAr ? 'مطلوب' : 'Required', isAr ? 'اشرح فكرتك.' : 'Describe your idea.'); return; }
     setSaving(true);
     try {
       await api.post('/worker-tools/kaizen', {
-        title:       title.trim(),
-        description: desc.trim(),
-        category:    category.trim() || undefined,
+        title:           title.trim(),
+        details:         details.trim(),
+        estimatedImpact: impact.trim() || undefined,
       });
-      setModal(false); setTitle(''); setDesc(''); setCategory('');
+      setModal(false); setTitle(''); setDetails(''); setImpact('');
       setLoading(true); void load();
     } catch (e: any) {
       Alert.alert(isAr ? 'خطأ' : 'Error', e.message ?? (isAr ? 'فشل إرسال الفكرة.' : 'Failed to submit idea.'));
@@ -72,7 +107,9 @@ export function KaizenIdeasScreen() {
       {loading ? (
         <View style={styles.center}><ActivityIndicator size="large" color={colors.success} /></View>
       ) : (
-        <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}
+        <ScrollView
+          contentContainerStyle={styles.content}
+          showsVerticalScrollIndicator={false}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); void load(); }} tintColor={colors.success} />}
         >
           <TouchableOpacity style={[styles.addBtn, { backgroundColor: colors.success }]} onPress={() => setModal(true)} activeOpacity={0.8}>
@@ -89,22 +126,46 @@ export function KaizenIdeasScreen() {
           ) : (
             <View style={styles.list}>
               {ideas.map((idea, idx) => {
-                const statusColor = STATUS_COLOR[idea.status?.toLowerCase() ?? ''] ?? colors.textMuted;
+                const statusColor = STATUS_COLOR[idea.review_status ?? ''] ?? colors.textMuted;
                 return (
                   <View key={`${idea.id}-${idx}`} style={[styles.card, { backgroundColor: colors.surface }]}>
                     <View style={styles.cardTop}>
                       <Text style={[styles.cardTitle, { color: colors.text }]} numberOfLines={2}>{idea.title}</Text>
-                      {idea.status && (
-                        <View style={[styles.badge, { backgroundColor: `${statusColor}20` }]}>
-                          <Text style={[styles.badgeText, { color: statusColor }]}>{idea.status}</Text>
+                      <View style={styles.cardTopRight}>
+                        {idea.review_status && (
+                          <View style={[styles.badge, { backgroundColor: `${statusColor}20` }]}>
+                            <Text style={[styles.badgeText, { color: statusColor }]}>{statusLabel(idea.review_status)}</Text>
+                          </View>
+                        )}
+                        <TouchableOpacity onPress={() => handleDelete(idea)} hitSlop={8}>
+                          <Ionicons name="trash-outline" size={16} color={colors.danger} />
+                        </TouchableOpacity>
+                      </View>
+                    </View>
+
+                    <Text style={[styles.cardDesc, { color: colors.textMuted }]} numberOfLines={3}>{idea.details}</Text>
+
+                    {idea.estimated_impact ? (
+                      <Text style={[styles.impact, { color: colors.primary }]}>
+                        {isAr ? 'التأثير: ' : 'Impact: '}{idea.estimated_impact}
+                      </Text>
+                    ) : null}
+
+                    <View style={styles.cardFooter}>
+                      <Text style={[styles.dateText, { color: colors.textMuted }]}>{new Date(idea.created_at).toLocaleDateString()}</Text>
+                      {(idea.reward_points ?? 0) > 0 && (
+                        <View style={[styles.pointsBadge, { backgroundColor: `${colors.accent}20` }]}>
+                          <Ionicons name="star" size={11} color={colors.accent} />
+                          <Text style={[styles.pointsText, { color: colors.accent }]}>+{idea.reward_points} pts</Text>
                         </View>
                       )}
                     </View>
-                    <Text style={[styles.cardDesc, { color: colors.textMuted }]} numberOfLines={3}>{idea.description}</Text>
-                    <View style={styles.cardFooter}>
-                      {idea.category && <Text style={[styles.category, { color: colors.primary }]}>{idea.category}</Text>}
-                      <Text style={[styles.dateText, { color: colors.textMuted }]}>{new Date(idea.createdAt).toLocaleDateString()}</Text>
-                    </View>
+
+                    {idea.review_note ? (
+                      <Text style={[styles.reviewNote, { color: colors.textMuted, borderTopColor: colors.border }]}>
+                        {isAr ? 'ملاحظة المراجع: ' : 'Reviewer note: '}{idea.review_note}
+                      </Text>
+                    ) : null}
                   </View>
                 );
               })}
@@ -118,12 +179,16 @@ export function KaizenIdeasScreen() {
           <View style={[styles.sheet, { backgroundColor: colors.surface }]}>
             <View style={[styles.handle, { backgroundColor: colors.border }]} />
             <Text style={[styles.sheetTitle, { color: colors.text }]}>{isAr ? 'فكرة كايزن جديدة' : 'New Kaizen Idea'}</Text>
+
             <Text style={[styles.label, { color: colors.textMuted }]}>{isAr ? 'العنوان *' : 'Title *'}</Text>
             <TextInput style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]} placeholder={isAr ? 'عنوان الفكرة' : 'Brief idea title'} placeholderTextColor={colors.textMuted} value={title} onChangeText={setTitle} />
-            <Text style={[styles.label, { color: colors.textMuted }]}>{isAr ? 'الوصف *' : 'Description *'}</Text>
-            <TextInput style={[styles.input, styles.inputMulti, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]} placeholder={isAr ? 'اشرح التحسين والفائدة المتوقعة…' : 'Describe the improvement and expected benefit…'} placeholderTextColor={colors.textMuted} value={desc} onChangeText={setDesc} multiline numberOfLines={4} />
-            <Text style={[styles.label, { color: colors.textMuted }]}>{isAr ? 'الفئة (اختياري)' : 'Category (optional)'}</Text>
-            <TextInput style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]} placeholder={isAr ? 'مثال: السلامة، الجودة، الكفاءة' : 'e.g. Safety, Quality, Efficiency'} placeholderTextColor={colors.textMuted} value={category} onChangeText={setCategory} />
+
+            <Text style={[styles.label, { color: colors.textMuted }]}>{isAr ? 'التفاصيل *' : 'Details *'}</Text>
+            <TextInput style={[styles.input, styles.inputMulti, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]} placeholder={isAr ? 'اشرح الفكرة بالتفصيل…' : 'Describe the improvement in detail…'} placeholderTextColor={colors.textMuted} value={details} onChangeText={setDetails} multiline numberOfLines={4} />
+
+            <Text style={[styles.label, { color: colors.textMuted }]}>{isAr ? 'التأثير المتوقع (اختياري)' : 'Estimated Impact (optional)'}</Text>
+            <TextInput style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]} placeholder={isAr ? 'مثال: تقليل الهدر 20%' : 'e.g. Reduce waste by 20%'} placeholderTextColor={colors.textMuted} value={impact} onChangeText={setImpact} />
+
             <View style={styles.actions}>
               <TouchableOpacity style={[styles.cancelBtn, { borderColor: colors.border }]} onPress={() => setModal(false)}>
                 <Text style={[styles.cancelText, { color: colors.textMuted }]}>{isAr ? 'إلغاء' : 'Cancel'}</Text>
@@ -152,12 +217,16 @@ const styles = StyleSheet.create({
   card:       { borderRadius: radius.lg, padding: spacing.md, ...shadow.sm },
   cardTop:    { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6, gap: spacing.sm },
   cardTitle:  { ...typography.h4, flex: 1 },
+  cardTopRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   badge:      { paddingHorizontal: 8, paddingVertical: 3, borderRadius: radius.sm },
   badgeText:  { fontSize: 11, fontWeight: '700', textTransform: 'capitalize' },
   cardDesc:   { ...typography.bodySmall, marginBottom: spacing.sm },
-  cardFooter: { flexDirection: 'row', justifyContent: 'space-between' },
-  category:   { ...typography.caption, fontWeight: '600' },
+  impact:     { ...typography.caption, fontWeight: '600', marginBottom: spacing.xs },
+  cardFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   dateText:   { ...typography.caption },
+  pointsBadge: { flexDirection: 'row', alignItems: 'center', gap: 3, paddingHorizontal: 6, paddingVertical: 2, borderRadius: radius.sm },
+  pointsText:  { fontSize: 11, fontWeight: '700' },
+  reviewNote: { ...typography.caption, marginTop: spacing.xs, paddingTop: spacing.xs, borderTopWidth: 1, fontStyle: 'italic' },
   overlay:    { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.45)' },
   sheet:      { borderTopLeftRadius: radius.xl, borderTopRightRadius: radius.xl, padding: spacing.lg, paddingBottom: 40 },
   handle:     { width: 40, height: 4, borderRadius: 2, alignSelf: 'center', marginBottom: spacing.md },

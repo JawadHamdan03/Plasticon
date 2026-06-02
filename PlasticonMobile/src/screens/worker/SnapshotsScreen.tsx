@@ -301,10 +301,16 @@ export function SnapshotsScreen() {
   const [showModal, setShowModal]   = useState(false);
   const [editing, setEditing]       = useState<WorkerSnapshot | null>(null);
   const [fullImage, setFullImage]   = useState<string | null>(null);
+  const [search,  setSearch]        = useState('');
+  const [fromDate, setFromDate]     = useState('');
+  const [toDate,   setToDate]       = useState('');
 
   const load = useCallback(async () => {
     try {
-      const res = await api.get<WorkerSnapshot[]>('/settings/snapshots/mine?limit=30');
+      const params = new URLSearchParams({ limit: '200' });
+      if (fromDate.trim()) params.set('from', fromDate.trim());
+      if (toDate.trim())   params.set('to',   toDate.trim());
+      const res = await api.get<WorkerSnapshot[]>(`/settings/snapshots/mine?${params.toString()}`);
       setSnaps(Array.isArray(res) ? res : []);
     } catch {
       setSnaps([]);
@@ -312,7 +318,7 @@ export function SnapshotsScreen() {
       setLoading(false);
       setRefreshing(false);
     }
-  }, []);
+  }, [fromDate, toDate]);
 
   useEffect(() => { void load(); }, [load]);
 
@@ -337,11 +343,22 @@ export function SnapshotsScreen() {
     );
   };
 
+  const visibleSnaps = snaps.filter((s) => {
+    if (!search.trim()) return true;
+    const term = search.trim().toLowerCase();
+    return [s.machineLabel, s.notes ?? '', String(s.machineCounter), String(s.electricityKwh)].join(' ').toLowerCase().includes(term);
+  });
+
+  const totalElectricity  = visibleSnaps.reduce((acc, s) => acc + (s.electricityKwh ?? 0), 0);
+  const avgElectricity    = visibleSnaps.length ? totalElectricity / visibleSnaps.length : 0;
+  const counterDelta      = visibleSnaps.length >= 2 ? visibleSnaps[0].machineCounter - visibleSnaps[1].machineCounter : null;
+  const uniqueMachines    = new Set(visibleSnaps.map((s) => s.machineLabel.trim()).filter(Boolean)).size;
+
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
       <ScreenHeader
         title={isAr ? 'لقطاتي' : 'My Snapshots'}
-        subtitle={`${snaps.length} ${isAr ? 'سجل' : 'records'}`}
+        subtitle={`${visibleSnaps.length} ${isAr ? 'سجل' : 'records'}`}
         showBack
       />
 
@@ -351,7 +368,7 @@ export function SnapshotsScreen() {
         </View>
       ) : (
         <FlatList
-          data={snaps}
+          data={visibleSnaps}
           keyExtractor={(item, idx) => `${item.id}-${idx}`}
           renderItem={({ item }) => (
             <SnapCard
@@ -371,6 +388,91 @@ export function SnapshotsScreen() {
               onRefresh={() => { setRefreshing(true); void load(); }}
               tintColor={colors.primary}
             />
+          }
+          ListHeaderComponent={
+            <View style={styles.listHeader}>
+              {/* Search */}
+              <View style={[styles.searchBar, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                <Ionicons name="search-outline" size={16} color={colors.textMuted} />
+                <TextInput
+                  style={[styles.searchInput, { color: colors.text }]}
+                  placeholder={isAr ? 'بحث في اللقطات…' : 'Search snapshots…'}
+                  placeholderTextColor={colors.textMuted}
+                  value={search}
+                  onChangeText={setSearch}
+                />
+                {search ? (
+                  <TouchableOpacity onPress={() => setSearch('')} hitSlop={8}>
+                    <Ionicons name="close-circle" size={16} color={colors.textMuted} />
+                  </TouchableOpacity>
+                ) : null}
+              </View>
+
+              {/* Date filters */}
+              <View style={styles.filterRow}>
+                <View style={[styles.filterInput, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                  <Ionicons name="calendar-outline" size={13} color={colors.textMuted} />
+                  <TextInput
+                    style={[styles.filterText, { color: colors.text }]}
+                    placeholder={isAr ? 'من تاريخ' : 'From date'}
+                    placeholderTextColor={colors.textMuted}
+                    value={fromDate}
+                    onChangeText={setFromDate}
+                  />
+                </View>
+                <View style={[styles.filterInput, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                  <Ionicons name="calendar-outline" size={13} color={colors.textMuted} />
+                  <TextInput
+                    style={[styles.filterText, { color: colors.text }]}
+                    placeholder={isAr ? 'إلى تاريخ' : 'To date'}
+                    placeholderTextColor={colors.textMuted}
+                    value={toDate}
+                    onChangeText={setToDate}
+                  />
+                </View>
+                {(fromDate || toDate) && (
+                  <TouchableOpacity
+                    style={[styles.clearBtn, { backgroundColor: colors.surface, borderColor: colors.border }]}
+                    onPress={() => { setFromDate(''); setToDate(''); }}
+                    hitSlop={8}
+                  >
+                    <Ionicons name="close" size={14} color={colors.textMuted} />
+                  </TouchableOpacity>
+                )}
+              </View>
+
+              {/* KPI stats */}
+              {visibleSnaps.length > 0 && (
+                <View style={[styles.statsRow, { backgroundColor: colors.surface }]}>
+                  <View style={styles.stat}>
+                    <Text style={[styles.statVal, { color: colors.primary }]}>{visibleSnaps.length}</Text>
+                    <Text style={[styles.statLabel, { color: colors.textMuted }]}>{isAr ? 'سجل' : 'Records'}</Text>
+                  </View>
+                  <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
+                  <View style={styles.stat}>
+                    <Text style={[styles.statVal, { color: colors.accent }]}>{totalElectricity.toFixed(1)}</Text>
+                    <Text style={[styles.statLabel, { color: colors.textMuted }]}>{isAr ? 'kWh إجمالي' : 'Total kWh'}</Text>
+                  </View>
+                  <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
+                  <View style={styles.stat}>
+                    <Text style={[styles.statVal, { color: colors.success }]}>{avgElectricity.toFixed(1)}</Text>
+                    <Text style={[styles.statLabel, { color: colors.textMuted }]}>{isAr ? 'متوسط kWh' : 'Avg kWh'}</Text>
+                  </View>
+                  <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
+                  <View style={styles.stat}>
+                    <Text style={[styles.statVal, { color: counterDelta !== null && counterDelta < 0 ? colors.danger : colors.text }]}>
+                      {counterDelta !== null ? (counterDelta >= 0 ? `+${counterDelta}` : String(counterDelta)) : '—'}
+                    </Text>
+                    <Text style={[styles.statLabel, { color: colors.textMuted }]}>{isAr ? 'فرق العداد' : 'Δ Counter'}</Text>
+                  </View>
+                  <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
+                  <View style={styles.stat}>
+                    <Text style={[styles.statVal, { color: colors.info }]}>{uniqueMachines}</Text>
+                    <Text style={[styles.statLabel, { color: colors.textMuted }]}>{isAr ? 'آلات' : 'Machines'}</Text>
+                  </View>
+                </View>
+              )}
+            </View>
           }
           ListEmptyComponent={
             <View style={styles.empty}>
@@ -418,6 +520,21 @@ const styles = StyleSheet.create({
   safe:   { flex: 1 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   list:   { padding: spacing.md, paddingBottom: 100 },
+
+  listHeader: { marginBottom: spacing.sm },
+  searchBar:  { flexDirection: 'row', alignItems: 'center', gap: 8, borderWidth: 1.5, borderRadius: radius.md, paddingHorizontal: spacing.md, paddingVertical: 8, marginBottom: spacing.sm },
+  searchInput: { flex: 1, fontSize: 14 },
+
+  filterRow:   { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.sm, alignItems: 'center' },
+  filterInput: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 6, borderWidth: 1.5, borderRadius: radius.md, paddingHorizontal: spacing.sm, paddingVertical: 6 },
+  filterText:  { flex: 1, fontSize: 12 },
+  clearBtn:    { width: 32, height: 32, alignItems: 'center', justifyContent: 'center', borderRadius: radius.sm, borderWidth: 1.5 },
+
+  statsRow:     { flexDirection: 'row', borderRadius: radius.lg, padding: spacing.md, marginBottom: spacing.sm, alignItems: 'center', ...shadow.sm },
+  stat:         { flex: 1, alignItems: 'center' },
+  statVal:      { fontSize: 16, fontWeight: '800' },
+  statLabel:    { fontSize: 10, fontWeight: '600', marginTop: 2, textAlign: 'center' },
+  statDivider:  { width: 1, height: 32 },
 
   card:        { borderRadius: radius.lg, padding: spacing.md, marginBottom: spacing.sm, ...shadow.sm },
   cardTop:     { flexDirection: 'row', alignItems: 'center', marginBottom: spacing.sm, gap: 8 },

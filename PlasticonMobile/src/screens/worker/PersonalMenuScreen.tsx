@@ -38,9 +38,10 @@ export function PersonalMenuScreen() {
   const { user } = useAuth();
 
   const ITEMS: MenuItem[] = [
+    { icon: 'person-circle', label: isAr ? 'ملفي الشخصي' : 'My Profile',    desc: isAr ? 'الصورة والمعلومات الشخصية والمستندات' : 'Photo, personal info and documents',  color: colors.primary,  screen: 'Profile'       },
     { icon: 'time',          label: isAr ? 'حضوري' : 'My Attendance',  desc: isAr ? 'تسجيل الدخول/الخروج وسجل الحضور' : 'Check-in/out and attendance history',  color: colors.success,  screen: 'Attendance'    },
     { icon: 'cash',          label: isAr ? 'راتبي' : 'My Payroll',      desc: isAr ? 'سجلات الرواتب والأرباح الشهرية' : 'Pay records and monthly earnings',       color: colors.accent,   screen: 'Payroll'       },
-    { icon: 'notifications', label: isAr ? 'الإشعارات' : 'Notifications', desc: isAr ? 'التنبيهات ورسائل النظام' : 'Alerts and system messages',                color: colors.primary,  screen: 'Notifications' },
+    { icon: 'notifications', label: isAr ? 'الإشعارات' : 'Notifications', desc: isAr ? 'التنبيهات ورسائل النظام' : 'Alerts and system messages',                color: colors.warning,  screen: 'Notifications' },
     { icon: 'chatbubbles',   label: isAr ? 'الدردشة' : 'Chat',           desc: isAr ? 'التواصل مع فريقك' : 'Communicate with your team',                        color: colors.info,     screen: 'Chat'          },
   ];
 

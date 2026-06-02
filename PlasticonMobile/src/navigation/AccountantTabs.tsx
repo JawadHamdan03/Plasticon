@@ -56,6 +56,7 @@ import { AttendanceScreen }    from '../screens/shared/AttendanceScreen';
 import { PayrollScreen }       from '../screens/worker/PayrollScreen';
 import { NotificationsScreen } from '../screens/shared/NotificationsScreen';
 import { ChatScreen }          from '../screens/shared/ChatScreen';
+import { ProfileScreen }       from '../screens/shared/ProfileScreen';
 
 // ─── Stack: Overview tab ─────────────────────────────────────────────────────
 const OverviewStack = createNativeStackNavigator<AccountantOverviewStackParamList>();
@@ -131,6 +132,7 @@ function PersonalNavigator() {
       <PersonalStack.Screen name="Payroll"       component={PayrollScreen} />
       <PersonalStack.Screen name="Notifications" component={NotificationsScreen} />
       <PersonalStack.Screen name="Chat"          component={ChatScreen} />
+      <PersonalStack.Screen name="Profile"       component={ProfileScreen} />
     </PersonalStack.Navigator>
   );
 }

@@ -1,142 +1,287 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, FlatList, RefreshControl, StyleSheet, Text, View } from 'react-native';
+import {
+  ActivityIndicator, Alert, FlatList, KeyboardAvoidingView, Linking, Modal,
+  Platform, Pressable, RefreshControl, ScrollView,
+  StyleSheet, Text, TextInput, TouchableOpacity, View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { api } from '../../api/client';
-import { ScreenHeader } from '../../components';
+import { ScreenHeader, StatCard } from '../../components';
 import { radius, shadow, spacing, typography } from '../../theme';
 import { useAppTheme } from '../../context/ThemeContext';
 import { useLocale } from '../../context/LocaleContext';
 
 interface FinancialReport {
   id: number;
-  title?: string;
-  reportType?: string;
-  period?: string;
-  pdfPath?: string;
-  generatedBy?: { fullName: string };
+  title: string;
+  reportType: string;
+  period: string;
+  pdfPath?: string | null;
+  generatedBy?: { id: number; fullName: string };
   createdAt: string;
 }
 
-function ReportCard({ item }: { item: FinancialReport }) {
-  const { colors } = useAppTheme();
-  const { isAr } = useLocale();
+const REPORT_TYPES = ['MONTHLY', 'QUARTERLY', 'ANNUAL'] as const;
+const FILTERS      = ['ALL', 'MONTHLY', 'QUARTERLY', 'ANNUAL'] as const;
+const TYPE_AR: Record<string, string> = { ALL: 'الكل', MONTHLY: 'شهري', QUARTERLY: 'ربعي', ANNUAL: 'سنوي' };
 
-  const TYPE_COLOR: Record<string, string> = {
-    'P&L':        colors.success,
-    BalanceSheet: colors.primary,
-    CashFlow:     colors.info,
-    TaxReport:    colors.warning,
-    Payroll:      colors.accent,
-  };
-
-  const color = TYPE_COLOR[item.reportType ?? ''] ?? colors.textMuted;
-
-  return (
-    <View style={[styles.card, { backgroundColor: colors.surface }]}>
-      <View style={styles.cardTop}>
-        <View style={[styles.iconWrap, { backgroundColor: `${color}15` }]}>
-          <Ionicons name="document-text" size={20} color={color} />
-        </View>
-        <View style={styles.cardContent}>
-          <Text style={[styles.title, { color: colors.text }]} numberOfLines={1}>
-            {item.title ?? item.reportType ?? `${isAr ? 'تقرير #' : 'Report #'}${item.id}`}
-          </Text>
-          <Text style={[styles.period, { color: colors.textMuted }]}>
-            {item.period ?? new Date(item.createdAt).toLocaleDateString([], { month: 'long', year: 'numeric' })}
-          </Text>
-        </View>
-        {item.reportType && (
-          <View style={[styles.typeBadge, { backgroundColor: `${color}15` }]}>
-            <Text style={[styles.typeText, { color }]}>{item.reportType}</Text>
-          </View>
-        )}
-      </View>
-      <View style={[styles.footer, { borderTopColor: colors.border }]}>
-        <Ionicons name="time-outline" size={12} color={colors.textMuted} />
-        <Text style={[styles.meta, { color: colors.textMuted }]}>
-          {new Date(item.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}
-          {item.generatedBy ? ` · ${item.generatedBy.fullName}` : ''}
-        </Text>
-        {item.pdfPath && (
-          <View style={[styles.pdfBadge, { backgroundColor: `${colors.primary}15` }]}>
-            <Ionicons name="attach-outline" size={12} color={colors.primary} />
-            <Text style={[styles.pdfText, { color: colors.primary }]}>PDF</Text>
-          </View>
-        )}
-      </View>
-    </View>
-  );
-}
+interface FormState { title: string; reportType: string; period: string; pdfPath: string; }
+const EMPTY: FormState = { title: '', reportType: 'MONTHLY', period: '', pdfPath: '' };
 
 export function FinancialReportsScreen() {
   const { colors } = useAppTheme();
   const { isAr } = useLocale();
-  const [reports, setReports]   = useState<FinancialReport[]>([]);
-  const [loading, setLoading]   = useState(true);
+  const [reports,    setReports]    = useState<FinancialReport[]>([]);
+  const [loading,    setLoading]    = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [filter,     setFilter]     = useState<string>('ALL');
+  const [modal,      setModal]      = useState(false);
+  const [editing,    setEditing]    = useState<FinancialReport | null>(null);
+  const [form,       setForm]       = useState<FormState>(EMPTY);
+  const [saving,     setSaving]     = useState(false);
 
   const load = useCallback(async () => {
     try {
-      const res = await api.get<FinancialReport[]>('/financial-reports?limit=30');
-      setReports(Array.isArray(res) ? res : []);
-    } catch (e: any) {
-      Alert.alert(isAr ? 'خطأ' : 'Error', e?.message ?? (isAr ? 'فشل تحميل التقارير' : 'Failed to load reports'));
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  }, [isAr]);
+      const res = await api.get<FinancialReport[] | { data: FinancialReport[] }>('/financial-reports?limit=50');
+      setReports(Array.isArray(res) ? res : ((res as any).data ?? []));
+    } catch { setReports([]); }
+    finally { setLoading(false); setRefreshing(false); }
+  }, []);
 
   useEffect(() => { void load(); }, [load]);
 
-  const subtitle = `${reports.length} ${isAr ? 'تقرير' : `report${reports.length !== 1 ? 's' : ''}`}`;
+  const openCreate = () => { setEditing(null); setForm(EMPTY); setModal(true); };
+  const openEdit   = (r: FinancialReport) => {
+    setEditing(r);
+    setForm({ title: r.title, reportType: r.reportType, period: r.period ?? '', pdfPath: r.pdfPath ?? '' });
+    setModal(true);
+  };
+
+  const handleDelete = (r: FinancialReport) => {
+    Alert.alert(isAr ? 'حذف' : 'Delete', isAr ? 'هل أنت متأكد؟' : 'Are you sure?', [
+      { text: isAr ? 'إلغاء' : 'Cancel', style: 'cancel' },
+      { text: isAr ? 'حذف' : 'Delete', style: 'destructive', onPress: async () => {
+        try {
+          await api.delete(`/financial-reports/${r.id}`);
+          setReports((p) => p.filter((x) => x.id !== r.id));
+        } catch (e: any) { Alert.alert('Error', e.message ?? 'Failed'); }
+      }},
+    ]);
+  };
+
+  const submit = async () => {
+    if (!form.title.trim()) {
+      Alert.alert(isAr ? 'مطلوب' : 'Required', isAr ? 'أدخل عنوان التقرير' : 'Enter report title'); return;
+    }
+    if (!form.period.trim()) {
+      Alert.alert(isAr ? 'مطلوب' : 'Required', isAr ? 'أدخل الفترة' : 'Enter period'); return;
+    }
+    setSaving(true);
+    try {
+      const body: Record<string, unknown> = { title: form.title.trim(), reportType: form.reportType, period: form.period.trim() };
+      if (form.pdfPath.trim()) body.pdfPath = form.pdfPath.trim();
+      if (editing) {
+        const up = await api.patch<FinancialReport>(`/financial-reports/${editing.id}`, body);
+        setReports((p) => p.map((x) => x.id === editing.id ? up : x));
+      } else {
+        const cr = await api.post<FinancialReport>('/financial-reports', body);
+        setReports((p) => [cr, ...p]);
+      }
+      setModal(false);
+    } catch (e: any) { Alert.alert(isAr ? 'خطأ' : 'Error', e.message ?? 'Failed'); }
+    finally { setSaving(false); }
+  };
+
+  const visible   = filter === 'ALL' ? reports : reports.filter((r) => r.reportType === filter);
+  const monthly   = reports.filter((r) => r.reportType === 'MONTHLY').length;
+  const quarterly = reports.filter((r) => r.reportType === 'QUARTERLY').length;
+  const annual    = reports.filter((r) => r.reportType === 'ANNUAL').length;
+
+  const typeColor = (t: string) => {
+    if (t === 'MONTHLY')   return colors.primary;
+    if (t === 'QUARTERLY') return colors.accent;
+    return colors.success;
+  };
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
-      <ScreenHeader title={isAr ? 'التقارير المالية' : 'Financial Reports'} subtitle={subtitle} showBack />
-      {loading ? <View style={styles.center}><ActivityIndicator size="large" color={colors.primary} /></View> : (
+      <ScreenHeader title={isAr ? 'التقارير المالية' : 'Financial Reports'} showBack />
+
+      {loading ? (
+        <View style={styles.center}><ActivityIndicator size="large" color={colors.primary} /></View>
+      ) : (
         <FlatList
-          data={reports}
-          keyExtractor={(i, idx) => `${String(i.id)}-${idx}`}
-          renderItem={({ item }) => <ReportCard item={item} />}
+          data={visible}
+          keyExtractor={(i) => String(i.id)}
           contentContainerStyle={styles.list}
           showsVerticalScrollIndicator={false}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); void load(); }} tintColor={colors.primary} />}
+          ListHeaderComponent={
+            <View>
+              <View style={[styles.kpiRow, { marginBottom: spacing.md }]}>
+                <StatCard label={isAr ? 'شهري' : 'Monthly'} value={String(monthly)} icon="calendar" color={colors.primary} style={styles.kpi} />
+                <StatCard label={isAr ? 'ربعي' : 'Quarterly'} value={String(quarterly)} icon="stats-chart" color={colors.accent} style={styles.kpi} />
+                <StatCard label={isAr ? 'سنوي' : 'Annual'} value={String(annual)} icon="trending-up" color={colors.success} style={styles.kpi} />
+              </View>
+              <View style={styles.filterRow}>
+                {FILTERS.map((f) => (
+                  <TouchableOpacity key={f}
+                    style={[styles.filterChip, filter === f && { backgroundColor: colors.primary, borderColor: colors.primary }]}
+                    onPress={() => setFilter(f)}>
+                    <Text style={[styles.filterText, { color: filter === f ? '#fff' : colors.textMuted }]}>
+                      {isAr ? TYPE_AR[f] : f === 'ALL' ? 'All' : f}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+              <TouchableOpacity style={[styles.addBtn, { backgroundColor: colors.primary }]} onPress={openCreate} activeOpacity={0.8}>
+                <Ionicons name="add-circle" size={20} color="#fff" />
+                <Text style={styles.addText}>{isAr ? 'إضافة تقرير' : 'Add Report'}</Text>
+              </TouchableOpacity>
+            </View>
+          }
+          renderItem={({ item: r }) => (
+            <View style={[styles.card, { backgroundColor: colors.surface }]}>
+              <View style={styles.cardTop}>
+                <View style={[styles.typeIcon, { backgroundColor: `${typeColor(r.reportType)}15` }]}>
+                  <Ionicons name="document-text" size={20} color={typeColor(r.reportType)} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.cardTitle, { color: colors.text }]} numberOfLines={1}>{r.title}</Text>
+                  <Text style={[styles.cardSub, { color: colors.textMuted }]}>{r.period}</Text>
+                  {r.generatedBy ? (
+                    <Text style={[styles.cardSub, { color: colors.textMuted }]}>{isAr ? 'بواسطة: ' : 'By: '}{r.generatedBy.fullName}</Text>
+                  ) : null}
+                </View>
+                <View style={styles.cardRight}>
+                  <View style={[styles.badge, { backgroundColor: `${typeColor(r.reportType)}15` }]}>
+                    <Text style={[styles.badgeText, { color: typeColor(r.reportType) }]}>{r.reportType}</Text>
+                  </View>
+                  <View style={styles.actionRow}>
+                    <TouchableOpacity onPress={() => openEdit(r)} hitSlop={8}>
+                      <Ionicons name="pencil" size={16} color={colors.primary} />
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={() => handleDelete(r)} hitSlop={8}>
+                      <Ionicons name="trash-outline" size={16} color={colors.danger} />
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              </View>
+              {r.pdfPath ? (
+                <TouchableOpacity
+                  style={[styles.pdfBtn, { borderColor: colors.border }]}
+                  onPress={() => void Linking.openURL(r.pdfPath!)}
+                >
+                  <Ionicons name="document-attach" size={14} color={colors.info} />
+                  <Text style={[styles.pdfText, { color: colors.info }]}>{isAr ? 'عرض PDF' : 'View PDF'}</Text>
+                </TouchableOpacity>
+              ) : null}
+            </View>
+          )}
           ListEmptyComponent={
             <View style={styles.empty}>
-              <Ionicons name="document-outline" size={44} color={colors.textMuted} />
-              <Text style={[styles.emptyText, { color: colors.textMuted }]}>
-                {isAr ? 'لا توجد تقارير' : 'No reports available'}
-              </Text>
-              <Text style={[styles.emptyHint, { color: colors.textMuted }]}>
-                {isAr ? 'يتم إنشاء التقارير بواسطة مديري المالية على لوحة الويب' : 'Reports are generated by finance managers on the web dashboard'}
-              </Text>
+              <Ionicons name="bar-chart-outline" size={44} color={colors.textMuted} />
+              <Text style={[styles.emptyText, { color: colors.textMuted }]}>{isAr ? 'لا توجد تقارير' : 'No reports yet'}</Text>
             </View>
           }
         />
       )}
+
+      <Modal visible={modal} transparent animationType="slide" onRequestClose={() => setModal(false)}>
+        <KeyboardAvoidingView style={styles.overlay} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+          <Pressable style={styles.overlayBg} onPress={() => setModal(false)} />
+          <View style={[styles.sheet, { backgroundColor: colors.surface }]}>
+            <View style={[styles.handle, { backgroundColor: colors.border }]} />
+            <Text style={[styles.sheetTitle, { color: colors.text }]}>
+              {editing ? (isAr ? 'تعديل التقرير' : 'Edit Report') : (isAr ? 'تقرير جديد' : 'New Report')}
+            </Text>
+            <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+              <Text style={[styles.label, { color: colors.textMuted }]}>{isAr ? 'العنوان *' : 'Title *'}</Text>
+              <TextInput style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
+                placeholder={isAr ? 'مثال: تقرير يناير 2025' : 'e.g. January 2025 Report'}
+                placeholderTextColor={colors.textMuted}
+                value={form.title} onChangeText={(v) => setForm((p) => ({ ...p, title: v }))} />
+
+              <Text style={[styles.label, { color: colors.textMuted }]}>{isAr ? 'نوع التقرير *' : 'Report Type *'}</Text>
+              <View style={styles.chipGroup}>
+                {REPORT_TYPES.map((t) => (
+                  <TouchableOpacity key={t}
+                    style={[styles.chip, { borderColor: colors.border, backgroundColor: colors.surfaceAlt },
+                      form.reportType === t && { borderColor: colors.primary, backgroundColor: `${colors.primary}18` }]}
+                    onPress={() => setForm((p) => ({ ...p, reportType: t }))}>
+                    <Text style={[styles.chipText, { color: form.reportType === t ? colors.primary : colors.textSecondary }]}>
+                      {isAr ? TYPE_AR[t] : t}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              <Text style={[styles.label, { color: colors.textMuted }]}>{isAr ? 'الفترة *' : 'Period *'}</Text>
+              <TextInput style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
+                placeholder={isAr ? 'مثال: يناير 2025' : 'e.g. January 2025'}
+                placeholderTextColor={colors.textMuted}
+                value={form.period} onChangeText={(v) => setForm((p) => ({ ...p, period: v }))} />
+
+              <Text style={[styles.label, { color: colors.textMuted }]}>{isAr ? 'رابط PDF (اختياري)' : 'PDF Path (optional)'}</Text>
+              <TextInput style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
+                placeholder="https://..." placeholderTextColor={colors.textMuted}
+                value={form.pdfPath} onChangeText={(v) => setForm((p) => ({ ...p, pdfPath: v }))}
+                autoCapitalize="none" keyboardType="url" />
+            </ScrollView>
+
+            <View style={styles.actions}>
+              <TouchableOpacity style={[styles.cancelBtn, { borderColor: colors.border }]} onPress={() => setModal(false)}>
+                <Text style={[styles.cancelText, { color: colors.textSecondary }]}>{isAr ? 'إلغاء' : 'Cancel'}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[styles.saveBtn, { backgroundColor: colors.primary }, saving && { opacity: 0.6 }]} onPress={submit} disabled={saving}>
+                {saving ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.saveText}>{isAr ? 'حفظ' : 'Save'}</Text>}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safe:        { flex: 1 },
-  center:      { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  list:        { padding: spacing.md, paddingBottom: 40 },
-  card:        { borderRadius: radius.lg, padding: spacing.md, marginBottom: spacing.sm, ...shadow.sm },
-  cardTop:     { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.sm, marginBottom: spacing.sm },
-  iconWrap:    { width: 40, height: 40, borderRadius: radius.sm, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
-  cardContent: { flex: 1 },
-  title:       { ...typography.h4 },
-  period:      { ...typography.caption, marginTop: 2 },
-  typeBadge:   { paddingHorizontal: 8, paddingVertical: 3, borderRadius: radius.full, flexShrink: 0 },
-  typeText:    { fontSize: 10, fontWeight: '700' },
-  footer:      { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, borderTopWidth: 1, paddingTop: spacing.sm },
-  meta:        { ...typography.caption, flex: 1 },
-  pdfBadge:    { flexDirection: 'row', alignItems: 'center', gap: 3, paddingHorizontal: 6, paddingVertical: 2, borderRadius: radius.sm },
-  pdfText:     { fontSize: 10, fontWeight: '700' },
-  empty:       { alignItems: 'center', paddingTop: 60, gap: spacing.sm, paddingHorizontal: spacing.lg },
-  emptyText:   { ...typography.bodySmall },
-  emptyHint:   { ...typography.caption, textAlign: 'center' },
+  safe:       { flex: 1 },
+  center:     { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  list:       { padding: spacing.md, paddingBottom: 40 },
+  kpiRow:     { flexDirection: 'row', gap: spacing.sm },
+  kpi:        { flex: 1 },
+  filterRow:  { flexDirection: 'row', gap: spacing.xs, marginBottom: spacing.sm, flexWrap: 'wrap' },
+  filterChip: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: radius.full, borderWidth: 1.5, borderColor: '#E2E8F0' },
+  filterText: { fontSize: 12, fontWeight: '600' as const },
+  addBtn:     { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, borderRadius: radius.lg, paddingVertical: 12, marginBottom: spacing.md },
+  addText:    { ...typography.bodySmall, fontWeight: '700' as const, color: '#fff' },
+  card:       { borderRadius: radius.lg, padding: spacing.md, marginBottom: spacing.sm, ...shadow.sm },
+  cardTop:    { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  typeIcon:   { width: 40, height: 40, borderRadius: radius.sm, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
+  cardTitle:  { ...typography.h4 },
+  cardSub:    { ...typography.caption, marginTop: 2 },
+  cardRight:  { alignItems: 'flex-end', gap: spacing.xs },
+  actionRow:  { flexDirection: 'row', gap: spacing.sm, marginTop: 4 },
+  badge:      { paddingHorizontal: 8, paddingVertical: 3, borderRadius: radius.full },
+  badgeText:  { fontSize: 10, fontWeight: '700' as const },
+  pdfBtn:     { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: spacing.sm, paddingTop: spacing.sm, borderTopWidth: 1 },
+  pdfText:    { fontSize: 13, fontWeight: '600' as const },
+  empty:      { alignItems: 'center', paddingTop: 60, gap: spacing.sm },
+  emptyText:  { ...typography.bodySmall },
+  overlay:    { flex: 1, justifyContent: 'flex-end' },
+  overlayBg:  { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.45)' },
+  sheet:      { borderTopLeftRadius: radius.xl, borderTopRightRadius: radius.xl, padding: spacing.lg, paddingBottom: spacing.xl, maxHeight: '90%' },
+  handle:     { width: 36, height: 4, borderRadius: 2, alignSelf: 'center', marginBottom: spacing.md },
+  sheetTitle: { ...typography.h3, textAlign: 'center', marginBottom: spacing.lg },
+  label:      { ...typography.caption, marginBottom: 6, marginTop: spacing.sm },
+  input:      { borderRadius: radius.md, borderWidth: 1.5, paddingHorizontal: spacing.md, paddingVertical: 11, fontSize: 15, marginBottom: 4 },
+  chipGroup:  { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs, marginBottom: spacing.sm },
+  chip:       { paddingHorizontal: 12, paddingVertical: 7, borderRadius: radius.full, borderWidth: 1.5 },
+  chipText:   { fontSize: 12, fontWeight: '600' as const },
+  actions:    { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.lg },
+  cancelBtn:  { flex: 1, paddingVertical: 13, borderRadius: radius.md, borderWidth: 1.5, alignItems: 'center' },
+  cancelText: { fontWeight: '600' as const },
+  saveBtn:    { flex: 2, paddingVertical: 13, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center' },
+  saveText:   { fontWeight: '700' as const, color: '#fff' },
 });

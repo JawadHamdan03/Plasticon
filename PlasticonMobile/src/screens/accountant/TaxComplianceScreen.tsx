@@ -1,142 +1,309 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, FlatList, RefreshControl, StyleSheet, Text, View } from 'react-native';
+import {
+  ActivityIndicator, Alert, FlatList, KeyboardAvoidingView, Modal,
+  Platform, Pressable, RefreshControl, ScrollView,
+  StyleSheet, Text, TextInput, TouchableOpacity, View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { api } from '../../api/client';
-import { ScreenHeader } from '../../components';
+import { ScreenHeader, StatCard } from '../../components';
 import { radius, shadow, spacing, typography } from '../../theme';
 import { useAppTheme } from '../../context/ThemeContext';
 import { useLocale } from '../../context/LocaleContext';
 
+function fmt(n: number) {
+  return n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
 interface TaxFiling {
   id: number;
-  taxType?: string;
-  period?: string;
-  amount?: number;
-  status?: string;
-  dueDate?: string;
-  filedDate?: string;
-  filedBy?: { fullName: string };
-  createdAt: string;
+  filingType: string;
+  amount: number;
+  dueDate: string;
+  status: string;
+  filedBy?: { id: number; fullName: string };
 }
 
-function fmt(n: number) { return n.toLocaleString('en-US', { minimumFractionDigits: 2 }); }
+const TAX_TYPES = ['VAT', 'INCOME_TAX', 'PAYROLL_TAX', 'CORPORATE_TAX', 'WITHHOLDING_TAX'];
+const STATUSES  = ['PENDING', 'COMPLETED', 'OVERDUE'] as const;
+const FILTERS   = ['ALL', 'PENDING', 'COMPLETED', 'OVERDUE'] as const;
 
-function TaxCard({ item }: { item: TaxFiling }) {
-  const { colors } = useAppTheme();
-  const { isAr } = useLocale();
-
-  const STATUS_META: Record<string, { color: string; icon: string }> = {
-    FILED:   { color: colors.success, icon: 'checkmark-circle' },
-    PENDING: { color: colors.warning, icon: 'time' },
-    OVERDUE: { color: colors.danger,  icon: 'alert-circle' },
-    DRAFT:   { color: colors.textMuted, icon: 'document' },
+function taxLabel(t: string, isAr: boolean) {
+  const m: Record<string, [string, string]> = {
+    VAT:             ['ضريبة القيمة المضافة', 'VAT'],
+    INCOME_TAX:      ['ضريبة الدخل',          'Income Tax'],
+    PAYROLL_TAX:     ['ضريبة الرواتب',         'Payroll Tax'],
+    CORPORATE_TAX:   ['ضريبة الشركات',         'Corporate Tax'],
+    WITHHOLDING_TAX: ['ضريبة الاستقطاع',       'Withholding Tax'],
   };
-
-  const status = item.status ?? 'PENDING';
-  const meta   = STATUS_META[status] ?? STATUS_META.PENDING;
-  const due    = item.dueDate ? new Date(item.dueDate).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' }) : null;
-
-  return (
-    <View style={[styles.card, { backgroundColor: colors.surface }]}>
-      <View style={styles.cardTop}>
-        <View style={[styles.iconWrap, { backgroundColor: `${meta.color}15` }]}>
-          <Ionicons name={meta.icon as any} size={20} color={meta.color} />
-        </View>
-        <View style={styles.cardContent}>
-          <Text style={[styles.taxType, { color: colors.text }]}>{item.taxType ?? `Filing #${item.id}`}</Text>
-          <Text style={[styles.period, { color: colors.textMuted }]}>{item.period ?? new Date(item.createdAt).toLocaleDateString([], { month: 'long', year: 'numeric' })}</Text>
-        </View>
-        <View style={[styles.badge, { backgroundColor: `${meta.color}15` }]}>
-          <Text style={[styles.badgeText, { color: meta.color }]}>{status}</Text>
-        </View>
-      </View>
-      <View style={[styles.footer, { borderTopColor: colors.border }]}>
-        {item.amount != null && (
-          <Text style={[styles.detail, { color: colors.textSecondary }]}>
-            {isAr ? 'المبلغ: ' : 'Amount: '}<Text style={[styles.detailVal, { color: colors.text }]}>${fmt(item.amount)}</Text>
-          </Text>
-        )}
-        {due && (
-          <Text style={[styles.detail, { color: colors.textSecondary }]}>
-            {isAr ? 'الاستحقاق: ' : 'Due: '}<Text style={[styles.detailVal, { color: colors.text }]}>{due}</Text>
-          </Text>
-        )}
-        {item.filedBy && (
-          <Text style={[styles.detail, { color: colors.textSecondary }]}>
-            {isAr ? 'قُدِّم بواسطة: ' : 'Filed by: '}<Text style={[styles.detailVal, { color: colors.text }]}>{item.filedBy.fullName}</Text>
-          </Text>
-        )}
-      </View>
-    </View>
-  );
+  return (m[t] ?? [t, t])[isAr ? 0 : 1];
 }
+
+const FILTER_AR: Record<string, string> = { ALL: 'الكل', PENDING: 'معلق', COMPLETED: 'مكتمل', OVERDUE: 'متأخر' };
+
+interface FormState { filingType: string; amount: string; dueDate: string; status: string; }
+const EMPTY: FormState = { filingType: 'VAT', amount: '', dueDate: '', status: 'PENDING' };
 
 export function TaxComplianceScreen() {
   const { colors } = useAppTheme();
   const { isAr } = useLocale();
-  const [filings, setFilings]   = useState<TaxFiling[]>([]);
-  const [loading, setLoading]   = useState(true);
+  const [filings,    setFilings]    = useState<TaxFiling[]>([]);
+  const [loading,    setLoading]    = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [filter,     setFilter]     = useState<string>('ALL');
+  const [modal,      setModal]      = useState(false);
+  const [editing,    setEditing]    = useState<TaxFiling | null>(null);
+  const [form,       setForm]       = useState<FormState>(EMPTY);
+  const [saving,     setSaving]     = useState(false);
 
   const load = useCallback(async () => {
     try {
-      const res = await api.get<TaxFiling[]>('/tax-filings?limit=20');
-      setFilings(Array.isArray(res) ? res : []);
-    } catch (e: any) {
-      Alert.alert(isAr ? 'خطأ' : 'Error', e?.message ?? (isAr ? 'فشل تحميل الملفات الضريبية' : 'Failed to load tax filings'));
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
+      const res = await api.get<TaxFiling[] | { data: TaxFiling[] }>('/tax-filings');
+      setFilings(Array.isArray(res) ? res : ((res as any).data ?? []));
+    } catch { setFilings([]); }
+    finally { setLoading(false); setRefreshing(false); }
   }, []);
 
   useEffect(() => { void load(); }, [load]);
 
-  const pending = filings.filter((f) => f.status === 'PENDING' || f.status === 'OVERDUE').length;
+  const openCreate = () => { setEditing(null); setForm(EMPTY); setModal(true); };
+  const openEdit   = (f: TaxFiling) => {
+    setEditing(f);
+    setForm({ filingType: f.filingType, amount: String(f.amount), dueDate: f.dueDate?.slice(0, 10) ?? '', status: f.status });
+    setModal(true);
+  };
+
+  const handleDelete = (f: TaxFiling) => {
+    Alert.alert(
+      isAr ? 'حذف' : 'Delete', isAr ? 'هل أنت متأكد؟' : 'Are you sure?',
+      [
+        { text: isAr ? 'إلغاء' : 'Cancel', style: 'cancel' },
+        { text: isAr ? 'حذف' : 'Delete', style: 'destructive', onPress: async () => {
+          try {
+            await api.delete(`/tax-filings/${f.id}`);
+            setFilings((p) => p.filter((x) => x.id !== f.id));
+          } catch (e: any) { Alert.alert('Error', e.message ?? 'Failed'); }
+        }},
+      ],
+    );
+  };
+
+  const submit = async () => {
+    if (!form.amount || isNaN(Number(form.amount))) {
+      Alert.alert(isAr ? 'مطلوب' : 'Required', isAr ? 'أدخل المبلغ' : 'Enter amount'); return;
+    }
+    if (!form.dueDate) {
+      Alert.alert(isAr ? 'مطلوب' : 'Required', isAr ? 'أدخل تاريخ الاستحقاق' : 'Enter due date'); return;
+    }
+    setSaving(true);
+    try {
+      const body = { filingType: form.filingType, amount: parseFloat(form.amount), dueDate: form.dueDate, status: form.status };
+      if (editing) {
+        const up = await api.patch<TaxFiling>(`/tax-filings/${editing.id}`, body);
+        setFilings((p) => p.map((x) => x.id === editing.id ? up : x));
+      } else {
+        const cr = await api.post<TaxFiling>('/tax-filings', body);
+        setFilings((p) => [cr, ...p]);
+      }
+      setModal(false);
+    } catch (e: any) { Alert.alert(isAr ? 'خطأ' : 'Error', e.message ?? 'Failed'); }
+    finally { setSaving(false); }
+  };
+
+  const visible   = filter === 'ALL' ? filings : filings.filter((f) => f.status === filter);
+  const completed = filings.filter((f) => f.status === 'COMPLETED').length;
+  const pending   = filings.filter((f) => f.status === 'PENDING').length;
+  const overdue   = filings.filter((f) => f.status === 'OVERDUE').length;
+  const totalAmt  = filings.reduce((s, f) => s + (Number(f.amount) || 0), 0);
+
+  const sc = (s: string) => {
+    if (s === 'COMPLETED') return { bg: colors.successLight, fg: colors.success };
+    if (s === 'OVERDUE')   return { bg: `${colors.danger}20`,  fg: colors.danger };
+    return                        { bg: colors.warningLight,   fg: colors.warning };
+  };
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
-      <ScreenHeader
-        title={isAr ? 'الامتثال الضريبي' : 'Tax Compliance'}
-        subtitle={pending > 0 ? `${pending} ${isAr ? 'ملفات معلقة' : 'pending filings'}` : (isAr ? 'كل شيء محدّث' : 'All up to date')}
-        showBack
-      />
-      {loading ? <View style={styles.center}><ActivityIndicator size="large" color={colors.primary} /></View> : (
+      <ScreenHeader title={isAr ? 'الامتثال الضريبي' : 'Tax Compliance'} showBack />
+
+      {loading ? (
+        <View style={styles.center}><ActivityIndicator size="large" color={colors.primary} /></View>
+      ) : (
         <FlatList
-          data={filings}
-          keyExtractor={(i, idx) => `${String(i.id)}-${idx}`}
-          renderItem={({ item }) => <TaxCard item={item} />}
+          data={visible}
+          keyExtractor={(i) => String(i.id)}
           contentContainerStyle={styles.list}
           showsVerticalScrollIndicator={false}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); void load(); }} tintColor={colors.primary} />}
+          ListHeaderComponent={
+            <View>
+              <View style={styles.kpiRow}>
+                <StatCard label={isAr ? 'الإجمالي' : 'Total'} value={`$${fmt(totalAmt)}`} icon="document-text" color={colors.primary} style={styles.kpi} />
+                <StatCard label={isAr ? 'مكتمل' : 'Completed'} value={String(completed)} icon="checkmark-circle" color={colors.success} style={styles.kpi} />
+              </View>
+              <View style={[styles.kpiRow, { marginBottom: spacing.md }]}>
+                <StatCard label={isAr ? 'معلق' : 'Pending'} value={String(pending)} icon="time" color={colors.warning} style={styles.kpi} />
+                <StatCard label={isAr ? 'متأخر' : 'Overdue'} value={String(overdue)} icon="alert-circle" color={colors.danger} style={styles.kpi} />
+              </View>
+              <View style={styles.filterRow}>
+                {FILTERS.map((f) => (
+                  <TouchableOpacity key={f}
+                    style={[styles.filterChip, filter === f && { backgroundColor: colors.primary, borderColor: colors.primary }]}
+                    onPress={() => setFilter(f)}>
+                    <Text style={[styles.filterText, { color: filter === f ? '#fff' : colors.textMuted }]}>
+                      {isAr ? FILTER_AR[f] : f === 'ALL' ? 'All' : f}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+              <TouchableOpacity style={[styles.addBtn, { backgroundColor: colors.primary }]} onPress={openCreate} activeOpacity={0.8}>
+                <Ionicons name="add-circle" size={20} color="#fff" />
+                <Text style={styles.addText}>{isAr ? 'إضافة ملف ضريبي' : 'Add Tax Filing'}</Text>
+              </TouchableOpacity>
+            </View>
+          }
+          renderItem={({ item: f }) => {
+            const c = sc(f.status);
+            return (
+              <View style={[styles.card, { backgroundColor: colors.surface }]}>
+                <View style={styles.cardTop}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.cardTitle, { color: colors.text }]}>{taxLabel(f.filingType, isAr)}</Text>
+                    <Text style={[styles.cardAmt, { color: colors.primary }]}>${fmt(Number(f.amount))}</Text>
+                    {f.dueDate ? (
+                      <Text style={[styles.cardSub, { color: colors.textMuted }]}>
+                        {isAr ? 'الاستحقاق: ' : 'Due: '}{new Date(f.dueDate).toLocaleDateString()}
+                      </Text>
+                    ) : null}
+                    {f.filedBy ? (
+                      <Text style={[styles.cardSub, { color: colors.textMuted }]}>
+                        {isAr ? 'بواسطة: ' : 'By: '}{f.filedBy.fullName}
+                      </Text>
+                    ) : null}
+                  </View>
+                  <View style={styles.cardRight}>
+                    <View style={[styles.badge, { backgroundColor: c.bg }]}>
+                      <Text style={[styles.badgeText, { color: c.fg }]}>{f.status}</Text>
+                    </View>
+                    <View style={styles.actionRow}>
+                      <TouchableOpacity onPress={() => openEdit(f)} hitSlop={8}>
+                        <Ionicons name="pencil" size={16} color={colors.primary} />
+                      </TouchableOpacity>
+                      <TouchableOpacity onPress={() => handleDelete(f)} hitSlop={8}>
+                        <Ionicons name="trash-outline" size={16} color={colors.danger} />
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                </View>
+              </View>
+            );
+          }}
           ListEmptyComponent={
             <View style={styles.empty}>
-              <Ionicons name="calculator-outline" size={44} color={colors.textMuted} />
-              <Text style={[styles.emptyText, { color: colors.textMuted }]}>{isAr ? 'لا توجد سجلات ضريبية' : 'No tax filings'}</Text>
+              <Ionicons name="document-text-outline" size={44} color={colors.textMuted} />
+              <Text style={[styles.emptyText, { color: colors.textMuted }]}>{isAr ? 'لا توجد ملفات ضريبية' : 'No tax filings'}</Text>
             </View>
           }
         />
       )}
+
+      <Modal visible={modal} transparent animationType="slide" onRequestClose={() => setModal(false)}>
+        <KeyboardAvoidingView style={styles.overlay} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+          <Pressable style={styles.overlayBg} onPress={() => setModal(false)} />
+          <View style={[styles.sheet, { backgroundColor: colors.surface }]}>
+            <View style={[styles.handle, { backgroundColor: colors.border }]} />
+            <Text style={[styles.sheetTitle, { color: colors.text }]}>
+              {editing ? (isAr ? 'تعديل الملف' : 'Edit Filing') : (isAr ? 'ملف ضريبي جديد' : 'New Tax Filing')}
+            </Text>
+            <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+              <Text style={[styles.label, { color: colors.textMuted }]}>{isAr ? 'نوع الضريبة *' : 'Tax Type *'}</Text>
+              <View style={styles.chipGroup}>
+                {TAX_TYPES.map((t) => (
+                  <TouchableOpacity key={t}
+                    style={[styles.chip, { borderColor: colors.border, backgroundColor: colors.surfaceAlt },
+                      form.filingType === t && { borderColor: colors.primary, backgroundColor: `${colors.primary}18` }]}
+                    onPress={() => setForm((p) => ({ ...p, filingType: t }))}>
+                    <Text style={[styles.chipText, { color: form.filingType === t ? colors.primary : colors.textSecondary }]}>
+                      {taxLabel(t, isAr)}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              <Text style={[styles.label, { color: colors.textMuted }]}>{isAr ? 'المبلغ *' : 'Amount *'}</Text>
+              <TextInput style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
+                placeholder="0.00" placeholderTextColor={colors.textMuted} keyboardType="decimal-pad"
+                value={form.amount} onChangeText={(v) => setForm((p) => ({ ...p, amount: v }))} />
+
+              <Text style={[styles.label, { color: colors.textMuted }]}>{isAr ? 'تاريخ الاستحقاق *' : 'Due Date *'}</Text>
+              <TextInput style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
+                placeholder="YYYY-MM-DD" placeholderTextColor={colors.textMuted}
+                value={form.dueDate} onChangeText={(v) => setForm((p) => ({ ...p, dueDate: v }))} />
+
+              <Text style={[styles.label, { color: colors.textMuted }]}>{isAr ? 'الحالة *' : 'Status *'}</Text>
+              <View style={styles.chipGroup}>
+                {STATUSES.map((s) => (
+                  <TouchableOpacity key={s}
+                    style={[styles.chip, { borderColor: colors.border, backgroundColor: colors.surfaceAlt },
+                      form.status === s && { borderColor: colors.primary, backgroundColor: `${colors.primary}18` }]}
+                    onPress={() => setForm((p) => ({ ...p, status: s }))}>
+                    <Text style={[styles.chipText, { color: form.status === s ? colors.primary : colors.textSecondary }]}>{s}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </ScrollView>
+
+            <View style={styles.actions}>
+              <TouchableOpacity style={[styles.cancelBtn, { borderColor: colors.border }]} onPress={() => setModal(false)}>
+                <Text style={[styles.cancelText, { color: colors.textSecondary }]}>{isAr ? 'إلغاء' : 'Cancel'}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[styles.saveBtn, { backgroundColor: colors.primary }, saving && { opacity: 0.6 }]} onPress={submit} disabled={saving}>
+                {saving ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.saveText}>{isAr ? 'حفظ' : 'Save'}</Text>}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safe:        { flex: 1 },
-  center:      { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  list:        { padding: spacing.md, paddingBottom: 40 },
-  card:        { borderRadius: radius.lg, padding: spacing.md, marginBottom: spacing.sm, ...shadow.sm },
-  cardTop:     { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginBottom: 8 },
-  iconWrap:    { width: 40, height: 40, borderRadius: radius.sm, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
-  cardContent: { flex: 1 },
-  taxType:     { ...typography.h4 },
-  period:      { ...typography.caption, marginTop: 2 },
-  badge:       { paddingHorizontal: 8, paddingVertical: 3, borderRadius: radius.full },
-  badgeText:   { fontSize: 10, fontWeight: '700' },
-  footer:      { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md, borderTopWidth: 1, paddingTop: 8 },
-  detail:      { ...typography.caption },
-  detailVal:   { fontWeight: '700' },
-  empty:       { alignItems: 'center', paddingTop: 60, gap: spacing.sm },
-  emptyText:   { ...typography.bodySmall },
+  safe:       { flex: 1 },
+  center:     { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  list:       { padding: spacing.md, paddingBottom: 40 },
+  kpiRow:     { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.sm },
+  kpi:        { flex: 1 },
+  filterRow:  { flexDirection: 'row', gap: spacing.xs, marginBottom: spacing.sm, flexWrap: 'wrap' },
+  filterChip: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: radius.full, borderWidth: 1.5, borderColor: '#E2E8F0' },
+  filterText: { fontSize: 12, fontWeight: '600' as const },
+  addBtn:     { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, borderRadius: radius.lg, paddingVertical: 12, marginBottom: spacing.md },
+  addText:    { ...typography.bodySmall, fontWeight: '700' as const, color: '#fff' },
+  card:       { borderRadius: radius.lg, padding: spacing.md, marginBottom: spacing.sm, ...shadow.sm },
+  cardTop:    { flexDirection: 'row', alignItems: 'flex-start' },
+  cardTitle:  { ...typography.h4, marginBottom: 2 },
+  cardAmt:    { fontSize: 18, fontWeight: '800' as const, marginBottom: 2 },
+  cardSub:    { ...typography.caption },
+  cardRight:  { alignItems: 'flex-end', gap: spacing.xs },
+  actionRow:  { flexDirection: 'row', gap: spacing.sm, marginTop: 4 },
+  badge:      { paddingHorizontal: 8, paddingVertical: 3, borderRadius: radius.full },
+  badgeText:  { fontSize: 10, fontWeight: '700' as const },
+  empty:      { alignItems: 'center', paddingTop: 60, gap: spacing.sm },
+  emptyText:  { ...typography.bodySmall },
+  overlay:    { flex: 1, justifyContent: 'flex-end' },
+  overlayBg:  { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.45)' },
+  sheet:      { borderTopLeftRadius: radius.xl, borderTopRightRadius: radius.xl, padding: spacing.lg, paddingBottom: spacing.xl, maxHeight: '90%' },
+  handle:     { width: 36, height: 4, borderRadius: 2, alignSelf: 'center', marginBottom: spacing.md },
+  sheetTitle: { ...typography.h3, textAlign: 'center', marginBottom: spacing.lg },
+  label:      { ...typography.caption, marginBottom: 6, marginTop: spacing.sm },
+  input:      { borderRadius: radius.md, borderWidth: 1.5, paddingHorizontal: spacing.md, paddingVertical: 11, fontSize: 15, marginBottom: 4 },
+  chipGroup:  { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs, marginBottom: spacing.sm },
+  chip:       { paddingHorizontal: 12, paddingVertical: 7, borderRadius: radius.full, borderWidth: 1.5 },
+  chipText:   { fontSize: 12, fontWeight: '600' as const },
+  actions:    { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.lg },
+  cancelBtn:  { flex: 1, paddingVertical: 13, borderRadius: radius.md, borderWidth: 1.5, alignItems: 'center' },
+  cancelText: { fontWeight: '600' as const },
+  saveBtn:    { flex: 2, paddingVertical: 13, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center' },
+  saveText:   { fontWeight: '700' as const, color: '#fff' },
 });

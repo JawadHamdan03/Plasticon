@@ -18,7 +18,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { api } from '../../api/client';
-import { ScreenHeader } from '../../components';
+import { ScreenHeader, StatCard } from '../../components';
 import { radius, shadow, spacing, typography } from '../../theme';
 import { useAppTheme } from '../../context/ThemeContext';
 import { useLocale } from '../../context/LocaleContext';
@@ -49,6 +49,7 @@ interface FormState {
   title: string;
   department: string;
   totalBudget: string;
+  spent: string;
   period: string;
   status: StatusOption;
 }
@@ -57,6 +58,7 @@ const DEFAULT_FORM: FormState = {
   title: '',
   department: '',
   totalBudget: '',
+  spent: '',
   period: '',
   status: 'ACTIVE',
 };
@@ -249,6 +251,16 @@ function BudgetFormModal({
               keyboardType="numeric"
             />
 
+            <Text style={[styles.fieldLabel, { color: colors.text }]}>{isAr ? 'المنفق' : 'Amount Spent'}</Text>
+            <TextInput
+              style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
+              value={form.spent}
+              onChangeText={set('spent')}
+              placeholder="0"
+              placeholderTextColor={colors.textMuted}
+              keyboardType="numeric"
+            />
+
             <Text style={[styles.fieldLabel, { color: colors.text }]}>{isAr ? 'الفترة' : 'Period'}</Text>
             <TextInput
               style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
@@ -351,6 +363,7 @@ export function BudgetPlanningScreen() {
         category:  form.title.trim() || form.department.trim() || undefined,
         month:     form.period.trim() || undefined,
         allocated: Number(form.totalBudget),
+        spent:     form.spent ? Number(form.spent) : undefined,
         title:     form.title.trim() || undefined,
         department:form.department.trim() || undefined,
         period:    form.period.trim() || undefined,
@@ -371,11 +384,16 @@ export function BudgetPlanningScreen() {
     }
   };
 
+  const totalAllocated = plans.reduce((s, p) => s + (Number(p.totalBudget ?? p.allocated) || 0), 0);
+  const totalSpent     = plans.reduce((s, p) => s + (Number(p.totalSpent ?? p.spent) || 0), 0);
+  const remaining      = totalAllocated - totalSpent;
+
   const initialForm: FormState = editing
     ? {
         title:       editing.title ?? editing.category ?? '',
         department:  editing.department ?? editing.category ?? '',
         totalBudget: String(editing.totalBudget ?? editing.allocated ?? ''),
+        spent:       String(editing.totalSpent ?? editing.spent ?? ''),
         period:      editing.period ?? editing.month ?? '',
         status:      (editing.status as StatusOption) ?? 'ACTIVE',
       }
@@ -408,6 +426,13 @@ export function BudgetPlanningScreen() {
               onRefresh={() => { setRefreshing(true); void load(); }}
               tintColor={colors.primary}
             />
+          }
+          ListHeaderComponent={
+            <View style={styles.kpiRow}>
+              <StatCard label={isAr ? 'المخصص' : 'Allocated'} value={`$${fmt(totalAllocated)}`} icon="wallet" color={colors.primary} style={styles.kpi} />
+              <StatCard label={isAr ? 'المنفق' : 'Spent'} value={`$${fmt(totalSpent)}`} icon="cash" color={colors.warning} style={styles.kpi} />
+              <StatCard label={isAr ? 'المتبقي' : 'Remaining'} value={`$${fmt(remaining)}`} icon="trending-up" color={remaining >= 0 ? colors.success : colors.danger} style={styles.kpi} />
+            </View>
           }
           ListEmptyComponent={
             <View style={styles.empty}>
@@ -456,6 +481,8 @@ const styles = StyleSheet.create({
   numLabel:    { ...typography.caption, flex: 1 },
   numVal:      { fontWeight: '700' },
 
+  kpiRow:      { flexDirection: 'row', gap: spacing.xs, marginBottom: spacing.md },
+  kpi:         { flex: 1 },
   empty:       { alignItems: 'center', paddingTop: 60, gap: spacing.sm },
   emptyText:   { ...typography.bodySmall },
 

@@ -9,6 +9,7 @@ const {
   mockPrisma: {
     user: {
       findMany: vi.fn(),
+      findUnique: vi.fn(),
     },
     notification: {
       createMany: vi.fn(),
@@ -43,9 +44,10 @@ import {
 
 describe("workerFeaturesServices", () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.resetAllMocks();
     mockPrisma.$executeRaw.mockResolvedValue(undefined);
     mockPrisma.user.findMany.mockResolvedValue([{ id: 21 }, { id: 22 }]);
+    mockPrisma.user.findUnique.mockResolvedValue({ fullName: 'Test Worker', username: 'testworker' });
     mockPrisma.notification.createMany.mockResolvedValue({ count: 2 });
   });
 
@@ -79,7 +81,7 @@ describe("workerFeaturesServices", () => {
       expect.objectContaining({
         data: expect.arrayContaining([
           expect.objectContaining({
-            title: "Machine Stop Alert",
+            title: "Machine Stop — 🟠 HIGH",
             type: NotificationType.MAINTENANCE_URGENT,
           }),
         ]),
@@ -87,7 +89,7 @@ describe("workerFeaturesServices", () => {
     );
     expect(mockEmitNotificationToUser).toHaveBeenCalledWith(
       21,
-      expect.objectContaining({ title: "Machine Stop Alert" }),
+      expect.objectContaining({ title: "Machine Stop — 🟠 HIGH" }),
     );
   });
 

@@ -187,6 +187,7 @@ export function SupplierPayablesScreen() {
   const [records, setRecords]       = useState<Payable[]>([]);
   const [loading, setLoading]       = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<string>('ALL');
   const [modalVisible, setModalVisible] = useState(false);
   const [editing, setEditing]       = useState<Payable | null>(null);
   const [saving, setSaving]         = useState(false);
@@ -256,9 +257,13 @@ export function SupplierPayablesScreen() {
     }
   };
 
-  const totalOwed = records
-    .filter((r) => (r.paymentStatus ?? r.status) !== 'PAID')
-    .reduce((s, r) => s + (r.amount ?? 0), 0);
+  const PAY_FILTERS = ['ALL', 'PENDING', 'PAID', 'OVERDUE'] as const;
+  const statusKey = (r: Payable) => r.paymentStatus ?? r.status ?? 'PENDING';
+  const visible   = statusFilter === 'ALL' ? records : records.filter((r) => statusKey(r) === statusFilter);
+  const totalAmt  = records.reduce((s, r) => s + (Number(r.amount) || 0), 0);
+  const pendingAmt= records.filter((r) => statusKey(r) === 'PENDING').reduce((s, r) => s + (Number(r.amount) || 0), 0);
+  const overdueAmt= records.filter((r) => statusKey(r) === 'OVERDUE').reduce((s, r) => s + (Number(r.amount) || 0), 0);
+  const paidCount = records.filter((r) => statusKey(r) === 'PAID').length;
 
   const initialForm: FormState = editing
     ? {
@@ -277,13 +282,35 @@ export function SupplierPayablesScreen() {
         <View style={styles.center}><ActivityIndicator size="large" color={colors.primary} /></View>
       ) : (
         <FlatList
-          data={records}
+          data={visible}
           keyExtractor={(i, idx) => `${String(i.id)}-${idx}`}
           renderItem={({ item }) => <PayCard item={item} onEdit={() => openEdit(item)} onDelete={() => confirmDelete(item)} />}
           contentContainerStyle={styles.list}
           showsVerticalScrollIndicator={false}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); void load(); }} tintColor={colors.primary} />}
-          ListHeaderComponent={<StatCard label={isAr ? 'إجمالي المستحقات للموردين' : 'Total Owed to Suppliers'} value={`$${fmt(totalOwed)}`} icon="business" color={colors.danger} style={styles.statHeader} />}
+          ListHeaderComponent={
+            <View>
+              <View style={styles.kpiRow}>
+                <StatCard label={isAr ? 'الإجمالي' : 'Total'} value={`$${fmt(totalAmt)}`} icon="business" color={colors.primary} style={styles.kpi} />
+                <StatCard label={isAr ? 'معلق' : 'Pending'} value={`$${fmt(pendingAmt)}`} icon="time" color={colors.warning} style={styles.kpi} />
+              </View>
+              <View style={[styles.kpiRow, { marginBottom: spacing.sm }]}>
+                <StatCard label={isAr ? 'مدفوع' : 'Paid'} value={String(paidCount)} icon="checkmark-circle" color={colors.success} style={styles.kpi} />
+                <StatCard label={isAr ? 'متأخر' : 'Overdue'} value={`$${fmt(overdueAmt)}`} icon="alert-circle" color={colors.danger} style={styles.kpi} />
+              </View>
+              <View style={[styles.filterRow, { marginBottom: spacing.sm }]}>
+                {PAY_FILTERS.map((f) => (
+                  <TouchableOpacity key={f}
+                    style={[styles.filterChip, statusFilter === f && { backgroundColor: colors.primary, borderColor: colors.primary }]}
+                    onPress={() => setStatusFilter(f)}>
+                    <Text style={[styles.filterText, { color: statusFilter === f ? '#fff' : colors.textMuted }]}>
+                      {isAr ? (f === 'ALL' ? 'الكل' : f === 'PENDING' ? 'معلق' : f === 'PAID' ? 'مدفوع' : 'متأخر') : (f === 'ALL' ? 'All' : f)}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+          }
           ListEmptyComponent={
             <View style={styles.empty}>
               <Ionicons name="business-outline" size={44} color={colors.textMuted} />
@@ -306,7 +333,7 @@ const styles = StyleSheet.create({
   safe:        { flex: 1 },
   center:      { flex: 1, alignItems: 'center', justifyContent: 'center' },
   list:        { padding: spacing.md, paddingBottom: 100 },
-  statHeader:  { marginBottom: spacing.md },
+
 
   card:        { borderRadius: radius.md, padding: spacing.md, marginBottom: spacing.sm, ...shadow.sm },
   cardTop:     { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 4 },
@@ -322,6 +349,12 @@ const styles = StyleSheet.create({
   badge:       { paddingHorizontal: 8, paddingVertical: 3, borderRadius: radius.full },
   badgeText:   { fontSize: 10, fontWeight: '700' },
   notesText:   { ...typography.caption, flex: 1 },
+
+  kpiRow:      { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.sm },
+  kpi:         { flex: 1 },
+  filterRow:   { flexDirection: 'row', gap: spacing.xs, flexWrap: 'wrap' },
+  filterChip:  { paddingHorizontal: 12, paddingVertical: 6, borderRadius: radius.full, borderWidth: 1.5, borderColor: '#E2E8F0' },
+  filterText:  { fontSize: 12, fontWeight: '600' as const },
 
   empty:       { alignItems: 'center', paddingTop: 60, gap: spacing.sm },
   emptyText:   { ...typography.bodySmall },
