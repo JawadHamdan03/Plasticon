@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator, Alert, Modal, RefreshControl, ScrollView,
   StyleSheet, Text, TextInput, TouchableOpacity, View,
@@ -22,6 +22,10 @@ interface MicroStop {
 export function MicroStopsScreen() {
   const { colors } = useAppTheme();
   const { isAr } = useLocale();
+  const today0 = new Date().toISOString().slice(0, 10);
+  const month0 = new Date().toISOString().slice(0, 7) + '-01';
+  const [fromDate, setFromDate] = useState(month0);
+  const [toDate,   setToDate]   = useState(today0);
   const [stops,      setStops]      = useState<MicroStop[]>([]);
   const [loading,    setLoading]    = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -40,6 +44,13 @@ export function MicroStopsScreen() {
   }, []);
 
   useEffect(() => { void load(); }, [load]);
+
+  const inRange = (d: string) => {
+    const s = d.slice(0, 10);
+    return (!fromDate || s >= fromDate) && (!toDate || s <= toDate);
+  };
+
+  const filteredStops = useMemo(() => stops.filter(s => inRange(s.created_at)), [stops, fromDate, toDate]);
 
   const totalMin = stops.reduce((acc, s) => acc + (Number(s.duration_minutes) || 0), 0);
 
@@ -97,19 +108,41 @@ export function MicroStopsScreen() {
           showsVerticalScrollIndicator={false}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); void load(); }} tintColor={colors.info} />}
         >
+          {/* Date filter bar */}
+          <View style={[styles.filterBar, { backgroundColor: colors.surface }]}>
+            <Ionicons name="calendar-outline" size={14} color={colors.textMuted} />
+            <TextInput
+              style={[styles.filterInput, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
+              value={fromDate}
+              onChangeText={setFromDate}
+              placeholder="From YYYY-MM-DD"
+              placeholderTextColor={colors.textMuted}
+            />
+            <Text style={{ color: colors.textMuted, fontSize: 12 }}>→</Text>
+            <TextInput
+              style={[styles.filterInput, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
+              value={toDate}
+              onChangeText={setToDate}
+              placeholder="To YYYY-MM-DD"
+              placeholderTextColor={colors.textMuted}
+            />
+            <TouchableOpacity onPress={() => { setFromDate(month0); setToDate(today0); }} style={[styles.filterReset, { borderColor: colors.border }]}>
+              <Ionicons name="refresh-outline" size={13} color={colors.primary} />
+            </TouchableOpacity>
+          </View>
           <TouchableOpacity style={[styles.addBtn, { backgroundColor: colors.info }]} onPress={() => setModal(true)} activeOpacity={0.8}>
             <Ionicons name="pause-circle" size={20} color="#fff" />
             <Text style={styles.addText}>{isAr ? 'تسجيل توقف صغير' : 'Log Micro Stop'}</Text>
           </TouchableOpacity>
 
-          {stops.length === 0 ? (
+          {filteredStops.length === 0 ? (
             <View style={styles.empty}>
               <Ionicons name="checkmark-circle-outline" size={48} color={colors.success} />
               <Text style={[styles.emptyText, { color: colors.textMuted }]}>{isAr ? 'لا توجد توقفات صغيرة' : 'No micro stops logged'}</Text>
             </View>
           ) : (
             <View style={styles.list}>
-              {stops.map((s, idx) => (
+              {filteredStops.map((s, idx) => (
                 <View key={`${s.id}-${idx}`} style={[styles.card, { backgroundColor: colors.surface }]}>
                   <View style={styles.durationBox}>
                     <Text style={[styles.durationNum, { color: colors.info }]}>{Number(s.duration_minutes).toFixed(0)}</Text>
@@ -190,4 +223,7 @@ const styles = StyleSheet.create({
   cancelText:  { fontWeight: '700' },
   submitBtn:   { flex: 1, alignItems: 'center', paddingVertical: 12, borderRadius: radius.md },
   submitText:  { fontWeight: '700', color: '#fff' },
+  filterBar:   { flexDirection: 'row', alignItems: 'center', gap: 6, padding: 10, borderRadius: 10, marginBottom: 8 },
+  filterInput: { flex: 1, borderWidth: 1.5, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 6, fontSize: 13 },
+  filterReset: { width: 30, height: 30, borderRadius: 8, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
 });

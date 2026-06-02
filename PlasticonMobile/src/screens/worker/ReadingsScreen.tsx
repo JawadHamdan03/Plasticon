@@ -1,11 +1,12 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import {
-  ActivityIndicator, Alert, RefreshControl, ScrollView,
+  ActivityIndicator, Alert, Image, RefreshControl, ScrollView,
   StyleSheet, Text, TextInput, TouchableOpacity, View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { api } from '../../api/client';
+import * as ImagePicker from 'expo-image-picker';
+import { api, uploadForm } from '../../api/client';
 import { ScreenHeader } from '../../components';
 import { radius, shadow, spacing, typography } from '../../theme';
 import { useAppTheme } from '../../context/ThemeContext';
@@ -16,6 +17,7 @@ interface Reading {
   value:     number;
   unit?:     string;
   notes?:    string;
+  imagePath?: string;
   createdAt: string;
   user?:     { fullName: string };
 }
@@ -30,6 +32,8 @@ export function ReadingsScreen() {
   const [notes,      setNotes]      = useState('');
   const [saving,     setSaving]     = useState(false);
   const [showForm,   setShowForm]   = useState(false);
+  const [photoUri,   setPhotoUri]   = useState<string | null>(null);
+  const [photoMime,  setPhotoMime]  = useState<string>('image/jpeg');
 
   const load = useCallback(async () => {
     try {
@@ -41,6 +45,44 @@ export function ReadingsScreen() {
 
   useEffect(() => { void load(); }, [load]);
 
+  const capturePhoto = async (fromCamera: boolean) => {
+    if (fromCamera) {
+      const perm = await ImagePicker.requestCameraPermissionsAsync();
+      if (!perm.granted) {
+        Alert.alert(isAr ? 'إذن مطلوب' : 'Permission required', isAr ? 'يجب السماح بالوصول إلى الكاميرا.' : 'Camera access is required.');
+        return;
+      }
+      const res = await ImagePicker.launchCameraAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 0.8 });
+      if (!res.canceled && res.assets?.[0]) {
+        setPhotoUri(res.assets[0].uri);
+        setPhotoMime(res.assets[0].mimeType ?? 'image/jpeg');
+      }
+    } else {
+      const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!perm.granted) {
+        Alert.alert(isAr ? 'إذن مطلوب' : 'Permission required', isAr ? 'يجب السماح بالوصول إلى مكتبة الصور.' : 'Media library access is required.');
+        return;
+      }
+      const res = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 0.8 });
+      if (!res.canceled && res.assets?.[0]) {
+        setPhotoUri(res.assets[0].uri);
+        setPhotoMime(res.assets[0].mimeType ?? 'image/jpeg');
+      }
+    }
+  };
+
+  const showPhotoOptions = () => {
+    Alert.alert(
+      isAr ? 'إضافة صورة العداد' : 'Add Meter Photo',
+      isAr ? 'اختر طريقة التقاط الصورة' : 'Choose how to add a photo',
+      [
+        { text: isAr ? 'الكاميرا' : 'Camera',         onPress: () => capturePhoto(true)  },
+        { text: isAr ? 'من المعرض' : 'Gallery',       onPress: () => capturePhoto(false) },
+        { text: isAr ? 'إلغاء' : 'Cancel', style: 'cancel' },
+      ],
+    );
+  };
+
   const submit = async () => {
     if (!value.trim() || isNaN(Number(value))) {
       Alert.alert(isAr ? 'مطلوب' : 'Required', isAr ? 'أدخل قيمة قراءة صالحة.' : 'Please enter a valid reading value.');
@@ -48,11 +90,19 @@ export function ReadingsScreen() {
     }
     setSaving(true);
     try {
-      await api.post('/electricity/readings', {
-        value: parseFloat(value),
-        notes: notes.trim() || undefined,
-      });
-      setValue(''); setNotes(''); setShowForm(false);
+      if (photoUri) {
+        const form = new FormData();
+        form.append('value', value.trim());
+        if (notes.trim()) form.append('notes', notes.trim());
+        form.append('image', { uri: photoUri, name: 'reading.jpg', type: photoMime } as any);
+        await uploadForm('/electricity/readings', form);
+      } else {
+        await api.post('/electricity/readings', {
+          value: parseFloat(value),
+          notes: notes.trim() || undefined,
+        });
+      }
+      setValue(''); setNotes(''); setPhotoUri(null); setShowForm(false);
       setLoading(true); void load();
     } catch (e: any) {
       Alert.alert(isAr ? 'خطأ' : 'Error', e.message ?? (isAr ? 'فشل حفظ القراءة.' : 'Failed to save reading.'));
@@ -69,7 +119,27 @@ export function ReadingsScreen() {
       >
         {showForm ? (
           <View style={[styles.form, { backgroundColor: colors.surface }]}>
-            <Text style={[styles.formTitle, { color: colors.text }]}>{isAr ? 'تسجيل قراءة جديدة' : 'Log New Reading'}</Text>
+            <View style={styles.formTitleRow}>
+              <Text style={[styles.formTitle, { color: colors.text }]}>{isAr ? 'تسجيل قراءة جديدة' : 'Log New Reading'}</Text>
+              <TouchableOpacity onPress={showPhotoOptions} style={[styles.cameraBtn, { backgroundColor: `${colors.warning}15` }]}>
+                <Ionicons name="camera" size={20} color={colors.warning} />
+              </TouchableOpacity>
+            </View>
+
+            {photoUri ? (
+              <View style={styles.photoPreviewWrap}>
+                <Image source={{ uri: photoUri }} style={styles.photoPreview} resizeMode="cover" />
+                <TouchableOpacity style={[styles.removePhotoBtn, { backgroundColor: colors.danger }]} onPress={() => setPhotoUri(null)}>
+                  <Ionicons name="close" size={14} color="#fff" />
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <TouchableOpacity style={[styles.photoPlaceholder, { borderColor: colors.border, backgroundColor: colors.surfaceAlt }]} onPress={showPhotoOptions} activeOpacity={0.75}>
+                <Ionicons name="camera-outline" size={22} color={colors.textMuted} />
+                <Text style={[styles.photoPlaceholderText, { color: colors.textMuted }]}>{isAr ? 'التقط صورة العداد (اختياري)' : 'Tap to photo meter (optional)'}</Text>
+              </TouchableOpacity>
+            )}
+
             <TextInput
               style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
               placeholder={isAr ? 'قيمة العداد (كيلوواط/ساعة)' : 'Meter value (kWh)'}
@@ -88,7 +158,7 @@ export function ReadingsScreen() {
               numberOfLines={2}
             />
             <View style={styles.formRow}>
-              <TouchableOpacity style={[styles.cancelBtn, { borderColor: colors.border }]} onPress={() => setShowForm(false)}>
+              <TouchableOpacity style={[styles.cancelBtn, { borderColor: colors.border }]} onPress={() => { setShowForm(false); setPhotoUri(null); }}>
                 <Text style={[styles.cancelText, { color: colors.textMuted }]}>{isAr ? 'إلغاء' : 'Cancel'}</Text>
               </TouchableOpacity>
               <TouchableOpacity style={[styles.saveBtn, { backgroundColor: colors.warning }]} onPress={submit} disabled={saving}>
@@ -121,6 +191,9 @@ export function ReadingsScreen() {
                     {r.notes ? <Text style={[styles.cardNotes, { color: colors.textMuted }]}>{r.notes}</Text> : null}
                     <Text style={[styles.cardDate, { color: colors.textMuted }]}>{new Date(r.createdAt).toLocaleString()}</Text>
                   </View>
+                  {r.imagePath ? (
+                    <Ionicons name="image-outline" size={18} color={colors.warning} style={{ marginLeft: 'auto' }} />
+                  ) : null}
                 </View>
               ))}
             </View>
@@ -132,10 +205,21 @@ export function ReadingsScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe:       { flex: 1 },
-  content:    { padding: spacing.md, paddingBottom: 40 },
-  form:       { borderRadius: radius.lg, padding: spacing.md, marginBottom: spacing.md, ...shadow.sm },
-  formTitle:  { ...typography.h4, marginBottom: spacing.sm },
+  safe:    { flex: 1 },
+  content: { padding: spacing.md, paddingBottom: 40 },
+
+  form:        { borderRadius: radius.lg, padding: spacing.md, marginBottom: spacing.md, ...shadow.sm },
+  formTitleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.sm },
+  formTitle:   { ...typography.h4 },
+  cameraBtn:   { width: 38, height: 38, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center' },
+
+  photoPreviewWrap: { position: 'relative', marginBottom: spacing.sm },
+  photoPreview:     { width: '100%', height: 160, borderRadius: radius.md },
+  removePhotoBtn:   { position: 'absolute', top: 6, right: 6, width: 24, height: 24, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+
+  photoPlaceholder:     { flexDirection: 'row', alignItems: 'center', gap: 8, borderWidth: 1.5, borderStyle: 'dashed', borderRadius: radius.md, padding: spacing.sm, marginBottom: spacing.sm, justifyContent: 'center' },
+  photoPlaceholderText: { ...typography.caption },
+
   input:      { borderWidth: 1.5, borderRadius: radius.sm, paddingHorizontal: spacing.md, paddingVertical: 10, fontSize: 15, marginBottom: spacing.sm },
   inputMulti: { height: 64, textAlignVertical: 'top' },
   formRow:    { flexDirection: 'row', gap: spacing.sm },
@@ -143,15 +227,18 @@ const styles = StyleSheet.create({
   cancelText: { ...typography.bodySmall, fontWeight: '700' },
   saveBtn:    { flex: 1, alignItems: 'center', paddingVertical: 11, borderRadius: radius.md },
   saveText:   { ...typography.bodySmall, fontWeight: '700', color: '#fff' },
-  addBtn:     { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, borderRadius: radius.lg, paddingVertical: 12, marginBottom: spacing.md },
-  addText:    { ...typography.bodySmall, fontWeight: '700', color: '#fff' },
-  empty:      { alignItems: 'center', paddingVertical: spacing.xxl, gap: spacing.sm },
-  emptyText:  { ...typography.bodySmall },
-  list:       { gap: spacing.sm },
-  card:       { flexDirection: 'row', alignItems: 'center', borderRadius: radius.lg, padding: spacing.md, gap: spacing.sm, ...shadow.sm },
-  cardIcon:   { width: 40, height: 40, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center' },
-  cardBody:   { flex: 1 },
-  cardValue:  { ...typography.h4 },
-  cardNotes:  { ...typography.caption },
-  cardDate:   { ...typography.caption },
+
+  addBtn:  { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, borderRadius: radius.lg, paddingVertical: 12, marginBottom: spacing.md },
+  addText: { ...typography.bodySmall, fontWeight: '700', color: '#fff' },
+
+  empty:     { alignItems: 'center', paddingVertical: spacing.xxl, gap: spacing.sm },
+  emptyText: { ...typography.bodySmall },
+
+  list:      { gap: spacing.sm },
+  card:      { flexDirection: 'row', alignItems: 'center', borderRadius: radius.lg, padding: spacing.md, gap: spacing.sm, ...shadow.sm },
+  cardIcon:  { width: 40, height: 40, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center' },
+  cardBody:  { flex: 1 },
+  cardValue: { ...typography.h4 },
+  cardNotes: { ...typography.caption },
+  cardDate:  { ...typography.caption },
 });

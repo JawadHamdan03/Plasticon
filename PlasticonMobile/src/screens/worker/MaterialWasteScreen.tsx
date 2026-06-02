@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator, Alert, Modal, RefreshControl, ScrollView,
   StyleSheet, Text, TextInput, TouchableOpacity, View,
@@ -24,6 +24,10 @@ interface WasteRecord {
 export function MaterialWasteScreen() {
   const { colors } = useAppTheme();
   const { isAr } = useLocale();
+  const today0 = new Date().toISOString().slice(0, 10);
+  const month0 = new Date().toISOString().slice(0, 7) + '-01';
+  const [fromDate, setFromDate] = useState(month0);
+  const [toDate,   setToDate]   = useState(today0);
   const [records,    setRecords]    = useState<WasteRecord[]>([]);
   const [loading,    setLoading]    = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -44,6 +48,13 @@ export function MaterialWasteScreen() {
   }, []);
 
   useEffect(() => { void load(); }, [load]);
+
+  const inRange = (d: string) => {
+    const s = d.slice(0, 10);
+    return (!fromDate || s >= fromDate) && (!toDate || s <= toDate);
+  };
+
+  const filteredRecords = useMemo(() => records.filter(r => inRange(r.created_at)), [records, fromDate, toDate]);
 
   const totalKg = records.reduce((acc, r) => acc + (Number(r.waste_kg) || 0), 0);
 
@@ -105,19 +116,41 @@ export function MaterialWasteScreen() {
           showsVerticalScrollIndicator={false}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); void load(); }} tintColor={colors.danger} />}
         >
+          {/* Date filter bar */}
+          <View style={[styles.filterBar, { backgroundColor: colors.surface }]}>
+            <Ionicons name="calendar-outline" size={14} color={colors.textMuted} />
+            <TextInput
+              style={[styles.filterInput, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
+              value={fromDate}
+              onChangeText={setFromDate}
+              placeholder="From YYYY-MM-DD"
+              placeholderTextColor={colors.textMuted}
+            />
+            <Text style={{ color: colors.textMuted, fontSize: 12 }}>→</Text>
+            <TextInput
+              style={[styles.filterInput, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
+              value={toDate}
+              onChangeText={setToDate}
+              placeholder="To YYYY-MM-DD"
+              placeholderTextColor={colors.textMuted}
+            />
+            <TouchableOpacity onPress={() => { setFromDate(month0); setToDate(today0); }} style={[styles.filterReset, { borderColor: colors.border }]}>
+              <Ionicons name="refresh-outline" size={13} color={colors.primary} />
+            </TouchableOpacity>
+          </View>
           <TouchableOpacity style={[styles.addBtn, { backgroundColor: colors.danger }]} onPress={() => setModal(true)} activeOpacity={0.8}>
             <Ionicons name="add-circle" size={20} color="#fff" />
             <Text style={styles.addText}>{isAr ? 'تسجيل هدر مواد' : 'Log Material Waste'}</Text>
           </TouchableOpacity>
 
-          {records.length === 0 ? (
+          {filteredRecords.length === 0 ? (
             <View style={styles.empty}>
               <Ionicons name="trash-outline" size={44} color={colors.textMuted} />
               <Text style={[styles.emptyText, { color: colors.textMuted }]}>{isAr ? 'لا توجد سجلات هدر' : 'No waste records logged'}</Text>
             </View>
           ) : (
             <View style={styles.list}>
-              {records.map((r, idx) => (
+              {filteredRecords.map((r, idx) => (
                 <View key={`${r.id}-${idx}`} style={[styles.card, { backgroundColor: colors.surface }]}>
                   <View style={[styles.cardIcon, { backgroundColor: `${colors.danger}15` }]}>
                     <Ionicons name="trash" size={18} color={colors.danger} />
@@ -214,4 +247,7 @@ const styles = StyleSheet.create({
   cancelText: { fontWeight: '700' },
   submitBtn:  { flex: 1, alignItems: 'center', paddingVertical: 12, borderRadius: radius.md },
   submitText: { fontWeight: '700', color: '#fff' },
+  filterBar:   { flexDirection: 'row', alignItems: 'center', gap: 6, padding: 10, borderRadius: 10, marginBottom: 8 },
+  filterInput: { flex: 1, borderWidth: 1.5, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 6, fontSize: 13 },
+  filterReset: { width: 30, height: 30, borderRadius: 8, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
 });

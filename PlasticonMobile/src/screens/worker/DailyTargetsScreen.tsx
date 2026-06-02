@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator, Alert, Modal, RefreshControl, ScrollView,
   StyleSheet, Text, TextInput, TouchableOpacity, View,
@@ -25,6 +25,10 @@ interface Target {
 export function DailyTargetsScreen() {
   const { colors } = useAppTheme();
   const { isAr } = useLocale();
+  const today0 = new Date().toISOString().slice(0, 10);
+  const month0 = new Date().toISOString().slice(0, 7) + '-01';
+  const [fromDate, setFromDate] = useState(month0);
+  const [toDate,   setToDate]   = useState(today0);
   const [targets,    setTargets]    = useState<Target[]>([]);
   const [loading,    setLoading]    = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -44,6 +48,13 @@ export function DailyTargetsScreen() {
   }, []);
 
   useEffect(() => { void load(); }, [load]);
+
+  const inRange = (d: string) => {
+    const s = d.slice(0, 10);
+    return (!fromDate || s >= fromDate) && (!toDate || s <= toDate);
+  };
+
+  const filteredTargets = useMemo(() => targets.filter(t => inRange(t.target_date)), [targets, fromDate, toDate]);
 
   const handleDelete = (t: Target) => {
     Alert.alert(
@@ -108,19 +119,41 @@ export function DailyTargetsScreen() {
           <ActivityIndicator style={{ marginTop: 60 }} size="large" color={colors.primary} />
         ) : (
           <>
+            {/* Date filter bar */}
+            <View style={[styles.filterBar, { backgroundColor: colors.surface }]}>
+              <Ionicons name="calendar-outline" size={14} color={colors.textMuted} />
+              <TextInput
+                style={[styles.filterInput, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
+                value={fromDate}
+                onChangeText={setFromDate}
+                placeholder="From YYYY-MM-DD"
+                placeholderTextColor={colors.textMuted}
+              />
+              <Text style={{ color: colors.textMuted, fontSize: 12 }}>→</Text>
+              <TextInput
+                style={[styles.filterInput, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
+                value={toDate}
+                onChangeText={setToDate}
+                placeholder="To YYYY-MM-DD"
+                placeholderTextColor={colors.textMuted}
+              />
+              <TouchableOpacity onPress={() => { setFromDate(month0); setToDate(today0); }} style={[styles.filterReset, { borderColor: colors.border }]}>
+                <Ionicons name="refresh-outline" size={13} color={colors.primary} />
+              </TouchableOpacity>
+            </View>
             <TouchableOpacity style={[styles.addBtn, { backgroundColor: colors.primary }]} onPress={() => setModal(true)} activeOpacity={0.8}>
               <Ionicons name="flag" size={20} color="#fff" />
               <Text style={styles.addText}>{isAr ? 'تسجيل هدف يومي' : 'Log Daily Target'}</Text>
             </TouchableOpacity>
 
-            {targets.length === 0 ? (
+            {filteredTargets.length === 0 ? (
               <View style={styles.empty}>
                 <Ionicons name="flag-outline" size={48} color={colors.textMuted} />
                 <Text style={[styles.emptyText, { color: colors.textMuted }]}>{isAr ? 'لا توجد أهداف مسجلة' : 'No targets recorded'}</Text>
               </View>
             ) : (
               <View style={styles.list}>
-                {targets.map((t, idx) => {
+                {filteredTargets.map((t, idx) => {
                   const target = Number(t.target_units) || 0;
                   const actual = Number(t.actual_units) || 0;
                   const pct = target > 0 ? (actual / target) * 100 : 0;
@@ -232,4 +265,7 @@ const styles = StyleSheet.create({
   cancelText: { fontWeight: '700' },
   submitBtn:  { flex: 1, alignItems: 'center', paddingVertical: 12, borderRadius: radius.md },
   submitText: { fontWeight: '700', color: '#fff' },
+  filterBar:   { flexDirection: 'row', alignItems: 'center', gap: 6, padding: 10, borderRadius: 10, marginBottom: 8 },
+  filterInput: { flex: 1, borderWidth: 1.5, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 6, fontSize: 13 },
+  filterReset: { width: 30, height: 30, borderRadius: 8, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
 });

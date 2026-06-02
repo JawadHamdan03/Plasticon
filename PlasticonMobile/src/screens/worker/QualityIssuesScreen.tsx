@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator, Alert, Image, Modal, RefreshControl, ScrollView,
   StyleSheet, Text, TextInput, TouchableOpacity, View,
@@ -38,6 +38,10 @@ export function QualityIssuesScreen() {
   const { colors } = useAppTheme();
   const { isAr } = useLocale();
 
+  const today0 = new Date().toISOString().slice(0, 10);
+  const month0 = new Date().toISOString().slice(0, 7) + '-01';
+  const [fromDate, setFromDate] = useState(month0);
+  const [toDate,   setToDate]   = useState(today0);
   const [issues,     setIssues]     = useState<QualityIssue[]>([]);
   const [loading,    setLoading]    = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -59,6 +63,13 @@ export function QualityIssuesScreen() {
   }, []);
 
   useEffect(() => { void load(); }, [load]);
+
+  const inRange = (d: string) => {
+    const s = d.slice(0, 10);
+    return (!fromDate || s >= fromDate) && (!toDate || s <= toDate);
+  };
+
+  const filteredIssues = useMemo(() => issues.filter(i => inRange(i.created_at)), [issues, fromDate, toDate]);
 
   const pickImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -125,19 +136,41 @@ export function QualityIssuesScreen() {
           showsVerticalScrollIndicator={false}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); void load(); }} tintColor={colors.warning} />}
         >
+          {/* Date filter bar */}
+          <View style={[styles.filterBar, { backgroundColor: colors.surface }]}>
+            <Ionicons name="calendar-outline" size={14} color={colors.textMuted} />
+            <TextInput
+              style={[styles.filterInput, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
+              value={fromDate}
+              onChangeText={setFromDate}
+              placeholder="From YYYY-MM-DD"
+              placeholderTextColor={colors.textMuted}
+            />
+            <Text style={{ color: colors.textMuted, fontSize: 12 }}>→</Text>
+            <TextInput
+              style={[styles.filterInput, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
+              value={toDate}
+              onChangeText={setToDate}
+              placeholder="To YYYY-MM-DD"
+              placeholderTextColor={colors.textMuted}
+            />
+            <TouchableOpacity onPress={() => { setFromDate(month0); setToDate(today0); }} style={[styles.filterReset, { borderColor: colors.border }]}>
+              <Ionicons name="refresh-outline" size={13} color={colors.primary} />
+            </TouchableOpacity>
+          </View>
           <TouchableOpacity style={[styles.addBtn, { backgroundColor: colors.warning }]} onPress={() => setModal(true)} activeOpacity={0.8}>
             <Ionicons name="alert-circle" size={20} color="#fff" />
             <Text style={styles.addText}>{isAr ? 'الإبلاغ عن مشكلة جودة' : 'Report Quality Issue'}</Text>
           </TouchableOpacity>
 
-          {issues.length === 0 ? (
+          {filteredIssues.length === 0 ? (
             <View style={styles.empty}>
               <Ionicons name="shield-checkmark-outline" size={48} color={colors.success} />
               <Text style={[styles.emptyText, { color: colors.textMuted }]}>{isAr ? 'لا توجد مشاكل جودة مسجلة' : 'No quality issues reported'}</Text>
             </View>
           ) : (
             <View style={styles.list}>
-              {issues.map((issue, idx) => {
+              {filteredIssues.map((issue, idx) => {
                 const imgUri = toImageUri(issue.issue_image);
                 return (
                   <View key={`${issue.id}-${idx}`} style={[styles.card, { backgroundColor: colors.surface, borderLeftColor: colors.warning }]}>
@@ -266,4 +299,7 @@ const styles = StyleSheet.create({
   imgViewerOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.9)', justifyContent: 'center', alignItems: 'center' },
   imgViewerClose:   { position: 'absolute', top: 50, right: 20, zIndex: 10 },
   fullImg:          { width: '100%', height: '80%' },
+  filterBar:   { flexDirection: 'row', alignItems: 'center', gap: 6, padding: 10, borderRadius: 10, marginBottom: 8 },
+  filterInput: { flex: 1, borderWidth: 1.5, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 6, fontSize: 13 },
+  filterReset: { width: 30, height: 30, borderRadius: 8, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
 });

@@ -1,7 +1,7 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator, Alert, FlatList, RefreshControl,
-  StyleSheet, Text, TouchableOpacity, View,
+  StyleSheet, Text, TextInput, TouchableOpacity, View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -48,10 +48,14 @@ function fmtTime(iso: string) {
 export function AdminMachineStopsScreen() {
   const { colors } = useAppTheme();
   const { isAr } = useLocale();
+  const today0 = new Date().toISOString().slice(0, 10);
+  const month0 = new Date().toISOString().slice(0, 7) + '-01';
   const [stops, setStops]       = useState<StopAlert[]>([]);
   const [filter, setFilter]     = useState<Filter>('all');
   const [loading, setLoading]   = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [fromDate, setFromDate] = useState(month0);
+  const [toDate,   setToDate]   = useState(today0);
 
   const load = useCallback(async (f: Filter = filter) => {
     try {
@@ -98,9 +102,11 @@ export function AdminMachineStopsScreen() {
     );
   };
 
-  const criticalOpen = stops.filter(s => !s.resolved_at && s.priority === 'CRITICAL').length;
-  const highOpen     = stops.filter(s => !s.resolved_at && s.priority === 'HIGH').length;
-  const totalOpen    = stops.filter(s => !s.resolved_at).length;
+  const inRange = (d: string) => { const s = d.slice(0, 10); return (!fromDate || s >= fromDate) && (!toDate || s <= toDate); };
+  const filteredStops = useMemo(() => stops.filter(s => inRange(s.created_at)), [stops, fromDate, toDate]); // eslint-disable-line
+  const criticalOpen = filteredStops.filter(s => !s.resolved_at && s.priority === 'CRITICAL').length;
+  const highOpen  = filteredStops.filter(s => !s.resolved_at && s.priority === 'HIGH').length;
+  const totalOpen = filteredStops.filter(s => !s.resolved_at).length;
 
   const FILTERS: { key: Filter; label: string; labelAr: string }[] = [
     { key: 'all',      label: 'All',      labelAr: 'الكل' },
@@ -196,12 +202,31 @@ export function AdminMachineStopsScreen() {
           <Text style={[styles.statLbl, { color: '#F97316' }]}>{isAr ? 'عالٍ' : 'High'}</Text>
         </View>
         <View style={[styles.statCard, { backgroundColor: colors.surface }]}>
-          <Text style={[styles.statNum, { color: colors.text }]}>{stops.length}</Text>
+          <Text style={[styles.statNum, { color: colors.text }]}>{filteredStops.length}</Text>
           <Text style={[styles.statLbl, { color: colors.textMuted }]}>{isAr ? 'إجمالي' : 'Total'}</Text>
         </View>
       </View>
 
-      {/* Filter tabs */}
+      {/* Date filter bar */}
+      <View style={[styles.filterBar, { backgroundColor: colors.surface }]}>
+        <Ionicons name="calendar-outline" size={14} color={colors.textMuted} />
+        <TextInput
+          style={[styles.filterInput, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
+          value={fromDate} onChangeText={setFromDate}
+          placeholder="From YYYY-MM-DD" placeholderTextColor={colors.textMuted}
+        />
+        <Text style={{ color: colors.textMuted, fontSize: 12 }}>→</Text>
+        <TextInput
+          style={[styles.filterInput, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
+          value={toDate} onChangeText={setToDate}
+          placeholder="To YYYY-MM-DD" placeholderTextColor={colors.textMuted}
+        />
+        <TouchableOpacity onPress={() => { setFromDate(month0); setToDate(today0); }} style={[styles.filterReset, { borderColor: colors.border }]}>
+          <Ionicons name="refresh-outline" size={13} color={colors.primary} />
+        </TouchableOpacity>
+      </View>
+
+      {/* Status filter tabs */}
       <View style={[styles.filterRow, { borderColor: colors.border }]}>
         {FILTERS.map(f => (
           <TouchableOpacity
@@ -221,7 +246,7 @@ export function AdminMachineStopsScreen() {
         <View style={styles.center}><ActivityIndicator size="large" color={colors.danger} /></View>
       ) : (
         <FlatList
-          data={stops}
+          data={filteredStops}
           keyExtractor={(item, idx) => `${item.id}-${idx}`}
           renderItem={renderStop}
           contentContainerStyle={styles.list}
@@ -244,9 +269,12 @@ export function AdminMachineStopsScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe:   { flex: 1 },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  list:   { padding: spacing.md, paddingBottom: 40 },
+  safe:        { flex: 1 },
+  center:      { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  list:        { padding: spacing.md, paddingBottom: 40 },
+  filterBar:   { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: spacing.md, paddingVertical: 8 },
+  filterInput: { flex: 1, borderWidth: 1.5, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 6, fontSize: 13 },
+  filterReset: { width: 30, height: 30, borderRadius: 8, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
 
   statsRow: { flexDirection: 'row', gap: spacing.sm, paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
   statCard: { flex: 1, borderRadius: radius.md, padding: spacing.sm, alignItems: 'center', gap: 2, ...shadow.sm },

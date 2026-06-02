@@ -24,7 +24,6 @@ import { ProductionScreen }      from '../screens/worker/ProductionScreen';
 import { ConsumptionScreen }     from '../screens/admin/ConsumptionScreen';
 import { AttendanceAdminScreen } from '../screens/admin/AttendanceAdminScreen';
 import { PayrollAdminScreen }    from '../screens/admin/PayrollAdminScreen';
-import { WorkerHubScreen }       from '../screens/worker/WorkerHubScreen';
 import { WorkerRecordsScreen }   from '../screens/admin/WorkerRecordsScreen';
 import { AdminSnapsScreen }      from '../screens/admin/AdminSnapsScreen';
 import { ElectricityScreen }     from '../screens/admin/ElectricityScreen';
@@ -112,7 +111,6 @@ function OpsNavigator() {
       <OpsStack.Screen name="Consumption"     component={ConsumptionScreen} />
       <OpsStack.Screen name="AttendanceAdmin" component={AttendanceAdminScreen} />
       <OpsStack.Screen name="PayrollAdmin"    component={PayrollAdminScreen} />
-      <OpsStack.Screen name="WorkerHub"       component={WorkerHubScreen} />
       <OpsStack.Screen name="WorkerRecords"   component={WorkerRecordsScreen} />
       <OpsStack.Screen name="Snapshots"       component={AdminSnapsScreen} />
       <OpsStack.Screen name="Electricity"     component={ElectricityScreen} />

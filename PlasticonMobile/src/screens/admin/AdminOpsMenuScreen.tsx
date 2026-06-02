@@ -19,7 +19,6 @@ export function AdminOpsMenuScreen() {
         { icon: 'people',        label: isAr ? 'الحضور' : 'Attendance',     desc: isAr ? 'تتبع وإدارة تسجيل دخول العمال' : 'Track and manage worker check-ins',   screen: 'AttendanceAdmin', color: colors.primary },
         { icon: 'cash',          label: isAr ? 'الرواتب' : 'Payroll',        desc: isAr ? 'سجلات الرواتب ودورات الدفع' : 'Salary records and payment runs',        screen: 'PayrollAdmin',    color: colors.success },
         { icon: 'person',        label: isAr ? 'سجلات العمال' : 'Worker Records', desc: isAr ? 'ملفات العمال وسجلاتهم' : 'Worker profiles and history',            screen: 'WorkerRecords',   color: colors.info },
-        { icon: 'home',          label: isAr ? 'مركز العمال' : 'Worker Hub',  desc: isAr ? 'إعلانات وأدوات العمال' : 'Worker announcements and tools',            screen: 'WorkerHub',       color: colors.accent },
         { icon: 'camera',        label: isAr ? 'القراءات' : 'Snapshots',      desc: isAr ? 'لقطات الإنتاج والصور' : 'Production snapshots and photos',             screen: 'Snapshots',       color: colors.warning },
       ],
     },

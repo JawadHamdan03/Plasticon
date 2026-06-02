@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator, Alert, KeyboardAvoidingView, Modal,
   Platform, RefreshControl, ScrollView, StyleSheet, Text,
@@ -30,9 +30,13 @@ export function DailyChecklistScreen() {
     ? 'فحص بصري للماكينة\nفحص معدات السلامة\nتجهيز المواد'
     : 'Machine visual check\nSafety equipment check\nMaterial ready';
 
+  const today0 = new Date().toISOString().slice(0, 10);
+  const month0 = new Date().toISOString().slice(0, 7) + '-01';
   const [entries,    setEntries]    = useState<ChecklistEntry[]>([]);
   const [loading,    setLoading]    = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [fromDate, setFromDate] = useState(month0);
+  const [toDate,   setToDate]   = useState(today0);
   const [modal,      setModal]      = useState(false);
   const [shiftPhase, setShiftPhase] = useState<'START' | 'END'>('START');
   const [tasksText,  setTasksText]  = useState(DEFAULT_TASKS);
@@ -107,6 +111,9 @@ export function DailyChecklistScreen() {
     } finally { setSaving(false); }
   };
 
+  const inRange = (d: string) => { const s = d.slice(0, 10); return (!fromDate || s >= fromDate) && (!toDate || s <= toDate); };
+  const filteredEntries = useMemo(() => entries.filter(e => inRange(e.created_at)), [entries, fromDate, toDate]); // eslint-disable-line
+
   const phaseLabel = (p: string) =>
     p === 'START'
       ? (isAr ? 'بداية الوردية' : 'Shift Start')
@@ -116,7 +123,7 @@ export function DailyChecklistScreen() {
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
       <ScreenHeader
         title={isAr ? 'قائمة الوردية' : 'Shift Checklist'}
-        subtitle={`${entries.length} ${isAr ? 'مسجل' : 'submitted'}`}
+        subtitle={`${filteredEntries.length} ${isAr ? 'مسجل' : 'submitted'}`}
         showBack
       />
 
@@ -133,14 +140,32 @@ export function DailyChecklistScreen() {
             <Text style={styles.addText}>{isAr ? 'تسجيل قائمة وردية' : 'Submit Shift Checklist'}</Text>
           </TouchableOpacity>
 
-          {entries.length === 0 ? (
+          <View style={[styles.filterBar, { backgroundColor: colors.surface }]}>
+            <Ionicons name="calendar-outline" size={14} color={colors.textMuted} />
+            <TextInput
+              style={[styles.filterInput, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
+              value={fromDate} onChangeText={setFromDate}
+              placeholder="From YYYY-MM-DD" placeholderTextColor={colors.textMuted}
+            />
+            <Text style={{ color: colors.textMuted, fontSize: 12 }}>→</Text>
+            <TextInput
+              style={[styles.filterInput, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
+              value={toDate} onChangeText={setToDate}
+              placeholder="To YYYY-MM-DD" placeholderTextColor={colors.textMuted}
+            />
+            <TouchableOpacity onPress={() => { setFromDate(month0); setToDate(today0); }} style={[styles.filterReset, { borderColor: colors.border }]}>
+              <Ionicons name="refresh-outline" size={13} color={colors.primary} />
+            </TouchableOpacity>
+          </View>
+
+          {filteredEntries.length === 0 ? (
             <View style={styles.empty}>
               <Ionicons name="clipboard-outline" size={48} color={colors.textMuted} />
               <Text style={[styles.emptyText, { color: colors.textMuted }]}>{isAr ? 'لا توجد قوائم مسجلة' : 'No checklists submitted'}</Text>
             </View>
           ) : (
             <View style={styles.list}>
-              {entries.map((entry, idx) => {
+              {filteredEntries.map((entry, idx) => {
                 const isStart = entry.shift_phase === 'START';
                 const phaseColor = isStart ? colors.success : colors.primary;
                 const tasks: { label: string; done: boolean }[] = Array.isArray(entry.tasks_json) ? entry.tasks_json : [];
@@ -260,6 +285,10 @@ const styles = StyleSheet.create({
 
   addBtn:  { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, borderRadius: radius.lg, paddingVertical: 12, marginBottom: spacing.md },
   addText: { ...typography.bodySmall, fontWeight: '700', color: '#fff' },
+
+  filterBar:   { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: spacing.sm, paddingVertical: 8, borderRadius: radius.md, marginBottom: spacing.sm },
+  filterInput: { flex: 1, borderWidth: 1.5, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 6, fontSize: 13 },
+  filterReset: { width: 30, height: 30, borderRadius: 8, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
 
   empty:     { alignItems: 'center', paddingVertical: 60, gap: spacing.sm },
   emptyText: { ...typography.bodySmall },

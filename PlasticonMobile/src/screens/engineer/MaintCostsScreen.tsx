@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator, Alert, FlatList, KeyboardAvoidingView,
   Modal, Platform, RefreshControl, ScrollView, StyleSheet,
@@ -235,18 +235,24 @@ export function MaintCostsScreen() {
   const { colors } = useAppTheme();
   const { isAr } = useLocale();
 
+  const today0 = new Date().toISOString().slice(0, 10);
+  const month0 = new Date().toISOString().slice(0, 7) + '-01';
   const [costs, setCosts]       = useState<CostRecord[]>([]);
-  const [total, setTotal]       = useState(0);
   const [loading, setLoading]   = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [modal, setModal]       = useState(false);
+  const [fromDate, setFromDate] = useState(month0);
+  const [toDate,   setToDate]   = useState(today0);
+
+  const inRange = (d: string) => { const s = d.slice(0, 10); return (!fromDate || s >= fromDate) && (!toDate || s <= toDate); };
+  const filteredCosts = useMemo(() => costs.filter(c => inRange(c.createdAt)), [costs, fromDate, toDate]); // eslint-disable-line
+  const filteredTotal = useMemo(() => filteredCosts.reduce((s, r) => s + (r.totalCost ?? 0), 0), [filteredCosts]);
 
   const load = useCallback(async () => {
     try {
       const res = await api.get<any>('/maintenance-costs');
       const records: CostRecord[] = Array.isArray(res) ? res : (res.costs ?? []);
       setCosts(records);
-      setTotal(records.reduce((s, r) => s + (r.totalCost ?? 0), 0));
     } catch {
       setCosts([]);
     } finally {
@@ -264,20 +270,39 @@ export function MaintCostsScreen() {
         <View style={styles.center}><ActivityIndicator size="large" color={colors.primary} /></View>
       ) : (
         <FlatList
-          data={costs}
+          data={filteredCosts}
           keyExtractor={(i) => String(i.id)}
           renderItem={({ item }) => <CostCard item={item} />}
           contentContainerStyle={styles.list}
           showsVerticalScrollIndicator={false}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); void load(); }} tintColor={colors.primary} />}
           ListHeaderComponent={
-            <StatCard
-              label={isAr ? 'إجمالي تكاليف الصيانة' : 'Total Maintenance Cost'}
-              value={`$${fmt(total)}`}
-              icon="cash"
-              color={colors.danger}
-              style={styles.totalCard}
-            />
+            <>
+              <StatCard
+                label={isAr ? 'إجمالي تكاليف الصيانة' : 'Total Maintenance Cost'}
+                value={`$${fmt(filteredTotal)}`}
+                icon="cash"
+                color={colors.danger}
+                style={styles.totalCard}
+              />
+              <View style={[styles.filterBar, { backgroundColor: colors.surface }]}>
+                <Ionicons name="calendar-outline" size={14} color={colors.textMuted} />
+                <TextInput
+                  style={[styles.filterInput, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
+                  value={fromDate} onChangeText={setFromDate}
+                  placeholder="From YYYY-MM-DD" placeholderTextColor={colors.textMuted}
+                />
+                <Text style={{ color: colors.textMuted, fontSize: 12 }}>→</Text>
+                <TextInput
+                  style={[styles.filterInput, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
+                  value={toDate} onChangeText={setToDate}
+                  placeholder="To YYYY-MM-DD" placeholderTextColor={colors.textMuted}
+                />
+                <TouchableOpacity onPress={() => { setFromDate(month0); setToDate(today0); }} style={[styles.filterReset, { borderColor: colors.border }]}>
+                  <Ionicons name="refresh-outline" size={13} color={colors.primary} />
+                </TouchableOpacity>
+              </View>
+            </>
           }
           ListEmptyComponent={
             <View style={styles.empty}>
@@ -315,6 +340,10 @@ const styles = StyleSheet.create({
   bLabel:  { ...typography.caption },
   bVal:    { ...typography.h4 },
   notes:   { ...typography.bodySmall, fontStyle: 'italic' },
+
+  filterBar:   { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: spacing.sm, paddingVertical: 8, borderRadius: radius.md, marginBottom: spacing.sm },
+  filterInput: { flex: 1, borderWidth: 1.5, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 6, fontSize: 13 },
+  filterReset: { width: 30, height: 30, borderRadius: 8, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
 
   empty:    { alignItems: 'center', paddingTop: 60, gap: spacing.sm },
   emptyText:{ ...typography.bodySmall },

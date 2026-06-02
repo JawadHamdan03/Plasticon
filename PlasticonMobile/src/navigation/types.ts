@@ -189,7 +189,6 @@ export type AdminOpsStackParamList = {
   Consumption:     undefined;
   AttendanceAdmin: undefined;
   PayrollAdmin:    undefined;
-  WorkerHub:       undefined;
   WorkerRecords:   undefined;
   Snapshots:       undefined;
   Electricity:     undefined;
