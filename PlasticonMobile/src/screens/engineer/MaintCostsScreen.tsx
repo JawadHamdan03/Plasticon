@@ -43,7 +43,7 @@ function fmtDate(d: string) { return new Date(d).toLocaleDateString([], { month:
 
 // ─── Card ─────────────────────────────────────────────────────────────────────
 
-function CostCard({ item }: { item: CostRecord }) {
+function CostCard({ item, onEdit, onDelete }: { item: CostRecord; onEdit: (i: CostRecord) => void; onDelete: (id: number) => void }) {
   const { colors } = useAppTheme();
   const { isAr } = useLocale();
   const total = item.totalCost ?? 0;
@@ -58,6 +58,14 @@ function CostCard({ item }: { item: CostRecord }) {
           <Text style={[styles.date, { color: colors.textMuted }]}>{fmtDate(item.createdAt)}</Text>
         </View>
         <Text style={[styles.amount, { color: colors.danger }]}>${fmt(total)}</Text>
+        <View style={styles.cardActions}>
+          <TouchableOpacity onPress={() => onEdit(item)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+            <Ionicons name="pencil-outline" size={17} color={colors.primary} />
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => onDelete(item.id)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+            <Ionicons name="trash-outline" size={17} color={colors.danger} />
+          </TouchableOpacity>
+        </View>
       </View>
 
       {(item.laborHours != null || item.sparesTotal != null) && (
@@ -88,9 +96,16 @@ function CostCard({ item }: { item: CostRecord }) {
   );
 }
 
-// ─── Create Modal ─────────────────────────────────────────────────────────────
+// ─── Cost Modal (create + edit) ───────────────────────────────────────────────
 
-function CreateModal({ visible, onClose, onSuccess }: { visible: boolean; onClose: () => void; onSuccess: () => void }) {
+function CreateModal({
+  visible, onClose, onSuccess, editing,
+}: {
+  visible: boolean;
+  onClose: () => void;
+  onSuccess: () => void;
+  editing?: CostRecord | null;
+}) {
   const { colors } = useAppTheme();
   const { isAr } = useLocale();
 
@@ -107,8 +122,17 @@ function CreateModal({ visible, onClose, onSuccess }: { visible: boolean; onClos
       api.get<any>('/maintenance/all')
         .then(r => setRecords(Array.isArray(r) ? r : (r.records ?? [])))
         .catch(() => {});
+      if (editing) {
+        setMaintenanceId(editing.maintenanceId ? String(editing.maintenanceId) : '');
+        setLaborHours(editing.laborHours != null ? String(editing.laborHours) : '');
+        setLaborRate(editing.laborCostPerHour != null ? String(editing.laborCostPerHour) : '');
+        setSparesTotal(editing.sparesTotal != null ? String(editing.sparesTotal) : '');
+        setNotes(editing.notes ?? '');
+      } else {
+        setMaintenanceId(''); setLaborHours(''); setLaborRate(''); setSparesTotal(''); setNotes('');
+      }
     }
-  }, [visible]);
+  }, [visible, editing]);
 
   const laborTotal = (parseFloat(laborHours) || 0) * (parseFloat(laborRate) || 0);
   const totalCost  = laborTotal + (parseFloat(sparesTotal) || 0);
@@ -116,19 +140,28 @@ function CreateModal({ visible, onClose, onSuccess }: { visible: boolean; onClos
   const reset = () => { setMaintenanceId(''); setLaborHours(''); setLaborRate(''); setSparesTotal(''); setNotes(''); };
 
   const submit = async () => {
-    if (!maintenanceId) {
+    if (!editing && !maintenanceId) {
       Alert.alert(isAr ? 'مطلوب' : 'Required', isAr ? 'اختر سجل صيانة.' : 'Select a maintenance record.');
       return;
     }
     setSaving(true);
     try {
-      await api.post('/maintenance-costs', {
-        maintenanceId: parseInt(maintenanceId, 10),
-        laborHours:        parseFloat(laborHours)    || 0,
-        laborCostPerHour:  parseFloat(laborRate)     || 0,
-        sparesTotal:       parseFloat(sparesTotal)   || 0,
-        notes: notes.trim() || undefined,
-      });
+      if (editing) {
+        await api.patch(`/maintenance-costs/${editing.id}`, {
+          laborHours:        parseFloat(laborHours)    || 0,
+          laborCostPerHour:  parseFloat(laborRate)     || 0,
+          sparesTotal:       parseFloat(sparesTotal)   || 0,
+          notes: notes.trim() || undefined,
+        });
+      } else {
+        await api.post('/maintenance-costs', {
+          maintenanceId: parseInt(maintenanceId, 10),
+          laborHours:        parseFloat(laborHours)    || 0,
+          laborCostPerHour:  parseFloat(laborRate)     || 0,
+          sparesTotal:       parseFloat(sparesTotal)   || 0,
+          notes: notes.trim() || undefined,
+        });
+      }
       reset();
       onSuccess();
     } catch (err: any) {
@@ -143,25 +176,31 @@ function CreateModal({ visible, onClose, onSuccess }: { visible: boolean; onClos
       <KeyboardAvoidingView style={styles.overlay} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         <View style={[styles.sheet, { backgroundColor: colors.surface }]}>
           <View style={[styles.handle, { backgroundColor: colors.border }]} />
-          <Text style={[styles.sheetTitle, { color: colors.text }]}>{isAr ? 'إضافة تكلفة صيانة' : 'Add Maintenance Cost'}</Text>
+          <Text style={[styles.sheetTitle, { color: colors.text }]}>
+            {editing ? (isAr ? 'تعديل التكلفة' : 'Edit Cost') : (isAr ? 'إضافة تكلفة صيانة' : 'Add Maintenance Cost')}
+          </Text>
           <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
 
-            {/* Maintenance record selector */}
-            <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{isAr ? 'سجل الصيانة *' : 'Maintenance Record *'}</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: spacing.md }}>
-              {records.slice(0, 20).map(r => (
-                <TouchableOpacity
-                  key={r.id}
-                  style={[styles.pill, { backgroundColor: colors.surfaceAlt, borderColor: colors.border },
-                    maintenanceId === String(r.id) && { backgroundColor: colors.primary, borderColor: colors.primary }]}
-                  onPress={() => setMaintenanceId(String(r.id))}
-                >
-                  <Text style={[styles.pillText, { color: colors.text }, maintenanceId === String(r.id) && styles.pillTextActive]} numberOfLines={1}>
-                    {r.machine?.name ?? `#${r.id}`}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
+            {/* Maintenance record selector — only when creating */}
+            {!editing && (
+              <>
+                <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{isAr ? 'سجل الصيانة *' : 'Maintenance Record *'}</Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: spacing.md }}>
+                  {records.slice(0, 20).map(r => (
+                    <TouchableOpacity
+                      key={r.id}
+                      style={[styles.pill, { backgroundColor: colors.surfaceAlt, borderColor: colors.border },
+                        maintenanceId === String(r.id) && { backgroundColor: colors.primary, borderColor: colors.primary }]}
+                      onPress={() => setMaintenanceId(String(r.id))}
+                    >
+                      <Text style={[styles.pillText, { color: colors.text }, maintenanceId === String(r.id) && styles.pillTextActive]} numberOfLines={1}>
+                        {r.machine?.name ?? `#${r.id}`}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              </>
+            )}
 
             {[
               { label: isAr ? 'ساعات العمل' : 'Labor Hours', val: laborHours, set: setLaborHours },
@@ -237,12 +276,13 @@ export function MaintCostsScreen() {
 
   const today0 = new Date().toISOString().slice(0, 10);
   const month0 = new Date().toISOString().slice(0, 7) + '-01';
-  const [costs, setCosts]       = useState<CostRecord[]>([]);
-  const [loading, setLoading]   = useState(true);
+  const [costs, setCosts]           = useState<CostRecord[]>([]);
+  const [loading, setLoading]       = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [modal, setModal]       = useState(false);
-  const [fromDate, setFromDate] = useState(month0);
-  const [toDate,   setToDate]   = useState(today0);
+  const [modal, setModal]           = useState(false);
+  const [editTarget, setEditTarget] = useState<CostRecord | null>(null);
+  const [fromDate, setFromDate]     = useState(month0);
+  const [toDate,   setToDate]       = useState(today0);
 
   const inRange = (d: string) => { const s = d.slice(0, 10); return (!fromDate || s >= fromDate) && (!toDate || s <= toDate); };
   const filteredCosts = useMemo(() => costs.filter(c => inRange(c.createdAt)), [costs, fromDate, toDate]); // eslint-disable-line
@@ -263,6 +303,27 @@ export function MaintCostsScreen() {
 
   useEffect(() => { void load(); }, [load]);
 
+  const handleDelete = (id: number) => {
+    Alert.alert(
+      isAr ? 'حذف السجل' : 'Delete Record',
+      isAr ? 'هل أنت متأكد؟ لا يمكن التراجع.' : 'Delete this cost record? This cannot be undone.',
+      [
+        { text: isAr ? 'إلغاء' : 'Cancel', style: 'cancel' },
+        {
+          text: isAr ? 'حذف' : 'Delete', style: 'destructive',
+          onPress: async () => {
+            try {
+              await api.delete(`/maintenance-costs/${id}`);
+              setCosts(prev => prev.filter(c => c.id !== id));
+            } catch (e: any) {
+              Alert.alert(isAr ? 'خطأ' : 'Error', e.message ?? 'Failed to delete.');
+            }
+          },
+        },
+      ],
+    );
+  };
+
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
       <ScreenHeader title={isAr ? 'تكاليف الصيانة' : 'Maintenance Costs'} showBack />
@@ -272,7 +333,13 @@ export function MaintCostsScreen() {
         <FlatList
           data={filteredCosts}
           keyExtractor={(i) => String(i.id)}
-          renderItem={({ item }) => <CostCard item={item} />}
+          renderItem={({ item }) => (
+            <CostCard
+              item={item}
+              onEdit={(r) => { setEditTarget(r); setModal(true); }}
+              onDelete={handleDelete}
+            />
+          )}
           contentContainerStyle={styles.list}
           showsVerticalScrollIndicator={false}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); void load(); }} tintColor={colors.primary} />}
@@ -313,10 +380,15 @@ export function MaintCostsScreen() {
         />
       )}
 
-      <TouchableOpacity style={[styles.fab, { backgroundColor: colors.primary }]} onPress={() => setModal(true)} activeOpacity={0.85}>
+      <TouchableOpacity style={[styles.fab, { backgroundColor: colors.primary }]} onPress={() => { setEditTarget(null); setModal(true); }} activeOpacity={0.85}>
         <Ionicons name="add" size={28} color="#fff" />
       </TouchableOpacity>
-      <CreateModal visible={modal} onClose={() => setModal(false)} onSuccess={() => { setModal(false); void load(); }} />
+      <CreateModal
+        visible={modal}
+        editing={editTarget}
+        onClose={() => { setModal(false); setEditTarget(null); }}
+        onSuccess={() => { setModal(false); setEditTarget(null); void load(); }}
+      />
     </SafeAreaView>
   );
 }
@@ -329,9 +401,10 @@ const styles = StyleSheet.create({
   list:      { padding: spacing.md, paddingBottom: 100 },
   totalCard: { marginBottom: spacing.md },
 
-  card:    { borderRadius: radius.md, padding: spacing.md, marginBottom: spacing.sm, ...shadow.sm },
-  cardTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 },
-  cardLeft:{ flex: 1, marginRight: spacing.sm },
+  card:        { borderRadius: radius.md, padding: spacing.md, marginBottom: spacing.sm, ...shadow.sm },
+  cardTop:     { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 },
+  cardLeft:    { flex: 1, marginRight: spacing.sm },
+  cardActions: { flexDirection: 'row', gap: 10, alignItems: 'center', marginLeft: spacing.sm },
   machine: { ...typography.h4 },
   date:    { ...typography.caption, marginTop: 2 },
   amount:  { fontSize: 20, fontWeight: '800' },

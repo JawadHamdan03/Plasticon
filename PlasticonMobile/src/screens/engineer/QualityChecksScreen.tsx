@@ -59,9 +59,10 @@ function fmt(iso: string) {
 
 // ─── Card ─────────────────────────────────────────────────────────────────────
 
-function CheckCard({ item, onResolve, resolving }: {
+function CheckCard({ item, onResolve, onDelete, resolving }: {
   item: QCheck;
   onResolve: (id: number) => void;
+  onDelete: (id: number) => void;
   resolving: boolean;
 }) {
   const { colors } = useAppTheme();
@@ -123,6 +124,13 @@ function CheckCard({ item, onResolve, resolving }: {
             }
           </TouchableOpacity>
         )}
+        <TouchableOpacity
+          onPress={() => onDelete(item.id)}
+          style={[styles.resolveBtn, { backgroundColor: `${colors.danger}12`, borderColor: `${colors.danger}30`, marginLeft: 4 }]}
+          activeOpacity={0.75}
+        >
+          <Ionicons name="trash-outline" size={12} color={colors.danger} />
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -260,12 +268,13 @@ export function QualityChecksScreen() {
   const { colors } = useAppTheme();
   const { isAr } = useLocale();
 
-  const [checks, setChecks]     = useState<QCheck[]>([]);
-  const [loading, setLoading]   = useState(true);
+  const [checks, setChecks]       = useState<QCheck[]>([]);
+  const [loading, setLoading]     = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [modal, setModal]       = useState(false);
-  const [filter, setFilter]     = useState<FilterKey>('all');
+  const [modal, setModal]         = useState(false);
+  const [filter, setFilter]       = useState<FilterKey>('all');
   const [resolvingId, setResolvingId] = useState<number | null>(null);
+  const [deletingId, setDeletingId]   = useState<number | null>(null);
 
   const FILTER_TABS: { key: FilterKey; label: string; labelAr: string }[] = [
     { key: 'all',      label: 'All',      labelAr: 'الكل' },
@@ -291,13 +300,37 @@ export function QualityChecksScreen() {
   const handleResolve = async (id: number) => {
     setResolvingId(id);
     try {
-      await api.patch(`/quality-checks/${id}`, { resolvedAt: new Date().toISOString() });
+      await api.patch(`/quality-checks/${id}/resolve`, {});
       setChecks(prev => prev.map(c => c.id === id ? { ...c, resolvedAt: new Date().toISOString() } : c));
     } catch (e: any) {
       Alert.alert(isAr ? 'خطأ' : 'Error', e.message ?? 'Failed to resolve.');
     } finally {
       setResolvingId(null);
     }
+  };
+
+  const handleDelete = (id: number) => {
+    Alert.alert(
+      isAr ? 'حذف الفحص' : 'Delete Check',
+      isAr ? 'هل أنت متأكد؟ لا يمكن التراجع.' : 'Delete this quality check? This cannot be undone.',
+      [
+        { text: isAr ? 'إلغاء' : 'Cancel', style: 'cancel' },
+        {
+          text: isAr ? 'حذف' : 'Delete', style: 'destructive',
+          onPress: async () => {
+            setDeletingId(id);
+            try {
+              await api.delete(`/quality-checks/${id}`);
+              setChecks(prev => prev.filter(c => c.id !== id));
+            } catch (e: any) {
+              Alert.alert(isAr ? 'خطأ' : 'Error', e.message ?? 'Failed to delete.');
+            } finally {
+              setDeletingId(null);
+            }
+          },
+        },
+      ],
+    );
   };
 
   const filtered = checks.filter(c => {
@@ -355,7 +388,8 @@ export function QualityChecksScreen() {
             <CheckCard
               item={item}
               onResolve={handleResolve}
-              resolving={resolvingId === item.id}
+              onDelete={handleDelete}
+              resolving={resolvingId === item.id || deletingId === item.id}
             />
           )}
           contentContainerStyle={styles.list}

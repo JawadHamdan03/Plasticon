@@ -3,6 +3,7 @@
 // When the app is closed/killed, memory is cleared → user must log in again.
 
 let _token: string | null = null;
+let _onSessionExpired: (() => void) | null = null;
 
 export function saveToken(token: string): void {
   _token = token;
@@ -14,6 +15,17 @@ export function getToken(): string | null {
 
 export function removeToken(): void {
   _token = null;
+}
+
+// Called by the API client when the server returns 401.
+// AuthContext registers the actual handler so it can clear React state.
+export function setSessionExpiredHandler(fn: () => void): void {
+  _onSessionExpired = fn;
+}
+
+export function triggerSessionExpired(): void {
+  _token = null; // always clear token immediately
+  _onSessionExpired?.();
 }
 
 // clearSession is called on logout

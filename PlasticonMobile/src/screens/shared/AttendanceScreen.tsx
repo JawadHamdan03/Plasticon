@@ -198,6 +198,7 @@ export function AttendanceScreen() {
       <ScreenHeader
         title={isAr ? 'حضوري' : 'My Attendance'}
         subtitle={isAr ? 'سجل دخولك وخروجك وتابع سجلك اليومي' : 'Check in, check out, and review your attendance'}
+        showBack
       />
 
       {loading ? (

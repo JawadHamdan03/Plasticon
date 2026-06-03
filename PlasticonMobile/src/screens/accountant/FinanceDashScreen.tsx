@@ -74,7 +74,7 @@ export function FinanceDashScreen() {
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
-      <ScreenHeader title={isAr ? 'لوحة المالية' : 'Finance Dashboard'} />
+      <ScreenHeader title={isAr ? 'لوحة المالية' : 'Finance Dashboard'} showBack />
       {loading ? <View style={styles.center}><ActivityIndicator size="large" color={colors.primary} /></View> : (
         <ScrollView
           contentContainerStyle={styles.content}

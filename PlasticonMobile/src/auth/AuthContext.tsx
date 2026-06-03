@@ -7,7 +7,7 @@ import React, {
 } from 'react';
 import { api } from '../api/client';
 import { AuthResponse, User } from '../api/types';
-import { clearSession, getSavedUser, saveToken, saveUser } from './storage';
+import { clearSession, getSavedUser, saveToken, saveUser, setSessionExpiredHandler } from './storage';
 
 interface AuthState {
   user: User | null;
@@ -22,7 +22,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser]       = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // On mount: session is in-memory only, so getSavedUser always returns null.
+  // On mount: register the 401 handler so any API call that gets "Invalid or
+  // expired token" automatically clears state and returns user to login screen.
+  useEffect(() => {
+    setSessionExpiredHandler(() => setUser(null));
+  }, []);
+
+  // Session is in-memory only, so getSavedUser always returns null.
   // User must log in every time the app is opened.
   useEffect(() => {
     getSavedUser<User>()

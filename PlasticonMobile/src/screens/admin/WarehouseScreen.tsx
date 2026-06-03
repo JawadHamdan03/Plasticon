@@ -54,7 +54,7 @@ export function WarehouseScreen() {
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
-      <ScreenHeader title={isAr ? 'المستودع' : 'Warehouse'} subtitle={isAr ? 'مستويات المخزون ومواقع التخزين' : 'Stock levels and storage locations'} />
+      <ScreenHeader title={isAr ? 'المستودع' : 'Warehouse'} subtitle={isAr ? 'مستويات المخزون ومواقع التخزين' : 'Stock levels and storage locations'} showBack />
       {loading ? (
         <View style={styles.center}><ActivityIndicator size="large" color={colors.primary} /></View>
       ) : (

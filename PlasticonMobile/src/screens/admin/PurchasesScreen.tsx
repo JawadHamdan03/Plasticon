@@ -86,7 +86,7 @@ export function PurchasesScreen() {
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
-      <ScreenHeader title={isAr ? 'المشتريات' : 'Purchases'} subtitle={isAr ? 'طلبات الشراء والمشتريات' : 'Purchase orders and procurement'} />
+      <ScreenHeader title={isAr ? 'المشتريات' : 'Purchases'} subtitle={isAr ? 'طلبات الشراء والمشتريات' : 'Purchase orders and procurement'} showBack />
       {loading ? (
         <View style={styles.center}><ActivityIndicator size="large" color={colors.primary} /></View>
       ) : (

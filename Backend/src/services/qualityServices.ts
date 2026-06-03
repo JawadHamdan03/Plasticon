@@ -137,3 +137,37 @@ export const getAllQualityChecks = async (): Promise<
 
   return { status: 200, data: records };
 };
+
+export const resolveQualityCheck = async (
+  engineerId: number,
+  id: number,
+): Promise<ServiceResult<unknown>> => {
+  const check = await prisma.qualityCheck.findUnique({ where: { id } });
+  if (!check) return { status: 404, message: "Quality check not found" };
+  if (check.engineerId !== engineerId) return { status: 403, message: "Not authorized" };
+  if (check.resolvedAt) return { status: 400, message: "Already resolved" };
+
+  const updated = await prisma.qualityCheck.update({
+    where: { id },
+    data: { resolvedAt: new Date() },
+    include: { machine: { select: { id: true, name: true } }, engineer: { select: { id: true, fullName: true } } },
+  });
+
+  auditAsync(engineerId, AuditAction.QUALITY_CHECK_UPDATED, AuditEntityType.QUALITY_CHECK, id, { action: "resolved" });
+
+  return { status: 200, data: updated };
+};
+
+export const deleteQualityCheck = async (
+  engineerId: number,
+  id: number,
+): Promise<ServiceResult<unknown>> => {
+  const check = await prisma.qualityCheck.findUnique({ where: { id } });
+  if (!check) return { status: 404, message: "Quality check not found" };
+  if (check.engineerId !== engineerId) return { status: 403, message: "Not authorized" };
+
+  await prisma.qualityCheck.delete({ where: { id } });
+  auditAsync(engineerId, AuditAction.QUALITY_CHECK_DELETED, AuditEntityType.QUALITY_CHECK, id, {});
+
+  return { status: 200, message: "Deleted" };
+};

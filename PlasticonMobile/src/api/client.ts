@@ -1,4 +1,4 @@
-import { getToken } from '../auth/storage';
+import { getToken, triggerSessionExpired } from '../auth/storage';
 import { API_BASE, RAG_BASE } from '../config';
 
 // Log once at startup so the console shows which URL is in use
@@ -41,11 +41,17 @@ async function request<T>(
 
   if (!res.ok) {
     const body = await res.json().catch(() => ({ message: res.statusText }));
-    throw new Error(
+    const msg =
       (body as { error?: string; message?: string }).error ??
       (body as { message?: string }).message ??
-      `Error ${res.status}`,
-    );
+      `Error ${res.status}`;
+
+    // Auto-logout on 401 — clears token and triggers navigation back to Login.
+    if (res.status === 401) {
+      triggerSessionExpired();
+    }
+
+    throw new Error(msg);
   }
 
   return res.json() as Promise<T>;
@@ -73,11 +79,12 @@ export async function uploadForm<T>(path: string, form: FormData, method: 'POST'
 
   if (!res.ok) {
     const body = await res.json().catch(() => ({ message: res.statusText }));
-    throw new Error(
+    const msg =
       (body as { error?: string; message?: string }).error ??
       (body as { message?: string }).message ??
-      `Error ${res.status}`,
-    );
+      `Error ${res.status}`;
+    if (res.status === 401) triggerSessionExpired();
+    throw new Error(msg);
   }
 
   return res.json() as Promise<T>;
