@@ -12,6 +12,8 @@ import { radius, shadow, spacing, typography } from '../../theme';
 import { useAppTheme } from '../../context/ThemeContext';
 import { useLocale } from '../../context/LocaleContext';
 
+// ── Types ─────────────────────────────────────────────────────────────────────
+
 type PayrollTab = 'daily' | 'monthly' | 'salaries' | 'config';
 
 interface DailyRecord {
@@ -24,7 +26,7 @@ interface DailyRecord {
   leaveType?: string | null;
   user?: { id: number; fullName: string; role?: string };
   attendance?: { id: number; checkIn?: string; checkOut?: string | null } | null;
-  createdAt?: string;
+  confirmedBy?: { fullName: string } | null;
 }
 
 interface MonthlyRecord {
@@ -54,7 +56,10 @@ interface UserSalary {
 interface SalaryConfig { id: number; role: string; monthlySalary: number; }
 interface DeductionRule { id: number; type: string; isActive: boolean; thresholdMinutes: number; deductionValue: number; }
 
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
 function fmt(n: number) { return n.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 }); }
+function fmtDec(n: number) { return n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
 function fmtTime(iso?: string | null) {
   if (!iso) return '—';
   return new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -64,12 +69,20 @@ const ROLE_COLORS: Record<string, string> = {
   WORKER: '#3B82F6', ENGINEER: '#10B981', ACCOUNTANT: '#F97316', ADMIN: '#EF4444',
 };
 
-const DEDUCTION_META: Record<string, { labelEn: string; labelAr: string; icon: string; showThreshold: boolean; showValue: boolean }> = {
-  LATE_ARRIVAL:      { labelEn: 'Late Arrival',       labelAr: 'تأخر دخول',       icon: 'time-outline',         showThreshold: true,  showValue: true  },
-  EARLY_CHECKOUT:    { labelEn: 'Early Checkout',      labelAr: 'خروج مبكر',       icon: 'log-out-outline',      showThreshold: true,  showValue: false },
-  UNEXCUSED_ABSENCE: { labelEn: 'Unexcused Absence',   labelAr: 'غياب بدون عذر',   icon: 'close-circle-outline', showThreshold: false, showValue: false },
-  SICK_LEAVE:        { labelEn: 'Sick Leave Pay Rate', labelAr: 'أجر إجازة مرضية', icon: 'medkit-outline',       showThreshold: false, showValue: true  },
+const LEAVE_LABELS: Record<string, { en: string; ar: string; color: string }> = {
+  SICK:   { en: 'Sick',   ar: 'مرضية', color: '#b91c1c' },
+  ANNUAL: { en: 'Annual', ar: 'سنوية', color: '#1d4ed8' },
+  UNPAID: { en: 'Unpaid', ar: 'بدون أجر', color: '#92400e' },
 };
+
+const DEDUCTION_META: Record<string, { labelEn: string; labelAr: string; icon: string; showThreshold: boolean; showValue: boolean; descEn: string; descAr: string }> = {
+  LATE_ARRIVAL:      { labelEn: 'Late Arrival',          labelAr: 'تأخر دخول',          icon: 'time-outline',         showThreshold: true,  showValue: true,  descEn: 'Deduct per hour of lateness beyond threshold', descAr: 'خصم لكل ساعة تأخر بعد الحد' },
+  EARLY_CHECKOUT:    { labelEn: 'Early Checkout',         labelAr: 'خروج مبكر',          icon: 'log-out-outline',      showThreshold: true,  showValue: false, descEn: 'Deduct hourly rate × missed hours beyond threshold', descAr: 'خصم سعر الساعة × الساعات المفقودة' },
+  UNEXCUSED_ABSENCE: { labelEn: 'Unexcused Absence',      labelAr: 'غياب بدون عذر',      icon: 'close-circle-outline', showThreshold: false, showValue: false, descEn: 'Deduct full daily rate if no attendance', descAr: 'خصم يوم كامل إذا لم يسجّل حضوراً' },
+  SICK_LEAVE:        { labelEn: 'Sick Leave Pay Rate',    labelAr: 'معدل أجر إجازة مرضية', icon: 'medkit-outline',    showThreshold: false, showValue: true,  descEn: 'Pay this % of daily rate for sick-leave days', descAr: 'ادفع هذه النسبة لأيام الإجازة المرضية' },
+};
+
+const RULE_ORDER = ['LATE_ARRIVAL', 'EARLY_CHECKOUT', 'UNEXCUSED_ABSENCE', 'SICK_LEAVE'];
 
 const TABS: { key: PayrollTab; labelEn: string; labelAr: string; icon: string }[] = [
   { key: 'daily',    labelEn: 'Daily Payroll',   labelAr: 'الرواتب اليومية', icon: 'today-outline'     },
@@ -77,6 +90,8 @@ const TABS: { key: PayrollTab; labelEn: string; labelAr: string; icon: string }[
   { key: 'salaries', labelEn: 'User Salaries',   labelAr: 'رواتب الموظفين', icon: 'people-outline'    },
   { key: 'config',   labelEn: 'Salary Config',   labelAr: 'إعداد الرواتب',  icon: 'settings-outline'  },
 ];
+
+// ── Screen ────────────────────────────────────────────────────────────────────
 
 export function PayrollAdminScreen() {
   const { colors } = useAppTheme();
@@ -94,6 +109,7 @@ export function PayrollAdminScreen() {
   const [dailyRefresh, setDailyRefresh] = useState(false);
   const [calculating,  setCalculating]  = useState(false);
   const [confirmingId, setConfirmingId] = useState<number | null>(null);
+  const [markingLeave, setMarkingLeave] = useState(false);
 
   // Monthly
   const [monthFilter,    setMonthFilter]    = useState(month0);
@@ -105,6 +121,7 @@ export function PayrollAdminScreen() {
   const [editMonthlyId,  setEditMonthlyId]  = useState<number | null>(null);
   const [editMonthlyVal, setEditMonthlyVal] = useState('');
   const [savingMonthly,  setSavingMonthly]  = useState(false);
+  const [deletingMoId,   setDeletingMoId]   = useState<number | null>(null);
 
   // User Salaries
   const [userSalaries,     setUserSalaries]     = useState<UserSalary[]>([]);
@@ -182,12 +199,12 @@ export function PayrollAdminScreen() {
     if (tab === 'config')   void loadConfig();
   }, [tab]); // eslint-disable-line
 
-  // ── Actions ──────────────────────────────────────────────────────────────────
+  // ── Daily actions ─────────────────────────────────────────────────────────────
 
   const handleCalculateDaily = () => {
     Alert.alert(
       isAr ? 'احتساب الرواتب' : 'Calculate Payroll',
-      `${isAr ? 'تشغيل الاحتساب لـ' : 'Calculate for'} ${dateFilter}?`,
+      `${isAr ? 'احتساب لـ' : 'Calculate for'} ${dateFilter}?`,
       [
         { text: isAr ? 'إلغاء' : 'Cancel', style: 'cancel' },
         { text: isAr ? 'احتساب' : 'Calculate', onPress: async () => {
@@ -195,7 +212,7 @@ export function PayrollAdminScreen() {
             try {
               await api.post('/payroll/daily/calculate-date', { date: dateFilter });
               setDailyLoading(true); await loadDaily();
-              Alert.alert(isAr ? 'تم' : 'Done', isAr ? 'تم الاحتساب بنجاح' : 'Payroll calculated');
+              Alert.alert(isAr ? 'تم' : 'Done', isAr ? 'تم الاحتساب' : 'Payroll calculated');
             } catch (e: any) { Alert.alert(isAr ? 'خطأ' : 'Error', e?.message ?? 'Failed'); }
             finally { setCalculating(false); }
           },
@@ -208,10 +225,47 @@ export function PayrollAdminScreen() {
     setConfirmingId(id);
     try {
       await api.post(`/payroll/daily/${id}/confirm`, {});
-      setDaily(prev => prev.map(r => r.id === id ? { ...r, isConfirmed: true } : r));
+      setDaily(prev => prev.map(r => r.id === id ? { ...r, isConfirmed: true, confirmedAt: new Date().toISOString() } : r));
     } catch (e: any) { Alert.alert(isAr ? 'خطأ' : 'Error', e?.message ?? 'Failed'); }
     finally { setConfirmingId(null); }
   };
+
+  const handleMarkLeave = (attendanceId: number, currentLeave: string | null) => {
+    const options = [
+      { text: isAr ? 'مرضية'      : 'Sick',   value: 'SICK'   },
+      { text: isAr ? 'سنوية'      : 'Annual', value: 'ANNUAL' },
+      { text: isAr ? 'بدون أجر'   : 'Unpaid', value: 'UNPAID' },
+    ];
+    const buttons: any[] = options.map(o => ({
+      text: o.text + (currentLeave === o.value ? ' ✓' : ''),
+      onPress: async () => {
+        setMarkingLeave(true);
+        try {
+          await api.patch(`/payroll/admin/attendance/${attendanceId}/leave`, { leaveType: o.value });
+          setDaily(prev => prev.map(r => r.attendance?.id === attendanceId ? { ...r, leaveType: o.value } : r));
+        } catch (e: any) { Alert.alert(isAr ? 'خطأ' : 'Error', e?.message ?? 'Failed'); }
+        finally { setMarkingLeave(false); }
+      },
+    }));
+    if (currentLeave) {
+      buttons.push({
+        text: isAr ? 'مسح الإجازة' : 'Clear Leave',
+        style: 'destructive',
+        onPress: async () => {
+          setMarkingLeave(true);
+          try {
+            await api.patch(`/payroll/admin/attendance/${attendanceId}/leave`, { leaveType: null });
+            setDaily(prev => prev.map(r => r.attendance?.id === attendanceId ? { ...r, leaveType: null } : r));
+          } catch (e: any) { Alert.alert(isAr ? 'خطأ' : 'Error', e?.message ?? 'Failed'); }
+          finally { setMarkingLeave(false); }
+        },
+      });
+    }
+    buttons.push({ text: isAr ? 'إلغاء' : 'Cancel', style: 'cancel' });
+    Alert.alert(isAr ? 'نوع الإجازة' : 'Mark Leave Type', '', buttons);
+  };
+
+  // ── Monthly actions ───────────────────────────────────────────────────────────
 
   const handleCalculateMonthly = () => {
     Alert.alert(
@@ -242,15 +296,19 @@ export function PayrollAdminScreen() {
   };
 
   const handleDeleteMonthly = (id: number) => {
-    Alert.alert(isAr ? 'حذف' : 'Delete', isAr ? 'حذف سجل الراتب؟' : 'Delete this payroll record?', [
+    Alert.alert(isAr ? 'حذف' : 'Delete', isAr ? 'حذف سجل الراتب؟' : 'Delete this payroll record? This cannot be undone.', [
       { text: isAr ? 'إلغاء' : 'Cancel', style: 'cancel' },
       { text: isAr ? 'حذف' : 'Delete', style: 'destructive', onPress: async () => {
+          setDeletingMoId(id);
           try { await api.delete(`/payroll/${id}`); setMonthlyRecords(prev => prev.filter(r => r.id !== id)); }
           catch (e: any) { Alert.alert(isAr ? 'خطأ' : 'Error', e?.message ?? 'Failed'); }
+          finally { setDeletingMoId(null); }
         },
       },
     ]);
   };
+
+  // ── User salary actions ───────────────────────────────────────────────────────
 
   const handleSaveUserSalary = async () => {
     if (editSalaryUserId == null) return;
@@ -263,14 +321,26 @@ export function PayrollAdminScreen() {
     finally { setSavingUserSalary(false); }
   };
 
-  const handleResetUserSalary = async (userId: number) => {
-    setSavingUserSalary(true);
-    try {
-      await api.put(`/payroll/admin/user-salaries/${userId}`, { monthlySalary: null });
-      await loadUserSalaries();
-    } catch (e: any) { Alert.alert(isAr ? 'خطأ' : 'Error', e?.message ?? 'Failed'); }
-    finally { setSavingUserSalary(false); }
+  const handleResetUserSalary = (userId: number, name: string) => {
+    Alert.alert(
+      isAr ? 'إعادة تعيين' : 'Reset Salary',
+      `${isAr ? 'إعادة تعيين راتب' : 'Reset salary for'} ${name} ${isAr ? 'إلى راتب الدور الافتراضي؟' : 'to role default?'}`,
+      [
+        { text: isAr ? 'إلغاء' : 'Cancel', style: 'cancel' },
+        { text: isAr ? 'إعادة تعيين' : 'Reset', onPress: async () => {
+            setSavingUserSalary(true);
+            try {
+              await api.put(`/payroll/admin/user-salaries/${userId}`, { monthlySalary: null });
+              await loadUserSalaries();
+            } catch (e: any) { Alert.alert(isAr ? 'خطأ' : 'Error', e?.message ?? 'Failed'); }
+            finally { setSavingUserSalary(false); }
+          },
+        },
+      ],
+    );
   };
+
+  // ── Config actions ────────────────────────────────────────────────────────────
 
   const handleSaveConfig = async () => {
     if (!editConfigRole) return;
@@ -307,23 +377,23 @@ export function PayrollAdminScreen() {
     finally { setSavingRule(false); }
   };
 
-  // ── Derived ──────────────────────────────────────────────────────────────────
+  // ── Derived ───────────────────────────────────────────────────────────────────
 
   const pendingCount   = useMemo(() => daily.filter(r => !r.isConfirmed).length, [daily]);
   const confirmedCount = useMemo(() => daily.filter(r => !!r.isConfirmed).length, [daily]);
   const dailyTotal     = useMemo(() => daily.reduce((s, r) => s + (r.totalDailyPay ?? 0), 0), [daily]);
 
-  // ── Render ───────────────────────────────────────────────────────────────────
+  // ── Render ────────────────────────────────────────────────────────────────────
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
       <ScreenHeader
         title={isAr ? 'إدارة الرواتب' : 'Payroll Management'}
-        subtitle={isAr ? 'تأكيد الرواتب اليومية وعرض التقارير' : 'Confirm daily payrolls and view monthly reports'}
+        subtitle={isAr ? 'تأكيد الرواتب اليومية وعرض التقارير الشهرية' : 'Confirm daily payrolls and view monthly reports'}
         showBack
       />
 
-      {/* Tab bar */}
+      {/* ── Tab bar ── */}
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.tabScroll} contentContainerStyle={styles.tabContent}>
         {TABS.map(t => (
           <TouchableOpacity
@@ -345,30 +415,39 @@ export function PayrollAdminScreen() {
         ))}
       </ScrollView>
 
-      {/* ── DAILY TAB ── */}
+      {/* ══════════════════════════════════════════════════════════════════
+          DAILY TAB
+      ══════════════════════════════════════════════════════════════════ */}
       {tab === 'daily' && (
         <FlatList
           data={daily}
-          keyExtractor={(i, idx) => `${i.id}-${idx}`}
+          keyExtractor={(i, idx) => `d-${i.id}-${idx}`}
           contentContainerStyle={styles.list}
           showsVerticalScrollIndicator={false}
           refreshControl={<RefreshControl refreshing={dailyRefresh} onRefresh={() => { setDailyRefresh(true); void loadDaily(); }} tintColor={colors.primary} />}
           ListHeaderComponent={
             <View>
+              {/* 4 KPI cards */}
               <View style={styles.statsRow}>
-                <View style={[styles.statCard, { backgroundColor: `${colors.warning}15` }]}>
-                  <Text style={[styles.statNum, { color: colors.warning }]}>{pendingCount}</Text>
-                  <Text style={[styles.statLbl, { color: colors.warning }]}>{isAr ? 'معلق' : 'Pending'}</Text>
+                <View style={[styles.kpiCard, { backgroundColor: '#f97316' }]}>
+                  <Text style={styles.kpiNum}>{pendingCount}</Text>
+                  <Text style={styles.kpiLbl}>{isAr ? 'معلق' : 'Pending'}</Text>
                 </View>
-                <View style={[styles.statCard, { backgroundColor: `${colors.success}15` }]}>
-                  <Text style={[styles.statNum, { color: colors.success }]}>{confirmedCount}</Text>
-                  <Text style={[styles.statLbl, { color: colors.success }]}>{isAr ? 'مؤكد' : 'Confirmed'}</Text>
+                <View style={[styles.kpiCard, { backgroundColor: '#10b981' }]}>
+                  <Text style={styles.kpiNum}>{confirmedCount}</Text>
+                  <Text style={styles.kpiLbl}>{isAr ? 'مؤكد' : 'Confirmed'}</Text>
                 </View>
-                <View style={[styles.statCard, { backgroundColor: colors.surface }]}>
-                  <Text style={[styles.statNum, { color: colors.text }]}>${fmt(dailyTotal)}</Text>
-                  <Text style={[styles.statLbl, { color: colors.textMuted }]}>{isAr ? 'الإجمالي' : 'Total'}</Text>
+                <View style={[styles.kpiCard, { backgroundColor: '#3b82f6' }]}>
+                  <Text style={styles.kpiNum}>${fmt(dailyTotal)}</Text>
+                  <Text style={styles.kpiLbl}>{isAr ? 'الإجمالي' : 'Day Total'}</Text>
+                </View>
+                <View style={[styles.kpiCard, { backgroundColor: '#8b5cf6' }]}>
+                  <Text style={styles.kpiNum}>{daily.length}</Text>
+                  <Text style={styles.kpiLbl}>{isAr ? 'موظفون' : 'Employees'}</Text>
                 </View>
               </View>
+
+              {/* Date filter + Calculate */}
               <View style={[styles.filterRow, { backgroundColor: colors.surface, borderColor: colors.border }]}>
                 <Ionicons name="calendar-outline" size={15} color={colors.textMuted} />
                 <TextInput
@@ -388,8 +467,20 @@ export function PayrollAdminScreen() {
                   onPress={handleCalculateDaily}
                   disabled={calculating}
                 >
-                  {calculating ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.smallBtnText}>{isAr ? 'احتساب' : 'Calc'}</Text>}
+                  {calculating
+                    ? <ActivityIndicator size="small" color="#fff" />
+                    : <Text style={styles.smallBtnText}>{isAr ? 'احتساب' : 'Calc All'}</Text>}
                 </TouchableOpacity>
+              </View>
+
+              {/* Flag legend */}
+              <View style={styles.legendRow}>
+                <View style={[styles.legendChip, { backgroundColor: '#fef9c3', borderColor: '#fde047' }]}>
+                  <Text style={[styles.legendText, { color: '#854d0e' }]}>⚠ {isAr ? 'بدون خروج' : 'Missing CO'}</Text>
+                </View>
+                <View style={[styles.legendChip, { backgroundColor: '#fee2e2', borderColor: '#fca5a5' }]}>
+                  <Text style={[styles.legendText, { color: '#991b1b' }]}>⚠ {isAr ? 'يوم قصير' : 'Short day'}</Text>
+                </View>
               </View>
             </View>
           }
@@ -402,61 +493,114 @@ export function PayrollAdminScreen() {
                 </View>
           }
           renderItem={({ item: r }) => {
-            const confirmed = !!r.isConfirmed;
-            const roleColor = ROLE_COLORS[r.user?.role ?? ''] ?? colors.primary;
-            const missingCO = !r.attendance?.checkOut;
+            const confirmed  = !!r.isConfirmed;
+            const roleColor  = ROLE_COLORS[r.user?.role ?? ''] ?? colors.primary;
+            const missingCO  = !r.attendance?.checkOut;
+            const shortDay   = (r.hoursWorked ?? 0) > 0 && (r.hoursWorked ?? 0) < 2;
+            const leaveMeta  = r.leaveType ? LEAVE_LABELS[r.leaveType] : null;
+            const flagColor  = missingCO || shortDay ? '#f97316' : colors.success;
+
             return (
               <View style={[styles.card, { backgroundColor: colors.surface, borderLeftColor: confirmed ? colors.success : colors.warning }]}>
+                {/* Header row */}
                 <View style={styles.cardHead}>
                   <View style={{ flex: 1 }}>
                     <Text style={[styles.cardName, { color: colors.text }]}>{r.user?.fullName ?? `#${r.id}`}</Text>
                     <View style={styles.pillRow}>
-                      <View style={[styles.pill, { backgroundColor: `${roleColor}15` }]}>
+                      <View style={[styles.pill, { backgroundColor: `${roleColor}18` }]}>
                         <Text style={[styles.pillText, { color: roleColor }]}>{r.user?.role ?? '—'}</Text>
                       </View>
                       {r.date && <Text style={[styles.caption, { color: colors.textMuted }]}>{new Date(r.date).toLocaleDateString([], { month: 'short', day: 'numeric' })}</Text>}
+                      {/* Flags */}
+                      {missingCO && <View style={[styles.flagChip, { backgroundColor: '#fef9c3', borderColor: '#fde047' }]}><Text style={[styles.flagText, { color: '#854d0e' }]}>⚠ {isAr ? 'بدون خروج' : 'No CO'}</Text></View>}
+                      {shortDay  && <View style={[styles.flagChip, { backgroundColor: '#fee2e2', borderColor: '#fca5a5' }]}><Text style={[styles.flagText, { color: '#991b1b' }]}>⚠ {isAr ? 'قصير' : 'Short'}</Text></View>}
                     </View>
                   </View>
                   <View style={{ alignItems: 'flex-end', gap: 4 }}>
-                    <Text style={[styles.payAmt, { color: colors.success }]}>${fmt(r.totalDailyPay ?? 0)}</Text>
-                    <View style={[styles.pill, { backgroundColor: confirmed ? `${colors.success}15` : `${colors.warning}15` }]}>
+                    <Text style={[styles.payAmt, { color: flagColor }]}>${fmtDec(r.totalDailyPay ?? 0)}</Text>
+                    <View style={[styles.pill, { backgroundColor: confirmed ? `${colors.success}18` : `${colors.warning}18` }]}>
                       <Text style={[styles.pillText, { color: confirmed ? colors.success : colors.warning }]}>
                         {confirmed ? (isAr ? 'مؤكد' : 'CONFIRMED') : (isAr ? 'معلق' : 'PENDING')}
                       </Text>
                     </View>
                   </View>
                 </View>
+
+                {/* Time / hours row */}
                 <View style={[styles.cardFoot, { borderTopColor: colors.border }]}>
-                  <View style={styles.infoChip}><Ionicons name="log-in-outline" size={11} color={colors.textMuted} /><Text style={[styles.caption, { color: colors.textMuted }]}>{fmtTime(r.attendance?.checkIn)}</Text></View>
-                  <View style={styles.infoChip}><Ionicons name="log-out-outline" size={11} color={missingCO ? colors.warning : colors.textMuted} /><Text style={[styles.caption, { color: missingCO ? colors.warning : colors.textMuted }]}>{missingCO ? (isAr ? 'مفقود' : 'Missing') : fmtTime(r.attendance?.checkOut)}</Text></View>
-                  <View style={styles.infoChip}><Ionicons name="time-outline" size={11} color={colors.textMuted} /><Text style={[styles.caption, { color: colors.textMuted }]}>{r.hoursWorked?.toFixed(1) ?? '—'}h</Text></View>
-                  {r.leaveType && <View style={[styles.pill, { backgroundColor: `${colors.info}15` }]}><Text style={[styles.pillText, { color: colors.info }]}>{r.leaveType}</Text></View>}
+                  <View style={styles.infoChip}>
+                    <Ionicons name="log-in-outline" size={11} color={colors.textMuted} />
+                    <Text style={[styles.caption, { color: colors.textMuted }]}>{fmtTime(r.attendance?.checkIn)}</Text>
+                  </View>
+                  <View style={styles.infoChip}>
+                    <Ionicons name="log-out-outline" size={11} color={missingCO ? colors.warning : colors.textMuted} />
+                    <Text style={[styles.caption, { color: missingCO ? colors.warning : colors.textMuted }]}>
+                      {missingCO ? (isAr ? 'مفقود' : 'Missing') : fmtTime(r.attendance?.checkOut)}
+                    </Text>
+                  </View>
+                  <View style={styles.infoChip}>
+                    <Ionicons name="time-outline" size={11} color={colors.textMuted} />
+                    <Text style={[styles.caption, { color: colors.textMuted }]}>{(r.hoursWorked ?? 0).toFixed(1)}h</Text>
+                  </View>
+                  {/* Leave badge */}
+                  {leaveMeta && (
+                    <View style={[styles.pill, { backgroundColor: `${leaveMeta.color}18`, borderWidth: 1, borderColor: `${leaveMeta.color}44` }]}>
+                      <Text style={[styles.pillText, { color: leaveMeta.color }]}>{isAr ? leaveMeta.ar : leaveMeta.en}</Text>
+                    </View>
+                  )}
                 </View>
-                {!confirmed && (
-                  <TouchableOpacity
-                    style={[styles.confirmBtn, { backgroundColor: colors.success }, confirmingId === r.id && { opacity: 0.6 }]}
-                    onPress={() => void handleConfirmRecord(r.id)}
-                    disabled={confirmingId === r.id}
-                  >
-                    {confirmingId === r.id
-                      ? <ActivityIndicator size="small" color="#fff" />
-                      : <><Ionicons name="checkmark-circle" size={14} color="#fff" /><Text style={styles.confirmText}>{isAr ? 'تأكيد الدفع' : 'Confirm Payment'}</Text></>
-                    }
-                  </TouchableOpacity>
-                )}
+
+                {/* Action row: Mark Leave + Confirm */}
+                <View style={styles.actionRow}>
+                  {/* Mark Leave button */}
+                  {r.attendance?.id && (
+                    <TouchableOpacity
+                      style={[styles.leaveBtn, { borderColor: colors.border }]}
+                      onPress={() => handleMarkLeave(r.attendance!.id, r.leaveType ?? null)}
+                      disabled={markingLeave}
+                    >
+                      <Ionicons name="medkit-outline" size={13} color={colors.textMuted} />
+                      <Text style={[styles.leaveBtnText, { color: colors.textMuted }]}>
+                        {r.leaveType
+                          ? (isAr ? 'تعديل الإجازة' : 'Edit Leave')
+                          : (isAr ? 'تحديد إجازة' : 'Mark Leave')}
+                      </Text>
+                    </TouchableOpacity>
+                  )}
+
+                  {/* Confirm button */}
+                  {!confirmed && (
+                    <TouchableOpacity
+                      style={[styles.confirmBtn, { backgroundColor: colors.success }, confirmingId === r.id && { opacity: 0.6 }]}
+                      onPress={() => void handleConfirmRecord(r.id)}
+                      disabled={confirmingId === r.id}
+                    >
+                      {confirmingId === r.id
+                        ? <ActivityIndicator size="small" color="#fff" />
+                        : <><Ionicons name="checkmark-circle" size={14} color="#fff" /><Text style={styles.confirmText}>{isAr ? 'تأكيد الدفع' : 'Confirm Payment'}</Text></>
+                      }
+                    </TouchableOpacity>
+                  )}
+                  {confirmed && r.confirmedBy?.fullName && (
+                    <Text style={[styles.caption, { color: colors.textMuted }]}>✓ {r.confirmedBy.fullName}</Text>
+                  )}
+                </View>
               </View>
             );
           }}
         />
       )}
 
-      {/* ── MONTHLY TAB ── */}
+      {/* ══════════════════════════════════════════════════════════════════
+          MONTHLY TAB
+      ══════════════════════════════════════════════════════════════════ */}
       {tab === 'monthly' && (
         <ScrollView
           contentContainerStyle={styles.list}
           showsVerticalScrollIndicator={false}
           refreshControl={<RefreshControl refreshing={monthlyRefresh} onRefresh={() => { setMonthlyRefresh(true); void loadMonthly(); }} tintColor={colors.primary} />}
         >
+          {/* Month filter */}
           <View style={[styles.filterRow, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <Ionicons name="calendar-outline" size={15} color={colors.textMuted} />
             <TextInput
@@ -482,24 +626,23 @@ export function PayrollAdminScreen() {
             <View style={styles.center}><ActivityIndicator size="large" color={colors.primary} /></View>
           ) : (
             <>
+              {/* 4 KPI cards */}
               <View style={styles.statsRow}>
-                <View style={[styles.statCard, { backgroundColor: `${colors.primary}15` }]}>
-                  <Text style={[styles.statNum, { color: colors.primary }]}>{overview?.totals.payrollCount ?? 0}</Text>
-                  <Text style={[styles.statLbl, { color: colors.primary }]}>{isAr ? 'سجلات' : 'Records'}</Text>
+                <View style={[styles.kpiCard, { backgroundColor: '#3b82f6' }]}>
+                  <Text style={styles.kpiNum}>{overview?.totals.payrollCount ?? 0}</Text>
+                  <Text style={styles.kpiLbl}>{isAr ? 'سجلات' : 'Records'}</Text>
                 </View>
-                <View style={[styles.statCard, { backgroundColor: `${colors.success}15` }]}>
-                  <Text style={[styles.statNum, { color: colors.success }]}>${fmt(overview?.totals.totalPayout ?? 0)}</Text>
-                  <Text style={[styles.statLbl, { color: colors.success }]}>{isAr ? 'الإجمالي' : 'Payout'}</Text>
+                <View style={[styles.kpiCard, { backgroundColor: '#10b981' }]}>
+                  <Text style={styles.kpiNum}>${fmt(overview?.totals.totalPayout ?? 0)}</Text>
+                  <Text style={styles.kpiLbl}>{isAr ? 'الإجمالي' : 'Payout'}</Text>
                 </View>
-              </View>
-              <View style={[styles.statsRow, { marginBottom: spacing.md }]}>
-                <View style={[styles.statCard, { backgroundColor: colors.surface }]}>
-                  <Text style={[styles.statNum, { color: colors.text }]}>${fmt(overview?.totals.totalBaseSalary ?? 0)}</Text>
-                  <Text style={[styles.statLbl, { color: colors.textMuted }]}>{isAr ? 'الأساسي' : 'Base'}</Text>
+                <View style={[styles.kpiCard, { backgroundColor: '#8b5cf6' }]}>
+                  <Text style={styles.kpiNum}>${fmt(overview?.totals.totalBaseSalary ?? 0)}</Text>
+                  <Text style={styles.kpiLbl}>{isAr ? 'الأساسي' : 'Base'}</Text>
                 </View>
-                <View style={[styles.statCard, { backgroundColor: `${colors.warning}15` }]}>
-                  <Text style={[styles.statNum, { color: colors.warning }]}>${fmt(overview?.totals.totalOvertimeSalary ?? 0)}</Text>
-                  <Text style={[styles.statLbl, { color: colors.warning }]}>{isAr ? 'إضافي' : 'OT'}</Text>
+                <View style={[styles.kpiCard, { backgroundColor: '#f97316' }]}>
+                  <Text style={styles.kpiNum}>${fmt(overview?.totals.totalOvertimeSalary ?? 0)}</Text>
+                  <Text style={styles.kpiLbl}>{isAr ? 'الإضافي' : 'Overtime'}</Text>
                 </View>
               </View>
 
@@ -511,15 +654,15 @@ export function PayrollAdminScreen() {
                     const pct = overview ? (r.totalPayout / (overview.totals.totalPayout || 1)) * 100 : 0;
                     const c = ROLE_COLORS[r.role] ?? colors.primary;
                     return (
-                      <View key={r.role} style={{ marginBottom: spacing.sm }}>
-                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 3 }}>
+                      <View key={r.role} style={[styles.roleRow, { backgroundColor: colors.background, borderColor: colors.border }]}>
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
                           <Text style={[styles.pillText, { color: c, fontSize: 12 }]}>{r.role}</Text>
                           <Text style={[styles.caption, { color: colors.text, fontWeight: '700' }]}>${fmt(r.totalPayout)}</Text>
                         </View>
                         <View style={[styles.progressBg, { backgroundColor: colors.border }]}>
                           <View style={[styles.progressFill, { width: `${pct}%` as any, backgroundColor: c }]} />
                         </View>
-                        <Text style={[styles.caption, { color: colors.textMuted, marginTop: 2 }]}>{r.payrollCount} {isAr ? 'موظف' : 'employees'}</Text>
+                        <Text style={[styles.caption, { color: colors.textMuted, marginTop: 2 }]}>{r.payrollCount} {isAr ? 'موظف' : 'employees'} · {pct.toFixed(0)}%</Text>
                       </View>
                     );
                   })}
@@ -531,13 +674,14 @@ export function PayrollAdminScreen() {
               {monthlyRecords.map(r => {
                 const isEd = editMonthlyId === r.id;
                 const rc = ROLE_COLORS[r.user?.role ?? ''] ?? colors.primary;
+                const deleting = deletingMoId === r.id;
                 return (
-                  <View key={r.id} style={[styles.card, { backgroundColor: colors.surface }]}>
+                  <View key={r.id} style={[styles.card, { backgroundColor: colors.surface, borderLeftColor: rc }]}>
                     <View style={styles.cardHead}>
                       <View style={{ flex: 1 }}>
                         <Text style={[styles.cardName, { color: colors.text }]}>{r.user?.fullName ?? '—'}</Text>
                         <View style={styles.pillRow}>
-                          <View style={[styles.pill, { backgroundColor: `${rc}15` }]}><Text style={[styles.pillText, { color: rc }]}>{r.user?.role ?? '—'}</Text></View>
+                          <View style={[styles.pill, { backgroundColor: `${rc}18` }]}><Text style={[styles.pillText, { color: rc }]}>{r.user?.role ?? '—'}</Text></View>
                           {r.month && <Text style={[styles.caption, { color: colors.textMuted }]}>{r.month}</Text>}
                         </View>
                       </View>
@@ -564,20 +708,18 @@ export function PayrollAdminScreen() {
                             <TouchableOpacity onPress={() => { setEditMonthlyId(r.id); setEditMonthlyVal(String(r.totalSalary)); }}>
                               <Ionicons name="pencil-outline" size={14} color={colors.primary} />
                             </TouchableOpacity>
-                            <TouchableOpacity onPress={() => handleDeleteMonthly(r.id)}>
-                              <Ionicons name="trash-outline" size={14} color={colors.danger} />
+                            <TouchableOpacity onPress={() => handleDeleteMonthly(r.id)} disabled={deleting}>
+                              {deleting ? <ActivityIndicator size="small" color={colors.danger} /> : <Ionicons name="trash-outline" size={14} color={colors.danger} />}
                             </TouchableOpacity>
                           </View>
                         )}
                       </View>
                     </View>
-                    {(r.totalHours != null || r.baseSalary != null) && (
-                      <View style={[styles.cardFoot, { borderTopColor: colors.border }]}>
-                        {r.totalHours != null && <View style={styles.infoChip}><Ionicons name="time-outline" size={11} color={colors.textMuted} /><Text style={[styles.caption, { color: colors.textMuted }]}>{r.totalHours.toFixed(1)}h</Text></View>}
-                        {r.baseSalary != null && <View style={styles.infoChip}><Ionicons name="cash-outline" size={11} color={colors.textMuted} /><Text style={[styles.caption, { color: colors.textMuted }]}>{isAr ? 'أساسي' : 'Base'}: ${fmt(r.baseSalary)}</Text></View>}
-                        {(r.overtimeSalary ?? 0) > 0 && <View style={styles.infoChip}><Ionicons name="add-circle-outline" size={11} color={colors.warning} /><Text style={[styles.caption, { color: colors.warning }]}>+${(r.overtimeSalary ?? 0).toFixed(1)}</Text></View>}
-                      </View>
-                    )}
+                    <View style={[styles.cardFoot, { borderTopColor: colors.border }]}>
+                      {r.totalHours != null && <View style={styles.infoChip}><Ionicons name="time-outline" size={11} color={colors.textMuted} /><Text style={[styles.caption, { color: colors.textMuted }]}>{r.totalHours.toFixed(1)}h</Text></View>}
+                      {r.baseSalary != null && <View style={styles.infoChip}><Ionicons name="cash-outline" size={11} color={colors.textMuted} /><Text style={[styles.caption, { color: colors.textMuted }]}>{isAr ? 'أساسي' : 'Base'}: ${fmt(r.baseSalary)}</Text></View>}
+                      {(r.overtimeSalary ?? 0) > 0 && <View style={styles.infoChip}><Ionicons name="add-circle-outline" size={11} color={colors.warning} /><Text style={[styles.caption, { color: colors.warning }]}>+${(r.overtimeSalary ?? 0).toFixed(1)} OT</Text></View>}
+                    </View>
                   </View>
                 );
               })}
@@ -592,7 +734,9 @@ export function PayrollAdminScreen() {
         </ScrollView>
       )}
 
-      {/* ── USER SALARIES TAB ── */}
+      {/* ══════════════════════════════════════════════════════════════════
+          USER SALARIES TAB
+      ══════════════════════════════════════════════════════════════════ */}
       {tab === 'salaries' && (
         <FlatList
           data={userSalaries}
@@ -600,6 +744,19 @@ export function PayrollAdminScreen() {
           contentContainerStyle={styles.list}
           showsVerticalScrollIndicator={false}
           refreshControl={<RefreshControl refreshing={salariesRefresh} onRefresh={() => { setSalariesRefresh(true); void loadUserSalaries(); }} tintColor={colors.primary} />}
+          ListHeaderComponent={
+            <View style={[styles.infoBanner, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+              <View style={[styles.infoBannerIcon, { backgroundColor: colors.primary }]}>
+                <Ionicons name="people" size={20} color="#fff" />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.cardName, { color: colors.text }]}>{isAr ? 'رواتب الموظفين' : 'Employee Salaries'}</Text>
+                <Text style={[styles.caption, { color: colors.textMuted, marginTop: 2 }]}>
+                  {isAr ? 'اضبط الراتب الشهري لكل موظف. اترك فارغاً لاستخدام راتب الدور الافتراضي.' : 'Set a monthly salary per employee. Leave blank to use the role default.'}
+                </Text>
+              </View>
+            </View>
+          }
           ListEmptyComponent={
             salariesLoading
               ? <View style={styles.center}><ActivityIndicator size="large" color={colors.primary} /></View>
@@ -616,8 +773,8 @@ export function PayrollAdminScreen() {
                   <View style={{ flex: 1 }}>
                     <Text style={[styles.cardName, { color: colors.text }]}>{u.fullName}</Text>
                     <View style={styles.pillRow}>
-                      <View style={[styles.pill, { backgroundColor: `${rc}15` }]}><Text style={[styles.pillText, { color: rc }]}>{u.role}</Text></View>
-                      {isCustom && <View style={[styles.pill, { backgroundColor: `${colors.info}15` }]}><Text style={[styles.pillText, { color: colors.info }]}>{isAr ? 'مخصص' : 'Custom'}</Text></View>}
+                      <View style={[styles.pill, { backgroundColor: `${rc}18` }]}><Text style={[styles.pillText, { color: rc }]}>{u.role}</Text></View>
+                      {isCustom && <View style={[styles.pill, { backgroundColor: `${colors.info}18` }]}><Text style={[styles.pillText, { color: colors.info }]}>{isAr ? 'مخصص' : 'Custom'}</Text></View>}
                     </View>
                   </View>
                   {isEd ? (
@@ -627,7 +784,7 @@ export function PayrollAdminScreen() {
                         value={editSalaryVal}
                         onChangeText={setEditSalaryVal}
                         keyboardType="decimal-pad"
-                        placeholder={`${u.roleDefaultSalary}`}
+                        placeholder={`${u.roleDefaultSalary} (default)`}
                         placeholderTextColor={colors.textMuted}
                         autoFocus
                       />
@@ -642,14 +799,16 @@ export function PayrollAdminScreen() {
                     </View>
                   ) : (
                     <View style={{ alignItems: 'flex-end', gap: 4 }}>
-                      <Text style={[styles.payAmt, { color: isCustom ? colors.info : colors.success }]}>${fmt(u.effectiveSalary)}<Text style={{ fontSize: 10, color: colors.textMuted }}>/mo</Text></Text>
+                      <Text style={[styles.payAmt, { color: isCustom ? colors.info : colors.success }]}>
+                        ${fmt(u.effectiveSalary)}<Text style={{ fontSize: 10, color: colors.textMuted }}>/mo</Text>
+                      </Text>
                       <Text style={[styles.caption, { color: colors.textMuted }]}>${(u.effectiveSalary / 30).toFixed(1)}/day</Text>
-                      <View style={{ flexDirection: 'row', gap: 8 }}>
+                      <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
                         <TouchableOpacity onPress={() => { setEditSalaryUserId(u.id); setEditSalaryVal(String(u.effectiveSalary)); }}>
                           <Ionicons name="pencil-outline" size={14} color={colors.primary} />
                         </TouchableOpacity>
                         {isCustom && (
-                          <TouchableOpacity onPress={() => void handleResetUserSalary(u.id)}>
+                          <TouchableOpacity onPress={() => handleResetUserSalary(u.id, u.fullName)}>
                             <Ionicons name="refresh-outline" size={14} color={colors.textMuted} />
                           </TouchableOpacity>
                         )}
@@ -659,7 +818,7 @@ export function PayrollAdminScreen() {
                 </View>
                 {!isCustom && (
                   <Text style={[styles.caption, { color: colors.textMuted, marginTop: 4 }]}>
-                    {isAr ? `راتب الدور: $${fmt(u.roleDefaultSalary)}` : `Role default: $${fmt(u.roleDefaultSalary)}`}
+                    {isAr ? `راتب الدور: $${fmt(u.roleDefaultSalary)}` : `Role default: $${fmt(u.roleDefaultSalary)}/mo`}
                   </Text>
                 )}
               </View>
@@ -668,21 +827,35 @@ export function PayrollAdminScreen() {
         />
       )}
 
-      {/* ── SALARY CONFIG TAB ── */}
+      {/* ══════════════════════════════════════════════════════════════════
+          SALARY CONFIG TAB
+      ══════════════════════════════════════════════════════════════════ */}
       {tab === 'config' && (
         <ScrollView contentContainerStyle={styles.list} showsVerticalScrollIndicator={false}>
+          {/* Monthly salary config */}
+          <View style={[styles.infoBanner, { backgroundColor: colors.surface, borderColor: colors.border, marginBottom: spacing.md }]}>
+            <View style={[styles.infoBannerIcon, { backgroundColor: colors.primary }]}>
+              <Ionicons name="settings" size={20} color="#fff" />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.cardName, { color: colors.text }]}>{isAr ? 'إعداد الرواتب الشهرية' : 'Monthly Salary Configuration'}</Text>
+              <Text style={[styles.caption, { color: colors.textMuted, marginTop: 2 }]}>
+                {isAr ? 'الراتب اليومي = الشهري ÷ 30' : 'Daily rate = monthly ÷ 30'}
+              </Text>
+            </View>
+          </View>
+
           {configLoading ? (
             <View style={styles.center}><ActivityIndicator size="large" color={colors.primary} /></View>
           ) : (
             <>
-              <Text style={[styles.sectionTitle, { color: colors.text }]}>{isAr ? 'رواتب الأدوار الشهرية' : 'Monthly Salary by Role'}</Text>
               {configs.map(c => {
                 const isEd = editConfigRole === c.role;
                 const rc = ROLE_COLORS[c.role] ?? colors.primary;
                 return (
                   <View key={c.id} style={[styles.configRow, { backgroundColor: colors.surface, borderColor: colors.border }]}>
                     <View style={[styles.pill, { backgroundColor: `${rc}20`, paddingHorizontal: 12 }]}>
-                      <Text style={[styles.pillText, { color: rc, fontSize: 12 }]}>{c.role}</Text>
+                      <Text style={[styles.pillText, { color: rc, fontSize: 13 }]}>{c.role}</Text>
                     </View>
                     {isEd ? (
                       <View style={{ flex: 1, flexDirection: 'row', gap: 8, alignItems: 'center' }}>
@@ -715,44 +888,72 @@ export function PayrollAdminScreen() {
                 );
               })}
 
-              <Text style={[styles.sectionTitle, { color: colors.text, marginTop: spacing.lg }]}>{isAr ? 'قواعد الخصم التلقائي' : 'Deduction Rules'}</Text>
+              {/* Deduction Rules */}
+              <View style={[styles.dedHeader, { borderColor: colors.border }]}>
+                <View style={[styles.infoBannerIcon, { backgroundColor: '#f59e0b', width: 36, height: 36 }]}>
+                  <Ionicons name="alert-circle" size={18} color="#fff" />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.cardName, { color: colors.text }]}>{isAr ? 'قواعد الخصم التلقائي' : 'Automated Deduction Rules'}</Text>
+                  <Text style={[styles.caption, { color: colors.textMuted }]}>
+                    {isAr ? 'تُطبَّق تلقائياً عند حساب الرواتب اليومية' : 'Applied automatically when calculating daily payroll'}
+                  </Text>
+                </View>
+              </View>
+
               {dedLoading && <ActivityIndicator color={colors.primary} style={{ marginVertical: spacing.md }} />}
-              {deductions.map(rule => {
-                const meta = DEDUCTION_META[rule.type];
-                if (!meta) return null;
-                const isEd = editRuleType === rule.type;
-                const isTog = togglingRule === rule.type;
+              {RULE_ORDER.map(type => {
+                const rule = deductions.find(r => r.type === type);
+                const meta = DEDUCTION_META[type];
+                if (!rule || !meta) return null;
+                const isEd  = editRuleType === type;
+                const isTog = togglingRule === type;
                 return (
-                  <View key={rule.type} style={[styles.ruleCard, { backgroundColor: colors.surface, borderColor: rule.isActive ? colors.primary : colors.border }]}>
+                  <View key={type} style={[styles.ruleCard, { backgroundColor: colors.surface, borderColor: rule.isActive ? colors.primary : colors.border }]}>
                     <View style={styles.ruleHead}>
                       <Ionicons name={meta.icon as any} size={18} color={rule.isActive ? colors.primary : colors.textMuted} />
                       <View style={{ flex: 1 }}>
-                        <Text style={[styles.cardName, { color: colors.text }]}>{isAr ? meta.labelAr : meta.labelEn}</Text>
-                        <View style={styles.pillRow}>
-                          {meta.showThreshold && (
-                            <View style={[styles.pill, { backgroundColor: colors.surfaceAlt }]}>
-                              <Text style={[styles.pillText, { color: colors.textMuted }]}>{isAr ? 'الحد' : 'Threshold'}: {rule.thresholdMinutes}min</Text>
-                            </View>
-                          )}
-                          {meta.showValue && (
-                            <View style={[styles.pill, { backgroundColor: colors.surfaceAlt }]}>
-                              <Text style={[styles.pillText, { color: colors.textMuted }]}>{rule.deductionValue}{rule.type === 'SICK_LEAVE' ? '%' : '$'}</Text>
-                            </View>
-                          )}
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                          <Text style={[styles.cardName, { color: colors.text }]}>{isAr ? meta.labelAr : meta.labelEn}</Text>
+                          {isTog
+                            ? <ActivityIndicator size="small" color={colors.primary} />
+                            : <Switch
+                                value={rule.isActive}
+                                onValueChange={v => void handleToggleRule(type, v)}
+                                trackColor={{ false: colors.border, true: `${colors.primary}70` }}
+                                thumbColor={rule.isActive ? colors.primary : colors.textMuted}
+                              />
+                          }
+                          <Text style={[styles.caption, { color: rule.isActive ? colors.primary : colors.textMuted, fontWeight: '700' }]}>
+                            {rule.isActive ? (isAr ? 'مُفعَّل' : 'Active') : (isAr ? 'معطَّل' : 'Inactive')}
+                          </Text>
                         </View>
-                      </View>
-                      <View style={{ alignItems: 'flex-end', gap: 6 }}>
-                        {isTog
-                          ? <ActivityIndicator size="small" color={colors.primary} />
-                          : <Switch value={rule.isActive} onValueChange={v => void handleToggleRule(rule.type, v)} trackColor={{ false: colors.border, true: `${colors.primary}70` }} thumbColor={rule.isActive ? colors.primary : colors.textMuted} />
-                        }
+                        <Text style={[styles.caption, { color: colors.textMuted, marginTop: 2 }]}>{isAr ? meta.descAr : meta.descEn}</Text>
+
+                        {/* Display values */}
                         {!isEd && (
-                          <TouchableOpacity onPress={() => { setEditRuleType(rule.type); setEditThreshold(String(rule.thresholdMinutes)); setEditDedVal(String(rule.deductionValue)); }}>
-                            <Ionicons name="pencil-outline" size={14} color={colors.primary} />
-                          </TouchableOpacity>
+                          <View style={{ flexDirection: 'row', gap: 6, marginTop: spacing.xs, flexWrap: 'wrap' }}>
+                            {meta.showThreshold && (
+                              <View style={[styles.pill, { backgroundColor: colors.surfaceAlt }]}>
+                                <Text style={[styles.pillText, { color: colors.textMuted }]}>{isAr ? 'الحد' : 'Threshold'}: {rule.thresholdMinutes}min</Text>
+                              </View>
+                            )}
+                            {meta.showValue && (
+                              <View style={[styles.pill, { backgroundColor: colors.surfaceAlt }]}>
+                                <Text style={[styles.pillText, { color: colors.textMuted }]}>{rule.deductionValue}{type === 'SICK_LEAVE' ? '%' : '$'}</Text>
+                              </View>
+                            )}
+                            <TouchableOpacity
+                              style={[styles.pill, { backgroundColor: `${colors.primary}15` }]}
+                              onPress={() => { setEditRuleType(type); setEditThreshold(String(rule.thresholdMinutes)); setEditDedVal(String(rule.deductionValue)); }}
+                            >
+                              <Text style={[styles.pillText, { color: colors.primary }]}><Ionicons name="pencil-outline" size={10} /> {isAr ? 'تعديل' : 'Edit'}</Text>
+                            </TouchableOpacity>
+                          </View>
                         )}
                       </View>
                     </View>
+
                     {isEd && (
                       <View style={[styles.ruleEdit, { borderTopColor: colors.border }]}>
                         {meta.showThreshold && (
@@ -763,7 +964,7 @@ export function PayrollAdminScreen() {
                         )}
                         {meta.showValue && (
                           <View style={styles.editFieldRow}>
-                            <Text style={[styles.caption, { color: colors.textMuted }]}>{isAr ? 'القيمة' : 'Value'}</Text>
+                            <Text style={[styles.caption, { color: colors.textMuted }]}>{isAr ? 'القيمة' : 'Value'} {type === 'SICK_LEAVE' ? '(%)' : '($)'}</Text>
                             <TextInput style={[styles.inlineInput, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt, width: 90 }]} value={editDedVal} onChangeText={setEditDedVal} keyboardType="decimal-pad" />
                           </View>
                         )}
@@ -784,32 +985,37 @@ export function PayrollAdminScreen() {
           )}
         </ScrollView>
       )}
-
     </SafeAreaView>
   );
 }
+
+// ── Styles ────────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
   safe:   { flex: 1 },
   center: { minHeight: 200, alignItems: 'center', justifyContent: 'center' },
   list:   { padding: spacing.md, paddingBottom: 40 },
 
-  tabScroll:  { flexGrow: 0 },
-  tabContent: { paddingHorizontal: spacing.md, paddingVertical: spacing.sm, gap: 8 },
-  tabChip:    { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 12, paddingVertical: 7, borderRadius: radius.full, borderWidth: 1.5 },
-  tabText:    { fontSize: 12, fontWeight: '700' },
-  pendingDot: { minWidth: 16, height: 16, borderRadius: 8, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4 },
+  tabScroll:      { flexGrow: 0 },
+  tabContent:     { paddingHorizontal: spacing.md, paddingVertical: spacing.sm, gap: 8 },
+  tabChip:        { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 12, paddingVertical: 7, borderRadius: radius.full, borderWidth: 1.5 },
+  tabText:        { fontSize: 12, fontWeight: '700' },
+  pendingDot:     { minWidth: 16, height: 16, borderRadius: 8, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4 },
   pendingDotText: { fontSize: 9, fontWeight: '800', color: '#fff' },
 
-  statsRow: { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.sm },
-  statCard: { flex: 1, borderRadius: radius.md, padding: spacing.sm, alignItems: 'center', gap: 2, ...shadow.sm },
-  statNum:  { fontSize: 18, fontWeight: '800' },
-  statLbl:  { fontSize: 10, fontWeight: '700' },
+  statsRow: { flexDirection: 'row', gap: spacing.xs, marginBottom: spacing.sm },
+  kpiCard:  { flex: 1, borderRadius: radius.md, padding: spacing.sm, alignItems: 'center', gap: 2, ...shadow.sm },
+  kpiNum:   { fontSize: 16, fontWeight: '800', color: '#fff' },
+  kpiLbl:   { fontSize: 9, fontWeight: '700', color: 'rgba(255,255,255,0.85)' },
 
-  filterRow:  { flexDirection: 'row', alignItems: 'center', gap: 8, borderRadius: radius.md, borderWidth: 1.5, paddingHorizontal: spacing.sm, paddingVertical: 8, marginBottom: spacing.md },
-  filterInput:{ flex: 1, fontSize: 14, paddingVertical: 0 },
-  smallBtn:   { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, paddingHorizontal: 12, paddingVertical: 7, borderRadius: radius.md },
+  filterRow:   { flexDirection: 'row', alignItems: 'center', gap: 8, borderRadius: radius.md, borderWidth: 1.5, paddingHorizontal: spacing.sm, paddingVertical: 8, marginBottom: spacing.sm },
+  filterInput: { flex: 1, fontSize: 14, paddingVertical: 0 },
+  smallBtn:    { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, paddingHorizontal: 12, paddingVertical: 7, borderRadius: radius.md },
   smallBtnText:{ fontSize: 12, fontWeight: '700', color: '#fff' },
+
+  legendRow: { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.md, flexWrap: 'wrap' },
+  legendChip:{ borderWidth: 1, borderRadius: 4, paddingHorizontal: 7, paddingVertical: 2 },
+  legendText:{ fontSize: 11, fontWeight: '600' },
 
   card:     { borderRadius: radius.lg, padding: spacing.md, marginBottom: spacing.sm, borderLeftWidth: 3, borderLeftColor: 'transparent', ...shadow.sm },
   cardHead: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 4 },
@@ -821,17 +1027,30 @@ const styles = StyleSheet.create({
   caption:  { ...typography.caption },
   payAmt:   { fontSize: 16, fontWeight: '800' },
   infoChip: { flexDirection: 'row', alignItems: 'center', gap: 3 },
-  confirmBtn:  { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, borderRadius: radius.md, paddingVertical: 8, marginTop: spacing.sm },
+
+  flagChip: { borderWidth: 1, borderRadius: 4, paddingHorizontal: 6, paddingVertical: 1 },
+  flagText: { fontSize: 10, fontWeight: '700' },
+
+  actionRow:   { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginTop: spacing.sm, flexWrap: 'wrap' },
+  leaveBtn:    { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 6, borderRadius: radius.md, borderWidth: 1 },
+  leaveBtnText:{ fontSize: 12, fontWeight: '600' },
+  confirmBtn:  { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, borderRadius: radius.md, paddingVertical: 8 },
   confirmText: { fontSize: 13, fontWeight: '700', color: '#fff' },
+
   inlineInput: { borderWidth: 1.5, borderRadius: radius.sm, paddingHorizontal: 10, paddingVertical: 6, fontSize: 14 },
 
-  section:     { borderRadius: radius.lg, padding: spacing.md, marginBottom: spacing.sm, ...shadow.sm },
-  sectionTitle:{ ...typography.h4, marginBottom: spacing.sm },
-  progressBg:  { height: 5, borderRadius: 99, marginBottom: 2 },
-  progressFill:{ height: 5, borderRadius: 99 },
+  section:      { borderRadius: radius.lg, padding: spacing.md, marginBottom: spacing.sm, ...shadow.sm },
+  sectionTitle: { ...typography.h4, marginBottom: spacing.sm },
+  roleRow:      { borderWidth: 1, borderRadius: radius.md, padding: spacing.sm, marginBottom: spacing.sm },
+  progressBg:   { height: 5, borderRadius: 99, marginBottom: 2 },
+  progressFill: { height: 5, borderRadius: 99 },
 
-  configRow:   { flexDirection: 'row', alignItems: 'center', gap: spacing.md, borderRadius: radius.md, borderWidth: 1, padding: spacing.md, marginBottom: spacing.sm },
+  infoBanner:     { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.md, borderWidth: 1, borderRadius: radius.xl, padding: spacing.md, marginBottom: spacing.sm },
+  infoBannerIcon: { width: 44, height: 44, borderRadius: radius.lg, alignItems: 'center', justifyContent: 'center' },
 
+  configRow:    { flexDirection: 'row', alignItems: 'center', gap: spacing.md, borderRadius: radius.md, borderWidth: 1, padding: spacing.md, marginBottom: spacing.sm },
+
+  dedHeader:    { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.md, borderTopWidth: 1, paddingTop: spacing.md, marginTop: spacing.md, marginBottom: spacing.sm },
   ruleCard:     { borderRadius: radius.lg, borderWidth: 1.5, padding: spacing.md, marginBottom: spacing.sm },
   ruleHead:     { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.sm },
   ruleEdit:     { borderTopWidth: 1, marginTop: spacing.sm, paddingTop: spacing.sm },

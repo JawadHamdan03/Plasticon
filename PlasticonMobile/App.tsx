@@ -19,9 +19,10 @@ function AppContent() {
   const navigationRef = useRef<NavigationContainerRef<any>>(null);
 
   useEffect(() => {
-    // Request permission and start polling once the app mounts
+    // Request permission then start polling regardless — polling tracks
+    // unread IDs even without permission; it just skips showing banners.
     requestNotificationPermission().then((granted) => {
-      if (granted) startNotificationPolling();
+      startNotificationPolling(granted);
     });
 
     return () => stopNotificationPolling();

@@ -3,38 +3,49 @@ import * as Device from 'expo-device';
 import { Platform } from 'react-native';
 import { api } from '../api/client';
 
-// ─── Show notifications as banners even when the app is in the foreground ─────
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: true,
-    shouldShowBanner: true,
-    shouldShowList: true,
-  }),
-});
+// ─── Detect if running inside Expo Go (limited notification support) ──────────
+// expo-notifications local scheduling still works in Expo Go; only remote
+// FCM/APNs push was removed. We wrap everything in try/catch so the app
+// never crashes regardless of environment.
+
+// Show notifications as banners even when the app is in the foreground
+try {
+  Notifications.setNotificationHandler({
+    handleNotification: async () => ({
+      shouldShowAlert: true,
+      shouldPlaySound: true,
+      shouldSetBadge: true,
+      shouldShowBanner: true,
+      shouldShowList: true,
+    }),
+  });
+} catch { /* Expo Go may not support all handler options */ }
 
 // ─── Request permissions ──────────────────────────────────────────────────────
 export async function requestNotificationPermission(): Promise<boolean> {
-  if (!Device.isDevice) return false; // simulator/emulator — skip
+  try {
+    if (!Device.isDevice) return false; // emulator/simulator
 
-  const { status: existing } = await Notifications.getPermissionsAsync();
-  if (existing === 'granted') return true;
+    if (Platform.OS === 'android') {
+      // Create notification channel before requesting permission
+      await Notifications.setNotificationChannelAsync('default', {
+        name: 'Plasticon',
+        importance: Notifications.AndroidImportance.MAX,
+        vibrationPattern: [0, 250, 250, 250],
+        lightColor: '#FF6B35',
+        sound: 'default',
+        enableVibrate: true,
+      });
+    }
 
-  const { status } = await Notifications.requestPermissionsAsync();
-  if (status !== 'granted') return false;
+    const { status: existing } = await Notifications.getPermissionsAsync();
+    if (existing === 'granted') return true;
 
-  if (Platform.OS === 'android') {
-    await Notifications.setNotificationChannelAsync('default', {
-      name: 'Plasticon',
-      importance: Notifications.AndroidImportance.MAX,
-      vibrationPattern: [0, 250, 250, 250],
-      lightColor: '#FF6B35',
-      sound: 'default',
-    });
+    const { status } = await Notifications.requestPermissionsAsync();
+    return status === 'granted';
+  } catch {
+    return false; // gracefully degrade in Expo Go or unsupported environments
   }
-
-  return true;
 }
 
 // ─── Show a local notification immediately ────────────────────────────────────
@@ -43,27 +54,31 @@ export async function showLocalNotification(
   body: string,
   data?: Record<string, unknown>,
 ): Promise<void> {
-  await Notifications.scheduleNotificationAsync({
-    content: {
-      title,
-      body,
-      data: data ?? {},
-      sound: 'default',
-      ...(Platform.OS === 'android' && { channelId: 'default' }),
-    },
-    trigger: null, // fire immediately
-  });
+  try {
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title,
+        body,
+        data: data ?? {},
+        sound: 'default',
+        ...(Platform.OS === 'android' && { channelId: 'default' }),
+      },
+      trigger: null, // fire immediately
+    });
+  } catch { /* ignore if notifications are unavailable */ }
 }
 
-// ─── Poll backend and fire local notifications for new items ─────────────────
+// ─── Poll backend and fire local notifications for new unread items ───────────
 
 let _lastSeenId = 0;
 let _pollTimer: ReturnType<typeof setInterval> | null = null;
+let _notificationsGranted = false;
 
-export function startNotificationPolling(): void {
-  if (_pollTimer) return; // already running
+export function startNotificationPolling(granted = true): void {
+  _notificationsGranted = granted;
+  if (_pollTimer) return;
+  void pollOnce();
   _pollTimer = setInterval(() => { void pollOnce(); }, 30_000); // every 30 s
-  void pollOnce(); // fire immediately on start
 }
 
 export function stopNotificationPolling(): void {
@@ -76,16 +91,21 @@ async function pollOnce(): Promise<void> {
       '/notifications?limit=20',
     );
     const list = Array.isArray(res) ? res : [];
+
+    // Only look at items newer than what we've already seen
     const fresh = list.filter((n) => !n.isRead && n.id > _lastSeenId);
     if (fresh.length === 0) return;
 
     _lastSeenId = Math.max(...fresh.map((n) => n.id));
 
-    for (const n of fresh.slice(0, 3)) {
-      await showLocalNotification(n.title, n.message, { notificationId: n.id });
-    }
-    // If more than 3 unread at once, show a summary instead of spamming
-    if (fresh.length > 3) {
+    if (!_notificationsGranted) return; // permission denied — just track IDs
+
+    if (fresh.length <= 3) {
+      for (const n of fresh) {
+        await showLocalNotification(n.title, n.message, { notificationId: n.id });
+      }
+    } else {
+      // Batch into a single summary to avoid spamming
       await showLocalNotification(
         'Plasticon',
         `You have ${fresh.length} new notifications`,
@@ -93,15 +113,15 @@ async function pollOnce(): Promise<void> {
       );
     }
   } catch {
-    // silently ignore — user may be offline or logged out
+    // Silently ignore — user may be offline, logged out, or in Expo Go
   }
 }
 
-// ─── Badge count helpers ──────────────────────────────────────────────────────
+// ─── Badge helpers ────────────────────────────────────────────────────────────
 export async function setBadgeCount(count: number): Promise<void> {
-  await Notifications.setBadgeCountAsync(count);
+  try { await Notifications.setBadgeCountAsync(count); } catch { /* ignore */ }
 }
 
 export async function clearBadge(): Promise<void> {
-  await Notifications.setBadgeCountAsync(0);
+  try { await Notifications.setBadgeCountAsync(0); } catch { /* ignore */ }
 }

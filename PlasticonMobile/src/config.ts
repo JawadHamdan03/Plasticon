@@ -7,7 +7,7 @@
 // Uses typeof document check instead of Platform.OS so Metro bundler
 // platform shims cannot interfere with the URL at module-eval time.
 
-const DEVICE_HOST = '172.20.10.2';
+const DEVICE_HOST = '192.168.1.22';
 
 // `document` exists in every browser; undefined in React Native runtime
 const isBrowser = typeof document !== 'undefined';

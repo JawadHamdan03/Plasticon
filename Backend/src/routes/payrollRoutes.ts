@@ -51,7 +51,7 @@ router.post(
 );
 
 // ── Salary Config (must be before /:id) ──
-router.get("/salary-config", authorizeRoles(accountingRoles), getSalaryConfigsHandler);
+router.get("/salary-config", authorizeRoles(allRoles), getSalaryConfigsHandler);
 router.put("/salary-config", authorizeRoles([UserRole.ADMIN]), updateSalaryConfigHandler);
 
 // ── Per-user salary overrides ──

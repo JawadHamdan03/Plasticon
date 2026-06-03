@@ -27,7 +27,7 @@ interface QCheck {
 
 type FilterKey = 'all' | 'open' | 'resolved';
 
-const ISSUE_TYPES = ['DIMENSIONAL','SURFACE_DEFECT','MATERIAL_FAULT','PROCESS_DEVIATION','CONTAMINATION','ASSEMBLY_ERROR','OTHER'] as const;
+const ISSUE_TYPES = ['DIMENSIONAL','SURFACE_DEFECT','MATERIAL_FAULT','WEIGHT_ISSUE','COLOR_ISSUE','OTHER'] as const;
 type IssueType = typeof ISSUE_TYPES[number];
 
 const SEVERITIES = ['LOW','MEDIUM','HIGH','CRITICAL'] as const;
@@ -35,11 +35,11 @@ type Severity = typeof SEVERITIES[number];
 
 const ISSUE_LABEL: Record<string, string> = {
   DIMENSIONAL:'Dimensional', SURFACE_DEFECT:'Surface Defect', MATERIAL_FAULT:'Material Fault',
-  PROCESS_DEVIATION:'Process Dev.', CONTAMINATION:'Contamination', ASSEMBLY_ERROR:'Assembly Error', OTHER:'Other',
+  WEIGHT_ISSUE:'Weight Issue', COLOR_ISSUE:'Color Issue', OTHER:'Other',
 };
 const ISSUE_LABEL_AR: Record<string, string> = {
   DIMENSIONAL:'أبعاد', SURFACE_DEFECT:'عيب سطحي', MATERIAL_FAULT:'خلل مادة',
-  PROCESS_DEVIATION:'انحراف عملية', CONTAMINATION:'تلوث', ASSEMBLY_ERROR:'خطأ تجميع', OTHER:'أخرى',
+  WEIGHT_ISSUE:'مشكلة وزن', COLOR_ISSUE:'مشكلة لون', OTHER:'أخرى',
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────

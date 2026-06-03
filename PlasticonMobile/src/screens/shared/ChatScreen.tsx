@@ -612,125 +612,133 @@ export function ChatScreen() {
   }
 
   // ── Messages view ──────────────────────────────────────────────────────────
-  return (
-    <KeyboardAvoidingView
-      style={[styles.safe, { backgroundColor: colors.background }]}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'padding'}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
-    >
-      <SafeAreaView style={styles.flex} edges={['top', 'left', 'right']}>
-        <View style={[styles.header, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
-          <TouchableOpacity style={styles.backBtn} onPress={goBack}>
-            <Ionicons name="arrow-back" size={22} color={colors.text} />
-          </TouchableOpacity>
-          <View style={[styles.headerIcon, { backgroundColor: `${colors.primary}20` }]}>
-            <Ionicons name="people" size={18} color={colors.primary} />
-          </View>
-          <View style={{ flex: 1 }}>
-            <Text style={[styles.headerTitle, { color: colors.text }]} numberOfLines={1}>
-              {activeGroup?.name}
-            </Text>
-            {activeGroup?._count && (
-              <Text style={[styles.headerSub, { color: colors.textMuted }]}>
-                {activeGroup._count.members} {isAr ? 'عضو' : 'members'}
-              </Text>
-            )}
-          </View>
+  // On Android, app.json sets softwareKeyboardLayoutMode="pan" which pans the
+  // entire window up automatically — KeyboardAvoidingView is not needed and
+  // conflicts with pan mode, causing the send button to stay hidden.
+  // On iOS, we wrap with KeyboardAvoidingView + behavior="padding".
+  const messagesContent = (
+    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['top', 'left', 'right']}>
+      <View style={[styles.header, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
+        <TouchableOpacity style={styles.backBtn} onPress={goBack}>
+          <Ionicons name="arrow-back" size={22} color={colors.text} />
+        </TouchableOpacity>
+        <View style={[styles.headerIcon, { backgroundColor: `${colors.primary}20` }]}>
+          <Ionicons name="people" size={18} color={colors.primary} />
         </View>
+        <View style={{ flex: 1 }}>
+          <Text style={[styles.headerTitle, { color: colors.text }]} numberOfLines={1}>
+            {activeGroup?.name}
+          </Text>
+          {activeGroup?._count && (
+            <Text style={[styles.headerSub, { color: colors.textMuted }]}>
+              {activeGroup._count.members} {isAr ? 'عضو' : 'members'}
+            </Text>
+          )}
+        </View>
+      </View>
 
-        {loadingMsgs ? (
-          <View style={styles.center}><ActivityIndicator size="large" color={colors.primary} /></View>
-        ) : (
-          <FlatList
-            ref={listRef}
-            data={messages}
-            keyExtractor={m => String(m.id)}
-            contentContainerStyle={styles.messageList}
-            showsVerticalScrollIndicator={false}
-            keyboardShouldPersistTaps="handled"
-            onContentSizeChange={() => listRef.current?.scrollToEnd({ animated: false })}
-            ListEmptyComponent={
-              <View style={styles.empty}>
-                <Ionicons name="chatbubbles-outline" size={44} color={colors.textMuted} />
-                <Text style={[styles.emptyText, { color: colors.textMuted }]}>
-                  {isAr ? 'لا توجد رسائل بعد. ابدأ المحادثة!' : 'No messages yet. Start the conversation!'}
-                </Text>
-              </View>
-            }
-            renderItem={({ item: msg, index }) => {
-              const me = msg.senderId === user?.id || msg.sender?.id === user?.id;
-              const rc = roleColor(msg.sender?.role);
-              const showDateSep = index === 0
-                || fmtDate(msg.createdAt, false) !== fmtDate(messages[index - 1].createdAt, false);
-              return (
-                <>
-                  {showDateSep && (
-                    <View style={styles.dateSep}>
-                      <View style={[styles.dateLine, { backgroundColor: colors.border }]} />
-                      <Text style={[styles.dateLabel, { color: colors.textMuted, backgroundColor: colors.background }]}>
-                        {fmtDate(msg.createdAt, isAr)}
-                      </Text>
-                      <View style={[styles.dateLine, { backgroundColor: colors.border }]} />
+      {loadingMsgs ? (
+        <View style={styles.center}><ActivityIndicator size="large" color={colors.primary} /></View>
+      ) : (
+        <FlatList
+          ref={listRef}
+          data={messages}
+          keyExtractor={m => String(m.id)}
+          contentContainerStyle={styles.messageList}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          onContentSizeChange={() => listRef.current?.scrollToEnd({ animated: false })}
+          ListEmptyComponent={
+            <View style={styles.empty}>
+              <Ionicons name="chatbubbles-outline" size={44} color={colors.textMuted} />
+              <Text style={[styles.emptyText, { color: colors.textMuted }]}>
+                {isAr ? 'لا توجد رسائل بعد. ابدأ المحادثة!' : 'No messages yet. Start the conversation!'}
+              </Text>
+            </View>
+          }
+          renderItem={({ item: msg, index }) => {
+            const me = msg.senderId === user?.id || msg.sender?.id === user?.id;
+            const rc = roleColor(msg.sender?.role);
+            const showDateSep = index === 0
+              || fmtDate(msg.createdAt, false) !== fmtDate(messages[index - 1].createdAt, false);
+            return (
+              <>
+                {showDateSep && (
+                  <View style={styles.dateSep}>
+                    <View style={[styles.dateLine, { backgroundColor: colors.border }]} />
+                    <Text style={[styles.dateLabel, { color: colors.textMuted, backgroundColor: colors.background }]}>
+                      {fmtDate(msg.createdAt, isAr)}
+                    </Text>
+                    <View style={[styles.dateLine, { backgroundColor: colors.border }]} />
+                  </View>
+                )}
+                <View style={[styles.msgRow, me && styles.msgRowMe]}>
+                  {!me && (
+                    <View style={[styles.msgAvatar, { backgroundColor: `${rc}20` }]}>
+                      <Text style={[styles.msgAvatarText, { color: rc }]}>{initials(msg.sender?.fullName)}</Text>
                     </View>
                   )}
-                  <View style={[styles.msgRow, me && styles.msgRowMe]}>
-                    {!me && (
-                      <View style={[styles.msgAvatar, { backgroundColor: `${rc}20` }]}>
-                        <Text style={[styles.msgAvatarText, { color: rc }]}>{initials(msg.sender?.fullName)}</Text>
-                      </View>
+                  <View style={[styles.msgBubble, me && styles.msgBubbleMe]}>
+                    {!me && msg.sender && (
+                      <Text style={[styles.msgSender, { color: rc }]}>
+                        {msg.sender.fullName}{msg.sender.role ? ` · ${msg.sender.role}` : ''}
+                      </Text>
                     )}
-                    <View style={[styles.msgBubble, me && styles.msgBubbleMe]}>
-                      {!me && msg.sender && (
-                        <Text style={[styles.msgSender, { color: rc }]}>
-                          {msg.sender.fullName}{msg.sender.role ? ` · ${msg.sender.role}` : ''}
-                        </Text>
-                      )}
-                      <View style={[
-                        styles.msgBody,
-                        me
-                          ? [styles.msgBodyMe,   { backgroundColor: colors.primary }]
-                          : [styles.msgBodyThem, { backgroundColor: colors.surface, borderColor: colors.border }],
-                      ]}>
-                        <Text style={[styles.msgText, { color: me ? '#fff' : colors.text }]}>
-                          {msg.content}
-                        </Text>
-                      </View>
-                      <Text style={[styles.msgTime, { color: colors.textMuted }, me && { textAlign: 'right' }]}>
-                        {fmtTime(msg.createdAt)}
+                    <View style={[
+                      styles.msgBody,
+                      me
+                        ? [styles.msgBodyMe,   { backgroundColor: colors.primary }]
+                        : [styles.msgBodyThem, { backgroundColor: colors.surface, borderColor: colors.border }],
+                    ]}>
+                      <Text style={[styles.msgText, { color: me ? '#fff' : colors.text }]}>
+                        {msg.content}
                       </Text>
                     </View>
+                    <Text style={[styles.msgTime, { color: colors.textMuted }, me && { textAlign: 'right' }]}>
+                      {fmtTime(msg.createdAt)}
+                    </Text>
                   </View>
-                </>
-              );
-            }}
-          />
-        )}
+                </View>
+              </>
+            );
+          }}
+        />
+      )}
 
-        <View style={[styles.inputBar, { backgroundColor: colors.surface, borderTopColor: colors.border }]}>
-          <TextInput
-            style={[styles.textInput, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
-            placeholder={isAr ? 'اكتب رسالة…' : 'Type a message…'}
-            placeholderTextColor={colors.textMuted}
-            value={input}
-            onChangeText={setInput}
-            multiline
-            maxLength={2000}
-          />
-          <TouchableOpacity
-            style={[styles.sendBtn, { backgroundColor: (!input.trim() || sending) ? colors.textMuted : colors.primary }]}
-            onPress={send}
-            disabled={!input.trim() || sending}
-            activeOpacity={0.8}
-          >
-            {sending
-              ? <ActivityIndicator size="small" color="#fff" />
-              : <Ionicons name="send" size={18} color="#fff" />
-            }
-          </TouchableOpacity>
-        </View>
-      </SafeAreaView>
-    </KeyboardAvoidingView>
+      <View style={[styles.inputBar, { backgroundColor: colors.surface, borderTopColor: colors.border }]}>
+        <TextInput
+          style={[styles.textInput, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
+          placeholder={isAr ? 'اكتب رسالة…' : 'Type a message…'}
+          placeholderTextColor={colors.textMuted}
+          value={input}
+          onChangeText={setInput}
+          multiline
+          maxLength={2000}
+        />
+        <TouchableOpacity
+          style={[styles.sendBtn, { backgroundColor: (!input.trim() || sending) ? colors.textMuted : colors.primary }]}
+          onPress={send}
+          disabled={!input.trim() || sending}
+          activeOpacity={0.8}
+        >
+          {sending
+            ? <ActivityIndicator size="small" color="#fff" />
+            : <Ionicons name="send" size={18} color="#fff" />
+          }
+        </TouchableOpacity>
+      </View>
+    </SafeAreaView>
   );
+
+  if (Platform.OS === 'ios') {
+    return (
+      <KeyboardAvoidingView style={styles.safe} behavior="padding">
+        {messagesContent}
+      </KeyboardAvoidingView>
+    );
+  }
+
+  return messagesContent;
 }
 
 const styles = StyleSheet.create({

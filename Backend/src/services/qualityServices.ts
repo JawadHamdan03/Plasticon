@@ -159,15 +159,17 @@ export const resolveQualityCheck = async (
 };
 
 export const deleteQualityCheck = async (
-  engineerId: number,
+  callerId: number,
   id: number,
+  callerRole?: string,
 ): Promise<ServiceResult<unknown>> => {
   const check = await prisma.qualityCheck.findUnique({ where: { id } });
   if (!check) return { status: 404, message: "Quality check not found" };
-  if (check.engineerId !== engineerId) return { status: 403, message: "Not authorized" };
+  const isAdmin = callerRole === UserRole.ADMIN;
+  if (!isAdmin && check.engineerId !== callerId) return { status: 403, message: "Not authorized" };
 
   await prisma.qualityCheck.delete({ where: { id } });
-  auditAsync(engineerId, AuditAction.QUALITY_CHECK_DELETED, AuditEntityType.QUALITY_CHECK, id, {});
+  auditAsync(callerId, AuditAction.QUALITY_CHECK_DELETED, AuditEntityType.QUALITY_CHECK, id, {});
 
   return { status: 200, message: "Deleted" };
 };

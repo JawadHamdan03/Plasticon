@@ -83,10 +83,10 @@ export function AdminDashScreen() {
   useEffect(() => { void load(); }, [load]);
 
   const shortcuts = [
-    { icon: 'people',        label: isAr ? 'المستخدمون' : 'Users',    color: colors.primary, tab: 'More',       screen: 'Users' },
-    { icon: 'hardware-chip', label: isAr ? 'الآلات' : 'Machines',     color: colors.info,    tab: 'Operations', screen: 'Machines' },
-    { icon: 'shield',        label: isAr ? 'سجلات التدقيق' : 'Audit', color: colors.warning, tab: 'More',       screen: 'AuditLogs' },
-    { icon: 'person-add',    label: isAr ? 'طلبات' : 'Requests',      color: colors.success, tab: 'More',       screen: 'Registrations' },
+    { icon: 'people',        label: isAr ? 'المستخدمون' : 'Users',    color: colors.primary, screen: 'Users' },
+    { icon: 'hardware-chip', label: isAr ? 'الآلات' : 'Machines',     color: colors.info,    screen: 'Machines' },
+    { icon: 'shield',        label: isAr ? 'سجلات التدقيق' : 'Audit', color: colors.warning, screen: 'AuditLogs' },
+    { icon: 'person-add',    label: isAr ? 'طلبات' : 'Requests',      color: colors.success, screen: 'Registrations' },
   ];
 
   return (
@@ -191,7 +191,7 @@ export function AdminDashScreen() {
                 <TouchableOpacity
                   key={s.screen}
                   style={[styles.shortcut, { backgroundColor: `${s.color}12` }]}
-                  onPress={() => navigation.navigate(s.tab, { screen: s.screen })}
+                  onPress={() => navigation.navigate(s.screen)}
                   activeOpacity={0.75}
                 >
                   <Ionicons name={s.icon as any} size={24} color={s.color} />

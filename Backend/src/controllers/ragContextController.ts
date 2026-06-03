@@ -3,7 +3,7 @@ import { prisma } from "../config/lib/prisma";
 
 export const getUserContext = async (req: Request, res: Response): Promise<void> => {
   try {
-    const userId = parseInt(req.params.userId, 10);
+    const userId = parseInt(req.params.userId as string, 10);
     if (isNaN(userId)) {
       res.status(400).json({ error: "Invalid userId" });
       return;

@@ -22,6 +22,34 @@ import { radius, shadow, spacing, typography } from '../../theme';
 import { useAppTheme } from '../../context/ThemeContext';
 import { useLocale } from '../../context/LocaleContext';
 
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+
+// Times are stored as UTC datetimes; extract HH:MM in UTC for display/edit
+function extractHHMM(iso?: string | null): string {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (!isNaN(d.getTime())) {
+    return `${String(d.getUTCHours()).padStart(2, '0')}:${String(d.getUTCMinutes()).padStart(2, '0')}`;
+  }
+  // Already plain HH:MM
+  return /^\d{2}:\d{2}$/.test(iso) ? iso : '';
+}
+
+// Display-friendly: "06:00" → "06:00 AM" style, or just 24h
+function fmtShiftTime(iso?: string | null): string {
+  const hhmm = extractHHMM(iso);
+  if (!hhmm) return '—';
+  const [h, m] = hhmm.split(':').map(Number);
+  const period = h < 12 ? 'AM' : 'PM';
+  const h12    = h % 12 === 0 ? 12 : h % 12;
+  return `${String(h12).padStart(2, '0')}:${String(m).padStart(2, '0')} ${period}`;
+}
+
+// Convert user-typed HH:MM back to a UTC datetime string the backend accepts
+function hhmmToUTC(hhmm: string): string {
+  return `1970-01-01T${hhmm}:00.000Z`;
+}
+
 // ─── Interfaces ───────────────────────────────────────────────────────────────
 
 interface Shift {
@@ -57,8 +85,8 @@ function EditModal({ shift, visible, onClose, onSaved }: EditModalProps) {
   useEffect(() => {
     if (shift) {
       setName(shift.name ?? shift.shiftType ?? '');
-      setStartTime(shift.startTime ?? '');
-      setEndTime(shift.endTime ?? '');
+      setStartTime(extractHHMM(shift.startTime));
+      setEndTime(extractHHMM(shift.endTime));
     }
   }, [shift]);
 
@@ -84,8 +112,8 @@ function EditModal({ shift, visible, onClose, onSaved }: EditModalProps) {
     try {
       await api.put(`/shifts/${shift.id}`, {
         name: name.trim(),
-        startTime: startTime.trim() || undefined,
-        endTime: endTime.trim() || undefined,
+        startTime: startTime.trim() ? hhmmToUTC(startTime.trim()) : undefined,
+        endTime:   endTime.trim()   ? hhmmToUTC(endTime.trim())   : undefined,
       });
       onSaved();
       onClose();
@@ -195,7 +223,7 @@ function ShiftCard({ item, onEdit }: ShiftCardProps) {
           <View style={styles.cardLeft}>
             <Text style={[styles.name, { color: colors.text }]}>{item.name ?? type}</Text>
             <Text style={[styles.time, { color: colors.primary }]}>
-              {item.startTime ?? '—'} – {item.endTime ?? '—'}
+              {fmtShiftTime(item.startTime)} – {fmtShiftTime(item.endTime)}
             </Text>
           </View>
           <TouchableOpacity

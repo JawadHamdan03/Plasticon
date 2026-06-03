@@ -63,8 +63,18 @@ const OverviewStack = createNativeStackNavigator<AccountantOverviewStackParamLis
 function OverviewNavigator() {
   return (
     <OverviewStack.Navigator screenOptions={{ headerShown: false }}>
-      <OverviewStack.Screen name="AcctDash" component={AccountantDashScreen} />
-      <OverviewStack.Screen name="Reports"  component={ReportsScreen} />
+      <OverviewStack.Screen name="AcctDash"            component={AccountantDashScreen} />
+      <OverviewStack.Screen name="Reports"             component={ReportsScreen} />
+      <OverviewStack.Screen name="FinanceDash"         component={FinanceDashScreen} />
+      <OverviewStack.Screen name="Invoices"            component={InvoicesScreen} />
+      <OverviewStack.Screen name="Expenses"            component={ExpensesScreen} />
+      <OverviewStack.Screen name="CustomerReceivables" component={CustomerReceivablesScreen} />
+      <OverviewStack.Screen name="SupplierPayables"    component={SupplierPayablesScreen} />
+      <OverviewStack.Screen name="ApprovalWorkflows"   component={ApprovalWorkflowsScreen} />
+      <OverviewStack.Screen name="AIHub"               component={AIHubScreen} />
+      <OverviewStack.Screen name="FinancialReports"    component={FinancialReportsScreen} />
+      <OverviewStack.Screen name="CostAnalysis"        component={CostAnalysisScreen} />
+      <OverviewStack.Screen name="BudgetPlanning"      component={BudgetPlanningScreen} />
     </OverviewStack.Navigator>
   );
 }

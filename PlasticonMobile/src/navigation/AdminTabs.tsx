@@ -95,8 +95,12 @@ const DashStack = createNativeStackNavigator<AdminDashStackParamList>();
 function DashNavigator() {
   return (
     <DashStack.Navigator screenOptions={{ headerShown: false }}>
-      <DashStack.Screen name="AdminDash"  component={AdminDashScreen} />
-      <DashStack.Screen name="Analytics"  component={AdminAnalyticsScreen} />
+      <DashStack.Screen name="AdminDash"    component={AdminDashScreen} />
+      <DashStack.Screen name="Analytics"    component={AdminAnalyticsScreen} />
+      <DashStack.Screen name="Users"         component={UsersAdminScreen} />
+      <DashStack.Screen name="Machines"      component={MachinesAdminScreen} />
+      <DashStack.Screen name="AuditLogs"     component={AuditLogsScreen} />
+      <DashStack.Screen name="Registrations" component={RegistrationsScreen} />
     </DashStack.Navigator>
   );
 }

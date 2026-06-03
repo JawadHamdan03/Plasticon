@@ -122,8 +122,18 @@ export type AccountantTabParamList = {
 };
 
 export type AccountantOverviewStackParamList = {
-  AcctDash: undefined;
-  Reports:  undefined;
+  AcctDash:            undefined;
+  Reports:             undefined;
+  FinanceDash:         undefined;
+  Invoices:            undefined;
+  Expenses:            undefined;
+  CustomerReceivables: undefined;
+  SupplierPayables:    undefined;
+  ApprovalWorkflows:   undefined;
+  AIHub:               undefined;
+  FinancialReports:    undefined;
+  CostAnalysis:        undefined;
+  BudgetPlanning:      undefined;
 };
 
 export type AccountantFinanceStackParamList = {
@@ -180,8 +190,12 @@ export type AdminTabParamList = {
 };
 
 export type AdminDashStackParamList = {
-  AdminDash: undefined;
-  Analytics: undefined;
+  AdminDash:     undefined;
+  Analytics:     undefined;
+  Users:         undefined;
+  Machines:      undefined;
+  AuditLogs:     undefined;
+  Registrations: undefined;
 };
 
 export type AdminOpsStackParamList = {

@@ -73,7 +73,7 @@ export const deleteQualityCheckHandler = async (req: AuthenticatedRequest, res: 
     try {
         const userId = req.user?.id;
         if (!userId) { res.status(401).json({ message: "Not authorized" }); return; }
-        const result = await deleteQualityCheck(userId, Number(req.params.id));
+        const result = await deleteQualityCheck(userId, Number(req.params.id), req.user?.role);
         res.status(result.status).json({ message: result.message });
     } catch (error) {
         console.error("Delete quality check error:", error);
