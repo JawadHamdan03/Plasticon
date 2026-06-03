@@ -175,7 +175,20 @@ export function ProductionPage() {
   const [loading, setLoading] = useState(false);
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
-  const [adminTab, setAdminTab] = useState<"overview" | "daily" | "shifts" | "records" | "workers">("overview");
+  const [adminTab, setAdminTab] = useState<"overview" | "daily" | "shifts" | "records" | "workers" | "electricity">("overview");
+  const [elKwhPrice, setElKwhPrice] = useState<{ id: number; price: number } | null>(null);
+  const [elReadings, setElReadings] = useState<Array<{
+    id: number; date: string; shift: { id: number; name: string };
+    startReading: number; endReading: number; consumption: number;
+    kwhPriceSnap: number; shiftCost: number; notes: string | null;
+    recordedBy: { fullName: string };
+  }>>([]);
+  const [elFromDate, setElFromDate] = useState("");
+  const [elToDate, setElToDate] = useState("");
+  const [elShiftId, setElShiftId] = useState("");
+  const [elKwhInput, setElKwhInput] = useState("");
+  const [elLoading, setElLoading] = useState(false);
+  const [elPriceSaving, setElPriceSaving] = useState(false);
   const [forms, setForms] = useState<Record<number, MachineForm>>({});
   const [filterMachineId, setFilterMachineId] = useState<string>("");
   const [nowMinutes, setNowMinutes] = useState(() => {
@@ -241,6 +254,25 @@ export function ProductionPage() {
   }, [canSeeAll, isAdmin, fromDate, toDate]);
 
   useEffect(() => { void loadAll(); }, [loadAll]);
+
+  const loadElectricity = useCallback(async () => {
+    setElLoading(true);
+    try {
+      const qs = new URLSearchParams();
+      if (elFromDate) qs.set("fromDate", elFromDate);
+      if (elToDate) qs.set("toDate", elToDate);
+      if (elShiftId) qs.set("shiftId", elShiftId);
+      const [prRes, rdRes] = await Promise.all([
+        fetchWithAuth("/electricity/kwh-price"),
+        fetchWithAuth(`/electricity/readings?${qs.toString()}`),
+      ]);
+      if (prRes.ok) { const d = await prRes.json(); setElKwhPrice(d); setElKwhInput(String(d?.price ?? "")); }
+      if (rdRes.ok) { const d = await rdRes.json(); setElReadings(Array.isArray(d) ? d : []); }
+    } catch { /* silent */ }
+    finally { setElLoading(false); }
+  }, [elFromDate, elToDate, elShiftId]);
+
+  useEffect(() => { if (adminTab === "electricity") void loadElectricity(); }, [adminTab, loadElectricity]);
 
   const submitProduction = async (e: FormEvent, machine: Machine) => {
     e.preventDefault();
@@ -763,7 +795,7 @@ export function ProductionPage() {
           </div>
 
           <div style={{ display: "flex", gap: ".5rem", flexWrap: "wrap", marginBottom: "1.25rem" }}>
-            {([ ["overview", isAr ? "نظرة عامة" : "Overview"], ["daily", isAr ? "يومي" : "Daily"], ["shifts", isAr ? "الشفتات" : "Shifts"], ["records", isAr ? "السجلات" : "Records"], ["workers", isAr ? "العمال" : "Workers"] ] as const).map(([key, label]) => (
+            {([ ["overview", isAr ? "نظرة عامة" : "Overview"], ["daily", isAr ? "يومي" : "Daily"], ["shifts", isAr ? "الشفتات" : "Shifts"], ["records", isAr ? "السجلات" : "Records"], ["workers", isAr ? "العمال" : "Workers"], ["electricity", isAr ? "إدارة الكهرباء" : "Electricity"] ] as const).map(([key, label]) => (
               <button key={key} type="button" onClick={() => setAdminTab(key)}
                 style={{ padding: ".45rem 1rem", borderRadius: 8, border: "1px solid var(--border-default)", background: adminTab === key ? "var(--orange-500,#f97316)" : "var(--bg-surface)", color: adminTab === key ? "#fff" : "var(--text-secondary)", fontWeight: 600, fontSize: ".83rem", cursor: "pointer" }}>
                 {label}
@@ -911,6 +943,152 @@ export function ProductionPage() {
                   </table>
                 </div>
               )}
+            </div>
+          )}
+
+          {adminTab === "electricity" && (
+            <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+              {/* Description + Current Price card */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: "1rem", alignItems: "start" }}>
+                <div style={{ background: "var(--bg-card)", border: "1px solid var(--border-default)", borderRadius: "var(--radius-xl)", padding: "1.25rem" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: ".5rem", marginBottom: ".5rem" }}>
+                    <span style={{ fontSize: "1.3rem" }}>⚡</span>
+                    <h3 style={{ margin: 0, fontSize: "1rem", fontWeight: 700, color: "var(--text-primary)" }}>
+                      {isAr ? "إدارة الكهرباء" : "Electricity Management"}
+                    </h3>
+                  </div>
+                  <p style={{ margin: 0, fontSize: ".85rem", color: "var(--text-secondary)" }}>
+                    {isAr
+                      ? "مراقبة استهلاك الكهرباء حسب الشفت وإدارة سعر الكيلوواط ساعة وعرض تقارير التكلفة"
+                      : "Monitor electricity consumption by shift, manage kWh pricing and view cost reports."}
+                  </p>
+                  {elKwhPrice && (
+                    <div style={{ marginTop: ".75rem", display: "inline-flex", alignItems: "center", gap: ".5rem", padding: ".35rem .875rem", borderRadius: 99, background: "rgba(249,115,22,.1)", border: "1px solid rgba(249,115,22,.3)", color: "#ea580c", fontWeight: 700, fontSize: ".85rem" }}>
+                      ⚡ {isAr ? "السعر الحالي:" : "Current Price:"} {elKwhPrice.price.toFixed(4)} ILS/kWh
+                    </div>
+                  )}
+                </div>
+
+                {/* kWh Price editor */}
+                <div style={{ background: "var(--bg-card)", border: "1px solid var(--border-default)", borderRadius: "var(--radius-xl)", padding: "1.25rem", minWidth: 220 }}>
+                  <div style={{ fontWeight: 700, fontSize: ".9rem", color: "var(--text-primary)", marginBottom: ".75rem" }}>
+                    {isAr ? "سعر الكيلوواط" : "kWh Price"}
+                  </div>
+                  <div style={{ display: "flex", gap: ".5rem", alignItems: "center" }}>
+                    <input
+                      type="number" step="0.0001" min={0}
+                      value={elKwhInput}
+                      onChange={(e) => setElKwhInput(e.target.value)}
+                      placeholder="0.0000"
+                      style={{ flex: 1, padding: ".45rem .65rem", border: "1px solid var(--border-default)", borderRadius: 8, background: "var(--bg-card)", fontSize: ".9rem", color: "var(--text-primary)" }}
+                    />
+                    <button
+                      onClick={async () => {
+                        const price = parseFloat(elKwhInput);
+                        if (!price || price <= 0) return;
+                        setElPriceSaving(true);
+                        try {
+                          await fetchWithAuth("/electricity/kwh-price", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ price }),
+                          });
+                          void loadElectricity();
+                        } catch { /* silent */ }
+                        finally { setElPriceSaving(false); }
+                      }}
+                      disabled={elPriceSaving}
+                      style={{ padding: ".45rem .875rem", borderRadius: 8, border: "none", background: "#f97316", color: "#fff", fontWeight: 700, fontSize: ".85rem", cursor: "pointer", opacity: elPriceSaving ? 0.6 : 1 }}
+                    >
+                      {elPriceSaving ? "..." : (isAr ? "حفظ" : "Save")}
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Consumption report filter */}
+              <div style={{ display: "flex", gap: ".75rem", alignItems: "flex-end", flexWrap: "wrap", padding: "1rem 1.25rem", background: "var(--bg-surface)", border: "1px solid var(--border-default)", borderRadius: "var(--radius-xl)" }}>
+                <label style={{ display: "flex", flexDirection: "column", gap: ".3rem", fontSize: ".82rem", fontWeight: 600, color: "var(--text-secondary)" }}>
+                  {isAr ? "من تاريخ" : "From date"}
+                  <input type="date" value={elFromDate} onChange={(e) => setElFromDate(e.target.value)}
+                    style={{ padding: ".4rem .75rem", border: "1px solid var(--border-default)", borderRadius: 8, background: "var(--bg-card)", fontSize: ".875rem" }} />
+                </label>
+                <label style={{ display: "flex", flexDirection: "column", gap: ".3rem", fontSize: ".82rem", fontWeight: 600, color: "var(--text-secondary)" }}>
+                  {isAr ? "إلى تاريخ" : "To date"}
+                  <input type="date" value={elToDate} onChange={(e) => setElToDate(e.target.value)}
+                    style={{ padding: ".4rem .75rem", border: "1px solid var(--border-default)", borderRadius: 8, background: "var(--bg-card)", fontSize: ".875rem" }} />
+                </label>
+                <label style={{ display: "flex", flexDirection: "column", gap: ".3rem", fontSize: ".82rem", fontWeight: 600, color: "var(--text-secondary)" }}>
+                  {isAr ? "الشفت" : "Shift"}
+                  <select value={elShiftId} onChange={(e) => setElShiftId(e.target.value)}
+                    style={{ padding: ".4rem .75rem", border: "1px solid var(--border-default)", borderRadius: 8, background: "var(--bg-card)", fontSize: ".875rem" }}>
+                    <option value="">{isAr ? "الكل" : "All"}</option>
+                    {shifts.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+                  </select>
+                </label>
+                <button type="button" className="auth-button" style={{ padding: ".45rem 1rem", fontSize: ".85rem" }}
+                  onClick={() => void loadElectricity()}>
+                  {isAr ? "تطبيق" : "Apply"}
+                </button>
+                <button type="button" className="auth-button auth-button--ghost" style={{ padding: ".45rem 1rem", fontSize: ".85rem" }}
+                  onClick={() => { setElFromDate(""); setElToDate(""); setElShiftId(""); }}>
+                  {isAr ? "مسح" : "Clear"}
+                </button>
+              </div>
+
+              {/* Consumption Report table */}
+              <div style={{ background: "var(--bg-card)", border: "1px solid var(--border-default)", borderRadius: "var(--radius-xl)", overflow: "hidden" }}>
+                <div style={{ padding: ".875rem 1.25rem", borderBottom: "1px solid var(--border-default)", background: "var(--bg-surface)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                  <span style={{ fontWeight: 700, fontSize: ".9rem" }}>
+                    {isAr ? `تقرير الاستهلاك (${elReadings.length})` : `Consumption Report (${elReadings.length})`}
+                  </span>
+                  {elReadings.length > 0 && (
+                    <span style={{ fontSize: ".82rem", fontWeight: 700, color: "#ea580c" }}>
+                      {isAr ? "الإجمالي:" : "Total:"} {elReadings.reduce((s, r) => s + r.consumption, 0).toFixed(2)} kWh
+                      {" · "}
+                      {elReadings.reduce((s, r) => s + r.shiftCost, 0).toFixed(2)} ILS
+                    </span>
+                  )}
+                </div>
+                {elLoading ? (
+                  <div style={{ padding: "2rem", textAlign: "center", color: "var(--text-secondary)" }}>
+                    {isAr ? "جاري التحميل..." : "Loading..."}
+                  </div>
+                ) : elReadings.length === 0 ? (
+                  <div style={{ padding: "2rem", textAlign: "center", color: "var(--text-secondary)" }}>
+                    {isAr ? "لا توجد بيانات" : "No readings found"}
+                  </div>
+                ) : (
+                  <div style={{ overflowX: "auto" }}>
+                    <table className="admin-table">
+                      <thead>
+                        <tr>
+                          <th>{isAr ? "التاريخ" : "Date"}</th>
+                          <th>{isAr ? "الشفت" : "Shift"}</th>
+                          <th>{isAr ? "البداية" : "Start"}</th>
+                          <th>{isAr ? "النهاية" : "End"}</th>
+                          <th>{isAr ? "الاستهلاك" : "kWh"}</th>
+                          <th>{isAr ? "التكلفة" : "Cost (ILS)"}</th>
+                          <th>{isAr ? "بواسطة" : "By"}</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {elReadings.map((r) => (
+                          <tr key={r.id}>
+                            <td style={{ whiteSpace: "nowrap", fontWeight: 600 }}>{r.date.slice(0, 10)}</td>
+                            <td>{r.shift.name}</td>
+                            <td>{r.startReading.toLocaleString()}</td>
+                            <td>{r.endReading.toLocaleString()}</td>
+                            <td style={{ fontWeight: 700, color: "#ea580c" }}>{r.consumption.toFixed(2)}</td>
+                            <td style={{ fontWeight: 700 }}>{r.shiftCost.toFixed(2)}</td>
+                            <td style={{ fontSize: ".8rem", color: "var(--text-secondary)" }}>{r.recordedBy.fullName}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </>

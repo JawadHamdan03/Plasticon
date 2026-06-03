@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, FlatList, RefreshControl, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, FlatList, RefreshControl, StyleSheet, Text, View, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { api } from '../../api/client';
@@ -69,11 +69,17 @@ export function TransferLogScreen() {
   const [logs, setLogs]         = useState<TransferRecord[]>([]);
   const [loading, setLoading]   = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [isCheckedIn, setIsCheckedIn] = useState(false);
 
   const load = useCallback(async () => {
     try {
-      const res = await api.get<{ transfers: TransferRecord[] }>('/engineer-inventory/transfers?limit=40');
-      setLogs(res.transfers ?? []);
+      const [res, attRes] = await Promise.all([
+        api.get<{ transfers: TransferRecord[] }>('/engineer-inventory/transfers?limit=40'),
+        api.get<any>('/attendance/me').catch(() => []),
+      ]);
+      setLogs(Array.isArray(res) ? res : (res.transfers ?? []));
+      const attList: any[] = Array.isArray(attRes) ? attRes : (attRes?.data ?? []);
+      setIsCheckedIn(attList.some((r: any) => !r.checkOut));
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -85,6 +91,14 @@ export function TransferLogScreen() {
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
       <ScreenHeader title={isAr ? 'سجل النقل' : 'Transfer Log'} subtitle={isAr ? 'سجل حركة المعدات' : 'Equipment movement history'} showBack />
+      {!isCheckedIn && !loading && (
+        <View style={[styles.banner, { backgroundColor: `${colors.warning}15`, borderColor: `${colors.warning}50` }]}>
+          <Ionicons name="warning-outline" size={16} color={colors.warning} />
+          <Text style={[styles.bannerText, { color: colors.warning }]}>
+            {isAr ? 'يجب تسجيل الدخول لتسجيل عمليات النقل' : 'Check in to record equipment transfers'}
+          </Text>
+        </View>
+      )}
       {loading ? (
         <View style={styles.center}><ActivityIndicator size="large" color={colors.primary} /></View>
       ) : (
@@ -126,4 +140,6 @@ const styles = StyleSheet.create({
   byText:   { ...typography.caption },
   empty:    { alignItems: 'center', paddingTop: 60, gap: spacing.sm },
   emptyText: { ...typography.bodySmall },
+  banner:     { flexDirection: 'row', alignItems: 'center', gap: 6, marginHorizontal: spacing.md, marginBottom: 4, paddingHorizontal: spacing.md, paddingVertical: 10, borderRadius: radius.md, borderWidth: 1 },
+  bannerText: { fontSize: 13, fontWeight: '600', flex: 1 },
 });

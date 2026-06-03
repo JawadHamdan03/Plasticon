@@ -84,11 +84,17 @@ export function LifecycleScreen() {
   const [records, setRecords]   = useState<HealthRecord[]>([]);
   const [loading, setLoading]   = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [isCheckedIn, setIsCheckedIn] = useState(false);
 
   const load = useCallback(async () => {
     try {
-      const res = await api.get<{ records: HealthRecord[] }>('/machine-health?limit=40');
-      setRecords(res.records ?? []);
+      const [res, attRes] = await Promise.all([
+        api.get<{ records: HealthRecord[] }>('/machine-health?limit=40'),
+        api.get<any>('/attendance/me').catch(() => []),
+      ]);
+      setRecords(Array.isArray(res) ? res : (res.records ?? []));
+      const attList: any[] = Array.isArray(attRes) ? attRes : (attRes?.data ?? []);
+      setIsCheckedIn(attList.some((r: any) => !r.checkOut));
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -100,6 +106,14 @@ export function LifecycleScreen() {
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
       <ScreenHeader title={isAr ? 'تتبع دورة الحياة' : 'Lifecycle Tracking'} subtitle={isAr ? 'نقاط صحة المعدات' : 'Equipment health scores'} showBack />
+      {!isCheckedIn && !loading && (
+        <View style={[styles.banner, { backgroundColor: `${colors.warning}15`, borderColor: `${colors.warning}50` }]}>
+          <Ionicons name="warning-outline" size={16} color={colors.warning} />
+          <Text style={[styles.bannerText, { color: colors.warning }]}>
+            {isAr ? 'يجب تسجيل الدخول لتسجيل بيانات المعدات' : 'Check in to record equipment data'}
+          </Text>
+        </View>
+      )}
       {loading ? (
         <View style={styles.center}><ActivityIndicator size="large" color={colors.primary} /></View>
       ) : (
@@ -146,4 +160,6 @@ const styles = StyleSheet.create({
   statusDot: { width: 8, height: 8, borderRadius: 4 },
   empty:     { alignItems: 'center', paddingTop: 60, gap: spacing.sm },
   emptyText: { ...typography.bodySmall },
+  banner:     { flexDirection: 'row', alignItems: 'center', gap: 6, marginHorizontal: spacing.md, marginBottom: 4, paddingHorizontal: spacing.md, paddingVertical: 10, borderRadius: radius.md, borderWidth: 1 },
+  bannerText: { fontSize: 13, fontWeight: '600', flex: 1 },
 });

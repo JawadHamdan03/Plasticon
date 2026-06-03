@@ -8,7 +8,8 @@ type ServiceResult<T> = {
 
 export const getFinancialDashboard = async (): Promise<ServiceResult<unknown>> => {
   try {
-    const [invoices, expenses, electricityReadings, payrolls, sales, purchases] = await Promise.all([
+    // Use allSettled so a missing/empty table doesn't abort the whole dashboard
+    const [invRes, expRes, elRes, payRes, saleRes, purchRes] = await Promise.allSettled([
       prisma.invoice.findMany({ select: { totalAmount: true, paymentStatus: true } }),
       prisma.expense.findMany({ select: { amount: true, paymentStatus: true } }),
       prisma.electricityReading.findMany({ select: { shiftCost: true } }),
@@ -16,6 +17,12 @@ export const getFinancialDashboard = async (): Promise<ServiceResult<unknown>> =
       prisma.sale.findMany({ select: { totalAmount: true } }),
       prisma.purchase.findMany({ select: { totalAmount: true } }),
     ]);
+    const invoices           = invRes.status   === "fulfilled" ? invRes.value   : [];
+    const expenses           = expRes.status   === "fulfilled" ? expRes.value   : [];
+    const electricityReadings = elRes.status   === "fulfilled" ? elRes.value    : [];
+    const payrolls           = payRes.status   === "fulfilled" ? payRes.value   : [];
+    const sales              = saleRes.status  === "fulfilled" ? saleRes.value  : [];
+    const purchases          = purchRes.status === "fulfilled" ? purchRes.value : [];
 
     const allRevenue = invoices.reduce((sum, inv) => sum + inv.totalAmount, 0);
     const paidRevenue = invoices

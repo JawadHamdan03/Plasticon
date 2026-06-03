@@ -100,6 +100,7 @@ export type EngineerAIStackParamList = {
   Assistant:         undefined;
   AnomalyDetection:  undefined;
   MaintenanceReport: undefined;
+  ShiftHandover:     undefined;
 };
 
 export type EngineerPersonalStackParamList = {

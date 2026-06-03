@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -69,6 +69,18 @@ const TASK_ICONS: Record<string, string> = {
 function fmtDate(d?: string) {
   if (!d) return '—';
   return new Date(d).toLocaleDateString([], { month: 'short', day: 'numeric' });
+}
+
+type WOFilter = 'all' | 'today' | 'overdue' | 'done';
+
+function isToday(d?: string) {
+  if (!d) return false;
+  return new Date(d).toISOString().slice(0, 10) === new Date().toISOString().slice(0, 10);
+}
+
+function isOverdue(d?: string, status?: string) {
+  if (!d || status === 'COMPLETED' || status === 'CANCELLED') return false;
+  return new Date(d) < new Date();
 }
 
 function ChipRow({ label, value, options, onChange }: { label: string; value: string; options: string[]; onChange: (v: string) => void }) {
@@ -267,6 +279,7 @@ export function WorkOrdersScreen() {
   const [editing, setEditing]       = useState<WorkOrder | null>(null);
   const [saving, setSaving]         = useState(false);
   const [updatingId, setUpdatingId] = useState<number | null>(null);
+  const [woFilter, setWoFilter]     = useState<WOFilter>('all');
 
   const load = useCallback(async () => {
     try {
@@ -351,6 +364,20 @@ export function WorkOrdersScreen() {
   const pending   = orders.filter((o) => o.status === 'PENDING' || o.status === 'IN_PROGRESS').length;
   const completed = orders.filter((o) => o.status === 'COMPLETED').length;
 
+  const displayed = useMemo(() => {
+    if (woFilter === 'today')   return orders.filter((o) => isToday(o.nextScheduledDate));
+    if (woFilter === 'overdue') return orders.filter((o) => isOverdue(o.nextScheduledDate, o.status));
+    if (woFilter === 'done')    return orders.filter((o) => o.status === 'COMPLETED');
+    return orders;
+  }, [orders, woFilter]);
+
+  const WO_FILTERS: { key: WOFilter; labelEn: string; labelAr: string }[] = [
+    { key: 'all',     labelEn: 'All',     labelAr: 'الكل' },
+    { key: 'today',   labelEn: 'Today',   labelAr: 'اليوم' },
+    { key: 'overdue', labelEn: 'Overdue', labelAr: 'متأخر' },
+    { key: 'done',    labelEn: 'Done',    labelAr: 'مكتمل' },
+  ];
+
   const initialForm: FormState = editing
     ? {
         machineId: editing.machineId ? String(editing.machineId) : (editing.machine?.id ? String(editing.machine.id) : ''),
@@ -369,7 +396,7 @@ export function WorkOrdersScreen() {
         <View style={styles.center}><ActivityIndicator size="large" color={colors.primary} /></View>
       ) : (
         <FlatList
-          data={orders}
+          data={displayed}
           keyExtractor={(i, idx) => `${String(i.id)}-${idx}`}
           renderItem={({ item }) => (
             <WorkOrderCard
@@ -383,6 +410,22 @@ export function WorkOrdersScreen() {
           contentContainerStyle={styles.list}
           showsVerticalScrollIndicator={false}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); void load(); }} tintColor={colors.primary} />}
+          ListHeaderComponent={
+            <View style={[styles.filterRow, { borderColor: colors.border }]}>
+              {WO_FILTERS.map((f) => (
+                <TouchableOpacity
+                  key={f.key}
+                  style={[styles.filterTab, woFilter === f.key && { backgroundColor: colors.primary }]}
+                  onPress={() => setWoFilter(f.key)}
+                  activeOpacity={0.8}
+                >
+                  <Text style={[styles.filterTabText, { color: woFilter === f.key ? '#fff' : colors.textMuted }]}>
+                    {isAr ? f.labelAr : f.labelEn}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          }
           ListEmptyComponent={
             <View style={styles.empty}>
               <Ionicons name="clipboard-outline" size={44} color={colors.textMuted} />
@@ -432,6 +475,10 @@ const styles = StyleSheet.create({
   statusBtns:  { flexDirection: 'row', gap: spacing.sm },
   statusBtn:   { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 12, paddingVertical: 6, borderRadius: radius.full },
   statusBtnText:{ fontSize: 12, fontWeight: '700' },
+
+  filterRow:     { flexDirection: 'row', borderWidth: 1, borderRadius: radius.md, marginBottom: spacing.md, overflow: 'hidden' },
+  filterTab:     { flex: 1, paddingVertical: 9, alignItems: 'center' },
+  filterTabText: { fontSize: 12, fontWeight: '700' },
 
   empty:    { alignItems: 'center', paddingTop: 60, gap: spacing.sm },
   emptyText:{ ...typography.bodySmall },

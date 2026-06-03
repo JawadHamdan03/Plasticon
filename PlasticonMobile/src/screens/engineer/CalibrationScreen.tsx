@@ -282,18 +282,22 @@ export function CalibrationScreen() {
   const [saving, setSaving]         = useState(false);
   const [fromDate, setFromDate] = useState(month0);
   const [toDate,   setToDate]   = useState(today0);
+  const [isCheckedIn, setIsCheckedIn] = useState(false);
 
   const inRange = (d: string) => { const s = d.slice(0, 10); return (!fromDate || s >= fromDate) && (!toDate || s <= toDate); };
   const filteredRecords = useMemo(() => records.filter(r => inRange(r.recordedAt)), [records, fromDate, toDate]); // eslint-disable-line
 
   const load = useCallback(async () => {
     try {
-      const [healthRes, machinesRes] = await Promise.all([
+      const [healthRes, machinesRes, attRes] = await Promise.all([
         api.get<HealthRecord[]>('/machine-health?limit=40'),
         api.get<Machine[]>('/machines').catch(() => [] as Machine[]),
+        api.get<any>('/attendance/me').catch(() => []),
       ]);
       setRecords(Array.isArray(healthRes) ? healthRes : []);
       setMachines(Array.isArray(machinesRes) ? machinesRes : []);
+      const attList: any[] = Array.isArray(attRes) ? attRes : (attRes?.data ?? []);
+      setIsCheckedIn(attList.some((r: any) => !r.checkOut));
     } catch {
       setRecords([]);
     } finally {
@@ -304,7 +308,17 @@ export function CalibrationScreen() {
 
   useEffect(() => { void load(); }, [load]);
 
-  const openCreate = () => { setEditing(null); setModalVisible(true); };
+  const openCreate = () => {
+    if (!isCheckedIn) {
+      Alert.alert(
+        isAr ? 'تسجيل الدخول مطلوب' : 'Check-In Required',
+        isAr ? 'يجب تسجيل الدخول قبل إضافة سجل معايرة.' : 'You must check in before adding a calibration record.',
+      );
+      return;
+    }
+    setEditing(null);
+    setModalVisible(true);
+  };;
   const openEdit   = (item: HealthRecord) => { setEditing(item); setModalVisible(true); };
 
   const handleSave = async (form: FormState) => {
@@ -353,6 +367,14 @@ export function CalibrationScreen() {
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
       <ScreenHeader title={isAr ? 'المعايرة' : 'Calibration'} subtitle={subtitle} showBack />
+      {!isCheckedIn && !loading && (
+        <View style={[styles.notCheckedBanner, { backgroundColor: `${colors.warning}15`, borderColor: `${colors.warning}50` }]}>
+          <Ionicons name="warning-outline" size={16} color={colors.warning} />
+          <Text style={[styles.notCheckedText, { color: colors.warning }]}>
+            {isAr ? 'يجب تسجيل الدخول لإضافة سجلات معايرة' : 'Check in to add calibration records'}
+          </Text>
+        </View>
+      )}
       {loading ? (
         <View style={styles.center}><ActivityIndicator size="large" color={colors.primary} /></View>
       ) : (
@@ -393,11 +415,11 @@ export function CalibrationScreen() {
         />
       )}
       <TouchableOpacity
-        style={[styles.fab, { backgroundColor: colors.primary }]}
+        style={[styles.fab, { backgroundColor: isCheckedIn ? colors.primary : colors.textMuted }]}
         onPress={openCreate}
         activeOpacity={0.85}
       >
-        <Ionicons name="add" size={28} color="#fff" />
+        <Ionicons name={isCheckedIn ? 'add' : 'lock-closed'} size={isCheckedIn ? 28 : 22} color="#fff" />
       </TouchableOpacity>
       <CalModal
         visible={modalVisible}
@@ -435,6 +457,9 @@ const styles = StyleSheet.create({
 
   empty:     { alignItems: 'center', paddingTop: 60, gap: spacing.sm },
   emptyText: { ...typography.bodySmall },
+
+  notCheckedBanner: { flexDirection: 'row', alignItems: 'center', gap: 6, marginHorizontal: spacing.md, marginBottom: 4, paddingHorizontal: spacing.md, paddingVertical: 10, borderRadius: radius.md, borderWidth: 1 },
+  notCheckedText:   { fontSize: 13, fontWeight: '600', flex: 1 },
 
   fab: { position: 'absolute', bottom: 28, right: 24, width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center', ...shadow.lg },
 

@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import {
-  ActivityIndicator, RefreshControl, ScrollView,
+  ActivityIndicator, Alert, RefreshControl, ScrollView,
   StyleSheet, Text, TouchableOpacity, View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -55,9 +55,46 @@ export function EngineerDashScreen() {
   const { user } = useAuth();
   const navigation = useNavigation<any>();
   const firstName = (user?.fullName ?? 'Engineer').split(' ')[0];
-  const [data, setData]       = useState<DashData | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [data, setData]           = useState<DashData | null>(null);
+  const [loading, setLoading]     = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [checkedIn, setCheckedIn] = useState(false);
+  const [checkInTime, setCheckInTime] = useState<string | null>(null);
+  const [attendanceId, setAttendanceId] = useState<number | null>(null);
+  const [actionLoading, setActionLoading] = useState(false);
+
+  const loadAttendance = useCallback(async () => {
+    try {
+      const res = await api.get<any>('/attendance/me');
+      const records: any[] = Array.isArray(res) ? res : (res?.data ?? []);
+      const open = records.find((r: any) => !r.checkOut);
+      setCheckedIn(!!open);
+      setCheckInTime(open?.checkIn ?? null);
+      setAttendanceId(open?.id ?? null);
+    } catch { setCheckedIn(false); }
+  }, []);
+
+  const handleCheckToggle = async () => {
+    setActionLoading(true);
+    try {
+      if (checkedIn) {
+        await api.post('/attendance/check-out', {});
+        setCheckedIn(false);
+        setCheckInTime(null);
+        setAttendanceId(null);
+      } else {
+        await api.post('/attendance/check-in', {});
+        await loadAttendance();
+      }
+    } catch (e: any) {
+      Alert.alert(
+        isAr ? 'خطأ' : 'Error',
+        e?.message ?? (isAr ? 'فشلت العملية' : 'Action failed'),
+      );
+    } finally {
+      setActionLoading(false);
+    }
+  };
 
   const load = useCallback(async () => {
     try {
@@ -89,7 +126,7 @@ export function EngineerDashScreen() {
     }
   }, []);
 
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => { void load(); void loadAttendance(); }, [load, loadAttendance]);
 
   if (loading) return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
@@ -112,6 +149,39 @@ export function EngineerDashScreen() {
           <TouchableOpacity style={[styles.analyticBtn, { backgroundColor: colors.primaryLight }]} onPress={() => navigation.navigate('Engineering', { screen: 'ProductionAnalytics' })}>
             <Ionicons name="analytics" size={16} color={colors.primary} />
             <Text style={[styles.analyticText, { color: colors.primary }]}>{isAr ? 'تحليل الإنتاج' : 'Production Analytics'}</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Check-in / Check-out card */}
+        <View style={[styles.checkCard, { backgroundColor: checkedIn ? `${colors.success}12` : `${colors.danger}10`, borderColor: checkedIn ? `${colors.success}50` : `${colors.danger}40` }]}>
+          <View style={styles.checkLeft}>
+            <View style={[styles.checkDot, { backgroundColor: checkedIn ? colors.success : colors.danger }]} />
+            <View>
+              <Text style={[styles.checkStatus, { color: colors.text }]}>
+                {checkedIn ? (isAr ? 'مسجّل الدخول' : 'Checked In') : (isAr ? 'لم تسجّل دخولاً' : 'Not Checked In')}
+              </Text>
+              {checkedIn && checkInTime ? (
+                <Text style={[styles.checkSince, { color: colors.textMuted }]}>
+                  {isAr ? 'منذ' : 'Since'}{' '}
+                  {new Date(checkInTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                </Text>
+              ) : (
+                <Text style={[styles.checkSince, { color: colors.textMuted }]}>
+                  {isAr ? 'سجّل دخولك للبدء' : 'Check in to start your shift'}
+                </Text>
+              )}
+            </View>
+          </View>
+          <TouchableOpacity
+            style={[styles.checkBtn, { backgroundColor: checkedIn ? colors.danger : colors.success }, actionLoading && { opacity: 0.6 }]}
+            onPress={handleCheckToggle}
+            disabled={actionLoading}
+            activeOpacity={0.82}
+          >
+            {actionLoading
+              ? <ActivityIndicator size="small" color="#fff" />
+              : <Text style={styles.checkBtnText}>{checkedIn ? (isAr ? 'خروج' : 'Check Out') : (isAr ? 'دخول' : 'Check In')}</Text>
+            }
           </TouchableOpacity>
         </View>
 
@@ -161,6 +231,14 @@ const styles = StyleSheet.create({
   greetName:    { ...typography.h2 },
   analyticBtn:  { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 12, paddingVertical: 7, borderRadius: radius.full },
   analyticText: { fontSize: 12, fontWeight: '700' },
+
+  checkCard:    { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderRadius: radius.lg, borderWidth: 1.5, padding: spacing.md, marginBottom: spacing.md, ...shadow.sm },
+  checkLeft:    { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  checkDot:     { width: 10, height: 10, borderRadius: 5 },
+  checkStatus:  { ...typography.h4 },
+  checkSince:   { ...typography.caption, marginTop: 2 },
+  checkBtn:     { paddingHorizontal: spacing.md, paddingVertical: 8, borderRadius: radius.full, minWidth: 90, alignItems: 'center' },
+  checkBtnText: { color: '#fff', fontWeight: '700', fontSize: 13 },
 
   kpiRow:       { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.sm },
   kpi:          { flex: 1 },

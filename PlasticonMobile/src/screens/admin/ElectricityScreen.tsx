@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator, Alert, FlatList, Image, KeyboardAvoidingView,
   Modal, Platform, RefreshControl, ScrollView, StyleSheet, Switch,
@@ -416,6 +416,13 @@ export function ElectricityScreen() {
   const [showForm, setShowForm]     = useState(false);
   const [editing, setEditing]       = useState<ElectricityReading | null>(null);
   const [fullImage, setFullImage]   = useState<string | null>(null);
+  const [kwhInput,  setKwhInput]   = useState('');
+  const [savingKwh, setSavingKwh]  = useState(false);
+  const today0 = new Date().toISOString().slice(0, 10);
+  const month0 = new Date().toISOString().slice(0, 7) + '-01';
+  const [fromDate,      setFromDate]      = useState(month0);
+  const [toDate,        setToDate]        = useState(today0);
+  const [filterShiftId, setFilterShiftId] = useState<number | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -426,8 +433,9 @@ export function ElectricityScreen() {
       ]);
       setReadings(Array.isArray(readingsRes) ? readingsRes : ((readingsRes as any).data ?? []));
       setShifts(Array.isArray(shiftsRes) ? shiftsRes : []);
-      if (typeof priceRes === 'number') setKwhPrice(priceRes);
-      else if (priceRes && typeof (priceRes as any).price === 'number') setKwhPrice((priceRes as any).price);
+      const p = typeof priceRes === 'number' ? priceRes : ((priceRes as any)?.price ?? 0);
+      setKwhPrice(p);
+      setKwhInput(String(p > 0 ? p : ''));
     } catch {
       setReadings([]);
     } finally {
@@ -459,17 +467,39 @@ export function ElectricityScreen() {
     );
   };
 
-  const totalConsumption = readings.reduce((s, r) => {
+  const handleSaveKwh = async () => {
+    const price = parseFloat(kwhInput);
+    if (!kwhInput.trim() || isNaN(price) || price <= 0) return;
+    setSavingKwh(true);
+    try {
+      await api.post('/electricity/kwh-price', { price });
+      setKwhPrice(price);
+      Alert.alert(isAr ? 'تم' : 'Done', isAr ? 'تم تحديث سعر الكيلوواط' : 'kWh price updated');
+    } catch (e: any) { Alert.alert(isAr ? 'خطأ' : 'Error', e?.message ?? 'Failed'); }
+    finally { setSavingKwh(false); }
+  };
+
+  const filteredReadings = useMemo(() => {
+    return readings.filter((r) => {
+      const d = (r.readingDate ?? r.date ?? '').slice(0, 10);
+      if (fromDate && d < fromDate) return false;
+      if (toDate   && d > toDate)   return false;
+      if (filterShiftId !== null && r.shiftId !== filterShiftId) return false;
+      return true;
+    });
+  }, [readings, fromDate, toDate, filterShiftId]); // eslint-disable-line
+
+  const totalConsumption = filteredReadings.reduce((s, r) => {
     const c = r.consumption ?? calcConsumption(r.startReading, r.endReading, r.isMeterReset, r.maxMeterValue ?? undefined);
     return s + (c ?? 0);
   }, 0);
-  const totalCost = readings.reduce((s, r) => s + (r.shiftCost ?? 0), 0);
+  const totalCost = filteredReadings.reduce((s, r) => s + (r.shiftCost ?? 0), 0);
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
       <ScreenHeader
         title={isAr ? 'الكهرباء' : 'Electricity'}
-        subtitle={`${readings.length} ${isAr ? 'قراءات' : 'readings'}`}
+        subtitle={`${filteredReadings.length} ${isAr ? 'قراءات' : 'readings'}`}
         showBack
       />
 
@@ -477,7 +507,7 @@ export function ElectricityScreen() {
         <View style={styles.center}><ActivityIndicator size="large" color={colors.primary} /></View>
       ) : (
         <FlatList
-          data={readings}
+          data={filteredReadings}
           keyExtractor={(item, idx) => `${item.id}-${idx}`}
           renderItem={({ item }) => (
             <ReadingCard
@@ -495,18 +525,103 @@ export function ElectricityScreen() {
             <RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); void load(); }} tintColor={colors.primary} />
           }
           ListHeaderComponent={
-            <View style={styles.statsRow}>
-              <View style={[styles.statCard, { backgroundColor: colors.surface }]}>
-                <Ionicons name="flash" size={20} color={colors.warning} />
-                <Text style={[styles.statVal, { color: colors.warning }]}>{totalConsumption.toFixed(1)}</Text>
-                <Text style={[styles.statLbl, { color: colors.textMuted }]}>kWh</Text>
-              </View>
-              {totalCost > 0 && (
+            <View>
+              <View style={styles.statsRow}>
                 <View style={[styles.statCard, { backgroundColor: colors.surface }]}>
-                  <Ionicons name="cash" size={20} color={colors.success} />
-                  <Text style={[styles.statVal, { color: colors.success }]}>${totalCost.toFixed(0)}</Text>
-                  <Text style={[styles.statLbl, { color: colors.textMuted }]}>{isAr ? 'التكلفة' : 'Total Cost'}</Text>
+                  <Ionicons name="flash" size={20} color={colors.warning} />
+                  <Text style={[styles.statVal, { color: colors.warning }]}>{totalConsumption.toFixed(1)}</Text>
+                  <Text style={[styles.statLbl, { color: colors.textMuted }]}>kWh</Text>
                 </View>
+                {totalCost > 0 && (
+                  <View style={[styles.statCard, { backgroundColor: colors.surface }]}>
+                    <Ionicons name="cash" size={20} color={colors.success} />
+                    <Text style={[styles.statVal, { color: colors.success }]}>${totalCost.toFixed(0)}</Text>
+                    <Text style={[styles.statLbl, { color: colors.textMuted }]}>{isAr ? 'التكلفة' : 'Total Cost'}</Text>
+                  </View>
+                )}
+              </View>
+
+              {/* kWh Price management */}
+              <View style={[styles.kwhCard, { backgroundColor: colors.surface }]}>
+                <View style={styles.kwhCardLeft}>
+                  <View style={[styles.kwhIconWrap, { backgroundColor: `${colors.warning}18` }]}>
+                    <Ionicons name="flash" size={20} color={colors.warning} />
+                  </View>
+                  <View>
+                    <Text style={[styles.kwhLabel, { color: colors.textMuted }]}>
+                      {isAr ? 'سعر الكيلوواط/ساعة' : 'kWh Price'}
+                    </Text>
+                    <Text style={[styles.kwhValue, { color: colors.text }]}>
+                      {kwhPrice > 0 ? `${kwhPrice.toFixed(4)} ILS` : '—'}
+                    </Text>
+                  </View>
+                </View>
+                <View style={styles.kwhCardRight}>
+                  <TextInput
+                    style={[styles.kwhInput, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
+                    value={kwhInput}
+                    onChangeText={setKwhInput}
+                    keyboardType="decimal-pad"
+                    placeholder="0.0000"
+                    placeholderTextColor={colors.textMuted}
+                  />
+                  <TouchableOpacity
+                    style={[styles.kwhSaveBtn, { backgroundColor: colors.warning }, savingKwh && { opacity: 0.6 }]}
+                    onPress={() => void handleSaveKwh()}
+                    disabled={savingKwh}
+                    activeOpacity={0.8}
+                  >
+                    {savingKwh
+                      ? <ActivityIndicator size="small" color="#fff" />
+                      : <Ionicons name="save-outline" size={15} color="#fff" />
+                    }
+                    <Text style={styles.kwhSaveBtnText}>{isAr ? 'حفظ' : 'Save'}</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              {/* Date filter bar */}
+              <View style={[styles.elFilterBar, { backgroundColor: colors.surface }]}>
+                <Ionicons name="calendar-outline" size={14} color={colors.textMuted} />
+                <TextInput
+                  style={[styles.elFilterInput, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
+                  value={fromDate} onChangeText={setFromDate}
+                  placeholder="From YYYY-MM-DD" placeholderTextColor={colors.textMuted}
+                />
+                <Text style={{ color: colors.textMuted, fontSize: 12 }}>→</Text>
+                <TextInput
+                  style={[styles.elFilterInput, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
+                  value={toDate} onChangeText={setToDate}
+                  placeholder="To YYYY-MM-DD" placeholderTextColor={colors.textMuted}
+                />
+                <TouchableOpacity onPress={() => { setFromDate(month0); setToDate(today0); setFilterShiftId(null); }} style={[styles.elFilterReset, { borderColor: colors.border }]}>
+                  <Ionicons name="refresh-outline" size={13} color={colors.primary} />
+                </TouchableOpacity>
+              </View>
+
+              {/* Shift filter chips */}
+              {shifts.length > 0 && (
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: spacing.sm }}>
+                  <View style={styles.elShiftRow}>
+                    <TouchableOpacity
+                      style={[styles.elShiftChip, { borderColor: colors.border }, filterShiftId === null && { backgroundColor: colors.primary, borderColor: colors.primary }]}
+                      onPress={() => setFilterShiftId(null)}
+                    >
+                      <Text style={[styles.elShiftText, { color: filterShiftId === null ? '#fff' : colors.textMuted }]}>
+                        {isAr ? 'كل الوردات' : 'All Shifts'}
+                      </Text>
+                    </TouchableOpacity>
+                    {shifts.map((s) => (
+                      <TouchableOpacity
+                        key={s.id}
+                        style={[styles.elShiftChip, { borderColor: colors.border }, filterShiftId === s.id && { backgroundColor: colors.primary, borderColor: colors.primary }]}
+                        onPress={() => setFilterShiftId(s.id)}
+                      >
+                        <Text style={[styles.elShiftText, { color: filterShiftId === s.id ? '#fff' : colors.textMuted }]}>{s.name}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </ScrollView>
               )}
             </View>
           }
@@ -556,6 +671,23 @@ const styles = StyleSheet.create({
   safe:   { flex: 1 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   list:   { padding: spacing.md, paddingBottom: 100 },
+
+  kwhCard:        { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderRadius: radius.lg, padding: spacing.sm, marginBottom: spacing.sm, ...shadow.sm },
+  kwhCardLeft:    { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  kwhCardRight:   { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  kwhIconWrap:    { width: 36, height: 36, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center' },
+  kwhLabel:       { fontSize: 10, fontWeight: '600' },
+  kwhValue:       { fontSize: 15, fontWeight: '800' },
+  kwhInput:       { width: 90, borderWidth: 1.5, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 6, fontSize: 13, fontWeight: '700' },
+  kwhSaveBtn:     { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 7, borderRadius: 8 },
+  kwhSaveBtnText: { fontSize: 12, fontWeight: '700', color: '#fff' },
+
+  elFilterBar:   { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: spacing.sm, paddingVertical: 8, borderRadius: radius.md, marginBottom: spacing.xs },
+  elFilterInput: { flex: 1, borderWidth: 1.5, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 6, fontSize: 13 },
+  elFilterReset: { width: 30, height: 30, borderRadius: 8, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
+  elShiftRow:    { flexDirection: 'row', gap: 8, paddingHorizontal: 2, paddingBottom: spacing.sm },
+  elShiftChip:   { paddingHorizontal: 12, paddingVertical: 6, borderRadius: radius.full, borderWidth: 1.5 },
+  elShiftText:   { fontSize: 12, fontWeight: '600' },
 
   statsRow: { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.md },
   statCard: { flex: 1, borderRadius: radius.lg, padding: spacing.md, alignItems: 'center', gap: 4, ...shadow.sm },

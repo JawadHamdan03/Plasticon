@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "node index.js",
     "start": "node index.js",
+    "ingest-knowledge": "node ingest-knowledge.js",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write \"**/*.{js,json,md}\"",

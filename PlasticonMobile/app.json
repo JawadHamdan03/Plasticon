@@ -12,6 +12,7 @@
     },
     "android": {
       "package": "com.plasticon.mobile",
+      "softwareKeyboardLayoutMode": "pan",
       "adaptiveIcon": {
         "backgroundColor": "#0D1321"
       }

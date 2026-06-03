@@ -42,6 +42,7 @@ import { AIHubScreen }              from '../screens/shared/AIHubScreen';
 import { AssistantScreen }          from '../screens/shared/AssistantScreen';
 import { AnomalyDetectionScreen }   from '../screens/shared/AnomalyDetectionScreen';
 import { MaintenanceReportScreen }  from '../screens/shared/MaintenanceReportScreen';
+import { ShiftHandoverScreen }      from '../screens/worker/ShiftHandoverScreen';
 
 // ─── Personal screens ─────────────────────────────────────────────────────────
 import { PersonalMenuScreen }   from '../screens/worker/PersonalMenuScreen';
@@ -98,6 +99,7 @@ function AINavigator() {
       <AIStack.Screen name="Assistant"         component={AssistantScreen} />
       <AIStack.Screen name="AnomalyDetection"  component={AnomalyDetectionScreen} />
       <AIStack.Screen name="MaintenanceReport" component={MaintenanceReportScreen} />
+      <AIStack.Screen name="ShiftHandover"     component={ShiftHandoverScreen} />
     </AIStack.Navigator>
   );
 }

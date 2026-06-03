@@ -495,31 +495,6 @@ export function AppScaffold({ children }: { children: ReactNode }) {
           </div>
         </div>
 
-        {/* Language + Dark mode controls — top of sidebar */}
-        <div className="app-sidebar__controls">
-          <button
-            type="button"
-            className="app-sidebar__ctrl-btn"
-            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-            title={theme === "dark" ? (isAr ? "الوضع الفاتح" : "Light mode") : (isAr ? "الوضع الداكن" : "Dark mode")}
-          >
-            {theme === "dark" ? <Sun size={15} /> : <Moon size={15} />}
-            <span>{theme === "dark" ? (isAr ? "فاتح" : "Light") : (isAr ? "داكن" : "Dark")}</span>
-          </button>
-          <div className="app-sidebar__lang">
-            <button
-              type="button"
-              className={`app-sidebar__lang-btn${locale === "en" ? " app-sidebar__lang-btn--active" : ""}`}
-              onClick={() => setLocale("en")}
-            >EN</button>
-            <button
-              type="button"
-              className={`app-sidebar__lang-btn${locale === "ar" ? " app-sidebar__lang-btn--active" : ""}`}
-              onClick={() => setLocale("ar")}
-            >ع</button>
-          </div>
-        </div>
-
         {/* Nav */}
         <nav className="app-sidebar__nav">
           {sectionsBi.map((section) => (

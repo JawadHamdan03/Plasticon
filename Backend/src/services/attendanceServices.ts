@@ -62,7 +62,6 @@ const calculateLateMinutes = (shiftStart: Date, checkIn: Date): number => {
   if (checkIn.getTime() <= shiftStart.getTime()) {
     return 0;
   }
-
   return Math.max(0, minutesBetween(checkIn, shiftStart) - LATE_GRACE_MINUTES);
 };
 
@@ -73,12 +72,42 @@ const calculateOvertimeMinutes = (
   if (!checkOut || checkOut.getTime() <= shiftEnd.getTime()) {
     return 0;
   }
-
-  return Math.max(
-    0,
-    minutesBetween(checkOut, shiftEnd) - OVERTIME_GRACE_MINUTES,
-  );
+  return Math.max(0, minutesBetween(checkOut, shiftEnd) - OVERTIME_GRACE_MINUTES);
 };
+
+// Shift times are stored as "1970-01-01THH:MM:00.000Z" (UTC hours/minutes carry the
+// intended time-of-day). Extract as minutes-since-midnight so we can compare against
+// the current wall-clock time regardless of the stored epoch date.
+function shiftTimeToMinutes(stored: Date | string): number {
+  const d = typeof stored === "string" ? new Date(stored) : stored;
+  return d.getUTCHours() * 60 + d.getUTCMinutes();
+}
+
+// Return a Date representing "today at the stored shift time (local hours/minutes)".
+function todayAtShiftTime(stored: Date | string): Date {
+  const d = typeof stored === "string" ? new Date(stored) : stored;
+  const result = new Date();
+  result.setHours(d.getUTCHours(), d.getUTCMinutes(), 0, 0);
+  return result;
+}
+
+// Find whichever shift is currently active based on the wall-clock time.
+async function getCurrentActiveShift(): Promise<{ id: number; name: string; startTime: Date | string; endTime: Date | string } | null> {
+  const shifts = await prisma.shift.findMany();
+  const nowMins = new Date().getHours() * 60 + new Date().getMinutes();
+  for (const s of shifts) {
+    if (!s.startTime || !s.endTime) continue;
+    const startMins = shiftTimeToMinutes(s.startTime as unknown as string);
+    const endMins   = shiftTimeToMinutes(s.endTime   as unknown as string);
+    if (endMins <= startMins) {
+      // overnight shift (e.g. 22:00–06:00)
+      if (nowMins >= startMins || nowMins < endMins) return s as any;
+    } else {
+      if (nowMins >= startMins && nowMins < endMins) return s as any;
+    }
+  }
+  return null;
+}
 
 type ServiceResult<T> = {
   status: number;
@@ -100,77 +129,45 @@ export const checkIn = async (
 
   const now = new Date();
 
-  const existingOpenAttendance = await prisma.attendance.findFirst({
-    where: {
-      userId,
-      checkOut: null,
-    },
+  // Auto-close any open attendance record (today OR previous days).
+  // We never block here — a forgotten checkout or server restart must not permanently
+  // prevent a user from checking in again.
+  const existingOpen = await prisma.attendance.findFirst({
+    where: { userId, checkOut: null },
     orderBy: { createdAt: "desc" },
   });
 
-  if (existingOpenAttendance) {
-    return {
-      status: 409,
-      message: "You already have an open attendance record",
-    };
-  }
-
-  let shiftId: number | null = user.shiftId ?? null;
-  let lateMinutes = 0;
-  const isFriday = now.getDay() === 5;
-
-  if (user.shift && !isFriday) {
-    const shiftStart = new Date(user.shift.startTime);
-
-    if (now.getTime() < shiftStart.getTime()) {
-      return { status: 400, message: "Early check-in is not allowed" };
-    }
-
-    const startOfDay = new Date(now);
-    startOfDay.setHours(0, 0, 0, 0);
-
-    const endOfDay = new Date(now);
-    endOfDay.setHours(23, 59, 59, 999);
-
-    const todayShiftAttendance = await prisma.attendance.findFirst({
-      where: {
-        userId,
-        shiftId: user.shift.id,
-        checkIn: { gte: startOfDay, lte: endOfDay },
+  if (existingOpen) {
+    await prisma.attendance.update({
+      where: { id: existingOpen.id },
+      data: {
+        checkOut: new Date(new Date(existingOpen.checkIn).getTime() + 8 * 3_600_000),
+        overtimeMinutes: 0,
       },
     });
+  }
 
-    if (todayShiftAttendance) {
-      return { status: 409, message: "Check-in already recorded for this shift today" };
-    }
+  // Detect which shift is currently active based on wall-clock time,
+  // then fall back to the user's assigned shift if none matches.
+  const activeShift = await getCurrentActiveShift();
+  const shiftId: number | null = activeShift?.id ?? user.shiftId ?? null;
+  const isFriday = now.getDay() === 5;
 
-    const minutesLateFromStart = minutesBetween(now, shiftStart);
-    lateMinutes = Math.max(0, minutesLateFromStart - LATE_GRACE_MINUTES);
-  } else if (isFriday) {
-    // Friday is the weekly day off — any work is purely voluntary overtime; no late penalty
-    lateMinutes = 0;
-  } else {
-    shiftId = null;
-    lateMinutes = 0;
+  // No duplicate check — users are allowed multiple check-ins per day.
+  // Each check-in must have its own check-out (enforced by the auto-close above).
+
+  // Calculate late minutes using time-of-day comparison (fixes the 1970-epoch bug)
+  let lateMinutes = 0;
+  if (activeShift?.startTime && !isFriday) {
+    const shiftStartToday = todayAtShiftTime(activeShift.startTime as unknown as string);
+    lateMinutes = calculateLateMinutes(shiftStartToday, now);
   }
 
   const attendance = await prisma.attendance.create({
-    data: {
-      userId,
-      shiftId,
-      checkIn: now,
-      lateMinutes,
-      overtimeMinutes: 0,
-    },
+    data: { userId, shiftId, checkIn: now, lateMinutes, overtimeMinutes: 0 },
   });
 
-  auditAsync(
-    userId,
-    AuditAction.ATTENDANCE_CHECKED_IN,
-    AuditEntityType.ATTENDANCE,
-    attendance.id,
-  );
-
+  auditAsync(userId, AuditAction.ATTENDANCE_CHECKED_IN, AuditEntityType.ATTENDANCE, attendance.id);
   return { status: 201, data: attendance };
 };
 
@@ -264,78 +261,34 @@ export const checkOut = async (
     return { status: 200, data: attendance };
   }
 
-  if (openAttendance.shift) {
-    const shiftEnd = new Date(openAttendance.shift.endTime);
+  // Calculate overtime using time-of-day comparison (fixes the 1970-epoch bug).
+  // Workers are always allowed to check out — no early-checkout restriction.
+  let overtimeMinutes = 0;
+  if (openAttendance.shift?.endTime) {
+    const shiftEndToday = todayAtShiftTime(openAttendance.shift.endTime as unknown as string);
 
-    if (now.getTime() < shiftEnd.getTime()) {
-      return { status: 400, message: "Early check-out is not allowed" };
+    // For overnight shifts (end < start) the shift end falls on the *next* calendar day
+    if (openAttendance.shift.startTime) {
+      const startMins = shiftTimeToMinutes(openAttendance.shift.startTime as unknown as string);
+      const endMins   = shiftTimeToMinutes(openAttendance.shift.endTime   as unknown as string);
+      if (endMins <= startMins) {
+        shiftEndToday.setDate(shiftEndToday.getDate() + 1);
+      }
     }
 
-    const missingRecord = await validateRequiredRecords(
-      userId,
-      openAttendance.shiftId,
-      openAttendance.checkIn,
-    );
-    if (missingRecord) {
-      return { status: 400, message: missingRecord };
-    }
-
-    const minutesAfterShiftEnd = minutesBetween(now, shiftEnd);
-    const overtimeMinutes = Math.max(
-      0,
-      minutesAfterShiftEnd - OVERTIME_GRACE_MINUTES,
-    );
-
-    const attendance = await prisma.attendance.update({
-      where: { id: openAttendance.id },
-      data: {
-        checkOut: now,
-        overtimeMinutes,
-      },
-    });
-
-    auditAsync(
-      userId,
-      AuditAction.ATTENDANCE_CHECKED_OUT,
-      AuditEntityType.ATTENDANCE,
-      attendance.id,
-    );
-
-    calculateDailyPayroll(attendance.id, userId).catch((err) =>
-      console.error("Auto daily-payroll calculation failed:", err),
-    );
-
-    return { status: 200, data: attendance };
-  }
-
-  const missingRecord = await validateRequiredRecords(
-    userId,
-    null,
-    openAttendance.checkIn,
-  );
-  if (missingRecord) {
-    return { status: 400, message: missingRecord };
+    const minsAfter = minutesBetween(now, shiftEndToday);
+    overtimeMinutes = Math.max(0, minsAfter - OVERTIME_GRACE_MINUTES);
   }
 
   const attendance = await prisma.attendance.update({
     where: { id: openAttendance.id },
-    data: {
-      checkOut: now,
-      overtimeMinutes: 0,
-    },
+    data: { checkOut: now, overtimeMinutes },
   });
 
-  auditAsync(
-    userId,
-    AuditAction.ATTENDANCE_CHECKED_OUT,
-    AuditEntityType.ATTENDANCE,
-    attendance.id,
-  );
-
+  auditAsync(userId, AuditAction.ATTENDANCE_CHECKED_OUT, AuditEntityType.ATTENDANCE, attendance.id);
   calculateDailyPayroll(attendance.id, userId).catch((err) =>
     console.error("Auto daily-payroll calculation failed:", err),
   );
-
   return { status: 200, data: attendance };
 };
 

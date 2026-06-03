@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator, Alert, FlatList, KeyboardAvoidingView, Modal,
   Platform, Pressable, RefreshControl, ScrollView,
@@ -64,6 +64,7 @@ export function InvoicesScreen() {
   const [loading,    setLoading]    = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [tab,        setTab]        = useState<Tab>('ALL');
+  const [search,     setSearch]     = useState('');
 
   // create modal
   const [createModal, setCreateModal] = useState(false);
@@ -203,7 +204,19 @@ export function InvoicesScreen() {
     finally { setPayLoading(false); }
   };
 
-  const visible    = tab === 'ALL' ? invoices : invoices.filter((i) => i.invoiceType === tab);
+  const visible = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return invoices.filter((i) => {
+      if (tab !== 'ALL' && i.invoiceType !== tab) return false;
+      if (!q) return true;
+      return (
+        (i.invoiceNumber ?? '').toLowerCase().includes(q) ||
+        (i.customer?.name ?? '').toLowerCase().includes(q) ||
+        (i.driverName ?? '').toLowerCase().includes(q) ||
+        (i.notes ?? '').toLowerCase().includes(q)
+      );
+    });
+  }, [invoices, tab, search]);
   const totalValue = invoices.reduce((s, i) => s + (Number(i.totalAmount) || 0), 0);
   const shipments  = invoices.filter((i) => i.invoiceType === 'SHIPMENT').length;
   const pending    = invoices.filter((i) => i.paymentStatus === 'PENDING').length;
@@ -231,6 +244,23 @@ export function InvoicesScreen() {
               <View style={[styles.kpiRow, { marginBottom: spacing.md }]}>
                 <StatCard label={isAr ? 'معلق' : 'Pending'} value={String(pending)} icon="time" color={colors.warning} style={styles.kpi} />
                 <StatCard label={isAr ? 'مؤكد' : 'Confirmed'} value={String(confirmed)} icon="checkmark-circle" color={colors.success} style={styles.kpi} />
+              </View>
+
+              <View style={[styles.searchBar, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                <Ionicons name="search-outline" size={16} color={colors.textMuted} />
+                <TextInput
+                  style={[styles.searchInput, { color: colors.text }]}
+                  placeholder={isAr ? 'بحث برقم الفاتورة، العميل، السائق…' : 'Search by number, customer, driver…'}
+                  placeholderTextColor={colors.textMuted}
+                  value={search}
+                  onChangeText={setSearch}
+                  returnKeyType="search"
+                />
+                {search.length > 0 && (
+                  <TouchableOpacity onPress={() => setSearch('')} hitSlop={8}>
+                    <Ionicons name="close-circle" size={16} color={colors.textMuted} />
+                  </TouchableOpacity>
+                )}
               </View>
 
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: spacing.sm }}>
@@ -498,6 +528,8 @@ const styles = StyleSheet.create({
   safe:       { flex: 1 },
   center:     { flex: 1, alignItems: 'center', justifyContent: 'center' },
   list:       { padding: spacing.md, paddingBottom: 40 },
+  searchBar:  { flexDirection: 'row', alignItems: 'center', gap: 8, borderRadius: radius.md, borderWidth: 1.5, paddingHorizontal: spacing.sm, paddingVertical: 9, marginBottom: spacing.sm },
+  searchInput:{ flex: 1, fontSize: 14, paddingVertical: 0 },
   kpiRow:     { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.sm },
   kpi:        { flex: 1 },
   tabRow:     { flexDirection: 'row', gap: spacing.xs, paddingRight: spacing.md },

@@ -51,6 +51,7 @@ export function TaxComplianceScreen() {
   const [filings,    setFilings]    = useState<TaxFiling[]>([]);
   const [loading,    setLoading]    = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [apiError,   setApiError]   = useState<string | null>(null);
   const [filter,     setFilter]     = useState<string>('ALL');
   const [modal,      setModal]      = useState(false);
   const [editing,    setEditing]    = useState<TaxFiling | null>(null);
@@ -58,10 +59,11 @@ export function TaxComplianceScreen() {
   const [saving,     setSaving]     = useState(false);
 
   const load = useCallback(async () => {
+    setApiError(null);
     try {
       const res = await api.get<TaxFiling[] | { data: TaxFiling[] }>('/tax-filings');
       setFilings(Array.isArray(res) ? res : ((res as any).data ?? []));
-    } catch { setFilings([]); }
+    } catch (e: any) { setApiError(e?.message ?? 'Failed to load'); setFilings([]); }
     finally { setLoading(false); setRefreshing(false); }
   }, []);
 
@@ -126,6 +128,12 @@ export function TaxComplianceScreen() {
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
       <ScreenHeader title={isAr ? 'الامتثال الضريبي' : 'Tax Compliance'} showBack />
+
+      {!!apiError && (
+        <View style={[styles.errorBanner, { backgroundColor: '#fef2f2', borderColor: '#fca5a5' }]}>
+          <Text style={styles.errorText}>{apiError}</Text>
+        </View>
+      )}
 
       {loading ? (
         <View style={styles.center}><ActivityIndicator size="large" color={colors.primary} /></View>
@@ -270,9 +278,11 @@ export function TaxComplianceScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe:       { flex: 1 },
-  center:     { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  list:       { padding: spacing.md, paddingBottom: 40 },
+  safe:        { flex: 1 },
+  errorBanner: { marginHorizontal: spacing.md, marginTop: spacing.sm, padding: spacing.sm, borderRadius: radius.md, borderWidth: 1 },
+  errorText:   { color: '#dc2626', fontSize: 13, fontWeight: '600' },
+  center:      { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  list:        { padding: spacing.md, paddingBottom: 40 },
   kpiRow:     { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.sm },
   kpi:        { flex: 1 },
   filterRow:  { flexDirection: 'row', gap: spacing.xs, marginBottom: spacing.sm, flexWrap: 'wrap' },

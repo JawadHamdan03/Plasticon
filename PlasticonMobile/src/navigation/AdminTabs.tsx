@@ -19,8 +19,8 @@ import { AdminDashScreen }      from '../screens/admin/AdminDashScreen';
 import { AdminAnalyticsScreen } from '../screens/admin/AdminAnalyticsScreen';
 
 // ─── Operations ───────────────────────────────────────────────────────────────
-import { AdminOpsMenuScreen }    from '../screens/admin/AdminOpsMenuScreen';
-import { ProductionScreen }      from '../screens/worker/ProductionScreen';
+import { AdminOpsMenuScreen }        from '../screens/admin/AdminOpsMenuScreen';
+import { AdminProductionScreen }     from '../screens/admin/AdminProductionScreen';
 import { ConsumptionScreen }     from '../screens/admin/ConsumptionScreen';
 import { AttendanceAdminScreen } from '../screens/admin/AttendanceAdminScreen';
 import { PayrollAdminScreen }    from '../screens/admin/PayrollAdminScreen';
@@ -107,7 +107,7 @@ function OpsNavigator() {
   return (
     <OpsStack.Navigator screenOptions={{ headerShown: false }}>
       <OpsStack.Screen name="AdminOpsMenu"    component={AdminOpsMenuScreen} />
-      <OpsStack.Screen name="Production"      component={ProductionScreen} />
+      <OpsStack.Screen name="Production"      component={AdminProductionScreen} />
       <OpsStack.Screen name="Consumption"     component={ConsumptionScreen} />
       <OpsStack.Screen name="AttendanceAdmin" component={AttendanceAdminScreen} />
       <OpsStack.Screen name="PayrollAdmin"    component={PayrollAdminScreen} />

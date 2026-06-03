@@ -29,13 +29,19 @@ export function ProductionMonitorScreen() {
   const [total,      setTotal]      = useState(0);
   const [loading,    setLoading]    = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [isCheckedIn, setIsCheckedIn] = useState(false);
 
   const load = useCallback(async () => {
     try {
-      const res = await api.get<ProductionRecord[] | { records: ProductionRecord[]; total?: number; data?: ProductionRecord[] }>('/production/all?limit=50');
+      const [res, attRes] = await Promise.all([
+        api.get<ProductionRecord[] | { records: ProductionRecord[]; total?: number; data?: ProductionRecord[] }>('/production/all?limit=50'),
+        api.get<any>('/attendance/me').catch(() => []),
+      ]);
       const list = Array.isArray(res) ? res : (res.records ?? res.data ?? []);
       setRecords(list);
       setTotal(Array.isArray(res) ? list.length : ((res as any).total ?? list.length));
+      const attList: any[] = Array.isArray(attRes) ? attRes : (attRes?.data ?? []);
+      setIsCheckedIn(attList.some((r: any) => !r.checkOut));
     } catch { setRecords([]); }
     finally { setLoading(false); setRefreshing(false); }
   }, []);
@@ -49,6 +55,14 @@ export function ProductionMonitorScreen() {
         subtitle={`${total} ${isAr ? 'سجل إجمالي' : 'total records'}`}
         showBack
       />
+      {!isCheckedIn && !loading && (
+        <View style={[styles.banner, { backgroundColor: `${colors.warning}15`, borderColor: `${colors.warning}50` }]}>
+          <Ionicons name="warning-outline" size={16} color={colors.warning} />
+          <Text style={[styles.bannerText, { color: colors.warning }]}>
+            {isAr ? 'يجب تسجيل الدخول لتسجيل الإنتاج' : 'Check in to record production data'}
+          </Text>
+        </View>
+      )}
       <ScrollView
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
@@ -114,4 +128,6 @@ const styles = StyleSheet.create({
   qtyBox:     { alignItems: 'flex-end' },
   qty:        { fontSize: 20, fontWeight: '800' },
   qtyLabel:   { ...typography.caption },
+  banner:     { flexDirection: 'row', alignItems: 'center', gap: 6, marginHorizontal: spacing.md, marginBottom: 4, paddingHorizontal: spacing.md, paddingVertical: 10, borderRadius: radius.md, borderWidth: 1 },
+  bannerText: { fontSize: 13, fontWeight: '600', flex: 1 },
 });

@@ -613,40 +613,41 @@ export function ChatScreen() {
 
   // ── Messages view ──────────────────────────────────────────────────────────
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
-      <View style={[styles.header, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
-        <TouchableOpacity style={styles.backBtn} onPress={goBack}>
-          <Ionicons name="arrow-back" size={22} color={colors.text} />
-        </TouchableOpacity>
-        <View style={[styles.headerIcon, { backgroundColor: `${colors.primary}20` }]}>
-          <Ionicons name="people" size={18} color={colors.primary} />
-        </View>
-        <View style={{ flex: 1 }}>
-          <Text style={[styles.headerTitle, { color: colors.text }]} numberOfLines={1}>
-            {activeGroup?.name}
-          </Text>
-          {activeGroup?._count && (
-            <Text style={[styles.headerSub, { color: colors.textMuted }]}>
-              {activeGroup._count.members} {isAr ? 'عضو' : 'members'}
+    <KeyboardAvoidingView
+      style={[styles.safe, { backgroundColor: colors.background }]}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'padding'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
+    >
+      <SafeAreaView style={styles.flex} edges={['top', 'left', 'right']}>
+        <View style={[styles.header, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
+          <TouchableOpacity style={styles.backBtn} onPress={goBack}>
+            <Ionicons name="arrow-back" size={22} color={colors.text} />
+          </TouchableOpacity>
+          <View style={[styles.headerIcon, { backgroundColor: `${colors.primary}20` }]}>
+            <Ionicons name="people" size={18} color={colors.primary} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={[styles.headerTitle, { color: colors.text }]} numberOfLines={1}>
+              {activeGroup?.name}
             </Text>
-          )}
+            {activeGroup?._count && (
+              <Text style={[styles.headerSub, { color: colors.textMuted }]}>
+                {activeGroup._count.members} {isAr ? 'عضو' : 'members'}
+              </Text>
+            )}
+          </View>
         </View>
-      </View>
 
-      {loadingMsgs ? (
-        <View style={styles.center}><ActivityIndicator size="large" color={colors.primary} /></View>
-      ) : (
-        <KeyboardAvoidingView
-          style={styles.flex}
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
-        >
+        {loadingMsgs ? (
+          <View style={styles.center}><ActivityIndicator size="large" color={colors.primary} /></View>
+        ) : (
           <FlatList
             ref={listRef}
             data={messages}
             keyExtractor={m => String(m.id)}
             contentContainerStyle={styles.messageList}
             showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
             onContentSizeChange={() => listRef.current?.scrollToEnd({ animated: false })}
             ListEmptyComponent={
               <View style={styles.empty}>
@@ -703,32 +704,32 @@ export function ChatScreen() {
               );
             }}
           />
+        )}
 
-          <View style={[styles.inputBar, { backgroundColor: colors.surface, borderTopColor: colors.border }]}>
-            <TextInput
-              style={[styles.textInput, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
-              placeholder={isAr ? 'اكتب رسالة…' : 'Type a message…'}
-              placeholderTextColor={colors.textMuted}
-              value={input}
-              onChangeText={setInput}
-              multiline
-              maxLength={2000}
-            />
-            <TouchableOpacity
-              style={[styles.sendBtn, { backgroundColor: (!input.trim() || sending) ? colors.textMuted : colors.primary }]}
-              onPress={send}
-              disabled={!input.trim() || sending}
-              activeOpacity={0.8}
-            >
-              {sending
-                ? <ActivityIndicator size="small" color="#fff" />
-                : <Ionicons name="send" size={18} color="#fff" />
-              }
-            </TouchableOpacity>
-          </View>
-        </KeyboardAvoidingView>
-      )}
-    </SafeAreaView>
+        <View style={[styles.inputBar, { backgroundColor: colors.surface, borderTopColor: colors.border }]}>
+          <TextInput
+            style={[styles.textInput, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
+            placeholder={isAr ? 'اكتب رسالة…' : 'Type a message…'}
+            placeholderTextColor={colors.textMuted}
+            value={input}
+            onChangeText={setInput}
+            multiline
+            maxLength={2000}
+          />
+          <TouchableOpacity
+            style={[styles.sendBtn, { backgroundColor: (!input.trim() || sending) ? colors.textMuted : colors.primary }]}
+            onPress={send}
+            disabled={!input.trim() || sending}
+            activeOpacity={0.8}
+          >
+            {sending
+              ? <ActivityIndicator size="small" color="#fff" />
+              : <Ionicons name="send" size={18} color="#fff" />
+            }
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    </KeyboardAvoidingView>
   );
 }
 

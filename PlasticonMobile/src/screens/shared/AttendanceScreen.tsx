@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -19,10 +19,11 @@ import { useLocale } from '../../context/LocaleContext';
 
 interface AttendanceRecord {
   id: number;
-  checkIn:  string | null;
-  checkOut: string | null;
-  status:   string;
-  date?:    string;
+  checkIn:        string | null;
+  checkOut:       string | null;
+  lateMinutes?:   number;
+  overtimeMinutes?: number;
+  shift?: { id: number; name: string } | null;
 }
 
 function fmtTime(iso: string | null): string {
@@ -30,9 +31,11 @@ function fmtTime(iso: string | null): string {
   return new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 }
 
-function fmtDate(iso: string | null): string {
+function fmtDate(iso: string | null, isAr: boolean): string {
   if (!iso) return '—';
-  return new Date(iso).toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' });
+  return new Date(iso).toLocaleDateString(isAr ? 'ar-EG' : 'en-US', {
+    weekday: 'short', month: 'short', day: 'numeric',
+  });
 }
 
 function calcDuration(checkIn: string | null, checkOut: string | null): string {
@@ -43,25 +46,38 @@ function calcDuration(checkIn: string | null, checkOut: string | null): string {
   return h > 0 ? `${h}h ${m}m` : `${m}m`;
 }
 
-function AttendanceRow({ item }: { item: AttendanceRecord }) {
-  const { colors } = useAppTheme();
-  const STATUS_COLOR: Record<string, string> = {
-    PRESENT:  colors.success,
-    LATE:     colors.warning,
-    ABSENT:   colors.danger,
-    HALF_DAY: colors.info,
-  };
-  const statusColor = STATUS_COLOR[item.status] ?? colors.textMuted;
+function RecordRow({ item, colors, isAr }: { item: AttendanceRecord; colors: any; isAr: boolean }) {
+  const isOpen     = !item.checkOut;
+  const accentColor = isOpen ? colors.success : colors.primary;
+
   return (
     <View style={[styles.row, { backgroundColor: colors.surface }]}>
-      <View style={[styles.rowAccent, { backgroundColor: statusColor }]} />
+      <View style={[styles.rowAccent, { backgroundColor: accentColor }]} />
       <View style={styles.rowContent}>
+
+        {/* Date + status badge */}
         <View style={styles.rowTop}>
-          <Text style={[styles.rowDate, { color: colors.text }]}>{fmtDate(item.checkIn)}</Text>
-          <View style={[styles.statusBadge, { backgroundColor: `${statusColor}18` }]}>
-            <Text style={[styles.statusText, { color: statusColor }]}>{item.status}</Text>
+          <Text style={[styles.rowDate, { color: colors.text }]}>
+            {fmtDate(item.checkIn, isAr)}
+          </Text>
+          <View style={[styles.statusBadge, { backgroundColor: `${accentColor}18` }]}>
+            <Text style={[styles.statusText, { color: accentColor }]}>
+              {isOpen ? (isAr ? 'داخل الشفت' : 'Open') : (isAr ? 'مكتمل' : 'Closed')}
+            </Text>
           </View>
         </View>
+
+        {/* Shift name */}
+        {item.shift?.name && (
+          <View style={styles.shiftRow}>
+            <Ionicons name="time-outline" size={12} color={colors.textMuted} />
+            <Text style={[styles.shiftLabel, { color: colors.textMuted }]}>
+              {item.shift.name}
+            </Text>
+          </View>
+        )}
+
+        {/* Times row */}
         <View style={styles.rowTimes}>
           <View style={styles.timeBlock}>
             <Ionicons name="log-in-outline" size={13} color={colors.success} />
@@ -72,8 +88,30 @@ function AttendanceRow({ item }: { item: AttendanceRecord }) {
             <Ionicons name="log-out-outline" size={13} color={colors.danger} />
             <Text style={[styles.timeLabel, { color: colors.textMuted }]}>{fmtTime(item.checkOut)}</Text>
           </View>
-          <Text style={[styles.duration, { color: colors.primary }]}>{calcDuration(item.checkIn, item.checkOut)}</Text>
+          <Text style={[styles.duration, { color: colors.primary }]}>
+            {calcDuration(item.checkIn, item.checkOut)}
+          </Text>
         </View>
+
+        {/* Late / Overtime */}
+        {((item.lateMinutes ?? 0) > 0 || (item.overtimeMinutes ?? 0) > 0) && (
+          <View style={styles.extraRow}>
+            {(item.lateMinutes ?? 0) > 0 && (
+              <View style={[styles.extraChip, { backgroundColor: `${colors.warning}18` }]}>
+                <Text style={[styles.extraText, { color: colors.warning }]}>
+                  {isAr ? `تأخير ${item.lateMinutes} د` : `Late ${item.lateMinutes}m`}
+                </Text>
+              </View>
+            )}
+            {(item.overtimeMinutes ?? 0) > 0 && (
+              <View style={[styles.extraChip, { backgroundColor: `${colors.info}18` }]}>
+                <Text style={[styles.extraText, { color: colors.info }]}>
+                  {isAr ? `إضافي ${item.overtimeMinutes} د` : `OT ${item.overtimeMinutes}m`}
+                </Text>
+              </View>
+            )}
+          </View>
+        )}
       </View>
     </View>
   );
@@ -81,26 +119,22 @@ function AttendanceRow({ item }: { item: AttendanceRecord }) {
 
 export function AttendanceScreen() {
   const { colors } = useAppTheme();
-  const { isAr } = useLocale();
+  const { isAr }   = useLocale();
 
-  const [records, setRecords]             = useState<AttendanceRecord[]>([]);
-  const [today, setToday]                 = useState<AttendanceRecord | null>(null);
-  const [loading, setLoading]             = useState(true);
-  const [refreshing, setRefreshing]       = useState(false);
-  const [actionLoading, setActionLoading] = useState(false);
+  const [records,       setRecords]       = useState<AttendanceRecord[]>([]);
+  const [loading,       setLoading]       = useState(true);
+  const [refreshing,    setRefreshing]    = useState(false);
+  const [actionLoading, setActionLoading] = useState<'in' | 'out' | ''>('');
+  const [successMsg,    setSuccessMsg]    = useState('');
+  const [errorMsg,      setErrorMsg]      = useState('');
 
   const load = useCallback(async () => {
     try {
-      const res = await api.get<{ records: AttendanceRecord[] }>('/attendance/me?limit=30');
-      const recs = res.records ?? [];
-      const todayDate = new Date().toDateString();
-      const todayRec = recs.find((r) =>
-        r.checkIn ? new Date(r.checkIn).toDateString() === todayDate : false,
-      ) ?? null;
-      setToday(todayRec);
+      const res = await api.get<any>('/attendance/me');
+      const recs: AttendanceRecord[] = Array.isArray(res) ? res : (res?.data ?? []);
       setRecords(recs);
     } catch {
-      // keep last state
+      /* keep last state */
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -109,135 +143,181 @@ export function AttendanceScreen() {
 
   useEffect(() => { void load(); }, [load]);
 
-  const onRefresh = () => { setRefreshing(true); void load(); };
+  const hasOpenAttendance = useMemo(() => records.some((r) => !r.checkOut), [records]);
 
-  const handleCheckIn = async () => {
-    setActionLoading(true);
+  const summary = useMemo(() => {
+    const daySet   = new Set<string>();
+    const monthSet = new Set<string>();
+    let fridays = 0;
+    const now = new Date();
+    for (const rec of records) {
+      if (!rec.checkIn) continue;
+      const d   = new Date(rec.checkIn);
+      if (Number.isNaN(d.getTime())) continue;
+      const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+      if (!daySet.has(key) && d.getDay() === 5) fridays++;
+      daySet.add(key);
+      if (d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()) {
+        monthSet.add(key);
+      }
+    }
+    return { total: daySet.size, month: monthSet.size, fridays };
+  }, [records]);
+
+  const runAction = async (action: 'in' | 'out') => {
+    setActionLoading(action);
+    setSuccessMsg('');
+    setErrorMsg('');
     try {
-      await api.post('/attendance/check-in', {});
+      await api.post(action === 'in' ? '/attendance/check-in' : '/attendance/check-out', {});
+      setSuccessMsg(action === 'in'
+        ? (isAr ? 'تم تسجيل الدخول بنجاح' : 'Checked in successfully')
+        : (isAr ? 'تم تسجيل الخروج بنجاح' : 'Checked out successfully'),
+      );
       await load();
     } catch (err: any) {
-      Alert.alert(isAr ? 'فشل تسجيل الحضور' : 'Check-In Failed', err.message ?? (isAr ? 'حاول مجدداً.' : 'Please try again.'));
+      setErrorMsg(err?.message ?? (isAr ? 'فشلت العملية' : 'Action failed'));
     } finally {
-      setActionLoading(false);
+      setActionLoading('');
     }
   };
 
-  const handleCheckOut = async () => {
+  const handleCheckOut = () => {
     Alert.alert(
-      isAr ? 'تسجيل الانصراف' : 'Check Out',
-      isAr ? 'تأكيد تسجيل الانصراف اليوم؟' : 'Confirm check out for today?',
+      isAr ? 'تسجيل الخروج' : 'Check Out',
+      isAr ? 'تأكيد تسجيل الخروج؟' : 'Confirm check out?',
       [
         { text: isAr ? 'إلغاء' : 'Cancel', style: 'cancel' },
-        {
-          text: isAr ? 'تسجيل الانصراف' : 'Check Out',
-          style: 'destructive',
-          onPress: async () => {
-            setActionLoading(true);
-            try {
-              await api.post('/attendance/check-out', {});
-              await load();
-            } catch (err: any) {
-              Alert.alert(isAr ? 'فشل تسجيل الانصراف' : 'Check-Out Failed', err.message ?? (isAr ? 'حاول مجدداً.' : 'Please try again.'));
-            } finally {
-              setActionLoading(false);
-            }
-          },
-        },
+        { text: isAr ? 'خروج' : 'Check Out', style: 'destructive', onPress: () => void runAction('out') },
       ],
     );
   };
 
-  const checkedIn  = !!today?.checkIn;
-  const checkedOut = !!today?.checkOut;
-  const canCheckIn  = !checkedIn;
-  const canCheckOut = checkedIn && !checkedOut;
-
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
-      <ScreenHeader title={isAr ? 'الحضور' : 'Attendance'} subtitle={isAr ? 'تتبع ساعات عملك' : 'Track your work hours'} />
+      <ScreenHeader
+        title={isAr ? 'حضوري' : 'My Attendance'}
+        subtitle={isAr ? 'سجل دخولك وخروجك وتابع سجلك اليومي' : 'Check in, check out, and review your attendance'}
+      />
 
       {loading ? (
-        <View style={styles.center}>
-          <ActivityIndicator size="large" color={colors.primary} />
-        </View>
+        <View style={styles.center}><ActivityIndicator size="large" color={colors.primary} /></View>
       ) : (
         <FlatList
           data={records}
           keyExtractor={(i, idx) => `${String(i.id)}-${idx}`}
-          renderItem={({ item }) => <AttendanceRow item={item} />}
+          renderItem={({ item }) => <RecordRow item={item} colors={colors} isAr={isAr} />}
           contentContainerStyle={styles.list}
           showsVerticalScrollIndicator={false}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={() => { setRefreshing(true); void load(); }}
+              tintColor={colors.primary}
+            />
+          }
           ListHeaderComponent={
-            <View style={styles.header}>
-              <View style={[styles.todayCard, { backgroundColor: colors.surface }]}>
-                <Text style={[styles.todayLabel, { color: colors.textMuted }]}>{isAr ? 'اليوم' : 'TODAY'}</Text>
-                {today ? (
-                  <View style={styles.todayTimes}>
-                    <View style={styles.todayBlock}>
-                      <Text style={[styles.todayBlockLabel, { color: colors.textMuted }]}>{isAr ? 'تسجيل الحضور' : 'Check In'}</Text>
-                      <Text style={[styles.todayBlockValue, { color: colors.success }]}>
-                        {fmtTime(today.checkIn)}
-                      </Text>
-                    </View>
-                    <View style={[styles.todayDivider, { backgroundColor: colors.border }]} />
-                    <View style={styles.todayBlock}>
-                      <Text style={[styles.todayBlockLabel, { color: colors.textMuted }]}>{isAr ? 'تسجيل الانصراف' : 'Check Out'}</Text>
-                      <Text style={[styles.todayBlockValue, { color: checkedOut ? colors.danger : colors.textMuted }]}>
-                        {fmtTime(today.checkOut)}
-                      </Text>
-                    </View>
-                    <View style={[styles.todayDivider, { backgroundColor: colors.border }]} />
-                    <View style={styles.todayBlock}>
-                      <Text style={[styles.todayBlockLabel, { color: colors.textMuted }]}>{isAr ? 'المدة' : 'Duration'}</Text>
-                      <Text style={[styles.todayBlockValue, { color: colors.primary }]}>
-                        {calcDuration(today.checkIn, today.checkOut)}
-                      </Text>
-                    </View>
+            <View style={styles.headerBlock}>
+
+              {/* Status + stats card */}
+              <View style={[styles.actionCard, { backgroundColor: colors.surface }]}>
+
+                {/* Status indicator */}
+                <View style={styles.statusRow}>
+                  <View style={[styles.statusDot, { backgroundColor: hasOpenAttendance ? colors.success : colors.textMuted }]} />
+                  <Text style={[styles.statusLabel, { color: hasOpenAttendance ? colors.success : colors.textMuted }]}>
+                    {hasOpenAttendance ? (isAr ? 'داخل الشفت' : 'Shift open') : (isAr ? 'لا يوجد شفت نشط' : 'No active shift')}
+                  </Text>
+                </View>
+
+                {/* Stats row */}
+                <View style={styles.statsRow}>
+                  <View style={styles.stat}>
+                    <Ionicons name="calendar-outline" size={18} color={colors.primary} />
+                    <Text style={[styles.statValue, { color: colors.text }]}>{summary.total}</Text>
+                    <Text style={[styles.statLabel, { color: colors.textMuted }]}>{isAr ? 'أيام دوام' : 'Worked days'}</Text>
                   </View>
-                ) : (
-                  <Text style={[styles.todayEmpty, { color: colors.textMuted }]}>{isAr ? 'لم تسجّل حضورك اليوم بعد.' : "You haven't checked in yet today."}</Text>
-                )}
+                  <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
+                  <View style={styles.stat}>
+                    <Ionicons name="sunny-outline" size={18} color={colors.warning} />
+                    <Text style={[styles.statValue, { color: colors.text }]}>{summary.month}</Text>
+                    <Text style={[styles.statLabel, { color: colors.textMuted }]}>{isAr ? 'هذا الشهر' : 'This month'}</Text>
+                  </View>
+                  <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
+                  <View style={styles.stat}>
+                    <Ionicons name="moon-outline" size={18} color={colors.info} />
+                    <Text style={[styles.statValue, { color: colors.text }]}>{summary.fridays}</Text>
+                    <Text style={[styles.statLabel, { color: colors.textMuted }]}>{isAr ? 'جمع' : 'Fridays'}</Text>
+                  </View>
+                </View>
 
-                {(canCheckIn || canCheckOut) && (
+                {/* Two action buttons */}
+                <View style={styles.btnRow}>
                   <TouchableOpacity
-                    style={[styles.actionBtn, { backgroundColor: canCheckOut ? colors.danger : colors.success }]}
-                    onPress={canCheckIn ? handleCheckIn : handleCheckOut}
+                    style={[
+                      styles.btn, styles.btnIn,
+                      { backgroundColor: hasOpenAttendance ? colors.surfaceAlt : colors.success },
+                      hasOpenAttendance && { borderWidth: 1.5, borderColor: colors.border },
+                    ]}
+                    onPress={() => void runAction('in')}
+                    disabled={actionLoading !== '' || hasOpenAttendance}
                     activeOpacity={0.8}
-                    disabled={actionLoading}
                   >
-                    {actionLoading ? (
-                      <ActivityIndicator color="#fff" size="small" />
-                    ) : (
-                      <>
-                        <Ionicons
-                          name={canCheckIn ? 'log-in-outline' : 'log-out-outline'}
-                          size={20} color="#fff"
-                        />
-                        <Text style={styles.actionBtnText}>
-                          {canCheckIn ? (isAr ? 'تسجيل الحضور' : 'Check In') : (isAr ? 'تسجيل الانصراف' : 'Check Out')}
-                        </Text>
-                      </>
-                    )}
+                    {actionLoading === 'in'
+                      ? <ActivityIndicator size="small" color={hasOpenAttendance ? colors.textMuted : '#fff'} />
+                      : <Ionicons name="log-in-outline" size={20} color={hasOpenAttendance ? colors.textMuted : '#fff'} />
+                    }
+                    <Text style={[styles.btnText, { color: hasOpenAttendance ? colors.textMuted : '#fff' }]}>
+                      {isAr ? 'تسجيل الدخول' : 'Check In'}
+                    </Text>
                   </TouchableOpacity>
-                )}
 
-                {checkedOut && (
-                  <View style={styles.doneRow}>
-                    <Ionicons name="checkmark-circle" size={16} color={colors.success} />
-                    <Text style={[styles.doneText, { color: colors.success }]}>{isAr ? 'اكتملت الوردية اليوم' : 'Shift complete for today'}</Text>
+                  <TouchableOpacity
+                    style={[
+                      styles.btn, styles.btnOut,
+                      { backgroundColor: hasOpenAttendance ? colors.danger : colors.surfaceAlt },
+                      !hasOpenAttendance && { borderWidth: 1.5, borderColor: colors.border },
+                    ]}
+                    onPress={handleCheckOut}
+                    disabled={actionLoading !== '' || !hasOpenAttendance}
+                    activeOpacity={0.8}
+                  >
+                    {actionLoading === 'out'
+                      ? <ActivityIndicator size="small" color={hasOpenAttendance ? '#fff' : colors.textMuted} />
+                      : <Ionicons name="log-out-outline" size={20} color={hasOpenAttendance ? '#fff' : colors.textMuted} />
+                    }
+                    <Text style={[styles.btnText, { color: hasOpenAttendance ? '#fff' : colors.textMuted }]}>
+                      {isAr ? 'تسجيل الخروج' : 'Check Out'}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+
+                {/* Success / Error messages */}
+                {!!successMsg && (
+                  <View style={[styles.msgBanner, { backgroundColor: `${colors.success}15`, borderColor: `${colors.success}40` }]}>
+                    <Ionicons name="checkmark-circle" size={14} color={colors.success} />
+                    <Text style={[styles.msgText, { color: colors.success }]}>{successMsg}</Text>
+                  </View>
+                )}
+                {!!errorMsg && (
+                  <View style={[styles.msgBanner, { backgroundColor: `${colors.danger}12`, borderColor: `${colors.danger}40` }]}>
+                    <Ionicons name="alert-circle" size={14} color={colors.danger} />
+                    <Text style={[styles.msgText, { color: colors.danger }]}>{errorMsg}</Text>
                   </View>
                 )}
               </View>
 
-              <Text style={[styles.histLabel, { color: colors.textMuted }]}>{isAr ? 'السجل' : 'HISTORY'}</Text>
+              <Text style={[styles.histLabel, { color: colors.textMuted }]}>
+                {isAr ? 'سجل الحضور والغياب' : 'ATTENDANCE HISTORY'}
+              </Text>
             </View>
           }
           ListEmptyComponent={
             <View style={styles.empty}>
               <Ionicons name="calendar-outline" size={44} color={colors.textMuted} />
-              <Text style={[styles.emptyText, { color: colors.textMuted }]}>{isAr ? 'لا توجد سجلات حضور بعد' : 'No attendance records yet'}</Text>
+              <Text style={[styles.emptyText, { color: colors.textMuted }]}>
+                {isAr ? 'لا توجد سجلات حضور بعد' : 'No attendance records yet'}
+              </Text>
             </View>
           }
         />
@@ -251,50 +331,54 @@ const styles = StyleSheet.create({
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   list:   { padding: spacing.md, paddingBottom: 40 },
 
-  header: { marginBottom: spacing.sm },
+  headerBlock: { marginBottom: spacing.sm },
 
-  todayCard: {
-    borderRadius: radius.lg,
-    padding: spacing.md,
-    marginBottom: spacing.lg,
-    ...shadow.md,
-  },
-  todayLabel:      { ...typography.sectionLabel, marginBottom: spacing.sm },
-  todayTimes:      { flexDirection: 'row', alignItems: 'center', marginBottom: spacing.md },
-  todayBlock:      { flex: 1, alignItems: 'center' },
-  todayBlockLabel: { ...typography.caption, marginBottom: 4 },
-  todayBlockValue: { fontSize: 17, fontWeight: '700' },
-  todayDivider:    { width: 1, height: 36, marginHorizontal: 4 },
-  todayEmpty:      { ...typography.bodySmall, marginBottom: spacing.md },
+  actionCard: { borderRadius: radius.lg, padding: spacing.md, marginBottom: spacing.lg, ...shadow.md },
 
-  actionBtn: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+  statusRow:  { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: spacing.md },
+  statusDot:  { width: 10, height: 10, borderRadius: 5 },
+  statusLabel: { ...typography.h4 },
+
+  statsRow:    { flexDirection: 'row', alignItems: 'center', marginBottom: spacing.md },
+  stat:        { flex: 1, alignItems: 'center', gap: 4 },
+  statValue:   { fontSize: 20, fontWeight: '800' },
+  statLabel:   { ...typography.caption, textAlign: 'center' },
+  statDivider: { width: 1, height: 40 },
+
+  btnRow: { flexDirection: 'row', gap: spacing.sm },
+  btn: {
+    flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
     paddingVertical: 13, borderRadius: radius.md, gap: 8,
   },
-  actionBtnText: { color: '#fff', fontWeight: '700', fontSize: 15 },
+  btnIn:   {},
+  btnOut:  {},
+  btnText: { fontWeight: '700', fontSize: 14 },
 
-  doneRow:  { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: spacing.sm },
-  doneText: { ...typography.bodySmall, fontWeight: '600' },
+  msgBanner: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: spacing.sm, padding: spacing.sm, borderRadius: radius.md, borderWidth: 1 },
+  msgText:   { ...typography.caption, fontWeight: '600', flex: 1 },
 
   histLabel: { ...typography.sectionLabel, marginBottom: spacing.sm },
 
+  // Record rows
   row: {
-    flexDirection: 'row',
-    borderRadius: radius.md,
-    marginBottom: spacing.sm,
-    overflow: 'hidden',
-    ...shadow.sm,
+    flexDirection: 'row', borderRadius: radius.md,
+    marginBottom: spacing.sm, overflow: 'hidden', ...shadow.sm,
   },
   rowAccent:  { width: 4 },
   rowContent: { flex: 1, padding: spacing.md },
-  rowTop:    { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
-  rowDate:   { ...typography.h4 },
+  rowTop:     { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 },
+  rowDate:    { ...typography.h4 },
   statusBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: radius.full },
   statusText:  { fontSize: 11, fontWeight: '700' },
-  rowTimes:  { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  timeBlock: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  timeLabel: { ...typography.caption, fontWeight: '600' },
-  duration:  { ...typography.caption, marginLeft: 'auto', fontWeight: '700' },
+  shiftRow:    { flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 6 },
+  shiftLabel:  { ...typography.caption, fontWeight: '600' },
+  rowTimes:   { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  timeBlock:  { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  timeLabel:  { ...typography.caption, fontWeight: '600' },
+  duration:   { ...typography.caption, marginLeft: 'auto', fontWeight: '700' },
+  extraRow:   { flexDirection: 'row', gap: 6, marginTop: 6 },
+  extraChip:  { paddingHorizontal: 8, paddingVertical: 3, borderRadius: radius.full },
+  extraText:  { fontSize: 11, fontWeight: '700' },
 
   empty:     { alignItems: 'center', paddingTop: 40, gap: spacing.sm },
   emptyText: { ...typography.bodySmall },

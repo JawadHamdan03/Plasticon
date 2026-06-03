@@ -21,9 +21,9 @@ interface StopAlert {
 }
 
 const PRIORITY_COLOR: Record<Priority, { bg: string; text: string; border: string }> = {
-  CRITICAL: { bg: "bg-red-100 dark:bg-red-950",    text: "text-red-600 dark:text-red-400",    border: "border-red-500" },
-  HIGH:     { bg: "bg-orange-100 dark:bg-orange-950", text: "text-orange-600 dark:text-orange-400", border: "border-orange-500" },
-  NORMAL:   { bg: "bg-yellow-100 dark:bg-yellow-950", text: "text-yellow-700 dark:text-yellow-400", border: "border-yellow-500" },
+  CRITICAL: { bg: "var(--red-100)",    text: "var(--red-600)",    border: "var(--red-600)" },
+  HIGH:     { bg: "var(--orange-100)", text: "var(--orange-600)", border: "var(--orange-600)" },
+  NORMAL:   { bg: "var(--yellow-100)", text: "var(--yellow-600)", border: "var(--yellow-600)" },
 };
 
 function elapsed(isoStart: string, isoEnd?: string | null) {
@@ -102,14 +102,14 @@ export function AdminMachineStopsPage() {
   ];
 
   return (
-    <div className="p-6 space-y-6" dir={isAr ? "rtl" : "ltr"}>
+    <div style={{ padding: "1.5rem", display: "flex", flexDirection: "column", gap: "1.5rem" }} dir={isAr ? "rtl" : "ltr"}>
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+          <h1 style={{ fontSize: "1.5rem", fontWeight: 800, color: "var(--text-primary)", margin: 0 }}>
             {isAr ? "توقفات الآلات" : "Machine Stop Alerts"}
           </h1>
-          <p className="text-sm text-gray-500 mt-1">
+          <p style={{ fontSize: ".85rem", color: "var(--text-secondary)", marginTop: ".25rem" }}>
             {isAr
               ? "تنبيهات توقف الآلات التي أبلغ عنها العمال — في الوقت الفعلي"
               : "Worker-reported machine stops — real-time"}
@@ -117,46 +117,53 @@ export function AdminMachineStopsPage() {
         </div>
         <button
           onClick={() => void load()}
-          className="flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+          style={{
+            display: "flex", alignItems: "center", gap: ".5rem",
+            padding: ".5rem .75rem", fontSize: ".85rem", fontWeight: 600,
+            borderRadius: 8, border: "1px solid var(--border-default)",
+            background: "var(--bg-card)", color: "var(--text-primary)", cursor: "pointer",
+          }}
         >
-          <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
+          <RefreshCw size={14} style={loading ? { animation: "spin 1s linear infinite" } : {}} />
           {isAr ? "تحديث" : "Refresh"}
         </button>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-4">
-        <div className="rounded-xl border border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-950/40 p-4">
-          <div className="text-3xl font-black text-red-600 dark:text-red-400">{criticalOpen}</div>
-          <div className="text-sm font-semibold text-red-600 dark:text-red-400 mt-1">
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "1rem" }}>
+        <div style={{ borderRadius: 12, border: "1px solid var(--red-600)", background: "var(--red-50)", padding: "1rem" }}>
+          <div style={{ fontSize: "2rem", fontWeight: 900, color: "var(--red-600)" }}>{criticalOpen}</div>
+          <div style={{ fontSize: ".85rem", fontWeight: 700, color: "var(--red-600)", marginTop: ".25rem" }}>
             {isAr ? "توقفات حرجة مفتوحة" : "Open Critical"}
           </div>
         </div>
-        <div className="rounded-xl border border-orange-200 dark:border-orange-900 bg-orange-50 dark:bg-orange-950/40 p-4">
-          <div className="text-3xl font-black text-orange-600 dark:text-orange-400">{highOpen}</div>
-          <div className="text-sm font-semibold text-orange-600 dark:text-orange-400 mt-1">
+        <div style={{ borderRadius: 12, border: "1px solid var(--orange-600)", background: "var(--orange-50)", padding: "1rem" }}>
+          <div style={{ fontSize: "2rem", fontWeight: 900, color: "var(--orange-600)" }}>{highOpen}</div>
+          <div style={{ fontSize: ".85rem", fontWeight: 700, color: "var(--orange-600)", marginTop: ".25rem" }}>
             {isAr ? "توقفات عالية مفتوحة" : "Open High Priority"}
           </div>
         </div>
-        <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4">
-          <div className="text-3xl font-black text-gray-800 dark:text-gray-100">{totalOpen}</div>
-          <div className="text-sm font-semibold text-gray-500 mt-1">
+        <div style={{ borderRadius: 12, border: "1px solid var(--border-default)", background: "var(--bg-card)", padding: "1rem" }}>
+          <div style={{ fontSize: "2rem", fontWeight: 900, color: "var(--text-primary)" }}>{totalOpen}</div>
+          <div style={{ fontSize: ".85rem", fontWeight: 700, color: "var(--text-secondary)", marginTop: ".25rem" }}>
             {isAr ? "إجمالي المفتوحة" : "Total Open"}
           </div>
         </div>
       </div>
 
       {/* Filter tabs */}
-      <div className="flex gap-1 p-1 bg-gray-100 dark:bg-gray-800 rounded-xl w-fit">
+      <div style={{ display: "flex", gap: 4, padding: 4, background: "var(--border-default)", borderRadius: 12, width: "fit-content" }}>
         {STATUS_TABS.map(t => (
           <button
             key={t.key}
             onClick={() => handleFilterChange(t.key)}
-            className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
-              filter === t.key
-                ? "bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm"
-                : "text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
-            }`}
+            style={{
+              padding: ".5rem 1rem", borderRadius: 8, fontSize: ".85rem", fontWeight: 700,
+              border: "none", cursor: "pointer", transition: "all .15s",
+              background: filter === t.key ? "var(--bg-card)" : "transparent",
+              color: filter === t.key ? "var(--text-primary)" : "var(--text-secondary)",
+              boxShadow: filter === t.key ? "0 1px 3px rgba(0,0,0,.12)" : "none",
+            }}
           >
             {isAr ? t.labelAr : t.label}
           </button>
@@ -165,24 +172,24 @@ export function AdminMachineStopsPage() {
 
       {/* Error */}
       {error && (
-        <div className="flex items-center gap-2 p-3 rounded-lg bg-red-50 dark:bg-red-950 text-red-600 dark:text-red-400 text-sm">
+        <div style={{ display: "flex", alignItems: "center", gap: ".5rem", padding: ".75rem", borderRadius: 8, background: "var(--red-50)", color: "var(--red-600)", fontSize: ".85rem" }}>
           <X size={16} />
           {error}
         </div>
       )}
 
-      {/* Table */}
+      {/* List */}
       {loading ? (
-        <div className="flex items-center justify-center h-48">
-          <div className="animate-spin rounded-full h-8 w-8 border-2 border-red-500 border-t-transparent" />
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 192 }}>
+          <div style={{ width: 32, height: 32, borderRadius: "50%", border: "2px solid var(--red-600)", borderTopColor: "transparent", animation: "spin 1s linear infinite" }} />
         </div>
       ) : stops.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20 gap-3 text-gray-400">
-          <CheckCircle2 size={48} className="text-green-400" />
-          <p className="font-medium">{isAr ? "لا توجد توقفات" : "No machine stops"}</p>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", paddingTop: "5rem", gap: ".75rem" }}>
+          <CheckCircle2 size={48} style={{ color: "var(--green-600)" }} />
+          <p style={{ fontWeight: 600, color: "var(--text-secondary)" }}>{isAr ? "لا توجد توقفات" : "No machine stops"}</p>
         </div>
       ) : (
-        <div className="space-y-3">
+        <div style={{ display: "flex", flexDirection: "column", gap: ".75rem" }}>
           {stops.map(stop => {
             const p       = PRIORITY_COLOR[stop.priority];
             const resolved = !!stop.resolved_at;
@@ -191,29 +198,36 @@ export function AdminMachineStopsPage() {
             return (
               <div
                 key={stop.id}
-                className={`rounded-xl border-l-4 ${p.border} bg-white dark:bg-gray-900 border border-l-4 border-gray-100 dark:border-gray-800 p-4 ${resolved ? "opacity-60" : ""}`}
+                style={{
+                  borderRadius: 12,
+                  borderLeft: `4px solid ${p.border}`,
+                  border: `1px solid var(--border-default)`,
+                  borderLeftWidth: 4,
+                  borderLeftColor: p.border,
+                  background: "var(--bg-card)",
+                  padding: "1rem",
+                  opacity: resolved ? 0.65 : 1,
+                }}
               >
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1 min-w-0">
-                    {/* Top row: machine + badges */}
-                    <div className="flex items-center gap-2 flex-wrap mb-1">
-                      <span className="font-bold text-gray-900 dark:text-white text-base">
+                <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: "1rem" }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    {/* Top row */}
+                    <div style={{ display: "flex", alignItems: "center", gap: ".5rem", flexWrap: "wrap", marginBottom: ".25rem" }}>
+                      <span style={{ fontWeight: 700, color: "var(--text-primary)", fontSize: "1rem" }}>
                         {stop.machine_label}
                       </span>
-                      <span className={`inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full ${p.bg} ${p.text}`}>
+                      <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: ".75rem", fontWeight: 700, padding: "2px 8px", borderRadius: 99, background: p.bg, color: p.text }}>
                         <AlertTriangle size={10} />
                         {stop.priority}
                       </span>
                       {resolved ? (
-                        <span className="inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full bg-green-100 dark:bg-green-950 text-green-600 dark:text-green-400">
+                        <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: ".75rem", fontWeight: 700, padding: "2px 8px", borderRadius: 99, background: "var(--green-100)", color: "var(--green-600)" }}>
                           <CheckCircle2 size={10} />
                           {isAr ? "محلول" : "Resolved"}
-                          {stop.response_minutes != null
-                            ? ` · ${Math.round(stop.response_minutes)}m`
-                            : ""}
+                          {stop.response_minutes != null ? ` · ${Math.round(stop.response_minutes)}m` : ""}
                         </span>
                       ) : (
-                        <span className={`inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full ${p.bg} ${p.text}`}>
+                        <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: ".75rem", fontWeight: 700, padding: "2px 8px", borderRadius: 99, background: p.bg, color: p.text }}>
                           <Clock size={10} />
                           {elapsed(stop.started_at)} {isAr ? "منذ" : "ago"}
                         </span>
@@ -221,13 +235,13 @@ export function AdminMachineStopsPage() {
                     </div>
 
                     {/* Reason */}
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-2 leading-relaxed">
+                    <p style={{ fontSize: ".875rem", color: "var(--text-secondary)", marginBottom: ".5rem", lineHeight: 1.6 }}>
                       {stop.reason}
                     </p>
 
                     {/* Footer meta */}
-                    <div className="flex items-center gap-3 text-xs text-gray-400 flex-wrap">
-                      <span className="font-medium text-gray-500 dark:text-gray-300">
+                    <div style={{ display: "flex", alignItems: "center", gap: ".75rem", fontSize: ".75rem", color: "var(--text-tertiary)", flexWrap: "wrap" }}>
+                      <span style={{ fontWeight: 600, color: "var(--text-secondary)" }}>
                         {isAr ? "بواسطة:" : "By:"} {worker}
                       </span>
                       <span>·</span>
@@ -235,7 +249,7 @@ export function AdminMachineStopsPage() {
                       {stop.resolved_at && (
                         <>
                           <span>·</span>
-                          <span className="text-green-600 dark:text-green-400">
+                          <span style={{ color: "var(--green-600)" }}>
                             {isAr ? "حُل في:" : "Resolved:"} {fmt(stop.resolved_at)}
                           </span>
                         </>
@@ -248,10 +262,17 @@ export function AdminMachineStopsPage() {
                     <button
                       onClick={() => void handleResolve(stop.id)}
                       disabled={resolving === stop.id}
-                      className="flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-green-50 dark:bg-green-950 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800 hover:bg-green-100 dark:hover:bg-green-900 transition-colors disabled:opacity-50"
+                      style={{
+                        flexShrink: 0, display: "flex", alignItems: "center", gap: 6,
+                        padding: ".375rem .75rem", fontSize: ".75rem", fontWeight: 700,
+                        borderRadius: 8, border: "1px solid var(--green-600)",
+                        background: "var(--green-50)", color: "var(--green-600)",
+                        cursor: resolving === stop.id ? "not-allowed" : "pointer",
+                        opacity: resolving === stop.id ? 0.5 : 1,
+                      }}
                     >
                       {resolving === stop.id ? (
-                        <div className="w-3 h-3 rounded-full border border-green-600 border-t-transparent animate-spin" />
+                        <div style={{ width: 12, height: 12, borderRadius: "50%", border: "1.5px solid var(--green-600)", borderTopColor: "transparent", animation: "spin 1s linear infinite" }} />
                       ) : (
                         <CheckCircle2 size={13} />
                       )}
