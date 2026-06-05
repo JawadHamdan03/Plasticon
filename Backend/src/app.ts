@@ -54,7 +54,7 @@ import techDocumentRoutes from "./routes/techDocumentRoutes";
 import aiRoutes from "./routes/aiRoutes";
 import ragContextRoutes from "./routes/ragContextRoutes";
 import { initializeEmailService } from "./utils/emailService";
-import { startShiftReminderScheduler } from "./services/shiftReminderScheduler";
+import { startNotificationScheduler } from "./services/notificationScheduler";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -185,7 +185,7 @@ server.on("error", (error: NodeJS.ErrnoException) => {
 
 server.listen(PORT, () => {
   console.log(`server is running on port ${PORT}`);
-  startShiftReminderScheduler();
+  startNotificationScheduler();
 });
 
 void initializeEmailService();

@@ -8,6 +8,7 @@ import React, {
 import { api } from '../api/client';
 import { AuthResponse, User } from '../api/types';
 import { clearSession, getSavedUser, saveToken, saveUser, setSessionExpiredHandler } from './storage';
+import { registerPushToken, unregisterPushToken } from '../notifications/notificationService';
 
 interface AuthState {
   user: User | null;
@@ -58,10 +59,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await saveToken(data.token);
     await saveUser(restored);
     setUser(restored);
+    registerPushToken().catch(() => undefined);
   }, []);
 
   const logout = useCallback(async () => {
-    // Best-effort server-side logout (cookie clear)
+    unregisterPushToken().catch(() => undefined);
     api.post('/auth/logout', {}).catch(() => undefined);
     await clearSession();
     setUser(null);

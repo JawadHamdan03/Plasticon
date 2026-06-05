@@ -7,6 +7,7 @@ import {
 import { auditAsync } from "./auditHelper";
 import { AuditEntityType } from "./auditServices";
 import { getNotificationRuleForEvent } from "./notificationRuleSettings";
+import { sendPushToUsers } from "./pushService";
 
 type ServiceResult<T> = {
   status: number;
@@ -340,6 +341,8 @@ export const createNotification = async (
     emitNotificationToUser(notification.userId, notification);
     emitNotificationUnreadCountUpdate(notification.userId, { refresh: true });
   });
+
+  sendPushToUsers(targetUserIds, title, message, { type: notificationType }).catch(() => undefined);
 
   return { status: 201, data: created };
 };

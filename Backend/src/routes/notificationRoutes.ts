@@ -7,6 +7,8 @@ import {
     getUnreadNotificationCountHandler,
     markAllNotificationsAsReadHandler,
     markNotificationAsReadHandler,
+    registerPushTokenHandler,
+    unregisterPushTokenHandler,
 } from "../controllers/notificationController";
 
 const router = Router();
@@ -19,5 +21,8 @@ router.patch("/:id/read", authorizeRoles(allRoles), markNotificationAsReadHandle
 router.patch("/read-all", authorizeRoles(allRoles), markAllNotificationsAsReadHandler);
 
 router.post("/", authorizeRoles([UserRole.ADMIN]), createNotificationHandler);
+
+router.post("/push-token", authorizeRoles(allRoles), registerPushTokenHandler);
+router.delete("/push-token", authorizeRoles(allRoles), unregisterPushTokenHandler);
 
 export default router;

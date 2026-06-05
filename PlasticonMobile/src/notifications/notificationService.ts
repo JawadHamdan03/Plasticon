@@ -1,5 +1,6 @@
 import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
+import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 import { api } from '../api/client';
 
@@ -124,4 +125,45 @@ export async function setBadgeCount(count: number): Promise<void> {
 
 export async function clearBadge(): Promise<void> {
   try { await Notifications.setBadgeCountAsync(0); } catch { /* ignore */ }
+}
+
+// ─── Remote push token registration ──────────────────────────────────────────
+
+let _lastPushToken: string | null = null;
+
+export async function registerPushToken(): Promise<void> {
+  try {
+    if (!Device.isDevice) return; // skip emulators / Expo Go web
+
+    const granted = await requestNotificationPermission();
+    if (!granted) return;
+
+    const projectId =
+      (Constants.expoConfig?.extra as Record<string, any> | undefined)
+        ?.eas?.projectId as string | undefined;
+
+    const { data: token } = await Notifications.getExpoPushTokenAsync(
+      projectId ? { projectId } : undefined,
+    );
+
+    if (!token) return;
+    _lastPushToken = token;
+
+    await api.post('/notifications/push-token', {
+      token,
+      platform: Platform.OS,
+    });
+  } catch (err) {
+    // Silently ignore — push may be unavailable in dev builds without EAS config
+    console.warn('[Push] registerPushToken skipped:', err);
+  }
+}
+
+export async function unregisterPushToken(): Promise<void> {
+  try {
+    _lastPushToken = null;
+    await (api.delete as (path: string) => Promise<unknown>)('/notifications/push-token').catch(() => undefined);
+  } catch {
+    // ignore on logout
+  }
 }

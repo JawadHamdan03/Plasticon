@@ -6,6 +6,8 @@ export const createUserSocket = (): Socket | null => {
     return null;
   }
 
+  const token = window.localStorage.getItem("plasticon_token") ?? "";
+
   const socket = io(API_BASE_URL, {
     transports: ["websocket"],
     timeout: 5000,
@@ -13,6 +15,7 @@ export const createUserSocket = (): Socket | null => {
     reconnectionAttempts: 2,
     reconnectionDelay: 1200,
     withCredentials: true,
+    auth: { token },
   });
 
   return socket;

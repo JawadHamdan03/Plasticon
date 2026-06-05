@@ -143,6 +143,7 @@ model User {
   confirmedDailyPayrolls DailyPayroll[] @relation("ConfirmedPayrolls")
   salaryConfigUpdates  SalaryConfig[] @relation("SalaryConfigUpdater")
   notifications Notification[]
+  pushTokens    PushToken[]
 
   electricityRecorded      ElectricityReading[]   @relation("ElectricityRecorder")
   electricityEngineered    ElectricityReading[]   @relation("ElectricityEngineer")
@@ -989,6 +990,22 @@ model Notification {
   productionRecord ProductionRecord? @relation(fields: [productionId], references: [id])
 
   createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([userId, isRead])
+}
+
+model PushToken {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  token     String   @unique
+  platform  String   // "android" | "ios"
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 //////////////////////

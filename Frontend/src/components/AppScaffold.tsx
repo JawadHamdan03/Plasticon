@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import { createUserSocket } from "../lib/socket";
 import {
   LayoutDashboard, Users, ClipboardList, DollarSign, Settings,
   Camera, Zap, Cpu, BarChart3, FileText, ShoppingCart, TrendingUp,
@@ -443,6 +444,51 @@ export function AppScaffold({ children }: { children: ReactNode }) {
   useEffect(() => { void fetchNotif(); }, [role]);
   useEffect(() => { if (notifOpen) void fetchNotif(); }, [notifOpen]);
   useEffect(() => { setNotifOpen(false); setSidebarOpen(false); setSearchOpen(false); setSearchQuery(""); }, [location.pathname]);
+
+  // Request browser notification permission on first render
+  useEffect(() => {
+    if (typeof Notification !== "undefined" && Notification.permission === "default") {
+      Notification.requestPermission().catch(() => undefined);
+    }
+  }, []);
+
+  // Real-time notifications via socket.io
+  useEffect(() => {
+    const socket = createUserSocket();
+    if (!socket) return;
+
+    const handleNewNotification = (notification: NotificationItem) => {
+      setNotifications((prev) => [notification, ...prev].slice(0, 20));
+      setUnread((c) => c + 1);
+
+      // Show browser notification when tab is not focused
+      if (typeof Notification !== "undefined" && Notification.permission === "granted" && document.hidden) {
+        try {
+          new Notification(notification.title, {
+            body: notification.message,
+            icon: "/favicon.svg",
+            tag: `notif-${notification.id}`,
+          });
+        } catch { /* ignore */ }
+      }
+    };
+
+    const handleUnreadCountUpdate = () => {
+      fetch(`${API_BASE_URL}/notifications/unread-count`, { credentials: "include" })
+        .then((r) => r.ok ? r.json() : null)
+        .then((d: any) => { if (d) setUnread(d.unreadCount ?? d.count ?? 0); })
+        .catch(() => undefined);
+    };
+
+    socket.on("notification:new", handleNewNotification);
+    socket.on("notification:unread-count-updated", handleUnreadCountUpdate);
+
+    return () => {
+      socket.off("notification:new", handleNewNotification);
+      socket.off("notification:unread-count-updated", handleUnreadCountUpdate);
+      socket.disconnect();
+    };
+  }, [role]);
 
   useEffect(() => {
     const onDown = (e: PointerEvent) => {
