@@ -45,10 +45,8 @@ export type WorkerWorkStackParamList = {
 
 // Worker — AI tab
 export type WorkerAIStackParamList = {
-  AIHub:          undefined;
-  Assistant:      undefined;
-  ShiftHandover:  undefined;
-  WorkerCoaching: undefined;
+  AIHub:     undefined;
+  Assistant: undefined;
 };
 
 // Worker — Personal tab
@@ -80,6 +78,7 @@ export type EngineerEngStackParamList = {
   Warehouse:           undefined;
   QualityChecks:       undefined;
   MaintenancePage:     undefined;
+  MaintSchedule:       undefined;
   EngInventory:        undefined;
   MachineHealth:       undefined;
   WorkOrders:          undefined;
@@ -157,6 +156,7 @@ export type AccountantFinanceStackParamList = {
   Suppliers:           undefined;
   EmployeePerformance: undefined;
   MaintCosts:          undefined;
+  Electricity:         undefined;
 };
 
 export type AccountantHRStackParamList = {

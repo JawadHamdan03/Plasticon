@@ -39,6 +39,7 @@ import { PartsPricingScreen }        from '../screens/accountant/PartsPricingScr
 import { SuppliersScreen }           from '../screens/accountant/SuppliersScreen';
 import { EmployeePerformanceScreen } from '../screens/accountant/EmployeePerformanceScreen';
 import { MaintCostsScreen }          from '../screens/engineer/MaintCostsScreen';
+import { ElectricityScreen }         from '../screens/admin/ElectricityScreen';
 
 // ─── HR screens ───────────────────────────────────────────────────────────────
 import { AccountantHRMenuScreen } from '../screens/accountant/AccountantHRMenuScreen';
@@ -104,6 +105,7 @@ function FinanceNavigator() {
       <FinanceStack.Screen name="Suppliers"            component={SuppliersScreen} />
       <FinanceStack.Screen name="EmployeePerformance"  component={EmployeePerformanceScreen} />
       <FinanceStack.Screen name="MaintCosts"           component={MaintCostsScreen} />
+      <FinanceStack.Screen name="Electricity"          component={ElectricityScreen} />
     </FinanceStack.Navigator>
   );
 }

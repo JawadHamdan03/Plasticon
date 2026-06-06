@@ -23,6 +23,7 @@ import { ConsumptionScreen }        from '../screens/admin/ConsumptionScreen';
 import { WarehouseScreen }          from '../screens/admin/WarehouseScreen';
 import { QualityChecksScreen }      from '../screens/engineer/QualityChecksScreen';
 import { MaintenancePage }          from '../screens/engineer/MaintenancePage';
+import { MaintScheduleScreen }      from '../screens/engineer/MaintScheduleScreen';
 import { EngInventoryScreen }       from '../screens/engineer/EngInventoryScreen';
 import { MachineHealthScreen }      from '../screens/engineer/MachineHealthScreen';
 import { WorkOrdersScreen }         from '../screens/engineer/WorkOrdersScreen';
@@ -73,6 +74,7 @@ function EngNavigator() {
       <EngStack.Screen name="Warehouse"            component={WarehouseScreen} />
       <EngStack.Screen name="QualityChecks"        component={QualityChecksScreen} />
       <EngStack.Screen name="MaintenancePage"      component={MaintenancePage} />
+      <EngStack.Screen name="MaintSchedule"        component={MaintScheduleScreen} />
       <EngStack.Screen name="EngInventory"         component={EngInventoryScreen} />
       <EngStack.Screen name="MachineHealth"        component={MachineHealthScreen} />
       <EngStack.Screen name="WorkOrders"           component={WorkOrdersScreen} />

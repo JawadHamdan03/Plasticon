@@ -33,10 +33,8 @@ import { ElectricityRecordScreen }  from '../screens/worker/ElectricityRecordScr
 import { SnapshotsScreen }          from '../screens/worker/SnapshotsScreen';
 
 // ─── AI tab ───────────────────────────────────────────────────────────────────
-import { AIHubScreen }          from '../screens/shared/AIHubScreen';
-import { AssistantScreen }      from '../screens/shared/AssistantScreen';
-import { ShiftHandoverScreen }  from '../screens/worker/ShiftHandoverScreen';
-import { WorkerCoachingScreen } from '../screens/worker/WorkerCoachingScreen';
+import { AIHubScreen }     from '../screens/shared/AIHubScreen';
+import { AssistantScreen } from '../screens/shared/AssistantScreen';
 
 // ─── Personal tab ─────────────────────────────────────────────────────────────
 import { PersonalMenuScreen }   from '../screens/worker/PersonalMenuScreen';
@@ -84,10 +82,8 @@ const AIStack = createNativeStackNavigator<WorkerAIStackParamList>();
 function AINavigator() {
   return (
     <AIStack.Navigator screenOptions={{ headerShown: false }}>
-      <AIStack.Screen name="AIHub"          component={AIHubScreen} />
-      <AIStack.Screen name="Assistant"      component={AssistantScreen} />
-      <AIStack.Screen name="ShiftHandover"  component={ShiftHandoverScreen} />
-      <AIStack.Screen name="WorkerCoaching" component={WorkerCoachingScreen} />
+      <AIStack.Screen name="AIHub"     component={AIHubScreen} />
+      <AIStack.Screen name="Assistant" component={AssistantScreen} />
     </AIStack.Navigator>
   );
 }
