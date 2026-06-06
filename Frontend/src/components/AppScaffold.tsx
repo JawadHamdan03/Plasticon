@@ -15,6 +15,7 @@ import { useLocale } from "../context/LocaleContext";
 import { useTheme } from "../context/ThemeContext";
 import { API_BASE_URL } from "../lib/api";
 import logo from "../assets/plasticon.png";
+import { DateTimeBadge } from "./DateTimeBadge";
 
 type SearchItem = { labelAr: string; labelEn: string; to: string };
 
@@ -642,6 +643,9 @@ export function AppScaffold({ children }: { children: ReactNode }) {
 
           {/* Actions */}
           <div className="app-topbar__actions">
+            {/* Date & time */}
+            <DateTimeBadge />
+
             {/* Locale switch */}
             <div className="locale-switch-topbar">
               <button

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import {
+  Image,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -19,6 +20,8 @@ import { AuthStackParamList } from '../../navigation/types';
 import { radius, spacing, typography } from '../../theme';
 import { useAppTheme } from '../../context/ThemeContext';
 import { useLocale } from '../../context/LocaleContext';
+
+const plasticonLogin = require('../../../assets/plasticonLogin.png') as number;
 
 type Nav = NativeStackNavigationProp<AuthStackParamList>;
 
@@ -50,25 +53,14 @@ export function LoginScreen() {
   };
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: colors.tabBar }]} edges={['top']}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['top']}>
       <KeyboardAvoidingView
         style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
-        {/* ── Brand header ─────────────────────────────────────────── */}
-        <View style={[styles.header, { backgroundColor: colors.tabBar }]}>
-          <View style={styles.logoWrap}>
-            <Ionicons name="business" size={32} color={colors.accent} />
-          </View>
-          <Text style={styles.brandName}>PLASTICON</Text>
-          <Text style={[styles.brandTagline, { color: colors.tabInactive }]}>
-            {isAr ? 'نظام إدارة المصنع' : 'Factory Management System'}
-          </Text>
-          <View style={styles.dots}>
-            {[0, 1, 2, 3, 4].map((i) => (
-              <View key={i} style={[styles.dot, i === 2 && { width: 18, backgroundColor: colors.accent }]} />
-            ))}
-          </View>
+        {/* ── Hero photo ───────────────────────────────────────────── */}
+        <View style={styles.heroWrap}>
+          <Image source={plasticonLogin} style={styles.heroImg} resizeMode="cover" />
         </View>
 
         {/* ── Login form ───────────────────────────────────────────── */}
@@ -147,21 +139,15 @@ const styles = StyleSheet.create({
   safe: { flex: 1 },
   flex: { flex: 1 },
 
-  header: {
-    alignItems: 'center',
-    paddingTop: spacing.xl,
-    paddingBottom: spacing.xl,
-    paddingHorizontal: spacing.xl,
+  heroWrap: {
+    width: '100%',
+    height: 260,
+    overflow: 'hidden',
   },
-  logoWrap: {
-    width: 64, height: 64, borderRadius: 20,
-    backgroundColor: '#1E293B', borderWidth: 1.5, borderColor: '#2D3F55',
-    alignItems: 'center', justifyContent: 'center', marginBottom: spacing.md,
+  heroImg: {
+    width: '100%',
+    height: '100%',
   },
-  brandName:    { fontSize: 22, fontWeight: '800', color: '#FFFFFF', letterSpacing: 3.5, marginBottom: 4 },
-  brandTagline: { fontSize: 12, letterSpacing: 0.5, fontWeight: '500', marginBottom: spacing.lg },
-  dots:         { flexDirection: 'row', gap: 6 },
-  dot:          { width: 5, height: 5, borderRadius: 3, backgroundColor: '#2D3F55' },
 
   formSheet:   { flex: 1, borderTopLeftRadius: 28, borderTopRightRadius: 28 },
   formContent: { padding: spacing.lg, paddingTop: spacing.md },

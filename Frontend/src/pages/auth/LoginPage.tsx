@@ -5,6 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Mail, Lock, Eye, EyeOff, Factory, ArrowRight, AlertCircle } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { loginSchema, type LoginInput } from "../../lib/validations";
+import plasticonImg from "../../assets/plasticonLogin.png";
 
 export function LoginPage() {
   const navigate = useNavigate();
@@ -37,51 +38,14 @@ export function LoginPage() {
 
   return (
     <div className="auth-root">
-      {/* Illustration side */}
-      <div className="auth-illustration">
-        <div style={{ position: "relative", zIndex: 1, textAlign: "center", color: "#fff" }}>
-          <div
-            style={{
-              width: 88,
-              height: 88,
-              background: "rgba(255,255,255,.15)",
-              borderRadius: "24px",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              margin: "0 auto 2rem",
-              backdropFilter: "blur(8px)",
-              border: "1px solid rgba(255,255,255,.2)",
-            }}
-          >
-            <Factory size={44} color="#fff" />
-          </div>
-          <h1 style={{ fontSize: "2.25rem", fontWeight: 900, margin: "0 0 .75rem", lineHeight: 1.15 }}>
-            Plasticon Factory
-          </h1>
-          <p style={{ fontSize: "1rem", opacity: 0.8, margin: "0 auto", maxWidth: 300, lineHeight: 1.6 }}>
-            Manage production, inventory, payroll, and more — all in one place.
-          </p>
-
-          <div style={{ marginTop: "3rem", display: "flex", flexDirection: "column", gap: "1rem", textAlign: "left", maxWidth: 300, margin: "3rem auto 0" }}>
-            {[
-              "Real-time production tracking",
-              "Role-based access for every team member",
-              "Automated payroll & attendance",
-              "Smart inventory management",
-            ].map((f) => (
-              <div key={f} style={{ display: "flex", alignItems: "center", gap: ".75rem", color: "rgba(255,255,255,.92)", fontSize: ".9rem" }}>
-                <span style={{
-                  width: 22, height: 22, borderRadius: "50%",
-                  background: "var(--orange-500)",
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  flexShrink: 0, fontSize: ".7rem", fontWeight: 800,
-                }}>✓</span>
-                {f}
-              </div>
-            ))}
-          </div>
-        </div>
+      {/* Illustration side — pure photo, no overlays */}
+      <div className="auth-illustration" style={{ background: "none", padding: 0 }}>
+        <img
+          src={plasticonImg}
+          alt=""
+          aria-hidden="true"
+          style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", objectPosition: "center" }}
+        />
       </div>
 
       {/* Form side */}
