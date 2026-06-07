@@ -55,7 +55,7 @@ router.get("/salary-config", authorizeRoles(allRoles), getSalaryConfigsHandler);
 router.put("/salary-config", authorizeRoles([UserRole.ADMIN]), updateSalaryConfigHandler);
 
 // ── Per-user salary overrides ──
-router.get("/admin/user-salaries", authorizeRoles([UserRole.ADMIN]), getUserSalariesHandler);
+router.get("/admin/user-salaries", authorizeRoles(accountingRoles), getUserSalariesHandler);
 router.put("/admin/user-salaries/:userId", authorizeRoles([UserRole.ADMIN]), setUserMonthlySalaryHandler);
 
 // ── Mark attendance leave type ──

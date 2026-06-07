@@ -13,6 +13,7 @@ import {
   getInventoryByIdHandler,
   setPriceHandler,
   reviewInventoryHandler,
+  getTransferLogsHandler,
 } from "../controllers/engineerInventoryController";
 
 const router = Router();
@@ -26,6 +27,9 @@ router.post("/", engineerAdmin, createOrUpdateInventoryHandler);
 
 // Engineer: get own inventories
 router.get("/mine", engineerAdmin, getMyInventoriesHandler);
+
+// Engineer/Admin: equipment transfer / maintenance log feed
+router.get("/transfers", engineerAdmin, getTransferLogsHandler);
 
 // Admin/Accountant: get all inventories
 router.get("/all", adminAccountant, getAllInventoriesHandler);

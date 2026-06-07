@@ -1,6 +1,35 @@
 import type { Response } from "express";
 import type { AuthenticatedRequest } from "../middleware/authMiddleware";
 import * as svc from "../services/engineerInventoryServices";
+import { prisma } from "../config/lib/prisma";
+
+export async function getTransferLogsHandler(req: AuthenticatedRequest, res: Response) {
+  try {
+    const limit = Math.min(Number(req.query.limit) || 40, 100);
+    const records = await prisma.maintenance.findMany({
+      take: limit,
+      orderBy: { createdAt: "desc" },
+      include: {
+        machine: { select: { id: true, name: true } },
+        engineer: { select: { id: true, fullName: true } },
+      },
+    });
+    const transfers = records.map((r) => ({
+      id: r.id,
+      itemName: r.partsUsed,
+      fromLocation: r.machine?.name ?? `Machine #${r.machineId}`,
+      toLocation: r.downtimeReason.replace(/_/g, " ").toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase()),
+      transferredBy: r.engineer ? { fullName: r.engineer.fullName } : null,
+      transferDate: r.createdAt,
+      notes: r.reportText ?? null,
+      createdAt: r.createdAt,
+    }));
+    res.json({ transfers });
+  } catch (error) {
+    console.error("getTransferLogsHandler error:", error);
+    res.status(500).json({ message: "Failed to fetch transfer logs" });
+  }
+}
 
 export async function createOrUpdateInventoryHandler(
   req: AuthenticatedRequest,

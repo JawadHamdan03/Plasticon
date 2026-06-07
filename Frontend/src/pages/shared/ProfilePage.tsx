@@ -101,6 +101,7 @@ export function ProfilePage() {
   const docInputRef = useRef<HTMLInputElement>(null);
   const [docTitle, setDocTitle] = useState("");
   const [docType, setDocType] = useState("OTHER");
+  const [docFileName, setDocFileName] = useState("");
   const [docUploading, setDocUploading] = useState(false);
   const [docMsg, setDocMsg] = useState<{ type: "ok" | "err"; text: string } | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
@@ -184,8 +185,8 @@ export function ProfilePage() {
       });
       if (!res.ok) throw new Error("Failed to save profile");
       await refreshUser();
-      setSaveMsg({ type: "ok", text: "Profile saved successfully!" });
       setEditMode(false);
+      setSaveMsg({ type: "ok", text: "Profile saved successfully!" });
     } catch {
       setSaveMsg({ type: "err", text: "Failed to save. Please try again." });
     } finally {
@@ -218,6 +219,7 @@ export function ProfilePage() {
       await refreshUser();
       setDocTitle("");
       setDocType("OTHER");
+      setDocFileName("");
       if (docInputRef.current) docInputRef.current.value = "";
       setDocMsg({ type: "ok", text: "Document uploaded successfully!" });
     } catch {
@@ -458,6 +460,34 @@ export function ProfilePage() {
           </button>
         </div>
       </Card>
+
+      {/* Save result banner — shown outside edit form so it persists after closing */}
+      {saveMsg && (
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: ".5rem",
+            padding: ".65rem 1rem",
+            borderRadius: 8,
+            fontSize: ".875rem",
+            fontWeight: 500,
+            background: saveMsg.type === "ok" ? "rgba(34,197,94,.1)" : "rgba(239,68,68,.1)",
+            color: saveMsg.type === "ok" ? "#16a34a" : "#dc2626",
+            border: `1px solid ${saveMsg.type === "ok" ? "rgba(34,197,94,.25)" : "rgba(239,68,68,.25)"}`,
+          }}
+        >
+          {saveMsg.type === "ok" ? <CheckCircle size={15} /> : <AlertCircle size={15} />}
+          {saveMsg.text}
+          <button
+            type="button"
+            onClick={() => setSaveMsg(null)}
+            style={{ marginLeft: "auto", background: "none", border: "none", cursor: "pointer", opacity: 0.6, padding: "2px 4px", fontSize: "1rem", lineHeight: 1 }}
+          >
+            ×
+          </button>
+        </div>
+      )}
 
       {/* ── Personal Info ── */}
       <Card style={{ padding: "1.5rem 2rem" }}>
@@ -721,31 +751,6 @@ export function ProfilePage() {
                 </div>
               </div>
 
-              {saveMsg && (
-                <div
-                  style={{
-                    gridColumn: "1 / -1",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: ".5rem",
-                    padding: ".65rem 1rem",
-                    borderRadius: 8,
-                    fontSize: ".85rem",
-                    fontWeight: 500,
-                    background:
-                      saveMsg.type === "ok" ? "rgba(34,197,94,.1)" : "rgba(239,68,68,.1)",
-                    color: saveMsg.type === "ok" ? "#16a34a" : "#dc2626",
-                  }}
-                >
-                  {saveMsg.type === "ok" ? (
-                    <CheckCircle size={15} />
-                  ) : (
-                    <AlertCircle size={15} />
-                  )}
-                  {saveMsg.text}
-                </div>
-              )}
-
               <div
                 style={{
                   gridColumn: "1 / -1",
@@ -920,19 +925,15 @@ export function ProfilePage() {
             </button>
             <span
               style={{ fontSize: ".78rem", color: "var(--text-secondary)", fontStyle: "italic" }}
-              id="doc-file-name"
             >
-              {docInputRef.current?.files?.[0]?.name ?? "No file selected"}
+              {docFileName || "No file selected"}
             </span>
             <input
               ref={docInputRef}
               type="file"
               accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
               style={{ display: "none" }}
-              onChange={() => {
-                // Force re-render to show file name
-                setDocTitle((t) => t);
-              }}
+              onChange={(e) => setDocFileName(e.target.files?.[0]?.name ?? "")}
             />
 
             <button

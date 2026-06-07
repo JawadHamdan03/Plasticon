@@ -239,6 +239,41 @@ export const markSparePartReceived = async (
   }
 };
 
+export const updateSparePartRequest = async (
+  id: number,
+  engineerId: number,
+  data: { partName?: string; quantity?: number; notes?: string; supplierName?: string },
+): Promise<ServiceResult<unknown>> => {
+  try {
+    const existing = await prisma.sparePartRequest.findUnique({
+      where: { id },
+      select: { id: true, engineerId: true, status: true },
+    });
+    if (!existing) return { status: 404, message: "Spare part request not found" };
+    if (existing.engineerId !== engineerId) return { status: 403, message: "Not authorized" };
+    if (existing.status === "RECEIVED") return { status: 400, message: "Cannot edit a received request" };
+
+    const updated = await prisma.sparePartRequest.update({
+      where: { id },
+      data: {
+        ...(data.partName?.trim() ? { partName: data.partName.trim() } : {}),
+        ...(data.quantity != null && data.quantity > 0 ? { quantity: data.quantity } : {}),
+        ...(data.notes !== undefined ? { notes: data.notes?.trim() || null } : {}),
+        ...(data.supplierName !== undefined ? { supplierName: data.supplierName?.trim() || null } : {}),
+      },
+      include: {
+        engineer: { select: userSelect },
+        machine: { select: machineSelect },
+        pricedBy: { select: pricedBySelect },
+      },
+    });
+    return { status: 200, data: updated };
+  } catch (error) {
+    console.error("Update spare part request error:", error);
+    return { status: 500, message: "Failed to update spare part request" };
+  }
+};
+
 export const deleteSparePartRequest = async (
   id: number,
 ): Promise<ServiceResult<unknown>> => {

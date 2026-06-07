@@ -43,9 +43,10 @@ export function WorkMenuScreen() {
   const { user } = useAuth();
 
   const PRODUCTION_ITEMS: MenuItem[] = [
-    { icon: 'cube',  label: isAr ? 'تسجيل الإنتاج' : 'Production Log',  desc: isAr ? 'تسجيل مخرجات الإنتاج' : 'Record production output',      color: colors.primary, screen: 'Production'   },
-    { icon: 'flash', label: isAr ? 'القراءات' : 'Readings',               desc: isAr ? 'تسجيل قراءات العداد' : 'Log electricity meter readings',  color: colors.warning, screen: 'Readings'     },
-    { icon: 'flag',  label: isAr ? 'الأهداف اليومية' : 'Daily Targets',  desc: isAr ? 'أهداف اليوم' : "Today's production goals",               color: colors.success, screen: 'DailyTargets' },
+    { icon: 'cube',         label: isAr ? 'تسجيل الإنتاج'  : 'Production Log',  desc: isAr ? 'تسجيل مخرجات الإنتاج'      : 'Record production output',            color: colors.primary, screen: 'Production'   },
+    { icon: 'camera',       label: isAr ? 'اللقطات'        : 'Snapshots',        desc: isAr ? 'قراءات الآلة والكهرباء'     : 'Machine counter & electricity reads',  color: '#8b5cf6',      screen: 'Snapshots'    },
+    { icon: 'flash',        label: isAr ? 'القراءات'       : 'Readings',          desc: isAr ? 'تسجيل قراءات العداد'       : 'Log electricity meter readings',       color: colors.warning, screen: 'Readings'     },
+    { icon: 'flag',         label: isAr ? 'الأهداف اليومية': 'Daily Targets',     desc: isAr ? 'أهداف اليوم'                : "Today's production goals",             color: colors.success, screen: 'DailyTargets' },
   ];
 
   const REPORTING_ITEMS: MenuItem[] = [

@@ -29,7 +29,7 @@ router.get(
 
 router.get(
   "/production/weekly",
-  authorizeRoles([UserRole.ACCOUNTANT, UserRole.ADMIN]),
+  authorizeRoles([UserRole.ACCOUNTANT, UserRole.ADMIN, UserRole.ENGINEER]),
   getWeeklyProductionSummaryHandler,
 );
 

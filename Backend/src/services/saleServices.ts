@@ -311,12 +311,12 @@ export const createSale = async (
     },
   );
 
-  await dispatchAutoNotification({
+  void dispatchAutoNotification({
     event: "SALE_CREATED",
     actorUserId: userId,
     saleId: result?.id,
     totalAmount,
-  });
+  }).catch((err) => console.error("[autoNotify] sale:", err));
 
   return { status: 201, data: result };
 };

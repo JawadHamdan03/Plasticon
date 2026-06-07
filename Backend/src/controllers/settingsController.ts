@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { ProductType } from "../config/generated/prisma/client";
 import { AuthenticatedRequest } from "../middleware/authMiddleware";
+import { emitSnapshotCreated } from "../config/socket";
 import {
   createSettingsSnapshot as createSettingsSnapshotService,
   deleteSettingsSnapshot as deleteSettingsSnapshotService,
@@ -107,6 +108,7 @@ export const createSettingsSnapshot = async (
       return;
     }
 
+    emitSnapshotCreated({ snapshot: result.data });
     res.status(result.status).json(result.data);
   } catch (error) {
     console.error("create settings snapshot error:", error);

@@ -129,14 +129,14 @@ export const createInventoryTransaction = async (
     },
   );
 
-  await dispatchAutoNotification({
+  void dispatchAutoNotification({
     event: "INVENTORY_TRANSACTION_CREATED",
     actorUserId: userId,
     inventoryTransactionId: result.transaction.id,
     materialName: material.name,
     quantity,
     operationType: payload.type,
-  });
+  }).catch((err) => console.error("[autoNotify] inventory:", err));
 
   return { status: 201, data: result };
 };

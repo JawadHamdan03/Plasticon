@@ -1,0 +1,90 @@
+services:
+
+  # ── PostgreSQL database ─────────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: plasticon_postgres
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: plasticon
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: "123456"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d plasticon"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  # ── Backend API (Express + Prisma) ──────────────────────────────────────
+  backend:
+    build:
+      context: ./Backend
+      dockerfile: Dockerfile
+    container_name: plasticon_backend
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    env_file:
+      - ./Backend/.env.docker
+    volumes:
+      # Persist uploaded pictures outside the container
+      - backend_pictures:/app/prisma/pictures
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # ── RAG AI server (LangChain + Pinecone + GPT-4o) ───────────────────────
+  rag:
+    build:
+      context: ./RAG
+      dockerfile: Dockerfile
+    container_name: plasticon_rag
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    env_file:
+      - ./RAG/.env.docker
+    depends_on:
+      - backend
+
+  # ── Frontend (React/Vite → nginx) ───────────────────────────────────────
+  frontend:
+    build:
+      context: ./Frontend
+      dockerfile: Dockerfile
+      args:
+        # Vite bakes these into the JS bundle — must be browser-reachable URLs
+        VITE_API_URL: "http://localhost:8080"
+        VITE_RAG_URL: "http://localhost:3001"
+    container_name: plasticon_frontend
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+      - rag
+
+  # ── Mobile (Expo web + Metro bundler) ───────────────────────────────────
+  mobile:
+    build:
+      context: ./PlasticonMobile
+      dockerfile: Dockerfile
+    container_name: plasticon_mobile
+    restart: unless-stopped
+    ports:
+      - "8082:8082"   # Expo web (browser)
+      - "8081:8081"   # Metro bundler (physical devices / emulators)
+      - "19000:19000" # Expo Go
+      - "19001:19001" # Expo dev tools
+    env_file:
+      - ./PlasticonMobile/.env.docker
+
+# ── Persistent volumes ──────────────────────────────────────────────────────
+volumes:
+  postgres_data:
+  backend_pictures:

@@ -32,6 +32,7 @@ export const createTechDocument = async (
   filePath?: string,
   fileSize?: number,
   mimeType?: string,
+  images?: string[],
 ): Promise<ServiceResult<unknown>> => {
   try {
     if (!title || !title.trim()) {
@@ -68,6 +69,7 @@ export const createTechDocument = async (
         filePath: filePath ?? null,
         fileSize: fileSize ?? null,
         mimeType: mimeType ?? null,
+        images: images ?? [],
         downloadCount: 0,
       },
       include: {
@@ -109,6 +111,37 @@ export const incrementDownloadCount = async (
   } catch (error) {
     console.error("Increment download count error:", error);
     return { status: 500, message: "Failed to update download count" };
+  }
+};
+
+export const updateTechDocument = async (
+  id: number,
+  title?: string,
+  category?: string,
+  description?: string,
+): Promise<ServiceResult<unknown>> => {
+  try {
+    const existing = await prisma.techDocument.findUnique({ where: { id }, select: { id: true } });
+    if (!existing) return { status: 404, message: "Tech document not found" };
+
+    const validCategories = ["Manual", "Maintenance", "Safety", "Reference", "Support", "Other"];
+    if (category && !validCategories.includes(category)) {
+      return { status: 400, message: `category must be one of: ${validCategories.join(", ")}` };
+    }
+
+    const updated = await prisma.techDocument.update({
+      where: { id },
+      data: {
+        ...(title?.trim() ? { title: title.trim() } : {}),
+        ...(category ? { category } : {}),
+        ...(description !== undefined ? { description: description?.trim() ?? null } : {}),
+      },
+      include: { uploadedBy: { select: uploaderSelect } },
+    });
+    return { status: 200, data: updated };
+  } catch (error) {
+    console.error("Update tech document error:", error);
+    return { status: 500, message: "Failed to update tech document" };
   }
 };
 

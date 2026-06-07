@@ -6,15 +6,10 @@ type UserAvatarBadgeProps = {
 };
 
 const normalizeImagePath = (value: string | null | undefined) => {
-  if (!value) {
-    return null;
-  }
-
-  if (value.startsWith("http")) {
-    return value;
-  }
-
-  return `${API_BASE_URL}/${value.replace(/^prisma\/?pictures\//, "pictures/")}`;
+  if (!value) return null;
+  if (value.startsWith("http")) return value;
+  const filename = value.replace(/^(?:prisma\/?)?pictures\//, "");
+  return `${API_BASE_URL}/pictures/${filename}`;
 };
 
 export function UserAvatarBadge({ size = "md" }: UserAvatarBadgeProps) {

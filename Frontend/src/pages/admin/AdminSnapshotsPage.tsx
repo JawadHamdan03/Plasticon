@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Download } from "lucide-react";
 import { useLocale } from "../../context/LocaleContext";
-import { UserAvatarBadge } from "../../components/UserAvatarBadge";
 import { API_BASE_URL, readApiError } from "../../lib/api";
+import { createUserSocket } from "../../lib/socket";
 
 type OpsSnapshot = {
   id: number;
@@ -85,9 +85,8 @@ export function AdminSnapshotsPage() {
   const [loadingSnapshots, setLoadingSnapshots] = useState(false);
   const [snapshotFromDate, setSnapshotFromDate] = useState("");
   const [snapshotToDate, setSnapshotToDate] = useState("");
-  const [previewImage, setPreviewImage] = useState<SnapshotImagePreview | null>(
-    null,
-  );
+  const [previewImage, setPreviewImage] = useState<SnapshotImagePreview | null>(null);
+  const [zoom, setZoom] = useState(1);
 
   const text = useMemo(
     () =>
@@ -144,7 +143,8 @@ export function AdminSnapshotsPage() {
       return value;
     }
 
-    return `${API_BASE_URL}/${value.replace(/^prisma\/?pictures\//, "pictures/")}`;
+    const filename = value.replace(/^(?:prisma\/?)?pictures\//, "");
+    return `${API_BASE_URL}/pictures/${filename}`;
   };
 
   const formatDateTime = (value: string | undefined) => {
@@ -197,21 +197,32 @@ export function AdminSnapshotsPage() {
     void loadSnapshots();
   }, [loadSnapshots]);
 
+  useEffect(() => {
+    const socket = createUserSocket();
+    if (!socket) return;
+    socket.on("snapshot:created", () => { void loadSnapshots(); });
+    return () => { socket.disconnect(); };
+  }, [loadSnapshots]);
+
   const latestSnapshot = snapshots[0] ?? null;
   const previousSnapshot = snapshots[1] ?? null;
 
   const deltaValues = useMemo(() => {
-    if (!latestSnapshot || !previousSnapshot) {
-      return null;
-    }
-
+    if (!latestSnapshot || !previousSnapshot) return null;
+    if (latestSnapshot.machineLabel !== previousSnapshot.machineLabel) return null;
     return {
-      machineCounter:
-        latestSnapshot.machineCounter - previousSnapshot.machineCounter,
-      electricityKwh:
-        latestSnapshot.electricityKwh - previousSnapshot.electricityKwh,
+      machineCounter:  latestSnapshot.machineCounter  - previousSnapshot.machineCounter,
+      electricityKwh:  latestSnapshot.electricityKwh  - previousSnapshot.electricityKwh,
     };
   }, [latestSnapshot, previousSnapshot]);
+
+  const closeModal  = () => { setPreviewImage(null); setZoom(1); };
+  const zoomIn      = () => setZoom((z) => Math.min(5, parseFloat((z + 0.5).toFixed(1))));
+  const zoomOut     = () => setZoom((z) => Math.max(0.5, parseFloat((z - 0.5).toFixed(1))));
+  const handleWheel = (e: React.WheelEvent) => {
+    e.preventDefault();
+    setZoom((z) => Math.min(5, Math.max(0.5, parseFloat((z - e.deltaY / 800).toFixed(2)))));
+  };
 
   const applySnapshotFilter = () => {
     void loadSnapshots();
@@ -276,9 +287,7 @@ export function AdminSnapshotsPage() {
             <h1>{text.title}</h1>
             <p>{text.subtitle}</p>
           </div>
-          <div className="admin-header__actions">
-            <UserAvatarBadge size="sm" />
-          </div>
+          <div className="admin-header__actions" />
         </header>
 
         <section className="admin-section">
@@ -450,20 +459,40 @@ export function AdminSnapshotsPage() {
           className="settings-image-modal"
           role="dialog"
           aria-modal="true"
-          onClick={() => setPreviewImage(null)}
+          onClick={closeModal}
         >
           <div
             className="settings-image-modal__content"
-            onClick={(event) => event.stopPropagation()}
+            onClick={(e) => e.stopPropagation()}
           >
-            <button
-              type="button"
-              className="auth-button auth-button--ghost"
-              onClick={() => setPreviewImage(null)}
-            >
-              {text.closePreview}
-            </button>
-            <img src={previewImage.src} alt={previewImage.alt} />
+            {/* Toolbar */}
+            <div className="settings-image-modal__toolbar">
+              <button type="button" className="img-zoom-btn" onClick={zoomOut} disabled={zoom <= 0.5}>−</button>
+              <span className="img-zoom-pct">{Math.round(zoom * 100)}%</span>
+              <button type="button" className="img-zoom-btn" onClick={zoomIn}  disabled={zoom >= 5}>+</button>
+              {zoom !== 1 && (
+                <button type="button" className="img-zoom-btn img-zoom-btn--reset" onClick={() => setZoom(1)}>↺</button>
+              )}
+              <div style={{ flex: 1 }} />
+              <button type="button" className="auth-button auth-button--ghost" onClick={closeModal}>
+                ✕ {text.closePreview}
+              </button>
+            </div>
+            {/* Zoomable viewport */}
+            <div className="settings-image-modal__viewport" onWheel={handleWheel}>
+              <img
+                src={previewImage.src}
+                alt={previewImage.alt}
+                style={{ transform: `scale(${zoom})`, cursor: zoom < 5 ? "zoom-in" : "default" }}
+                onDoubleClick={() => setZoom((z) => (z < 2 ? 3 : 1))}
+                draggable={false}
+              />
+            </div>
+            <p className="img-zoom-hint">
+              {locale === "ar"
+                ? "عجلة الفأرة للتكبير · نقر مزدوج للتكبير/التصغير"
+                : "Scroll wheel to zoom · Double-click to toggle zoom"}
+            </p>
           </div>
         </div>
       ) : null}

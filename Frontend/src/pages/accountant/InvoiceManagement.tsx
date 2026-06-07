@@ -1,9 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { confirmDialog } from "../../lib/dialog";
 import {
   Plus, CheckCircle, Clock, Trash2, FileText, Search,
   AlertCircle, User, DollarSign, Calendar, X, Save,
-  Sparkles, Edit3, Truck, PackageCheck, Filter,
+  Sparkles, Edit3, Truck, PackageCheck, Paperclip, ExternalLink,
 } from "lucide-react";
 import { ModulePageShell } from "../../components/ModulePageShell";
 import { Button } from "../../components/ui/button";
@@ -32,7 +32,7 @@ interface Invoice {
   aiExtracted?: boolean; currency?: string | null;
   subtotal?: number | null; taxAmount?: number | null;
   notes?: string | null; lineItems?: string | null;
-  vendorName?: string | null;
+  vendorName?: string | null; invoicePath?: string | null;
   customer?: { id: number; name: string } | null;
   createdBy?: { id: number; fullName: string } | null;
   // Shipment/Receipt
@@ -101,6 +101,11 @@ export default function InvoiceManagement() {
 
   /* Confirm */
   const [confirming, setConfirming] = useState<number | null>(null);
+
+  /* File upload */
+  const [uploading, setUploading] = useState<number | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const uploadTargetId = useRef<number | null>(null);
 
   useEffect(() => { void fetchInvoices(); }, []);
 
@@ -237,6 +242,35 @@ export default function InvoiceManagement() {
     void fetchInvoices();
   };
 
+  /* ── Upload invoice file ── */
+  const triggerUpload = (id: number) => {
+    uploadTargetId.current = id;
+    fileInputRef.current?.click();
+  };
+
+  const handleFileSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    const id = uploadTargetId.current;
+    if (!file || !id) return;
+    e.target.value = "";
+    setUploading(id);
+    try {
+      const body = new FormData();
+      body.append("file", file);
+      const res = await apiFetch(`/invoices/${id}/upload`, { method: "PATCH", body });
+      if (!res.ok) { const j = await res.json() as { message?: string }; throw new Error(j.message ?? "Upload failed"); }
+      void fetchInvoices();
+    } catch { }
+    finally { setUploading(null); }
+  };
+
+  const normalizeFilePath = (value: string | null | undefined) => {
+    if (!value) return null;
+    if (value.startsWith("http")) return value;
+    const filename = value.replace(/^(?:prisma\/?)?pictures\//, "");
+    return `${API_BASE_URL}/pictures/${filename}`;
+  };
+
   /* ── Filtered list ── */
   const isOverdue = (dueDate: string, status: string) => new Date(dueDate) < new Date() && status !== "PAID";
   const filtered = invoices
@@ -289,6 +323,9 @@ export default function InvoiceManagement() {
       subtitle={t("Shipment invoices, receipt confirmations, and billing", "فواتير الشحن والاستلام والفوترة")}
       icon={<FileText size={22} />}
     >
+      {/* Hidden file input for invoice attachment */}
+      <input ref={fileInputRef} type="file" accept="image/*,application/pdf" style={{ display: "none" }} onChange={e => void handleFileSelected(e)} />
+
       {/* KPIs */}
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-6">
         {[
@@ -427,7 +464,7 @@ export default function InvoiceManagement() {
                 </div>
 
                 {/* Card footer */}
-                <div style={{ borderTop: "1px solid var(--border-default)", padding: ".5rem .75rem", display: "flex", gap: ".5rem" }}>
+                <div style={{ borderTop: "1px solid var(--border-default)", padding: ".5rem .75rem", display: "flex", gap: ".5rem", flexWrap: "wrap" }}>
                   {isReceipt && !isConfirmed ? (
                     <button disabled={confirming === inv.id} onClick={() => void confirmReceipt(inv.id)}
                       style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: ".3rem", padding: ".4rem", background: "#8b5cf6", color: "#fff", border: "none", borderRadius: 8, fontSize: ".78rem", fontWeight: 700, cursor: confirming === inv.id ? "default" : "pointer" }}>
@@ -439,6 +476,19 @@ export default function InvoiceManagement() {
                       <CheckCircle size={12} />{t("Mark Paid", "تسجيل الدفع")}
                     </button>
                   ) : null}
+                  {/* Attach / View invoice file */}
+                  {inv.invoicePath ? (
+                    <a href={normalizeFilePath(inv.invoicePath) ?? "#"} target="_blank" rel="noopener noreferrer"
+                      style={{ display: "flex", alignItems: "center", gap: ".25rem", padding: ".4rem .65rem", background: "rgba(99,102,241,.1)", color: "#6366f1", border: "1px solid rgba(99,102,241,.25)", borderRadius: 8, fontSize: ".76rem", fontWeight: 700, textDecoration: "none" }}>
+                      <ExternalLink size={11} />{t("View File", "عرض الملف")}
+                    </a>
+                  ) : null}
+                  <button disabled={uploading === inv.id} onClick={() => triggerUpload(inv.id)}
+                    title={t("Attach invoice document", "إرفاق مستند الفاتورة")}
+                    style={{ display: "flex", alignItems: "center", gap: ".25rem", padding: ".4rem .65rem", background: "var(--bg-surface)", color: "var(--text-secondary)", border: "1px solid var(--border-default)", borderRadius: 8, fontSize: ".76rem", fontWeight: 600, cursor: uploading === inv.id ? "default" : "pointer" }}>
+                    {uploading === inv.id ? <div className="spinner" style={{ width: 11, height: 11, borderWidth: 2 }} /> : <Paperclip size={11} />}
+                    {inv.invoicePath ? t("Replace", "تغيير") : t("Attach", "إرفاق")}
+                  </button>
                 </div>
               </Card>
             );

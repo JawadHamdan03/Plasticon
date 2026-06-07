@@ -4,6 +4,7 @@ import {
   getAllSparePartRequests,
   getMySparePartRequests,
   createSparePartRequest,
+  updateSparePartRequest,
   setSparePartPrice,
   markSparePartReceived,
   deleteSparePartRequest,
@@ -82,6 +83,27 @@ export const createSparePartRequestHandler = async (
   } catch (error) {
     console.error("Create spare part request error:", error);
     res.status(500).json({ message: "Failed to create spare part request" });
+  }
+};
+
+export const updateSparePartRequestHandler = async (
+  req: AuthenticatedRequest,
+  res: Response,
+) => {
+  try {
+    const engineerId = req.user?.id;
+    if (!engineerId) { res.status(401).json({ message: "Not authorized" }); return; }
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id) || id <= 0) { res.status(400).json({ message: "Invalid id" }); return; }
+    const { partName, quantity, notes, supplierName } = req.body;
+    const result = await updateSparePartRequest(id, engineerId, {
+      partName, quantity: quantity != null ? Number(quantity) : undefined, notes, supplierName,
+    });
+    if (result.message && result.status !== 200) { res.status(result.status).json({ message: result.message }); return; }
+    res.status(result.status).json(result.data);
+  } catch (error) {
+    console.error("Update spare part request error:", error);
+    res.status(500).json({ message: "Failed to update spare part request" });
   }
 };
 

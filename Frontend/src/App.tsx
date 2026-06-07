@@ -181,6 +181,18 @@ const AdminMachineStopsPage = lazy(() =>
   })),
 );
 
+// Support machine readings pages
+const SupportMachineReadingsPage = lazy(() =>
+  import("./pages/engineer/SupportMachineReadingsPage").then((m) => ({
+    default: m.SupportMachineReadingsPage,
+  })),
+);
+const AdminSupportMachinesPage = lazy(() =>
+  import("./pages/admin/AdminSupportMachinesPage").then((m) => ({
+    default: m.AdminSupportMachinesPage,
+  })),
+);
+
 // Worker pages
 const WorkerSnapshotsPage = lazy(() =>
   import("./pages/worker/WorkerSnapshotsPage").then((m) => ({
@@ -282,6 +294,9 @@ const SupplierManagement = lazy(
 );
 const EmployeePerformance = lazy(
   () => import("./pages/accountant/EmployeePerformance"),
+);
+const CustomerReturnsPage = lazy(
+  () => import("./pages/accountant/CustomerReturnsPage"),
 );
 
 // AI pages
@@ -612,7 +627,7 @@ function App() {
               <Route
                 path="/accountant/financial-reports"
                 element={
-                  <RoleProtectedRoute allowedRoles={["ACCOUNTANT", "ADMIN"]}>
+                  <RoleProtectedRoute allowedRoles={["ACCOUNTANT"]}>
                     <FinancialReports />
                   </RoleProtectedRoute>
                 }
@@ -686,6 +701,14 @@ function App() {
                 element={
                   <RoleProtectedRoute allowedRoles={["ADMIN", "ACCOUNTANT"]}>
                     <EmployeePerformance />
+                  </RoleProtectedRoute>
+                }
+              />
+              <Route
+                path="/accountant/customer-returns"
+                element={
+                  <RoleProtectedRoute allowedRoles={["ADMIN", "ACCOUNTANT"]}>
+                    <CustomerReturnsPage />
                   </RoleProtectedRoute>
                 }
               />
@@ -901,6 +924,34 @@ function App() {
                   <RoleProtectedRoute allowedRoles={["WORKER"]}>
                     <WorkerSnapshotsPage mode="tools" />
                   </RoleProtectedRoute>
+                }
+              />
+
+              {/* ── Engineer snapshots ── */}
+              <Route
+                path="/engineer/snapshots"
+                element={
+                  <RoleProtectedRoute allowedRoles={["ENGINEER"]}>
+                    <WorkerSnapshotsPage mode="snapshots" />
+                  </RoleProtectedRoute>
+                }
+              />
+
+              {/* ── Support machine readings ── */}
+              <Route
+                path="/engineer/support-machines"
+                element={
+                  <RoleProtectedRoute allowedRoles={["ENGINEER", "WORKER"]}>
+                    <SupportMachineReadingsPage />
+                  </RoleProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/support-machines"
+                element={
+                  <AdminOnlyRoute>
+                    <AdminSupportMachinesPage />
+                  </AdminOnlyRoute>
                 }
               />
 

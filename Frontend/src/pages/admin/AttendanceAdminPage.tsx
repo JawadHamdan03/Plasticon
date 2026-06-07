@@ -93,7 +93,12 @@ function durMin(ci: string, co?: string | null) {
   return Math.max(0, Math.floor((new Date(co).getTime() - new Date(ci).getTime()) / 60000));
 }
 function fmtDur(min: number) {
-  return min ? `${Math.floor(min/60)}h ${min%60}m` : "—";
+  if (!min) return "—";
+  const h = Math.floor(min / 60);
+  const m = min % 60;
+  if (h === 0) return `${m}m`;
+  if (m === 0) return `${h}h`;
+  return `${h}h ${m}m`;
 }
 function dayStatus(rec: AttendanceRecord | undefined, isPast: boolean, isFriday: boolean): DayStatus {
   if (isFriday) return rec ? "friday_ot" : "weekend";
@@ -535,14 +540,14 @@ export function AttendanceAdminPage() {
                           {/* Late */}
                           <td style={{ padding:"7px 10px" }}>
                             {rec && (rec.lateMinutes ?? 0) > 0
-                              ? <span style={{ color:"#a16207", fontWeight:700, fontSize:".78rem" }}>+{rec.lateMinutes}m</span>
+                              ? <span style={{ color:"#a16207", fontWeight:700, fontSize:".78rem" }}>+{fmtDur(rec.lateMinutes ?? 0)}</span>
                               : <span style={{ color:"var(--gray-400)" }}>—</span>}
                           </td>
 
                           {/* OT */}
                           <td style={{ padding:"7px 10px" }}>
                             {rec && (rec.overtimeMinutes ?? 0) > 0
-                              ? <span style={{ color:"#7c3aed", fontWeight:700, fontSize:".78rem" }}>+{rec.overtimeMinutes}m</span>
+                              ? <span style={{ color:"#7c3aed", fontWeight:700, fontSize:".78rem" }}>+{fmtDur(rec.overtimeMinutes ?? 0)}</span>
                               : <span style={{ color:"var(--gray-400)" }}>—</span>}
                           </td>
 

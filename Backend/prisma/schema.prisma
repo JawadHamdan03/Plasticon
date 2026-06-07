@@ -198,6 +198,7 @@ model User {
   sparePartRequestsAsEngineer  SparePartRequest[]    @relation("SparePartRequestEngineer")
   sparePartRequestsAsPricer    SparePartRequest[]    @relation("SparePartRequestPricer")
   techDocumentsUploaded        TechDocument[]        @relation("TechDocUploader")
+  customerReturnsRecorded      CustomerReturn[]      @relation("CustomerReturnRecorder")
 
   // Indices for common queries
   @@index([email])
@@ -545,10 +546,28 @@ model Customer {
   sales       Sale[]
   invoices    Invoice[]
   receivables CustomerReceivable[]
+  returns     CustomerReturn[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   deletedAt DateTime?
+}
+
+model CustomerReturn {
+  id           Int      @id @default(autoincrement())
+  customerId   Int?
+  customerName String
+  productType  String   // "CAPS" | "PREFORM" | "OTHER"
+  quantity     Float
+  returnDate   DateTime
+  notes        String?
+  recordedById Int?
+
+  customer   Customer? @relation(fields: [customerId], references: [id])
+  recordedBy User?     @relation("CustomerReturnRecorder", fields: [recordedById], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Sale {
@@ -760,6 +779,7 @@ model TechDocument {
   filePath      String?
   fileSize      Int?
   mimeType      String?
+  images        String[] @default([])
   downloadCount Int      @default(0)
   uploadedById  Int
 

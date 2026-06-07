@@ -556,13 +556,13 @@ export const createProductionRecord = async (
     { machineId: resolvedMachineId, cartonsCount, totalPieces },
   );
 
-  await dispatchAutoNotification({
+  void dispatchAutoNotification({
     event: "PRODUCTION_CREATED",
     actorUserId: userId,
     shiftId: Number(resolvedShiftId),
     productionId: production.id,
     totalPieces,
-  });
+  }).catch((err) => console.error("[autoNotify] production:", err));
 
   return { status: 201, data: production };
 };

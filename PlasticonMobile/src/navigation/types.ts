@@ -22,10 +22,16 @@ export type WorkerTabParamList = {
 
 // Worker — Overview tab (dashboard)
 export type WorkerOverviewStackParamList = {
-  WorkerHub: undefined;
+  WorkerHub:    undefined;
+  // Quick-action shortcuts — pushed from hub so back returns to WorkerHub
+  Production:   undefined;
+  Snapshots:    undefined;
+  MachineStops: undefined;
+  Attendance:   undefined;
+  Payroll:      undefined;
 };
 
-// Worker — Work tab (12 features)
+// Worker — Work tab (11 features)
 export type WorkerWorkStackParamList = {
   WorkMenu:          undefined;
   Production:        undefined;

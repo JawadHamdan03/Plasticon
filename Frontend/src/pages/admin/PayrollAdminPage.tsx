@@ -467,14 +467,7 @@ export function PayrollAdminPage() {
 
           {dailyError && <div className="auth-alert auth-alert--error" style={{ marginBottom: "1rem" }}>{dailyError}</div>}
 
-          {/* Flag legend */}
-          <div style={{ display: "flex", gap: ".75rem", flexWrap: "wrap", marginBottom: ".75rem", fontSize: ".78rem", color: "var(--text-secondary)", alignItems: "center" }}>
-            <span style={{ background: "#fef9c3", border: "1px solid #fde047", borderRadius: "4px", padding: "1px 7px", color: "#854d0e", fontWeight: 600 }}>⚠ Missing checkout</span>
-            <span style={{ background: "#fee2e2", border: "1px solid #fca5a5", borderRadius: "4px", padding: "1px 7px", color: "#991b1b", fontWeight: 600 }}>⚠ Short day (&lt;2h)</span>
-            <span style={{ color: "var(--text-secondary)" }}>— flags indicate records that need review</span>
-          </div>
-
-          <div className="module-panel module-panel--full">
+<div className="module-panel module-panel--full">
             <div style={{ overflowX: "auto" }}>
               <table className="admin-table">
                 <thead>
@@ -502,27 +495,21 @@ export function PayrollAdminPage() {
                     </tr>
                   ) : (
                     daily.map((r) => {
-                      const missingCheckout = !r.attendance?.checkOut;
-                      const shortDay = r.hoursWorked > 0 && r.hoursWorked < 2;
                       const leaveBadge = r.leaveType ? LEAVE_BADGE[r.leaveType] : null;
                       const isMarkingThis = markLeaveFor?.attendanceId === r.attendance?.id;
                       return (
-                        <tr key={r.id} style={{ background: (missingCheckout || shortDay) ? "rgba(245,158,11,.04)" : undefined }}>
+                        <tr key={r.id}>
                           <td style={{ fontWeight: 600 }}>{r.user.fullName}</td>
                           <td>
                             <span className="badge" style={{ background: ROLE_COLORS[r.user.role] + "22", color: ROLE_COLORS[r.user.role], border: "none", fontSize: ".74rem" }}>{r.user.role}</span>
                           </td>
                           <td>{r.attendance?.checkIn ? fmtTime(r.attendance.checkIn) : "—"}</td>
                           <td>
-                            {r.attendance?.checkOut
-                              ? fmtTime(r.attendance.checkOut)
-                              : <span style={{ background: "#fef9c3", border: "1px solid #fde047", borderRadius: "4px", padding: "1px 6px", color: "#854d0e", fontSize: ".72rem", fontWeight: 600 }}>⚠ Missing</span>
-                            }
+                            {r.attendance?.checkOut ? fmtTime(r.attendance.checkOut) : "—"}
                           </td>
                           <td>
                             <span style={{ display: "flex", alignItems: "center", gap: ".25rem" }}>
                               <Clock size={13} style={{ opacity: 0.6 }} />{r.hoursWorked.toFixed(1)}h
-                              {shortDay && <span style={{ background: "#fee2e2", border: "1px solid #fca5a5", borderRadius: "4px", padding: "1px 5px", color: "#991b1b", fontSize: ".7rem", fontWeight: 600 }}>⚠ Short</span>}
                             </span>
                           </td>
                           <td style={{ fontWeight: 700, color: "var(--brand-primary)" }}>{r.totalDailyPay.toFixed(2)} ₪</td>

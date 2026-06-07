@@ -65,6 +65,9 @@ const ALL_SEARCH_ITEMS: SearchItem[] = [
   { labelAr: "تحليل التكاليف", labelEn: "Cost Analysis", to: "/accountant/cost-analysis" },
   { labelAr: "سير العمل للموافقة", labelEn: "Approval Workflows", to: "/accountant/approvals" },
   // New Phase 3 Features
+  { labelAr: "قراءات المهندس", labelEn: "Engineer Readings", to: "/engineer/snapshots" },
+  { labelAr: "قراءات الماكينات الداعمة", labelEn: "Support Machine Readings", to: "/engineer/support-machines" },
+  { labelAr: "قراءات الداعم (مدير)", labelEn: "Support Machines (Admin)", to: "/admin/support-machines" },
   { labelAr: "تنبيهات المواد الخام", labelEn: "Raw Material Alerts", to: "/engineer/raw-material-alerts" },
   { labelAr: "تكاليف الصيانة", labelEn: "Maintenance Costs", to: "/engineer/maintenance-costs" },
   { labelAr: "إدارة الموردين", labelEn: "Supplier Management", to: "/accountant/suppliers" },
@@ -122,6 +125,7 @@ function getNavSectionsBi(role: string): NavSectionBi[] {
           { to: "/admin/attendance", icon: <UserCheck size={17} />, label: nav("Attendance", "الحضور") },
           { to: "/admin/payroll", icon: <DollarSign size={17} />, label: nav("Payroll", "الرواتب") },
           { to: "/admin/snapshots", icon: <Camera size={17} />, label: nav("Snapshots", "القراءات") },
+          { to: "/admin/support-machines", icon: <Activity size={17} />, label: nav("Support Machines", "ماكينات الدعم") },
           { to: "/admin/worker-records", icon: <Briefcase size={17} />, label: nav("Worker Hub", "مركز العمال") },
           { to: "/admin/settings/electricity", icon: <Zap size={17} />, label: nav("Electricity", "الكهرباء") },
           { to: "/admin/machine-stops", icon: <AlertTriangle size={17} />, label: nav("Machine Stops", "توقفات الآلات") },
@@ -133,7 +137,6 @@ function getNavSectionsBi(role: string): NavSectionBi[] {
           { to: "/accountant/financial-dashboard", icon: <PieChart size={17} />, label: nav("Fin. Dashboard", "لوحة المالية") },
           { to: "/accountant/invoices", icon: <FileText size={17} />, label: nav("Invoices", "الفواتير") },
           { to: "/accountant/expenses", icon: <DollarSign size={17} />, label: nav("Expenses", "المصروفات") },
-          { to: "/accountant/financial-reports", icon: <BarChart3 size={17} />, label: nav("Fin. Reports", "تقارير مالية") },
           { to: "/accountant/payables", icon: <CreditCard size={17} />, label: nav("Payables", "مستحقات") },
           { to: "/accountant/receivables", icon: <Wallet size={17} />, label: nav("Receivables", "مستقبلات") },
           { to: "/accountant/budgets", icon: <Target size={17} />, label: nav("Budgets", "ميزانيات") },
@@ -146,6 +149,7 @@ function getNavSectionsBi(role: string): NavSectionBi[] {
           { to: "/reports", icon: <FileText size={17} />, label: nav("Reports", "التقارير") },
           { to: "/accountant/suppliers", icon: <Truck size={17} />, label: nav("Suppliers", "الموردون") },
           { to: "/accountant/performance", icon: <Award size={17} />, label: nav("Performance", "الأداء") },
+          { to: "/accountant/customer-returns", icon: <Package size={17} />, label: nav("Cust. Returns", "مرتجعات العملاء") },
         ],
       },
       {
@@ -200,6 +204,8 @@ function getNavSectionsBi(role: string): NavSectionBi[] {
         label: nav("Engineering", "الهندسة"),
         items: [
           { to: "/production", icon: <Factory size={17} />, label: nav("Production", "الإنتاج") },
+          { to: "/engineer/snapshots", icon: <Camera size={17} />, label: nav("Meter Readings", "قراءات العدادات") },
+          { to: "/engineer/support-machines", icon: <Activity size={17} />, label: nav("Support Machines", "ماكينات الدعم") },
           { to: "/quality-checks", icon: <CheckSquare size={17} />, label: nav("Quality Checks", "فحص الجودة") },
           { to: "/maintenance", icon: <Wrench size={17} />, label: nav("Maintenance", "الصيانة") },
           { to: "/engineer/inventory", icon: <ClipboardList size={17} />, label: nav("Parts Inventory", "مخزون القطع") },
@@ -264,6 +270,7 @@ function getNavSectionsBi(role: string): NavSectionBi[] {
           { to: "/accountant/parts-pricing", icon: <Receipt size={17} />, label: nav("Parts Pricing", "تسعير القطع") },
           { to: "/accountant/suppliers", icon: <Truck size={17} />, label: nav("Suppliers", "الموردون") },
           { to: "/accountant/performance", icon: <Award size={17} />, label: nav("Performance", "الأداء") },
+          { to: "/accountant/customer-returns", icon: <Package size={17} />, label: nav("Cust. Returns", "مرتجعات العملاء") },
           { to: "/engineer/maintenance-costs", icon: <DollarSign size={17} />, label: nav("Maint. Costs", "تكاليف الصيانة") },
         ],
       },
@@ -386,6 +393,10 @@ export function AppScaffold({ children }: { children: ReactNode }) {
       if (["/inventory", "/purchases", "/sales", "/reports"].includes(item.to))
         return role === "ADMIN" || role === "ACCOUNTANT";
       if (item.to.startsWith("/worker/")) return role === "WORKER";
+      if (item.to === "/engineer/snapshots") return role === "ENGINEER";
+      if (item.to === "/engineer/support-machines") return role === "ENGINEER" || role === "WORKER";
+      if (item.to === "/admin/support-machines") return role === "ADMIN";
+      if (item.to === "/accountant/financial-reports") return role === "ACCOUNTANT";
       return true;
     });
     if (!q) return allowed.slice(0, 6);
@@ -792,9 +803,7 @@ export function AppScaffold({ children }: { children: ReactNode }) {
                 overflow: "hidden",
               }}
             >
-              {user?.profileImage
-                ? <img src={`${API_BASE_URL.replace("/api", "")}/pictures/${user.profileImage}`} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                : initials(user?.name ?? "U")}
+              {initials(user?.name ?? "U")}
             </Link>
           </div>
         </header>

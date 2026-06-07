@@ -41,7 +41,23 @@ function fmtDT(iso: string) {
   return `${d.toLocaleDateString([], { month: 'short', day: 'numeric' })} · ${d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
 }
 
-async function pickImage(): Promise<PickedImage | null> {
+async function takePhoto(): Promise<PickedImage | null> {
+  const { status } = await ImagePicker.requestCameraPermissionsAsync();
+  if (status !== 'granted') {
+    Alert.alert('Permission required', 'Please allow camera access to take a photo.');
+    return null;
+  }
+  const result = await ImagePicker.launchCameraAsync({
+    mediaTypes: ['images'],
+    allowsEditing: true,
+    quality: 0.8,
+  });
+  if (result.canceled || !result.assets[0]) return null;
+  const a = result.assets[0];
+  return { uri: a.uri, fileName: a.fileName ?? undefined, mimeType: a.mimeType ?? undefined };
+}
+
+async function pickFromLibrary(): Promise<PickedImage | null> {
   const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
   if (status !== 'granted') {
     Alert.alert('Permission required', 'Please allow access to your photo library.');
@@ -57,24 +73,47 @@ async function pickImage(): Promise<PickedImage | null> {
   return { uri: a.uri, fileName: a.fileName ?? undefined, mimeType: a.mimeType ?? undefined };
 }
 
-function PhotoPicker({ label, image, onPick, colors }: {
-  label: string; image: PickedImage | null; onPick: () => void; colors: any;
+function PhotoPicker({ label, image, onCamera, onGallery, onClear, colors, isAr }: {
+  label: string;
+  image: PickedImage | null;
+  onCamera:  () => void;
+  onGallery: () => void;
+  onClear:   () => void;
+  colors: any;
+  isAr: boolean;
 }) {
-  return (
-    <TouchableOpacity
-      style={[styles.photoPicker, { borderColor: colors.border, backgroundColor: colors.surfaceAlt }]}
-      onPress={onPick}
-      activeOpacity={0.8}
-    >
-      {image ? (
+  if (image) {
+    return (
+      <View style={[styles.photoPicker, { borderColor: colors.border, backgroundColor: colors.surfaceAlt }]}>
         <Image source={{ uri: image.uri }} style={styles.photoPickerImg} resizeMode="cover" />
-      ) : (
-        <View style={styles.photoPickerPlaceholder}>
-          <Ionicons name="camera-outline" size={22} color={colors.textMuted} />
-          <Text style={[styles.photoPickerLabel, { color: colors.textMuted }]}>{label}</Text>
-        </View>
-      )}
-    </TouchableOpacity>
+        <TouchableOpacity style={styles.photoPickerClear} onPress={onClear} hitSlop={6}>
+          <Ionicons name="close-circle" size={22} color="#fff" />
+        </TouchableOpacity>
+      </View>
+    );
+  }
+  return (
+    <View style={[styles.photoPicker, { borderColor: colors.border, backgroundColor: colors.surfaceAlt }]}>
+      <Text style={[styles.photoPickerLabel, { color: colors.textMuted, marginBottom: 8 }]}>{label}</Text>
+      <View style={styles.photoPickerBtns}>
+        <TouchableOpacity
+          style={[styles.photoPickerBtn, { backgroundColor: colors.primary }]}
+          onPress={onCamera}
+          activeOpacity={0.8}
+        >
+          <Ionicons name="camera" size={18} color="#fff" />
+          <Text style={styles.photoPickerBtnText}>{isAr ? 'كاميرا' : 'Camera'}</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.photoPickerBtn, { backgroundColor: colors.surface, borderWidth: 1.5, borderColor: colors.border }]}
+          onPress={onGallery}
+          activeOpacity={0.8}
+        >
+          <Ionicons name="images-outline" size={18} color={colors.text} />
+          <Text style={[styles.photoPickerBtnText, { color: colors.text }]}>{isAr ? 'معرض' : 'Gallery'}</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
   );
 }
 
@@ -260,19 +299,25 @@ function SnapModal({
             <View style={styles.photoPickerCol}>
               <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{isAr ? 'صورة العداد' : 'Counter Photo'}</Text>
               <PhotoPicker
-                label={isAr ? 'اختر صورة' : 'Select'}
+                label={isAr ? 'أضف صورة العداد' : 'Add counter photo'}
                 image={machineImg}
-                onPick={async () => { const img = await pickImage(); if (img) setMachineImg(img); }}
+                onCamera={async () => { const img = await takePhoto();       if (img) setMachineImg(img); }}
+                onGallery={async () => { const img = await pickFromLibrary(); if (img) setMachineImg(img); }}
+                onClear={() => setMachineImg(null)}
                 colors={colors}
+                isAr={isAr}
               />
             </View>
             <View style={styles.photoPickerCol}>
               <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{isAr ? 'صورة الكهرباء' : 'Electricity Photo'}</Text>
               <PhotoPicker
-                label={isAr ? 'اختر صورة' : 'Select'}
+                label={isAr ? 'أضف صورة الكهرباء' : 'Add electricity photo'}
                 image={electricityImg}
-                onPick={async () => { const img = await pickImage(); if (img) setElectricityImg(img); }}
+                onCamera={async () => { const img = await takePhoto();       if (img) setElectricityImg(img); }}
+                onGallery={async () => { const img = await pickFromLibrary(); if (img) setElectricityImg(img); }}
+                onClear={() => setElectricityImg(null)}
                 colors={colors}
+                isAr={isAr}
               />
             </View>
           </View>
@@ -349,10 +394,13 @@ export function SnapshotsScreen() {
     return [s.machineLabel, s.notes ?? '', String(s.machineCounter), String(s.electricityKwh)].join(' ').toLowerCase().includes(term);
   });
 
-  const totalElectricity  = visibleSnaps.reduce((acc, s) => acc + (s.electricityKwh ?? 0), 0);
-  const avgElectricity    = visibleSnaps.length ? totalElectricity / visibleSnaps.length : 0;
-  const counterDelta      = visibleSnaps.length >= 2 ? visibleSnaps[0].machineCounter - visibleSnaps[1].machineCounter : null;
-  const uniqueMachines    = new Set(visibleSnaps.map((s) => s.machineLabel.trim()).filter(Boolean)).size;
+  const totalElectricity = visibleSnaps.reduce((acc, s) => acc + (s.electricityKwh ?? 0), 0);
+  const avgElectricity   = visibleSnaps.length ? totalElectricity / visibleSnaps.length : 0;
+  const uniqueMachines   = new Set(visibleSnaps.map((s) => s.machineLabel.trim()).filter(Boolean)).size;
+  // Delta only meaningful when filtering to a single machine (snaps sorted newest-first)
+  const counterDelta = uniqueMachines === 1 && visibleSnaps.length >= 2
+    ? visibleSnaps[0].machineCounter - visibleSnaps[visibleSnaps.length - 1].machineCounter
+    : null;
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
@@ -504,11 +552,31 @@ export function SnapshotsScreen() {
 
       <Modal visible={!!fullImage} transparent animationType="fade" onRequestClose={() => setFullImage(null)}>
         <View style={styles.imgViewerOverlay}>
-          <TouchableOpacity style={styles.imgViewerClose} onPress={() => setFullImage(null)}>
-            <Ionicons name="close-circle" size={36} color="#fff" />
+          {/* Close button */}
+          <TouchableOpacity style={styles.imgViewerClose} onPress={() => setFullImage(null)} hitSlop={10}>
+            <Ionicons name="close-circle" size={38} color="#fff" />
           </TouchableOpacity>
+          {/* Hint */}
+          <View style={styles.imgViewerHint}>
+            <Ionicons name="expand-outline" size={13} color="rgba(255,255,255,0.6)" />
+            <Text style={styles.imgViewerHintText}>
+              {isAr ? 'قرص بأصبعين للتكبير · انقر للإغلاق' : 'Pinch to zoom · tap × to close'}
+            </Text>
+          </View>
+          {/* Zoomable ScrollView */}
           {fullImage && (
-            <Image source={{ uri: fullImage }} style={styles.fullImg} resizeMode="contain" />
+            <ScrollView
+              style={styles.imgScrollView}
+              contentContainerStyle={styles.imgScrollContent}
+              maximumZoomScale={5}
+              minimumZoomScale={1}
+              showsVerticalScrollIndicator={false}
+              showsHorizontalScrollIndicator={false}
+              bouncesZoom
+              centerContent
+            >
+              <Image source={{ uri: fullImage }} style={styles.fullImg} resizeMode="contain" />
+            </ScrollView>
           )}
         </View>
       </Modal>
@@ -580,10 +648,14 @@ const styles = StyleSheet.create({
 
   photoPickers:    { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.md },
   photoPickerCol:  { flex: 1 },
-  photoPicker:     { height: 90, borderRadius: radius.sm, borderWidth: 1.5, borderStyle: 'dashed', overflow: 'hidden' },
-  photoPickerImg:  { width: '100%', height: '100%' },
+  photoPicker:     { minHeight: 110, borderRadius: radius.sm, borderWidth: 1.5, borderStyle: 'dashed', overflow: 'hidden', alignItems: 'center', justifyContent: 'center', padding: 8 },
+  photoPickerImg:  { width: '100%', height: '100%', position: 'absolute', top: 0, left: 0 },
+  photoPickerClear: { position: 'absolute', top: 4, right: 4, backgroundColor: 'rgba(0,0,0,0.45)', borderRadius: 12 },
+  photoPickerBtns: { flexDirection: 'row', gap: 6, width: '100%' },
+  photoPickerBtn:  { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5, paddingVertical: 8, borderRadius: radius.sm },
+  photoPickerBtnText: { fontSize: 11, fontWeight: '700', color: '#fff' },
   photoPickerPlaceholder: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 4 },
-  photoPickerLabel: { ...typography.caption },
+  photoPickerLabel: { ...typography.caption, textAlign: 'center' },
 
   actions:    { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.sm },
   cancelBtn:  { flex: 1, alignItems: 'center', paddingVertical: 12, borderRadius: radius.md, borderWidth: 1.5 },
@@ -591,7 +663,11 @@ const styles = StyleSheet.create({
   saveBtn:    { flex: 1, alignItems: 'center', paddingVertical: 12, borderRadius: radius.md },
   saveText:   { ...typography.bodySmall, fontWeight: '700', color: '#fff' },
 
-  imgViewerOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.9)', justifyContent: 'center', alignItems: 'center' },
-  imgViewerClose:   { position: 'absolute', top: 50, right: 20, zIndex: 10 },
-  fullImg:          { width: '100%', height: '80%' },
+  imgViewerOverlay: { flex: 1, backgroundColor: '#000' },
+  imgViewerClose:   { position: 'absolute', top: 50, right: 16, zIndex: 20 },
+  imgViewerHint:    { position: 'absolute', bottom: 36, alignSelf: 'center', zIndex: 20, flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: 'rgba(0,0,0,0.45)', paddingHorizontal: 12, paddingVertical: 5, borderRadius: 20 },
+  imgViewerHintText: { color: 'rgba(255,255,255,0.6)', fontSize: 11 },
+  imgScrollView:    { flex: 1 },
+  imgScrollContent: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  fullImg:          { width: '100%', aspectRatio: 1, resizeMode: 'contain' },
 });

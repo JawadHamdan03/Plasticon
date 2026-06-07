@@ -9,11 +9,11 @@ export const createUserSocket = (): Socket | null => {
   const token = window.localStorage.getItem("plasticon_token") ?? "";
 
   const socket = io(API_BASE_URL, {
-    transports: ["websocket"],
-    timeout: 5000,
+    transports: ["websocket", "polling"],
+    timeout: 8000,
     reconnection: true,
-    reconnectionAttempts: 2,
-    reconnectionDelay: 1200,
+    reconnectionAttempts: 3,
+    reconnectionDelay: 2000,
     withCredentials: true,
     auth: { token },
   });

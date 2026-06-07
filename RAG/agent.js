@@ -1,5 +1,5 @@
 import { ChatOpenAI } from "@langchain/openai";
-import { createAgent } from "langchain";
+import { createReactAgent } from "@langchain/langgraph/prebuilt";
 import { MemorySaver } from "@langchain/langgraph-checkpoint";
 import { searchKnowledgeBase } from "./tools.js";
 
@@ -18,11 +18,11 @@ export async function runAgent({ sessionId = "default", message, systemPrompt })
       temperature: 0,
     });
 
-    const agent = createAgent({
-      model,
+    const agent = createReactAgent({
+      llm: model,
       tools: [searchKnowledgeBase],
-      checkpointer,
-      systemPrompt: systemPrompt ?? DEFAULT_SYSTEM_PROMPT,
+      checkpointSaver: checkpointer,
+      stateModifier: systemPrompt ?? DEFAULT_SYSTEM_PROMPT,
     });
 
     console.log(`🤖 Running agent for: "${message}"`);

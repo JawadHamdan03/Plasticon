@@ -6,6 +6,7 @@ import {
   getAllSparePartRequestsHandler,
   getMySparePartRequestsHandler,
   createSparePartRequestHandler,
+  updateSparePartRequestHandler,
   setSparePartPriceHandler,
   markSparePartReceivedHandler,
   deleteSparePartRequestHandler,
@@ -30,6 +31,9 @@ router.post(
   upload.single("photo"),
   createSparePartRequestHandler,
 );
+
+// PATCH /:id — ENGINEER: update own pending request
+router.patch("/:id", engineerOnly, updateSparePartRequestHandler);
 
 // PATCH /:id/price — ACCOUNTANT, ADMIN: set unit price
 router.patch("/:id/price", adminAccountant, setSparePartPriceHandler);

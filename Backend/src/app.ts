@@ -51,10 +51,13 @@ import profileRoutes from "./routes/profileRoutes";
 import registrationRequestRoutes from "./routes/registrationRequestRoutes";
 import sparePartRequestRoutes from "./routes/sparePartRequestRoutes";
 import techDocumentRoutes from "./routes/techDocumentRoutes";
+import customerReturnRoutes from "./routes/customerReturnRoutes";
+import supportMachineRoutes from "./routes/supportMachineRoutes";
 import aiRoutes from "./routes/aiRoutes";
 import ragContextRoutes from "./routes/ragContextRoutes";
 import { initializeEmailService } from "./utils/emailService";
 import { startNotificationScheduler } from "./services/notificationScheduler";
+import { prisma } from "./config/lib/prisma";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -98,16 +101,20 @@ app.use(cookieParser());
 app.use(express.json({ limit: "2mb" }));
 app.use(express.urlencoded({ extended: true, limit: "2mb" }));
 
-// Serve static files — allow cross-origin image loading (frontend on different port)
+// Serve static files — allow cross-origin loading and iframe embedding (frontend on different port)
 app.use(
   "/pictures",
-  (_req, res, next) => { res.setHeader("Cross-Origin-Resource-Policy", "cross-origin"); next(); },
+  (_req, res, next) => {
+    res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
+    res.removeHeader("X-Frame-Options"); // allow <iframe> embedding from frontend origin
+    next();
+  },
   express.static(path.resolve(__dirname, "..", "prisma", "pictures")),
 );
 
 const authRateLimit = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 20,
+  max: 5,
   standardHeaders: true,
   legacyHeaders: false,
   message: { message: "Too many requests, please try again later." },
@@ -155,6 +162,8 @@ app.use("/maintenance-costs", maintenanceCostRoutes);
 app.use("/electricity", electricityRoutes);
 app.use("/spare-part-requests", sparePartRequestRoutes);
 app.use("/tech-documents", techDocumentRoutes);
+app.use("/customer-returns", customerReturnRoutes);
+app.use("/support-machine-readings", supportMachineRoutes);
 app.use("/ai", aiRoutes);
 app.use("/rag-context", ragContextRoutes);
 
@@ -166,6 +175,162 @@ app.use((err: Error & { status?: number; code?: string }, _req: express.Request,
 });
 
 initializeSocketServer(server);
+
+async function initializeRawSqlTables(): Promise<void> {
+  try {
+    await prisma.$executeRaw`
+      CREATE TABLE IF NOT EXISTS operation_snapshots (
+        id SERIAL PRIMARY KEY,
+        machine_label TEXT NOT NULL,
+        machine_counter DOUBLE PRECISION NOT NULL,
+        electricity_kwh DOUBLE PRECISION NOT NULL,
+        notes TEXT,
+        machine_counter_image TEXT,
+        electricity_image TEXT,
+        created_by_id INTEGER REFERENCES "User"(id) ON DELETE SET NULL,
+        created_at TIMESTAMP NOT NULL DEFAULT NOW()
+      )
+    `;
+    await prisma.$executeRaw`
+      CREATE INDEX IF NOT EXISTS idx_operation_snapshots_created_at
+      ON operation_snapshots (created_at DESC)
+    `;
+    await prisma.$executeRaw`
+      CREATE TABLE IF NOT EXISTS worker_machine_stop_alerts (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER NOT NULL REFERENCES "User"(id) ON DELETE CASCADE,
+        machine_label TEXT NOT NULL,
+        priority TEXT NOT NULL,
+        reason TEXT NOT NULL,
+        started_at TIMESTAMP NOT NULL DEFAULT NOW(),
+        resolved_at TIMESTAMP,
+        response_minutes DOUBLE PRECISION,
+        created_at TIMESTAMP NOT NULL DEFAULT NOW()
+      )
+    `;
+    await prisma.$executeRaw`
+      CREATE TABLE IF NOT EXISTS worker_shift_checklists (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER NOT NULL REFERENCES "User"(id) ON DELETE CASCADE,
+        shift_phase TEXT NOT NULL,
+        tasks_json JSONB NOT NULL,
+        digital_signature TEXT NOT NULL,
+        created_at TIMESTAMP NOT NULL DEFAULT NOW()
+      )
+    `;
+    await prisma.$executeRaw`
+      CREATE TABLE IF NOT EXISTS worker_material_waste_logs (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER NOT NULL REFERENCES "User"(id) ON DELETE CASCADE,
+        machine_label TEXT NOT NULL,
+        machine_type TEXT,
+        material_type TEXT NOT NULL,
+        waste_kg DOUBLE PRECISION NOT NULL,
+        reason TEXT NOT NULL,
+        created_at TIMESTAMP NOT NULL DEFAULT NOW()
+      )
+    `;
+    await prisma.$executeRaw`
+      CREATE TABLE IF NOT EXISTS worker_daily_targets (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER NOT NULL REFERENCES "User"(id) ON DELETE CASCADE,
+        target_date DATE NOT NULL,
+        target_units DOUBLE PRECISION NOT NULL,
+        actual_units DOUBLE PRECISION NOT NULL,
+        note TEXT,
+        created_at TIMESTAMP NOT NULL DEFAULT NOW()
+      )
+    `;
+    await prisma.$executeRaw`
+      CREATE TABLE IF NOT EXISTS worker_kaizen_suggestions (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER NOT NULL REFERENCES "User"(id) ON DELETE CASCADE,
+        title TEXT NOT NULL,
+        details TEXT NOT NULL,
+        estimated_impact TEXT,
+        review_status TEXT NOT NULL DEFAULT 'PENDING',
+        review_note TEXT,
+        reviewed_by_id INTEGER REFERENCES "User"(id) ON DELETE SET NULL,
+        reviewed_at TIMESTAMP,
+        score INTEGER NOT NULL DEFAULT 0,
+        reward_points INTEGER NOT NULL DEFAULT 0,
+        created_at TIMESTAMP NOT NULL DEFAULT NOW()
+      )
+    `;
+    await prisma.$executeRaw`
+      ALTER TABLE worker_kaizen_suggestions
+      ADD COLUMN IF NOT EXISTS review_status TEXT NOT NULL DEFAULT 'PENDING'
+    `;
+    await prisma.$executeRaw`
+      ALTER TABLE worker_kaizen_suggestions
+      ADD COLUMN IF NOT EXISTS review_note TEXT
+    `;
+    await prisma.$executeRaw`
+      ALTER TABLE worker_kaizen_suggestions
+      ADD COLUMN IF NOT EXISTS reviewed_by_id INTEGER REFERENCES "User"(id) ON DELETE SET NULL
+    `;
+    await prisma.$executeRaw`
+      ALTER TABLE worker_kaizen_suggestions
+      ADD COLUMN IF NOT EXISTS reviewed_at TIMESTAMP
+    `;
+    await prisma.$executeRaw`
+      CREATE TABLE IF NOT EXISTS worker_quality_issue_reports (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER NOT NULL REFERENCES "User"(id) ON DELETE CASCADE,
+        batch_code TEXT NOT NULL,
+        machine_label TEXT NOT NULL,
+        issue_type TEXT NOT NULL,
+        details TEXT,
+        issue_image TEXT,
+        created_at TIMESTAMP NOT NULL DEFAULT NOW()
+      )
+    `;
+    await prisma.$executeRaw`
+      CREATE TABLE IF NOT EXISTS worker_micro_stops (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER NOT NULL REFERENCES "User"(id) ON DELETE CASCADE,
+        machine_label TEXT NOT NULL,
+        reason TEXT NOT NULL,
+        duration_minutes DOUBLE PRECISION NOT NULL,
+        created_at TIMESTAMP NOT NULL DEFAULT NOW()
+      )
+    `;
+    await prisma.$executeRaw`
+      CREATE TABLE IF NOT EXISTS worker_electricity_anomaly_alerts (
+        id SERIAL PRIMARY KEY,
+        user_id INTEGER NOT NULL REFERENCES "User"(id) ON DELETE CASCADE,
+        machine_label TEXT NOT NULL,
+        current_kwh DOUBLE PRECISION NOT NULL,
+        baseline_kwh DOUBLE PRECISION NOT NULL,
+        threshold_ratio DOUBLE PRECISION NOT NULL,
+        severity TEXT NOT NULL,
+        message TEXT NOT NULL,
+        created_at TIMESTAMP NOT NULL DEFAULT NOW()
+      )
+    `;
+    await prisma.$executeRaw`
+      CREATE TABLE IF NOT EXISTS support_machine_readings (
+        id SERIAL PRIMARY KEY,
+        machine_name TEXT NOT NULL,
+        reading_type TEXT NOT NULL,
+        value DOUBLE PRECISION NOT NULL,
+        unit TEXT NOT NULL,
+        notes TEXT,
+        image_path TEXT,
+        shift TEXT,
+        created_by_id INTEGER REFERENCES "User"(id) ON DELETE SET NULL,
+        created_at TIMESTAMP NOT NULL DEFAULT NOW()
+      )
+    `;
+    await prisma.$executeRaw`
+      CREATE INDEX IF NOT EXISTS idx_support_machine_readings_created_at
+      ON support_machine_readings (created_at DESC)
+    `;
+    console.log("raw SQL tables initialized");
+  } catch (err) {
+    console.error("failed to initialize raw SQL tables:", err);
+  }
+}
 
 let hasRetriedPortBind = false;
 
@@ -183,9 +348,11 @@ server.on("error", (error: NodeJS.ErrnoException) => {
   process.exit(1);
 });
 
-server.listen(PORT, () => {
-  console.log(`server is running on port ${PORT}`);
-  startNotificationScheduler();
-});
-
-void initializeEmailService();
+void (async () => {
+  await initializeRawSqlTables();
+  server.listen(PORT, () => {
+    console.log(`server is running on port ${PORT}`);
+    startNotificationScheduler();
+  });
+  void initializeEmailService();
+})();

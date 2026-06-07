@@ -22,12 +22,18 @@ const storage = multer.diskStorage({
   },
 });
 
+function clientError(msg: string): Error {
+  const err = new Error(msg) as Error & { status: number };
+  err.status = 400;
+  return err;
+}
+
 const fileFilter = (_req: any, file: Express.Multer.File, cb: any) => {
   const allowedMimes = ["image/jpeg", "image/png", "image/gif", "image/webp"];
   if (allowedMimes.includes(file.mimetype)) {
     cb(null, true);
   } else {
-    cb(new Error("Only image files are allowed"));
+    cb(clientError("Only image files are allowed"));
   }
 };
 
@@ -42,7 +48,7 @@ const invoiceFileFilter = (_req: any, file: Express.Multer.File, cb: any) => {
   if (allowedMimes.includes(file.mimetype)) {
     cb(null, true);
   } else {
-    cb(new Error("Only image and PDF files are allowed"));
+    cb(clientError("Only image and PDF files are allowed"));
   }
 };
 
@@ -71,7 +77,7 @@ const docFileFilter = (_req: any, file: Express.Multer.File, cb: any) => {
   if (allowedMimes.includes(file.mimetype)) {
     cb(null, true);
   } else {
-    cb(new Error("Only image, PDF, and Word document files are allowed"));
+    cb(clientError("Only image, PDF, and Word document files are allowed"));
   }
 };
 
@@ -80,3 +86,8 @@ export const uploadDoc = multer({
   fileFilter: docFileFilter,
   limits: { fileSize: 20 * 1024 * 1024 }, // 20MB limit for documents
 });
+
+export const uploadDocFields = uploadDoc.fields([
+  { name: "file", maxCount: 1 },
+  { name: "images", maxCount: 10 },
+]);

@@ -231,6 +231,25 @@ export const confirmReceiptInvoice = async (
   }
 };
 
+export const attachInvoiceFile = async (
+  id: number,
+  filePath: string,
+): Promise<ServiceResult<unknown>> => {
+  try {
+    const invoice = await prisma.invoice.findUnique({ where: { id }, select: { id: true } });
+    if (!invoice) return { status: 404, message: "Invoice not found" };
+    const updated = await prisma.invoice.update({
+      where: { id },
+      data: { invoicePath: filePath },
+      include: INVOICE_INCLUDE,
+    });
+    return { status: 200, data: updated };
+  } catch (error) {
+    console.error("Attach invoice file error:", error);
+    return { status: 500, message: "Failed to attach file" };
+  }
+};
+
 export const recordInvoicePayment = async (
   id: number,
   payload: { paymentStatus?: string },

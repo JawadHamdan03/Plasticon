@@ -287,12 +287,12 @@ export const createPurchase = async (
     },
   );
 
-  await dispatchAutoNotification({
+  void dispatchAutoNotification({
     event: "PURCHASE_CREATED",
     actorUserId: userId,
     purchaseId: result?.id,
     totalAmount,
-  });
+  }).catch((err) => console.error("[autoNotify] purchase:", err));
 
   return { status: 201, data: result };
 };

@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Factory, LayoutDashboard, Settings2, Trash2, Users2 } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 import { useLocale } from "../../context/LocaleContext";
-import { UserAvatarBadge } from "../../components/UserAvatarBadge";
 import { appCopy } from "../../content/appCopy";
 import { API_BASE_URL, readApiError } from "../../lib/api";
 import { createUserSocket } from "../../lib/socket";
@@ -939,7 +938,6 @@ export function SettingsAdminPage() {
               </span>
             ))}
           </div>
-          <UserAvatarBadge size="sm" />
         </div>
       </div>
 

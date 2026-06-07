@@ -105,6 +105,7 @@ export default function EmployeePerformance() {
 
   const [records, setRecords] = useState<PerfRecord[]>([]);
   const [users, setUsers] = useState<UserOption[]>([]);
+  const [salaries, setSalaries] = useState<{ id: number; fullName: string; role: string; effectiveSalary: number; individualSalary: number | null; roleDefaultSalary: number }[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(emptyForm);
@@ -119,12 +120,14 @@ export default function EmployeePerformance() {
   const fetchAll = async () => {
     setLoading(true);
     try {
-      const [r1, r2] = await Promise.all([
+      const [r1, r2, r3] = await Promise.all([
         fetch(`${API_BASE_URL}/performance`, { headers: authHeaders(), credentials: "include" }),
         fetch(`${API_BASE_URL}/users/all`, { headers: authHeaders(), credentials: "include" }),
+        fetch(`${API_BASE_URL}/payroll/admin/user-salaries`, { headers: authHeaders(), credentials: "include" }),
       ]);
       if (r1.ok) { const d = await r1.json(); setRecords(d.records ?? d ?? []); }
       if (r2.ok) { const d = await r2.json(); setUsers((d.users ?? d ?? []).filter((u: UserOption) => u.role !== "ADMIN")); }
+      if (r3.ok) { const d = await r3.json(); setSalaries(d ?? []); }
     } catch { } finally { setLoading(false); }
   };
 
@@ -456,6 +459,45 @@ export default function EmployeePerformance() {
               </Card>
             );
           })}
+        </div>
+      )}
+
+      {/* Salary Table */}
+      {salaries.length > 0 && (
+        <div style={{ marginTop: "2rem" }}>
+          <h2 style={{ fontSize: "1rem", fontWeight: 700, marginBottom: ".75rem", color: "var(--text-primary)" }}>
+            💰 {nav("Employee Salaries", "رواتب الموظفين")}
+          </h2>
+          <div style={{ overflowX: "auto", borderRadius: "var(--radius-lg)", border: "1px solid var(--border-default)" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: ".85rem" }}>
+              <thead>
+                <tr style={{ background: "var(--bg-surface)" }}>
+                  <th style={{ padding: ".6rem 1rem", textAlign: "left", fontWeight: 700, color: "var(--text-secondary)", borderBottom: "1px solid var(--border-default)" }}>{nav("Employee", "الموظف")}</th>
+                  <th style={{ padding: ".6rem 1rem", textAlign: "left", fontWeight: 700, color: "var(--text-secondary)", borderBottom: "1px solid var(--border-default)" }}>{nav("Role", "الدور")}</th>
+                  <th style={{ padding: ".6rem 1rem", textAlign: "right", fontWeight: 700, color: "var(--text-secondary)", borderBottom: "1px solid var(--border-default)" }}>{nav("Monthly Salary", "الراتب الشهري")}</th>
+                  <th style={{ padding: ".6rem 1rem", textAlign: "right", fontWeight: 700, color: "var(--text-secondary)", borderBottom: "1px solid var(--border-default)" }}>{nav("Type", "النوع")}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {salaries.map((s, i) => (
+                  <tr key={s.id} style={{ background: i % 2 === 0 ? "transparent" : "var(--bg-surface)" }}>
+                    <td style={{ padding: ".6rem 1rem", fontWeight: 600, color: "var(--text-primary)" }}>{s.fullName}</td>
+                    <td style={{ padding: ".6rem 1rem", color: "var(--text-secondary)" }}>{s.role}</td>
+                    <td style={{ padding: ".6rem 1rem", textAlign: "right", fontWeight: 700, color: "#10b981" }}>{s.effectiveSalary.toLocaleString()} ₪</td>
+                    <td style={{ padding: ".6rem 1rem", textAlign: "right" }}>
+                      <span style={{
+                        fontSize: ".72rem", fontWeight: 700, padding: "2px 8px", borderRadius: 99,
+                        background: s.individualSalary != null ? "#dbeafe" : "#f3f4f6",
+                        color: s.individualSalary != null ? "#1d4ed8" : "#6b7280",
+                      }}>
+                        {s.individualSalary != null ? nav("Custom", "مخصص") : nav("Default", "افتراضي")}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
     </ModulePageShell>

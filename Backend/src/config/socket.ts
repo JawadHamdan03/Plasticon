@@ -136,3 +136,11 @@ export const emitNotificationUnreadCountUpdate = (userId: number, payload: unkno
 
     ioInstance.to(`user:${userId}`).emit("notification:unread-count-updated", payload);
 };
+
+export const emitSnapshotCreated = (payload: unknown) => {
+    if (!ioInstance) {
+        return;
+    }
+
+    ioInstance.emit("snapshot:created", payload);
+};

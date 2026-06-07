@@ -4,6 +4,7 @@ import {
   getAllTechDocuments,
   createTechDocument,
   incrementDownloadCount,
+  updateTechDocument,
   deleteTechDocument,
 } from "../services/techDocumentServices";
 
@@ -37,11 +38,16 @@ export const createTechDocumentHandler = async (
 
     const { title, category, description } = req.body;
 
-    const file = req.file;
+    const fields = req.files as
+      | { file?: Express.Multer.File[]; images?: Express.Multer.File[] }
+      | undefined;
+
+    const file = fields?.file?.[0];
     const fileName = file?.originalname ?? undefined;
     const filePath = file?.filename ?? undefined;
     const fileSize = file?.size ?? undefined;
     const mimeType = file?.mimetype ?? undefined;
+    const images = (fields?.images ?? []).map((f) => f.filename);
 
     const result = await createTechDocument(
       uploadedById,
@@ -52,6 +58,7 @@ export const createTechDocumentHandler = async (
       filePath,
       fileSize,
       mimeType,
+      images,
     );
 
     if (result.message && result.status !== 201) {
@@ -85,6 +92,29 @@ export const incrementDownloadCountHandler = async (
   } catch (error) {
     console.error("Increment download count error:", error);
     res.status(500).json({ message: "Failed to update download count" });
+  }
+};
+
+export const updateTechDocumentHandler = async (
+  req: AuthenticatedRequest,
+  res: Response,
+) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isInteger(id) || id <= 0) {
+      res.status(400).json({ message: "id must be a positive integer" });
+      return;
+    }
+    const { title, category, description } = req.body;
+    const result = await updateTechDocument(id, title, category, description);
+    if (result.message && result.status !== 200) {
+      res.status(result.status).json({ message: result.message });
+      return;
+    }
+    res.status(result.status).json(result.data);
+  } catch (error) {
+    console.error("Update tech document error:", error);
+    res.status(500).json({ message: "Failed to update tech document" });
   }
 };
 

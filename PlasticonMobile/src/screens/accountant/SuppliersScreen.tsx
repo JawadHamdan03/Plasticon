@@ -201,6 +201,7 @@ export function SuppliersScreen() {
   const [editing, setEditing]       = useState<Supplier | null>(null);
   const [form, setForm]             = useState<SupplierForm>(EMPTY_FORM);
   const [saving, setSaving]         = useState(false);
+  const [search, setSearch]         = useState('');
 
   const load = useCallback(async () => {
     try {
@@ -289,6 +290,16 @@ export function SuppliersScreen() {
   const setField = (key: keyof SupplierForm) => (val: string) =>
     setForm((f) => ({ ...f, [key]: val }));
 
+  const q = search.trim().toLowerCase();
+  const filtered = suppliers.filter(s =>
+    !q
+    || s.name.toLowerCase().includes(q)
+    || (s.contactPerson ?? '').toLowerCase().includes(q)
+    || (s.email ?? '').toLowerCase().includes(q)
+    || (s.phone ?? '').toLowerCase().includes(q)
+    || (s.category ?? '').toLowerCase().includes(q)
+  );
+
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
       <ScreenHeader
@@ -303,7 +314,7 @@ export function SuppliersScreen() {
         </View>
       ) : (
         <FlatList
-          data={suppliers}
+          data={filtered}
           keyExtractor={(i, idx) => `${String(i.id)}-${idx}`}
           renderItem={({ item }) => (
             <SupplierCard
@@ -321,11 +332,32 @@ export function SuppliersScreen() {
               tintColor={colors.primary}
             />
           }
+          ListHeaderComponent={
+            <View style={[styles.searchBox, { backgroundColor: colors.surfaceAlt, borderColor: colors.border }]}>
+              <Ionicons name="search-outline" size={16} color={colors.textMuted} />
+              <TextInput
+                style={[styles.searchInput, { color: colors.text }]}
+                value={search}
+                onChangeText={setSearch}
+                placeholder={isAr ? 'بحث في الموردين...' : 'Search suppliers...'}
+                placeholderTextColor={colors.textMuted}
+                returnKeyType="search"
+                autoCorrect={false}
+              />
+              {search.length > 0 && (
+                <TouchableOpacity onPress={() => setSearch('')} hitSlop={8}>
+                  <Ionicons name="close-circle" size={16} color={colors.textMuted} />
+                </TouchableOpacity>
+              )}
+            </View>
+          }
           ListEmptyComponent={
             <View style={styles.empty}>
               <Ionicons name="business-outline" size={44} color={colors.textMuted} />
-              <Text style={[styles.emptyText, { color: colors.textMuted }]}>{isAr ? 'لا يوجد موردون بعد' : 'No suppliers yet'}</Text>
-              <Text style={[styles.emptyHint, { color: colors.textMuted }]}>{isAr ? 'اضغط + لإضافة أول مورد' : 'Tap + to add the first one'}</Text>
+              <Text style={[styles.emptyText, { color: colors.textMuted }]}>
+                {q ? (isAr ? 'لا توجد نتائج' : 'No results found') : (isAr ? 'لا يوجد موردون بعد' : 'No suppliers yet')}
+              </Text>
+              {!q && <Text style={[styles.emptyHint, { color: colors.textMuted }]}>{isAr ? 'اضغط + لإضافة أول مورد' : 'Tap + to add the first one'}</Text>}
             </View>
           }
         />
@@ -398,6 +430,10 @@ const styles = StyleSheet.create({
   safe:   { flex: 1 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   list:   { padding: spacing.md, paddingBottom: 100 },
+
+  // Search
+  searchBox:   { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, borderWidth: 1, borderRadius: radius.md, paddingHorizontal: spacing.sm, paddingVertical: 9, marginBottom: spacing.sm },
+  searchInput: { flex: 1, fontSize: 14, paddingVertical: 0 },
 
   // Cards
   card: {

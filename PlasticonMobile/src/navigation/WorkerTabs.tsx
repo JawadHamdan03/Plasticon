@@ -46,7 +46,12 @@ const OverviewStack = createNativeStackNavigator<WorkerOverviewStackParamList>()
 function OverviewNavigator() {
   return (
     <OverviewStack.Navigator screenOptions={{ headerShown: false }}>
-      <OverviewStack.Screen name="WorkerHub" component={WorkerHubScreen} />
+      <OverviewStack.Screen name="WorkerHub"    component={WorkerHubScreen} />
+      <OverviewStack.Screen name="Production"   component={ProductionScreen} />
+      <OverviewStack.Screen name="Snapshots"    component={SnapshotsScreen} />
+      <OverviewStack.Screen name="MachineStops" component={MachineStopsScreen} />
+      <OverviewStack.Screen name="Attendance"   component={AttendanceScreen} />
+      <OverviewStack.Screen name="Payroll"      component={PayrollScreen} />
     </OverviewStack.Navigator>
   );
 }

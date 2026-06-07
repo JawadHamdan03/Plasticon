@@ -1,17 +1,40 @@
-FROM node:20-alpine AS runtime
+### Stage 1 — install deps + generate Prisma client
+FROM node:20-alpine AS deps
+
+RUN apk add --no-cache openssl libc6-compat
+
 WORKDIR /app
-ENV NODE_ENV=development
-ENV PORT=8080
-ENV DATABASE_URL=postgres://postgres:123456@host.docker.internal:5433/plasticon?sslmode=disable
-ENV JWT_SECRET=a-string-secret-at-least-256-bits-long
 
 COPY package*.json ./
-COPY prisma ./prisma
 RUN npm ci
 
-COPY tsconfig.json ./
+COPY prisma ./prisma
+RUN npx prisma generate
+
+### Stage 2 — production runner
+FROM node:20-alpine AS runner
+
+RUN apk add --no-cache openssl
+
+WORKDIR /app
+
+# Carry over installed modules
+COPY --from=deps /app/node_modules ./node_modules
+
+# Prisma schema + migrations folder (needed for "migrate deploy" at startup)
+COPY prisma ./prisma
+
+# Application source + TypeScript config
 COPY src ./src
-RUN npm run apply-schema
-RUN npm run seed
+COPY tsconfig*.json ./
+COPY package*.json ./
+COPY prisma.config.ts ./
+
+# Overwrite any stale committed generated client with the one built from current schema
+COPY --from=deps /app/src/config/generated/prisma ./src/config/generated/prisma
+
 EXPOSE 8080
-CMD ["npm", "run", "dev"]
+
+# 1. Apply any pending DB migrations + regenerate client to match schema
+# 2. Start the server via tsx (TypeScript runtime — no separate compile step)
+CMD ["sh", "-c", "npx prisma generate && npx prisma db push --accept-data-loss && npx tsx src/app.ts"]

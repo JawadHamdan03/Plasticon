@@ -15,6 +15,14 @@ type AttendanceRecord = {
   shift?: { id: number; name: string } | null;
 };
 
+function fmtMin(min: number): string {
+  const h = Math.floor(min / 60);
+  const m = min % 60;
+  if (h === 0) return `${m}m`;
+  if (m === 0) return `${h}h`;
+  return `${h}h ${m}m`;
+}
+
 function authToken(): Record<string, string> {
   const t = localStorage.getItem("plasticon_token");
   return t ? { Authorization: `Bearer ${t}` } : {};
@@ -314,7 +322,7 @@ export function MyAttendancePage() {
                     {duration !== null ? (
                       <div className="attendance-time-chip attendance-time-chip--dur">
                         <Clock size={13} />
-                        {duration} {t.minutes}
+                        {fmtMin(duration)}
                       </div>
                     ) : null}
                   </div>
@@ -323,12 +331,12 @@ export function MyAttendancePage() {
                     {rec.shift?.name ? <span>🔄 {rec.shift.name}</span> : null}
                     {rec.lateMinutes > 0 ? (
                       <span className="attendance-meta-tag attendance-meta-tag--late">
-                        {t.late}: {rec.lateMinutes} {t.minutes}
+                        {t.late}: {fmtMin(rec.lateMinutes)}
                       </span>
                     ) : null}
                     {rec.overtimeMinutes > 0 ? (
                       <span className="attendance-meta-tag attendance-meta-tag--ot">
-                        {t.overtime}: {rec.overtimeMinutes} {t.minutes}
+                        {t.overtime}: {fmtMin(rec.overtimeMinutes)}
                       </span>
                     ) : null}
                   </div>

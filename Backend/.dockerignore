@@ -1,0 +1,12 @@
+node_modules
+dist
+.env
+.env.*
+!.env.docker
+*.log
+server-out*.txt
+server-err*.txt
+scripts
+tests
+docs
+prisma/pictures

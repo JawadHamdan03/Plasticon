@@ -41,7 +41,8 @@ interface PickedImage {
 
 function toImageUri(stored?: string | null): string | null {
   if (!stored) return null;
-  return `${API_BASE}/${stored.replace(/^prisma\/?pictures\//, 'pictures/')}`;
+  const filename = stored.replace(/^(?:prisma\/?)?pictures\//, '');
+  return `${API_BASE}/pictures/${filename}`;
 }
 
 function fmtDate(iso: string) {
@@ -68,51 +69,58 @@ function ReadingCard({
   const consumption = item.consumption ?? calcConsumption(item.startReading, item.endReading, item.isMeterReset, item.maxMeterValue ?? undefined);
 
   return (
-    <View style={[styles.card, { backgroundColor: colors.surface }]}>
+    <View style={[styles.card, { backgroundColor: colors.surface, borderLeftWidth: 3, borderLeftColor: colors.warning }]}>
+      {/* Top row: date + shift + consumption badge */}
       <View style={styles.cardHeader}>
-        <View style={[styles.iconWrap, { backgroundColor: `${colors.warning}15` }]}>
-          <Ionicons name="flash" size={20} color={colors.warning} />
+        <View style={[styles.iconWrap, { backgroundColor: `${colors.warning}18` }]}>
+          <Ionicons name="flash" size={22} color={colors.warning} />
         </View>
         <View style={styles.cardInfo}>
           {dateStr && <Text style={[styles.cardDate, { color: colors.text }]}>{fmtDate(dateStr)}</Text>}
-          {item.shift?.name && <Text style={[styles.cardShift, { color: colors.textMuted }]}>{item.shift.name}</Text>}
+          {item.shift?.name && (
+            <View style={styles.shiftPill}>
+              <Ionicons name="time-outline" size={11} color={colors.textMuted} />
+              <Text style={[styles.cardShift, { color: colors.textMuted }]}>{item.shift.name}</Text>
+            </View>
+          )}
         </View>
         {consumption != null && (
-          <Text style={[styles.consumptionBadge, { color: colors.warning }]}>
-            {consumption.toFixed(2)} kWh
-          </Text>
+          <View style={[styles.consumptionBox, { backgroundColor: `${colors.warning}18`, borderColor: `${colors.warning}35` }]}>
+            <Text style={[styles.consumptionVal, { color: colors.warning }]}>{consumption.toFixed(1)}</Text>
+            <Text style={[styles.consumptionUnit, { color: colors.warning }]}>kWh</Text>
+          </View>
         )}
       </View>
 
+      {/* Readings row */}
       <View style={[styles.readingRow, { borderTopColor: colors.border }]}>
-        <View style={styles.readingItem}>
-          <Text style={[styles.readingLbl, { color: colors.textMuted }]}>{isAr ? 'بداية' : 'Start'}</Text>
-          <Text style={[styles.readingVal, { color: colors.text }]}>{item.startReading}</Text>
+        <View style={[styles.readingBox, { backgroundColor: colors.surfaceAlt, borderColor: colors.border }]}>
+          <Text style={[styles.readingLbl, { color: colors.textMuted }]}>{isAr ? 'قراءة البداية' : 'Start'}</Text>
+          <Text style={[styles.readingVal, { color: colors.text }]}>{item.startReading.toLocaleString()}</Text>
         </View>
-        <Ionicons name="arrow-forward" size={14} color={colors.textMuted} />
-        <View style={styles.readingItem}>
-          <Text style={[styles.readingLbl, { color: colors.textMuted }]}>{isAr ? 'نهاية' : 'End'}</Text>
-          <Text style={[styles.readingVal, { color: colors.text }]}>{item.endReading}</Text>
+        <View style={[styles.arrowWrap, { backgroundColor: colors.border }]}>
+          <Ionicons name="arrow-forward" size={12} color={colors.textMuted} />
+        </View>
+        <View style={[styles.readingBox, { backgroundColor: colors.surfaceAlt, borderColor: colors.border }]}>
+          <Text style={[styles.readingLbl, { color: colors.textMuted }]}>{isAr ? 'قراءة النهاية' : 'End'}</Text>
+          <Text style={[styles.readingVal, { color: colors.text }]}>{item.endReading.toLocaleString()}</Text>
         </View>
         {item.shiftCost != null && item.shiftCost > 0 && (
-          <>
-            <View style={[styles.readingDivider, { backgroundColor: colors.border }]} />
-            <View style={styles.readingItem}>
-              <Text style={[styles.readingLbl, { color: colors.textMuted }]}>{isAr ? 'تكلفة' : 'Cost'}</Text>
-              <Text style={[styles.readingVal, { color: colors.success }]}>${item.shiftCost.toFixed(2)}</Text>
-            </View>
-          </>
+          <View style={[styles.readingBox, { backgroundColor: `${colors.success}12`, borderColor: `${colors.success}25` }]}>
+            <Text style={[styles.readingLbl, { color: colors.textMuted }]}>{isAr ? 'التكلفة' : 'Cost'}</Text>
+            <Text style={[styles.readingVal, { color: colors.success }]}>${item.shiftCost.toFixed(2)}</Text>
+          </View>
         )}
       </View>
 
       {item.isMeterReset && (
-        <View style={[styles.resetBadge, { backgroundColor: `${colors.danger}15` }]}>
+        <View style={[styles.resetBadge, { backgroundColor: `${colors.danger}15`, borderColor: `${colors.danger}25`, borderWidth: 1 }]}>
           <Ionicons name="refresh-circle" size={12} color={colors.danger} />
           <Text style={[styles.resetText, { color: colors.danger }]}>{isAr ? 'إعادة ضبط العداد' : 'Meter Reset'}</Text>
         </View>
       )}
 
-      {item.notes ? <Text style={[styles.notes, { color: colors.textMuted }]} numberOfLines={2}>{item.notes}</Text> : null}
+      {item.notes ? <Text style={[styles.notes, { color: colors.textMuted, borderTopColor: colors.border }]} numberOfLines={2}>{item.notes}</Text> : null}
 
       {toImageUri(item.imagePath) && (
         <TouchableOpacity onPress={() => onImagePress(toImageUri(item.imagePath)!)}>
@@ -387,22 +395,6 @@ export function ElectricityRecordScreen() {
 
   useEffect(() => { void load(); }, [load]);
 
-  const totalConsumption = readings.reduce((s, r) => {
-    const c = r.consumption ?? calcConsumption(r.startReading, r.endReading, r.isMeterReset, r.maxMeterValue ?? undefined);
-    return s + (c ?? 0);
-  }, 0);
-
-  const latest = readings[0];
-  const prev   = readings[1];
-  const latestConsumption = latest
-    ? (latest.consumption ?? calcConsumption(latest.startReading, latest.endReading, latest.isMeterReset, latest.maxMeterValue ?? undefined))
-    : null;
-  const prevConsumption = prev
-    ? (prev.consumption ?? calcConsumption(prev.startReading, prev.endReading, prev.isMeterReset, prev.maxMeterValue ?? undefined))
-    : null;
-  const delta = latestConsumption != null && prevConsumption != null
-    ? latestConsumption - prevConsumption : null;
-
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
       <ScreenHeader
@@ -429,26 +421,6 @@ export function ElectricityRecordScreen() {
           showsVerticalScrollIndicator={false}
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); void load(); }} tintColor={colors.warning} />
-          }
-          ListHeaderComponent={
-            <View style={styles.summaryCard}>
-              <View style={[styles.summaryBg, { backgroundColor: colors.surface }]}>
-                <View style={styles.summaryRow}>
-                  <View style={styles.summaryItem}>
-                    <Text style={[styles.summaryLbl, { color: colors.textMuted }]}>{isAr ? 'إجمالي الاستهلاك' : 'Total Usage'}</Text>
-                    <Text style={[styles.summaryVal, { color: colors.warning }]}>{totalConsumption.toFixed(1)} kWh</Text>
-                  </View>
-                  {delta !== null && (
-                    <View style={styles.summaryItem}>
-                      <Text style={[styles.summaryLbl, { color: colors.textMuted }]}>{isAr ? 'مقارنة بالسابق' : 'vs Previous'}</Text>
-                      <Text style={[styles.summaryVal, { color: delta > 0 ? colors.danger : colors.success }]}>
-                        {delta > 0 ? '+' : ''}{delta.toFixed(1)} kWh
-                      </Text>
-                    </View>
-                  )}
-                </View>
-              </View>
-            </View>
           }
           ListEmptyComponent={
             <View style={styles.empty}>
@@ -496,30 +468,26 @@ const styles = StyleSheet.create({
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   list:   { padding: spacing.md, paddingBottom: 100 },
 
-  summaryCard: { marginBottom: spacing.md },
-  summaryBg:   { borderRadius: radius.lg, padding: spacing.md, ...shadow.sm },
-  summaryRow:  { flexDirection: 'row', justifyContent: 'space-around' },
-  summaryItem: { alignItems: 'center' },
-  summaryLbl:  { ...typography.caption, marginBottom: 2 },
-  summaryVal:  { fontSize: 20, fontWeight: '800' },
+  card:         { borderRadius: radius.lg, padding: spacing.md, marginBottom: spacing.sm, ...shadow.sm },
+  cardHeader:   { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.sm, marginBottom: spacing.sm },
+  iconWrap:     { width: 42, height: 42, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
+  cardInfo:     { flex: 1, gap: 3 },
+  cardDate:     { ...typography.h4 },
+  shiftPill:    { flexDirection: 'row', alignItems: 'center', gap: 3 },
+  cardShift:    { ...typography.caption },
+  consumptionBox: { alignItems: 'center', borderRadius: radius.md, borderWidth: 1, paddingHorizontal: 10, paddingVertical: 6 },
+  consumptionVal: { fontSize: 18, fontWeight: '900', lineHeight: 22 },
+  consumptionUnit:{ fontSize: 10, fontWeight: '700' },
 
-  card:           { borderRadius: radius.lg, padding: spacing.md, marginBottom: spacing.sm, ...shadow.sm },
-  cardHeader:     { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.sm, marginBottom: 8 },
-  iconWrap:       { width: 38, height: 38, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
-  cardInfo:       { flex: 1, gap: 2 },
-  cardDate:       { ...typography.h4 },
-  cardShift:      { ...typography.caption },
-  consumptionBadge: { fontSize: 14, fontWeight: '800' },
+  readingRow:  { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, borderTopWidth: 1, paddingTop: spacing.sm },
+  readingBox:  { flex: 1, alignItems: 'center', borderRadius: radius.md, borderWidth: 1, paddingVertical: 8 },
+  readingLbl:  { fontSize: 10, fontWeight: '600', marginBottom: 2 },
+  readingVal:  { fontSize: 15, fontWeight: '800' },
+  arrowWrap:   { width: 20, height: 20, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
 
-  readingRow:    { flexDirection: 'row', alignItems: 'center', gap: 10, borderTopWidth: 1, paddingTop: 8, flexWrap: 'wrap' },
-  readingItem:   { alignItems: 'center' },
-  readingLbl:    { ...typography.caption, marginBottom: 2 },
-  readingVal:    { fontSize: 13, fontWeight: '700' },
-  readingDivider:{ width: 1, height: 28 },
-
-  resetBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 99, alignSelf: 'flex-start', marginTop: 6 },
+  resetBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 99, alignSelf: 'flex-start', marginTop: 8 },
   resetText:  { fontSize: 11, fontWeight: '700' },
-  notes:      { ...typography.bodySmall, marginTop: 6, fontStyle: 'italic' },
+  notes:      { ...typography.bodySmall, borderTopWidth: 1, paddingTop: 6, marginTop: 8, fontStyle: 'italic' },
   cardImage:  { width: '100%', height: 120, borderRadius: radius.sm, marginTop: 8 },
 
   empty:     { alignItems: 'center', paddingTop: 60, gap: spacing.sm },

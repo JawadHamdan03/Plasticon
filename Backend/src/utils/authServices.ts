@@ -16,7 +16,7 @@ if (!jwtSecret) {
 
 export const generateToken = (userId: number, res: Response) => {
   const payload = { id: userId };
-  const token = jwt.sign(payload, jwtSecret, { expiresIn: "7d" });
+  const token = jwt.sign(payload, jwtSecret, { expiresIn: "7d", algorithm: "HS256" });
   res.cookie("authToken", token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
@@ -39,14 +39,14 @@ export const generateActionToken = (
   expiresIn: SignOptions["expiresIn"],
 ) => {
   const payload: ActionTokenPayload = { id: userId, purpose };
-  return jwt.sign(payload, jwtSecret, { expiresIn });
+  return jwt.sign(payload, jwtSecret, { expiresIn, algorithm: "HS256" });
 };
 
 export const verifyActionToken = (
   token: string,
   expectedPurpose: AuthAction,
 ) => {
-  const decoded = jwt.verify(token, jwtSecret) as ActionTokenPayload;
+  const decoded = jwt.verify(token, jwtSecret, { algorithms: ["HS256"] }) as ActionTokenPayload;
 
   if (decoded.purpose !== expectedPurpose) {
     throw new Error("Invalid token purpose");

@@ -26,7 +26,7 @@ export const authorizeRoles = (allowedRoles: UserRole[]) => {
         const secret = process.env.JWT_SECRET as string
 
         try {
-            const decoded = jwt.verify(token, secret) as { id: string }
+            const decoded = jwt.verify(token, secret, { algorithms: ["HS256"] }) as { id: string }
             const userId = Number(decoded.id)
             const user = await prisma.user.findUnique({
                 where: { id: userId },

@@ -270,69 +270,78 @@ export function ProductionScreen() {
     const machineType = item.machine?.type?.trim().toUpperCase() ?? '';
     const isCaps = machineType === 'CAPS' || machineType.includes('CAP');
     const accentColor = isCaps ? colors.primary : colors.info;
-    const typeLabel = isCaps
-      ? (isAr ? 'كابات' : 'Caps')
-      : (isAr ? 'بريفورم' : 'Preforms');
+    const typeLabel = isCaps ? (isAr ? 'كابات' : 'Caps') : (isAr ? 'بريفورم' : 'Preforms');
+    const net = item.netGoodPieces ?? item.totalPieces ?? 0;
+    const total = item.totalPieces ?? 0;
+    const damaged = item.damagedPieces ?? 0;
+    const yieldPct = total > 0 ? Math.round((net / total) * 100) : 100;
 
     return (
-      <View style={[styles.card, { backgroundColor: colors.surface }]}>
+      <View style={[styles.card, { backgroundColor: colors.surface, borderLeftWidth: 3, borderLeftColor: accentColor }]}>
+        {/* Row 1: type tag + date + actions */}
         <View style={styles.cardTop}>
-          <View style={[styles.typeTag, { backgroundColor: accentColor + '20' }]}>
+          <View style={[styles.typeTag, { backgroundColor: accentColor + '18' }]}>
             <Ionicons name={isCaps ? 'layers-outline' : 'cube-outline'} size={13} color={accentColor} />
             <Text style={[styles.typeTagText, { color: accentColor }]}>{typeLabel}</Text>
           </View>
+          <Text style={[styles.cardDateBig, { color: colors.textSecondary }]}>
+            {fmtDate(item.date ?? item.createdAt)}
+          </Text>
           <View style={styles.cardActions}>
             <TouchableOpacity onPress={() => openEdit(item)} style={styles.cardActionBtn} activeOpacity={0.7}>
-              <Ionicons name="pencil" size={16} color={colors.textMuted} />
+              <Ionicons name="pencil" size={15} color={colors.textMuted} />
             </TouchableOpacity>
             <TouchableOpacity onPress={() => handleDelete(item)} style={styles.cardActionBtn} activeOpacity={0.7}>
-              <Ionicons name="trash-outline" size={16} color={colors.danger} />
+              <Ionicons name="trash-outline" size={15} color={colors.danger} />
             </TouchableOpacity>
           </View>
         </View>
 
+        {/* Row 2: big metrics */}
         <View style={styles.metricsRow}>
-          <View style={[styles.metric, { backgroundColor: accentColor + '10' }]}>
-            <Text style={[styles.metricVal, { color: accentColor }]}>{(item.totalPieces ?? 0).toLocaleString()}</Text>
+          <View style={[styles.metric, { backgroundColor: accentColor + '10', borderRadius: radius.md }]}>
+            <Text style={[styles.metricVal, { color: accentColor }]}>{total.toLocaleString()}</Text>
             <Text style={[styles.metricLbl, { color: colors.textMuted }]}>{isAr ? 'إجمالي' : 'Total'}</Text>
           </View>
-          {(item.damagedPieces ?? 0) > 0 && (
-            <View style={[styles.metric, { backgroundColor: colors.danger + '10' }]}>
-              <Text style={[styles.metricVal, { color: colors.danger }]}>{item.damagedPieces}</Text>
-              <Text style={[styles.metricLbl, { color: colors.textMuted }]}>{isAr ? 'تالف' : 'Damaged'}</Text>
-            </View>
-          )}
-          <View style={[styles.metric, { backgroundColor: colors.success + '10' }]}>
-            <Text style={[styles.metricVal, { color: colors.success }]}>{(item.netGoodPieces ?? item.totalPieces ?? 0).toLocaleString()}</Text>
+          <View style={[styles.metric, { backgroundColor: colors.success + '10', borderRadius: radius.md }]}>
+            <Text style={[styles.metricVal, { color: colors.success }]}>{net.toLocaleString()}</Text>
             <Text style={[styles.metricLbl, { color: colors.textMuted }]}>{isAr ? 'صالح' : 'Good'}</Text>
+          </View>
+          <View style={[styles.metric, { backgroundColor: damaged > 0 ? colors.danger + '10' : colors.border + '30', borderRadius: radius.md }]}>
+            <Text style={[styles.metricVal, { color: damaged > 0 ? colors.danger : colors.textMuted }]}>{damaged.toLocaleString()}</Text>
+            <Text style={[styles.metricLbl, { color: colors.textMuted }]}>{isAr ? 'تالف' : 'Damaged'}</Text>
+          </View>
+          <View style={[styles.metric, { backgroundColor: yieldPct >= 95 ? colors.success + '10' : colors.warning + '10', borderRadius: radius.md }]}>
+            <Text style={[styles.metricVal, { color: yieldPct >= 95 ? colors.success : colors.warning }]}>{yieldPct}%</Text>
+            <Text style={[styles.metricLbl, { color: colors.textMuted }]}>{isAr ? 'جودة' : 'Yield'}</Text>
           </View>
         </View>
 
-        <View style={styles.cardFooter}>
-          {item.machine && (
-            <Text style={[styles.footerText, { color: colors.textMuted }]}>
-              <Ionicons name="hardware-chip-outline" size={11} /> {item.machine.name}
-            </Text>
-          )}
+        {/* Row 3: shift · machine · color/type */}
+        <View style={[styles.cardMeta, { borderTopColor: colors.border }]}>
           {item.shift && (
-            <Text style={[styles.footerText, { color: colors.textMuted }]}>
-              <Ionicons name="time-outline" size={11} /> {item.shift.name}
-            </Text>
+            <View style={styles.metaChip}>
+              <Ionicons name="time-outline" size={11} color={colors.textMuted} />
+              <Text style={[styles.metaChipText, { color: colors.textSecondary }]}>{item.shift.name}</Text>
+            </View>
+          )}
+          {item.machine && (
+            <View style={styles.metaChip}>
+              <Ionicons name="hardware-chip-outline" size={11} color={colors.textMuted} />
+              <Text style={[styles.metaChipText, { color: colors.textSecondary }]}>{item.machine.name}</Text>
+            </View>
           )}
           {(item.capColor || item.preformType) && (
-            <Text style={[styles.footerText, { color: colors.textMuted }]}>
-              {item.capColor ?? item.preformType}
-            </Text>
+            <View style={styles.metaChip}>
+              <Ionicons name="color-palette-outline" size={11} color={colors.textMuted} />
+              <Text style={[styles.metaChipText, { color: colors.textSecondary }]}>{item.capColor ?? item.preformType}</Text>
+            </View>
           )}
-          <Text style={[styles.footerDate, { color: colors.textMuted }]}>
-            {fmtDate(item.date ?? item.createdAt)} · {fmtTime(item.createdAt)}
-          </Text>
+          <Text style={[styles.metaTime, { color: colors.textMuted }]}>{fmtTime(item.createdAt)}</Text>
         </View>
 
         {item.notes ? (
-          <Text style={[styles.notes, { color: colors.textMuted, borderTopColor: colors.border }]} numberOfLines={2}>
-            {item.notes}
-          </Text>
+          <Text style={[styles.notes, { color: colors.textMuted, borderTopColor: colors.border }]} numberOfLines={2}>{item.notes}</Text>
         ) : null}
       </View>
     );
@@ -363,15 +372,20 @@ export function ProductionScreen() {
           }
           ListHeaderComponent={
             <View style={styles.statsRow}>
-              <View style={[styles.statCard, { backgroundColor: colors.surface }]}>
-                <Ionicons name="checkmark-circle" size={20} color={colors.success} />
-                <Text style={[styles.statVal, { color: colors.success }]}>{totalGood.toLocaleString()}</Text>
-                <Text style={[styles.statLbl, { color: colors.textMuted }]}>{isAr ? 'قطعة صالحة' : 'Good Pieces'}</Text>
+              <View style={[styles.statCard, { backgroundColor: colors.primary + '15', borderWidth: 1, borderColor: colors.primary + '30' }]}>
+                <Ionicons name="cube-outline" size={22} color={colors.primary} />
+                <Text style={[styles.statVal, { color: colors.primary }]}>{records.length}</Text>
+                <Text style={[styles.statLbl, { color: colors.textMuted }]}>{isAr ? 'سجل' : 'Records'}</Text>
               </View>
-              <View style={[styles.statCard, { backgroundColor: colors.surface }]}>
-                <Ionicons name="close-circle" size={20} color={colors.danger} />
+              <View style={[styles.statCard, { backgroundColor: colors.success + '15', borderWidth: 1, borderColor: colors.success + '30' }]}>
+                <Ionicons name="checkmark-circle" size={22} color={colors.success} />
+                <Text style={[styles.statVal, { color: colors.success }]}>{totalGood.toLocaleString()}</Text>
+                <Text style={[styles.statLbl, { color: colors.textMuted }]}>{isAr ? 'صالح' : 'Good Pcs'}</Text>
+              </View>
+              <View style={[styles.statCard, { backgroundColor: colors.danger + '15', borderWidth: 1, borderColor: colors.danger + '30' }]}>
+                <Ionicons name="close-circle" size={22} color={colors.danger} />
                 <Text style={[styles.statVal, { color: colors.danger }]}>{totalDamaged.toLocaleString()}</Text>
-                <Text style={[styles.statLbl, { color: colors.textMuted }]}>{isAr ? 'قطعة تالفة' : 'Damaged'}</Text>
+                <Text style={[styles.statLbl, { color: colors.textMuted }]}>{isAr ? 'تالف' : 'Damaged'}</Text>
               </View>
             </View>
           }
@@ -693,26 +707,28 @@ const styles = StyleSheet.create({
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   list:   { padding: spacing.md, paddingBottom: 100 },
 
-  statsRow: { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.md },
-  statCard: { flex: 1, borderRadius: radius.lg, padding: spacing.md, alignItems: 'center', gap: 4, ...shadow.sm },
-  statVal:  { fontSize: 20, fontWeight: '800' },
-  statLbl:  { ...typography.caption, textAlign: 'center' },
+  statsRow: { flexDirection: 'row', gap: spacing.xs, marginBottom: spacing.md },
+  statCard: { flex: 1, borderRadius: radius.lg, padding: spacing.sm, alignItems: 'center', gap: 3, ...shadow.sm },
+  statVal:  { fontSize: 18, fontWeight: '900' },
+  statLbl:  { fontSize: 10, fontWeight: '600', textAlign: 'center' },
 
-  card:       { borderRadius: radius.lg, padding: spacing.md, marginBottom: spacing.sm, ...shadow.sm },
-  cardTop:    { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 },
-  typeTag:    { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 99 },
-  typeTagText:{ fontSize: 11, fontWeight: '700' },
-  cardActions:{ flexDirection: 'row', gap: 4 },
-  cardActionBtn: { padding: 6 },
+  card:         { borderRadius: radius.lg, padding: spacing.md, marginBottom: spacing.sm, ...shadow.sm },
+  cardTop:      { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, marginBottom: spacing.sm },
+  typeTag:      { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 99 },
+  typeTagText:  { fontSize: 11, fontWeight: '700' },
+  cardDateBig:  { flex: 1, fontSize: 12, fontWeight: '600' },
+  cardActions:  { flexDirection: 'row', gap: 2 },
+  cardActionBtn:{ padding: 6 },
 
-  metricsRow: { flexDirection: 'row', gap: spacing.sm, marginBottom: 8 },
-  metric:     { flex: 1, alignItems: 'center', paddingVertical: 8, borderRadius: radius.md, gap: 2 },
-  metricVal:  { fontSize: 18, fontWeight: '800' },
-  metricLbl:  { ...typography.caption },
+  metricsRow: { flexDirection: 'row', gap: spacing.xs, marginBottom: spacing.sm },
+  metric:     { flex: 1, alignItems: 'center', paddingVertical: 10, gap: 2 },
+  metricVal:  { fontSize: 20, fontWeight: '900' },
+  metricLbl:  { fontSize: 10, fontWeight: '600' },
 
-  cardFooter: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 2 },
-  footerText: { ...typography.caption },
-  footerDate: { ...typography.caption },
+  cardMeta:   { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs, borderTopWidth: 1, paddingTop: 8, marginTop: 2 },
+  metaChip:   { flexDirection: 'row', alignItems: 'center', gap: 3 },
+  metaChipText:{ fontSize: 11, fontWeight: '600' },
+  metaTime:   { marginLeft: 'auto' as any, fontSize: 11 },
   notes:      { ...typography.bodySmall, borderTopWidth: 1, paddingTop: 6, marginTop: 6, fontStyle: 'italic' },
 
   empty:     { alignItems: 'center', paddingTop: 60, gap: spacing.sm },

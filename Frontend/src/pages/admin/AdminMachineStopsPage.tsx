@@ -41,7 +41,8 @@ function fmt(iso: string) {
 }
 
 export function AdminMachineStopsPage() {
-  const { isAr } = useLocale();
+  const { locale } = useLocale();
+  const isAr = locale === "ar";
   const [stops, setStops]         = useState<StopAlert[]>([]);
   const [filter, setFilter]       = useState<StatusFilter>("all");
   const [loading, setLoading]     = useState(true);

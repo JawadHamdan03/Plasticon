@@ -50,7 +50,7 @@ router.get(
 
 router.post(
   "/snapshots",
-  authorizeRoles([UserRole.WORKER]),
+  authorizeRoles([UserRole.WORKER, UserRole.ENGINEER]),
   upload.fields([
     { name: "machineCounterImage", maxCount: 1 },
     { name: "electricityImage", maxCount: 1 },
@@ -60,7 +60,7 @@ router.post(
 
 router.get(
   "/snapshots/mine",
-  authorizeRoles([UserRole.WORKER]),
+  authorizeRoles([UserRole.WORKER, UserRole.ENGINEER]),
   getSettingsSnapshots,
 );
 
@@ -72,7 +72,7 @@ router.get(
 
 router.put(
   "/snapshots/:id",
-  authorizeRoles([UserRole.WORKER, UserRole.ADMIN]),
+  authorizeRoles([UserRole.WORKER, UserRole.ENGINEER, UserRole.ADMIN]),
   upload.fields([
     { name: "machineCounterImage", maxCount: 1 },
     { name: "electricityImage", maxCount: 1 },
@@ -82,7 +82,7 @@ router.put(
 
 router.delete(
   "/snapshots/:id",
-  authorizeRoles([UserRole.WORKER, UserRole.ADMIN]),
+  authorizeRoles([UserRole.WORKER, UserRole.ENGINEER, UserRole.ADMIN]),
   deleteSettingsSnapshot,
 );
 
