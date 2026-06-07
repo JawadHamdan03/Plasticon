@@ -2,3 +2,11 @@
 node_modules
 .codacy
 .qodo
+
+# Secret env files — never commit these
+Backend/.env.docker
+Frontend/.env.docker
+RAG/.env.docker
+PlasticonMobile/.env.docker
+**/.env.local
+**/.env.production
