@@ -127,21 +127,16 @@ export function AccountantPartsPricingPage() {
       icon={<DollarSign size={22} />}
     >
       {/* KPIs */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: ".75rem", marginBottom: "1.25rem" }}>
         {[
-          { label: nav("Awaiting Pricing", "في انتظار التسعير"), value: submittedCount, icon: "⏳", color: "#d97706", bg: "#fef3c7" },
-          { label: nav("Reviewed", "تمت المراجعة"), value: reviewedCount, icon: "✅", color: "#059669", bg: "#d1fae5" },
-          { label: nav("Incomplete Pricing", "تسعير غير مكتمل"), value: pendingPricing, icon: "⚠️", color: "#dc2626", bg: "#fee2e2" },
+          { label: nav("Awaiting Pricing",    "في انتظار التسعير"), value: submittedCount, gradient: "linear-gradient(135deg,#f59e0b,#d97706)" },
+          { label: nav("Reviewed",            "تمت المراجعة"),       value: reviewedCount,  gradient: "linear-gradient(135deg,#10b981,#059669)" },
+          { label: nav("Incomplete Pricing",  "تسعير غير مكتمل"),   value: pendingPricing, gradient: "linear-gradient(135deg,#ef4444,#dc2626)" },
         ].map((k) => (
-          <Card key={k.label} className="p-4 flex items-center gap-3">
-            <div style={{ width: 40, height: 40, borderRadius: 10, background: k.bg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.2rem", flexShrink: 0 }}>
-              {k.icon}
-            </div>
-            <div>
-              <p className="text-xs text-[var(--text-secondary)] font-medium leading-tight">{k.label}</p>
-              <p className="text-xl font-bold" style={{ color: k.color }}>{k.value}</p>
-            </div>
-          </Card>
+          <div key={k.label} style={{ borderRadius: 14, padding: "1rem 1.1rem", background: k.gradient, color: "#fff", boxShadow: "0 4px 12px rgba(0,0,0,.15)" }}>
+            <p style={{ margin: 0, fontSize: ".72rem", fontWeight: 600, opacity: .85, textTransform: "uppercase", letterSpacing: ".06em" }}>{k.label}</p>
+            <p style={{ margin: ".25rem 0 0", fontSize: "1.7rem", fontWeight: 900, lineHeight: 1.1 }}>{k.value}</p>
+          </div>
         ))}
       </div>
 

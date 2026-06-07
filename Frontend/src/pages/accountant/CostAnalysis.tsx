@@ -106,22 +106,19 @@ export default function CostAnalysis() {
       icon={<PieChart size={22} />}
     >
       {/* KPIs */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
-        {[
-          { label: nav("Total Cost", "التكلفة الإجمالية"), value: fmtMoney(totalCost), icon: "💰", color: "#1d4ed8", bg: "#dbeafe" },
-          { label: nav("Categories", "الفئات"), value: analyses.length, icon: "📊", color: "#7c3aed", bg: "#ede9fe" },
-          { label: nav("Top Category", "أعلى فئة"), value: topCategory ? getCatMeta(topCategory.category).icon + " " + (locale === "ar" ? getCatMeta(topCategory.category).labelAr : topCategory.category) : "—", icon: "🏆", color: "#d97706", bg: "#fef3c7" },
-        ].map((k) => (
-          <Card key={k.label} className="p-4 flex items-center gap-3">
-            <div style={{ width: 40, height: 40, borderRadius: 10, background: k.bg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.2rem", flexShrink: 0 }}>
-              {k.icon}
-            </div>
-            <div className="min-w-0">
-              <p className="text-xs text-[var(--text-secondary)] font-medium leading-tight">{k.label}</p>
-              <p className="text-lg font-bold truncate" style={{ color: k.color }}>{k.value}</p>
-            </div>
-          </Card>
-        ))}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: ".75rem", marginBottom: "1.25rem" }}>
+        <div style={{ borderRadius: 14, padding: "1rem 1.1rem", background: "linear-gradient(135deg,#3b82f6,#1d4ed8)", color: "#fff", boxShadow: "0 4px 12px rgba(0,0,0,.15)" }}>
+          <p style={{ margin: 0, fontSize: ".72rem", fontWeight: 600, opacity: .85, textTransform: "uppercase", letterSpacing: ".06em" }}>{nav("Total Cost", "التكلفة الإجمالية")}</p>
+          <p style={{ margin: ".25rem 0 0", fontSize: "1.4rem", fontWeight: 900, lineHeight: 1.1 }}>{fmtMoney(totalCost)}</p>
+        </div>
+        <div style={{ borderRadius: 14, padding: "1rem 1.1rem", background: "linear-gradient(135deg,#8b5cf6,#7c3aed)", color: "#fff", boxShadow: "0 4px 12px rgba(0,0,0,.15)" }}>
+          <p style={{ margin: 0, fontSize: ".72rem", fontWeight: 600, opacity: .85, textTransform: "uppercase", letterSpacing: ".06em" }}>{nav("Categories", "الفئات")}</p>
+          <p style={{ margin: ".25rem 0 0", fontSize: "1.7rem", fontWeight: 900, lineHeight: 1.1 }}>{analyses.length}</p>
+        </div>
+        <div style={{ borderRadius: 14, padding: "1rem 1.1rem", background: "linear-gradient(135deg,#f59e0b,#d97706)", color: "#fff", boxShadow: "0 4px 12px rgba(0,0,0,.15)" }}>
+          <p style={{ margin: 0, fontSize: ".72rem", fontWeight: 600, opacity: .85, textTransform: "uppercase", letterSpacing: ".06em" }}>{nav("Top Category", "أعلى فئة")}</p>
+          <p style={{ margin: ".25rem 0 0", fontSize: "1rem", fontWeight: 900, lineHeight: 1.2 }}>{topCategory ? (locale === "ar" ? getCatMeta(topCategory.category).labelAr : topCategory.category) : "—"}</p>
+        </div>
       </div>
 
       {/* Distribution Chart */}

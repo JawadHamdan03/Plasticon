@@ -29,13 +29,11 @@ export type WorkerOverviewStackParamList = {
 export type WorkerWorkStackParamList = {
   WorkMenu:          undefined;
   Production:        undefined;
-  Consumption:       undefined;
   Readings:          undefined;
   MachineStops:      undefined;
   DailyChecklist:    undefined;
   MaterialWaste:     undefined;
   DailyTargets:      undefined;
-  KaizenIdeas:       undefined;
   QualityIssues:     undefined;
   MicroStops:        undefined;
   ElectricityAlerts: undefined;
@@ -45,7 +43,6 @@ export type WorkerWorkStackParamList = {
 
 // Worker — AI tab
 export type WorkerAIStackParamList = {
-  AIHub:     undefined;
   Assistant: undefined;
 };
 
@@ -85,9 +82,7 @@ export type EngineerEngStackParamList = {
   SpareParts:          undefined;
   Lifecycle:           undefined;
   ProductionAnalytics: undefined;
-  QualityTrends:       undefined;
   TechDocs:            undefined;
-  Calibration:         undefined;
   TransferLog:         undefined;
   RawAlerts:           undefined;
   MaintCosts:          undefined;
@@ -144,11 +139,9 @@ export type AccountantFinanceStackParamList = {
   SupplierPayables:    undefined;
   CustomerReceivables: undefined;
   BudgetPlanning:      undefined;
-  TaxCompliance:       undefined;
   BankReconciliation:  undefined;
   CostAnalysis:        undefined;
   ApprovalWorkflows:   undefined;
-  Warehouse:           undefined;
   Inventory:           undefined;
   Purchases:           undefined;
   Sales:               undefined;

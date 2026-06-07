@@ -111,8 +111,8 @@ export function RequestAccessScreen() {
         >
           <View style={[styles.handle, { backgroundColor: colors.border }]} />
 
-          <Input label={`${isAr ? 'الاسم الكامل' : 'Full Name'} *`}      value={fullName}   onChangeText={setFullName}   placeholder="John Smith"                    icon="person-outline"   autoCapitalize="words" />
-          <Input label={`${isAr ? 'البريد الإلكتروني' : 'Email Address'} *`} value={email}  onChangeText={setEmail}      placeholder="you@plasticon.com"             icon="mail-outline"     keyboardType="email-address" autoCapitalize="none" autoCorrect={false} />
+          <Input label={`${isAr ? 'الاسم الكامل' : 'Full Name'} *`}      value={fullName}   onChangeText={setFullName}   placeholder="Mohamamd Esawi"                    icon="person-outline"   autoCapitalize="words" />
+          <Input label={`${isAr ? 'البريد الإلكتروني' : 'Email Address'} *`} value={email}  onChangeText={setEmail}      placeholder="mhmd@plasticon.com"             icon="mail-outline"     keyboardType="email-address" autoCapitalize="none" autoCorrect={false} />
           <Input label={isAr ? 'القسم' : 'Department'}                    value={department} onChangeText={setDepartment} placeholder={isAr ? 'مثال: الإنتاج، المالية' : 'e.g. Production, Finance'} icon="business-outline" />
 
           {/* Role picker */}

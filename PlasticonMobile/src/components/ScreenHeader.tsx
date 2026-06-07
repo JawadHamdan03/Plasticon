@@ -1,9 +1,11 @@
 import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useAppTheme } from '../context/ThemeContext';
 import { spacing, typography } from '../theme';
+
+const plasticonLogo = require('../../assets/plasticonLogo.png') as number;
 
 interface Props {
   title: string;
@@ -29,7 +31,7 @@ export function ScreenHeader({ title, subtitle, showBack, rightIcon, onRightPres
           <Ionicons name="chevron-back" size={24} color={colors.primary} />
         </Pressable>
       ) : (
-        <View style={styles.backPlaceholder} />
+        <Image source={plasticonLogo} style={styles.logo} resizeMode="contain" />
       )}
 
       <View style={styles.center}>
@@ -51,7 +53,7 @@ export function ScreenHeader({ title, subtitle, showBack, rightIcon, onRightPres
           ) : null}
         </Pressable>
       ) : (
-        <View style={styles.backPlaceholder} />
+        <View style={styles.logo} />
       )}
     </View>
   );
@@ -65,8 +67,8 @@ const styles = StyleSheet.create({
     paddingTop: spacing.md,
     paddingBottom: spacing.sm,
   },
-  backBtn:         { padding: 4, marginRight: 4 },
-  backPlaceholder: { width: 32 },
+  backBtn: { padding: 4, marginRight: 4 },
+  logo:    { width: 44, height: 44, borderRadius: 8 },
   center:          { flex: 1, alignItems: 'center' },
   title: {
     ...typography.h3,

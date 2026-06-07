@@ -49,14 +49,12 @@ export function AccountantFinMenuScreen() {
     { icon: 'arrow-up-circle',   label: 'Supplier Payables',   labelAr: 'مستحقات الموردين',     desc: 'Supplier payment obligations',        color: colors.warning,  screen: 'SupplierPayables'    },
     { icon: 'arrow-down-circle', label: 'Customer Receivables',labelAr: 'مستقبلات العملاء',    desc: 'Customer outstanding amounts',        color: colors.success,  screen: 'CustomerReceivables' },
     { icon: 'wallet',            label: 'Budget Planning',     labelAr: 'التخطيط الميزاني',     desc: 'Budget planning and allocations',     color: '#6366F1',       screen: 'BudgetPlanning'      },
-    { icon: 'document',          label: 'Tax Compliance',      labelAr: 'الامتثال الضريبي',     desc: 'Tax filings and obligations',         color: '#EF4444',       screen: 'TaxCompliance'       },
     { icon: 'sync',              label: 'Reconciliation',      labelAr: 'التسوية',              desc: 'Bank and account reconciliation',     color: '#0EA5E9',       screen: 'BankReconciliation'  },
     { icon: 'analytics',         label: 'Cost Analysis',       labelAr: 'تحليل التكاليف',       desc: 'Production and operational costs',    color: '#8B5CF6',       screen: 'CostAnalysis'        },
     { icon: 'checkmark-done',    label: 'Approval Workflows',  labelAr: 'سير الموافقات',        desc: 'Purchase and expense approvals',      color: colors.success,  screen: 'ApprovalWorkflows'   },
   ];
 
   const OPS_ITEMS: MenuItem[] = [
-    { icon: 'cube',         label: 'Warehouse',  labelAr: 'المستودع',   desc: 'Warehouse stock and locations', color: '#D97706',      screen: 'Warehouse'  },
     { icon: 'layers',       label: 'Inventory',  labelAr: 'المخزون',    desc: 'Full inventory records',        color: colors.primary, screen: 'Inventory'  },
     { icon: 'cart',         label: 'Purchases',  labelAr: 'المشتريات',  desc: 'Purchase orders and history',   color: colors.info,    screen: 'Purchases'  },
     { icon: 'trending-up',  label: 'Sales',      labelAr: 'المبيعات',   desc: 'Sales orders and revenue',      color: colors.success, screen: 'Sales'      },
@@ -74,7 +72,7 @@ export function AccountantFinMenuScreen() {
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.pageHeader}>
           <Text style={[styles.pageTitle, { color: colors.text }]}>{isAr ? 'المالية' : 'Finance'}</Text>
-          <Text style={[styles.pageSub, { color: colors.textMuted }]}>{isAr ? '١٩ أداة وتقرير' : '19 tools and reports'}</Text>
+          <Text style={[styles.pageSub, { color: colors.textMuted }]}>{isAr ? '١٧ أداة وتقرير' : '17 tools and reports'}</Text>
         </View>
         <Section title={isAr ? 'المالية الأساسية' : 'Core Finance'} items={CORE_ITEMS} colors={colors} isAr={isAr} />
         <Section title={isAr ? 'العمليات' : 'Operations'}           items={OPS_ITEMS}  colors={colors} isAr={isAr} />

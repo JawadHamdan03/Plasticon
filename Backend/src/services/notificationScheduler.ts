@@ -23,6 +23,34 @@ function minutesUntil(target: Date): number {
   return (targetMin - nowMin + 1440) % 1440;
 }
 
+function minutesSince(target: Date): number {
+  const targetMin = shiftTimeUTCMinutes(target);
+  const nowMin = nowUTCMinutes();
+  return (nowMin - targetMin + 1440) % 1440;
+}
+
+function todayUTC(): Date {
+  const d = new Date();
+  d.setUTCHours(0, 0, 0, 0);
+  return d;
+}
+
+// Sentinel sets to prevent duplicate sends per shift per day.
+// Key format: `${shiftId}-${YYYY-MM-DD}`
+const sentCheckInReminders  = new Set<string>();
+const sentCheckOutReminders = new Set<string>();
+
+function sentinelKey(shiftId: number): string {
+  return `${shiftId}-${new Date().toISOString().slice(0, 10)}`;
+}
+
+function pruneOldSentinels(set: Set<string>): void {
+  const today = new Date().toISOString().slice(0, 10);
+  for (const key of set) {
+    if (!key.endsWith(today)) set.delete(key);
+  }
+}
+
 async function checkShiftStartReminders(): Promise<void> {
   const shifts = await prisma.shift.findMany();
 
@@ -123,6 +151,99 @@ async function checkShiftEndReminders(): Promise<void> {
   }
 }
 
+async function checkMissingCheckIn(): Promise<void> {
+  const shifts = await prisma.shift.findMany();
+
+  for (const shift of shifts) {
+    const minsAfterStart = minutesSince(shift.startTime);
+    // Fire once ~30 minutes after shift starts
+    if (minsAfterStart < 29 || minsAfterStart > 31) continue;
+
+    const key = sentinelKey(shift.id);
+    if (sentCheckInReminders.has(key)) continue;
+    sentCheckInReminders.add(key);
+
+    // All active users assigned to this shift
+    const shiftUsers = await prisma.user.findMany({
+      where: { shiftId: shift.id, isActive: true, deletedAt: null },
+      select: { id: true },
+    });
+    if (shiftUsers.length === 0) continue;
+
+    // Users who already checked in today
+    const checkedIn = await prisma.attendance.findMany({
+      where: { shiftId: shift.id, checkIn: { gte: todayUTC() } },
+      select: { userId: true },
+    });
+    const checkedInSet = new Set(checkedIn.map((a) => a.userId));
+
+    const missingIds = shiftUsers.map((u) => u.id).filter((id) => !checkedInSet.has(id));
+    if (missingIds.length === 0) continue;
+
+    const title = "🔔 لم تسجّل الحضور / Check-In Reminder";
+    const message =
+      `وردية "${shift.name}" بدأت منذ 30 دقيقة ولم تسجّل حضورك بعد. ` +
+      `Shift "${shift.name}" started 30 minutes ago — you haven't checked in yet.`;
+
+    const created = await prisma.$transaction(
+      missingIds.map((userId) =>
+        prisma.notification.create({
+          data: { userId, title, message, type: NotificationType.SYSTEM_MESSAGE },
+        }),
+      ),
+    );
+    created.forEach((n) => {
+      emitNotificationToUser(n.userId, n);
+      emitNotificationUnreadCountUpdate(n.userId, { refresh: true });
+    });
+    await sendPushToUsers(missingIds, title, message, { type: "CHECK_IN_REMINDER", shiftId: shift.id });
+  }
+}
+
+async function checkMissingCheckOut(): Promise<void> {
+  const shifts = await prisma.shift.findMany();
+
+  for (const shift of shifts) {
+    const minsAfterEnd = minutesSince(shift.endTime);
+    // Fire once ~30 minutes after shift ends
+    if (minsAfterEnd < 29 || minsAfterEnd > 31) continue;
+
+    const key = sentinelKey(shift.id);
+    if (sentCheckOutReminders.has(key)) continue;
+    sentCheckOutReminders.add(key);
+
+    // Users still checked in (no checkout) from today's shift
+    const openAttendances = await prisma.attendance.findMany({
+      where: {
+        shiftId: shift.id,
+        checkOut: null,
+        checkIn: { gte: todayUTC() },
+      },
+      select: { userId: true },
+    });
+    if (openAttendances.length === 0) continue;
+
+    const userIds = openAttendances.map((a) => a.userId);
+    const title = "🔔 لم تسجّل الانصراف / Check-Out Reminder";
+    const message =
+      `وردية "${shift.name}" انتهت منذ 30 دقيقة ولم تسجّل انصرافك بعد. ` +
+      `Shift "${shift.name}" ended 30 minutes ago — you haven't checked out yet.`;
+
+    const created = await prisma.$transaction(
+      userIds.map((userId) =>
+        prisma.notification.create({
+          data: { userId, title, message, type: NotificationType.SYSTEM_MESSAGE },
+        }),
+      ),
+    );
+    created.forEach((n) => {
+      emitNotificationToUser(n.userId, n);
+      emitNotificationUnreadCountUpdate(n.userId, { refresh: true });
+    });
+    await sendPushToUsers(userIds, title, message, { type: "CHECK_OUT_REMINDER", shiftId: shift.id });
+  }
+}
+
 async function sendMonthlyPayrollReminder(): Promise<void> {
   const activeUsers = await prisma.user.findMany({
     where: { isActive: true, deletedAt: null },
@@ -156,11 +277,15 @@ async function sendMonthlyPayrollReminder(): Promise<void> {
 }
 
 export function startNotificationScheduler(): void {
-  // Every minute: check shift start (30 min ahead) and shift end (20 min ahead)
+  // Every minute: shift reminders + check-in/check-out absence alerts
   cron.schedule("* * * * *", async () => {
     try {
       await checkShiftStartReminders();
       await checkShiftEndReminders();
+      await checkMissingCheckIn();
+      await checkMissingCheckOut();
+      pruneOldSentinels(sentCheckInReminders);
+      pruneOldSentinels(sentCheckOutReminders);
     } catch (err) {
       console.error("[NotificationScheduler] shift reminder error:", err);
     }

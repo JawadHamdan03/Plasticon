@@ -96,21 +96,16 @@ export default function FinancialReports() {
       icon={<BarChart2 size={22} />}
     >
       {/* KPIs */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: ".75rem", marginBottom: "1.25rem" }}>
         {[
-          { label: nav("Monthly", "شهرية"), value: monthly, icon: "📅", color: "#1d4ed8", bg: "#dbeafe" },
-          { label: nav("Quarterly", "فصلية"), value: quarterly, icon: "📊", color: "#7c3aed", bg: "#ede9fe" },
-          { label: nav("Annual", "سنوية"), value: annual, icon: "📈", color: "#047857", bg: "#d1fae5" },
+          { label: nav("Monthly Reports",   "تقارير شهرية"),  value: monthly,   gradient: "linear-gradient(135deg,#3b82f6,#1d4ed8)" },
+          { label: nav("Quarterly Reports", "تقارير فصلية"),  value: quarterly, gradient: "linear-gradient(135deg,#8b5cf6,#7c3aed)" },
+          { label: nav("Annual Reports",    "تقارير سنوية"),  value: annual,    gradient: "linear-gradient(135deg,#10b981,#047857)" },
         ].map((k) => (
-          <Card key={k.label} className="p-4 flex items-center gap-3">
-            <div style={{ width: 40, height: 40, borderRadius: 10, background: k.bg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.2rem", flexShrink: 0 }}>
-              {k.icon}
-            </div>
-            <div>
-              <p className="text-xs text-[var(--text-secondary)] font-medium leading-tight">{k.label} {nav("Reports", "تقارير")}</p>
-              <p className="text-xl font-bold" style={{ color: k.color }}>{k.value}</p>
-            </div>
-          </Card>
+          <div key={k.label} style={{ borderRadius: 14, padding: "1rem 1.1rem", background: k.gradient, color: "#fff", boxShadow: "0 4px 12px rgba(0,0,0,.15)" }}>
+            <p style={{ margin: 0, fontSize: ".72rem", fontWeight: 600, opacity: .85, textTransform: "uppercase", letterSpacing: ".06em" }}>{k.label}</p>
+            <p style={{ margin: ".25rem 0 0", fontSize: "1.7rem", fontWeight: 900, lineHeight: 1.1 }}>{k.value}</p>
+          </div>
         ))}
       </div>
 

@@ -4,6 +4,7 @@ import {
   emitNotificationToUser,
   emitNotificationUnreadCountUpdate,
 } from "../config/socket";
+import { sendPushToUsers } from "./pushService";
 
 type ServiceResult<T> = {
   status: number;
@@ -199,6 +200,8 @@ const pushNotificationToUsers = async (
     });
     emitNotificationUnreadCountUpdate(userId, { refresh: true });
   });
+
+  sendPushToUsers(userIds, title, message, { type }).catch(() => undefined);
 };
 
 const notifyAdmins = async (

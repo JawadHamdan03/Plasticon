@@ -182,10 +182,10 @@ export default function WorkOrders() {
 
   /* ── KPI counts ────────────────────────────────────────────── */
   const kpis = [
-    { label: nav("Today's Tasks", "مهام اليوم"),  value: todayOrders.length,   icon: "📋", color: "#1d4ed8", bg: "#dbeafe" },
-    { label: nav("Overdue",        "متأخرة"),       value: overdueOrders.length, icon: "⏰", color: "#dc2626", bg: "#fee2e2" },
-    { label: nav("Completed",      "مكتملة"),       value: doneOrders.length,    icon: "✅", color: "#059669", bg: "#d1fae5" },
-    { label: nav("Total",          "الإجمالي"),     value: orders.length,        icon: "🔧", color: "#7c3aed", bg: "#ede9fe" },
+    { label: nav("Today's Tasks", "مهام اليوم"), value: todayOrders.length,   gradient: "linear-gradient(135deg,#3b82f6,#1d4ed8)" },
+    { label: nav("Overdue",        "متأخرة"),      value: overdueOrders.length, gradient: "linear-gradient(135deg,#ef4444,#dc2626)" },
+    { label: nav("Completed",      "مكتملة"),      value: doneOrders.length,    gradient: "linear-gradient(135deg,#10b981,#059669)" },
+    { label: nav("Total",          "الإجمالي"),    value: orders.length,        gradient: "linear-gradient(135deg,#8b5cf6,#7c3aed)" },
   ];
 
   return (
@@ -198,15 +198,10 @@ export default function WorkOrders() {
       {/* ── KPI row ────────────────────────────────────────────── */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: ".75rem", marginBottom: "1.25rem" }}>
         {kpis.map(k => (
-          <Card key={k.label} style={{ padding: ".85rem 1rem", display: "flex", alignItems: "center", gap: ".75rem" }}>
-            <div style={{ width: 38, height: 38, borderRadius: 10, background: k.bg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.1rem", flexShrink: 0 }}>
-              {k.icon}
-            </div>
-            <div>
-              <p style={{ margin: 0, fontSize: ".7rem", color: "var(--text-secondary)", fontWeight: 600 }}>{k.label}</p>
-              <p style={{ margin: 0, fontSize: "1.4rem", fontWeight: 900, color: k.color, lineHeight: 1.1 }}>{k.value}</p>
-            </div>
-          </Card>
+          <div key={k.label} style={{ borderRadius: 14, padding: "1rem 1.1rem", background: k.gradient, color: "#fff", boxShadow: "0 4px 12px rgba(0,0,0,.15)" }}>
+            <p style={{ margin: 0, fontSize: ".72rem", fontWeight: 600, opacity: .85, textTransform: "uppercase", letterSpacing: ".06em" }}>{k.label}</p>
+            <p style={{ margin: ".25rem 0 0", fontSize: "1.7rem", fontWeight: 900, lineHeight: 1.1 }}>{k.value}</p>
+          </div>
         ))}
       </div>
 

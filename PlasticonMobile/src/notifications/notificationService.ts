@@ -4,10 +4,6 @@ import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 import { api } from '../api/client';
 
-// ─── Detect if running inside Expo Go (limited notification support) ──────────
-// expo-notifications local scheduling still works in Expo Go; only remote
-// FCM/APNs push was removed. We wrap everything in try/catch so the app
-// never crashes regardless of environment.
 
 // Show notifications as banners even when the app is in the foreground
 try {
@@ -28,7 +24,6 @@ export async function requestNotificationPermission(): Promise<boolean> {
     if (!Device.isDevice) return false; // emulator/simulator
 
     if (Platform.OS === 'android') {
-      // Create notification channel before requesting permission
       await Notifications.setNotificationChannelAsync('default', {
         name: 'Plasticon',
         importance: Notifications.AndroidImportance.MAX,
@@ -139,14 +134,18 @@ export async function registerPushToken(): Promise<void> {
     if (!granted) return;
 
     const projectId =
-      (Constants.expoConfig?.extra as Record<string, any> | undefined)
-        ?.eas?.projectId as string | undefined;
+      ((Constants.expoConfig?.extra as Record<string, any> | undefined)
+        ?.eas?.projectId as string | undefined) || undefined;
 
-    const { data: token } = await Notifications.getExpoPushTokenAsync(
-      projectId ? { projectId } : undefined,
-    );
+    if (!projectId) {
+      // No EAS project ID configured — push notifications unavailable.
+      // Run `npx eas init` in the project root to set one up.
+      return;
+    }
 
-    if (!token) return;
+    const { data: token } = await Notifications.getExpoPushTokenAsync({ projectId });
+
+    if (!token || token === _lastPushToken) return;
     _lastPushToken = token;
 
     await api.post('/notifications/push-token', {
@@ -154,7 +153,6 @@ export async function registerPushToken(): Promise<void> {
       platform: Platform.OS,
     });
   } catch (err) {
-    // Silently ignore — push may be unavailable in dev builds without EAS config
     console.warn('[Push] registerPushToken skipped:', err);
   }
 }

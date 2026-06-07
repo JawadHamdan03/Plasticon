@@ -14,7 +14,7 @@ import { useAuth } from "../context/AuthContext";
 import { useLocale } from "../context/LocaleContext";
 import { useTheme } from "../context/ThemeContext";
 import { API_BASE_URL } from "../lib/api";
-import logo from "../assets/plasticon.png";
+import logo from "../assets/plasticonLogo.png";
 import { DateTimeBadge } from "./DateTimeBadge";
 
 type SearchItem = { labelAr: string; labelEn: string; to: string };
@@ -22,7 +22,6 @@ type SearchItem = { labelAr: string; labelEn: string; to: string };
 const ALL_SEARCH_ITEMS: SearchItem[] = [
   { labelAr: "لوحة التحكم", labelEn: "Dashboard", to: "/dashboard" },
   { labelAr: "الإنتاج", labelEn: "Production", to: "/production" },
-  { labelAr: "الاستهلاك", labelEn: "Consumption", to: "/consumption" },
   { labelAr: "الإشعارات", labelEn: "Notifications", to: "/notifications" },
   { labelAr: "الدردشة", labelEn: "Chat", to: "/chat" },
   { labelAr: "المخزون", labelEn: "Inventory", to: "/inventory" },
@@ -50,9 +49,7 @@ const ALL_SEARCH_ITEMS: SearchItem[] = [
   // Engineer Phase 2 Features
   { labelAr: "دورة حياة المعدات", labelEn: "Equipment Lifecycle", to: "/engineer/equipment-lifecycle" },
   { labelAr: "تحليل الإنتاج", labelEn: "Production Analytics", to: "/engineer/production-analytics" },
-  { labelAr: "اتجاهات الجودة", labelEn: "Quality Trends", to: "/engineer/quality-trends" },
   { labelAr: "الوثائق التقنية", labelEn: "Technical Documentation", to: "/engineer/documentation" },
-  { labelAr: "معايرة المعدات", labelEn: "Equipment Calibration", to: "/engineer/calibration" },
   { labelAr: "أوامر العمل", labelEn: "Work Orders", to: "/engineer/work-orders" },
   { labelAr: "سجل نقل المعدات", labelEn: "Equipment Transfer", to: "/engineer/equipment-transfer" },
   // Accountant Phase 1 Features
@@ -64,7 +61,6 @@ const ALL_SEARCH_ITEMS: SearchItem[] = [
   { labelAr: "مستحقات الموردين", labelEn: "Supplier Payables", to: "/accountant/payables" },
   { labelAr: "المستقبلات من الزبائن", labelEn: "Customer Receivables", to: "/accountant/receivables" },
   { labelAr: "خطة الميزانية", labelEn: "Budget Planning", to: "/accountant/budgets" },
-  { labelAr: "الامتثال الضريبي", labelEn: "Tax Compliance", to: "/accountant/tax" },
   { labelAr: "التوفيق البنكي", labelEn: "Bank Reconciliation", to: "/accountant/reconciliation" },
   { labelAr: "تحليل التكاليف", labelEn: "Cost Analysis", to: "/accountant/cost-analysis" },
   { labelAr: "سير العمل للموافقة", labelEn: "Approval Workflows", to: "/accountant/approvals" },
@@ -123,7 +119,6 @@ function getNavSectionsBi(role: string): NavSectionBi[] {
         label: nav("Operations", "العمليات"),
         items: [
           { to: "/production", icon: <Factory size={17} />, label: nav("Production", "الإنتاج") },
-          { to: "/consumption", icon: <Package size={17} />, label: nav("Consumption", "الاستهلاك") },
           { to: "/admin/attendance", icon: <UserCheck size={17} />, label: nav("Attendance", "الحضور") },
           { to: "/admin/payroll", icon: <DollarSign size={17} />, label: nav("Payroll", "الرواتب") },
           { to: "/admin/snapshots", icon: <Camera size={17} />, label: nav("Snapshots", "القراءات") },
@@ -142,11 +137,9 @@ function getNavSectionsBi(role: string): NavSectionBi[] {
           { to: "/accountant/payables", icon: <CreditCard size={17} />, label: nav("Payables", "مستحقات") },
           { to: "/accountant/receivables", icon: <Wallet size={17} />, label: nav("Receivables", "مستقبلات") },
           { to: "/accountant/budgets", icon: <Target size={17} />, label: nav("Budgets", "ميزانيات") },
-          { to: "/accountant/tax", icon: <Shield size={17} />, label: nav("Tax", "ضريبة") },
           { to: "/accountant/reconciliation", icon: <CheckCircle size={17} />, label: nav("Reconciliation", "توفيق") },
           { to: "/accountant/cost-analysis", icon: <Percent size={17} />, label: nav("Cost Analysis", "التكاليف") },
           { to: "/accountant/approvals", icon: <Zap size={17} />, label: nav("Approvals", "موافقات") },
-          { to: "/warehouse", icon: <Boxes size={17} />, label: nav("Warehouse", "المستودع") },
           { to: "/inventory", icon: <Boxes size={17} />, label: nav("Inventory", "المخزون") },
           { to: "/purchases", icon: <ShoppingCart size={17} />, label: nav("Purchases", "المشتريات") },
           { to: "/sales", icon: <TrendingUp size={17} />, label: nav("Sales", "المبيعات") },
@@ -165,9 +158,7 @@ function getNavSectionsBi(role: string): NavSectionBi[] {
           { to: "/engineer/spare-parts", icon: <Package size={17} />, label: nav("Spare Parts", "القطع الغيار") },
           { to: "/engineer/equipment-lifecycle", icon: <Zap size={17} />, label: nav("Equipment Lifecycle", "دورة المعدات") },
           { to: "/engineer/production-analytics", icon: <BarChart3 size={17} />, label: nav("Prod. Analytics", "تحليل الإنتاج") },
-          { to: "/engineer/quality-trends", icon: <TrendingUp size={17} />, label: nav("Quality Trends", "اتجاهات الجودة") },
           { to: "/engineer/documentation", icon: <FileText size={17} />, label: nav("Tech. Docs", "وثائق تقنية") },
-          { to: "/engineer/calibration", icon: <Settings size={17} />, label: nav("Calibration", "معايرة") },
           { to: "/engineer/equipment-transfer", icon: <Layers size={17} />, label: nav("Equip. Transfer", "نقل معدات") },
           { to: "/engineer/raw-material-alerts", icon: <AlertTriangle size={17} />, label: nav("Raw Mat. Alerts", "تنبيهات المواد") },
           { to: "/engineer/maintenance-costs", icon: <DollarSign size={17} />, label: nav("Maint. Costs", "تكاليف الصيانة") },
@@ -209,8 +200,6 @@ function getNavSectionsBi(role: string): NavSectionBi[] {
         label: nav("Engineering", "الهندسة"),
         items: [
           { to: "/production", icon: <Factory size={17} />, label: nav("Production", "الإنتاج") },
-          { to: "/consumption", icon: <Package size={17} />, label: nav("Consumption", "الاستهلاك") },
-          { to: "/warehouse", icon: <Boxes size={17} />, label: nav("Warehouse", "المستودع") },
           { to: "/quality-checks", icon: <CheckSquare size={17} />, label: nav("Quality Checks", "فحص الجودة") },
           { to: "/maintenance", icon: <Wrench size={17} />, label: nav("Maintenance", "الصيانة") },
           { to: "/engineer/inventory", icon: <ClipboardList size={17} />, label: nav("Parts Inventory", "مخزون القطع") },
@@ -219,9 +208,7 @@ function getNavSectionsBi(role: string): NavSectionBi[] {
           { to: "/engineer/spare-parts", icon: <Package size={17} />, label: nav("Spare Parts", "القطع الغيار") },
           { to: "/engineer/equipment-lifecycle", icon: <Zap size={17} />, label: nav("Equipment Lifecycle", "دورة المعدات") },
           { to: "/engineer/production-analytics", icon: <BarChart3 size={17} />, label: nav("Prod. Analytics", "تحليل الإنتاج") },
-          { to: "/engineer/quality-trends", icon: <TrendingUp size={17} />, label: nav("Quality Trends", "اتجاهات الجودة") },
           { to: "/engineer/documentation", icon: <FileText size={17} />, label: nav("Tech. Docs", "وثائق تقنية") },
-          { to: "/engineer/calibration", icon: <Settings size={17} />, label: nav("Calibration", "معايرة") },
           { to: "/engineer/equipment-transfer", icon: <Layers size={17} />, label: nav("Equip. Transfer", "نقل معدات") },
           { to: "/engineer/raw-material-alerts", icon: <AlertTriangle size={17} />, label: nav("Raw Mat. Alerts", "تنبيهات المواد") },
           { to: "/engineer/maintenance-costs", icon: <DollarSign size={17} />, label: nav("Maint. Costs", "تكاليف الصيانة") },
@@ -268,11 +255,9 @@ function getNavSectionsBi(role: string): NavSectionBi[] {
           { to: "/accountant/payables", icon: <CreditCard size={17} />, label: nav("Payables", "مستحقات") },
           { to: "/accountant/receivables", icon: <Wallet size={17} />, label: nav("Receivables", "مستقبلات") },
           { to: "/accountant/budgets", icon: <Target size={17} />, label: nav("Budgets", "ميزانيات") },
-          { to: "/accountant/tax", icon: <Shield size={17} />, label: nav("Tax Compliance", "ضريبة") },
           { to: "/accountant/reconciliation", icon: <CheckCircle size={17} />, label: nav("Reconciliation", "توفيق") },
           { to: "/accountant/cost-analysis", icon: <Percent size={17} />, label: nav("Cost Analysis", "تحليل التكاليف") },
           { to: "/accountant/approvals", icon: <Zap size={17} />, label: nav("Approvals", "موافقات") },
-          { to: "/warehouse", icon: <Boxes size={17} />, label: nav("Warehouse", "المستودع") },
           { to: "/inventory", icon: <Boxes size={17} />, label: nav("Inventory", "المخزون") },
           { to: "/purchases", icon: <ShoppingCart size={17} />, label: nav("Purchases", "المشتريات") },
           { to: "/sales", icon: <TrendingUp size={17} />, label: nav("Sales", "المبيعات") },
@@ -321,13 +306,11 @@ function getNavSectionsBi(role: string): NavSectionBi[] {
       label: nav("Work", "العمل"),
       items: [
         { to: "/production", icon: <Factory size={17} />, label: nav("Production", "الإنتاج") },
-        { to: "/consumption", icon: <Package size={17} />, label: nav("Consumption", "الاستهلاك") },
         { to: "/worker/snapshots", icon: <Camera size={17} />, label: nav("Readings", "القراءات") },
         { to: "/worker/tools?tab=stops", icon: <AlertTriangle size={17} />, label: nav("Machine Stops", "توقف الماكينات") },
         { to: "/worker/tools?tab=checklist", icon: <CheckSquare size={17} />, label: nav("Daily Checklist", "قائمة اليوم") },
         { to: "/worker/tools?tab=waste", icon: <Layers size={17} />, label: nav("Material Waste", "هدر المواد") },
         { to: "/worker/tools?tab=target", icon: <Target size={17} />, label: nav("Daily Targets", "الأهداف اليومية") },
-        { to: "/worker/tools?tab=kaizen", icon: <Lightbulb size={17} />, label: nav("Kaizen Ideas", "أفكار كايزن") },
         { to: "/worker/tools?tab=quality", icon: <Activity size={17} />, label: nav("Quality Issues", "مشاكل الجودة") },
         { to: "/worker/tools?tab=micro", icon: <Cpu size={17} />, label: nav("Micro Stops", "توقفات مايكرو") },
         { to: "/worker/tools?tab=anomaly", icon: <Zap size={17} />, label: nav("Electricity Alerts", "تنبيهات الكهرباء") },
@@ -337,7 +320,6 @@ function getNavSectionsBi(role: string): NavSectionBi[] {
     {
       label: nav("AI Tools", "أدوات الذكاء الاصطناعي"),
       items: [
-        { to: "/ai", icon: <Sparkles size={17} />, label: nav("AI Hub", "مركز الذكاء") },
         { to: "/ai/assistant", icon: <Bot size={17} />, label: nav("AI Assistant", "المساعد الذكي") },
       ],
     },

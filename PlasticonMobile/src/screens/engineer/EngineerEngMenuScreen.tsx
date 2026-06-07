@@ -43,19 +43,16 @@ export function EngineerEngMenuScreen() {
 
   const PRODUCTION_ITEMS: MenuItem[] = [
     { icon: 'cube',      label: 'Production',          labelAr: 'الإنتاج',           desc: 'All production logs and records',     color: colors.primary, screen: 'Production'          },
-    { icon: 'flask',     label: 'Consumption',          labelAr: 'الاستهلاك',          desc: 'Material usage and consumption data', color: colors.accent,  screen: 'Consumption'         },
-    { icon: 'layers',    label: 'Warehouse',            labelAr: 'المستودع',           desc: 'Warehouse stock and locations',       color: '#D97706',      screen: 'Warehouse'           },
     { icon: 'analytics', label: 'Production Analytics', labelAr: 'تحليل الإنتاج',     desc: 'Production trends and deep analysis', color: colors.info,    screen: 'ProductionAnalytics' },
     { icon: 'flash',     label: 'Electricity',          labelAr: 'الكهرباء',           desc: 'Power monitoring and alerts',         color: colors.warning, screen: 'Electricity'         },
   ];
 
   const QUALITY_MAINT_ITEMS: MenuItem[] = [
-    { icon: 'shield-checkmark', label: 'Quality Checks',   labelAr: 'فحص الجودة',        desc: 'Inspection records and results',   color: colors.success, screen: 'QualityChecks'   },
-    { icon: 'trending-up',      label: 'Quality Trends',   labelAr: 'اتجاهات الجودة',    desc: 'Quality KPIs and trend reports',   color: colors.info,    screen: 'QualityTrends'   },
-    { icon: 'warning',          label: 'Raw Material Alerts', labelAr: 'تنبيهات المواد الخام', desc: 'Raw material threshold alerts', color: colors.danger,  screen: 'RawAlerts'       },
-    { icon: 'construct',        label: 'Maintenance',      labelAr: 'الصيانة',           desc: 'Active and scheduled maintenance', color: colors.warning, screen: 'MaintenancePage' },
-    { icon: 'calendar',         label: 'Work Orders',      labelAr: 'أوامر العمل',       desc: 'Maintenance work order tracking',  color: '#6366F1',      screen: 'WorkOrders'      },
-    { icon: 'cash',             label: 'Maintenance Costs', labelAr: 'تكاليف الصيانة',   desc: 'Maintenance expense tracking',     color: colors.danger,  screen: 'MaintCosts'      },
+    { icon: 'shield-checkmark', label: 'Quality Checks',      labelAr: 'فحص الجودة',           desc: 'Inspection records and results',   color: colors.success, screen: 'QualityChecks'   },
+    { icon: 'warning',          label: 'Raw Material Alerts',  labelAr: 'تنبيهات المواد الخام', desc: 'Raw material threshold alerts',    color: colors.danger,  screen: 'RawAlerts'       },
+    { icon: 'construct',        label: 'Maintenance',          labelAr: 'الصيانة',              desc: 'Active and scheduled maintenance', color: colors.warning, screen: 'MaintenancePage' },
+    { icon: 'calendar',         label: 'Work Orders',          labelAr: 'أوامر العمل',          desc: 'Maintenance work order tracking',  color: '#6366F1',      screen: 'WorkOrders'      },
+    { icon: 'cash',             label: 'Maintenance Costs',    labelAr: 'تكاليف الصيانة',       desc: 'Maintenance expense tracking',     color: colors.danger,  screen: 'MaintCosts'      },
   ];
 
   const MACHINES_ITEMS: MenuItem[] = [
@@ -63,7 +60,6 @@ export function EngineerEngMenuScreen() {
     { icon: 'grid',            label: 'Parts Inventory',      labelAr: 'مخزون القطع',      desc: 'Engineer parts and supplies',         color: '#0EA5E9',        screen: 'EngInventory'  },
     { icon: 'settings',        label: 'Spare Parts',          labelAr: 'قطع الغيار',       desc: 'Spare part requests and stock',       color: colors.warning,  screen: 'SpareParts'    },
     { icon: 'time',            label: 'Equipment Lifecycle',  labelAr: 'دورة المعدات',     desc: 'Equipment age and lifecycle data',    color: '#8B5CF6',        screen: 'Lifecycle'     },
-    { icon: 'speedometer',     label: 'Calibration',          labelAr: 'المعايرة',         desc: 'Equipment calibration schedule',      color: colors.success,  screen: 'Calibration'   },
     { icon: 'swap-horizontal', label: 'Transfer Log',         labelAr: 'سجل النقل',        desc: 'Equipment transfer log history',      color: colors.info,     screen: 'TransferLog'   },
     { icon: 'document-text',   label: 'Technical Docs',       labelAr: 'الوثائق التقنية',  desc: 'Technical manuals and documents',     color: colors.textMuted, screen: 'TechDocs'     },
   ];
@@ -73,7 +69,7 @@ export function EngineerEngMenuScreen() {
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.pageHeader}>
           <Text style={[styles.pageTitle, { color: colors.text }]}>{isAr ? 'الهندسة' : 'Engineering'}</Text>
-          <Text style={[styles.pageSub, { color: colors.textMuted }]}>{isAr ? '١٨ أداة وشاشة' : '18 tools and monitors'}</Text>
+          <Text style={[styles.pageSub, { color: colors.textMuted }]}>{isAr ? '١٤ أداة وشاشة' : '14 tools and monitors'}</Text>
         </View>
         <Section title={isAr ? 'الإنتاج' : 'Production'}            items={PRODUCTION_ITEMS}    colors={colors} isAr={isAr} />
         <Section title={isAr ? 'الجودة والصيانة' : 'Quality & Maintenance'} items={QUALITY_MAINT_ITEMS} colors={colors} isAr={isAr} />

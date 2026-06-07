@@ -58,7 +58,7 @@ export function LoginScreen() {
         style={styles.flex}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
-        {/* ── Hero photo ───────────────────────────────────────────── */}
+        {/* ── Logo ─────────────────────────────────────────────────── */}
         <View style={styles.heroWrap}>
           <Image source={plasticonLogin} style={styles.heroImg} resizeMode="cover" />
         </View>
@@ -141,7 +141,7 @@ const styles = StyleSheet.create({
 
   heroWrap: {
     width: '100%',
-    height: 260,
+    height: 280,
     overflow: 'hidden',
   },
   heroImg: {

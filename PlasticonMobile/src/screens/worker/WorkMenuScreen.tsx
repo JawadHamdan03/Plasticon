@@ -44,7 +44,6 @@ export function WorkMenuScreen() {
 
   const PRODUCTION_ITEMS: MenuItem[] = [
     { icon: 'cube',  label: isAr ? 'تسجيل الإنتاج' : 'Production Log',  desc: isAr ? 'تسجيل مخرجات الإنتاج' : 'Record production output',      color: colors.primary, screen: 'Production'   },
-    { icon: 'flask', label: isAr ? 'الاستهلاك' : 'Consumption',          desc: isAr ? 'سجلات استخدام المواد' : 'Material usage records',          color: colors.accent,  screen: 'Consumption'  },
     { icon: 'flash', label: isAr ? 'القراءات' : 'Readings',               desc: isAr ? 'تسجيل قراءات العداد' : 'Log electricity meter readings',  color: colors.warning, screen: 'Readings'     },
     { icon: 'flag',  label: isAr ? 'الأهداف اليومية' : 'Daily Targets',  desc: isAr ? 'أهداف اليوم' : "Today's production goals",               color: colors.success, screen: 'DailyTargets' },
   ];
@@ -55,7 +54,6 @@ export function WorkMenuScreen() {
     { icon: 'trash',            label: isAr ? 'هدر المواد' : 'Material Waste',   desc: isAr ? 'تسجيل المواد المهدرة' : 'Log scrap and waste materials',            color: '#E67E22',      screen: 'MaterialWaste'  },
     { icon: 'alert-circle',     label: isAr ? 'مشاكل الجودة' : 'Quality Issues', desc: isAr ? 'الإبلاغ عن العيوب' : 'Report defects and problems',                color: colors.warning, screen: 'QualityIssues'  },
     { icon: 'checkmark-circle', label: isAr ? 'قائمة التحقق' : 'Daily Checklist', desc: isAr ? 'فحوصات السلامة' : 'Safety and pre-start checks',                 color: colors.success, screen: 'DailyChecklist' },
-    { icon: 'bulb',             label: isAr ? 'أفكار كايزن' : 'Kaizen Ideas',    desc: isAr ? 'تقديم اقتراحات تحسين' : 'Submit improvement suggestions',          color: '#8B5CF6',      screen: 'KaizenIdeas'    },
   ];
 
   const ELECTRICITY_ITEMS: MenuItem[] = [

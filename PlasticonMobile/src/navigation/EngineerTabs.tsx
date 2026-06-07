@@ -30,9 +30,7 @@ import { WorkOrdersScreen }         from '../screens/engineer/WorkOrdersScreen';
 import { SparePartsScreen }         from '../screens/engineer/SparePartsScreen';
 import { LifecycleScreen }          from '../screens/engineer/LifecycleScreen';
 import { ProductionAnalyticsScreen }from '../screens/engineer/ProductionAnalyticsScreen';
-import { QualityTrendsScreen }      from '../screens/engineer/QualityTrendsScreen';
 import { TechDocsScreen }           from '../screens/engineer/TechDocsScreen';
-import { CalibrationScreen }        from '../screens/engineer/CalibrationScreen';
 import { TransferLogScreen }        from '../screens/engineer/TransferLogScreen';
 import { RawAlertsScreen }          from '../screens/engineer/RawAlertsScreen';
 import { MaintCostsScreen }         from '../screens/engineer/MaintCostsScreen';
@@ -81,9 +79,7 @@ function EngNavigator() {
       <EngStack.Screen name="SpareParts"           component={SparePartsScreen} />
       <EngStack.Screen name="Lifecycle"            component={LifecycleScreen} />
       <EngStack.Screen name="ProductionAnalytics"  component={ProductionAnalyticsScreen} />
-      <EngStack.Screen name="QualityTrends"        component={QualityTrendsScreen} />
       <EngStack.Screen name="TechDocs"             component={TechDocsScreen} />
-      <EngStack.Screen name="Calibration"          component={CalibrationScreen} />
       <EngStack.Screen name="TransferLog"          component={TransferLogScreen} />
       <EngStack.Screen name="RawAlerts"            component={RawAlertsScreen} />
       <EngStack.Screen name="MaintCosts"           component={MaintCostsScreen} />

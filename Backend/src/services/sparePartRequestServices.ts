@@ -3,6 +3,7 @@ import {
   emitNotificationToUser,
   emitNotificationUnreadCountUpdate,
 } from "../config/socket";
+import { sendPushToUsers } from "./pushService";
 
 type ServiceResult<T> = {
   status: number;
@@ -23,6 +24,8 @@ const pushNotifications = async (userIds: number[], title: string, message: stri
     emitNotificationToUser(n.userId, n);
     emitNotificationUnreadCountUpdate(n.userId, { refresh: true });
   });
+
+  sendPushToUsers(userIds, title, message).catch(() => undefined);
 };
 const machineSelect = { id: true, name: true, type: true };
 const pricedBySelect = { id: true, fullName: true };

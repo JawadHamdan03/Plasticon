@@ -1,5 +1,10 @@
 import { UserRole } from "../config/generated/prisma/client";
 import { prisma } from "../config/lib/prisma";
+import {
+  emitNotificationToUser,
+  emitNotificationUnreadCountUpdate,
+} from "../config/socket";
+import { sendPushToUsers } from "./pushService";
 
 type ServiceResult<T = unknown> = {
   status: number;
@@ -154,6 +159,35 @@ export const createElectricityReading = async (
       kwhPrice: { select: { price: true } },
     },
   });
+
+  // Notify admins about the new electricity reading (fire-and-forget)
+  void (async () => {
+    try {
+      const admins = await prisma.user.findMany({
+        where: { role: UserRole.ADMIN, isActive: true, deletedAt: null },
+        select: { id: true },
+      });
+      if (admins.length === 0) return;
+      const adminIds = admins.map(a => a.id);
+      const recorder = reading.recordedBy as { fullName?: string; username?: string };
+      const shift = reading.shift as { name?: string };
+      const title = "New Electricity Reading";
+      const message = `${recorder?.fullName ?? `User #${recordedById}`} recorded ${consumption.toFixed(1)} kWh for shift "${shift?.name ?? shiftIdNum}".`;
+
+      const notes = await prisma.$transaction(
+        adminIds.map(userId =>
+          prisma.notification.create({
+            data: { userId, title, message, type: "SYSTEM_MESSAGE" },
+          }),
+        ),
+      );
+      notes.forEach(n => {
+        emitNotificationToUser(n.userId, n);
+        emitNotificationUnreadCountUpdate(n.userId, { refresh: true });
+      });
+      sendPushToUsers(adminIds, title, message, { type: "SYSTEM_MESSAGE" }).catch(() => undefined);
+    } catch { /* ignore */ }
+  })();
 
   return { status: 201, data: reading };
 };

@@ -1,58 +1,41 @@
 import { useEffect, useMemo, useState } from "react";
 import { useLocale } from "../context/LocaleContext";
 
-type DateTimeBadgeProps = {
-  tone?: "light" | "dark";
-  className?: string;
-};
-
-export function DateTimeBadge({
-  tone = "light",
-  className = "",
-}: DateTimeBadgeProps) {
+export function DateTimeBadge() {
   const { locale } = useLocale();
   const [now, setNow] = useState(() => new Date());
 
   useEffect(() => {
-    const intervalId = window.setInterval(() => {
-      setNow(new Date());
-    }, 1000);
-
-    return () => window.clearInterval(intervalId);
+    const id = window.setInterval(() => setNow(new Date()), 1000);
+    return () => window.clearInterval(id);
   }, []);
 
-  const dateFormatter = useMemo(
-    () =>
-      new Intl.DateTimeFormat(locale === "ar" ? "ar-EG" : "en-US", {
-        weekday: "short",
-        year: "numeric",
-        month: "short",
-        day: "numeric",
-      }),
-    [locale],
+  const isAr = locale === "ar";
+  const loc  = isAr ? "ar-EG" : "en-US";
+
+  const dateStr = useMemo(
+    () => new Intl.DateTimeFormat(loc, { weekday: "short", month: "short", day: "numeric", year: "numeric" }).format(now),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [loc, now.toDateString()],
   );
 
-  const timeFormatter = useMemo(
-    () =>
-      new Intl.DateTimeFormat(locale === "ar" ? "ar-EG" : "en-US", {
-        hour: "2-digit",
-        minute: "2-digit",
-        second: "2-digit",
-      }),
-    [locale],
-  );
+  const timeStr = new Intl.DateTimeFormat(loc, {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  }).format(now);
 
   return (
-    <div className={`app-clock app-clock--${tone} ${className}`.trim()}>
-      <span className="app-clock__label">
-        {locale === "ar" ? "اليوم" : "Today"}
+    <div className="dt-badge" dir="ltr">
+      <span className="dt-badge__icon">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="12" cy="12" r="10" />
+          <polyline points="12 6 12 12 16 14" />
+        </svg>
       </span>
-      <strong className="app-clock__date">{dateFormatter.format(now)}</strong>
-      <span className="app-clock__time">{timeFormatter.format(now)}</span>
+      <span className="dt-badge__date">{dateStr}</span>
+      <span className="dt-badge__divider" />
+      <span className="dt-badge__time">{timeStr}</span>
     </div>
   );
 }
-
-
-
-

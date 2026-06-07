@@ -156,6 +156,33 @@ function getCurrentShift(shifts: Shift[], nowMinutes: number): Shift | null {
   return null;
 }
 
+/* ─── Grouping helpers ──────────────────────────────────── */
+type DayGroup = {
+  date: string;
+  shifts: Array<{ shiftId: number | null; shiftName: string; capsCartons: number; preformCartons: number; totalCartons: number; totalPieces: number }>;
+  totalCartons: number;
+  totalPieces: number;
+  capsCartons: number;
+  preformCartons: number;
+};
+
+function groupByDay(data: AdminOverviewResponse["byShiftProduct"]): DayGroup[] {
+  const map = new Map<string, DayGroup>();
+  for (const row of data ?? []) {
+    let g = map.get(row.date);
+    if (!g) {
+      g = { date: row.date, shifts: [], totalCartons: 0, totalPieces: 0, capsCartons: 0, preformCartons: 0 };
+      map.set(row.date, g);
+    }
+    g.shifts.push(row);
+    g.totalCartons += row.totalCartons;
+    g.totalPieces += row.totalPieces;
+    g.capsCartons += row.capsCartons;
+    g.preformCartons += row.preformCartons;
+  }
+  return [...map.values()].sort((a, b) => b.date.localeCompare(a.date));
+}
+
 /* ─── Component ─────────────────────────────────────────── */
 export function ProductionPage() {
   const { user } = useAuth();
@@ -176,6 +203,7 @@ export function ProductionPage() {
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
   const [adminTab, setAdminTab] = useState<"overview" | "daily" | "shifts" | "records" | "workers" | "electricity">("overview");
+  const [prodViewMode, setProdViewMode] = useState<"summary" | "records">("summary");
   const [elKwhPrice, setElKwhPrice] = useState<{ id: number; price: number } | null>(null);
   const [elReadings, setElReadings] = useState<Array<{
     id: number; date: string; shift: { id: number; name: string };
@@ -241,7 +269,7 @@ export function ProductionPage() {
           setAllRecords(Array.isArray(all) ? all : []);
         }
       }
-      if (isAdmin) {
+      if (isAdmin || isAccountant) {
         const qs = new URLSearchParams();
         if (fromDate) qs.set("fromDate", fromDate);
         if (toDate) qs.set("toDate", toDate);
@@ -361,6 +389,77 @@ export function ProductionPage() {
   const myCaps = myRecords.filter((r) => isCapsMachine(r.machine?.type));
   const dailyData = adminOverview?.dailyByProduct ?? [];
   const shiftData = adminOverview?.byShiftProduct ?? [];
+  const dayGroups = groupByDay(adminOverview?.byShiftProduct);
+
+  const shiftColors = ["#3b82f6", "#10b981", "#f97316", "#8b5cf6", "#06b6d4"];
+
+  const ProdSummaryView = ({ groups }: { groups: DayGroup[] }) => (
+    <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+      {groups.length === 0 ? (
+        <div style={{ padding: "2.5rem", textAlign: "center", color: "var(--text-secondary)", background: "var(--bg-card)", border: "1px solid var(--border-default)", borderRadius: "var(--radius-xl)" }}>
+          {isAr ? "لا توجد بيانات إنتاج" : "No production data"}
+        </div>
+      ) : groups.map((day) => (
+        <div key={day.date} style={{ background: "var(--bg-card)", border: "1px solid var(--border-default)", borderRadius: "var(--radius-xl)", overflow: "hidden" }}>
+          {/* Day header */}
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: ".875rem 1.25rem", background: "var(--bg-surface)", borderBottom: "1px solid var(--border-default)" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: ".75rem" }}>
+              <span style={{ fontSize: "1.1rem" }}>📅</span>
+              <span style={{ fontWeight: 800, fontSize: "1rem", color: "var(--text-primary)" }}>{day.date}</span>
+            </div>
+            <div style={{ display: "flex", gap: "1rem", alignItems: "center" }}>
+              <span style={{ fontSize: ".78rem", fontWeight: 600, color: "var(--text-secondary)" }}>
+                🧢 {fmt(day.capsCartons)} {isAr ? "كرتون" : "caps"}
+                &nbsp;·&nbsp;
+                🏭 {fmt(day.preformCartons)} {isAr ? "صندوق" : "preform"}
+              </span>
+              <div style={{ display: "flex", alignItems: "center", gap: ".5rem", padding: ".3rem .875rem", borderRadius: 999, background: "rgba(59,130,246,.1)", border: "1px solid rgba(59,130,246,.25)" }}>
+                <span style={{ fontSize: ".82rem", fontWeight: 700, color: "#1d4ed8" }}>
+                  {fmt(day.totalPieces)} {isAr ? "قطعة" : "pcs"}
+                </span>
+              </div>
+            </div>
+          </div>
+          {/* Shift breakdown */}
+          <div style={{ padding: ".75rem 1.25rem", display: "flex", flexDirection: "column", gap: ".6rem" }}>
+            {day.shifts.map((sh, i) => {
+              const color = shiftColors[i % shiftColors.length];
+              const pct = day.totalPieces > 0 ? (sh.totalPieces / day.totalPieces) * 100 : 0;
+              return (
+                <div key={sh.shiftId ?? i} style={{ display: "grid", gridTemplateColumns: "110px 1fr auto", gap: ".75rem", alignItems: "center" }}>
+                  <span style={{ fontSize: ".8rem", fontWeight: 700, color, padding: ".25rem .6rem", borderRadius: 999, background: `${color}15`, border: `1px solid ${color}30`, textAlign: "center", whiteSpace: "nowrap" }}>
+                    {sh.shiftName}
+                  </span>
+                  <div style={{ display: "flex", alignItems: "center", gap: ".5rem" }}>
+                    <div style={{ flex: 1, height: 8, borderRadius: 4, background: "var(--bg-surface)", overflow: "hidden" }}>
+                      <div style={{ width: `${pct}%`, height: "100%", background: color, borderRadius: 4, transition: "width .4s" }} />
+                    </div>
+                    <span style={{ fontSize: ".75rem", color: "var(--text-secondary)", fontWeight: 600, whiteSpace: "nowrap", minWidth: 34 }}>
+                      {pct.toFixed(0)}%
+                    </span>
+                  </div>
+                  <div style={{ display: "flex", gap: ".75rem", fontSize: ".8rem", fontWeight: 700, color: "var(--text-primary)", whiteSpace: "nowrap" }}>
+                    <span>🧢 {fmt(sh.capsCartons)}</span>
+                    <span>🏭 {fmt(sh.preformCartons)}</span>
+                    <span style={{ color, minWidth: 90, textAlign: "end" }}>{fmt(sh.totalPieces)} {isAr ? "قطعة" : "pcs"}</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          {/* Day total row */}
+          <div style={{ padding: ".5rem 1.25rem .75rem", display: "flex", justifyContent: "flex-end", gap: "1.25rem", borderTop: "1px solid var(--border-default)", background: "var(--bg-surface)" }}>
+            <span style={{ fontSize: ".82rem", fontWeight: 700, color: "var(--text-secondary)" }}>
+              {isAr ? "إجمالي اليوم:" : "Day Total:"}&nbsp;
+              <span style={{ color: "#1d4ed8" }}>{fmt(day.totalCartons)} {isAr ? "كرتون" : "cartons"}</span>
+              &nbsp;·&nbsp;
+              <span style={{ color: "#059669" }}>{fmt(day.totalPieces)} {isAr ? "قطعة" : "pcs"}</span>
+            </span>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
 
   return (
     <ModulePageShell
@@ -844,14 +943,43 @@ export function ProductionPage() {
           )}
 
           {adminTab === "daily" && (
-            <div style={{ background: "var(--bg-card)", border: "1px solid var(--border-default)", borderRadius: "var(--radius-xl)", overflow: "hidden" }}>
-              <div style={{ padding: ".875rem 1.25rem", borderBottom: "1px solid var(--border-default)", background: "var(--bg-surface)", fontWeight: 700, fontSize: ".9rem" }}>{isAr ? "التقرير اليومي" : "Daily Production Report"}</div>
-              {dailyData.length === 0 ? <div style={{ padding: "2rem", textAlign: "center", color: "var(--text-secondary)" }}>{isAr ? "لا توجد بيانات" : "No data"}</div> : (
-                <div style={{ overflowX: "auto" }}>
-                  <table className="admin-table">
-                    <thead><tr>{[isAr ? "التاريخ" : "Date", isAr ? "كراتين الكابس" : "Caps Cartons", isAr ? "صناديق البريفورم" : "Preform Boxes", isAr ? "إجمالي القطع" : "Total Pcs"].map((h) => <th key={h}>{h}</th>)}</tr></thead>
-                    <tbody>{dailyData.map((row) => <tr key={row.date}><td style={{ fontWeight: 700 }}>{row.date}</td><td>{fmt(row.capsCartons)}</td><td>{fmt(row.preformCartons)}</td><td style={{ fontWeight: 700 }}>{fmt(row.totalPieces)}</td></tr>)}</tbody>
-                  </table>
+            <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: ".5rem" }}>
+                <span style={{ fontWeight: 700, fontSize: ".9rem", color: "var(--text-primary)" }}>
+                  {isAr ? "التقرير اليومي حسب الشفت" : "Daily Production by Shift"}
+                </span>
+                <div style={{ display: "flex", gap: ".35rem" }}>
+                  {(["summary", "records"] as const).map((m) => (
+                    <button key={m} type="button" onClick={() => setProdViewMode(m)}
+                      style={{ padding: ".35rem .875rem", borderRadius: 999, border: "1px solid var(--border-default)", background: prodViewMode === m ? "var(--brand-primary,#3b82f6)" : "var(--bg-surface)", color: prodViewMode === m ? "#fff" : "var(--text-secondary)", fontWeight: 600, fontSize: ".8rem", cursor: "pointer" }}>
+                      {m === "summary" ? (isAr ? "ملخص يومي" : "Daily Summary") : (isAr ? "كل السجلات" : "All Records")}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              {prodViewMode === "summary" ? (
+                <ProdSummaryView groups={dayGroups} />
+              ) : (
+                <div style={{ background: "var(--bg-card)", border: "1px solid var(--border-default)", borderRadius: "var(--radius-xl)", overflow: "hidden" }}>
+                  {dailyData.length === 0 ? <div style={{ padding: "2rem", textAlign: "center", color: "var(--text-secondary)" }}>{isAr ? "لا توجد بيانات" : "No data"}</div> : (
+                    <div style={{ overflowX: "auto" }}>
+                      <table className="admin-table">
+                        <thead><tr>{[isAr ? "التاريخ" : "Date", isAr ? "كراتين الكابس" : "Caps Cartons", isAr ? "صناديق البريفورم" : "Preform Boxes", isAr ? "إجمالي الكراتين" : "Total Cartons", isAr ? "إجمالي القطع" : "Total Pcs"].map((h) => <th key={h}>{h}</th>)}</tr></thead>
+                        <tbody>
+                          {dailyData.map((row) => <tr key={row.date}><td style={{ fontWeight: 700 }}>{row.date}</td><td>{fmt(row.capsCartons)}</td><td>{fmt(row.preformCartons)}</td><td>{fmt(row.totalCartons)}</td><td style={{ fontWeight: 700 }}>{fmt(row.totalPieces)}</td></tr>)}
+                        </tbody>
+                        <tfoot>
+                          <tr style={{ background: "var(--bg-surface)", fontWeight: 700 }}>
+                            <td>{isAr ? "الإجمالي" : "Total"}</td>
+                            <td>{fmt(dailyData.reduce((s, r) => s + r.capsCartons, 0))}</td>
+                            <td>{fmt(dailyData.reduce((s, r) => s + r.preformCartons, 0))}</td>
+                            <td>{fmt(dailyData.reduce((s, r) => s + r.totalCartons, 0))}</td>
+                            <td style={{ color: "#1d4ed8" }}>{fmt(dailyData.reduce((s, r) => s + r.totalPieces, 0))}</td>
+                          </tr>
+                        </tfoot>
+                      </table>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -1094,9 +1222,82 @@ export function ProductionPage() {
         </>
       )}
 
-      {/* ── ACCOUNTANT / ENGINEER: read-only table ─────────── */}
-      {(isAccountant || (!isAdmin && canSeeAll)) && (
-        <div style={{ background: "var(--bg-card)", border: "1px solid var(--border-default)", borderRadius: "var(--radius-xl)", overflow: "hidden", marginTop: isAccountant ? 0 : "1.5rem" }}>
+      {/* ── ACCOUNTANT: grouped daily/shift summary ─────────── */}
+      {isAccountant && (
+        <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+          {/* KPI cards */}
+          {adminOverview && (
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: "1rem" }}>
+              {[
+                { label: isAr ? "إجمالي السجلات" : "Total Records", value: adminOverview.totals.totalRecords, gradient: "linear-gradient(135deg,#3b82f6,#1d4ed8)", icon: "📋" },
+                { label: isAr ? "إجمالي الكراتين" : "Total Cartons", value: fmt(adminOverview.totals.totalCartons), gradient: "linear-gradient(135deg,#10b981,#059669)", icon: "📦" },
+                { label: isAr ? "إجمالي القطع" : "Total Pieces", value: fmt(adminOverview.totals.totalPieces), gradient: "linear-gradient(135deg,#f97316,#ea580c)", icon: "🔢" },
+                { label: isAr ? "كراتين الكابس" : "Caps Cartons", value: fmt(dailyData.reduce((s, d) => s + d.capsCartons, 0)), gradient: "linear-gradient(135deg,#06b6d4,#0284c7)", icon: "🧢" },
+                { label: isAr ? "صناديق البريفورم" : "Preform Boxes", value: fmt(dailyData.reduce((s, d) => s + d.preformCartons, 0)), gradient: "linear-gradient(135deg,#8b5cf6,#7c3aed)", icon: "🏭" },
+              ].map((kpi) => (
+                <div key={kpi.label} style={{ background: kpi.gradient, borderRadius: "var(--radius-xl)", padding: "1.1rem 1.25rem", color: "#fff", display: "flex", flexDirection: "column", gap: ".35rem", boxShadow: "0 4px 14px rgba(0,0,0,.12)" }}>
+                  <span style={{ fontSize: "1.3rem" }}>{kpi.icon}</span>
+                  <p style={{ margin: 0, fontSize: ".75rem", opacity: .85, fontWeight: 500 }}>{kpi.label}</p>
+                  <p style={{ margin: 0, fontSize: "1.5rem", fontWeight: 800, lineHeight: 1 }}>{kpi.value}</p>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* View toggle */}
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: ".5rem" }}>
+            <span style={{ fontWeight: 700, fontSize: ".9rem", color: "var(--text-primary)" }}>
+              {isAr ? "الإنتاج حسب اليوم والشفت" : "Production by Day & Shift"}
+            </span>
+            <div style={{ display: "flex", gap: ".35rem" }}>
+              {(["summary", "records"] as const).map((m) => (
+                <button key={m} type="button" onClick={() => setProdViewMode(m)}
+                  style={{ padding: ".35rem .875rem", borderRadius: 999, border: "1px solid var(--border-default)", background: prodViewMode === m ? "var(--brand-primary,#3b82f6)" : "var(--bg-surface)", color: prodViewMode === m ? "#fff" : "var(--text-secondary)", fontWeight: 600, fontSize: ".8rem", cursor: "pointer" }}>
+                  {m === "summary" ? (isAr ? "ملخص يومي" : "Daily Summary") : (isAr ? "كل السجلات" : "All Records")}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {prodViewMode === "summary" ? (
+            <ProdSummaryView groups={dayGroups} />
+          ) : (
+            <div style={{ background: "var(--bg-card)", border: "1px solid var(--border-default)", borderRadius: "var(--radius-xl)", overflow: "hidden" }}>
+              <div style={{ padding: ".875rem 1.25rem", borderBottom: "1px solid var(--border-default)", background: "var(--bg-surface)", fontWeight: 700, fontSize: ".9rem" }}>
+                {isAr ? `سجلات الإنتاج (${allRecords.length})` : `Production Records (${allRecords.length})`}
+              </div>
+              <div style={{ overflowX: "auto" }}>
+                <table className="admin-table">
+                  <thead><tr>{[isAr ? "التاريخ" : "Date", isAr ? "العامل" : "Worker", isAr ? "الآلة" : "Machine", isAr ? "الشفت" : "Shift", isAr ? "كراتين" : "Cartons", isAr ? "القطع" : "Pieces"].map((h) => <th key={h}>{h}</th>)}</tr></thead>
+                  <tbody>
+                    {allRecords.slice(0, 50).map((r, i) => (
+                      <tr key={r.id} style={{ background: i % 2 === 0 ? "transparent" : "var(--bg-surface)" }}>
+                        <td style={{ padding: ".5rem .875rem", whiteSpace: "nowrap" }}>{new Date(r.createdAt).toLocaleDateString()}</td>
+                        <td style={{ padding: ".5rem .875rem", fontWeight: 600 }}>{r.user?.fullName ?? "—"}</td>
+                        <td style={{ padding: ".5rem .875rem" }}>{r.machine?.name ?? "—"}</td>
+                        <td style={{ padding: ".5rem .875rem" }}>{r.shift?.name ?? "—"}</td>
+                        <td style={{ padding: ".5rem .875rem" }}>{r.cartonsCount ?? 0}</td>
+                        <td style={{ padding: ".5rem .875rem", fontWeight: 700 }}>{fmt(r.totalPieces ?? 0)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot>
+                    <tr style={{ background: "var(--bg-surface)", fontWeight: 700 }}>
+                      <td colSpan={4}>{isAr ? "الإجمالي" : "Total"}</td>
+                      <td>{allRecords.reduce((s, r) => s + (r.cartonsCount ?? 0), 0)}</td>
+                      <td style={{ color: "#1d4ed8" }}>{fmt(allRecords.reduce((s, r) => s + (r.totalPieces ?? 0), 0))}</td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── ENGINEER: read-only table ─────────── */}
+      {(!isAdmin && !isAccountant && canSeeAll) && (
+        <div style={{ background: "var(--bg-card)", border: "1px solid var(--border-default)", borderRadius: "var(--radius-xl)", overflow: "hidden", marginTop: "1.5rem" }}>
           <div style={{ padding: ".875rem 1.25rem", borderBottom: "1px solid var(--border-default)", background: "var(--bg-surface)", fontWeight: 700, fontSize: ".9rem" }}>{isAr ? `سجلات الإنتاج (${allRecords.length})` : `Production Records (${allRecords.length})`}</div>
           <div style={{ overflowX: "auto" }}>
             <table className="admin-table">

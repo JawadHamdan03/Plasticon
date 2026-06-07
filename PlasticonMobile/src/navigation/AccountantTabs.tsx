@@ -27,11 +27,9 @@ import { FinancialReportsScreen }    from '../screens/accountant/FinancialReport
 import { SupplierPayablesScreen }    from '../screens/accountant/SupplierPayablesScreen';
 import { CustomerReceivablesScreen } from '../screens/accountant/CustomerReceivablesScreen';
 import { BudgetPlanningScreen }      from '../screens/accountant/BudgetPlanningScreen';
-import { TaxComplianceScreen }       from '../screens/accountant/TaxComplianceScreen';
 import { BankReconciliationScreen }  from '../screens/accountant/BankReconciliationScreen';
 import { CostAnalysisScreen }        from '../screens/accountant/CostAnalysisScreen';
 import { ApprovalWorkflowsScreen }   from '../screens/accountant/ApprovalWorkflowsScreen';
-import { WarehouseScreen }           from '../screens/admin/WarehouseScreen';
 import { InventoryAdminScreen }      from '../screens/admin/InventoryAdminScreen';
 import { PurchasesScreen }           from '../screens/admin/PurchasesScreen';
 import { SalesAdminScreen }          from '../screens/admin/SalesAdminScreen';
@@ -93,11 +91,9 @@ function FinanceNavigator() {
       <FinanceStack.Screen name="SupplierPayables"     component={SupplierPayablesScreen} />
       <FinanceStack.Screen name="CustomerReceivables"  component={CustomerReceivablesScreen} />
       <FinanceStack.Screen name="BudgetPlanning"       component={BudgetPlanningScreen} />
-      <FinanceStack.Screen name="TaxCompliance"        component={TaxComplianceScreen} />
       <FinanceStack.Screen name="BankReconciliation"   component={BankReconciliationScreen} />
       <FinanceStack.Screen name="CostAnalysis"         component={CostAnalysisScreen} />
       <FinanceStack.Screen name="ApprovalWorkflows"    component={ApprovalWorkflowsScreen} />
-      <FinanceStack.Screen name="Warehouse"            component={WarehouseScreen} />
       <FinanceStack.Screen name="Inventory"            component={InventoryAdminScreen} />
       <FinanceStack.Screen name="Purchases"            component={PurchasesScreen} />
       <FinanceStack.Screen name="Sales"                component={SalesAdminScreen} />

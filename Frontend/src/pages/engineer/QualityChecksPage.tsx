@@ -2,20 +2,15 @@ import { useEffect, useState, type FormEvent } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { useLocale } from "../../context/LocaleContext";
 import { API_BASE_URL, readApiError } from "../../lib/api";
-import {
-  CheckSquare,
-  Plus,
-  AlertTriangle,
-  CheckCircle,
-  Clock,
-  Activity,
-} from "lucide-react";
+import { ModulePageShell } from "../../components/ModulePageShell";
+import { Plus, CheckSquare } from "lucide-react";
 
 type Machine = { id: number; name: string; type?: string };
+type Severity = "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
 type QualityCheck = {
   id: number;
   issueType: string;
-  severity: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
+  severity: Severity;
   description: string | null;
   resolvedAt: string | null;
   createdAt: string;
@@ -24,53 +19,41 @@ type QualityCheck = {
 };
 
 function authToken(): Record<string, string> {
-  const token = localStorage.getItem("plasticon_token");
-  return token ? { Authorization: `Bearer ${token}` } : {};
+  const t = localStorage.getItem("plasticon_token");
+  return t ? { Authorization: `Bearer ${t}` } : {};
 }
-async function fetchAuth(path: string, options?: RequestInit) {
+async function fetchAuth(path: string, opts?: RequestInit) {
   return fetch(`${API_BASE_URL}${path}`, {
-    ...options,
-    headers: {
-      "Content-Type": "application/json",
-      ...authToken(),
-      ...(options?.headers ?? {}),
-    },
+    ...opts,
+    headers: { "Content-Type": "application/json", ...authToken(), ...(opts?.headers ?? {}) },
     credentials: "include",
   });
 }
 
 const ISSUE_TYPES = [
-  "DIMENSIONAL",
-  "SURFACE_DEFECT",
-  "MATERIAL_FAULT",
-  "PROCESS_DEVIATION",
-  "CONTAMINATION",
-  "ASSEMBLY_ERROR",
-  "OTHER",
+  "DIMENSIONAL", "SURFACE_DEFECT", "MATERIAL_FAULT",
+  "PROCESS_DEVIATION", "CONTAMINATION", "ASSEMBLY_ERROR", "OTHER",
 ];
-const SEVERITIES: QualityCheck["severity"][] = [
-  "LOW",
-  "MEDIUM",
-  "HIGH",
-  "CRITICAL",
-];
-
-function severityClass(s: QualityCheck["severity"]) {
-  return {
-    LOW: "quality-severity quality-severity--low",
-    MEDIUM: "quality-severity quality-severity--medium",
-    HIGH: "quality-severity quality-severity--high",
-    CRITICAL: "quality-severity quality-severity--critical",
-  }[s];
-}
+const ISSUE_LABELS: Record<string, { en: string; ar: string }> = {
+  DIMENSIONAL:       { en: "Dimensional",        ar: "أبعاد خاطئة" },
+  SURFACE_DEFECT:    { en: "Surface Defect",      ar: "عيب سطحي" },
+  MATERIAL_FAULT:    { en: "Material Fault",      ar: "خلل في المادة" },
+  PROCESS_DEVIATION: { en: "Process Deviation",   ar: "انحراف في العملية" },
+  CONTAMINATION:     { en: "Contamination",       ar: "تلوث" },
+  ASSEMBLY_ERROR:    { en: "Assembly Error",      ar: "خطأ في التجميع" },
+  OTHER:             { en: "Other",               ar: "أخرى" },
+};
+const SEVERITIES: Severity[] = ["LOW", "MEDIUM", "HIGH", "CRITICAL"];
+const SEV_META: Record<Severity, { en: string; ar: string; color: string; bg: string; gradient: string }> = {
+  LOW:      { en: "Low",      ar: "منخفض", color: "#059669", bg: "#d1fae5", gradient: "linear-gradient(135deg,#10b981,#059669)" },
+  MEDIUM:   { en: "Medium",   ar: "متوسط", color: "#d97706", bg: "#fef3c7", gradient: "linear-gradient(135deg,#f59e0b,#d97706)" },
+  HIGH:     { en: "High",     ar: "مرتفع", color: "#ea580c", bg: "#ffedd5", gradient: "linear-gradient(135deg,#f97316,#ea580c)" },
+  CRITICAL: { en: "Critical", ar: "حرج",   color: "#dc2626", bg: "#fee2e2", gradient: "linear-gradient(135deg,#ef4444,#dc2626)" },
+};
 
 function fmtDate(d: string) {
   return new Intl.DateTimeFormat("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
+    month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit",
   }).format(new Date(d));
 }
 
@@ -78,94 +61,47 @@ export function QualityChecksPage() {
   const { user } = useAuth();
   const { locale } = useLocale();
   const isAr = locale === "ar";
-
   const role = String(user?.role ?? "WORKER").toUpperCase();
-  const isAdmin = role === "ADMIN";
   const canViewAll = ["ADMIN", "ACCOUNTANT"].includes(role);
-  const canCreate = !isAdmin;
+  const canCreate = !["ADMIN", "ACCOUNTANT"].includes(role);
 
-  const [records, setRecords] = useState<QualityCheck[]>([]);
+  const [records, setRecords]   = useState<QualityCheck[]>([]);
   const [machines, setMachines] = useState<Machine[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
+  const [loading, setLoading]   = useState(false);
   const [showForm, setShowForm] = useState(false);
+  const [filterSev, setFilterSev]       = useState<string>("");
+  const [filterStatus, setFilterStatus] = useState<"all" | "open" | "resolved">("all");
 
   const [form, setForm] = useState({
-    machineId: "",
-    issueType: "OTHER",
-    severity: "MEDIUM" as QualityCheck["severity"],
-    description: "",
+    machineId: "", issueType: "OTHER", severity: "MEDIUM" as Severity, description: "",
   });
   const [submitting, setSubmitting] = useState(false);
-
-  const t = {
-    title: isAr ? "فحص الجودة" : "Quality Checks",
-    subtitle: isAr
-      ? "تسجيل ومتابعة مشاكل الجودة في خط الإنتاج"
-      : "Log and track quality issues on the production line",
-    newCheck: isAr ? "فحص جديد" : "New Check",
-    machine: isAr ? "الآلة" : "Machine",
-    issueType: isAr ? "نوع المشكلة" : "Issue Type",
-    severity: isAr ? "الخطورة" : "Severity",
-    description: isAr ? "الوصف" : "Description",
-    save: isAr ? "حفظ" : "Save",
-    cancel: isAr ? "إلغاء" : "Cancel",
-    history: isAr ? "سجل الفحوصات" : "Checks History",
-    noRecords: isAr ? "لا توجد فحوصات بعد" : "No quality checks yet",
-    resolved: isAr ? "تم الحل" : "Resolved",
-    open: isAr ? "مفتوح" : "Open",
-    kpiTotal: isAr ? "إجمالي الفحوصات" : "Total Checks",
-    kpiOpen: isAr ? "مشاكل مفتوحة" : "Open Issues",
-    kpiCritical: isAr ? "حرجة" : "Critical",
-    kpiResolved: isAr ? "تم الحل" : "Resolved",
-    engineer: isAr ? "المهندس" : "Engineer",
-    refresh: isAr ? "تحديث" : "Refresh",
-  };
+  const [error, setError]   = useState("");
+  const [success, setSuccess] = useState("");
 
   const load = async () => {
     setLoading(true);
-    setError("");
     try {
-      const endpoint = canViewAll
-        ? "/quality-checks/all"
-        : "/quality-checks/me";
-      const res = await fetchAuth(endpoint);
-      if (!res.ok) throw new Error(await readApiError(res));
-      setRecords((await res.json()) as QualityCheck[]);
-    } catch (e) {
-      setError(
-        e instanceof Error ? e.message : "Failed to load quality checks",
-      );
-    } finally {
-      setLoading(false);
-    }
+      const res = await fetchAuth(canViewAll ? "/quality-checks/all" : "/quality-checks/me");
+      if (res.ok) setRecords((await res.json()) as QualityCheck[]);
+    } catch { /* silent */ } finally { setLoading(false); }
   };
 
   const loadMachines = async () => {
     try {
       const res = await fetchAuth("/machines");
       if (res.ok) {
-        const d = (await res.json()) as
-          | { items?: Machine[]; data?: Machine[] }
-          | Machine[];
+        const d = await res.json();
         setMachines(Array.isArray(d) ? d : (d.items ?? d.data ?? []));
       }
-    } catch {
-      /* ignore */
-    }
+    } catch { /* silent */ }
   };
 
-  useEffect(() => {
-    void load();
-    void loadMachines();
-  }, []);
+  useEffect(() => { void load(); void loadMachines(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
-    setError("");
-    setSuccess("");
-    setSubmitting(true);
+    setError(""); setSuccess(""); setSubmitting(true);
     try {
       const res = await fetchAuth("/quality-checks", {
         method: "POST",
@@ -177,435 +113,233 @@ export function QualityChecksPage() {
         }),
       });
       if (!res.ok) throw new Error(await readApiError(res));
-      setSuccess(
-        isAr ? "تم حفظ فحص الجودة بنجاح" : "Quality check saved successfully",
-      );
-      setForm({
-        machineId: "",
-        issueType: "OTHER",
-        severity: "MEDIUM",
-        description: "",
-      });
+      setSuccess(isAr ? "تم حفظ فحص الجودة بنجاح ✓" : "Quality check saved ✓");
+      setForm({ machineId: "", issueType: "OTHER", severity: "MEDIUM", description: "" });
       setShowForm(false);
       void load();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to save quality check");
-    } finally {
-      setSubmitting(false);
-    }
+      setError(e instanceof Error ? e.message : "Failed to save");
+    } finally { setSubmitting(false); }
   };
 
-  const openCount = records.filter((r) => !r.resolvedAt).length;
-  const criticalCount = records.filter((r) => r.severity === "CRITICAL").length;
-  const resolvedCount = records.filter((r) => r.resolvedAt).length;
+  const openCount     = records.filter(r => !r.resolvedAt).length;
+  const criticalCount = records.filter(r => r.severity === "CRITICAL").length;
+  const resolvedCount = records.filter(r => !!r.resolvedAt).length;
+
+  const filtered = records.filter(r => {
+    if (filterSev && r.severity !== filterSev) return false;
+    if (filterStatus === "open"     && r.resolvedAt)  return false;
+    if (filterStatus === "resolved" && !r.resolvedAt) return false;
+    return true;
+  });
+
+  const kpis = [
+    { label: isAr ? "إجمالي الفحوصات" : "Total Checks", value: records.length,  gradient: "linear-gradient(135deg,#3b82f6,#1d4ed8)", icon: "✅" },
+    { label: isAr ? "مشاكل مفتوحة"   : "Open Issues",   value: openCount,        gradient: "linear-gradient(135deg,#f59e0b,#d97706)", icon: "⚠️" },
+    { label: isAr ? "حرجة"            : "Critical",      value: criticalCount,    gradient: "linear-gradient(135deg,#ef4444,#dc2626)", icon: "🚨" },
+    { label: isAr ? "تم الحل"         : "Resolved",      value: resolvedCount,    gradient: "linear-gradient(135deg,#10b981,#059669)", icon: "🎯" },
+  ];
+
+  const sel = (active: boolean) => ({
+    padding: ".3rem .85rem", borderRadius: 999,
+    border: "1px solid var(--border-default)",
+    background: active ? "var(--brand-primary,#3b82f6)" : "var(--bg-surface)",
+    color: active ? "#fff" : "var(--text-secondary)",
+    fontWeight: 600 as const, fontSize: ".78rem", cursor: "pointer" as const,
+  });
 
   return (
-    <div className="maintenance-page">
-      {/* Header */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "flex-start",
-          justifyContent: "space-between",
-          gap: "1rem",
-          flexWrap: "wrap",
-        }}
-      >
-        <div>
-          <p
-            style={{
-              margin: 0,
-              fontSize: ".75rem",
-              fontWeight: 700,
-              textTransform: "uppercase",
-              letterSpacing: ".12em",
-              color: "var(--text-secondary)",
-            }}
-          >
-            {isAr ? "بلاستيكون" : "Plasticon"}
-          </p>
-          <h1
-            style={{
-              margin: ".3rem 0 .25rem",
-              fontSize: "1.5rem",
-              fontWeight: 800,
-              color: "var(--text-primary)",
-              display: "flex",
-              alignItems: "center",
-              gap: ".5rem",
-            }}
-          >
-            <CheckSquare size={22} style={{ color: "var(--brand-primary)" }} />
-            {t.title}
-          </h1>
-          <p
-            style={{
-              margin: 0,
-              fontSize: ".875rem",
-              color: "var(--text-secondary)",
-            }}
-          >
-            {t.subtitle}
-          </p>
-        </div>
-        <div style={{ display: "flex", gap: ".625rem" }}>
-          <button
-            className="auth-button auth-button--ghost"
-            type="button"
-            onClick={() => void load()}
-          >
-            {t.refresh}
+    <ModulePageShell
+      title={isAr ? "فحص الجودة" : "Quality Checks"}
+      subtitle={isAr
+        ? "تسجيل ومتابعة مشاكل الجودة في خط الإنتاج"
+        : "Log and track quality issues on the production line"}
+      icon={<CheckSquare size={22} />}
+      actions={
+        <div style={{ display: "flex", gap: ".5rem" }}>
+          <button type="button" className="auth-button auth-button--ghost" onClick={() => void load()}>
+            {isAr ? "تحديث" : "Refresh"}
           </button>
           {canCreate && (
-            <button
-              className="auth-button"
-              type="button"
-              onClick={() => setShowForm((v) => !v)}
-            >
-              <Plus size={15} /> {t.newCheck}
+            <button type="button" className="auth-button" onClick={() => setShowForm(v => !v)}>
+              <Plus size={15} />
+              {showForm ? (isAr ? "إلغاء" : "Cancel") : (isAr ? "فحص جديد" : "New Check")}
             </button>
           )}
         </div>
-      </div>
-
-      {/* KPI strip */}
-      <div className="maintenance-kpi-strip">
-        <div className="maintenance-kpi">
-          <span className="maintenance-kpi__label">{t.kpiTotal}</span>
-          <span className="maintenance-kpi__value">{records.length}</span>
-        </div>
-        <div className="maintenance-kpi">
-          <span className="maintenance-kpi__label">{t.kpiOpen}</span>
-          <span
-            className="maintenance-kpi__value"
-            style={{ color: openCount > 0 ? "var(--orange-500)" : undefined }}
-          >
-            {openCount}
-          </span>
-        </div>
-        <div className="maintenance-kpi">
-          <span className="maintenance-kpi__label">{t.kpiCritical}</span>
-          <span
-            className="maintenance-kpi__value"
-            style={{ color: criticalCount > 0 ? "var(--red-600)" : undefined }}
-          >
-            {criticalCount}
-          </span>
-        </div>
-        <div className="maintenance-kpi">
-          <span className="maintenance-kpi__label">{t.kpiResolved}</span>
-          <span
-            className="maintenance-kpi__value"
-            style={{ color: "var(--green-600)" }}
-          >
-            {resolvedCount}
-          </span>
-        </div>
+      }
+    >
+      {/* KPI cards */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(160px,1fr))", gap: "1rem", marginBottom: "1.5rem" }}>
+        {kpis.map(k => (
+          <div key={k.label} style={{ background: k.gradient, borderRadius: "var(--radius-xl)", padding: "1.1rem 1.25rem", color: "#fff", display: "flex", flexDirection: "column", gap: ".35rem", boxShadow: "0 4px 14px rgba(0,0,0,.12)" }}>
+            <span style={{ fontSize: "1.3rem" }}>{k.icon}</span>
+            <p style={{ margin: 0, fontSize: ".75rem", opacity: .85, fontWeight: 500 }}>{k.label}</p>
+            <p style={{ margin: 0, fontSize: "1.75rem", fontWeight: 800, lineHeight: 1 }}>{k.value}</p>
+          </div>
+        ))}
       </div>
 
       {/* Alerts */}
-      {error && (
-        <div
-          style={{
-            padding: ".75rem 1rem",
-            borderRadius: "var(--radius-lg)",
-            background: "var(--red-50)",
-            border: "1px solid var(--red-100)",
-            color: "var(--red-700)",
-            fontSize: ".875rem",
-            display: "flex",
-            alignItems: "center",
-            gap: ".5rem",
-          }}
-        >
-          <AlertTriangle size={15} /> {error}
-        </div>
-      )}
-      {success && (
-        <div
-          style={{
-            padding: ".75rem 1rem",
-            borderRadius: "var(--radius-lg)",
-            background: "var(--green-50)",
-            border: "1px solid var(--green-100)",
-            color: "var(--green-700)",
-            fontSize: ".875rem",
-            display: "flex",
-            alignItems: "center",
-            gap: ".5rem",
-          }}
-        >
-          <CheckCircle size={15} /> {success}
+      {error   && <div className="auth-alert auth-alert--error" style={{ marginBottom: "1rem" }}>{error}</div>}
+      {success && <div className="auth-alert"                   style={{ marginBottom: "1rem" }}>{success}</div>}
+
+      {/* New Check form */}
+      {canCreate && showForm && (
+        <div style={{ background: "var(--bg-card)", border: "2px solid var(--brand-primary,#3b82f6)", borderRadius: "var(--radius-xl)", padding: "1.25rem", marginBottom: "1.5rem" }}>
+          <h3 style={{ margin: "0 0 1.1rem", fontSize: "1rem", fontWeight: 700, color: "var(--text-primary)", display: "flex", alignItems: "center", gap: ".5rem" }}>
+            <CheckSquare size={17} style={{ color: "var(--brand-primary)" }} />
+            {isAr ? "تسجيل فحص جودة جديد" : "Log New Quality Check"}
+          </h3>
+          <form onSubmit={e => void submit(e)} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))", gap: "1rem" }}>
+
+              <label style={{ display: "flex", flexDirection: "column", gap: ".35rem", fontWeight: 600, fontSize: ".875rem", color: "var(--text-primary)" }}>
+                {isAr ? "الآلة *" : "Machine *"}
+                <select required value={form.machineId}
+                  onChange={e => setForm(p => ({ ...p, machineId: e.target.value }))}
+                  style={{ padding: ".55rem .75rem", border: "1px solid var(--border-default)", borderRadius: "var(--radius-md)", background: "var(--bg-input)", fontSize: ".875rem" }}>
+                  <option value="">{isAr ? "اختر الآلة..." : "Select machine..."}</option>
+                  {machines.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+                </select>
+              </label>
+
+              <label style={{ display: "flex", flexDirection: "column", gap: ".35rem", fontWeight: 600, fontSize: ".875rem", color: "var(--text-primary)" }}>
+                {isAr ? "نوع المشكلة" : "Issue Type"}
+                <select value={form.issueType}
+                  onChange={e => setForm(p => ({ ...p, issueType: e.target.value }))}
+                  style={{ padding: ".55rem .75rem", border: "1px solid var(--border-default)", borderRadius: "var(--radius-md)", background: "var(--bg-input)", fontSize: ".875rem" }}>
+                  {ISSUE_TYPES.map(t => (
+                    <option key={t} value={t}>{isAr ? ISSUE_LABELS[t]?.ar : ISSUE_LABELS[t]?.en}</option>
+                  ))}
+                </select>
+              </label>
+
+              <label style={{ display: "flex", flexDirection: "column", gap: ".35rem", fontWeight: 600, fontSize: ".875rem", color: "var(--text-primary)" }}>
+                {isAr ? "مستوى الخطورة" : "Severity Level"}
+                <select value={form.severity}
+                  onChange={e => setForm(p => ({ ...p, severity: e.target.value as Severity }))}
+                  style={{ padding: ".55rem .75rem", border: `2px solid ${SEV_META[form.severity].color}`, borderRadius: "var(--radius-md)", background: SEV_META[form.severity].bg, fontSize: ".875rem", fontWeight: 700, color: SEV_META[form.severity].color }}>
+                  {SEVERITIES.map(s => (
+                    <option key={s} value={s}>{isAr ? SEV_META[s].ar : SEV_META[s].en}</option>
+                  ))}
+                </select>
+              </label>
+            </div>
+
+            <label style={{ display: "flex", flexDirection: "column", gap: ".35rem", fontWeight: 600, fontSize: ".875rem", color: "var(--text-primary)" }}>
+              {isAr ? "وصف المشكلة والإجراءات" : "Issue Description & Actions Taken"}
+              <textarea rows={3} value={form.description}
+                onChange={e => setForm(p => ({ ...p, description: e.target.value }))}
+                placeholder={isAr
+                  ? "اشرح المشكلة بالتفصيل، والإجراءات التي تم اتخاذها..."
+                  : "Describe the issue in detail, and any corrective actions taken..."}
+                style={{ padding: ".6rem .75rem", border: "1px solid var(--border-default)", borderRadius: "var(--radius-md)", background: "var(--bg-input)", fontSize: ".875rem", resize: "vertical", lineHeight: 1.55 }} />
+            </label>
+
+            <div style={{ display: "flex", gap: ".625rem" }}>
+              <button type="submit" className="auth-button" disabled={submitting} style={{ flex: 1 }}>
+                {submitting ? (isAr ? "جارٍ الحفظ..." : "Saving...") : (isAr ? "حفظ الفحص" : "Save Check")}
+              </button>
+              <button type="button" className="auth-button auth-button--ghost" onClick={() => setShowForm(false)}>
+                {isAr ? "إلغاء" : "Cancel"}
+              </button>
+            </div>
+          </form>
         </div>
       )}
 
-      <div className="maintenance-grid">
-        {/* History list */}
-        <div className="maintenance-card">
-          <div className="maintenance-card__head">
-            <p className="maintenance-card__title">
-              {t.history}
-              <span
-                style={{
-                  marginLeft: ".5rem",
-                  background: "var(--bg-surface)",
-                  border: "1px solid var(--border-default)",
-                  borderRadius: "999px",
-                  fontSize: ".72rem",
-                  fontWeight: 700,
-                  padding: ".1rem .5rem",
-                  color: "var(--text-secondary)",
-                }}
-              >
-                {records.length}
-              </span>
+      {/* Filter bar */}
+      <div style={{ display: "flex", gap: ".4rem", flexWrap: "wrap", marginBottom: "1.1rem", alignItems: "center" }}>
+        <span style={{ fontSize: ".78rem", fontWeight: 700, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: ".05em" }}>
+          {isAr ? "عرض:" : "Show:"}
+        </span>
+        <button type="button" style={sel(filterStatus === "all")}     onClick={() => setFilterStatus("all")}>     {isAr ? "الكل" : "All"} ({records.length})</button>
+        <button type="button" style={sel(filterStatus === "open")}    onClick={() => setFilterStatus("open")}>    {isAr ? "مفتوح" : "Open"} ({openCount})</button>
+        <button type="button" style={sel(filterStatus === "resolved")} onClick={() => setFilterStatus("resolved")}>{isAr ? "محلول" : "Resolved"} ({resolvedCount})</button>
+        <div style={{ width: 1, height: 20, background: "var(--border-default)", margin: "0 .2rem" }} />
+        {SEVERITIES.map(s => (
+          <button key={s} type="button"
+            onClick={() => setFilterSev(filterSev === s ? "" : s)}
+            style={{ padding: ".3rem .75rem", borderRadius: 999, border: `1px solid ${SEV_META[s].color}60`, background: filterSev === s ? SEV_META[s].bg : "transparent", color: filterSev === s ? SEV_META[s].color : "var(--text-secondary)", fontWeight: 700, fontSize: ".76rem", cursor: "pointer" }}>
+            {isAr ? SEV_META[s].ar : SEV_META[s].en}
+          </button>
+        ))}
+      </div>
+
+      {/* Records list */}
+      {loading ? (
+        <div style={{ padding: "3rem", textAlign: "center" }}>
+          <div className="spinner" style={{ margin: "0 auto" }} />
+        </div>
+      ) : filtered.length === 0 ? (
+        <div style={{ padding: "3rem", textAlign: "center", background: "var(--bg-card)", border: "1px dashed var(--border-default)", borderRadius: "var(--radius-xl)" }}>
+          <CheckSquare size={36} style={{ color: "var(--gray-300)", margin: "0 auto .75rem", display: "block" }} />
+          <p style={{ margin: 0, fontWeight: 600, color: "var(--text-secondary)", fontSize: ".9rem" }}>
+            {isAr ? "لا توجد فحوصات" : "No quality checks"}
+          </p>
+          {canCreate && filterStatus === "all" && !filterSev && (
+            <p style={{ margin: ".4rem 0 0", fontSize: ".82rem", color: "var(--text-secondary)" }}>
+              {isAr ? "انقر على 'فحص جديد' للبدء" : "Click 'New Check' to log the first one"}
             </p>
-          </div>
-          <div
-            className="maintenance-card__body"
-            style={{ display: "grid", gap: ".625rem" }}
-          >
-            {loading ? (
-              <div style={{ padding: "2rem", textAlign: "center" }}>
-                <div className="spinner" style={{ margin: "0 auto" }} />
-              </div>
-            ) : records.length === 0 ? (
-              <div style={{ padding: "2.5rem", textAlign: "center" }}>
-                <Activity
-                  size={36}
-                  style={{
-                    color: "var(--gray-300)",
-                    margin: "0 auto .75rem",
-                    display: "block",
-                  }}
-                />
-                <p
-                  style={{
-                    margin: 0,
-                    color: "var(--text-secondary)",
-                    fontSize: ".9rem",
-                  }}
-                >
-                  {t.noRecords}
-                </p>
-              </div>
-            ) : (
-              records.map((r) => (
-                <div key={r.id} className="maintenance-report-item">
-                  <div className="maintenance-report-item__header">
-                    <span className="maintenance-report-item__machine">
-                      {r.machine?.name ?? `#${r.id}`}
-                    </span>
-                    <span className="maintenance-report-item__date">
-                      {fmtDate(r.createdAt)}
+          )}
+        </div>
+      ) : (
+        <div style={{ display: "flex", flexDirection: "column", gap: ".75rem" }}>
+          {filtered.map(r => {
+            const sev = SEV_META[r.severity];
+            const resolved = !!r.resolvedAt;
+            return (
+              <div key={r.id} style={{ background: "var(--bg-card)", border: "1px solid var(--border-default)", borderRadius: "var(--radius-xl)", overflow: "hidden" }}>
+                {/* Row header */}
+                <div style={{ display: "flex", alignItems: "stretch", gap: 0 }}>
+                  {/* Color stripe */}
+                  <div style={{ width: 5, background: sev.gradient, flexShrink: 0 }} />
+                  <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "space-between", gap: ".75rem", padding: ".875rem 1.1rem", background: "var(--bg-surface)", flexWrap: "wrap" }}>
+                    <div style={{ display: "flex", flexDirection: "column", gap: ".3rem" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: ".5rem", flexWrap: "wrap" }}>
+                        <span style={{ fontWeight: 800, fontSize: ".95rem", color: "var(--text-primary)" }}>
+                          🔧 {r.machine?.name}
+                        </span>
+                        <span style={{ fontSize: ".72rem", padding: ".2rem .6rem", borderRadius: 999, background: sev.bg, color: sev.color, fontWeight: 700 }}>
+                          {isAr ? sev.ar : sev.en}
+                        </span>
+                        <span style={{ fontSize: ".72rem", padding: ".2rem .6rem", borderRadius: 999, background: resolved ? "#d1fae5" : "#fef3c7", color: resolved ? "#059669" : "#d97706", fontWeight: 700 }}>
+                          {resolved ? (isAr ? "✓ تم الحل" : "✓ Resolved") : (isAr ? "● مفتوح" : "● Open")}
+                        </span>
+                      </div>
+                      <div style={{ display: "flex", gap: ".875rem", flexWrap: "wrap" }}>
+                        <span style={{ fontSize: ".78rem", color: "var(--text-secondary)" }}>
+                          📋 {isAr ? ISSUE_LABELS[r.issueType]?.ar : ISSUE_LABELS[r.issueType]?.en}
+                        </span>
+                        {r.engineer && (
+                          <span style={{ fontSize: ".78rem", color: "var(--text-secondary)" }}>
+                            👷 {r.engineer.fullName}
+                          </span>
+                        )}
+                        <span style={{ fontSize: ".78rem", color: "var(--text-secondary)" }}>
+                          📅 {fmtDate(r.createdAt)}
+                        </span>
+                      </div>
+                    </div>
+                    <span style={{ fontSize: ".7rem", fontWeight: 700, color: "var(--text-secondary)", background: "var(--bg-card)", border: "1px solid var(--border-default)", borderRadius: 6, padding: ".15rem .5rem" }}>
+                      #{r.id}
                     </span>
                   </div>
-                  <p className="maintenance-report-item__parts">
-                    {isAr ? "نوع: " : "Type: "}
-                    <strong>{r.issueType.replace(/_/g, " ")}</strong>
-                  </p>
-                  <div className="maintenance-report-item__meta">
-                    <span className={severityClass(r.severity)}>
-                      {r.severity}
-                    </span>
-                    {r.resolvedAt ? (
-                      <span
-                        style={{
-                          fontSize: ".72rem",
-                          color: "var(--green-600)",
-                          display: "flex",
-                          alignItems: "center",
-                          gap: ".2rem",
-                        }}
-                      >
-                        <CheckCircle size={11} /> {t.resolved}
-                      </span>
-                    ) : (
-                      <span
-                        style={{
-                          fontSize: ".72rem",
-                          color: "var(--orange-500)",
-                          display: "flex",
-                          alignItems: "center",
-                          gap: ".2rem",
-                        }}
-                      >
-                        <Clock size={11} /> {t.open}
-                      </span>
-                    )}
-                    {r.engineer && (
-                      <span
-                        style={{
-                          fontSize: ".72rem",
-                          color: "var(--text-tertiary)",
-                        }}
-                      >
-                        {t.engineer}: {r.engineer.fullName}
-                      </span>
-                    )}
-                  </div>
-                  {r.description && (
-                    <p
-                      style={{
-                        margin: ".375rem 0 0",
-                        fontSize: ".82rem",
-                        color: "var(--text-secondary)",
-                        background: "var(--bg-surface)",
-                        padding: ".5rem .75rem",
-                        borderRadius: "var(--radius-md)",
-                        border: "1px solid var(--border-default)",
-                        lineHeight: 1.55,
-                      }}
-                    >
+                </div>
+                {/* Description */}
+                {r.description && (
+                  <div style={{ padding: ".75rem 1.25rem", borderTop: "1px solid var(--border-default)" }}>
+                    <p style={{ margin: 0, fontSize: ".875rem", color: "var(--text-secondary)", lineHeight: 1.65 }}>
                       {r.description}
                     </p>
-                  )}
-                </div>
-              ))
-            )}
-          </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
-
-        {/* Create form */}
-        {canCreate && showForm ? (
-          <div className="maintenance-card">
-            <div className="maintenance-card__head">
-              <p className="maintenance-card__title">{t.newCheck}</p>
-            </div>
-            <div className="maintenance-card__body">
-              <form className="module-form" onSubmit={(e) => void submit(e)}>
-                <label>
-                  {t.machine}
-                  <select
-                    value={form.machineId}
-                    onChange={(e) =>
-                      setForm((p) => ({ ...p, machineId: e.target.value }))
-                    }
-                    required
-                  >
-                    <option value="">
-                      {isAr ? "اختر الآلة..." : "Select machine..."}
-                    </option>
-                    {machines.map((m) => (
-                      <option key={m.id} value={m.id}>
-                        {m.name}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-
-                <label>
-                  {t.issueType}
-                  <select
-                    value={form.issueType}
-                    onChange={(e) =>
-                      setForm((p) => ({ ...p, issueType: e.target.value }))
-                    }
-                  >
-                    {ISSUE_TYPES.map((t) => (
-                      <option key={t} value={t}>
-                        {t.replace(/_/g, " ")}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-
-                <label>
-                  {t.severity}
-                  <select
-                    value={form.severity}
-                    onChange={(e) =>
-                      setForm((p) => ({
-                        ...p,
-                        severity: e.target.value as QualityCheck["severity"],
-                      }))
-                    }
-                  >
-                    {SEVERITIES.map((s) => (
-                      <option key={s} value={s}>
-                        {s}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-
-                <label>
-                  {t.description}
-                  <textarea
-                    rows={4}
-                    value={form.description}
-                    onChange={(e) =>
-                      setForm((p) => ({ ...p, description: e.target.value }))
-                    }
-                    placeholder={
-                      isAr
-                        ? "وصف المشكلة والإجراءات المتخذة..."
-                        : "Describe the issue and actions taken..."
-                    }
-                  />
-                </label>
-
-                <div style={{ display: "flex", gap: ".625rem" }}>
-                  <button
-                    type="submit"
-                    className="auth-button"
-                    style={{ flex: 1 }}
-                    disabled={submitting}
-                  >
-                    {submitting
-                      ? isAr
-                        ? "جارٍ الحفظ..."
-                        : "Saving..."
-                      : t.save}
-                  </button>
-                  <button
-                    type="button"
-                    className="auth-button auth-button--ghost"
-                    onClick={() => setShowForm(false)}
-                  >
-                    {t.cancel}
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        ) : (
-          <div
-            className="maintenance-card"
-            style={{
-              display: "grid",
-              placeItems: "center",
-              minHeight: "200px",
-              cursor: "pointer",
-              border: "2px dashed var(--border-default)",
-              background: "transparent",
-              boxShadow: "none",
-            }}
-            onClick={() => setShowForm(true)}
-          >
-            <div
-              style={{ textAlign: "center", color: "var(--text-secondary)" }}
-            >
-              <Plus
-                size={28}
-                style={{
-                  margin: "0 auto .5rem",
-                  color: "var(--brand-primary)",
-                  display: "block",
-                }}
-              />
-              <p style={{ margin: 0, fontWeight: 600, fontSize: ".875rem" }}>
-                {t.newCheck}
-              </p>
-              <p style={{ margin: ".25rem 0 0", fontSize: ".78rem" }}>
-                {isAr
-                  ? "انقر لتسجيل فحص جودة جديد"
-                  : "Click to log a new quality check"}
-              </p>
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
+      )}
+    </ModulePageShell>
   );
 }

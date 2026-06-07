@@ -19,13 +19,11 @@ import { WorkerHubScreen }         from '../screens/worker/WorkerHubScreen';
 // ─── Work tab ─────────────────────────────────────────────────────────────────
 import { WorkMenuScreen }           from '../screens/worker/WorkMenuScreen';
 import { ProductionScreen }         from '../screens/worker/ProductionScreen';
-import { ConsumptionWorkerScreen }  from '../screens/worker/ConsumptionWorkerScreen';
 import { ReadingsScreen }           from '../screens/worker/ReadingsScreen';
 import { MachineStopsScreen }       from '../screens/worker/MachineStopsScreen';
 import { DailyChecklistScreen }     from '../screens/worker/DailyChecklistScreen';
 import { MaterialWasteScreen }      from '../screens/worker/MaterialWasteScreen';
 import { DailyTargetsScreen }       from '../screens/worker/DailyTargetsScreen';
-import { KaizenIdeasScreen }        from '../screens/worker/KaizenIdeasScreen';
 import { QualityIssuesScreen }      from '../screens/worker/QualityIssuesScreen';
 import { MicroStopsScreen }         from '../screens/worker/MicroStopsScreen';
 import { ElectricityAlertsScreen }  from '../screens/worker/ElectricityAlertsScreen';
@@ -33,7 +31,6 @@ import { ElectricityRecordScreen }  from '../screens/worker/ElectricityRecordScr
 import { SnapshotsScreen }          from '../screens/worker/SnapshotsScreen';
 
 // ─── AI tab ───────────────────────────────────────────────────────────────────
-import { AIHubScreen }     from '../screens/shared/AIHubScreen';
 import { AssistantScreen } from '../screens/shared/AssistantScreen';
 
 // ─── Personal tab ─────────────────────────────────────────────────────────────
@@ -61,13 +58,11 @@ function WorkNavigator() {
     <WorkStack.Navigator screenOptions={{ headerShown: false }}>
       <WorkStack.Screen name="WorkMenu"          component={WorkMenuScreen} />
       <WorkStack.Screen name="Production"        component={ProductionScreen} />
-      <WorkStack.Screen name="Consumption"       component={ConsumptionWorkerScreen} />
       <WorkStack.Screen name="Readings"          component={ReadingsScreen} />
       <WorkStack.Screen name="MachineStops"      component={MachineStopsScreen} />
       <WorkStack.Screen name="DailyChecklist"    component={DailyChecklistScreen} />
       <WorkStack.Screen name="MaterialWaste"     component={MaterialWasteScreen} />
       <WorkStack.Screen name="DailyTargets"      component={DailyTargetsScreen} />
-      <WorkStack.Screen name="KaizenIdeas"       component={KaizenIdeasScreen} />
       <WorkStack.Screen name="QualityIssues"     component={QualityIssuesScreen} />
       <WorkStack.Screen name="MicroStops"        component={MicroStopsScreen} />
       <WorkStack.Screen name="ElectricityAlerts" component={ElectricityAlertsScreen} />
@@ -82,7 +77,6 @@ const AIStack = createNativeStackNavigator<WorkerAIStackParamList>();
 function AINavigator() {
   return (
     <AIStack.Navigator screenOptions={{ headerShown: false }}>
-      <AIStack.Screen name="AIHub"     component={AIHubScreen} />
       <AIStack.Screen name="Assistant" component={AssistantScreen} />
     </AIStack.Navigator>
   );

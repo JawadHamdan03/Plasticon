@@ -213,22 +213,17 @@ export default function EmployeePerformance() {
       icon={<Award size={22} />}
     >
       {/* KPI Row */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: ".75rem", marginBottom: "1.25rem" }}>
         {[
-          { label: nav("Total Assessments", "إجمالي التقييمات"), value: records.length, icon: "📋", color: "#3b82f6", bg: "#dbeafe" },
-          { label: nav("Avg Score", "متوسط الدرجة"), value: records.length ? avgScore.toFixed(1) : "—", icon: "📊", color: "#10b981", bg: "#d1fae5" },
-          { label: nav("Excellent (≥90)", "ممتاز (≥90)"), value: excellent, icon: "🏆", color: "#f59e0b", bg: "#fef3c7" },
-          { label: nav("Top Performer", "الأفضل أداءً"), value: topPerformer?.user.fullName.split(" ")[0] ?? "—", icon: "⭐", color: "#8b5cf6", bg: "#ede9fe" },
+          { label: nav("Total Assessments", "إجمالي التقييمات"), value: records.length,                               gradient: "linear-gradient(135deg,#3b82f6,#1d4ed8)" },
+          { label: nav("Avg Score",         "متوسط الدرجة"),      value: records.length ? avgScore.toFixed(1) : "—",  gradient: "linear-gradient(135deg,#10b981,#059669)" },
+          { label: nav("Excellent (≥90)",   "ممتاز (≥90)"),       value: excellent,                                   gradient: "linear-gradient(135deg,#f59e0b,#d97706)" },
+          { label: nav("Top Performer",     "الأفضل أداءً"),      value: topPerformer?.user.fullName.split(" ")[0] ?? "—", gradient: "linear-gradient(135deg,#8b5cf6,#7c3aed)" },
         ].map((k) => (
-          <Card key={k.label} className="p-4 flex items-center gap-3">
-            <div style={{ width: 40, height: 40, borderRadius: 10, background: k.bg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.2rem", flexShrink: 0 }}>
-              {k.icon}
-            </div>
-            <div className="min-w-0">
-              <p className="text-xs text-[var(--text-secondary)] font-medium leading-tight">{k.label}</p>
-              <p className="text-xl font-bold truncate" style={{ color: k.color }}>{k.value}</p>
-            </div>
-          </Card>
+          <div key={k.label} style={{ borderRadius: 14, padding: "1rem 1.1rem", background: k.gradient, color: "#fff", boxShadow: "0 4px 12px rgba(0,0,0,.15)" }}>
+            <p style={{ margin: 0, fontSize: ".72rem", fontWeight: 600, opacity: .85, textTransform: "uppercase", letterSpacing: ".06em" }}>{k.label}</p>
+            <p style={{ margin: ".25rem 0 0", fontSize: "1.5rem", fontWeight: 900, lineHeight: 1.1 }}>{k.value}</p>
+          </div>
         ))}
       </div>
 

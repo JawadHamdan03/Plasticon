@@ -110,23 +110,16 @@ export default function RawMaterialAlerts() {
       icon={<AlertTriangle size={22} />}
     >
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: ".75rem", marginBottom: "1.25rem" }}>
         {[
-          { icon: "📦", label: nav("Total Materials", "إجمالي المواد"), value: totalMaterials, color: "#3b82f6", bg: "rgba(59,130,246,.1)" },
-          { icon: "⚠️", label: nav("Low Stock", "مخزون منخفض"), value: lowCount, color: "#f97316", bg: "rgba(249,115,22,.1)" },
-          { icon: "🚨", label: nav("Critical (0 stock)", "حرج (لا مخزون)"), value: criticalCount, color: "#ef4444", bg: "rgba(239,68,68,.1)" },
+          { label: nav("Total Materials", "إجمالي المواد"),       value: totalMaterials, gradient: "linear-gradient(135deg,#3b82f6,#1d4ed8)" },
+          { label: nav("Low Stock",       "مخزون منخفض"),          value: lowCount,       gradient: "linear-gradient(135deg,#f59e0b,#d97706)" },
+          { label: nav("Critical",        "حرج (لا مخزون)"),       value: criticalCount,  gradient: "linear-gradient(135deg,#ef4444,#dc2626)" },
         ].map((kpi) => (
-          <Card key={kpi.label} className="p-4">
-            <div className="flex items-center gap-3">
-              <div style={{ width: 40, height: 40, borderRadius: 8, background: kpi.bg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.2rem", flexShrink: 0 }}>
-                {kpi.icon}
-              </div>
-              <div>
-                <p style={{ margin: 0, fontSize: ".75rem", fontWeight: 600, color: "var(--text-secondary)" }}>{kpi.label}</p>
-                <p style={{ margin: 0, fontSize: "1.6rem", fontWeight: 800, color: kpi.color }}>{kpi.value}</p>
-              </div>
-            </div>
-          </Card>
+          <div key={kpi.label} style={{ borderRadius: 14, padding: "1rem 1.1rem", background: kpi.gradient, color: "#fff", boxShadow: "0 4px 12px rgba(0,0,0,.15)" }}>
+            <p style={{ margin: 0, fontSize: ".72rem", fontWeight: 600, opacity: .85, textTransform: "uppercase", letterSpacing: ".06em" }}>{kpi.label}</p>
+            <p style={{ margin: ".25rem 0 0", fontSize: "1.7rem", fontWeight: 900, lineHeight: 1.1 }}>{kpi.value}</p>
+          </div>
         ))}
       </div>
 

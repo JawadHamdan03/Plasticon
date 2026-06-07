@@ -6,6 +6,11 @@ import {
 } from "../utils/authServices";
 import { isSmtpConfigured, sendEmail } from "../utils/emailService";
 import { dispatchAutoNotification } from "./notificationServices";
+import {
+  emitNotificationToUser,
+  emitNotificationUnreadCountUpdate,
+} from "../config/socket";
+import { sendPushToUsers } from "./pushService";
 
 const appBaseUrl = process.env.APP_BASE_URL || "http://localhost:5173";
 
@@ -49,21 +54,31 @@ export const createRegistrationRequest = async (body: {
     },
   });
 
-  // Notify all admins
+  // Notify all admins (DB + web socket + mobile push)
   const admins = await prisma.user.findMany({
     where: { role: "ADMIN", isActive: true, deletedAt: null },
     select: { id: true },
   });
 
-  for (const admin of admins) {
-    await prisma.notification.create({
-      data: {
-        userId: admin.id,
-        title: "New Registration Request",
-        message: `${fullName} (${email}) is requesting access to the system.`,
-        type: "REGISTRATION_REQUEST",
-      },
+  if (admins.length > 0) {
+    const adminIds = admins.map(a => a.id);
+    const notifTitle = "New Registration Request";
+    const notifMessage = `${fullName} (${email}) is requesting access to the system.`;
+
+    const notes = await prisma.$transaction(
+      adminIds.map(userId =>
+        prisma.notification.create({
+          data: { userId, title: notifTitle, message: notifMessage, type: "REGISTRATION_REQUEST" },
+        }),
+      ),
+    );
+
+    notes.forEach(n => {
+      emitNotificationToUser(n.userId, n);
+      emitNotificationUnreadCountUpdate(n.userId, { refresh: true });
     });
+
+    sendPushToUsers(adminIds, notifTitle, notifMessage, { type: "REGISTRATION_REQUEST" }).catch(() => undefined);
   }
 
   return { status: 201, data: { id: request.id, message: "Request submitted successfully" } };

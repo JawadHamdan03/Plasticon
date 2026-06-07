@@ -200,51 +200,43 @@ export default function FinancialDashboard() {
 
       {/* KPI Cards */}
       {loading ? (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: ".75rem", marginBottom: "1.25rem" }}>
           {[1, 2, 3, 4].map((i) => (
-            <Card key={i} className="p-4 h-20 animate-pulse bg-[var(--surface-2)]" />
+            <div key={i} style={{ borderRadius: 14, height: 80, background: "var(--bg-surface-2,#f1f5f9)", animation: "pulse 1.5s ease-in-out infinite" }} />
           ))}
         </div>
       ) : data ? (
         <>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: ".75rem", marginBottom: "1.25rem" }}>
             {[
-              { label: nav("Total Revenue", "إجمالي الإيرادات"), value: fmtMoney(data.revenue), icon: "💰", color: "#1d4ed8", bg: "#dbeafe" },
-              { label: nav("Total Expenses", "إجمالي المصروفات"), value: fmtMoney(data.expenses), icon: "🧾", color: "#d97706", bg: "#fef3c7" },
-              { label: nav("Net Profit", "صافي الربح"), value: fmtMoney(data.profit), icon: data.profit >= 0 ? "📈" : "📉", color: data.profit >= 0 ? "#059669" : "#dc2626", bg: data.profit >= 0 ? "#d1fae5" : "#fee2e2" },
-              { label: nav("Cash Balance", "رصيد النقد"), value: fmtMoney(data.cashBalance), icon: "🏦", color: data.cashBalance >= 0 ? "#7c3aed" : "#dc2626", bg: data.cashBalance >= 0 ? "#ede9fe" : "#fee2e2" },
+              { label: nav("Total Revenue",  "إجمالي الإيرادات"),  value: fmtMoney(data.revenue),      gradient: "linear-gradient(135deg,#3b82f6,#1d4ed8)" },
+              { label: nav("Total Expenses", "إجمالي المصروفات"), value: fmtMoney(data.expenses),     gradient: "linear-gradient(135deg,#f59e0b,#d97706)" },
+              { label: nav("Net Profit",     "صافي الربح"),        value: fmtMoney(data.profit),       gradient: data.profit >= 0 ? "linear-gradient(135deg,#10b981,#059669)" : "linear-gradient(135deg,#f87171,#dc2626)" },
+              { label: nav("Cash Balance",   "رصيد النقد"),        value: fmtMoney(data.cashBalance),  gradient: data.cashBalance >= 0 ? "linear-gradient(135deg,#8b5cf6,#7c3aed)" : "linear-gradient(135deg,#f87171,#dc2626)" },
             ].map((k) => (
-              <Card key={k.label} className="p-4 flex items-center gap-3">
-                <div style={{ width: 40, height: 40, borderRadius: 10, background: k.bg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.2rem", flexShrink: 0 }}>
-                  {k.icon}
-                </div>
-                <div className="min-w-0">
-                  <p className="text-xs text-[var(--text-secondary)] font-medium leading-tight truncate">{k.label}</p>
-                  <p className="text-lg font-bold leading-tight" style={{ color: k.color }}>{k.value}</p>
-                </div>
-              </Card>
+              <div key={k.label} style={{ borderRadius: 14, padding: "1rem 1.1rem", background: k.gradient, color: "#fff", boxShadow: "0 4px 12px rgba(0,0,0,.15)" }}>
+                <p style={{ margin: 0, fontSize: ".72rem", fontWeight: 600, opacity: .85, textTransform: "uppercase", letterSpacing: ".06em" }}>{k.label}</p>
+                <p style={{ margin: ".25rem 0 0", fontSize: "1.4rem", fontWeight: 900, lineHeight: 1.1 }}>{k.value}</p>
+              </div>
             ))}
           </div>
 
           {/* Factory Cost Breakdown */}
           <div className="mb-6">
             <h3 className="text-sm font-bold text-(--text-primary) mb-3">{nav("Factory Cost Breakdown — Net Profit Formula", "تفصيل تكاليف المصنع — معادلة صافي الربح")}</h3>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: ".65rem" }}>
               {[
-                { label: nav("Sales Revenue", "إيرادات المبيعات"),   value: fmtMoney(data.salesRevenue ?? 0),      icon: "📦", color: "#1d4ed8", bg: "#dbeafe" },
-                { label: nav("Raw Materials", "المواد الخام"),        value: fmtMoney(data.rawMaterialCost ?? 0),   icon: "🧱", color: "#d97706", bg: "#fef3c7" },
-                { label: nav("Electricity",   "الكهرباء"),            value: fmtMoney(data.electricityCost ?? 0),   icon: "⚡", color: "#7c3aed", bg: "#ede9fe" },
-                { label: nav("Salaries",      "الرواتب"),             value: fmtMoney(data.salaryCost ?? 0),        icon: "👷", color: "#0891b2", bg: "#cffafe" },
-                { label: nav("Other Expenses","مصروفات أخرى"),        value: fmtMoney(data.approvedExpenses ?? 0),  icon: "🧾", color: "#6b7280", bg: "#f3f4f6" },
-                { label: nav("Net Profit",    "صافي الربح"),          value: fmtMoney(data.netProfit ?? 0),         icon: (data.netProfit ?? 0) >= 0 ? "📈" : "📉", color: (data.netProfit ?? 0) >= 0 ? "#059669" : "#dc2626", bg: (data.netProfit ?? 0) >= 0 ? "#d1fae5" : "#fee2e2" },
+                { label: nav("Sales Revenue", "إيرادات المبيعات"),  value: fmtMoney(data.salesRevenue ?? 0),     gradient: "linear-gradient(135deg,#3b82f6,#1d4ed8)" },
+                { label: nav("Raw Materials", "المواد الخام"),       value: fmtMoney(data.rawMaterialCost ?? 0),  gradient: "linear-gradient(135deg,#f59e0b,#d97706)" },
+                { label: nav("Electricity",   "الكهرباء"),           value: fmtMoney(data.electricityCost ?? 0),  gradient: "linear-gradient(135deg,#8b5cf6,#7c3aed)" },
+                { label: nav("Salaries",      "الرواتب"),            value: fmtMoney(data.salaryCost ?? 0),       gradient: "linear-gradient(135deg,#06b6d4,#0891b2)" },
+                { label: nav("Other Expenses","مصروفات أخرى"),       value: fmtMoney(data.approvedExpenses ?? 0), gradient: "linear-gradient(135deg,#94a3b8,#64748b)" },
+                { label: nav("Net Profit",    "صافي الربح"),         value: fmtMoney(data.netProfit ?? 0),        gradient: (data.netProfit ?? 0) >= 0 ? "linear-gradient(135deg,#10b981,#059669)" : "linear-gradient(135deg,#f87171,#dc2626)" },
               ].map((k) => (
-                <Card key={k.label} className="p-3 flex items-center gap-2">
-                  <div style={{ width: 34, height: 34, borderRadius: 8, background: k.bg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1rem", flexShrink: 0 }}>{k.icon}</div>
-                  <div className="min-w-0">
-                    <p className="text-[11px] text-(--text-secondary) font-medium leading-tight truncate">{k.label}</p>
-                    <p className="text-sm font-bold leading-tight" style={{ color: k.color }}>{k.value}</p>
-                  </div>
-                </Card>
+                <div key={k.label} style={{ borderRadius: 12, padding: ".8rem 1rem", background: k.gradient, color: "#fff", boxShadow: "0 3px 10px rgba(0,0,0,.12)" }}>
+                  <p style={{ margin: 0, fontSize: ".68rem", fontWeight: 600, opacity: .85, textTransform: "uppercase", letterSpacing: ".05em" }}>{k.label}</p>
+                  <p style={{ margin: ".2rem 0 0", fontSize: "1.1rem", fontWeight: 900, lineHeight: 1.1 }}>{k.value}</p>
+                </div>
               ))}
             </div>
             <p className="text-xs text-(--text-secondary) mt-2">
