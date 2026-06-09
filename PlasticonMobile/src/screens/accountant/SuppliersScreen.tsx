@@ -205,8 +205,8 @@ export function SuppliersScreen() {
 
   const load = useCallback(async () => {
     try {
-      const res = await api.get<Supplier[]>('/suppliers?limit=30');
-      setSuppliers(Array.isArray(res) ? res : []);
+      const res = await api.get<any>('/suppliers?limit=30');
+      setSuppliers(Array.isArray(res) ? res : (res?.data ?? res?.items ?? res?.suppliers ?? []));
     } catch (err: unknown) {
       Alert.alert(isAr ? 'خطأ' : 'Error', err instanceof Error ? err.message : (isAr ? 'فشل تحميل الموردين' : 'Failed to load suppliers.'));
     } finally {

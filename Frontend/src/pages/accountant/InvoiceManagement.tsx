@@ -107,7 +107,18 @@ export default function InvoiceManagement() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const uploadTargetId = useRef<number | null>(null);
 
-  useEffect(() => { void fetchInvoices(); }, []);
+  /* Sales reconciliation */
+  const [salesTotal, setSalesTotal] = useState<number | null>(null);
+
+  useEffect(() => {
+    void fetchInvoices();
+    void fetch(`${API_BASE_URL}/sales/all`, { credentials: "include" })
+      .then(r => r.ok ? r.json() : [])
+      .then((d: Array<{ totalAmount?: number }>) => {
+        setSalesTotal(Array.isArray(d) ? d.reduce((s, x) => s + (x.totalAmount ?? 0), 0) : 0);
+      })
+      .catch(() => {});
+  }, []);
 
   const fetchInvoices = async () => {
     setLoading(true);
@@ -342,6 +353,33 @@ export default function InvoiceManagement() {
         ))}
       </div>
 
+      {/* Sales vs Invoices reconciliation */}
+      {salesTotal !== null && (() => {
+        const invoicedTotal = invoices.reduce((s, i) => s + i.totalAmount, 0);
+        const diff = salesTotal - invoicedTotal;
+        return (
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: ".75rem", marginBottom: "1.5rem", padding: "1rem", background: "var(--bg-surface)", border: "1px solid var(--border-default)", borderRadius: 12 }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: ".25rem" }}>
+              <span style={{ fontSize: ".7rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: ".06em", color: "var(--text-secondary)" }}>{t("Total Sales", "إجمالي المبيعات")}</span>
+              <span style={{ fontSize: "1.2rem", fontWeight: 900, color: "#3b82f6" }}>{fmtMoney(salesTotal, "ILS")}</span>
+              <span style={{ fontSize: ".72rem", color: "var(--text-secondary)" }}>{t("from sales records", "من سجلات المبيعات")}</span>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: ".25rem" }}>
+              <span style={{ fontSize: ".7rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: ".06em", color: "var(--text-secondary)" }}>{t("Total Invoiced", "إجمالي الفواتير")}</span>
+              <span style={{ fontSize: "1.2rem", fontWeight: 900, color: "#8b5cf6" }}>{fmtMoney(invoicedTotal, "ILS")}</span>
+              <span style={{ fontSize: ".72rem", color: "var(--text-secondary)" }}>{t("from invoices", "من الفواتير")}</span>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: ".25rem" }}>
+              <span style={{ fontSize: ".7rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: ".06em", color: "var(--text-secondary)" }}>{t("Difference", "الفارق")}</span>
+              <span style={{ fontSize: "1.2rem", fontWeight: 900, color: diff >= 0 ? "#ef4444" : "#10b981" }}>{diff >= 0 ? "+" : ""}{fmtMoney(diff, "ILS")}</span>
+              <span style={{ fontSize: ".72rem", color: "var(--text-secondary)" }}>
+                {diff > 0 ? t("uninvoiced sales", "مبيعات غير مفوترة") : diff < 0 ? t("over-invoiced", "فواتير تفوق المبيعات") : t("balanced", "متوازن")}
+              </span>
+            </div>
+          </div>
+        );
+      })()}
+
       {/* Tabs */}
       <div style={{ display: "flex", gap: ".35rem", marginBottom: "1rem", borderBottom: "1px solid var(--border-default)", paddingBottom: ".6rem" }}>
         {(["ALL", "SHIPMENT", "RECEIPT", "REGULAR"] as Tab[]).map(tb => {
@@ -370,11 +408,6 @@ export default function InvoiceManagement() {
         <Button size="sm" style={{ background: "#8b5cf6" }} onClick={() => { setSrForm(emptySR()); setCreateErr(""); setCreateType("RECEIPT"); }}>
           <PackageCheck size={13} className="me-1" />{t("+ Receipt", "+ استلام")}
         </Button>
-        {!isAdmin && (
-          <Button size="sm" variant="outline" onClick={() => { setRegForm(emptyRegular()); setCreateErr(""); setCreateType("REGULAR"); }}>
-            <Plus size={13} className="me-1" />{t("+ Regular", "+ عادي")}
-          </Button>
-        )}
       </div>
 
       {/* Invoice grid */}
@@ -410,10 +443,12 @@ export default function InvoiceManagement() {
                     </div>
                     <StatusBadge status={inv.paymentStatus} dueDate={inv.dueDate} />
                   </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: ".2rem", flexShrink: 0 }}>
-                    <button title={t("Edit","تعديل")} onClick={() => openEdit(inv)} style={{ width: 26, height: 26, display: "flex", alignItems: "center", justifyContent: "center", background: "none", border: "none", cursor: "pointer", color: "var(--text-secondary)", borderRadius: 6 }}><Edit3 size={13} /></button>
-                    {!isAdmin && <button title={t("Delete","حذف")} onClick={() => handleDelete(inv.id)} style={{ width: 26, height: 26, display: "flex", alignItems: "center", justifyContent: "center", background: "none", border: "none", cursor: "pointer", color: "#ef4444", borderRadius: 6 }}><Trash2 size={13} /></button>}
-                  </div>
+                  {!isAdmin && (
+                    <div style={{ display: "flex", alignItems: "center", gap: ".2rem", flexShrink: 0 }}>
+                      <button title={t("Edit","تعديل")} onClick={() => openEdit(inv)} style={{ width: 26, height: 26, display: "flex", alignItems: "center", justifyContent: "center", background: "none", border: "none", cursor: "pointer", color: "var(--text-secondary)", borderRadius: 6 }}><Edit3 size={13} /></button>
+                      <button title={t("Delete","حذف")} onClick={() => handleDelete(inv.id)} style={{ width: 26, height: 26, display: "flex", alignItems: "center", justifyContent: "center", background: "none", border: "none", cursor: "pointer", color: "#ef4444", borderRadius: 6 }}><Trash2 size={13} /></button>
+                    </div>
+                  )}
                 </div>
 
                 {/* Card body */}

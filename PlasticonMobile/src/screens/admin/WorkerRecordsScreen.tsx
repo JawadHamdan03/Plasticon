@@ -1,5 +1,8 @@
-import React, { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, FlatList, RefreshControl, StyleSheet, Text, View } from 'react-native';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  ActivityIndicator, FlatList, RefreshControl,
+  StyleSheet, Text, TextInput, TouchableOpacity, View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { api } from '../../api/client';
@@ -22,7 +25,6 @@ interface OverviewSummary {
   checklist: number;
   waste: number;
   target: number;
-  kaizen: number;
   quality: number;
   micro: number;
   anomaly: number;
@@ -38,7 +40,6 @@ function ItemCard({ item }: { item: WorkerItem }) {
     checklist: { icon: 'checkbox',     color: colors.success,  label: isAr ? 'قائمة تحقق' : 'Checklist' },
     waste:     { icon: 'trash',        color: colors.warning,  label: isAr ? 'هدر مواد' : 'Material Waste' },
     target:    { icon: 'flag',         color: colors.info,     label: isAr ? 'هدف يومي' : 'Daily Target' },
-    kaizen:    { icon: 'bulb',         color: colors.accent,   label: isAr ? 'كايزن' : 'Kaizen' },
     quality:   { icon: 'shield',       color: colors.primary,  label: isAr ? 'مشكلة جودة' : 'Quality Issue' },
     micro:     { icon: 'pause-circle', color: colors.warning,  label: isAr ? 'توقف مؤقت' : 'Micro Stop' },
     anomaly:   { icon: 'warning',      color: colors.danger,   label: isAr ? 'شذوذ' : 'Anomaly' },
@@ -60,30 +61,33 @@ function ItemCard({ item }: { item: WorkerItem }) {
           </View>
         </View>
         {item.title   && <Text style={[styles.title,   { color: colors.text }]}          numberOfLines={1}>{item.title}</Text>}
-        {item.details && <Text style={[styles.details, { color: colors.textSecondary }]} numberOfLines={1}>{item.details}</Text>}
+        {item.details && <Text style={[styles.details, { color: colors.textMuted }]} numberOfLines={1}>{item.details}</Text>}
         <Text style={[styles.date, { color: colors.textMuted }]}>{date}</Text>
       </View>
     </View>
   );
 }
 
+const FEATURE_KEYS = ['stops','checklist','waste','target','quality','micro','anomaly'] as const;
+
 export function WorkerRecordsScreen() {
   const { colors } = useAppTheme();
   const { isAr } = useLocale();
-  const [items, setItems]       = useState<WorkerItem[]>([]);
-  const [summary, setSummary]   = useState<OverviewSummary | null>(null);
-  const [loading, setLoading]   = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
+  const [items, setItems]             = useState<WorkerItem[]>([]);
+  const [summary, setSummary]         = useState<OverviewSummary | null>(null);
+  const [loading, setLoading]         = useState(true);
+  const [refreshing, setRefreshing]   = useState(false);
+  const [activeFeature, setActiveFeature] = useState<string | null>(null);
+  const [search, setSearch]           = useState('');
 
-  const FEATURE_META_SUMMARY: Record<string, { icon: string; color: string; label: string }> = {
-    stops:     { icon: 'stop-circle',  color: colors.danger,   label: isAr ? 'توقف آلة' : 'Machine Stop' },
-    checklist: { icon: 'checkbox',     color: colors.success,  label: isAr ? 'قائمة تحقق' : 'Checklist' },
-    waste:     { icon: 'trash',        color: colors.warning,  label: isAr ? 'هدر مواد' : 'Material Waste' },
-    target:    { icon: 'flag',         color: colors.info,     label: isAr ? 'هدف يومي' : 'Daily Target' },
-    kaizen:    { icon: 'bulb',         color: colors.accent,   label: isAr ? 'كايزن' : 'Kaizen' },
-    quality:   { icon: 'shield',       color: colors.primary,  label: isAr ? 'مشكلة جودة' : 'Quality Issue' },
-    micro:     { icon: 'pause-circle', color: colors.warning,  label: isAr ? 'توقف مؤقت' : 'Micro Stop' },
-    anomaly:   { icon: 'warning',      color: colors.danger,   label: isAr ? 'شذوذ' : 'Anomaly' },
+  const FEATURE_META: Record<string, { icon: string; color: string; label: string; labelAr: string }> = {
+    stops:     { icon: 'stop-circle',  color: colors.danger,   label: 'Machine Stop',  labelAr: 'توقف آلة' },
+    checklist: { icon: 'checkbox',     color: colors.success,  label: 'Checklist',     labelAr: 'قائمة تحقق' },
+    waste:     { icon: 'trash',        color: colors.warning,  label: 'Material Waste', labelAr: 'هدر مواد' },
+    target:    { icon: 'flag',         color: colors.info,     label: 'Daily Target',  labelAr: 'هدف يومي' },
+    quality:   { icon: 'shield',       color: colors.primary,  label: 'Quality Issue', labelAr: 'مشكلة جودة' },
+    micro:     { icon: 'pause-circle', color: colors.warning,  label: 'Micro Stop',    labelAr: 'توقف مؤقت' },
+    anomaly:   { icon: 'warning',      color: colors.danger,   label: 'Anomaly',       labelAr: 'شذوذ' },
   };
 
   const load = useCallback(async () => {
@@ -105,39 +109,87 @@ export function WorkerRecordsScreen() {
 
   useEffect(() => { void load(); }, [load]);
 
+  const filtered = useMemo(() => {
+    let result = items;
+    if (activeFeature) {
+      result = result.filter((i) => i.feature === activeFeature);
+    }
+    const q = search.trim().toLowerCase();
+    if (q) {
+      result = result.filter((i) => (i.worker_name ?? '').toLowerCase().includes(q) || (i.title ?? '').toLowerCase().includes(q));
+    }
+    return result;
+  }, [items, activeFeature, search]);
+
+  const FilterBar = (
+    <View style={styles.filterWrap}>
+      <View style={[styles.searchRow, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+        <Ionicons name="search-outline" size={16} color={colors.textMuted} />
+        <TextInput
+          style={[styles.searchInput, { color: colors.text }]}
+          placeholder={isAr ? 'بحث باسم العامل...' : 'Search worker name...'}
+          placeholderTextColor={colors.textMuted}
+          value={search}
+          onChangeText={setSearch}
+        />
+        {search.length > 0 && (
+          <TouchableOpacity onPress={() => setSearch('')}>
+            <Ionicons name="close-circle" size={16} color={colors.textMuted} />
+          </TouchableOpacity>
+        )}
+      </View>
+      <View style={styles.chipsRow}>
+        <TouchableOpacity
+          style={[styles.chip, !activeFeature && { backgroundColor: colors.primary }]}
+          onPress={() => setActiveFeature(null)}
+        >
+          <Text style={[styles.chipText, { color: !activeFeature ? '#fff' : colors.textMuted }]}>
+            {isAr ? 'الكل' : 'All'}
+          </Text>
+        </TouchableOpacity>
+        {FEATURE_KEYS.map((key) => {
+          const meta = FEATURE_META[key];
+          const active = activeFeature === key;
+          const count = summary ? (summary as any)[key] as number ?? 0 : 0;
+          if (summary && !count) return null;
+          return (
+            <TouchableOpacity
+              key={key}
+              style={[styles.chip, active && { backgroundColor: meta.color }]}
+              onPress={() => setActiveFeature(active ? null : key)}
+            >
+              <Ionicons name={meta.icon as any} size={11} color={active ? '#fff' : meta.color} />
+              <Text style={[styles.chipText, { color: active ? '#fff' : meta.color }]}>
+                {isAr ? meta.labelAr : meta.label}
+                {count ? ` (${count})` : ''}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+    </View>
+  );
+
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
       <ScreenHeader
         title={isAr ? 'سجلات العمال' : 'Worker Records'}
-        subtitle={summary ? `${summary.total} ${isAr ? 'مدخل' : 'entries'}` : `${items.length} ${isAr ? 'سجل' : 'records'}`}
+        subtitle={`${filtered.length} / ${items.length} ${isAr ? 'سجل' : 'records'}`}
         showBack
       />
       {loading ? <View style={styles.center}><ActivityIndicator size="large" color={colors.primary} /></View> : (
         <FlatList
-          data={items}
+          data={filtered}
           keyExtractor={(i) => `${i.feature}-${i.id}`}
           renderItem={({ item }) => <ItemCard item={item} />}
           contentContainerStyle={styles.list}
           showsVerticalScrollIndicator={false}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); void load(); }} tintColor={colors.primary} />}
-          ListHeaderComponent={summary ? (
-            <View style={styles.summaryWrap}>
-              {Object.entries(FEATURE_META_SUMMARY).map(([key, meta]) => {
-                const count = (summary as any)[key] as number ?? 0;
-                if (!count) return null;
-                return (
-                  <View key={key} style={[styles.summaryChip, { backgroundColor: `${meta.color}12` }]}>
-                    <Ionicons name={meta.icon as any} size={12} color={meta.color} />
-                    <Text style={[styles.summaryChipText, { color: meta.color }]}>{count} {meta.label}</Text>
-                  </View>
-                );
-              })}
-            </View>
-          ) : null}
+          ListHeaderComponent={FilterBar}
           ListEmptyComponent={
             <View style={styles.empty}>
               <Ionicons name="document-outline" size={44} color={colors.textMuted} />
-              <Text style={[styles.emptyText, { color: colors.textMuted }]}>{isAr ? 'لا توجد سجلات عمال' : 'No worker records'}</Text>
+              <Text style={[styles.emptyText, { color: colors.textMuted }]}>{isAr ? 'لا توجد سجلات' : 'No records found'}</Text>
             </View>
           }
         />
@@ -147,22 +199,27 @@ export function WorkerRecordsScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe:            { flex: 1 },
-  center:          { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  list:            { padding: spacing.md, paddingBottom: 40 },
-  summaryWrap:     { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.xs, marginBottom: spacing.md },
-  summaryChip:     { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 8, paddingVertical: 4, borderRadius: radius.full },
-  summaryChipText: { fontSize: 11, fontWeight: '700' },
-  card:            { flexDirection: 'row', alignItems: 'flex-start', borderRadius: radius.md, padding: spacing.md, marginBottom: spacing.sm, gap: spacing.sm, ...shadow.sm },
-  iconWrap:        { width: 36, height: 36, borderRadius: radius.sm, alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 2 },
-  cardBody:        { flex: 1 },
-  cardTop:         { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 3 },
-  worker:          { ...typography.h4, flex: 1 },
-  badge:           { paddingHorizontal: 7, paddingVertical: 2, borderRadius: radius.full, marginLeft: 4 },
-  badgeText:       { fontSize: 9, fontWeight: '800' },
-  title:           { ...typography.bodySmall, fontWeight: '600', marginBottom: 2 },
-  details:         { ...typography.caption, marginBottom: 2 },
-  date:            { ...typography.caption },
-  empty:           { alignItems: 'center', paddingTop: 60, gap: spacing.sm },
-  emptyText:       { ...typography.bodySmall },
+  safe:   { flex: 1 },
+  center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  list:   { padding: spacing.md, paddingBottom: 40 },
+
+  filterWrap:  { marginBottom: spacing.md, gap: spacing.sm },
+  searchRow:   { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, borderRadius: radius.md, borderWidth: 1, paddingHorizontal: spacing.sm, paddingVertical: 8 },
+  searchInput: { flex: 1, fontSize: 14, padding: 0 },
+  chipsRow:    { flexDirection: 'row', gap: spacing.xs, flexWrap: 'wrap' },
+  chip:        { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 5, borderRadius: radius.full, backgroundColor: '#e5e7eb' },
+  chipText:    { fontSize: 11, fontWeight: '700' },
+
+  card:      { flexDirection: 'row', alignItems: 'flex-start', borderRadius: radius.md, padding: spacing.md, marginBottom: spacing.sm, gap: spacing.sm, ...shadow.sm },
+  iconWrap:  { width: 36, height: 36, borderRadius: radius.sm, alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 2 },
+  cardBody:  { flex: 1 },
+  cardTop:   { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 3 },
+  worker:    { ...typography.h4, flex: 1 },
+  badge:     { paddingHorizontal: 7, paddingVertical: 2, borderRadius: radius.full, marginLeft: 4 },
+  badgeText: { fontSize: 9, fontWeight: '800' },
+  title:     { ...typography.bodySmall, fontWeight: '600', marginBottom: 2 },
+  details:   { ...typography.caption, marginBottom: 2 },
+  date:      { ...typography.caption },
+  empty:     { alignItems: 'center', paddingTop: 60, gap: spacing.sm },
+  emptyText: { ...typography.bodySmall },
 });

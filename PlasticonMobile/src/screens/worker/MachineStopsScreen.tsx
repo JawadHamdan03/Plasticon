@@ -350,25 +350,25 @@ export function MachineStopsScreen() {
                 numberOfLines={4}
               />
 
-              <View style={styles.actions}>
-                <TouchableOpacity
-                  style={[styles.cancelBtn, { borderColor: colors.border }]}
-                  onPress={handleClose}
-                >
-                  <Text style={[styles.cancelText, { color: colors.textMuted }]}>{isAr ? 'إلغاء' : 'Cancel'}</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.submitBtn, { backgroundColor: colors.danger }]}
-                  onPress={submit}
-                  disabled={saving}
-                >
-                  {saving
-                    ? <ActivityIndicator size="small" color="#fff" />
-                    : <Text style={styles.submitText}>{isAr ? 'إبلاغ' : 'Report'}</Text>
-                  }
-                </TouchableOpacity>
-              </View>
             </ScrollView>
+            <View style={styles.actions}>
+              <TouchableOpacity
+                style={[styles.cancelBtn, { borderColor: colors.border }]}
+                onPress={handleClose}
+              >
+                <Text style={[styles.cancelText, { color: colors.textMuted }]}>{isAr ? 'إلغاء' : 'Cancel'}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.submitBtn, { backgroundColor: colors.danger }]}
+                onPress={submit}
+                disabled={saving}
+              >
+                {saving
+                  ? <ActivityIndicator size="small" color="#fff" />
+                  : <Text style={styles.submitText}>{isAr ? 'إبلاغ' : 'Report'}</Text>
+                }
+              </TouchableOpacity>
+            </View>
           </View>
         </KeyboardAvoidingView>
       </Modal>
@@ -406,7 +406,7 @@ const styles = StyleSheet.create({
   overlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.45)' },
   sheet: {
     borderTopLeftRadius: radius.xl, borderTopRightRadius: radius.xl,
-    padding: spacing.lg, paddingBottom: 40, maxHeight: '90%',
+    padding: spacing.lg, paddingBottom: spacing.md, maxHeight: '90%', flexShrink: 1,
   },
   handle:     { width: 40, height: 4, borderRadius: 2, alignSelf: 'center', marginBottom: spacing.md },
   sheetTitle: { ...typography.h2, marginBottom: spacing.md },

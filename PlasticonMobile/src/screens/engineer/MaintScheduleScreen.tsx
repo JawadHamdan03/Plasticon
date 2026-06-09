@@ -83,8 +83,9 @@ export function MaintScheduleScreen() {
 
   const load = useCallback(async () => {
     try {
-      const res = await api.get<{ schedules: Schedule[] }>('/maintenance-schedule?limit=40');
-      setSchedules(res.schedules ?? []);
+      const res = await api.get<any>('/maintenance-schedule?limit=40');
+      const list: Schedule[] = Array.isArray(res) ? res : (res.schedules ?? res.data ?? res.items ?? []);
+      setSchedules(list);
     } finally {
       setLoading(false);
       setRefreshing(false);

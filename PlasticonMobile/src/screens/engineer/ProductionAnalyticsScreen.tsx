@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import { api } from '../../api/client';
 import { ScreenHeader, StatCard } from '../../components';
 import { radius, shadow, spacing, typography } from '../../theme';
@@ -41,12 +42,16 @@ export function ProductionAnalyticsScreen() {
   const [data, setData]         = useState<WeeklyReport | null>(null);
   const [loading, setLoading]   = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [error, setError]       = useState<string | null>(null);
 
   const load = useCallback(async () => {
+    setError(null);
     try {
-      const res = await api.get<WeeklyReport>('/reports/production/weekly');
-      setData(res);
-    } catch {
+      const res = await api.get<any>('/reports/production/weekly');
+      const report: WeeklyReport = res?.report ?? res?.data ?? res;
+      setData(report?.totals ? report : null);
+    } catch (err: any) {
+      setError(err?.message ?? 'Failed to load');
       setData(null);
     } finally {
       setLoading(false);
@@ -58,28 +63,50 @@ export function ProductionAnalyticsScreen() {
 
   const byMachine    = data?.byMachine ?? [];
   const byDay        = data?.byDay ?? [];
-  const maxMachProd  = Math.max(...byMachine.map((m) => m.totalPieces ?? 0), 0);
+  const maxMachProd  = byMachine.reduce((m, r) => Math.max(m, r.totalPieces ?? 0), 0);
   const topMachine   = [...byMachine].sort((a, b) => (b.totalPieces ?? 0) - (a.totalPieces ?? 0))[0]?.machineName ?? '—';
   const avgPerDay    = byDay.length > 0 ? Math.round((data?.totals.totalPieces ?? 0) / byDay.length) : 0;
+  const hasData      = (data?.totals.recordsCount ?? 0) > 0;
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
       <ScreenHeader title={isAr ? 'تحليلات الإنتاج' : 'Production Analytics'} showBack />
       {loading ? (
         <View style={styles.center}><ActivityIndicator size="large" color={colors.primary} /></View>
+      ) : error ? (
+        <View style={styles.center}>
+          <Ionicons name="cloud-offline-outline" size={48} color={colors.danger} />
+          <Text style={[styles.emptyTitle, { color: colors.text }]}>{isAr ? 'فشل التحميل' : 'Failed to Load'}</Text>
+          <Text style={[styles.emptyMsg, { color: colors.textMuted }]}>{error}</Text>
+          <TouchableOpacity style={[styles.retryBtn, { backgroundColor: colors.primary }]} onPress={() => { setLoading(true); void load(); }}>
+            <Text style={styles.retryText}>{isAr ? 'إعادة المحاولة' : 'Retry'}</Text>
+          </TouchableOpacity>
+        </View>
       ) : (
         <ScrollView
           contentContainerStyle={styles.content}
           showsVerticalScrollIndicator={false}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); void load(); }} tintColor={colors.primary} />}
         >
+          {!hasData && (
+            <View style={[styles.emptyCard, { backgroundColor: colors.surface }]}>
+              <Ionicons name="bar-chart-outline" size={44} color={colors.textMuted} />
+              <Text style={[styles.emptyTitle, { color: colors.text }]}>
+                {isAr ? 'لا توجد بيانات هذا الأسبوع' : 'No Data This Week'}
+              </Text>
+              <Text style={[styles.emptyMsg, { color: colors.textMuted }]}>
+                {isAr ? 'لم يتم تسجيل أي بيانات إنتاج للأسبوع الحالي' : 'No production records have been logged for the current week'}
+              </Text>
+            </View>
+          )}
+
           <View style={styles.kpiRow}>
             <StatCard label={isAr ? 'إجمالي القطع'    : 'Total Pieces'} value={(data?.totals.totalPieces ?? 0).toLocaleString()} icon="cube"          color={colors.primary} style={styles.kpi} />
             <StatCard label={isAr ? 'متوسط / يوم'     : 'Avg / Day'}    value={avgPerDay.toLocaleString()}                       icon="analytics"     color={colors.info}    style={styles.kpi} />
           </View>
           <View style={styles.kpiRow}>
             <StatCard label={isAr ? 'إجمالي السجلات'  : 'Total Logs'}   value={String(data?.totals.recordsCount ?? 0)}           icon="list"          color={colors.accent}  style={styles.kpi} />
-            <StatCard label={isAr ? 'أعلى آلة'        : 'Top Machine'}  value={topMachine}                                       icon="hardware-chip" color={colors.success} style={styles.kpi} />
+            <StatCard label={isAr ? 'أعلى آلة'        : 'Top Machine'}  value={hasData ? topMachine : '—'}                       icon="hardware-chip" color={colors.success} style={styles.kpi} />
           </View>
 
           {byMachine.length > 0 && (
@@ -100,8 +127,8 @@ export function ProductionAnalyticsScreen() {
               </Text>
               {byDay.map((t) => (
                 <View key={t.date} style={[styles.trendRow, { borderBottomColor: colors.border }]}>
-                  <Text style={[styles.trendDate, { color: colors.textSecondary }]}>
-                    {new Date(t.date).toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' })}
+                  <Text style={[styles.trendDate, { color: colors.textMuted }]}>
+                    {new Date(t.date + 'T12:00:00').toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' })}
                   </Text>
                   <Text style={[styles.trendVal, { color: colors.primary }]}>
                     {(t.totalPieces ?? 0).toLocaleString()} {isAr ? 'وحدات' : 'units'}
@@ -132,4 +159,10 @@ const styles = StyleSheet.create({
   trendRow:     { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 8, borderBottomWidth: 1 },
   trendDate:    { ...typography.bodySmall },
   trendVal:     { ...typography.bodySmall, fontWeight: '700' },
+
+  emptyCard:  { borderRadius: radius.lg, padding: spacing.xl, alignItems: 'center', gap: spacing.sm, marginBottom: spacing.md, ...shadow.sm },
+  emptyTitle: { ...typography.h4, marginTop: 4, textAlign: 'center' },
+  emptyMsg:   { ...typography.bodySmall, textAlign: 'center', lineHeight: 20 },
+  retryBtn:   { marginTop: spacing.sm, paddingHorizontal: spacing.lg, paddingVertical: 10, borderRadius: radius.full },
+  retryText:  { color: '#fff', fontWeight: '700', fontSize: 14 },
 });

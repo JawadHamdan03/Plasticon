@@ -13,7 +13,7 @@ import {
 
 const router = Router();
 
-const allRoles = [UserRole.WORKER, UserRole.ENGINEER, UserRole.ACCOUNTANT, UserRole.ADMIN];
+const allRoles = [UserRole.WORKER, UserRole.ENGINEER, UserRole.ACCOUNTANT, UserRole.ADMIN, UserRole.SALES_REP];
 
 router.get("/", authorizeRoles(allRoles), getMyNotificationsHandler);
 router.get("/unread-count", authorizeRoles(allRoles), getUnreadNotificationCountHandler);

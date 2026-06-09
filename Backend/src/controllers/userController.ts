@@ -8,7 +8,8 @@ import {
 } from "../services/userServices";
 
 export const getUsers = async (req: Request, res: Response) => {
-  const result = await getUsersService();
+  const role = typeof req.query.role === "string" ? req.query.role : undefined;
+  const result = await getUsersService(role);
   res.status(result.status).send(result.data);
 };
 

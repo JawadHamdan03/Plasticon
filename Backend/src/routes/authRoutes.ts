@@ -52,6 +52,7 @@ router.post(
     UserRole.ENGINEER,
     UserRole.ACCOUNTANT,
     UserRole.ADMIN,
+    UserRole.SALES_REP,
   ]),
   logoutHandler,
 );

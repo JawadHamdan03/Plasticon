@@ -32,6 +32,7 @@ interface User {
   role?: string;
   isActive?: boolean;
   department?: string;
+  phone?: string | null;
   shiftId?: number | null;
   createdAt: string;
 }
@@ -44,7 +45,7 @@ interface Shift {
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const ROLES = ['WORKER', 'ENGINEER', 'ACCOUNTANT', 'ADMIN'] as const;
+const ROLES = ['WORKER', 'ENGINEER', 'ACCOUNTANT', 'ADMIN', 'SALES_REP'] as const;
 type Role = typeof ROLES[number];
 
 // ─── Edit Modal ───────────────────────────────────────────────────────────────
@@ -66,16 +67,25 @@ function EditModal({ user, shifts, visible, onClose, onSaved }: EditModalProps) 
     ENGINEER:   colors.info,
     ACCOUNTANT: colors.success,
     WORKER:     colors.accent,
+    SALES_REP:  colors.primary,
   };
 
-  const [role, setRole]       = useState<Role>('WORKER');
-  const [shiftId, setShiftId] = useState('');
-  const [saving, setSaving]   = useState(false);
+  const [role, setRole]           = useState<Role>('WORKER');
+  const [shiftId, setShiftId]     = useState('');
+  const [fullName, setFullName]   = useState('');
+  const [phone, setPhone]         = useState('');
+  const [department, setDepartment] = useState('');
+  const [isActive, setIsActive]   = useState(true);
+  const [saving, setSaving]       = useState(false);
 
   useEffect(() => {
     if (user) {
       setRole((user.role as Role) ?? 'WORKER');
       setShiftId(user.shiftId != null ? String(user.shiftId) : '');
+      setFullName(user.fullName ?? '');
+      setPhone(user.phone ?? '');
+      setDepartment(user.department ?? '');
+      setIsActive(user.isActive !== false);
     }
   }, [user]);
 
@@ -83,9 +93,19 @@ function EditModal({ user, shifts, visible, onClose, onSaved }: EditModalProps) 
 
   async function save() {
     if (!user) return;
+    if (!fullName.trim()) {
+      Alert.alert(isAr ? 'تحقق' : 'Validation', isAr ? 'الاسم الكامل مطلوب' : 'Full name is required');
+      return;
+    }
     setSaving(true);
     try {
-      const body: { role: string; shiftId?: number | null } = { role };
+      const body: Record<string, unknown> = {
+        role,
+        fullName: fullName.trim(),
+        phone:       phone.trim()      || null,
+        department:  department.trim() || null,
+        isActive,
+      };
       if (needsShift) {
         body.shiftId = shiftId.trim() ? Number(shiftId) : null;
       } else {
@@ -114,8 +134,63 @@ function EditModal({ user, shifts, visible, onClose, onSaved }: EditModalProps) 
 
           <Text style={[styles.sheetTitle, { color: colors.text }]}>{isAr ? 'تعديل المستخدم' : 'Edit User'}</Text>
           {user && (
-            <Text style={[styles.sheetSub, { color: colors.textMuted }]}>{user.fullName} · {user.email}</Text>
+            <Text style={[styles.sheetSub, { color: colors.textMuted }]}>{user.email}</Text>
           )}
+
+          <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+          {/* Full name */}
+          <Text style={[styles.label, { color: colors.text }]}>{isAr ? 'الاسم الكامل' : 'Full Name'}</Text>
+          <TextInput
+            style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
+            value={fullName}
+            onChangeText={setFullName}
+            placeholder={isAr ? 'الاسم الكامل' : 'Full name'}
+            placeholderTextColor={colors.textMuted}
+          />
+
+          {/* Phone */}
+          <Text style={[styles.label, { color: colors.text }]}>{isAr ? 'الهاتف' : 'Phone'}</Text>
+          <TextInput
+            style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
+            value={phone}
+            onChangeText={setPhone}
+            placeholder={isAr ? 'رقم الهاتف' : 'Phone number'}
+            placeholderTextColor={colors.textMuted}
+            keyboardType="phone-pad"
+          />
+
+          {/* Department */}
+          <Text style={[styles.label, { color: colors.text }]}>{isAr ? 'القسم' : 'Department'}</Text>
+          <TextInput
+            style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
+            value={department}
+            onChangeText={setDepartment}
+            placeholder={isAr ? 'اسم القسم' : 'Department name'}
+            placeholderTextColor={colors.textMuted}
+          />
+
+          {/* Active status toggle */}
+          <Text style={[styles.label, { color: colors.text }]}>{isAr ? 'الحالة' : 'Status'}</Text>
+          <View style={styles.toggleRow}>
+            <TouchableOpacity
+              style={[styles.toggleBtn, isActive && { backgroundColor: colors.success, borderColor: colors.success }]}
+              onPress={() => setIsActive(true)}
+              activeOpacity={0.75}
+            >
+              <Text style={[styles.toggleText, { color: isActive ? colors.textInverse : colors.textSecondary }]}>
+                {isAr ? 'نشط' : 'Active'}
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.toggleBtn, !isActive && { backgroundColor: colors.danger, borderColor: colors.danger }]}
+              onPress={() => setIsActive(false)}
+              activeOpacity={0.75}
+            >
+              <Text style={[styles.toggleText, { color: !isActive ? colors.textInverse : colors.textSecondary }]}>
+                {isAr ? 'غير نشط' : 'Inactive'}
+              </Text>
+            </TouchableOpacity>
+          </View>
 
           {/* Role picker */}
           <Text style={[styles.label, { color: colors.text }]}>{isAr ? 'الدور' : 'Role'}</Text>
@@ -167,6 +242,7 @@ function EditModal({ user, shifts, visible, onClose, onSaved }: EditModalProps) 
           <TouchableOpacity style={styles.cancelBtn} onPress={onClose} activeOpacity={0.7}>
             <Text style={[styles.cancelText, { color: colors.textMuted }]}>{isAr ? 'إلغاء' : 'Cancel'}</Text>
           </TouchableOpacity>
+          </ScrollView>
         </View>
       </KeyboardAvoidingView>
     </Modal>
@@ -189,6 +265,7 @@ function UserCard({ item, onEdit }: UserCardProps) {
     ENGINEER:   colors.info,
     ACCOUNTANT: colors.success,
     WORKER:     colors.accent,
+    SALES_REP:  colors.primary,
   };
 
   const roleColor = ROLE_COLOR[item.role ?? ''] ?? colors.textMuted;
@@ -343,10 +420,10 @@ const styles = StyleSheet.create({
   // Modal sheet
   backdrop:        { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.45)' },
   sheetWrap:       { flex: 1, justifyContent: 'flex-end' },
-  sheet:           { borderTopLeftRadius: radius.xl, borderTopRightRadius: radius.xl, padding: spacing.lg, paddingBottom: spacing.xxl, ...shadow.lg },
+  sheet:           { borderTopLeftRadius: radius.xl, borderTopRightRadius: radius.xl, padding: spacing.lg, maxHeight: '90%', ...shadow.lg },
   handle:          { width: 40, height: 4, borderRadius: 2, alignSelf: 'center', marginBottom: spacing.md },
   sheetTitle:      { ...typography.h2, marginBottom: 4 },
-  sheetSub:        { ...typography.bodySmall, marginBottom: spacing.lg },
+  sheetSub:        { ...typography.bodySmall, marginBottom: spacing.md },
 
   // Form
   label:           { ...typography.sectionLabel, marginBottom: spacing.xs, marginTop: spacing.md },
@@ -354,11 +431,14 @@ const styles = StyleSheet.create({
   roleRow:         { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginTop: 2 },
   roleChip:        { paddingHorizontal: 14, paddingVertical: 7, borderRadius: radius.full, borderWidth: 1.5 },
   roleChipText:    { fontSize: 12, fontWeight: '700' },
+  toggleRow:       { flexDirection: 'row', gap: spacing.sm, marginTop: 2 },
+  toggleBtn:       { flex: 1, paddingVertical: 10, borderRadius: radius.md, borderWidth: 1.5, alignItems: 'center', borderColor: '#e2e8f0', backgroundColor: '#f8fafc' },
+  toggleText:      { fontSize: 13, fontWeight: '700' },
 
   // Buttons
   saveBtn:         { borderRadius: radius.md, paddingVertical: 14, alignItems: 'center', marginTop: spacing.lg },
   saveBtnDisabled: { opacity: 0.6 },
   saveBtnText:     { fontSize: 15, fontWeight: '700' },
-  cancelBtn:       { alignItems: 'center', paddingVertical: 12, marginTop: spacing.sm },
+  cancelBtn:       { alignItems: 'center', paddingVertical: 12, marginTop: spacing.sm, marginBottom: spacing.lg },
   cancelText:      { ...typography.body },
 });

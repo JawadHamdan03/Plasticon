@@ -385,46 +385,6 @@ export const createSettingsSnapshot = async (
 
   await ensureSnapshotsTable();
 
-  if (userId) {
-    const userWithShift = await prisma.user.findUnique({
-      where: { id: userId },
-      include: { shift: true },
-    });
-
-    if (userWithShift?.shift) {
-      const now = new Date();
-      const shiftStart = new Date(userWithShift.shift.startTime);
-      const shiftEnd = new Date(userWithShift.shift.endTime);
-
-      const minutesOfDay = (d: Date) => d.getHours() * 60 + d.getMinutes();
-
-      const windowStart = new Date(now);
-      windowStart.setHours(0, 0, 0, 0);
-      windowStart.setTime(windowStart.getTime() + minutesOfDay(shiftStart) * 60000);
-
-      const windowEnd = new Date(now);
-      windowEnd.setHours(0, 0, 0, 0);
-      windowEnd.setTime(windowEnd.getTime() + minutesOfDay(shiftEnd) * 60000);
-      if (windowEnd <= windowStart) windowEnd.setDate(windowEnd.getDate() + 1);
-
-      const existing = await prisma.$queryRaw<Array<{ count: bigint }>>`
-        SELECT COUNT(*)::bigint AS count
-        FROM operation_snapshots
-        WHERE created_by_id = ${userId}
-          AND created_at >= ${windowStart}
-          AND created_at < ${windowEnd}
-      `;
-
-      if (Number(existing[0]?.count ?? 0) > 0) {
-        return {
-          status: 409,
-          message:
-            "لديك قراءة مسجلة بالفعل لهذه الوردية. / You already have a snapshot recorded for this shift.",
-        };
-      }
-    }
-  }
-
   const inserted = await prisma.$queryRaw<SnapshotRow[]>`
     INSERT INTO operation_snapshots (
       machine_label,

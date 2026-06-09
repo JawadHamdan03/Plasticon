@@ -32,6 +32,7 @@ const allRoles = [
   UserRole.ENGINEER,
   UserRole.ACCOUNTANT,
   UserRole.ADMIN,
+  UserRole.SALES_REP,
 ];
 
 // Calculate payroll from attendance for a user — ACCOUNTANT/ADMIN only

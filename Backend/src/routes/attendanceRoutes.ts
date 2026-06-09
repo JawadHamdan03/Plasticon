@@ -41,6 +41,7 @@ router.post(
     UserRole.ENGINEER,
     UserRole.ACCOUNTANT,
     UserRole.ADMIN,
+    UserRole.SALES_REP,
   ]),
   checkInHandler,
 );
@@ -52,6 +53,7 @@ router.post(
     UserRole.ENGINEER,
     UserRole.ACCOUNTANT,
     UserRole.ADMIN,
+    UserRole.SALES_REP,
   ]),
   checkOutHandler,
 );
@@ -63,6 +65,7 @@ router.get(
     UserRole.ENGINEER,
     UserRole.ACCOUNTANT,
     UserRole.ADMIN,
+    UserRole.SALES_REP,
   ]),
   getMyAttendances,
 );

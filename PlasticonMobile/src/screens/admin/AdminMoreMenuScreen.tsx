@@ -47,6 +47,53 @@ export function AdminMoreMenuScreen() {
       ],
     },
     {
+      title: isAr ? 'مندوبو المبيعات' : 'Sales Reps',
+      items: [
+        {
+          icon: 'trending-up',
+          label: isAr ? 'لوحة المندوب' : 'Sales Dashboard',
+          desc:  isAr ? 'نظرة عامة على أداء المندوبين' : 'Sales rep performance overview',
+          screen: 'SalesRepDash',
+          color: '#ec4899',
+        },
+        {
+          icon: 'people',
+          label: isAr ? 'عملاء المندوبين' : 'Rep Customers',
+          desc:  isAr ? 'جميع عملاء المندوبين' : 'All sales rep customers',
+          screen: 'SalesRepCustomers',
+          color: '#8b5cf6',
+        },
+        {
+          icon: 'document-text',
+          label: isAr ? 'عروض الأسعار' : 'Quotations',
+          desc:  isAr ? 'جميع عروض الأسعار' : 'All quotations from all reps',
+          screen: 'SalesRepQuotations',
+          color: '#3b82f6',
+        },
+        {
+          icon: 'location',
+          label: isAr ? 'سجل الزيارات' : 'Visit Log',
+          desc:  isAr ? 'جميع زيارات العملاء' : 'All customer visit records',
+          screen: 'SalesRepVisits',
+          color: '#10b981',
+        },
+        {
+          icon: 'flag',
+          label: isAr ? 'الأهداف' : 'Targets',
+          desc:  isAr ? 'أهداف المبيعات والإنجازات' : 'Sales targets and achievements',
+          screen: 'SalesRepTargets',
+          color: '#f59e0b',
+        },
+        {
+          icon: 'checkmark-circle',
+          label: isAr ? 'مراجعة الطلبات' : 'Rep Requests',
+          desc:  isAr ? 'مراجعة وموافقة طلبات المندوبين' : 'Review and approve rep requests',
+          screen: 'SalesReview',
+          color: '#ef4444',
+        },
+      ],
+    },
+    {
       title: isAr ? 'أدوات الذكاء الاصطناعي' : 'AI Tools',
       items: [
         {
@@ -102,13 +149,6 @@ export function AdminMoreMenuScreen() {
           desc:  isAr ? 'جميع إجراءات النظام وسجل التدقيق' : 'All system actions and audit trail',
           screen: 'AuditLogs',
           color: colors.info,
-        },
-        {
-          icon: 'camera',
-          label: isAr ? 'لقطات المدير' : 'Admin Snapshots',
-          desc:  isAr ? 'اللقطات والأرشيفات الإدارية' : 'Administrative snapshots and archives',
-          screen: 'AdminSnaps',
-          color: colors.textMuted,
         },
         {
           icon: 'settings',

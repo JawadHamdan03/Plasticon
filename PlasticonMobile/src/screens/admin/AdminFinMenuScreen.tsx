@@ -43,8 +43,6 @@ export function AdminFinMenuScreen() {
         { icon: 'cart',            label: isAr ? 'المشتريات' : 'Purchases',               desc: isAr ? 'أوامر الشراء والمشتريات' : 'Purchase orders and procurement',                 screen: 'Purchases',           color: colors.primary },
         { icon: 'trending-up',     label: isAr ? 'المبيعات' : 'Sales',                    desc: isAr ? 'طلبات البيع وتتبع الإيرادات' : 'Sales orders and revenue tracking',           screen: 'Sales',               color: colors.success },
         { icon: 'cube',            label: isAr ? 'المخزون' : 'Inventory',                 desc: isAr ? 'مستويات المخزون وإدارته' : 'Stock levels and inventory management',          screen: 'Inventory',           color: colors.accent },
-        { icon: 'business',        label: isAr ? 'المستودع' : 'Warehouse',                desc: isAr ? 'تخطيط المستودع ومواقع التخزين' : 'Warehouse layout and storage locations',   screen: 'Warehouse',           color: colors.textMuted },
-        { icon: 'star',            label: isAr ? 'أداء الموظفين' : 'Employee Performance', desc: isAr ? 'مراجعات الأداء والتقييمات' : 'Performance reviews and evaluations',        screen: 'EmployeePerformance', color: colors.roleEngineer },
       ],
     },
   ];

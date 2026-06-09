@@ -70,8 +70,8 @@ export function PurchasesScreen() {
 
   const load = useCallback(async () => {
     try {
-      const res = await api.get<Purchase[]>('/purchases/all');
-      setItems(Array.isArray(res) ? res : []);
+      const res = await api.get<any>('/purchases/all');
+      setItems(Array.isArray(res) ? res : (res?.data ?? res?.items ?? res?.purchases ?? []));
     } catch {
       setItems([]);
     } finally {

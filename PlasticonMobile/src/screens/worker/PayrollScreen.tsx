@@ -39,7 +39,7 @@ function fmtTime(iso?: string | null) {
 }
 
 const ROLE_COLORS: Record<string, string> = {
-  WORKER: '#3B82F6', ENGINEER: '#10B981', ACCOUNTANT: '#F97316', ADMIN: '#EF4444',
+  WORKER: '#3B82F6', ENGINEER: '#10B981', ACCOUNTANT: '#F97316', ADMIN: '#EF4444', SALES_REP: '#8b5cf6',
 };
 
 const TABS: { key: PayrollTab; labelEn: string; labelAr: string; icon: string }[] = [

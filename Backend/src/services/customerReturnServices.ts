@@ -38,7 +38,7 @@ export const createCustomerReturn = async (
   payload: Record<string, unknown>,
 ): Promise<ServiceResult<unknown>> => {
   try {
-    const { customerName, customerId, productType, quantity, returnDate, notes } = payload;
+    const { customerName, customerId, productType, quantity, returnDate, notes, invoicePdf } = payload;
 
     if (!customerName || typeof customerName !== "string")
       return { status: 400, message: "customerName is required" };
@@ -57,6 +57,7 @@ export const createCustomerReturn = async (
         quantity: Number(quantity),
         returnDate: new Date(String(returnDate)),
         notes: notes ? String(notes).trim() : null,
+        invoicePdf: invoicePdf ? String(invoicePdf) : null,
         recordedById,
       },
       include: RETURN_INCLUDE,
@@ -76,7 +77,7 @@ export const updateCustomerReturn = async (
     const existing = await prisma.customerReturn.findUnique({ where: { id }, select: { id: true } });
     if (!existing) return { status: 404, message: "Return record not found" };
 
-    const { customerName, productType, quantity, returnDate, notes } = payload;
+    const { customerName, productType, quantity, returnDate, notes, invoicePdf } = payload;
     const updated = await prisma.customerReturn.update({
       where: { id },
       data: {
@@ -85,6 +86,7 @@ export const updateCustomerReturn = async (
         ...(quantity !== undefined ? { quantity: Number(quantity) } : {}),
         ...(returnDate ? { returnDate: new Date(String(returnDate)) } : {}),
         ...(notes !== undefined ? { notes: notes ? String(notes).trim() : null } : {}),
+        ...(invoicePdf !== undefined ? { invoicePdf: String(invoicePdf) } : {}),
       },
       include: RETURN_INCLUDE,
     });

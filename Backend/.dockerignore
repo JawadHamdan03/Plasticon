@@ -10,3 +10,4 @@ scripts
 tests
 docs
 prisma/pictures
+src/config/generated

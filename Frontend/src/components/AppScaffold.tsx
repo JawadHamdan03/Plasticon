@@ -72,6 +72,13 @@ const ALL_SEARCH_ITEMS: SearchItem[] = [
   { labelAr: "تكاليف الصيانة", labelEn: "Maintenance Costs", to: "/engineer/maintenance-costs" },
   { labelAr: "إدارة الموردين", labelEn: "Supplier Management", to: "/accountant/suppliers" },
   { labelAr: "أداء الموظفين", labelEn: "Employee Performance", to: "/accountant/performance" },
+  // Sales Rep
+  { labelAr: "لوحة المندوب",    labelEn: "Sales Dashboard",  to: "/sales-rep" },
+  { labelAr: "عملاء المندوب",   labelEn: "My Customers",     to: "/sales-rep/customers" },
+  { labelAr: "عروض الأسعار",    labelEn: "Quotations",       to: "/sales-rep/quotations" },
+  { labelAr: "سجل الزيارات",    labelEn: "Visit Log",        to: "/sales-rep/visits" },
+  { labelAr: "أهداف المبيعات",  labelEn: "Sales Targets",    to: "/sales-rep/targets" },
+  { labelAr: "طلبات المندوبين", labelEn: "Rep Requests",     to: "/sales-rep/review" },
   // AI Tools
   { labelAr: "أدوات الذكاء الاصطناعي", labelEn: "AI Tools Hub", to: "/ai" },
   { labelAr: "استخراج الفواتير بالذكاء الاصطناعي", labelEn: "AI Invoice Extraction", to: "/ai/invoice-extract" },
@@ -150,6 +157,15 @@ function getNavSectionsBi(role: string): NavSectionBi[] {
           { to: "/accountant/suppliers", icon: <Truck size={17} />, label: nav("Suppliers", "الموردون") },
           { to: "/accountant/performance", icon: <Award size={17} />, label: nav("Performance", "الأداء") },
           { to: "/accountant/customer-returns", icon: <Package size={17} />, label: nav("Cust. Returns", "مرتجعات العملاء") },
+        ],
+      },
+      {
+        label: nav("Sales Reps", "مندوبو المبيعات"),
+        items: [
+          { to: "/sales-rep/customers",  icon: <Users         size={17} />, label: nav("Customers",      "العملاء") },
+          { to: "/sales-rep/quotations", icon: <FileText      size={17} />, label: nav("All Quotations", "كل العروض") },
+          { to: "/sales-rep/visits",     icon: <ClipboardList size={17} />, label: nav("All Visits",     "كل الزيارات") },
+          { to: "/sales-rep/targets",    icon: <Target        size={17} />, label: nav("All Targets",    "كل الأهداف") },
         ],
       },
       {
@@ -275,6 +291,15 @@ function getNavSectionsBi(role: string): NavSectionBi[] {
         ],
       },
       {
+        label: nav("Sales Reps", "مندوبو المبيعات"),
+        items: [
+          { to: "/sales-rep/review",         icon: <CheckCircle   size={17} />, label: nav("Rep Requests",   "طلبات المندوبين") },
+          { to: "/sales-rep/quotations", icon: <FileText      size={17} />, label: nav("All Quotations", "كل العروض") },
+          { to: "/sales-rep/visits",     icon: <ClipboardList size={17} />, label: nav("All Visits",     "كل الزيارات") },
+          { to: "/sales-rep/targets",    icon: <Target        size={17} />, label: nav("All Targets",    "كل الأهداف") },
+        ],
+      },
+      {
         label: nav("HR", "الموارد البشرية"),
         items: [
           { to: "/admin/attendance", icon: <UserCheck size={17} />, label: nav("Attendance", "الحضور") },
@@ -296,6 +321,37 @@ function getNavSectionsBi(role: string): NavSectionBi[] {
           { to: "/my-payroll", icon: <Receipt size={17} />, label: nav("My Payroll", "راتبي") },
           { to: "/notifications", icon: <Bell size={17} />, label: nav("Notifications", "الإشعارات") },
           { to: "/chat", icon: <MessageSquare size={17} />, label: nav("Chat", "الدردشة") },
+        ],
+      },
+    ];
+  }
+
+  // SALES_REP
+  if (role === "SALES_REP") {
+    return [
+      {
+        label: nav("Overview", "نظرة عامة"),
+        items: [
+          { to: "/sales-rep",                    icon: <LayoutDashboard size={17} />, label: nav("Dashboard",    "لوحة المندوب") },
+        ],
+      },
+      {
+        label: nav("Sales", "المبيعات"),
+        items: [
+          { to: "/sales-rep/customers",  icon: <Users         size={17} />, label: nav("My Customers", "عملائي") },
+          { to: "/sales-rep/quotations", icon: <FileText      size={17} />, label: nav("Quotations",   "عروض الأسعار") },
+          { to: "/sales-rep/visits",     icon: <ClipboardList size={17} />, label: nav("Visit Log",    "سجل الزيارات") },
+          { to: "/sales-rep/targets",    icon: <Target        size={17} />, label: nav("Targets",      "الأهداف") },
+          { to: "/sales",                    icon: <TrendingUp    size={17} />, label: nav("Sales Orders", "طلبات المبيعات") },
+        ],
+      },
+      {
+        label: nav("Personal", "الشخصية"),
+        items: [
+          { to: "/attendance",    icon: <UserCheck     size={17} />, label: nav("My Attendance", "حضوري") },
+          { to: "/my-payroll",    icon: <DollarSign    size={17} />, label: nav("My Payroll",    "راتبي") },
+          { to: "/notifications", icon: <Bell          size={17} />, label: nav("Notifications", "الإشعارات") },
+          { to: "/chat",          icon: <MessageSquare size={17} />, label: nav("Chat",          "الدردشة") },
         ],
       },
     ];
@@ -348,6 +404,7 @@ function roleLabel(role: string, locale: string) {
     ENGINEER: { en: "Engineer", ar: "مهندس" },
     ACCOUNTANT: { en: "Accountant", ar: "محاسب" },
     WORKER: { en: "Worker", ar: "عامل" },
+    SALES_REP: { en: "Sales Rep", ar: "مندوب مبيعات" },
   };
   const entry = map[role];
   if (!entry) return role;
@@ -390,13 +447,18 @@ export function AppScaffold({ children }: { children: ReactNode }) {
     const q = searchQuery.trim().toLowerCase();
     const allowed = ALL_SEARCH_ITEMS.filter((item) => {
       if (item.to.startsWith("/admin")) return role === "ADMIN" || role === "ACCOUNTANT";
-      if (["/inventory", "/purchases", "/sales", "/reports"].includes(item.to))
+      if (item.to === "/inventory" || item.to === "/purchases" || item.to === "/reports")
         return role === "ADMIN" || role === "ACCOUNTANT";
+      if (item.to === "/sales") return role === "ADMIN" || role === "ACCOUNTANT" || role === "SALES_REP";
       if (item.to.startsWith("/worker/")) return role === "WORKER";
       if (item.to === "/engineer/snapshots") return role === "ENGINEER";
       if (item.to === "/engineer/support-machines") return role === "ENGINEER" || role === "WORKER";
       if (item.to === "/admin/support-machines") return role === "ADMIN";
       if (item.to === "/accountant/financial-reports") return role === "ACCOUNTANT";
+      if (item.to.startsWith("/accountant/")) return role === "ACCOUNTANT" || role === "ADMIN";
+      if (item.to.startsWith("/engineer/")) return role === "ENGINEER" || role === "ADMIN";
+      if (item.to === "/sales-rep/review") return role === "ACCOUNTANT" || role === "ADMIN";
+      if (item.to.startsWith("/sales-rep")) return role === "SALES_REP" || role === "ADMIN";
       return true;
     });
     if (!q) return allowed.slice(0, 6);
@@ -504,10 +566,9 @@ export function AppScaffold({ children }: { children: ReactNode }) {
 
   const isActive = (to: string) => {
     const path = to.split("?")[0].split("#")[0];
-    return (
-      location.pathname === path ||
-      (path !== "/dashboard" && location.pathname.startsWith(path))
-    );
+    const exactOnly = ["/dashboard", "/sales-rep"];
+    if (exactOnly.includes(path)) return location.pathname === path;
+    return location.pathname === path || location.pathname.startsWith(path + "/");
   };
 
   const fmt = (v: string) =>

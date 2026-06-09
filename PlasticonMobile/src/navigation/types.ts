@@ -22,13 +22,15 @@ export type WorkerTabParamList = {
 
 // Worker — Overview tab (dashboard)
 export type WorkerOverviewStackParamList = {
-  WorkerHub:    undefined;
+  WorkerHub:         undefined;
   // Quick-action shortcuts — pushed from hub so back returns to WorkerHub
-  Production:   undefined;
-  Snapshots:    undefined;
-  MachineStops: undefined;
-  Attendance:   undefined;
-  Payroll:      undefined;
+  Production:        undefined;
+  Snapshots:         undefined;
+  MachineStops:      undefined;
+  Attendance:        undefined;
+  Payroll:           undefined;
+  KaizenIdeas:       undefined;
+  ElectricityRecord: undefined;
 };
 
 // Worker — Work tab (11 features)
@@ -156,6 +158,7 @@ export type AccountantFinanceStackParamList = {
   EmployeePerformance: undefined;
   MaintCosts:          undefined;
   Electricity:         undefined;
+  SalesReview:         undefined;
 };
 
 export type AccountantHRStackParamList = {
@@ -198,17 +201,18 @@ export type AdminDashStackParamList = {
 };
 
 export type AdminOpsStackParamList = {
-  AdminOpsMenu:    undefined;
-  Production:      undefined;
-  Consumption:     undefined;
-  AttendanceAdmin: undefined;
-  PayrollAdmin:    undefined;
-  WorkerRecords:   undefined;
-  Snapshots:       undefined;
-  Electricity:     undefined;
-  Machines:        undefined;
-  Shifts:          undefined;
-  MachineStops:    undefined;
+  AdminOpsMenu:      undefined;
+  Production:        undefined;
+  Consumption:       undefined;
+  AttendanceAdmin:   undefined;
+  PayrollAdmin:      undefined;
+  WorkerRecords:     undefined;
+  Snapshots:         undefined;
+  Electricity:       undefined;
+  Machines:          undefined;
+  Shifts:            undefined;
+  MachineStops:      undefined;
+  ElectricityRecord: undefined;
 };
 
 export type AdminFinStackParamList = {
@@ -227,7 +231,6 @@ export type AdminFinStackParamList = {
   PartsPricing:        undefined;
   ApprovalWorkflows:   undefined;
   EmployeePerformance: undefined;
-  Warehouse:           undefined;
   Inventory:           undefined;
   Purchases:           undefined;
   Sales:               undefined;
@@ -242,12 +245,10 @@ export type AdminEngStackParamList = {
   MaintCosts:          undefined;
   MachineHealth:       undefined;
   SpareParts:          undefined;
-  EngInventory:        undefined;
   Calibration:         undefined;
   Lifecycle:           undefined;
   TransferLog:         undefined;
   QualityChecks:       undefined;
-  QualityTrends:       undefined;
   RawAlerts:           undefined;
   TechDocs:            undefined;
   ProductionAnalytics: undefined;
@@ -272,6 +273,42 @@ export type AdminMoreStackParamList = {
   WorkerCoaching:    undefined;
   Profile:           undefined;
   Customers:         undefined;
+  // Sales Rep screens
+  SalesRepDash:       undefined;
+  SalesRepCustomers:  undefined;
+  SalesRepQuotations: undefined;
+  SalesRepVisits:     undefined;
+  SalesRepTargets:    undefined;
+  SalesReview:        undefined;
+};
+
+// ─── Sales Rep tabs ───────────────────────────────────────────────────────────
+export type SalesRepTabParamList = {
+  Overview: undefined;
+  Sales:    undefined;
+  Personal: undefined;
+};
+
+export type SalesRepOverviewStackParamList = {
+  SalesRepHome: undefined;
+};
+
+export type SalesRepSalesStackParamList = {
+  SalesMenu:   undefined;
+  Customers:   undefined;
+  Quotations:  undefined;
+  Visits:      undefined;
+  Targets:     undefined;
+  SalesOrders: undefined;
+};
+
+export type SalesRepPersonalStackParamList = {
+  PersonalMenu:  undefined;
+  Attendance:    undefined;
+  Payroll:       undefined;
+  Notifications: undefined;
+  Chat:          undefined;
+  Profile:       undefined;
 };
 
 // ─── Navigation prop helpers ──────────────────────────────────────────────────

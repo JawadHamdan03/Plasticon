@@ -26,10 +26,11 @@ type CreateNotificationPayload = {
   title?: string;
   message?: string;
   type?: NotificationType;
-  targetType?: "USER" | "SHIFT" | "ALL";
+  targetType?: "USER" | "SHIFT" | "ALL" | "ROLE";
   shiftId?: number;
   userId?: number;
   userIds?: number[];
+  role?: string;
   chatGroupId?: number;
   machineId?: number;
   productionId?: number;
@@ -249,6 +250,15 @@ export const createNotification = async (
     });
 
     targetUserIds = allActiveUsers.map((user) => user.id);
+  } else if (targetType === "ROLE") {
+    if (!payload.role) {
+      return { status: 400, message: "role is required for ROLE target" };
+    }
+    const roleUsers = await prisma.user.findMany({
+      where: { role: payload.role as any, isActive: true, deletedAt: null },
+      select: { id: true },
+    });
+    targetUserIds = roleUsers.map((u) => u.id);
   } else if (targetType === "SHIFT") {
     const shiftId = Number(payload.shiftId);
     if (!Number.isInteger(shiftId) || shiftId <= 0) {

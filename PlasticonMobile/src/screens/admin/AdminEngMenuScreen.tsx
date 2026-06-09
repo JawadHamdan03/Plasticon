@@ -27,7 +27,6 @@ export function AdminEngMenuScreen() {
       items: [
         { icon: 'pulse',           label: isAr ? 'صحة الآلات' : 'Machine Health',       desc: isAr ? 'مراقبة صحة الآلات في الوقت الفعلي' : 'Real-time machine health monitoring',   screen: 'MachineHealth',       color: colors.success },
         { icon: 'cog',             label: isAr ? 'قطع الغيار' : 'Spare Parts',           desc: isAr ? 'مخزون قطع الغيار وطلباتها' : 'Spare parts stock and requests',              screen: 'SpareParts',          color: colors.warning },
-        { icon: 'archive',         label: isAr ? 'مخزون الهندسة' : 'Eng. Inventory',    desc: isAr ? 'المخزون الهندسي والمكونات' : 'Engineering stock and components',             screen: 'EngInventory',        color: colors.info },
         { icon: 'speedometer',     label: isAr ? 'المعايرة' : 'Calibration',             desc: isAr ? 'سجلات معايرة المعدات' : 'Equipment calibration records',                    screen: 'Calibration',         color: colors.accent },
         { icon: 'git-branch',      label: isAr ? 'دورة حياة المعدات' : 'Equipment Lifecycle', desc: isAr ? 'تتبع الأصول وإهلاكها' : 'Asset lifecycle and depreciation tracking',   screen: 'Lifecycle',           color: colors.roleEngineer },
         { icon: 'swap-horizontal', label: isAr ? 'نقل المعدات' : 'Equipment Transfer',   desc: isAr ? 'تتبع تنقلات موقع المعدات' : 'Track equipment location transfers',           screen: 'TransferLog',         color: colors.textMuted },
@@ -37,8 +36,7 @@ export function AdminEngMenuScreen() {
       title: isAr ? 'الجودة والإنتاج' : 'Quality & Production',
       items: [
         { icon: 'checkmark-done',  label: isAr ? 'فحوصات الجودة' : 'Quality Checks',       desc: isAr ? 'نتائج الفحص وتتبع العيوب' : 'Inspection results and defect tracking',   screen: 'QualityChecks',       color: colors.success },
-        { icon: 'trending-up',     label: isAr ? 'اتجاهات الجودة' : 'Quality Trends',       desc: isAr ? 'اتجاهات مؤشرات الجودة وتحليلها' : 'Quality KPI trends and analysis',     screen: 'QualityTrends',       color: colors.info },
-        { icon: 'analytics',       label: isAr ? 'تحليلات الإنتاج' : 'Production Analytics', desc: isAr ? 'كفاءة الإخراج وتحليل العائد' : 'Output efficiency and yield analysis',  screen: 'ProductionAnalytics', color: colors.primary },
+{ icon: 'analytics',       label: isAr ? 'تحليلات الإنتاج' : 'Production Analytics', desc: isAr ? 'كفاءة الإخراج وتحليل العائد' : 'Output efficiency and yield analysis',  screen: 'ProductionAnalytics', color: colors.primary },
         { icon: 'alert-circle',    label: isAr ? 'تنبيهات المواد الخام' : 'Raw Material Alerts', desc: isAr ? 'نقص المخزون وإشعارات إعادة الطلب' : 'Low stock and reorder notifications', screen: 'RawAlerts',      color: colors.danger },
         { icon: 'document',        label: isAr ? 'الوثائق التقنية' : 'Tech Documents',       desc: isAr ? 'الأدلة التقنية وإجراءات التشغيل' : 'Technical manuals and SOPs',          screen: 'TechDocs',            color: colors.textMuted },
       ],

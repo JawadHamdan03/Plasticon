@@ -1,7 +1,7 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator, FlatList, Image, RefreshControl,
-  StyleSheet, Text, View,
+  StyleSheet, Text, TextInput, TouchableOpacity, View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -25,6 +25,8 @@ interface Snapshot {
   createdByName?: string;
 }
 
+type DateFilter = 'all' | 'today' | 'week' | 'month';
+
 function toImageUri(stored?: string | null): string | null {
   if (!stored) return null;
   return `${API_BASE}/${stored.replace(/^prisma\/?pictures\//, 'pictures/')}`;
@@ -33,6 +35,23 @@ function toImageUri(stored?: string | null): string | null {
 function fmtDT(iso: string) {
   const d = new Date(iso);
   return d.toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+}
+
+function startOf(filter: DateFilter): Date | null {
+  const now = new Date();
+  if (filter === 'today') {
+    return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  }
+  if (filter === 'week') {
+    const d = new Date(now);
+    d.setDate(d.getDate() - 6);
+    d.setHours(0, 0, 0, 0);
+    return d;
+  }
+  if (filter === 'month') {
+    return new Date(now.getFullYear(), now.getMonth(), 1);
+  }
+  return null;
 }
 
 function SnapCard({
@@ -113,14 +132,16 @@ function SnapCard({
 export function AdminSnapsScreen() {
   const { colors } = useAppTheme();
   const { isAr } = useLocale();
-  const [snaps, setSnaps]     = useState<Snapshot[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [snaps, setSnaps]         = useState<Snapshot[]>([]);
+  const [loading, setLoading]     = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [dateFilter, setDateFilter] = useState<DateFilter>('all');
+  const [search, setSearch]         = useState('');
 
   const load = useCallback(async () => {
     try {
-      const res = await api.get<Snapshot[] | { items: Snapshot[] }>('/settings/snapshots?limit=50');
-      const raw = Array.isArray(res) ? res : ((res as any).items ?? []);
+      const res = await api.get<Snapshot[] | { items: Snapshot[] }>('/settings/snapshots?limit=200');
+      const raw = Array.isArray(res) ? res : ((res as any).items ?? (res as any).data ?? []);
       setSnaps(raw);
     } catch {
       setSnaps([]);
@@ -132,14 +153,74 @@ export function AdminSnapsScreen() {
 
   useEffect(() => { void load(); }, [load]);
 
-  const totalKwh     = snaps.reduce((s, r) => s + (r.electricityKwh ?? 0), 0);
-  const totalCounter = snaps.reduce((s, r) => s + (r.machineCounter ?? 0), 0);
+  const filtered = useMemo(() => {
+    let result = snaps;
+    const cutoff = startOf(dateFilter);
+    if (cutoff) {
+      result = result.filter((s) => new Date(s.createdAt) >= cutoff!);
+    }
+    const q = search.trim().toLowerCase();
+    if (q) {
+      result = result.filter((s) => {
+        const name = (s.createdBy?.fullName ?? s.createdByName ?? '').toLowerCase();
+        const machine = (s.machineLabel ?? '').toLowerCase();
+        return name.includes(q) || machine.includes(q);
+      });
+    }
+    return result;
+  }, [snaps, dateFilter, search]);
+
+  const totalKwh     = filtered.reduce((s, r) => s + (r.electricityKwh ?? 0), 0);
+  const totalCounter = filtered.reduce((s, r) => s + (r.machineCounter ?? 0), 0);
+
+  const DATE_CHIPS: { key: DateFilter; label: string; labelAr: string }[] = [
+    { key: 'all',   label: 'All',        labelAr: 'الكل' },
+    { key: 'today', label: 'Today',      labelAr: 'اليوم' },
+    { key: 'week',  label: 'This Week',  labelAr: 'هذا الأسبوع' },
+    { key: 'month', label: 'This Month', labelAr: 'هذا الشهر' },
+  ];
+
+  const FilterBar = (
+    <View style={styles.filterWrap}>
+      <View style={[styles.searchRow, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+        <Ionicons name="search-outline" size={16} color={colors.textMuted} />
+        <TextInput
+          style={[styles.searchInput, { color: colors.text }]}
+          placeholder={isAr ? 'بحث باسم العامل أو الآلة...' : 'Search worker or machine...'}
+          placeholderTextColor={colors.textMuted}
+          value={search}
+          onChangeText={setSearch}
+        />
+        {search.length > 0 && (
+          <TouchableOpacity onPress={() => setSearch('')}>
+            <Ionicons name="close-circle" size={16} color={colors.textMuted} />
+          </TouchableOpacity>
+        )}
+      </View>
+      <View style={styles.chipsRow}>
+        {DATE_CHIPS.map((chip) => {
+          const active = dateFilter === chip.key;
+          return (
+            <TouchableOpacity
+              key={chip.key}
+              style={[styles.chip, active && { backgroundColor: colors.primary }]}
+              onPress={() => setDateFilter(chip.key)}
+            >
+              <Text style={[styles.chipText, { color: active ? '#fff' : colors.textMuted }]}>
+                {isAr ? chip.labelAr : chip.label}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+    </View>
+  );
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
       <ScreenHeader
         title={isAr ? 'لقطات الإدارة' : 'Admin Snapshots'}
-        subtitle={`${snaps.length} ${isAr ? 'سجل' : 'records'}`}
+        subtitle={`${filtered.length} ${isAr ? 'سجل' : 'records'}`}
         showBack
       />
 
@@ -147,12 +228,12 @@ export function AdminSnapsScreen() {
         <View style={styles.center}><ActivityIndicator size="large" color={colors.primary} /></View>
       ) : (
         <FlatList
-          data={snaps}
+          data={filtered}
           keyExtractor={(item, idx) => `${item.id}-${idx}`}
           renderItem={({ item, index }) => (
             <SnapCard
               item={item}
-              prev={snaps[index + 1]}
+              prev={filtered[index + 1]}
               colors={colors}
               isAr={isAr}
             />
@@ -163,18 +244,21 @@ export function AdminSnapsScreen() {
             <RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); void load(); }} tintColor={colors.primary} />
           }
           ListHeaderComponent={
-            <View style={styles.statsRow}>
-              <View style={[styles.statCard, { backgroundColor: colors.surface }]}>
-                <Ionicons name="flash" size={20} color={colors.warning} />
-                <Text style={[styles.statVal, { color: colors.warning }]}>{totalKwh.toFixed(1)}</Text>
-                <Text style={[styles.statLbl, { color: colors.textMuted }]}>kWh</Text>
+            <>
+              {FilterBar}
+              <View style={styles.statsRow}>
+                <View style={[styles.statCard, { backgroundColor: colors.surface }]}>
+                  <Ionicons name="flash" size={20} color={colors.warning} />
+                  <Text style={[styles.statVal, { color: colors.warning }]}>{totalKwh.toFixed(1)}</Text>
+                  <Text style={[styles.statLbl, { color: colors.textMuted }]}>kWh</Text>
+                </View>
+                <View style={[styles.statCard, { backgroundColor: colors.surface }]}>
+                  <Ionicons name="speedometer" size={20} color={colors.info} />
+                  <Text style={[styles.statVal, { color: colors.info }]}>{totalCounter.toLocaleString()}</Text>
+                  <Text style={[styles.statLbl, { color: colors.textMuted }]}>{isAr ? 'إجمالي العداد' : 'Total Counter'}</Text>
+                </View>
               </View>
-              <View style={[styles.statCard, { backgroundColor: colors.surface }]}>
-                <Ionicons name="speedometer" size={20} color={colors.info} />
-                <Text style={[styles.statVal, { color: colors.info }]}>{totalCounter.toLocaleString()}</Text>
-                <Text style={[styles.statLbl, { color: colors.textMuted }]}>{isAr ? 'إجمالي العداد' : 'Total Counter'}</Text>
-              </View>
-            </View>
+            </>
           }
           ListEmptyComponent={
             <View style={styles.empty}>
@@ -195,6 +279,13 @@ const styles = StyleSheet.create({
   safe:   { flex: 1 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   list:   { padding: spacing.md, paddingBottom: 40 },
+
+  filterWrap:  { marginBottom: spacing.md, gap: spacing.sm },
+  searchRow:   { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, borderRadius: radius.md, borderWidth: 1, paddingHorizontal: spacing.sm, paddingVertical: 8 },
+  searchInput: { flex: 1, fontSize: 14, padding: 0 },
+  chipsRow:    { flexDirection: 'row', gap: spacing.xs, flexWrap: 'wrap' },
+  chip:        { paddingHorizontal: 12, paddingVertical: 6, borderRadius: radius.full, backgroundColor: '#e5e7eb' },
+  chipText:    { fontSize: 12, fontWeight: '600' },
 
   statsRow: { flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.md },
   statCard: { flex: 1, borderRadius: radius.lg, padding: spacing.md, alignItems: 'center', gap: 4, ...shadow.sm },
@@ -227,5 +318,4 @@ const styles = StyleSheet.create({
 
   empty:     { alignItems: 'center', paddingTop: 60, gap: spacing.sm },
   emptyText: { ...typography.bodySmall },
-
 });

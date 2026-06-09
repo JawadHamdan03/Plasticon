@@ -1,6 +1,6 @@
 // ─── Core domain types ────────────────────────────────────────────────────────
 
-export type UserRole = 'ADMIN' | 'ENGINEER' | 'ACCOUNTANT' | 'WORKER';
+export type UserRole = 'ADMIN' | 'ENGINEER' | 'ACCOUNTANT' | 'WORKER' | 'SALES_REP';
 
 export interface User {
   id: number;

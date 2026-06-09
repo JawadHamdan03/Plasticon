@@ -24,6 +24,7 @@ const allChatRoles = [
   UserRole.ENGINEER,
   UserRole.ACCOUNTANT,
   UserRole.ADMIN,
+  UserRole.SALES_REP,
 ];
 
 router.post("/groups", authorizeRoles(allChatRoles), createChatGroupHandler);

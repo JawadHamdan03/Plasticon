@@ -4,6 +4,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons }                   from '@expo/vector-icons';
 import { useAppTheme }                from '../context/ThemeContext';
 import { useLocale }                  from '../context/LocaleContext';
+import { useUnreadCount }             from '../hooks/useUnreadCount';
 
 import {
   WorkerTabParamList,
@@ -15,6 +16,8 @@ import {
 
 // ─── Overview tab ─────────────────────────────────────────────────────────────
 import { WorkerHubScreen }         from '../screens/worker/WorkerHubScreen';
+import { KaizenIdeasScreen }       from '../screens/worker/KaizenIdeasScreen';
+import { ElectricityRecordScreen } from '../screens/worker/ElectricityRecordScreen';
 
 // ─── Work tab ─────────────────────────────────────────────────────────────────
 import { WorkMenuScreen }           from '../screens/worker/WorkMenuScreen';
@@ -27,7 +30,6 @@ import { DailyTargetsScreen }       from '../screens/worker/DailyTargetsScreen';
 import { QualityIssuesScreen }      from '../screens/worker/QualityIssuesScreen';
 import { MicroStopsScreen }         from '../screens/worker/MicroStopsScreen';
 import { ElectricityAlertsScreen }  from '../screens/worker/ElectricityAlertsScreen';
-import { ElectricityRecordScreen }  from '../screens/worker/ElectricityRecordScreen';
 import { SnapshotsScreen }          from '../screens/worker/SnapshotsScreen';
 
 // ─── AI tab ───────────────────────────────────────────────────────────────────
@@ -52,6 +54,8 @@ function OverviewNavigator() {
       <OverviewStack.Screen name="MachineStops" component={MachineStopsScreen} />
       <OverviewStack.Screen name="Attendance"   component={AttendanceScreen} />
       <OverviewStack.Screen name="Payroll"      component={PayrollScreen} />
+      <OverviewStack.Screen name="KaizenIdeas"       component={KaizenIdeasScreen} />
+      <OverviewStack.Screen name="ElectricityRecord" component={ElectricityRecordScreen} />
     </OverviewStack.Navigator>
   );
 }
@@ -106,8 +110,9 @@ function PersonalNavigator() {
 const Tab = createBottomTabNavigator<WorkerTabParamList>();
 
 export function WorkerTabs() {
-  const { colors } = useAppTheme();
-  const { isAr }   = useLocale();
+  const { colors }  = useAppTheme();
+  const { isAr }    = useLocale();
+  const unreadCount = useUnreadCount();
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -137,7 +142,7 @@ export function WorkerTabs() {
       <Tab.Screen name="Overview" component={OverviewNavigator} options={{ tabBarLabel: isAr ? 'نظرة عامة' : 'Overview' }} />
       <Tab.Screen name="Work"     component={WorkNavigator}     options={{ tabBarLabel: isAr ? 'عملي'      : 'My Work'  }} />
       <Tab.Screen name="AI"       component={AINavigator}       options={{ tabBarLabel: isAr ? 'الذكاء'    : 'AI Tools' }} />
-      <Tab.Screen name="Personal" component={PersonalNavigator} options={{ tabBarLabel: isAr ? 'شخصي'      : 'Personal' }} />
+      <Tab.Screen name="Personal" component={PersonalNavigator} options={{ tabBarLabel: isAr ? 'شخصي' : 'Personal', tabBarBadge: unreadCount > 0 ? unreadCount : undefined }} />
     </Tab.Navigator>
   );
 }

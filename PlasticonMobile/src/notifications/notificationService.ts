@@ -83,10 +83,9 @@ export function stopNotificationPolling(): void {
 
 async function pollOnce(): Promise<void> {
   try {
-    const res = await api.get<{ id: number; title: string; message: string; isRead: boolean }[]>(
-      '/notifications?limit=20',
-    );
-    const list = Array.isArray(res) ? res : [];
+    const res = await api.get<any>('/notifications?limit=20');
+    const list: { id: number; title: string; message: string; isRead: boolean }[] =
+      Array.isArray(res) ? res : Array.isArray(res?.items) ? res.items : [];
 
     // Only look at items newer than what we've already seen
     const fresh = list.filter((n) => !n.isRead && n.id > _lastSeenId);

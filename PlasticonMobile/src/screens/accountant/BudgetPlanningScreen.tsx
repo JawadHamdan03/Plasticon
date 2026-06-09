@@ -313,8 +313,8 @@ export function BudgetPlanningScreen() {
 
   const load = useCallback(async () => {
     try {
-      const res = await api.get<BudgetPlan[]>('/budgets?limit=20');
-      setPlans(Array.isArray(res) ? res : []);
+      const res = await api.get<any>('/budgets?limit=20');
+      setPlans(Array.isArray(res) ? res : (res?.data ?? res?.items ?? res?.budgets ?? []));
     } catch (e: any) {
       Alert.alert(isAr ? 'خطأ' : 'Error', e?.message ?? (isAr ? 'فشل تحميل الميزانيات' : 'Failed to load budgets'));
     } finally {

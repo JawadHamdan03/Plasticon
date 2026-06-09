@@ -71,8 +71,8 @@ export function SalesAdminScreen() {
 
   const load = useCallback(async () => {
     try {
-      const res = await api.get<Sale[]>('/sales/all');
-      setSales(Array.isArray(res) ? res : []);
+      const res = await api.get<any>('/sales/all');
+      setSales(Array.isArray(res) ? res : (res?.data ?? res?.items ?? res?.sales ?? []));
     } catch {
       setSales([]);
     } finally {

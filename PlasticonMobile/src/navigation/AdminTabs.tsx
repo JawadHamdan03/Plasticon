@@ -4,6 +4,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons }                   from '@expo/vector-icons';
 import { useAppTheme }                from '../context/ThemeContext';
 import { useLocale }                  from '../context/LocaleContext';
+import { useUnreadCount }             from '../hooks/useUnreadCount';
 
 import {
   AdminTabParamList,
@@ -30,6 +31,7 @@ import { ElectricityScreen }     from '../screens/admin/ElectricityScreen';
 import { MachinesAdminScreen }        from '../screens/admin/MachinesAdminScreen';
 import { ShiftsAdminScreen }          from '../screens/admin/ShiftsAdminScreen';
 import { AdminMachineStopsScreen }    from '../screens/admin/AdminMachineStopsScreen';
+import { ElectricityRecordScreen }   from '../screens/worker/ElectricityRecordScreen';
 
 // ─── Finance ──────────────────────────────────────────────────────────────────
 import { AdminFinMenuScreen }        from '../screens/admin/AdminFinMenuScreen';
@@ -47,7 +49,6 @@ import { SuppliersScreen }           from '../screens/accountant/SuppliersScreen
 import { PartsPricingScreen }        from '../screens/accountant/PartsPricingScreen';
 import { ApprovalWorkflowsScreen }   from '../screens/accountant/ApprovalWorkflowsScreen';
 import { EmployeePerformanceScreen } from '../screens/accountant/EmployeePerformanceScreen';
-import { WarehouseScreen }           from '../screens/admin/WarehouseScreen';
 import { InventoryAdminScreen }      from '../screens/admin/InventoryAdminScreen';
 import { PurchasesScreen }           from '../screens/admin/PurchasesScreen';
 import { SalesAdminScreen }          from '../screens/admin/SalesAdminScreen';
@@ -61,12 +62,10 @@ import { WorkOrdersScreen }          from '../screens/engineer/WorkOrdersScreen'
 import { MaintCostsScreen }          from '../screens/engineer/MaintCostsScreen';
 import { MachineHealthScreen }       from '../screens/engineer/MachineHealthScreen';
 import { SparePartsScreen }          from '../screens/engineer/SparePartsScreen';
-import { EngInventoryScreen }        from '../screens/engineer/EngInventoryScreen';
 import { CalibrationScreen }         from '../screens/engineer/CalibrationScreen';
 import { LifecycleScreen }           from '../screens/engineer/LifecycleScreen';
 import { TransferLogScreen }         from '../screens/engineer/TransferLogScreen';
 import { QualityChecksScreen }       from '../screens/engineer/QualityChecksScreen';
-import { QualityTrendsScreen }       from '../screens/engineer/QualityTrendsScreen';
 import { RawAlertsScreen }           from '../screens/engineer/RawAlertsScreen';
 import { TechDocsScreen }            from '../screens/engineer/TechDocsScreen';
 import { ProductionAnalyticsScreen } from '../screens/engineer/ProductionAnalyticsScreen';
@@ -89,6 +88,14 @@ import { ShiftHandoverScreen }       from '../screens/worker/ShiftHandoverScreen
 import { WorkerCoachingScreen }      from '../screens/worker/WorkerCoachingScreen';
 import { ProfileScreen }             from '../screens/shared/ProfileScreen';
 import { CustomersScreen }           from '../screens/shared/CustomersScreen';
+
+// ─── Sales Rep (admin view) ───────────────────────────────────────────────────
+import { SalesRepHomeScreen }   from '../screens/sales-rep/SalesRepHomeScreen';
+import { CustomersScreen as SalesRepCustomersScreen } from '../screens/sales-rep/CustomersScreen';
+import { QuotationsScreen }     from '../screens/sales-rep/QuotationsScreen';
+import { VisitsScreen }         from '../screens/sales-rep/VisitsScreen';
+import { TargetsScreen }        from '../screens/sales-rep/TargetsScreen';
+import { SalesReviewScreen }    from '../screens/accountant/SalesReviewScreen';
 
 // ─── Stack: Dashboard ─────────────────────────────────────────────────────────
 const DashStack = createNativeStackNavigator<AdminDashStackParamList>();
@@ -120,7 +127,8 @@ function OpsNavigator() {
       <OpsStack.Screen name="Electricity"     component={ElectricityScreen} />
       <OpsStack.Screen name="Machines"        component={MachinesAdminScreen} />
       <OpsStack.Screen name="Shifts"          component={ShiftsAdminScreen} />
-      <OpsStack.Screen name="MachineStops"    component={AdminMachineStopsScreen} />
+      <OpsStack.Screen name="MachineStops"       component={AdminMachineStopsScreen} />
+      <OpsStack.Screen name="ElectricityRecord" component={ElectricityRecordScreen} />
     </OpsStack.Navigator>
   );
 }
@@ -145,7 +153,6 @@ function FinNavigator() {
       <FinStack.Screen name="PartsPricing"        component={PartsPricingScreen} />
       <FinStack.Screen name="ApprovalWorkflows"   component={ApprovalWorkflowsScreen} />
       <FinStack.Screen name="EmployeePerformance" component={EmployeePerformanceScreen} />
-      <FinStack.Screen name="Warehouse"           component={WarehouseScreen} />
       <FinStack.Screen name="Inventory"           component={InventoryAdminScreen} />
       <FinStack.Screen name="Purchases"           component={PurchasesScreen} />
       <FinStack.Screen name="Sales"               component={SalesAdminScreen} />
@@ -166,12 +173,10 @@ function EngNavigator() {
       <EngStack.Screen name="MaintCosts"          component={MaintCostsScreen} />
       <EngStack.Screen name="MachineHealth"       component={MachineHealthScreen} />
       <EngStack.Screen name="SpareParts"          component={SparePartsScreen} />
-      <EngStack.Screen name="EngInventory"        component={EngInventoryScreen} />
       <EngStack.Screen name="Calibration"         component={CalibrationScreen} />
       <EngStack.Screen name="Lifecycle"           component={LifecycleScreen} />
       <EngStack.Screen name="TransferLog"         component={TransferLogScreen} />
       <EngStack.Screen name="QualityChecks"       component={QualityChecksScreen} />
-      <EngStack.Screen name="QualityTrends"       component={QualityTrendsScreen} />
       <EngStack.Screen name="RawAlerts"           component={RawAlertsScreen} />
       <EngStack.Screen name="TechDocs"            component={TechDocsScreen} />
       <EngStack.Screen name="ProductionAnalytics" component={ProductionAnalyticsScreen} />
@@ -202,6 +207,12 @@ function MoreNavigator() {
       <MoreStack.Screen name="WorkerCoaching"    component={WorkerCoachingScreen} />
       <MoreStack.Screen name="Profile"           component={ProfileScreen} />
       <MoreStack.Screen name="Customers"         component={CustomersScreen} />
+      <MoreStack.Screen name="SalesRepDash"       component={SalesRepHomeScreen} />
+      <MoreStack.Screen name="SalesRepCustomers"  component={SalesRepCustomersScreen} />
+      <MoreStack.Screen name="SalesRepQuotations" component={QuotationsScreen} />
+      <MoreStack.Screen name="SalesRepVisits"     component={VisitsScreen} />
+      <MoreStack.Screen name="SalesRepTargets"    component={TargetsScreen} />
+      <MoreStack.Screen name="SalesReview"        component={SalesReviewScreen} />
     </MoreStack.Navigator>
   );
 }
@@ -210,8 +221,9 @@ function MoreNavigator() {
 const Tab = createBottomTabNavigator<AdminTabParamList>();
 
 export function AdminTabs() {
-  const { colors } = useAppTheme();
-  const { isAr }   = useLocale();
+  const { colors }  = useAppTheme();
+  const { isAr }    = useLocale();
+  const unreadCount = useUnreadCount();
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -243,7 +255,7 @@ export function AdminTabs() {
       <Tab.Screen name="Operations"  component={OpsNavigator}   options={{ tabBarLabel: isAr ? 'العمليات'  : 'Operations'  }} />
       <Tab.Screen name="Finance"     component={FinNavigator}   options={{ tabBarLabel: isAr ? 'المالية'   : 'Finance'     }} />
       <Tab.Screen name="Engineering" component={EngNavigator}   options={{ tabBarLabel: isAr ? 'الهندسة'   : 'Engineering' }} />
-      <Tab.Screen name="More"        component={MoreNavigator}  options={{ tabBarLabel: isAr ? 'المزيد'    : 'More'        }} />
+      <Tab.Screen name="More"        component={MoreNavigator}  options={{ tabBarLabel: isAr ? 'المزيد' : 'More', tabBarBadge: unreadCount > 0 ? unreadCount : undefined }} />
     </Tab.Navigator>
   );
 }

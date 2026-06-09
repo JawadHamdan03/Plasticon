@@ -676,15 +676,15 @@ export function ProductionScreen() {
                 />
               </Field>
 
-              <View style={styles.modalActions}>
-                <Button variant="ghost" onPress={handleClose} style={styles.actionBtn}>
-                  {isAr ? 'إلغاء' : 'Cancel'}
-                </Button>
-                <Button onPress={handleSubmit} loading={saving} style={styles.actionBtn}>
-                  {isAr ? 'حفظ' : 'Save'}
-                </Button>
-              </View>
             </ScrollView>
+            <View style={styles.modalActions}>
+              <Button variant="ghost" onPress={handleClose} style={styles.actionBtn}>
+                {isAr ? 'إلغاء' : 'Cancel'}
+              </Button>
+              <Button onPress={handleSubmit} loading={saving} style={styles.actionBtn}>
+                {isAr ? 'حفظ' : 'Save'}
+              </Button>
+            </View>
           </View>
         </KeyboardAvoidingView>
       </Modal>
@@ -744,7 +744,7 @@ const styles = StyleSheet.create({
   overlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.45)' },
   sheet: {
     borderTopLeftRadius: radius.xl, borderTopRightRadius: radius.xl,
-    padding: spacing.lg, paddingBottom: 40, maxHeight: '90%',
+    padding: spacing.lg, paddingBottom: spacing.md, maxHeight: '90%', flexShrink: 1,
   },
   handle:     { width: 40, height: 4, borderRadius: 2, alignSelf: 'center', marginBottom: spacing.md },
   sheetTitle: { ...typography.h2, marginBottom: spacing.md },

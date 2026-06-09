@@ -1,6 +1,6 @@
 import { lazy, Suspense } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
-import { AuthProvider } from "./context/AuthContext";
+import { AuthProvider, useAuth } from "./context/AuthContext";
 import { LocaleProvider } from "./context/LocaleContext";
 import { ThemeProvider } from "./context/ThemeContext";
 import { AlertToaster } from "./components/AlertToaster";
@@ -84,11 +84,6 @@ const ConsumptionPage = lazy(() =>
 const InventoryStockPage = lazy(() =>
   import("./pages/shared/InventoryStockPage").then((m) => ({
     default: m.InventoryStockPage,
-  })),
-);
-const WarehousePage = lazy(() =>
-  import("./pages/shared/WarehousePage").then((m) => ({
-    default: m.WarehousePage,
   })),
 );
 const SuppliersPage = lazy(() =>
@@ -334,6 +329,46 @@ const WorkerCoachingPage = lazy(() =>
   })),
 );
 
+// Sales Rep pages
+const SalesRepDashboardPage = lazy(() =>
+  import("./pages/sales-rep/SalesRepDashboardPage").then((m) => ({ default: m.SalesRepDashboardPage })),
+);
+const MyCustomersPage = lazy(() =>
+  import("./pages/sales-rep/MyCustomersPage").then((m) => ({ default: m.MyCustomersPage })),
+);
+const QuotationBuilderPage = lazy(() =>
+  import("./pages/sales-rep/QuotationBuilderPage").then((m) => ({ default: m.QuotationBuilderPage })),
+);
+const CustomerVisitsPage = lazy(() =>
+  import("./pages/sales-rep/CustomerVisitsPage").then((m) => ({ default: m.CustomerVisitsPage })),
+);
+const SalesTargetsPage = lazy(() =>
+  import("./pages/sales-rep/SalesTargetsPage").then((m) => ({ default: m.SalesTargetsPage })),
+);
+const SalesRepReviewPage = lazy(() =>
+  import("./pages/accountant/SalesRepReviewPage").then((m) => ({ default: m.SalesRepReviewPage })),
+);
+
+// ── Catch-all: unknown URLs → login (or dashboard if already logged in) ──
+function CatchAll() {
+  const { isAuthenticated } = useAuth();
+  return <Navigate to={isAuthenticated ? "/dashboard" : "/login"} replace />;
+}
+
+// ── Redirect SALES_REP away from factory dashboard ────────────
+function DashboardGate() {
+  const { user } = useAuth();
+  if (user?.role === "SALES_REP") return <Navigate to="/sales-rep" replace />;
+  return <DashboardPage />;
+}
+
+// ── /sales-rep root: dashboard for SALES_REP, redirect admin/accountant to customers ──
+function SalesRepIndexGate() {
+  const { user } = useAuth();
+  if (user?.role === "ADMIN" || user?.role === "ACCOUNTANT") return <Navigate to="/sales-rep/customers" replace />;
+  return <SalesRepDashboardPage />;
+}
+
 // ── Page loading fallback ─────────────────────────────────────
 function PageLoader() {
   return (
@@ -410,7 +445,7 @@ function App() {
                 path="/dashboard"
                 element={
                   <ProtectedRoute>
-                    <DashboardPage />
+                    <DashboardGate />
                   </ProtectedRoute>
                 }
               />
@@ -559,14 +594,6 @@ function App() {
                 }
               />
               <Route
-                path="/warehouse"
-                element={
-                  <RoleProtectedRoute allowedRoles={["ADMIN", "ACCOUNTANT", "ENGINEER"]}>
-                    <WarehousePage />
-                  </RoleProtectedRoute>
-                }
-              />
-              <Route
                 path="/purchases"
                 element={
                   <RoleProtectedRoute allowedRoles={["ADMIN", "ACCOUNTANT"]}>
@@ -577,7 +604,7 @@ function App() {
               <Route
                 path="/sales"
                 element={
-                  <RoleProtectedRoute allowedRoles={["ADMIN", "ACCOUNTANT"]}>
+                  <RoleProtectedRoute allowedRoles={["ADMIN", "ACCOUNTANT", "SALES_REP"]}>
                     <SalesPage />
                   </RoleProtectedRoute>
                 }
@@ -738,7 +765,7 @@ function App() {
                 path="/notifications"
                 element={
                   <RoleProtectedRoute
-                    allowedRoles={["ADMIN", "ACCOUNTANT", "ENGINEER", "WORKER"]}
+                    allowedRoles={["ADMIN", "ACCOUNTANT", "ENGINEER", "WORKER", "SALES_REP"]}
                   >
                     <NotificationsPage />
                   </RoleProtectedRoute>
@@ -748,7 +775,7 @@ function App() {
                 path="/attendance"
                 element={
                   <RoleProtectedRoute
-                    allowedRoles={["ADMIN", "ACCOUNTANT", "ENGINEER", "WORKER"]}
+                    allowedRoles={["ADMIN", "ACCOUNTANT", "ENGINEER", "WORKER", "SALES_REP"]}
                   >
                     <MyAttendancePage />
                   </RoleProtectedRoute>
@@ -758,7 +785,7 @@ function App() {
                 path="/my-payroll"
                 element={
                   <RoleProtectedRoute
-                    allowedRoles={["ADMIN", "ACCOUNTANT", "ENGINEER", "WORKER"]}
+                    allowedRoles={["ADMIN", "ACCOUNTANT", "ENGINEER", "WORKER", "SALES_REP"]}
                   >
                     <MyPayrollPage />
                   </RoleProtectedRoute>
@@ -768,7 +795,7 @@ function App() {
                 path="/chat"
                 element={
                   <RoleProtectedRoute
-                    allowedRoles={["ADMIN", "ACCOUNTANT", "ENGINEER", "WORKER"]}
+                    allowedRoles={["ADMIN", "ACCOUNTANT", "ENGINEER", "WORKER", "SALES_REP"]}
                   >
                     <ChatPage />
                   </RoleProtectedRoute>
@@ -1013,6 +1040,56 @@ function App() {
                 }
               />
 
+              {/* ── Sales Rep ── */}
+              <Route
+                path="/sales-rep"
+                element={
+                  <RoleProtectedRoute allowedRoles={["ADMIN", "ACCOUNTANT", "SALES_REP"]}>
+                    <SalesRepIndexGate />
+                  </RoleProtectedRoute>
+                }
+              />
+              <Route
+                path="/sales-rep/customers"
+                element={
+                  <RoleProtectedRoute allowedRoles={["ADMIN", "SALES_REP", "ACCOUNTANT"]}>
+                    <MyCustomersPage />
+                  </RoleProtectedRoute>
+                }
+              />
+              <Route
+                path="/sales-rep/quotations"
+                element={
+                  <RoleProtectedRoute allowedRoles={["ADMIN", "SALES_REP", "ACCOUNTANT"]}>
+                    <QuotationBuilderPage />
+                  </RoleProtectedRoute>
+                }
+              />
+              <Route
+                path="/sales-rep/visits"
+                element={
+                  <RoleProtectedRoute allowedRoles={["ADMIN", "SALES_REP", "ACCOUNTANT"]}>
+                    <CustomerVisitsPage />
+                  </RoleProtectedRoute>
+                }
+              />
+              <Route
+                path="/sales-rep/targets"
+                element={
+                  <RoleProtectedRoute allowedRoles={["ADMIN", "SALES_REP", "ACCOUNTANT"]}>
+                    <SalesTargetsPage />
+                  </RoleProtectedRoute>
+                }
+              />
+              <Route
+                path="/sales-rep/review"
+                element={
+                  <RoleProtectedRoute allowedRoles={["ACCOUNTANT", "ADMIN"]}>
+                    <SalesRepReviewPage />
+                  </RoleProtectedRoute>
+                }
+              />
+
               {/* ── Redirects ── */}
               <Route
                 path="/suppliers"
@@ -1032,7 +1109,7 @@ function App() {
               />
 
               {/* ── Fallback ── */}
-              <Route path="*" element={<Navigate to="/login" replace />} />
+              <Route path="*" element={<CatchAll />} />
             </Routes>
           </Suspense>
         </AuthProvider>

@@ -18,6 +18,7 @@ enum UserRole {
   ENGINEER
   ACCOUNTANT
   ADMIN
+  SALES_REP
 }
 
 enum InventoryType {
@@ -199,6 +200,12 @@ model User {
   sparePartRequestsAsPricer    SparePartRequest[]    @relation("SparePartRequestPricer")
   techDocumentsUploaded        TechDocument[]        @relation("TechDocUploader")
   customerReturnsRecorded      CustomerReturn[]      @relation("CustomerReturnRecorder")
+
+  // Sales rep features
+  quotations         Quotation[]      @relation("QuotationCreator")
+  assignedCustomers  Customer[]       @relation("AssignedSalesRep")
+  customerVisits     CustomerVisit[]  @relation("VisitLogger")
+  salesTargets       SalesTarget[]    @relation("SalesTargetRep")
 
   // Indices for common queries
   @@index([email])
@@ -537,16 +544,20 @@ model PurchaseItem {
 //////////////////////
 
 model Customer {
-  id      Int     @id @default(autoincrement())
-  name    String
-  phone   String?
-  email   String?
-  address String?
+  id                 Int     @id @default(autoincrement())
+  name               String
+  phone              String?
+  email              String?
+  address            String?
+  assignedSalesRepId Int?
 
-  sales       Sale[]
-  invoices    Invoice[]
-  receivables CustomerReceivable[]
-  returns     CustomerReturn[]
+  assignedSalesRep User?                @relation("AssignedSalesRep", fields: [assignedSalesRepId], references: [id])
+  sales            Sale[]
+  invoices         Invoice[]
+  receivables      CustomerReceivable[]
+  returns          CustomerReturn[]
+  quotations       Quotation[]
+  visits           CustomerVisit[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -561,6 +572,7 @@ model CustomerReturn {
   quantity     Float
   returnDate   DateTime
   notes        String?
+  invoicePdf   String?
   recordedById Int?
 
   customer   Customer? @relation(fields: [customerId], references: [id])
@@ -1275,4 +1287,80 @@ model RegistrationRequest {
   reviewedById Int?
   reviewedBy   User?                      @relation("RegistrationReviewer", fields: [reviewedById], references: [id])
   createdAt    DateTime                   @default(now())
+}
+
+//////////////////////
+// SALES REP
+//////////////////////
+
+enum QuotationStatus {
+  DRAFT
+  SENT
+  ACCEPTED
+  REJECTED
+  EXPIRED
+}
+
+model Quotation {
+  id            Int             @id @default(autoincrement())
+  customerId    Int
+  createdById   Int
+  status        QuotationStatus @default(DRAFT)
+  notes         String?
+  rejectionNote String?
+  validUntil    DateTime?
+  totalAmount   Float           @default(0)
+
+  customer   Customer        @relation(fields: [customerId], references: [id])
+  createdBy  User            @relation("QuotationCreator", fields: [createdById], references: [id])
+  items      QuotationItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model QuotationItem {
+  id           Int    @id @default(autoincrement())
+  quotationId  Int
+  productType  String
+  size         String
+  quantity     Float
+  pricePerUnit Float
+
+  quotation Quotation @relation(fields: [quotationId], references: [id])
+}
+
+model CustomerVisit {
+  id          Int      @id @default(autoincrement())
+  customerId  Int
+  loggedById  Int
+  visitDate   DateTime
+  outcome     String?
+  notes       String?
+  nextVisitAt DateTime?
+
+  customer Customer @relation(fields: [customerId], references: [id])
+  loggedBy User     @relation("VisitLogger", fields: [loggedById], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([visitDate])
+}
+
+model SalesTarget {
+  id         Int   @id @default(autoincrement())
+  repId      Int
+  month      Int
+  year       Int
+  targetAmount Float
+  achievedAmount Float @default(0)
+  notes      String?
+
+  rep User @relation("SalesTargetRep", fields: [repId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([repId, month, year])
 }

@@ -14,8 +14,7 @@ export function QualMenuScreen() {
 
   const ITEMS = [
     { icon: 'shield-checkmark', label: isAr ? 'فحوصات الجودة' : 'Quality Checks',    desc: isAr ? 'تسجيل ومراجعة فحوصات جودة الدفعات' : 'Log and review batch quality inspections',     screen: 'QualityChecks', color: colors.success },
-    { icon: 'trending-up',      label: isAr ? 'اتجاهات الجودة' : 'Quality Trends',   desc: isAr ? 'اتجاهات النجاح والفشل ومعدلات الدفعات' : 'Pass/fail trends, rates, and batch analytics', screen: 'QualityTrends', color: colors.primary },
-    { icon: 'warning',          label: isAr ? 'تنبيهات المواد الخام' : 'Raw Material Alerts', desc: isAr ? 'تنبيهات نقص المخزون ومشاكل جودة المواد' : 'Low stock alerts and material quality issues', screen: 'RawAlerts',     color: colors.warning },
+{ icon: 'warning',          label: isAr ? 'تنبيهات المواد الخام' : 'Raw Material Alerts', desc: isAr ? 'تنبيهات نقص المخزون ومشاكل جودة المواد' : 'Low stock alerts and material quality issues', screen: 'RawAlerts',     color: colors.warning },
     { icon: 'document-text',    label: isAr ? 'الوثائق التقنية' : 'Technical Docs',   desc: isAr ? 'إجراءات التشغيل وصحائف البيانات والوثائق الهندسية' : 'SOPs, datasheets, and engineering documents', screen: 'TechDocs',      color: colors.info },
   ];
 

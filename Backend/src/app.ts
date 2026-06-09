@@ -55,6 +55,7 @@ import customerReturnRoutes from "./routes/customerReturnRoutes";
 import supportMachineRoutes from "./routes/supportMachineRoutes";
 import aiRoutes from "./routes/aiRoutes";
 import ragContextRoutes from "./routes/ragContextRoutes";
+import salesRepRoutes from "./routes/salesRepRoutes";
 import { initializeEmailService } from "./utils/emailService";
 import { startNotificationScheduler } from "./services/notificationScheduler";
 import { prisma } from "./config/lib/prisma";
@@ -166,6 +167,7 @@ app.use("/customer-returns", customerReturnRoutes);
 app.use("/support-machine-readings", supportMachineRoutes);
 app.use("/ai", aiRoutes);
 app.use("/rag-context", ragContextRoutes);
+app.use("/sales-rep", salesRepRoutes);
 
 // Global JSON error handler — catches multer/middleware errors and returns JSON
 app.use((err: Error & { status?: number; code?: string }, _req: express.Request, res: express.Response, _next: express.NextFunction) => {

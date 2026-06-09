@@ -71,11 +71,12 @@ export function NotificationsPage() {
 
   const [form, setForm] = useState({
     type: "SYSTEM_MESSAGE",
-    targetType: "USER" as "USER" | "SHIFT" | "ALL",
+    targetType: "USER" as "USER" | "SHIFT" | "ALL" | "ROLE",
     title: "",
     message: "",
     userId: "",
     shiftId: "",
+    role: "SALES_REP",
   });
 
   const load = async () => {
@@ -135,6 +136,9 @@ export function NotificationsPage() {
           ...(form.targetType === "SHIFT" && form.shiftId
             ? { shiftId: Number(form.shiftId) }
             : {}),
+          ...(form.targetType === "ROLE"
+            ? { role: form.role }
+            : {}),
         }),
       });
       if (!res.ok) throw new Error(await readApiError(res));
@@ -150,6 +154,7 @@ export function NotificationsPage() {
         message: "",
         userId: "",
         shiftId: "",
+        role: "SALES_REP",
       });
       void load();
     } catch (e) {
@@ -529,7 +534,7 @@ export function NotificationsPage() {
                     onChange={(e) =>
                       setForm((p) => ({
                         ...p,
-                        targetType: e.target.value as "USER" | "SHIFT" | "ALL",
+                        targetType: e.target.value as "USER" | "SHIFT" | "ALL" | "ROLE",
                       }))
                     }
                   >
@@ -538,6 +543,9 @@ export function NotificationsPage() {
                     </option>
                     <option value="SHIFT">
                       {locale === "ar" ? "وردية" : "Shift"}
+                    </option>
+                    <option value="ROLE">
+                      {locale === "ar" ? "دور محدد" : "By Role"}
                     </option>
                     <option value="ALL">
                       {locale === "ar" ? "الجميع" : "Everyone"}
@@ -625,6 +633,20 @@ export function NotificationsPage() {
                       }
                       required
                     />
+                  </label>
+                )}
+                {form.targetType === "ROLE" && (
+                  <label>
+                    {locale === "ar" ? "الدور" : "Role"}
+                    <select
+                      value={form.role}
+                      onChange={(e) => setForm((p) => ({ ...p, role: e.target.value }))}
+                    >
+                      <option value="SALES_REP">{locale === "ar" ? "مندوب المبيعات" : "Sales Rep"}</option>
+                      <option value="WORKER">{locale === "ar" ? "عامل" : "Worker"}</option>
+                      <option value="ENGINEER">{locale === "ar" ? "مهندس" : "Engineer"}</option>
+                      <option value="ACCOUNTANT">{locale === "ar" ? "محاسب" : "Accountant"}</option>
+                    </select>
                   </label>
                 )}
                 <button

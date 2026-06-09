@@ -188,8 +188,8 @@ export function CustomerReceivablesScreen() {
 
   const load = useCallback(async () => {
     try {
-      const res = await api.get<Receivable[]>('/customer-receivables?limit=30');
-      setRecords(Array.isArray(res) ? res : []);
+      const res = await api.get<any>('/customer-receivables?limit=30');
+      setRecords(Array.isArray(res) ? res : (res?.data ?? res?.items ?? res?.records ?? []));
     } catch (e: any) {
       Alert.alert(isAr ? 'خطأ' : 'Error', e?.message ?? (isAr ? 'فشل تحميل المستحقات' : 'Failed to load receivables'));
     } finally {

@@ -31,8 +31,8 @@ export function InventoryAdminScreen() {
 
   const load = useCallback(async () => {
     try {
-      const res = await api.get<InventoryItem[]>('/inventory/materials');
-      setItems(Array.isArray(res) ? res : []);
+      const res = await api.get<any>('/inventory/materials');
+      setItems(Array.isArray(res) ? res : (res?.data ?? res?.items ?? res?.materials ?? []));
     } catch {
       setItems([]);
     } finally {

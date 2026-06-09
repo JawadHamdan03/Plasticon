@@ -64,6 +64,14 @@ const defaultUsers: SeedUser[] = [
     role: UserRole.ACCOUNTANT,
     shiftName: "B",
   },
+  {
+    nationalId: "999900005",
+    fullName: "Sales Rep User",
+    username: "salesrep",
+    phone: "0599000005",
+    email: "salesrep@plasticon.local",
+    role: UserRole.SALES_REP,
+  },
 ];
 
 const defaultRawMaterials = [

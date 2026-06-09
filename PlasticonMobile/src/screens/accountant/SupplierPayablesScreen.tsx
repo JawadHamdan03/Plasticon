@@ -194,8 +194,8 @@ export function SupplierPayablesScreen() {
 
   const load = useCallback(async () => {
     try {
-      const res = await api.get<Payable[]>('/supplier-payables?limit=30');
-      setRecords(Array.isArray(res) ? res : []);
+      const res = await api.get<any>('/supplier-payables?limit=30');
+      setRecords(Array.isArray(res) ? res : (res?.data ?? res?.items ?? res?.records ?? []));
     } catch (e: any) {
       Alert.alert(isAr ? 'خطأ' : 'Error', e?.message ?? (isAr ? 'فشل تحميل المستحقات' : 'Failed to load payables'));
     } finally {

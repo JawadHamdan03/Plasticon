@@ -291,7 +291,7 @@ export function MaintCostsScreen() {
   const load = useCallback(async () => {
     try {
       const res = await api.get<any>('/maintenance-costs');
-      const records: CostRecord[] = Array.isArray(res) ? res : (res.costs ?? []);
+      const records: CostRecord[] = Array.isArray(res) ? res : (res.costs ?? res.data ?? res.items ?? []);
       setCosts(records);
     } catch {
       setCosts([]);

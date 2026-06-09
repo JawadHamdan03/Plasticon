@@ -90,6 +90,7 @@ type AdminUser = {
   phone: string | null;
   nationalId: string | null;
   isActive: boolean;
+  deletedAt: string | null;
   createdAt: string;
   profileImage: string | null;
 };
@@ -822,6 +823,8 @@ export function SettingsAdminPage() {
       const res = await fetchWithAdminAuth(`/users/${id}`, { method: "DELETE" });
       if (!res.ok) throw new Error(await readApiError(res));
       setDeleteConfirmId(null);
+      setStatusTone("success");
+      setStatusMessage("User deleted successfully.");
       await loadUsers();
     } catch (err) {
       setStatusTone("error");
@@ -830,13 +833,14 @@ export function SettingsAdminPage() {
   };
 
   const filteredUsers = users.filter((u) => {
+    if (u.deletedAt) return false;
     const q = userSearch.toLowerCase();
     const matchesSearch = !q || u.fullName.toLowerCase().includes(q) || u.email.toLowerCase().includes(q) || u.username.toLowerCase().includes(q);
     const matchesRole = userRoleFilter === "ALL" || u.role === userRoleFilter;
     return matchesSearch && matchesRole;
   });
 
-  const ROLES = ["ADMIN", "WORKER", "ENGINEER", "ACCOUNTANT"];
+  const ROLES = ["ADMIN", "WORKER", "ENGINEER", "ACCOUNTANT", "SALES_REP"];
 
   const roleColor = (role: string) => {
     const map: Record<string, string> = {
@@ -1266,6 +1270,13 @@ export function SettingsAdminPage() {
               );
             })}
           </div>
+
+          {/* Status feedback */}
+          {statusMessage && (
+            <div style={{ padding: ".65rem 1rem", borderRadius: 8, background: statusTone === "error" ? "rgba(239,68,68,.1)" : "rgba(34,197,94,.1)", color: statusTone === "error" ? "#dc2626" : "#16a34a", fontSize: ".85rem", fontWeight: 500 }}>
+              {statusMessage}
+            </div>
+          )}
 
           {/* Users table */}
           <div style={{ background: "var(--bg-card)", border: "1px solid var(--border-default)", borderRadius: 14, overflow: "hidden" }}>

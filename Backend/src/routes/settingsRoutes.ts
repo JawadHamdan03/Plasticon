@@ -50,7 +50,7 @@ router.get(
 
 router.post(
   "/snapshots",
-  authorizeRoles([UserRole.WORKER, UserRole.ENGINEER]),
+  authorizeRoles([UserRole.WORKER, UserRole.ENGINEER, UserRole.ADMIN]),
   upload.fields([
     { name: "machineCounterImage", maxCount: 1 },
     { name: "electricityImage", maxCount: 1 },

@@ -15,9 +15,10 @@ const USER_SAFE_SELECT = {
   shiftId: true, createdAt: true, updatedAt: true,
 } as const;
 
-export const getUsers = async (): Promise<ServiceResult<unknown>> => {
+export const getUsers = async (role?: string): Promise<ServiceResult<unknown>> => {
   const users = await prisma.user.findMany({
-    select: { ...USER_SAFE_SELECT, shift: { select: { id: true, name: true } } },
+    where:   role ? { role: role as UserRole, deletedAt: null } : { deletedAt: null },
+    select:  { ...USER_SAFE_SELECT, shift: { select: { id: true, name: true } } },
     orderBy: { id: "asc" },
   });
   return { status: 200, data: users };

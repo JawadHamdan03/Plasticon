@@ -29,12 +29,13 @@ COPY src ./src
 COPY tsconfig*.json ./
 COPY package*.json ./
 COPY prisma.config.ts ./
+COPY startup.sh ./startup.sh
 
 # Overwrite any stale committed generated client with the one built from current schema
 COPY --from=deps /app/src/config/generated/prisma ./src/config/generated/prisma
 
+RUN chmod +x startup.sh
+
 EXPOSE 8080
 
-# 1. Apply any pending DB migrations + regenerate client to match schema
-# 2. Start the server via tsx (TypeScript runtime — no separate compile step)
-CMD ["sh", "-c", "npx prisma generate && npx prisma db push --accept-data-loss && npx tsx src/app.ts"]
+CMD ["sh", "startup.sh"]

@@ -61,10 +61,11 @@ export function AccountantFinMenuScreen() {
   ];
 
   const MORE_ITEMS: MenuItem[] = [
-    { icon: 'pricetag',  label: 'Parts Pricing',         labelAr: 'تسعير القطع',       desc: 'Spare part costs and pricing',       color: '#F59E0B', screen: 'PartsPricing'        },
-    { icon: 'business',  label: 'Suppliers',              labelAr: 'الموردون',          desc: 'Supplier list and management',       color: '#0284C7', screen: 'Suppliers'           },
-    { icon: 'people',    label: 'Employee Performance',   labelAr: 'أداء الموظفين',     desc: 'Employee productivity metrics',      color: '#7C3AED', screen: 'EmployeePerformance' },
-    { icon: 'construct', label: 'Maintenance Costs',      labelAr: 'تكاليف الصيانة',   desc: 'Maintenance expense tracking',       color: '#DC2626', screen: 'MaintCosts'          },
+    { icon: 'pricetag',    label: 'Parts Pricing',         labelAr: 'تسعير القطع',         desc: 'Spare part costs and pricing',            color: '#F59E0B', screen: 'PartsPricing'        },
+    { icon: 'business',    label: 'Suppliers',              labelAr: 'الموردون',            desc: 'Supplier list and management',            color: '#0284C7', screen: 'Suppliers'           },
+    { icon: 'people',      label: 'Employee Performance',   labelAr: 'أداء الموظفين',      desc: 'Employee productivity metrics',           color: '#7C3AED', screen: 'EmployeePerformance' },
+    { icon: 'construct',   label: 'Maintenance Costs',      labelAr: 'تكاليف الصيانة',    desc: 'Maintenance expense tracking',            color: '#DC2626', screen: 'MaintCosts'          },
+    { icon: 'briefcase',   label: 'Sales Rep Review',       labelAr: 'مراجعة المندوبين',   desc: 'Approve or reject sales quotations',      color: '#10b981', screen: 'SalesReview'         },
   ];
 
   return (
@@ -72,7 +73,7 @@ export function AccountantFinMenuScreen() {
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.pageHeader}>
           <Text style={[styles.pageTitle, { color: colors.text }]}>{isAr ? 'المالية' : 'Finance'}</Text>
-          <Text style={[styles.pageSub, { color: colors.textMuted }]}>{isAr ? '١٧ أداة وتقرير' : '17 tools and reports'}</Text>
+          <Text style={[styles.pageSub, { color: colors.textMuted }]}>{isAr ? '١٨ أداة وتقرير' : '18 tools and reports'}</Text>
         </View>
         <Section title={isAr ? 'المالية الأساسية' : 'Core Finance'} items={CORE_ITEMS} colors={colors} isAr={isAr} />
         <Section title={isAr ? 'العمليات' : 'Operations'}           items={OPS_ITEMS}  colors={colors} isAr={isAr} />

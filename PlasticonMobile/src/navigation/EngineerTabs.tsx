@@ -4,6 +4,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons }                   from '@expo/vector-icons';
 import { useAppTheme }                from '../context/ThemeContext';
 import { useLocale }                  from '../context/LocaleContext';
+import { useUnreadCount }             from '../hooks/useUnreadCount';
 
 import {
   EngineerTabParamList,
@@ -121,8 +122,9 @@ function PersonalNavigator() {
 const Tab = createBottomTabNavigator<EngineerTabParamList>();
 
 export function EngineerTabs() {
-  const { colors } = useAppTheme();
-  const { isAr }   = useLocale();
+  const { colors }  = useAppTheme();
+  const { isAr }    = useLocale();
+  const unreadCount = useUnreadCount();
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -152,7 +154,7 @@ export function EngineerTabs() {
       <Tab.Screen name="Overview"    component={OverviewNavigator} options={{ tabBarLabel: isAr ? 'نظرة عامة' : 'Overview'    }} />
       <Tab.Screen name="Engineering" component={EngNavigator}      options={{ tabBarLabel: isAr ? 'الهندسة'   : 'Engineering' }} />
       <Tab.Screen name="AITools"     component={AINavigator}       options={{ tabBarLabel: isAr ? 'الذكاء'    : 'AI Tools'    }} />
-      <Tab.Screen name="Personal"    component={PersonalNavigator} options={{ tabBarLabel: isAr ? 'شخصي'      : 'Personal'    }} />
+      <Tab.Screen name="Personal"    component={PersonalNavigator} options={{ tabBarLabel: isAr ? 'شخصي' : 'Personal', tabBarBadge: unreadCount > 0 ? unreadCount : undefined }} />
     </Tab.Navigator>
   );
 }

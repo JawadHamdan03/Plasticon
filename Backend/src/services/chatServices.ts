@@ -93,6 +93,7 @@ const chatEligibleRoles = [
   "ENGINEER",
   "ACCOUNTANT",
   "ADMIN",
+  "SALES_REP",
 ] as const;
 
 const chatEligibleRoleValues: UserRole[] = [
@@ -793,7 +794,7 @@ export const getChatMembersByShift = async (
   const roleShiftFilter = roleRestricted
     ? {
         OR: [
-          { role: { in: [UserRole.ADMIN, UserRole.ACCOUNTANT] as any[] } },
+          { role: { in: [UserRole.ADMIN, UserRole.ACCOUNTANT, UserRole.SALES_REP] as any[] } },
           {
             role: { in: [UserRole.WORKER, UserRole.ENGINEER] as any[] },
             shiftId: requester.shiftId ?? -1,

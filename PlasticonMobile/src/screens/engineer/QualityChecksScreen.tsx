@@ -284,8 +284,8 @@ export function QualityChecksScreen() {
 
   const load = useCallback(async () => {
     try {
-      const res = await api.get<any>('/quality-checks/me');
-      const data: QCheck[] = Array.isArray(res) ? res : (res.checks ?? res.data ?? []);
+      const res = await api.get<any>('/quality-checks?limit=100');
+      const data: QCheck[] = Array.isArray(res) ? res : (res.checks ?? res.data ?? res.items ?? []);
       setChecks(data);
     } catch {
       setChecks([]);

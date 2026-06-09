@@ -14,25 +14,28 @@ import { uploadInvoice } from "../utils/uploadHandler";
 
 const router = Router();
 
+const salesCreateRoles = [UserRole.ACCOUNTANT, UserRole.ADMIN, UserRole.SALES_REP];
+const salesViewRoles   = [UserRole.ACCOUNTANT, UserRole.ADMIN, UserRole.ENGINEER, UserRole.SALES_REP];
+
 router.post(
   "/",
-  authorizeRoles([UserRole.ACCOUNTANT, UserRole.ADMIN]),
+  authorizeRoles(salesCreateRoles),
   uploadInvoice.single("invoiceFile"),
   createSaleHandler,
 );
 router.get(
   "/all",
-  authorizeRoles([UserRole.ACCOUNTANT, UserRole.ADMIN, UserRole.ENGINEER]),
+  authorizeRoles(salesViewRoles),
   getAllSalesHandler,
 );
 router.get(
   "/me",
-  authorizeRoles([UserRole.ACCOUNTANT, UserRole.ADMIN]),
+  authorizeRoles(salesCreateRoles),
   getMySalesHandler,
 );
 router.get(
   "/customers",
-  authorizeRoles([UserRole.ACCOUNTANT, UserRole.ADMIN]),
+  authorizeRoles(salesCreateRoles),
   getCustomerOptionsHandler,
 );
 router.get(
@@ -42,13 +45,13 @@ router.get(
 );
 router.put(
   "/:id",
-  authorizeRoles([UserRole.ACCOUNTANT, UserRole.ADMIN]),
+  authorizeRoles(salesCreateRoles),
   uploadInvoice.single("invoiceFile"),
   updateSaleHandler,
 );
 router.delete(
   "/:id",
-  authorizeRoles([UserRole.ACCOUNTANT, UserRole.ADMIN]),
+  authorizeRoles(salesCreateRoles),
   deleteSaleHandler,
 );
 

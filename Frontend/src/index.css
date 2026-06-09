@@ -2064,6 +2064,41 @@ tbody td {
   font-size: 0.925rem;
 }
 
+/* Input / select / textarea used inside admin pages */
+.admin-input {
+  width: 100%;
+  padding: 0.6rem 0.9rem;
+  border-radius: var(--radius-lg);
+  border: 1.5px solid var(--border-input);
+  background: var(--bg-input);
+  color: var(--text-primary);
+  font-size: 0.875rem;
+  font-family: inherit;
+  line-height: 1.5;
+  outline: none;
+  transition: border-color var(--transition), box-shadow var(--transition), background var(--transition);
+  appearance: auto;
+}
+.admin-input::placeholder {
+  color: var(--text-tertiary);
+}
+.admin-input:hover {
+  border-color: var(--border-strong);
+}
+.admin-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(var(--accent-rgb, 99, 102, 241), 0.15);
+  background: var(--bg-card);
+}
+.admin-input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.admin-input[type="date"],
+.admin-input[type="datetime-local"] {
+  color-scheme: dark;
+}
+
 /* KPI stat grid */
 .admin-kpi-grid {
   display: grid;

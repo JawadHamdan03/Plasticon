@@ -18,7 +18,8 @@ export const createCustomerReturnHandler = async (req: AuthenticatedRequest, res
   try {
     const recordedById = req.user?.id;
     if (!recordedById) { res.status(401).json({ message: "Not authorized" }); return; }
-    const result = await createCustomerReturn(recordedById, req.body as Record<string, unknown>);
+    const invoicePdf = (req.file as Express.Multer.File | undefined)?.filename ?? null;
+    const result = await createCustomerReturn(recordedById, { ...req.body as Record<string, unknown>, invoicePdf });
     if (result.message && result.status !== 201) { res.status(result.status).json({ message: result.message }); return; }
     res.status(result.status).json(result.data);
   } catch {
@@ -30,7 +31,8 @@ export const updateCustomerReturnHandler = async (req: AuthenticatedRequest, res
   try {
     const id = Number(req.params.id);
     if (!Number.isInteger(id) || id <= 0) { res.status(400).json({ message: "Invalid id" }); return; }
-    const result = await updateCustomerReturn(id, req.body as Record<string, unknown>);
+    const invoicePdf = (req.file as Express.Multer.File | undefined)?.filename ?? undefined;
+    const result = await updateCustomerReturn(id, { ...req.body as Record<string, unknown>, ...(invoicePdf ? { invoicePdf } : {}) });
     if (result.message && result.status !== 200) { res.status(result.status).json({ message: result.message }); return; }
     res.status(result.status).json(result.data);
   } catch {

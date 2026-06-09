@@ -8,11 +8,33 @@ import {
 } from "react";
 import { API_BASE_URL, readApiError } from "../lib/api";
 
+// Helpers — ADMIN sessions live in sessionStorage (clears on browser close)
+function readToken(): string | null {
+  return window.sessionStorage.getItem("plasticon_token") ?? window.localStorage.getItem("plasticon_token");
+}
+function readUser(): string | null {
+  return window.sessionStorage.getItem("plasticon_user") ?? window.localStorage.getItem("plasticon_user");
+}
+function writeSession(token: string, user: UserProfile) {
+  const store = user.role === "ADMIN" ? window.sessionStorage : window.localStorage;
+  const other = user.role === "ADMIN" ? window.localStorage   : window.sessionStorage;
+  other.removeItem("plasticon_token");
+  other.removeItem("plasticon_user");
+  store.setItem("plasticon_token", token);
+  store.setItem("plasticon_user", JSON.stringify(user));
+}
+function clearSession() {
+  window.sessionStorage.removeItem("plasticon_token");
+  window.sessionStorage.removeItem("plasticon_user");
+  window.localStorage.removeItem("plasticon_token");
+  window.localStorage.removeItem("plasticon_user");
+}
+
 // Global fetch interceptor — ensures credentials and Bearer token are always sent
 const originalFetch = window.fetch.bind(window);
 window.fetch = (input: RequestInfo | URL, init?: RequestInit) => {
   const isFormData = init?.body instanceof FormData;
-  const token = window.localStorage.getItem("plasticon_token");
+  const token = readToken();
 
   const modifiedInit: RequestInit = {
     ...(init ?? {}),
@@ -90,20 +112,16 @@ type AuthContextValue = {
   setUser: (user: UserProfile) => void;
 };
 
-const USER_KEY = "plasticon_user";
-
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [token, setToken] = useState<string | null>(() => {
-    return window.localStorage.getItem("plasticon_token");
-  });
+  const [token, setToken] = useState<string | null>(() => readToken());
   const [user, setUserState] = useState<UserProfile | null>(() => {
     try {
-      const stored = window.localStorage.getItem(USER_KEY);
+      const stored = readUser();
       return stored ? (JSON.parse(stored) as UserProfile) : null;
     } catch {
-      window.localStorage.removeItem(USER_KEY);
+      clearSession();
       return null;
     }
   });
@@ -111,21 +129,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const persistSession = useCallback(
     (nextToken: string, nextUser: UserProfile) => {
-      window.localStorage.setItem("plasticon_token", nextToken);
+      writeSession(nextToken, nextUser);
       setToken(nextToken);
       setUserState(nextUser);
-      window.localStorage.setItem(USER_KEY, JSON.stringify(nextUser));
     },
     [],
   );
 
   const setUser = useCallback((nextUser: UserProfile) => {
     setUserState(nextUser);
-    window.localStorage.setItem(USER_KEY, JSON.stringify(nextUser));
+    const store = nextUser.role === "ADMIN" ? window.sessionStorage : window.localStorage;
+    store.setItem("plasticon_user", JSON.stringify(nextUser));
   }, []);
 
   const refreshUser = useCallback(async () => {
-    const storedToken = window.localStorage.getItem("plasticon_token");
+    const storedToken = readToken();
     if (!storedToken) return;
     try {
       const res = await fetch(`${API_BASE_URL}/profile/me`, {
@@ -235,8 +253,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signOut = useCallback(() => {
     setToken(null);
     setUserState(null);
-    window.localStorage.removeItem(USER_KEY);
-    window.localStorage.removeItem("plasticon_token");
+    clearSession();
   }, []);
 
   const value = useMemo<AuthContextValue>(

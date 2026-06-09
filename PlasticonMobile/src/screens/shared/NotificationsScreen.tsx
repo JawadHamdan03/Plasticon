@@ -91,13 +91,21 @@ function NotifRow({ item, onRead }: { item: Notification; onRead: (id: number) =
   );
 }
 
+const ROLES = [
+  { key: 'SALES_REP', labelEn: 'Sales Rep', labelAr: 'مندوب مبيعات' },
+  { key: 'WORKER',    labelEn: 'Worker',     labelAr: 'عامل'          },
+  { key: 'ENGINEER',  labelEn: 'Engineer',   labelAr: 'مهندس'         },
+  { key: 'ACCOUNTANT',labelEn: 'Accountant', labelAr: 'محاسب'         },
+] as const;
+
 interface SendForm {
   type: string;
-  targetType: 'ALL' | 'USER' | 'SHIFT';
+  targetType: 'ALL' | 'USER' | 'SHIFT' | 'ROLE';
   title: string;
   message: string;
   userId: string;
   shiftId: string;
+  role: string;
 }
 
 function AdminSendModal({
@@ -106,7 +114,7 @@ function AdminSendModal({
   const { colors } = useAppTheme();
   const { isAr } = useLocale();
   const [form, setForm] = useState<SendForm>({
-    type: 'SYSTEM_MESSAGE', targetType: 'ALL', title: '', message: '', userId: '', shiftId: '',
+    type: 'SYSTEM_MESSAGE', targetType: 'ALL', title: '', message: '', userId: '', shiftId: '', role: 'SALES_REP',
   });
   const [sending, setSending] = useState(false);
   const [users,  setUsers]  = useState<{ id: number; fullName: string }[]>([]);
@@ -132,8 +140,9 @@ function AdminSendModal({
       };
       if (form.targetType === 'USER'  && form.userId)  body.userId  = Number(form.userId);
       if (form.targetType === 'SHIFT' && form.shiftId) body.shiftId = Number(form.shiftId);
+      if (form.targetType === 'ROLE')                  body.role    = form.role;
       await api.post('/notifications', body);
-      setForm({ type: 'SYSTEM_MESSAGE', targetType: 'ALL', title: '', message: '', userId: '', shiftId: '' });
+      setForm({ type: 'SYSTEM_MESSAGE', targetType: 'ALL', title: '', message: '', userId: '', shiftId: '', role: 'SALES_REP' });
       onSent();
     } catch {} finally { setSending(false); }
   };
@@ -175,15 +184,31 @@ function AdminSendModal({
             </ScrollView>
 
             <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>{isAr ? 'الهدف' : 'Target'}</Text>
-            <View style={{ flexDirection: 'row', marginBottom: spacing.md }}>
-              {(['ALL', 'USER', 'SHIFT'] as const).map(t => (
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginBottom: spacing.md }}>
+              {(['ALL', 'ROLE', 'USER', 'SHIFT'] as const).map(t => (
                 <TouchableOpacity key={t} style={chip(form.targetType === t)} onPress={() => U('targetType', t)}>
                   <Text style={chipTxt(form.targetType === t)}>
-                    {t === 'ALL' ? (isAr ? 'الكل' : 'All') : t === 'USER' ? (isAr ? 'مستخدم' : 'User') : (isAr ? 'وردية' : 'Shift')}
+                    {t === 'ALL' ? (isAr ? 'الكل' : 'All')
+                      : t === 'USER'  ? (isAr ? 'مستخدم' : 'User')
+                      : t === 'SHIFT' ? (isAr ? 'وردية' : 'Shift')
+                      :                 (isAr ? 'دور' : 'Role')}
                   </Text>
                 </TouchableOpacity>
               ))}
             </View>
+
+            {form.targetType === 'ROLE' && (
+              <>
+                <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>{isAr ? 'اختر الدور' : 'Select Role'}</Text>
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginBottom: spacing.md }}>
+                  {ROLES.map(r => (
+                    <TouchableOpacity key={r.key} style={[chip(form.role === r.key), { marginBottom: 6 }]} onPress={() => U('role', r.key)}>
+                      <Text style={chipTxt(form.role === r.key)}>{isAr ? r.labelAr : r.labelEn}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </>
+            )}
 
             {form.targetType === 'USER' && users.length > 0 && (
               <>
@@ -266,7 +291,11 @@ export function NotificationsScreen() {
   const load = useCallback(async () => {
     try {
       const res = await api.get<any>('/notifications?limit=50');
-      const list: Notification[] = Array.isArray(res) ? res : (res?.notifications ?? []);
+      const list: Notification[] = Array.isArray(res)
+        ? res
+        : Array.isArray(res?.items)
+          ? res.items
+          : [];
       setNotifs(list);
     } finally {
       setLoading(false);

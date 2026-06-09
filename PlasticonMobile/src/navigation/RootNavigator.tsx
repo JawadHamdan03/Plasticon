@@ -16,6 +16,7 @@ import { WorkerTabs }     from './WorkerTabs';
 import { EngineerTabs }   from './EngineerTabs';
 import { AccountantTabs } from './AccountantTabs';
 import { AdminTabs }      from './AdminTabs';
+import { SalesRepTabs }   from './SalesRepTabs';
 import { AppTopBar }      from '../components/AppTopBar';
 import { colors }         from '../theme';
 import { useAppTheme }    from '../context/ThemeContext';
@@ -41,6 +42,7 @@ function AppTabs({ role }: { role: string }) {
     case 'ENGINEER':   return <EngineerTabs />;
     case 'ACCOUNTANT': return <AccountantTabs />;
     case 'ADMIN':      return <AdminTabs />;
+    case 'SALES_REP':  return <SalesRepTabs />;
     default:           return <WorkerTabs />;
   }
 }

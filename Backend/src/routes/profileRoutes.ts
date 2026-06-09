@@ -12,7 +12,7 @@ import {
 
 const router = Router();
 
-const ALL_ROLES = [UserRole.ADMIN, UserRole.ENGINEER, UserRole.ACCOUNTANT, UserRole.WORKER];
+const ALL_ROLES = [UserRole.ADMIN, UserRole.ENGINEER, UserRole.ACCOUNTANT, UserRole.WORKER, UserRole.SALES_REP];
 
 const handlePhotoUpload = (req: Request, res: Response, next: NextFunction) => {
   upload.single("photo")(req, res, (err: unknown) => {

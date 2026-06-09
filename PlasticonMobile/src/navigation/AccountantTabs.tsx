@@ -4,6 +4,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons }                   from '@expo/vector-icons';
 import { useAppTheme }                from '../context/ThemeContext';
 import { useLocale }                  from '../context/LocaleContext';
+import { useUnreadCount }             from '../hooks/useUnreadCount';
 
 import {
   AccountantTabParamList,
@@ -38,6 +39,7 @@ import { SuppliersScreen }           from '../screens/accountant/SuppliersScreen
 import { EmployeePerformanceScreen } from '../screens/accountant/EmployeePerformanceScreen';
 import { MaintCostsScreen }          from '../screens/engineer/MaintCostsScreen';
 import { ElectricityScreen }         from '../screens/admin/ElectricityScreen';
+import { SalesReviewScreen }         from '../screens/accountant/SalesReviewScreen';
 
 // ─── HR screens ───────────────────────────────────────────────────────────────
 import { AccountantHRMenuScreen } from '../screens/accountant/AccountantHRMenuScreen';
@@ -102,6 +104,7 @@ function FinanceNavigator() {
       <FinanceStack.Screen name="EmployeePerformance"  component={EmployeePerformanceScreen} />
       <FinanceStack.Screen name="MaintCosts"           component={MaintCostsScreen} />
       <FinanceStack.Screen name="Electricity"          component={ElectricityScreen} />
+      <FinanceStack.Screen name="SalesReview"          component={SalesReviewScreen} />
     </FinanceStack.Navigator>
   );
 }
@@ -149,8 +152,9 @@ function PersonalNavigator() {
 const Tab = createBottomTabNavigator<AccountantTabParamList>();
 
 export function AccountantTabs() {
-  const { colors } = useAppTheme();
-  const { isAr }   = useLocale();
+  const { colors }  = useAppTheme();
+  const { isAr }    = useLocale();
+  const unreadCount = useUnreadCount();
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -182,7 +186,7 @@ export function AccountantTabs() {
       <Tab.Screen name="Finance"  component={FinanceNavigator}  options={{ tabBarLabel: isAr ? 'المالية'   : 'Finance'  }} />
       <Tab.Screen name="HR"       component={HRNavigator}       options={{ tabBarLabel: isAr ? 'الموارد'   : 'HR'       }} />
       <Tab.Screen name="AITools"  component={AINavigator}       options={{ tabBarLabel: isAr ? 'الذكاء'    : 'AI Tools' }} />
-      <Tab.Screen name="Personal" component={PersonalNavigator} options={{ tabBarLabel: isAr ? 'شخصي'      : 'Personal' }} />
+      <Tab.Screen name="Personal" component={PersonalNavigator} options={{ tabBarLabel: isAr ? 'شخصي' : 'Personal', tabBarBadge: unreadCount > 0 ? unreadCount : undefined }} />
     </Tab.Navigator>
   );
 }

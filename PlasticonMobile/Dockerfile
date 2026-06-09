@@ -1,6 +1,6 @@
 FROM node:20-alpine
 
-RUN apk add --no-cache git
+RUN apk add --no-cache git wget
 
 WORKDIR /app
 
@@ -17,6 +17,7 @@ EXPOSE 8081 8082 19000 19001 19002
 # so the host machine (and physical devices on the same network) can connect
 ENV EXPO_DEVTOOLS_LISTEN_ADDRESS=0.0.0.0
 
-# --web   → also serves the Expo Web version at http://localhost:8082
-# --host  → binds Metro to 0.0.0.0 so it is reachable outside the container
-CMD ["npx", "expo", "start", "--web", "--host", "lan"]
+RUN chmod +x startup.sh
+
+# startup.sh: starts Metro, pre-warms iOS/Android bundles, serves QR code on :8082
+CMD ["sh", "startup.sh"]
