@@ -1,5 +1,6 @@
-import React, { useCallback, useEffect, useState } from 'react';
+﻿import React, { useCallback, useEffect, useState } from 'react';
 import {
+import { useLocale } from '../../context/LocaleContext';
   ActivityIndicator, Alert, FlatList, KeyboardAvoidingView, Modal,
   Platform, Pressable, RefreshControl, ScrollView,
   StyleSheet, Text, TextInput, TouchableOpacity, View,
@@ -10,7 +11,6 @@ import { api } from '../../api/client';
 import { ScreenHeader, StatCard } from '../../components';
 import { radius, shadow, spacing, typography } from '../../theme';
 import { useAppTheme } from '../../context/ThemeContext';
-import { useLocale } from '../../context/LocaleContext';
 
 function fmt(n: number) {
   return n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -78,10 +78,10 @@ export function TaxComplianceScreen() {
 
   const handleDelete = (f: TaxFiling) => {
     Alert.alert(
-      isAr ? 'حذف' : 'Delete', isAr ? 'هل أنت متأكد؟' : 'Are you sure?',
+      'حذف', 'هل أنت متأكد؟',
       [
-        { text: isAr ? 'إلغاء' : 'Cancel', style: 'cancel' },
-        { text: isAr ? 'حذف' : 'Delete', style: 'destructive', onPress: async () => {
+        { text: 'إلغاء', style: 'cancel' },
+        { text: 'حذف', style: 'destructive', onPress: async () => {
           try {
             await api.delete(`/tax-filings/${f.id}`);
             setFilings((p) => p.filter((x) => x.id !== f.id));
@@ -93,10 +93,10 @@ export function TaxComplianceScreen() {
 
   const submit = async () => {
     if (!form.amount || isNaN(Number(form.amount))) {
-      Alert.alert(isAr ? 'مطلوب' : 'Required', isAr ? 'أدخل المبلغ' : 'Enter amount'); return;
+      Alert.alert('مطلوب', 'أدخل المبلغ'); return;
     }
     if (!form.dueDate) {
-      Alert.alert(isAr ? 'مطلوب' : 'Required', isAr ? 'أدخل تاريخ الاستحقاق' : 'Enter due date'); return;
+      Alert.alert('مطلوب', 'أدخل تاريخ الاستحقاق'); return;
     }
     setSaving(true);
     try {
@@ -127,7 +127,7 @@ export function TaxComplianceScreen() {
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
-      <ScreenHeader title={isAr ? 'الامتثال الضريبي' : 'Tax Compliance'} showBack />
+      <ScreenHeader title={'الامتثال الضريبي'} showBack />
 
       {!!apiError && (
         <View style={[styles.errorBanner, { backgroundColor: '#fef2f2', borderColor: '#fca5a5' }]}>
@@ -147,12 +147,12 @@ export function TaxComplianceScreen() {
           ListHeaderComponent={
             <View>
               <View style={styles.kpiRow}>
-                <StatCard label={isAr ? 'الإجمالي' : 'Total'} value={`$${fmt(totalAmt)}`} icon="document-text" color={colors.primary} style={styles.kpi} />
-                <StatCard label={isAr ? 'مكتمل' : 'Completed'} value={String(completed)} icon="checkmark-circle" color={colors.success} style={styles.kpi} />
+                <StatCard label={'الإجمالي'} value={`$${fmt(totalAmt)}`} icon="document-text" color={colors.primary} style={styles.kpi} />
+                <StatCard label={'مكتمل'} value={String(completed)} icon="checkmark-circle" color={colors.success} style={styles.kpi} />
               </View>
               <View style={[styles.kpiRow, { marginBottom: spacing.md }]}>
-                <StatCard label={isAr ? 'معلق' : 'Pending'} value={String(pending)} icon="time" color={colors.warning} style={styles.kpi} />
-                <StatCard label={isAr ? 'متأخر' : 'Overdue'} value={String(overdue)} icon="alert-circle" color={colors.danger} style={styles.kpi} />
+                <StatCard label={'معلق'} value={String(pending)} icon="time" color={colors.warning} style={styles.kpi} />
+                <StatCard label={'متأخر'} value={String(overdue)} icon="alert-circle" color={colors.danger} style={styles.kpi} />
               </View>
               <View style={styles.filterRow}>
                 {FILTERS.map((f) => (
@@ -167,7 +167,7 @@ export function TaxComplianceScreen() {
               </View>
               <TouchableOpacity style={[styles.addBtn, { backgroundColor: colors.primary }]} onPress={openCreate} activeOpacity={0.8}>
                 <Ionicons name="add-circle" size={20} color="#fff" />
-                <Text style={styles.addText}>{isAr ? 'إضافة ملف ضريبي' : 'Add Tax Filing'}</Text>
+                <Text style={styles.addText}>{'إضافة ملف ضريبي'}</Text>
               </TouchableOpacity>
             </View>
           }
@@ -181,12 +181,12 @@ export function TaxComplianceScreen() {
                     <Text style={[styles.cardAmt, { color: colors.primary }]}>${fmt(Number(f.amount))}</Text>
                     {f.dueDate ? (
                       <Text style={[styles.cardSub, { color: colors.textMuted }]}>
-                        {isAr ? 'الاستحقاق: ' : 'Due: '}{new Date(f.dueDate).toLocaleDateString()}
+                        {'الاستحقاق: '}{new Date(f.dueDate).toLocaleDateString()}
                       </Text>
                     ) : null}
                     {f.filedBy ? (
                       <Text style={[styles.cardSub, { color: colors.textMuted }]}>
-                        {isAr ? 'بواسطة: ' : 'By: '}{f.filedBy.fullName}
+                        {'بواسطة: '}{f.filedBy.fullName}
                       </Text>
                     ) : null}
                   </View>
@@ -210,7 +210,7 @@ export function TaxComplianceScreen() {
           ListEmptyComponent={
             <View style={styles.empty}>
               <Ionicons name="document-text-outline" size={44} color={colors.textMuted} />
-              <Text style={[styles.emptyText, { color: colors.textMuted }]}>{isAr ? 'لا توجد ملفات ضريبية' : 'No tax filings'}</Text>
+              <Text style={[styles.emptyText, { color: colors.textMuted }]}>{'لا توجد ملفات ضريبية'}</Text>
             </View>
           }
         />
@@ -222,10 +222,10 @@ export function TaxComplianceScreen() {
           <View style={[styles.sheet, { backgroundColor: colors.surface }]}>
             <View style={[styles.handle, { backgroundColor: colors.border }]} />
             <Text style={[styles.sheetTitle, { color: colors.text }]}>
-              {editing ? (isAr ? 'تعديل الملف' : 'Edit Filing') : (isAr ? 'ملف ضريبي جديد' : 'New Tax Filing')}
+              {editing ? ('تعديل الملف') : ('ملف ضريبي جديد')}
             </Text>
             <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-              <Text style={[styles.label, { color: colors.textMuted }]}>{isAr ? 'نوع الضريبة *' : 'Tax Type *'}</Text>
+              <Text style={[styles.label, { color: colors.textMuted }]}>{'نوع الضريبة *'}</Text>
               <View style={styles.chipGroup}>
                 {TAX_TYPES.map((t) => (
                   <TouchableOpacity key={t}
@@ -239,17 +239,17 @@ export function TaxComplianceScreen() {
                 ))}
               </View>
 
-              <Text style={[styles.label, { color: colors.textMuted }]}>{isAr ? 'المبلغ *' : 'Amount *'}</Text>
+              <Text style={[styles.label, { color: colors.textMuted }]}>{'المبلغ *'}</Text>
               <TextInput style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
                 placeholder="0.00" placeholderTextColor={colors.textMuted} keyboardType="decimal-pad"
                 value={form.amount} onChangeText={(v) => setForm((p) => ({ ...p, amount: v }))} />
 
-              <Text style={[styles.label, { color: colors.textMuted }]}>{isAr ? 'تاريخ الاستحقاق *' : 'Due Date *'}</Text>
+              <Text style={[styles.label, { color: colors.textMuted }]}>{'تاريخ الاستحقاق *'}</Text>
               <TextInput style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
                 placeholder="YYYY-MM-DD" placeholderTextColor={colors.textMuted}
                 value={form.dueDate} onChangeText={(v) => setForm((p) => ({ ...p, dueDate: v }))} />
 
-              <Text style={[styles.label, { color: colors.textMuted }]}>{isAr ? 'الحالة *' : 'Status *'}</Text>
+              <Text style={[styles.label, { color: colors.textMuted }]}>{'الحالة *'}</Text>
               <View style={styles.chipGroup}>
                 {STATUSES.map((s) => (
                   <TouchableOpacity key={s}
@@ -264,10 +264,10 @@ export function TaxComplianceScreen() {
 
             <View style={styles.actions}>
               <TouchableOpacity style={[styles.cancelBtn, { borderColor: colors.border }]} onPress={() => setModal(false)}>
-                <Text style={[styles.cancelText, { color: colors.textSecondary }]}>{isAr ? 'إلغاء' : 'Cancel'}</Text>
+                <Text style={[styles.cancelText, { color: colors.textSecondary }]}>{'إلغاء'}</Text>
               </TouchableOpacity>
               <TouchableOpacity style={[styles.saveBtn, { backgroundColor: colors.primary }, saving && { opacity: 0.6 }]} onPress={submit} disabled={saving}>
-                {saving ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.saveText}>{isAr ? 'حفظ' : 'Save'}</Text>}
+                {saving ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.saveText}>{'حفظ'}</Text>}
               </TouchableOpacity>
             </View>
           </View>

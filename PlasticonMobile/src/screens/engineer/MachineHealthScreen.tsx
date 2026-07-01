@@ -1,5 +1,6 @@
-import React, { useCallback, useEffect, useState } from 'react';
+﻿import React, { useCallback, useEffect, useState } from 'react';
 import {
+import { useLocale } from '../../context/LocaleContext';
   ActivityIndicator, Alert, FlatList, KeyboardAvoidingView,
   Modal, Platform, RefreshControl, ScrollView, StyleSheet,
   Text, TextInput, TouchableOpacity, View,
@@ -10,7 +11,6 @@ import { api } from '../../api/client';
 import { Button, ScreenHeader } from '../../components';
 import { radius, shadow, spacing, typography } from '../../theme';
 import { useAppTheme } from '../../context/ThemeContext';
-import { useLocale } from '../../context/LocaleContext';
 
 interface Machine { id: number; name: string; type?: string }
 interface HealthRecord {
@@ -56,7 +56,7 @@ function RecordModal({ visible, machines, initial, title, onClose, onSave }: {
   const set = (k: keyof FormState) => (v: string) => setForm((p) => ({ ...p, [k]: v }));
 
   const submit = async () => {
-    if (!form.machineId) { Alert.alert(isAr ? 'مطلوب' : 'Required', isAr ? 'اختر آلة.' : 'Select a machine.'); return; }
+    if (!form.machineId) { Alert.alert('مطلوب', 'اختر آلة.'); return; }
     setSaving(true);
     try { await onSave(form); } finally { setSaving(false); }
   };
@@ -68,7 +68,7 @@ function RecordModal({ visible, machines, initial, title, onClose, onSave }: {
           <View style={[styles.handle, { backgroundColor: colors.border }]} />
           <Text style={[styles.sheetTitle, { color: colors.text }]}>{title}</Text>
           <ScrollView showsVerticalScrollIndicator={false}>
-            <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{isAr ? 'الآلة *' : 'Machine *'}</Text>
+            <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{'الآلة *'}</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: spacing.md }}>
               {machines.map((m) => (
                 <TouchableOpacity key={m.id}
@@ -81,7 +81,7 @@ function RecordModal({ visible, machines, initial, title, onClose, onSave }: {
               ))}
             </ScrollView>
 
-            <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{isAr ? 'الحالة *' : 'Status *'}</Text>
+            <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{'الحالة *'}</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: spacing.md }}>
               {STATUS_LIST.map((s) => (
                 <TouchableOpacity key={s}
@@ -95,9 +95,9 @@ function RecordModal({ visible, machines, initial, title, onClose, onSave }: {
             </ScrollView>
 
             {[
-              { label: isAr ? 'معدل الكفاءة (%)' : 'Efficiency (%)', key: 'efficiency' as const },
-              { label: isAr ? 'ساعات الصيانة' : 'Maintenance Hours', key: 'maintHours' as const },
-              { label: isAr ? 'نسبة التوقف (%)' : 'Downtime (%)', key: 'downtime' as const },
+              { label: 'معدل الكفاءة (%)', key: 'efficiency' as const },
+              { label: 'ساعات الصيانة', key: 'maintHours' as const },
+              { label: 'نسبة التوقف (%)', key: 'downtime' as const },
             ].map((f) => (
               <View key={f.key} style={styles.field}>
                 <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{f.label}</Text>
@@ -110,7 +110,7 @@ function RecordModal({ visible, machines, initial, title, onClose, onSave }: {
             ))}
 
             <View style={styles.field}>
-              <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{isAr ? 'ملاحظات' : 'Notes'}</Text>
+              <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{'ملاحظات'}</Text>
               <TextInput
                 style={[styles.input, styles.inputMulti, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
                 placeholderTextColor={colors.textMuted} multiline value={form.notes} onChangeText={set('notes')}
@@ -118,8 +118,8 @@ function RecordModal({ visible, machines, initial, title, onClose, onSave }: {
             </View>
 
             <View style={styles.actions}>
-              <Button variant="ghost" onPress={onClose} style={styles.actionBtn}>{isAr ? 'إلغاء' : 'Cancel'}</Button>
-              <Button onPress={submit} loading={saving} style={styles.actionBtn}>{isAr ? 'حفظ' : 'Save'}</Button>
+              <Button variant="ghost" onPress={onClose} style={styles.actionBtn}>{'إلغاء'}</Button>
+              <Button onPress={submit} loading={saving} style={styles.actionBtn}>{'حفظ'}</Button>
             </View>
           </ScrollView>
         </View>
@@ -153,17 +153,17 @@ function HealthCard({ item, onEdit, onDelete }: { item: HealthRecord; onEdit: ()
       <View style={[styles.metrics, { borderTopColor: colors.border }]}>
         <View style={styles.metric}>
           <Text style={[styles.metricVal, { color: colors.primary }]}>{item.efficiencyRating}%</Text>
-          <Text style={[styles.metricLabel, { color: colors.textMuted }]}>{isAr ? 'الكفاءة' : 'Efficiency'}</Text>
+          <Text style={[styles.metricLabel, { color: colors.textMuted }]}>{'الكفاءة'}</Text>
         </View>
         <View style={[styles.metricDivider, { backgroundColor: colors.border }]} />
         <View style={styles.metric}>
           <Text style={[styles.metricVal, { color: item.downtimePercentage > 10 ? colors.danger : colors.text }]}>{item.downtimePercentage}%</Text>
-          <Text style={[styles.metricLabel, { color: colors.textMuted }]}>{isAr ? 'التوقف' : 'Downtime'}</Text>
+          <Text style={[styles.metricLabel, { color: colors.textMuted }]}>{'التوقف'}</Text>
         </View>
         <View style={[styles.metricDivider, { backgroundColor: colors.border }]} />
         <View style={styles.metric}>
           <Text style={[styles.metricVal, { color: colors.text }]}>{item.maintenanceHours}h</Text>
-          <Text style={[styles.metricLabel, { color: colors.textMuted }]}>{isAr ? 'ساعات الصيانة' : 'Maint. Hrs'}</Text>
+          <Text style={[styles.metricLabel, { color: colors.textMuted }]}>{'ساعات الصيانة'}</Text>
         </View>
       </View>
       {item.notes ? <Text style={[styles.notes, { color: colors.textMuted }]} numberOfLines={2}>{item.notes}</Text> : null}
@@ -208,11 +208,11 @@ export function MachineHealthScreen() {
 
   const confirmDelete = (item: HealthRecord) => {
     Alert.alert(
-      isAr ? 'حذف السجل' : 'Delete Record',
-      `${isAr ? 'حذف سجل' : 'Delete record for'} "${item.machine?.name ?? `#${item.id}`}"?`,
+      'حذف السجل',
+      `${'حذف سجل'} "${item.machine?.name ?? `#${item.id}`}"?`,
       [
-        { text: isAr ? 'إلغاء' : 'Cancel', style: 'cancel' },
-        { text: isAr ? 'حذف' : 'Delete', style: 'destructive', onPress: () => void doDelete(item.id) },
+        { text: 'إلغاء', style: 'cancel' },
+        { text: 'حذف', style: 'destructive', onPress: () => void doDelete(item.id) },
       ],
     );
   };
@@ -222,7 +222,7 @@ export function MachineHealthScreen() {
       await api.delete(`/machine-health/${id}`);
       setRecords((prev) => prev.filter((r) => r.id !== id));
     } catch (e: any) {
-      Alert.alert(isAr ? 'خطأ' : 'Error', e?.message ?? (isAr ? 'فشل الحذف.' : 'Failed to delete.'));
+      Alert.alert('خطأ', e?.message ?? ('فشل الحذف.'));
     }
   };
 
@@ -245,7 +245,7 @@ export function MachineHealthScreen() {
       setLoading(true);
       void load();
     } catch (e: any) {
-      Alert.alert(isAr ? 'خطأ' : 'Error', e?.message ?? (isAr ? 'فشل الحفظ.' : 'Failed to save.'));
+      Alert.alert('خطأ', e?.message ?? ('فشل الحفظ.'));
     }
   };
 
@@ -262,7 +262,7 @@ export function MachineHealthScreen() {
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
-      <ScreenHeader title={isAr ? 'صحة الآلات' : 'Machine Health'} subtitle={`${records.length} ${isAr ? 'سجل' : 'records'}`} showBack />
+      <ScreenHeader title={'صحة الآلات'} subtitle={`${records.length} ${'سجل'}`} showBack />
       {loading ? (
         <View style={styles.center}><ActivityIndicator size="large" color={colors.primary} /></View>
       ) : (
@@ -278,7 +278,7 @@ export function MachineHealthScreen() {
           ListEmptyComponent={
             <View style={styles.empty}>
               <Ionicons name="pulse-outline" size={44} color={colors.textMuted} />
-              <Text style={[styles.emptyText, { color: colors.textMuted }]}>{isAr ? 'لا توجد سجلات صحة' : 'No health records'}</Text>
+              <Text style={[styles.emptyText, { color: colors.textMuted }]}>{'لا توجد سجلات صحة'}</Text>
             </View>
           }
         />
@@ -290,7 +290,7 @@ export function MachineHealthScreen() {
         visible={modal}
         machines={machines}
         initial={initForm}
-        title={editing ? (isAr ? 'تعديل السجل' : 'Edit Record') : (isAr ? 'تسجيل سجل صحة' : 'Log Health Record')}
+        title={editing ? ('تعديل السجل') : ('تسجيل سجل صحة')}
         onClose={() => setModal(false)}
         onSave={handleSave}
       />

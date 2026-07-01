@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+﻿import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator, Alert, Modal, RefreshControl, ScrollView,
   StyleSheet, Text, TextInput, TouchableOpacity, View,
@@ -9,7 +9,6 @@ import { api } from '../../api/client';
 import { ScreenHeader } from '../../components';
 import { radius, shadow, spacing, typography } from '../../theme';
 import { useAppTheme } from '../../context/ThemeContext';
-import { useLocale } from '../../context/LocaleContext';
 
 interface WasteRecord {
   id: number;
@@ -23,7 +22,6 @@ interface WasteRecord {
 
 export function MaterialWasteScreen() {
   const { colors } = useAppTheme();
-  const { isAr } = useLocale();
   const today0 = new Date().toISOString().slice(0, 10);
   const month0 = new Date().toISOString().slice(0, 7) + '-01';
   const [fromDate, setFromDate] = useState(month0);
@@ -60,18 +58,18 @@ export function MaterialWasteScreen() {
 
   const handleDelete = (rec: WasteRecord) => {
     Alert.alert(
-      isAr ? 'حذف السجل' : 'Delete Record',
-      isAr ? 'هل أنت متأكد؟' : 'Are you sure?',
+      'حذف السجل',
+      'هل أنت متأكد؟',
       [
-        { text: isAr ? 'إلغاء' : 'Cancel', style: 'cancel' },
+        { text: 'إلغاء', style: 'cancel' },
         {
-          text: isAr ? 'حذف' : 'Delete', style: 'destructive',
+          text: 'حذف', style: 'destructive',
           onPress: async () => {
             try {
               await api.delete(`/worker-tools/entries/waste/${rec.id}`);
               setRecords((prev) => prev.filter((r) => r.id !== rec.id));
             } catch (e: any) {
-              Alert.alert(isAr ? 'خطأ' : 'Error', e.message ?? 'Failed');
+              Alert.alert('خطأ', e.message ?? 'Failed');
             }
           },
         },
@@ -80,10 +78,10 @@ export function MaterialWasteScreen() {
   };
 
   const submit = async () => {
-    if (!machineLabel.trim()) { Alert.alert(isAr ? 'مطلوب' : 'Required', isAr ? 'أدخل اسم الآلة.' : 'Enter machine label.'); return; }
-    if (!materialType.trim()) { Alert.alert(isAr ? 'مطلوب' : 'Required', isAr ? 'أدخل نوع المادة.' : 'Enter material type.'); return; }
-    if (!wasteKg.trim() || isNaN(Number(wasteKg)) || Number(wasteKg) < 0) { Alert.alert(isAr ? 'مطلوب' : 'Required', isAr ? 'أدخل كمية هدر صالحة.' : 'Enter a valid waste amount.'); return; }
-    if (!reason.trim()) { Alert.alert(isAr ? 'مطلوب' : 'Required', isAr ? 'أدخل سبب الهدر.' : 'Enter waste reason.'); return; }
+    if (!machineLabel.trim()) { Alert.alert('مطلوب', 'أدخل اسم الآلة.'); return; }
+    if (!materialType.trim()) { Alert.alert('مطلوب', 'أدخل نوع المادة.'); return; }
+    if (!wasteKg.trim() || isNaN(Number(wasteKg)) || Number(wasteKg) < 0) { Alert.alert('مطلوب', 'أدخل كمية هدر صالحة.'); return; }
+    if (!reason.trim()) { Alert.alert('مطلوب', 'أدخل سبب الهدر.'); return; }
     setSaving(true);
     try {
       await api.post('/worker-tools/material-waste', {
@@ -97,15 +95,15 @@ export function MaterialWasteScreen() {
       setMachineLabel(''); setMachineType(''); setMaterialType(''); setWasteKg(''); setReason('');
       setLoading(true); void load();
     } catch (e: any) {
-      Alert.alert(isAr ? 'خطأ' : 'Error', e.message ?? (isAr ? 'فشل تسجيل الهدر.' : 'Failed to log waste.'));
+      Alert.alert('خطأ', e.message ?? ('فشل تسجيل الهدر.'));
     } finally { setSaving(false); }
   };
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
       <ScreenHeader
-        title={isAr ? 'هدر المواد' : 'Material Waste'}
-        subtitle={`${records.length} ${isAr ? 'مسجل' : 'logged'} · ${totalKg.toFixed(1)} kg ${isAr ? 'إجمالي' : 'total'}`}
+        title={'هدر المواد'}
+        subtitle={`${records.length} ${'مسجل'} · ${totalKg.toFixed(1)} kg ${'إجمالي'}`}
         showBack
       />
       {loading ? (
@@ -140,13 +138,13 @@ export function MaterialWasteScreen() {
           </View>
           <TouchableOpacity style={[styles.addBtn, { backgroundColor: colors.danger }]} onPress={() => setModal(true)} activeOpacity={0.8}>
             <Ionicons name="add-circle" size={20} color="#fff" />
-            <Text style={styles.addText}>{isAr ? 'تسجيل هدر مواد' : 'Log Material Waste'}</Text>
+            <Text style={styles.addText}>{'تسجيل هدر مواد'}</Text>
           </TouchableOpacity>
 
           {filteredRecords.length === 0 ? (
             <View style={styles.empty}>
               <Ionicons name="trash-outline" size={44} color={colors.textMuted} />
-              <Text style={[styles.emptyText, { color: colors.textMuted }]}>{isAr ? 'لا توجد سجلات هدر' : 'No waste records logged'}</Text>
+              <Text style={[styles.emptyText, { color: colors.textMuted }]}>{'لا توجد سجلات هدر'}</Text>
             </View>
           ) : (
             <View style={styles.list}>
@@ -182,29 +180,29 @@ export function MaterialWasteScreen() {
           <View style={[styles.sheet, { backgroundColor: colors.surface }]}>
             <View style={[styles.handle, { backgroundColor: colors.border }]} />
             <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-              <Text style={[styles.sheetTitle, { color: colors.text }]}>{isAr ? 'تسجيل هدر مواد' : 'Log Material Waste'}</Text>
+              <Text style={[styles.sheetTitle, { color: colors.text }]}>{'تسجيل هدر مواد'}</Text>
 
-              <Text style={[styles.label, { color: colors.textMuted }]}>{isAr ? 'اسم الآلة *' : 'Machine Label *'}</Text>
-              <TextInput style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]} placeholder={isAr ? 'مثال: آلة بثق 1' : 'e.g. Extruder 1'} placeholderTextColor={colors.textMuted} value={machineLabel} onChangeText={setMachineLabel} />
+              <Text style={[styles.label, { color: colors.textMuted }]}>{'اسم الآلة *'}</Text>
+              <TextInput style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]} placeholder={'مثال: آلة بثق 1'} placeholderTextColor={colors.textMuted} value={machineLabel} onChangeText={setMachineLabel} />
 
-              <Text style={[styles.label, { color: colors.textMuted }]}>{isAr ? 'نوع الآلة (اختياري)' : 'Machine Type (optional)'}</Text>
-              <TextInput style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]} placeholder={isAr ? 'مثال: بثق' : 'e.g. Extruder'} placeholderTextColor={colors.textMuted} value={machineType} onChangeText={setMachineType} />
+              <Text style={[styles.label, { color: colors.textMuted }]}>{'نوع الآلة (اختياري)'}</Text>
+              <TextInput style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]} placeholder={'مثال: بثق'} placeholderTextColor={colors.textMuted} value={machineType} onChangeText={setMachineType} />
 
-              <Text style={[styles.label, { color: colors.textMuted }]}>{isAr ? 'نوع المادة *' : 'Material Type *'}</Text>
-              <TextInput style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]} placeholder={isAr ? 'مثال: راتنج PVC' : 'e.g. PVC Resin'} placeholderTextColor={colors.textMuted} value={materialType} onChangeText={setMaterialType} />
+              <Text style={[styles.label, { color: colors.textMuted }]}>{'نوع المادة *'}</Text>
+              <TextInput style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]} placeholder={'مثال: راتنج PVC'} placeholderTextColor={colors.textMuted} value={materialType} onChangeText={setMaterialType} />
 
-              <Text style={[styles.label, { color: colors.textMuted }]}>{isAr ? 'الكمية (كغ) *' : 'Waste Amount (kg) *'}</Text>
+              <Text style={[styles.label, { color: colors.textMuted }]}>{'الكمية (كغ) *'}</Text>
               <TextInput style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]} placeholder="e.g. 5.5" placeholderTextColor={colors.textMuted} value={wasteKg} onChangeText={setWasteKg} keyboardType="decimal-pad" />
 
-              <Text style={[styles.label, { color: colors.textMuted }]}>{isAr ? 'السبب *' : 'Reason *'}</Text>
-              <TextInput style={[styles.input, styles.inputMulti, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]} placeholder={isAr ? 'اشرح سبب الهدر…' : 'Describe the cause of waste…'} placeholderTextColor={colors.textMuted} value={reason} onChangeText={setReason} multiline numberOfLines={3} />
+              <Text style={[styles.label, { color: colors.textMuted }]}>{'السبب *'}</Text>
+              <TextInput style={[styles.input, styles.inputMulti, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]} placeholder={'اشرح سبب الهدر…'} placeholderTextColor={colors.textMuted} value={reason} onChangeText={setReason} multiline numberOfLines={3} />
 
               <View style={styles.actions}>
                 <TouchableOpacity style={[styles.cancelBtn, { borderColor: colors.border }]} onPress={() => setModal(false)}>
-                  <Text style={[styles.cancelText, { color: colors.textMuted }]}>{isAr ? 'إلغاء' : 'Cancel'}</Text>
+                  <Text style={[styles.cancelText, { color: colors.textMuted }]}>{'إلغاء'}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={[styles.submitBtn, { backgroundColor: colors.danger }]} onPress={submit} disabled={saving}>
-                  {saving ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.submitText}>{isAr ? 'تسجيل الهدر' : 'Log Waste'}</Text>}
+                  {saving ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.submitText}>{'تسجيل الهدر'}</Text>}
                 </TouchableOpacity>
               </View>
             </ScrollView>

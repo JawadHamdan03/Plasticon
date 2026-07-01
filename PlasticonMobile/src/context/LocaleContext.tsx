@@ -1,45 +1,38 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import React, { createContext, useContext } from 'react';
 import { I18nManager } from 'react-native';
 
-const STORAGE_KEY = 'plasticon_locale';
+// Permanently locked to Arabic
+I18nManager.forceRTL(true);
 
-export type Locale = 'en' | 'ar';
+export type Locale = 'ar';
 
 type LocaleContextValue = {
   locale: Locale;
-  isAr: boolean;
+  isAr: true;
   setLocale: (l: Locale) => void;
   t: (en: string, ar: string) => string;
 };
 
-const LocaleContext = createContext<LocaleContextValue | undefined>(undefined);
+const LocaleContext = createContext<LocaleContextValue>({
+  locale: 'ar',
+  isAr: true,
+  setLocale: () => {},
+  t: (_en, ar) => ar,
+});
 
 export function LocaleProvider({ children }: { children: React.ReactNode }) {
-  const [locale, setLocaleState] = useState<Locale>('ar');
-
-  useEffect(() => {
-    I18nManager.forceRTL(true);
-    AsyncStorage.setItem(STORAGE_KEY, 'ar');
-  }, []);
-
-  const setLocale = (l: Locale) => {
-    setLocaleState(l);
-    AsyncStorage.setItem(STORAGE_KEY, l);
-    I18nManager.forceRTL(l === 'ar');
-  };
-
-  const t = (en: string, ar: string) => locale === 'ar' ? ar : en;
-
   return (
-    <LocaleContext.Provider value={{ locale, isAr: locale === 'ar', setLocale, t }}>
+    <LocaleContext.Provider value={{
+      locale: 'ar',
+      isAr: true,
+      setLocale: () => {},
+      t: (_en, ar) => ar,
+    }}>
       {children}
     </LocaleContext.Provider>
   );
 }
 
 export function useLocale() {
-  const ctx = useContext(LocaleContext);
-  if (!ctx) throw new Error('useLocale must be used inside LocaleProvider');
-  return ctx;
+  return useContext(LocaleContext);
 }

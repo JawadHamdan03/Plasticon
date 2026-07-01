@@ -1,5 +1,6 @@
-import React, { useCallback, useEffect, useState } from 'react';
+﻿import React, { useCallback, useEffect, useState } from 'react';
 import {
+import { useLocale } from '../../context/LocaleContext';
   ActivityIndicator, RefreshControl, ScrollView,
   StyleSheet, Text, View,
 } from 'react-native';
@@ -9,7 +10,6 @@ import { api } from '../../api/client';
 import { ScreenHeader } from '../../components';
 import { radius, shadow, spacing, typography } from '../../theme';
 import { useAppTheme } from '../../context/ThemeContext';
-import { useLocale } from '../../context/LocaleContext';
 
 interface ConsumptionRecord {
   id:           string;
@@ -42,9 +42,9 @@ export function ConsumptionScreen() {
       setData({
         records: rows.map((r) => ({
           id:           String(r.id),
-          materialName: r.material?.name ?? `${isAr ? 'مادة' : 'Material'} #${r.id}`,
+          materialName: r.material?.name ?? `${'مادة'} #${r.id}`,
           quantity:     r.quantity,
-          unit:         r.material?.unit ?? (isAr ? 'وحدة' : 'units'),
+          unit:         r.material?.unit ?? ('وحدة'),
           date:         r.createdAt,
         })),
       });
@@ -62,7 +62,7 @@ export function ConsumptionScreen() {
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
-      <ScreenHeader title={isAr ? 'الاستهلاك' : 'Consumption'} subtitle={isAr ? 'تتبع استخدام المواد الخام' : 'Raw material usage tracking'} showBack />
+      <ScreenHeader title={'الاستهلاك'} subtitle={'تتبع استخدام المواد الخام'} showBack />
       {loading ? (
         <View style={styles.center}><ActivityIndicator size="large" color={colors.primary} /></View>
       ) : (
@@ -75,24 +75,24 @@ export function ConsumptionScreen() {
           <View style={styles.kpiRow}>
             <View style={[styles.kpi, { backgroundColor: colors.surface, borderColor: `${colors.primary}40` }]}>
               <Text style={[styles.kpiVal, { color: colors.primary }]}>{data?.totalToday ?? records.length}</Text>
-              <Text style={[styles.kpiLabel, { color: colors.textMuted }]}>{isAr ? 'اليوم' : 'Today'}</Text>
+              <Text style={[styles.kpiLabel, { color: colors.textMuted }]}>{'اليوم'}</Text>
             </View>
             <View style={[styles.kpi, { backgroundColor: colors.surface, borderColor: `${colors.info}40` }]}>
               <Text style={[styles.kpiVal, { color: colors.info }]}>{data?.totalWeek ?? '—'}</Text>
-              <Text style={[styles.kpiLabel, { color: colors.textMuted }]}>{isAr ? 'هذا الأسبوع' : 'This Week'}</Text>
+              <Text style={[styles.kpiLabel, { color: colors.textMuted }]}>{'هذا الأسبوع'}</Text>
             </View>
             <View style={[styles.kpi, { backgroundColor: colors.surface, borderColor: `${colors.success}40` }]}>
               <Text style={[styles.kpiVal, { color: colors.success }]}>{data?.totalMonth ?? '—'}</Text>
-              <Text style={[styles.kpiLabel, { color: colors.textMuted }]}>{isAr ? 'هذا الشهر' : 'This Month'}</Text>
+              <Text style={[styles.kpiLabel, { color: colors.textMuted }]}>{'هذا الشهر'}</Text>
             </View>
           </View>
 
           {/* Records list */}
-          <Text style={[styles.sectionTitle, { color: colors.text }]}>{isAr ? 'الاستهلاك الأخير' : 'Recent Consumption'}</Text>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>{'الاستهلاك الأخير'}</Text>
           {records.length === 0 ? (
             <View style={styles.empty}>
               <Ionicons name="cube-outline" size={40} color={colors.textMuted} />
-              <Text style={[styles.emptyText, { color: colors.textMuted }]}>{isAr ? 'لا توجد سجلات استهلاك' : 'No consumption records found'}</Text>
+              <Text style={[styles.emptyText, { color: colors.textMuted }]}>{'لا توجد سجلات استهلاك'}</Text>
             </View>
           ) : (
             <View style={styles.list}>

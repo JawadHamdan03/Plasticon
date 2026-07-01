@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+﻿import React, { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, FlatList, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -6,7 +6,6 @@ import { api } from '../../api/client';
 import { ScreenHeader } from '../../components';
 import { radius, shadow, spacing, typography } from '../../theme';
 import { useAppTheme } from '../../context/ThemeContext';
-import { useLocale } from '../../context/LocaleContext';
 
 interface AuditLog {
   id: number;
@@ -58,7 +57,6 @@ function LogCard({ item }: { item: AuditLog }) {
 
 export function AuditLogsScreen() {
   const { colors } = useAppTheme();
-  const { isAr } = useLocale();
   const [logs, setLogs]         = useState<AuditLog[]>([]);
   const [loading, setLoading]   = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -79,7 +77,7 @@ export function AuditLogsScreen() {
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
-      <ScreenHeader title={isAr ? 'سجلات التدقيق' : 'Audit Logs'} subtitle={`${logs.length} ${isAr ? 'إدخال' : 'entries'}`} showBack />
+      <ScreenHeader title={'سجلات التدقيق'} subtitle={`${logs.length} ${'إدخال'}`} showBack />
       {loading ? <View style={styles.center}><ActivityIndicator size="large" color={colors.primary} /></View> : (
         <FlatList
           data={logs}
@@ -92,7 +90,7 @@ export function AuditLogsScreen() {
             <View style={styles.empty}>
               <Ionicons name="shield-outline" size={44} color={colors.textMuted} />
               <Text style={[styles.emptyText, { color: colors.textMuted }]}>
-                {isAr ? 'لا توجد سجلات تدقيق' : 'No audit logs'}
+                {'لا توجد سجلات تدقيق'}
               </Text>
             </View>
           }

@@ -1,5 +1,6 @@
-import React, { useCallback, useEffect, useState } from 'react';
+﻿import React, { useCallback, useEffect, useState } from 'react';
 import {
+import { useLocale } from '../../context/LocaleContext';
   ActivityIndicator, Alert, FlatList, KeyboardAvoidingView, Modal,
   Platform, Pressable, RefreshControl, ScrollView,
   StyleSheet, Text, TextInput, TouchableOpacity, View,
@@ -10,7 +11,6 @@ import { api } from '../../api/client';
 import { ScreenHeader, StatCard } from '../../components';
 import { radius, shadow, spacing, typography } from '../../theme';
 import { useAppTheme } from '../../context/ThemeContext';
-import { useLocale } from '../../context/LocaleContext';
 
 function fmt(n: number) {
   return n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -65,9 +65,9 @@ export function ExpensesScreen() {
   useEffect(() => { void load(); }, [load]);
 
   const handleDelete = (e: Expense) => {
-    Alert.alert(isAr ? 'حذف' : 'Delete', isAr ? 'هل أنت متأكد؟' : 'Are you sure?', [
-      { text: isAr ? 'إلغاء' : 'Cancel', style: 'cancel' },
-      { text: isAr ? 'حذف' : 'Delete', style: 'destructive', onPress: async () => {
+    Alert.alert('حذف', 'هل أنت متأكد؟', [
+      { text: 'إلغاء', style: 'cancel' },
+      { text: 'حذف', style: 'destructive', onPress: async () => {
         try {
           await api.delete(`/expenses/${e.id}`);
           setExpenses((p) => p.filter((x) => x.id !== e.id));
@@ -88,7 +88,7 @@ export function ExpensesScreen() {
 
   const submit = async () => {
     if (!form.amount || isNaN(Number(form.amount))) {
-      Alert.alert(isAr ? 'مطلوب' : 'Required', isAr ? 'أدخل المبلغ' : 'Enter amount'); return;
+      Alert.alert('مطلوب', 'أدخل المبلغ'); return;
     }
     setSaving(true);
     try {
@@ -111,7 +111,7 @@ export function ExpensesScreen() {
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
-      <ScreenHeader title={isAr ? 'تتبع المصروفات' : 'Expense Tracking'} showBack />
+      <ScreenHeader title={'تتبع المصروفات'} showBack />
 
       {loading ? (
         <View style={styles.center}><ActivityIndicator size="large" color={colors.primary} /></View>
@@ -125,9 +125,9 @@ export function ExpensesScreen() {
           ListHeaderComponent={
             <View>
               <View style={styles.kpiRow}>
-                <StatCard label={isAr ? 'إجمالي' : 'Total'} value={`$${fmt(totalAmt)}`} icon="receipt" color={colors.primary} style={styles.kpi} />
-                <StatCard label={isAr ? 'معتمد' : 'Approved'} value={String(approved.length)} icon="checkmark-circle" color={colors.success} style={styles.kpi} />
-                <StatCard label={isAr ? 'معلق' : 'Pending'} value={String(pending.length)} icon="time" color={colors.warning} style={styles.kpi} />
+                <StatCard label={'إجمالي'} value={`$${fmt(totalAmt)}`} icon="receipt" color={colors.primary} style={styles.kpi} />
+                <StatCard label={'معتمد'} value={String(approved.length)} icon="checkmark-circle" color={colors.success} style={styles.kpi} />
+                <StatCard label={'معلق'} value={String(pending.length)} icon="time" color={colors.warning} style={styles.kpi} />
               </View>
               <View style={[styles.filterRow, { marginBottom: spacing.sm }]}>
                 {FILTERS.map((f) => (
@@ -142,7 +142,7 @@ export function ExpensesScreen() {
               </View>
               <TouchableOpacity style={[styles.addBtn, { backgroundColor: colors.primary }]} onPress={() => { setForm(EMPTY); setModal(true); }} activeOpacity={0.8}>
                 <Ionicons name="add-circle" size={20} color="#fff" />
-                <Text style={styles.addText}>{isAr ? 'إضافة مصروف' : 'Add Expense'}</Text>
+                <Text style={styles.addText}>{'إضافة مصروف'}</Text>
               </TouchableOpacity>
             </View>
           }
@@ -164,19 +164,19 @@ export function ExpensesScreen() {
                     {e.description ? <Text style={[styles.cardSub, { color: colors.textMuted }]}>{e.description}</Text> : null}
                     {e.submittedBy ? (
                       <Text style={[styles.cardSub, { color: colors.textMuted }]}>
-                        {isAr ? 'بواسطة: ' : 'By: '}{e.submittedBy.fullName}
+                        {'بواسطة: '}{e.submittedBy.fullName}
                       </Text>
                     ) : null}
                     {e.approvedBy ? (
                       <Text style={[styles.cardSub, { color: colors.success }]}>
-                        {isAr ? 'اعتمد من: ' : 'Approved by: '}{e.approvedBy.fullName}
+                        {'اعتمد من: '}{e.approvedBy.fullName}
                       </Text>
                     ) : null}
                   </View>
                   <View style={styles.cardRight}>
                     <View style={[styles.badge, { backgroundColor: isApproved ? colors.successLight : colors.warningLight }]}>
                       <Text style={[styles.badgeText, { color: isApproved ? colors.success : colors.warning }]}>
-                        {isApproved ? (isAr ? 'معتمد' : 'Approved') : (isAr ? 'معلق' : 'Pending')}
+                        {isApproved ? ('معتمد') : ('معلق')}
                       </Text>
                     </View>
                     <View style={styles.actionRow}>
@@ -203,7 +203,7 @@ export function ExpensesScreen() {
           ListEmptyComponent={
             <View style={styles.empty}>
               <Ionicons name="receipt-outline" size={44} color={colors.textMuted} />
-              <Text style={[styles.emptyText, { color: colors.textMuted }]}>{isAr ? 'لا توجد مصروفات' : 'No expenses'}</Text>
+              <Text style={[styles.emptyText, { color: colors.textMuted }]}>{'لا توجد مصروفات'}</Text>
             </View>
           }
         />
@@ -214,9 +214,9 @@ export function ExpensesScreen() {
           <Pressable style={styles.overlayBg} onPress={() => setModal(false)} />
           <View style={[styles.sheet, { backgroundColor: colors.surface }]}>
             <View style={[styles.handle, { backgroundColor: colors.border }]} />
-            <Text style={[styles.sheetTitle, { color: colors.text }]}>{isAr ? 'مصروف جديد' : 'New Expense'}</Text>
+            <Text style={[styles.sheetTitle, { color: colors.text }]}>{'مصروف جديد'}</Text>
             <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-              <Text style={[styles.label, { color: colors.textMuted }]}>{isAr ? 'الفئة *' : 'Category *'}</Text>
+              <Text style={[styles.label, { color: colors.textMuted }]}>{'الفئة *'}</Text>
               <View style={styles.chipGroup}>
                 {CATEGORIES.map((cat) => (
                   <TouchableOpacity key={cat}
@@ -230,24 +230,24 @@ export function ExpensesScreen() {
                 ))}
               </View>
 
-              <Text style={[styles.label, { color: colors.textMuted }]}>{isAr ? 'المبلغ *' : 'Amount *'}</Text>
+              <Text style={[styles.label, { color: colors.textMuted }]}>{'المبلغ *'}</Text>
               <TextInput style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
                 placeholder="0.00" placeholderTextColor={colors.textMuted} keyboardType="decimal-pad"
                 value={form.amount} onChangeText={(v) => setForm((p) => ({ ...p, amount: v }))} />
 
-              <Text style={[styles.label, { color: colors.textMuted }]}>{isAr ? 'الوصف' : 'Description'}</Text>
+              <Text style={[styles.label, { color: colors.textMuted }]}>{'الوصف'}</Text>
               <TextInput style={[styles.input, styles.inputMulti, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
-                placeholder={isAr ? 'وصف اختياري…' : 'Optional description…'}
+                placeholder={'وصف اختياري…'}
                 placeholderTextColor={colors.textMuted} multiline numberOfLines={3}
                 value={form.description} onChangeText={(v) => setForm((p) => ({ ...p, description: v }))} />
             </ScrollView>
 
             <View style={styles.actions}>
               <TouchableOpacity style={[styles.cancelBtn, { borderColor: colors.border }]} onPress={() => setModal(false)}>
-                <Text style={[styles.cancelText, { color: colors.textSecondary }]}>{isAr ? 'إلغاء' : 'Cancel'}</Text>
+                <Text style={[styles.cancelText, { color: colors.textSecondary }]}>{'إلغاء'}</Text>
               </TouchableOpacity>
               <TouchableOpacity style={[styles.saveBtn, { backgroundColor: colors.primary }, saving && { opacity: 0.6 }]} onPress={submit} disabled={saving}>
-                {saving ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.saveText}>{isAr ? 'حفظ' : 'Save'}</Text>}
+                {saving ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.saveText}>{'حفظ'}</Text>}
               </TouchableOpacity>
             </View>
           </View>

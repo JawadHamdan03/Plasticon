@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+﻿import React, { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator, RefreshControl, ScrollView,
   StyleSheet, Text, View,
@@ -9,7 +9,6 @@ import { api } from '../../api/client';
 import { ScreenHeader } from '../../components';
 import { radius, shadow, spacing, typography } from '../../theme';
 import { useAppTheme } from '../../context/ThemeContext';
-import { useLocale } from '../../context/LocaleContext';
 
 interface WarehouseItem {
   id:           string;
@@ -24,7 +23,6 @@ interface WarehouseItem {
 
 export function WarehouseScreen() {
   const { colors } = useAppTheme();
-  const { isAr } = useLocale();
   const [items,      setItems]      = useState<WarehouseItem[]>([]);
   const [loading,    setLoading]    = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -54,7 +52,7 @@ export function WarehouseScreen() {
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
-      <ScreenHeader title={isAr ? 'المستودع' : 'Warehouse'} subtitle={isAr ? 'مستويات المخزون ومواقع التخزين' : 'Stock levels and storage locations'} showBack />
+      <ScreenHeader title={'المستودع'} subtitle={'مستويات المخزون ومواقع التخزين'} showBack />
       {loading ? (
         <View style={styles.center}><ActivityIndicator size="large" color={colors.primary} /></View>
       ) : (
@@ -67,18 +65,18 @@ export function WarehouseScreen() {
           <View style={styles.summaryRow}>
             <View style={[styles.summaryCard, { backgroundColor: colors.surface, borderLeftColor: colors.primary }]}>
               <Text style={[styles.summaryVal, { color: colors.primary }]}>{items.length}</Text>
-              <Text style={[styles.summaryLabel, { color: colors.textMuted }]}>{isAr ? 'إجمالي الأصناف' : 'Total Items'}</Text>
+              <Text style={[styles.summaryLabel, { color: colors.textMuted }]}>{'إجمالي الأصناف'}</Text>
             </View>
             <View style={[styles.summaryCard, { backgroundColor: colors.surface, borderLeftColor: colors.warning }]}>
               <Text style={[styles.summaryVal, { color: colors.warning }]}>{lowStock}</Text>
-              <Text style={[styles.summaryLabel, { color: colors.textMuted }]}>{isAr ? 'مخزون منخفض' : 'Low Stock'}</Text>
+              <Text style={[styles.summaryLabel, { color: colors.textMuted }]}>{'مخزون منخفض'}</Text>
             </View>
           </View>
 
           {items.length === 0 ? (
             <View style={styles.empty}>
               <Ionicons name="cube-outline" size={44} color={colors.textMuted} />
-              <Text style={[styles.emptyText, { color: colors.textMuted }]}>{isAr ? 'لا توجد أصناف في المستودع' : 'No warehouse items found'}</Text>
+              <Text style={[styles.emptyText, { color: colors.textMuted }]}>{'لا توجد أصناف في المستودع'}</Text>
             </View>
           ) : (
             <View style={styles.list}>
@@ -90,7 +88,7 @@ export function WarehouseScreen() {
                     <View style={styles.cardBody}>
                       <Text style={[styles.cardTitle, { color: colors.text }]}>{item.name}</Text>
                       <Text style={[styles.cardSub, { color: colors.textMuted }]}>
-                        {item.category ? `${item.category} · ` : ''}{item.location ?? (isAr ? 'لا يوجد موقع' : 'No location')}
+                        {item.category ? `${item.category} · ` : ''}{item.location ?? ('لا يوجد موقع')}
                       </Text>
                     </View>
                     <View style={styles.qtyBlock}>

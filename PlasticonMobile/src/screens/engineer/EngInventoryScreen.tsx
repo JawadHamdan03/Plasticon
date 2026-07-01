@@ -1,5 +1,6 @@
-import React, { useCallback, useEffect, useState } from 'react';
+﻿import React, { useCallback, useEffect, useState } from 'react';
 import {
+import { useLocale } from '../../context/LocaleContext';
   ActivityIndicator, Alert, FlatList, KeyboardAvoidingView,
   Modal, Platform, Pressable, RefreshControl, ScrollView,
   StyleSheet, Text, TextInput, TouchableOpacity, View,
@@ -11,7 +12,6 @@ import { api, uploadForm } from '../../api/client';
 import { ScreenHeader, StatCard } from '../../components';
 import { radius, shadow, spacing, typography } from '../../theme';
 import { useAppTheme } from '../../context/ThemeContext';
-import { useLocale } from '../../context/LocaleContext';
 
 interface InventoryItem {
   id: number;
@@ -68,8 +68,8 @@ function AddItemModal({ visible, reportId, onClose, onAdded }: {
   };
 
   const submit = async () => {
-    if (!partName.trim()) { Alert.alert(isAr ? 'مطلوب' : 'Required', isAr ? 'اسم القطعة مطلوب.' : 'Part name is required.'); return; }
-    if (!quantity || Number(quantity) < 1) { Alert.alert(isAr ? 'مطلوب' : 'Required', isAr ? 'الكمية يجب أن تكون 1 على الأقل.' : 'Quantity must be at least 1.'); return; }
+    if (!partName.trim()) { Alert.alert('مطلوب', 'اسم القطعة مطلوب.'); return; }
+    if (!quantity || Number(quantity) < 1) { Alert.alert('مطلوب', 'الكمية يجب أن تكون 1 على الأقل.'); return; }
     setSaving(true);
     try {
       const fd = new FormData();
@@ -79,7 +79,7 @@ function AddItemModal({ visible, reportId, onClose, onAdded }: {
       await uploadForm(`/engineer-inventory/${reportId}/items`, fd);
       onAdded();
     } catch (e: any) {
-      Alert.alert(isAr ? 'خطأ' : 'Error', e?.message ?? (isAr ? 'فشل إضافة القطعة.' : 'Failed to add part.'));
+      Alert.alert('خطأ', e?.message ?? ('فشل إضافة القطعة.'));
     } finally { setSaving(false); }
   };
 
@@ -89,16 +89,16 @@ function AddItemModal({ visible, reportId, onClose, onAdded }: {
         <Pressable style={styles.overlayBg} onPress={onClose} />
         <View style={[styles.sheet, { backgroundColor: colors.surface }]}>
           <View style={[styles.handle, { backgroundColor: colors.border }]} />
-          <Text style={[styles.sheetTitle, { color: colors.text }]}>{isAr ? 'إضافة قطعة' : 'Add Part'}</Text>
+          <Text style={[styles.sheetTitle, { color: colors.text }]}>{'إضافة قطعة'}</Text>
           <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-            <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{isAr ? 'اسم القطعة *' : 'Part Name *'}</Text>
+            <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{'اسم القطعة *'}</Text>
             <TextInput
               style={[styles.input, { backgroundColor: colors.surfaceAlt, borderColor: colors.border, color: colors.text }]}
               value={partName} onChangeText={setPartName}
-              placeholder={isAr ? 'مثال: Bearing 6205' : 'e.g. Bearing 6205'}
+              placeholder={'مثال: Bearing 6205'}
               placeholderTextColor={colors.textMuted}
             />
-            <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{isAr ? 'الكمية *' : 'Quantity *'}</Text>
+            <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{'الكمية *'}</Text>
             <TextInput
               style={[styles.input, { backgroundColor: colors.surfaceAlt, borderColor: colors.border, color: colors.text }]}
               value={quantity} onChangeText={setQuantity}
@@ -107,16 +107,16 @@ function AddItemModal({ visible, reportId, onClose, onAdded }: {
             <TouchableOpacity style={[styles.photoBtn, { borderColor: colors.border, backgroundColor: colors.surfaceAlt }]} onPress={pickPhoto}>
               <Ionicons name={imageUri ? 'image' : 'camera-outline'} size={18} color={imageUri ? colors.success : colors.primary} />
               <Text style={[styles.photoBtnText, { color: imageUri ? colors.success : colors.primary }]}>
-                {imageUri ? (isAr ? 'صورة محددة ✓' : 'Photo selected ✓') : (isAr ? 'إضافة صورة (اختياري)' : 'Add photo (optional)')}
+                {imageUri ? ('صورة محددة ✓') : ('إضافة صورة (اختياري)')}
               </Text>
             </TouchableOpacity>
           </ScrollView>
           <View style={styles.sheetActions}>
             <TouchableOpacity style={[styles.cancelBtn, { borderColor: colors.border }]} onPress={onClose}>
-              <Text style={[styles.cancelText, { color: colors.textSecondary }]}>{isAr ? 'إلغاء' : 'Cancel'}</Text>
+              <Text style={[styles.cancelText, { color: colors.textSecondary }]}>{'إلغاء'}</Text>
             </TouchableOpacity>
             <TouchableOpacity style={[styles.saveBtn, { backgroundColor: colors.primary }, saving && { opacity: 0.6 }]} onPress={submit} disabled={saving}>
-              {saving ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.saveText}>{isAr ? 'إضافة' : 'Add'}</Text>}
+              {saving ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.saveText}>{'إضافة'}</Text>}
             </TouchableOpacity>
           </View>
         </View>
@@ -144,7 +144,7 @@ function NewReportModal({ visible, onClose, onCreated }: {
       await api.post('/engineer-inventory', { month, year, notes: notes.trim() || undefined });
       onCreated();
     } catch (e: any) {
-      Alert.alert(isAr ? 'خطأ' : 'Error', e?.message ?? (isAr ? 'فشل الإنشاء.' : 'Failed to create.'));
+      Alert.alert('خطأ', e?.message ?? ('فشل الإنشاء.'));
     } finally { setSaving(false); }
   };
 
@@ -156,9 +156,9 @@ function NewReportModal({ visible, onClose, onCreated }: {
         <Pressable style={styles.overlayBg} onPress={onClose} />
         <View style={[styles.sheet, { backgroundColor: colors.surface }]}>
           <View style={[styles.handle, { backgroundColor: colors.border }]} />
-          <Text style={[styles.sheetTitle, { color: colors.text }]}>{isAr ? 'تقرير جرد جديد' : 'New Inventory Report'}</Text>
+          <Text style={[styles.sheetTitle, { color: colors.text }]}>{'تقرير جرد جديد'}</Text>
           <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-            <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{isAr ? 'الشهر *' : 'Month *'}</Text>
+            <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{'الشهر *'}</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: spacing.md }}>
               {months.map((m, i) => (
                 <TouchableOpacity
@@ -170,26 +170,26 @@ function NewReportModal({ visible, onClose, onCreated }: {
                 </TouchableOpacity>
               ))}
             </ScrollView>
-            <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{isAr ? 'السنة *' : 'Year *'}</Text>
+            <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{'السنة *'}</Text>
             <TextInput
               style={[styles.input, { backgroundColor: colors.surfaceAlt, borderColor: colors.border, color: colors.text }]}
               value={String(year)} onChangeText={(v) => setYear(Number(v) || now.getFullYear())}
               keyboardType="numeric" placeholderTextColor={colors.textMuted}
             />
-            <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{isAr ? 'ملاحظات' : 'Notes'}</Text>
+            <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{'ملاحظات'}</Text>
             <TextInput
               style={[styles.input, styles.inputMulti, { backgroundColor: colors.surfaceAlt, borderColor: colors.border, color: colors.text }]}
               value={notes} onChangeText={setNotes}
-              placeholder={isAr ? 'ملاحظات اختيارية' : 'Optional notes'}
+              placeholder={'ملاحظات اختيارية'}
               placeholderTextColor={colors.textMuted} multiline textAlignVertical="top"
             />
           </ScrollView>
           <View style={styles.sheetActions}>
             <TouchableOpacity style={[styles.cancelBtn, { borderColor: colors.border }]} onPress={onClose}>
-              <Text style={[styles.cancelText, { color: colors.textSecondary }]}>{isAr ? 'إلغاء' : 'Cancel'}</Text>
+              <Text style={[styles.cancelText, { color: colors.textSecondary }]}>{'إلغاء'}</Text>
             </TouchableOpacity>
             <TouchableOpacity style={[styles.saveBtn, { backgroundColor: colors.primary }, saving && { opacity: 0.6 }]} onPress={submit} disabled={saving}>
-              {saving ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.saveText}>{isAr ? 'إنشاء' : 'Create'}</Text>}
+              {saving ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.saveText}>{'إنشاء'}</Text>}
             </TouchableOpacity>
           </View>
         </View>
@@ -210,15 +210,15 @@ function ReportCard({ report, onReload }: { report: InventoryReport; onReload: (
 
   const handleSubmit = () => {
     if (report.items.length === 0) {
-      Alert.alert(isAr ? 'تنبيه' : 'Notice', isAr ? 'أضف قطعة واحدة على الأقل قبل الإرسال.' : 'Add at least one part before submitting.');
+      Alert.alert('تنبيه', 'أضف قطعة واحدة على الأقل قبل الإرسال.');
       return;
     }
     Alert.alert(
-      isAr ? 'إرسال التقرير' : 'Submit Report',
+      'إرسال التقرير',
       isAr ? 'هل أنت متأكد؟ لا يمكن التراجع.' : `Submit inventory for ${months[report.month - 1]} ${report.year}? This cannot be undone.`,
       [
-        { text: isAr ? 'إلغاء' : 'Cancel', style: 'cancel' },
-        { text: isAr ? 'إرسال' : 'Submit', style: 'destructive', onPress: () => void doSubmit() },
+        { text: 'إلغاء', style: 'cancel' },
+        { text: 'إرسال', style: 'destructive', onPress: () => void doSubmit() },
       ],
     );
   };
@@ -229,17 +229,17 @@ function ReportCard({ report, onReload }: { report: InventoryReport; onReload: (
       await api.patch(`/engineer-inventory/${report.id}/submit`, {});
       onReload();
     } catch (e: any) {
-      Alert.alert(isAr ? 'خطأ' : 'Error', e?.message ?? (isAr ? 'فشل الإرسال.' : 'Failed to submit.'));
+      Alert.alert('خطأ', e?.message ?? ('فشل الإرسال.'));
     } finally { setSubmitting(false); }
   };
 
   const deleteItem = (item: InventoryItem) => {
     Alert.alert(
-      isAr ? 'حذف القطعة' : 'Delete Part',
+      'حذف القطعة',
       `"${item.partName}"?`,
       [
-        { text: isAr ? 'إلغاء' : 'Cancel', style: 'cancel' },
-        { text: isAr ? 'حذف' : 'Delete', style: 'destructive', onPress: () => void doDeleteItem(item.id) },
+        { text: 'إلغاء', style: 'cancel' },
+        { text: 'حذف', style: 'destructive', onPress: () => void doDeleteItem(item.id) },
       ],
     );
   };
@@ -249,7 +249,7 @@ function ReportCard({ report, onReload }: { report: InventoryReport; onReload: (
       await api.delete(`/engineer-inventory/items/${id}`);
       onReload();
     } catch (e: any) {
-      Alert.alert(isAr ? 'خطأ' : 'Error', e?.message ?? (isAr ? 'فشل الحذف.' : 'Failed to delete.'));
+      Alert.alert('خطأ', e?.message ?? ('فشل الحذف.'));
     }
   };
 
@@ -258,7 +258,7 @@ function ReportCard({ report, onReload }: { report: InventoryReport; onReload: (
       <TouchableOpacity style={styles.reportHeader} onPress={() => setExpanded((v) => !v)} activeOpacity={0.75}>
         <View style={styles.reportHeaderLeft}>
           <Text style={[styles.reportMonth, { color: colors.text }]}>{months[report.month - 1]} {report.year}</Text>
-          <Text style={[styles.reportSub, { color: colors.textMuted }]}>{report.items.length} {isAr ? 'قطعة' : 'parts'}</Text>
+          <Text style={[styles.reportSub, { color: colors.textMuted }]}>{report.items.length} {'قطعة'}</Text>
         </View>
         <View style={styles.reportHeaderRight}>
           <StatusBadge status={report.status} />
@@ -292,7 +292,7 @@ function ReportCard({ report, onReload }: { report: InventoryReport; onReload: (
             <View style={styles.reportActions}>
               <TouchableOpacity style={[styles.addItemBtn, { borderColor: colors.primary }]} onPress={() => setAddItem(true)}>
                 <Ionicons name="add-circle-outline" size={16} color={colors.primary} />
-                <Text style={[styles.addItemText, { color: colors.primary }]}>{isAr ? 'إضافة قطعة' : 'Add Part'}</Text>
+                <Text style={[styles.addItemText, { color: colors.primary }]}>{'إضافة قطعة'}</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.submitBtn, { backgroundColor: colors.success }, submitting && { opacity: 0.6 }]}
@@ -303,7 +303,7 @@ function ReportCard({ report, onReload }: { report: InventoryReport; onReload: (
                   ? <ActivityIndicator size="small" color="#fff" />
                   : <>
                       <Ionicons name="send" size={14} color="#fff" />
-                      <Text style={styles.submitBtnText}>{isAr ? 'إرسال' : 'Submit'}</Text>
+                      <Text style={styles.submitBtnText}>{'إرسال'}</Text>
                     </>}
               </TouchableOpacity>
             </View>
@@ -334,7 +334,7 @@ export function EngInventoryScreen() {
       const res = await api.get<InventoryReport[]>('/engineer-inventory/mine');
       setReports(Array.isArray(res) ? res : []);
     } catch (e: any) {
-      Alert.alert(isAr ? 'خطأ' : 'Error', e?.message ?? (isAr ? 'فشل التحميل.' : 'Failed to load.'));
+      Alert.alert('خطأ', e?.message ?? ('فشل التحميل.'));
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -349,7 +349,7 @@ export function EngInventoryScreen() {
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
-      <ScreenHeader title={isAr ? 'جرد المهندس' : 'Engineer Inventory'} subtitle={`${reports.length} ${isAr ? 'تقرير' : 'reports'}`} showBack />
+      <ScreenHeader title={'جرد المهندس'} subtitle={`${reports.length} ${'تقرير'}`} showBack />
       {loading ? (
         <View style={styles.center}><ActivityIndicator size="large" color={colors.primary} /></View>
       ) : (
@@ -362,16 +362,16 @@ export function EngInventoryScreen() {
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); void load(); }} tintColor={colors.primary} />}
           ListHeaderComponent={
             <View style={styles.statsRow}>
-              <StatCard label={isAr ? 'مسودة' : 'Draft'}     value={String(draftCount)}     icon="create-outline"         color={colors.textMuted} style={styles.stat} />
-              <StatCard label={isAr ? 'مُرسل' : 'Submitted'} value={String(submittedCount)} icon="send-outline"           color={colors.warning}   style={styles.stat} />
-              <StatCard label={isAr ? 'مراجَع' : 'Reviewed'} value={String(reviewedCount)}  icon="checkmark-circle-outline" color={colors.success} style={styles.stat} />
+              <StatCard label={'مسودة'}     value={String(draftCount)}     icon="create-outline"         color={colors.textMuted} style={styles.stat} />
+              <StatCard label={'مُرسل'} value={String(submittedCount)} icon="send-outline"           color={colors.warning}   style={styles.stat} />
+              <StatCard label={'مراجَع'} value={String(reviewedCount)}  icon="checkmark-circle-outline" color={colors.success} style={styles.stat} />
             </View>
           }
           ListEmptyComponent={
             <View style={styles.empty}>
               <Ionicons name="folder-open-outline" size={44} color={colors.textMuted} />
-              <Text style={[styles.emptyText, { color: colors.textMuted }]}>{isAr ? 'لا توجد تقارير جرد' : 'No inventory reports'}</Text>
-              <Text style={[styles.emptyHint, { color: colors.textMuted }]}>{isAr ? 'اضغط + لإنشاء تقرير' : 'Tap + to create a report'}</Text>
+              <Text style={[styles.emptyText, { color: colors.textMuted }]}>{'لا توجد تقارير جرد'}</Text>
+              <Text style={[styles.emptyHint, { color: colors.textMuted }]}>{'اضغط + لإنشاء تقرير'}</Text>
             </View>
           }
         />

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+﻿import React, { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator, RefreshControl, ScrollView,
   StyleSheet, Text, View,
@@ -9,7 +9,6 @@ import { api } from '../../api/client';
 import { ScreenHeader } from '../../components';
 import { radius, shadow, spacing, typography } from '../../theme';
 import { useAppTheme } from '../../context/ThemeContext';
-import { useLocale } from '../../context/LocaleContext';
 
 interface ConsumptionRecord {
   id:           number;
@@ -22,7 +21,6 @@ interface ConsumptionRecord {
 
 export function ConsumptionWorkerScreen() {
   const { colors } = useAppTheme();
-  const { isAr } = useLocale();
   const [records,   setRecords]   = useState<ConsumptionRecord[]>([]);
   const [loading,   setLoading]   = useState(true);
   const [refreshing,setRefreshing]= useState(false);
@@ -47,7 +45,7 @@ export function ConsumptionWorkerScreen() {
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
-      <ScreenHeader title={isAr ? 'الاستهلاك' : 'Consumption'} subtitle={isAr ? 'سجلات استخدام المواد' : 'Material usage records'} showBack />
+      <ScreenHeader title={'الاستهلاك'} subtitle={'سجلات استخدام المواد'} showBack />
       <ScrollView
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
@@ -58,7 +56,7 @@ export function ConsumptionWorkerScreen() {
         ) : records.length === 0 ? (
           <View style={styles.empty}>
             <Ionicons name="flask-outline" size={48} color={colors.textMuted} />
-            <Text style={[styles.emptyText, { color: colors.textMuted }]}>{isAr ? 'لا توجد سجلات استهلاك' : 'No consumption records'}</Text>
+            <Text style={[styles.emptyText, { color: colors.textMuted }]}>{'لا توجد سجلات استهلاك'}</Text>
           </View>
         ) : (
           <View style={styles.list}>

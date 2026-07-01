@@ -1,5 +1,6 @@
-import React, { useCallback, useEffect, useState } from 'react';
+﻿import React, { useCallback, useEffect, useState } from 'react';
 import {
+import { useLocale } from '../../context/LocaleContext';
   ActivityIndicator, Alert, FlatList, Modal, RefreshControl,
   ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View,
 } from 'react-native';
@@ -9,7 +10,6 @@ import { api } from '../../api/client';
 import { ScreenHeader } from '../../components';
 import { radius, shadow, spacing, typography } from '../../theme';
 import { useAppTheme } from '../../context/ThemeContext';
-import { useLocale } from '../../context/LocaleContext';
 import { useAuth } from '../../auth/AuthContext';
 
 interface QuotationItem {
@@ -88,7 +88,7 @@ export function SalesReviewScreen() {
       });
       void load();
     } catch (err: any) {
-      Alert.alert(isAr ? 'خطأ' : 'Error', err.message ?? 'Failed to update');
+      Alert.alert('خطأ', err.message ?? 'Failed to update');
     } finally {
       setChangingId(null);
     }
@@ -96,11 +96,11 @@ export function SalesReviewScreen() {
 
   const handleAccept = (id: number) => {
     Alert.alert(
-      isAr ? 'تأكيد القبول' : 'Confirm Accept',
-      isAr ? 'هل تريد قبول هذا العرض؟' : 'Accept this quotation?',
+      'تأكيد القبول',
+      'هل تريد قبول هذا العرض؟',
       [
-        { text: isAr ? 'إلغاء' : 'Cancel', style: 'cancel' },
-        { text: isAr ? 'قبول' : 'Accept', onPress: () => void changeStatus(id, 'ACCEPTED') },
+        { text: 'إلغاء', style: 'cancel' },
+        { text: 'قبول', onPress: () => void changeStatus(id, 'ACCEPTED') },
       ],
     );
   };
@@ -163,10 +163,10 @@ export function SalesReviewScreen() {
             {q.items.length > 0 && (
               <View style={[styles.itemsTable, { borderColor: colors.border }]}>
                 <View style={[styles.tableHeader, { backgroundColor: colors.surfaceAlt }]}>
-                  <Text style={[styles.tableCell, styles.tableCellFlex2, { color: colors.textMuted }]}>{isAr ? 'المنتج' : 'Product'}</Text>
-                  <Text style={[styles.tableCell, { color: colors.textMuted }]}>{isAr ? 'الحجم' : 'Size'}</Text>
-                  <Text style={[styles.tableCell, styles.tableCellRight, { color: colors.textMuted }]}>{isAr ? 'الكمية' : 'Qty'}</Text>
-                  <Text style={[styles.tableCell, styles.tableCellRight, { color: colors.textMuted }]}>{isAr ? 'السعر' : '₪/unit'}</Text>
+                  <Text style={[styles.tableCell, styles.tableCellFlex2, { color: colors.textMuted }]}>{'المنتج'}</Text>
+                  <Text style={[styles.tableCell, { color: colors.textMuted }]}>{'الحجم'}</Text>
+                  <Text style={[styles.tableCell, styles.tableCellRight, { color: colors.textMuted }]}>{'الكمية'}</Text>
+                  <Text style={[styles.tableCell, styles.tableCellRight, { color: colors.textMuted }]}>{'السعر'}</Text>
                 </View>
                 {q.items.map((item, idx) => (
                   <View key={idx} style={[styles.tableRow, { borderTopColor: colors.border }]}>
@@ -182,7 +182,7 @@ export function SalesReviewScreen() {
             {/* Notes */}
             {q.notes ? (
               <Text style={[styles.noteLine, { color: colors.textMuted }]}>
-                {isAr ? 'ملاحظات: ' : 'Notes: '}{q.notes}
+                {'ملاحظات: '}{q.notes}
               </Text>
             ) : null}
 
@@ -191,14 +191,14 @@ export function SalesReviewScreen() {
               <View style={[styles.rejectionNote, { backgroundColor: '#ef444410', borderColor: '#ef444430' }]}>
                 <Ionicons name="alert-circle-outline" size={13} color="#ef4444" />
                 <Text style={[styles.rejectionNoteText, { color: '#dc2626' }]}>
-                  {isAr ? 'سبب الرفض: ' : 'Rejection note: '}{q.rejectionNote}
+                  {'سبب الرفض: '}{q.rejectionNote}
                 </Text>
               </View>
             ) : null}
 
             {q.validUntil ? (
               <Text style={[styles.noteLine, { color: colors.textMuted }]}>
-                {isAr ? 'صالح حتى: ' : 'Valid until: '}{fmtDate(q.validUntil)}
+                {'صالح حتى: '}{fmtDate(q.validUntil)}
               </Text>
             ) : null}
             <Text style={[styles.noteLine, { color: colors.textMuted }]}>{fmtDate(q.createdAt)}</Text>
@@ -213,7 +213,7 @@ export function SalesReviewScreen() {
                     activeOpacity={0.85}
                   >
                     <Ionicons name="checkmark-circle-outline" size={15} color="#fff" />
-                    <Text style={styles.actionBtnText}>{isAr ? 'قبول' : 'Accept'}</Text>
+                    <Text style={styles.actionBtnText}>{'قبول'}</Text>
                   </TouchableOpacity>
                 )}
                 {q.status !== 'REJECTED' && (
@@ -223,7 +223,7 @@ export function SalesReviewScreen() {
                     activeOpacity={0.85}
                   >
                     <Ionicons name="close-circle-outline" size={15} color="#ef4444" />
-                    <Text style={[styles.actionBtnText, { color: '#ef4444' }]}>{isAr ? 'رفض' : 'Reject'}</Text>
+                    <Text style={[styles.actionBtnText, { color: '#ef4444' }]}>{'رفض'}</Text>
                   </TouchableOpacity>
                 )}
               </View>
@@ -237,8 +237,8 @@ export function SalesReviewScreen() {
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
       <ScreenHeader
-        title={isAr ? 'مراجعة المندوبين' : 'Sales Review'}
-        subtitle={pendingCount > 0 ? `${pendingCount} ${isAr ? 'بانتظار' : 'pending'}` : undefined}
+        title={'مراجعة المندوبين'}
+        subtitle={pendingCount > 0 ? `${pendingCount} ${'بانتظار'}` : undefined}
         showBack
       />
 
@@ -260,7 +260,7 @@ export function SalesReviewScreen() {
               activeOpacity={0.75}
             >
               <Text style={[styles.chipText, { color: active ? color : colors.textMuted }]}>
-                {f === 'ALL' ? (isAr ? 'الكل' : 'All') : f}
+                {f === 'ALL' ? ('الكل') : f}
               </Text>
               {f === 'SENT' && pendingCount > 0 && (
                 <View style={[styles.chipBadge, { backgroundColor: STATUS_COLOR.SENT }]}>
@@ -292,7 +292,7 @@ export function SalesReviewScreen() {
             <View style={styles.empty}>
               <Ionicons name="document-text-outline" size={44} color={colors.textMuted} />
               <Text style={[styles.emptyText, { color: colors.textMuted }]}>
-                {isAr ? 'لا توجد عروض أسعار' : 'No quotations'}
+                {'لا توجد عروض أسعار'}
               </Text>
             </View>
           }
@@ -312,17 +312,17 @@ export function SalesReviewScreen() {
             <View style={styles.sheetHeader}>
               <Ionicons name="close-circle" size={22} color="#ef4444" />
               <Text style={[styles.sheetTitle, { color: colors.text }]}>
-                {isAr ? 'رفض العرض' : 'Reject Quotation'}
+                {'رفض العرض'}
               </Text>
             </View>
             <Text style={[styles.sheetSub, { color: colors.textMuted }]}>
-              {isAr ? 'أضف ملاحظة للمندوب (اختياري)' : 'Add a note for the sales rep (optional)'}
+              {'أضف ملاحظة للمندوب (اختياري)'}
             </Text>
             <TextInput
               style={[styles.noteInput, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
               value={rejectNote}
               onChangeText={setRejectNote}
-              placeholder={isAr ? 'سبب الرفض...' : 'Reason for rejection...'}
+              placeholder={'سبب الرفض...'}
               placeholderTextColor={colors.textMuted}
               multiline
               numberOfLines={3}
@@ -332,7 +332,7 @@ export function SalesReviewScreen() {
                 style={[styles.sheetBtn, { borderWidth: 1.5, borderColor: colors.border }]}
                 onPress={() => setRejectId(null)}
               >
-                <Text style={{ color: colors.textMuted, fontWeight: '600' }}>{isAr ? 'إلغاء' : 'Cancel'}</Text>
+                <Text style={{ color: colors.textMuted, fontWeight: '600' }}>{'إلغاء'}</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.sheetBtn, { flex: 2, backgroundColor: '#ef4444' }]}
@@ -341,7 +341,7 @@ export function SalesReviewScreen() {
               >
                 {rejectSaving
                   ? <ActivityIndicator size="small" color="#fff" />
-                  : <Text style={{ color: '#fff', fontWeight: '700' }}>{isAr ? 'تأكيد الرفض' : 'Confirm Reject'}</Text>
+                  : <Text style={{ color: '#fff', fontWeight: '700' }}>{'تأكيد الرفض'}</Text>
                 }
               </TouchableOpacity>
             </View>

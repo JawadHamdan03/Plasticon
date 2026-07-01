@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+﻿import React, { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator, RefreshControl, ScrollView,
   StyleSheet, Text, View,
@@ -9,7 +9,6 @@ import { api } from '../../api/client';
 import { ScreenHeader } from '../../components';
 import { radius, shadow, spacing, typography } from '../../theme';
 import { useAppTheme } from '../../context/ThemeContext';
-import { useLocale } from '../../context/LocaleContext';
 
 interface ProductionRecord {
   id:           number;
@@ -24,7 +23,6 @@ interface ProductionRecord {
 
 export function ProductionMonitorScreen() {
   const { colors } = useAppTheme();
-  const { isAr } = useLocale();
   const [records,    setRecords]    = useState<ProductionRecord[]>([]);
   const [total,      setTotal]      = useState(0);
   const [loading,    setLoading]    = useState(true);
@@ -51,15 +49,15 @@ export function ProductionMonitorScreen() {
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
       <ScreenHeader
-        title={isAr ? 'الإنتاج' : 'Production'}
-        subtitle={`${total} ${isAr ? 'سجل إجمالي' : 'total records'}`}
+        title={'الإنتاج'}
+        subtitle={`${total} ${'سجل إجمالي'}`}
         showBack
       />
       {!isCheckedIn && !loading && (
         <View style={[styles.banner, { backgroundColor: `${colors.warning}15`, borderColor: `${colors.warning}50` }]}>
           <Ionicons name="warning-outline" size={16} color={colors.warning} />
           <Text style={[styles.bannerText, { color: colors.warning }]}>
-            {isAr ? 'يجب تسجيل الدخول لتسجيل الإنتاج' : 'Check in to record production data'}
+            {'يجب تسجيل الدخول لتسجيل الإنتاج'}
           </Text>
         </View>
       )}
@@ -74,7 +72,7 @@ export function ProductionMonitorScreen() {
           <View style={styles.empty}>
             <Ionicons name="cube-outline" size={48} color={colors.textMuted} />
             <Text style={[styles.emptyText, { color: colors.textMuted }]}>
-              {isAr ? 'لا توجد سجلات إنتاج' : 'No production records found'}
+              {'لا توجد سجلات إنتاج'}
             </Text>
           </View>
         ) : (
@@ -88,7 +86,7 @@ export function ProductionMonitorScreen() {
                   </View>
                   <View style={styles.cardBody}>
                     <Text style={[styles.cardName, { color: colors.text }]}>
-                      {r.productName ?? `${isAr ? 'سجل #' : 'Record #'}${r.id}`}
+                      {r.productName ?? `${'سجل #'}${r.id}`}
                     </Text>
                     {r.user?.fullName && (
                       <Text style={[styles.cardWorker, { color: colors.primary }]}>
@@ -100,7 +98,7 @@ export function ProductionMonitorScreen() {
                   </View>
                   <View style={styles.qtyBox}>
                     <Text style={[styles.qty, { color: colors.primary }]}>{qty}</Text>
-                    <Text style={[styles.qtyLabel, { color: colors.textMuted }]}>{isAr ? 'وحدات' : 'units'}</Text>
+                    <Text style={[styles.qtyLabel, { color: colors.textMuted }]}>{'وحدات'}</Text>
                   </View>
                 </View>
               );

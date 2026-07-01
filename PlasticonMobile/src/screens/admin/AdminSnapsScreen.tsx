@@ -1,5 +1,6 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+﻿import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
+import { useLocale } from '../../context/LocaleContext';
   ActivityIndicator, FlatList, Image, RefreshControl,
   StyleSheet, Text, TextInput, TouchableOpacity, View,
 } from 'react-native';
@@ -10,7 +11,6 @@ import { ScreenHeader } from '../../components';
 import { radius, shadow, spacing, typography } from '../../theme';
 import { API_BASE } from '../../config';
 import { useAppTheme } from '../../context/ThemeContext';
-import { useLocale } from '../../context/LocaleContext';
 
 interface Snapshot {
   id: number;
@@ -59,7 +59,7 @@ function SnapCard({
 }: {
   item: Snapshot; prev?: Snapshot; colors: any; isAr: boolean;
 }) {
-  const workerName = item.createdBy?.fullName ?? item.createdByName ?? `${isAr ? 'عامل' : 'Worker'} #${item.id}`;
+  const workerName = item.createdBy?.fullName ?? item.createdByName ?? `${'عامل'} #${item.id}`;
   const delta = (prev?.machineCounter != null && item.machineCounter != null)
     ? item.machineCounter - prev.machineCounter : null;
 
@@ -86,7 +86,7 @@ function SnapCard({
           <View style={[styles.metricBox, { backgroundColor: `${colors.info}10` }]}>
             <Ionicons name="speedometer-outline" size={14} color={colors.info} />
             <Text style={[styles.metricVal, { color: colors.text }]}>{item.machineCounter.toLocaleString()}</Text>
-            <Text style={[styles.metricLbl, { color: colors.textMuted }]}>{isAr ? 'عداد' : 'Counter'}</Text>
+            <Text style={[styles.metricLbl, { color: colors.textMuted }]}>{'عداد'}</Text>
             {delta !== null && (
               <Text style={[styles.delta, { color: delta >= 0 ? colors.success : colors.warning }]}>
                 {delta >= 0 ? '+' : ''}{delta.toLocaleString()}
@@ -114,13 +114,13 @@ function SnapCard({
           {toImageUri(item.machineCounterImage) ? (
             <View style={styles.photoWrap}>
               <Image source={{ uri: toImageUri(item.machineCounterImage)! }} style={[styles.photo, { backgroundColor: colors.border }]} resizeMode="cover" />
-              <View style={styles.photoTag}><Text style={styles.photoTagText}>{isAr ? 'عداد' : 'Counter'}</Text></View>
+              <View style={styles.photoTag}><Text style={styles.photoTagText}>{'عداد'}</Text></View>
             </View>
           ) : null}
           {toImageUri(item.electricityImage) ? (
             <View style={styles.photoWrap}>
               <Image source={{ uri: toImageUri(item.electricityImage)! }} style={[styles.photo, { backgroundColor: colors.border }]} resizeMode="cover" />
-              <View style={styles.photoTag}><Text style={styles.photoTagText}>{isAr ? 'كهرباء' : 'Electric'}</Text></View>
+              <View style={styles.photoTag}><Text style={styles.photoTagText}>{'كهرباء'}</Text></View>
             </View>
           ) : null}
         </View>
@@ -186,7 +186,7 @@ export function AdminSnapsScreen() {
         <Ionicons name="search-outline" size={16} color={colors.textMuted} />
         <TextInput
           style={[styles.searchInput, { color: colors.text }]}
-          placeholder={isAr ? 'بحث باسم العامل أو الآلة...' : 'Search worker or machine...'}
+          placeholder={'بحث باسم العامل أو الآلة...'}
           placeholderTextColor={colors.textMuted}
           value={search}
           onChangeText={setSearch}
@@ -219,8 +219,8 @@ export function AdminSnapsScreen() {
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
       <ScreenHeader
-        title={isAr ? 'لقطات الإدارة' : 'Admin Snapshots'}
-        subtitle={`${filtered.length} ${isAr ? 'سجل' : 'records'}`}
+        title={'لقطات الإدارة'}
+        subtitle={`${filtered.length} ${'سجل'}`}
         showBack
       />
 
@@ -255,7 +255,7 @@ export function AdminSnapsScreen() {
                 <View style={[styles.statCard, { backgroundColor: colors.surface }]}>
                   <Ionicons name="speedometer" size={20} color={colors.info} />
                   <Text style={[styles.statVal, { color: colors.info }]}>{totalCounter.toLocaleString()}</Text>
-                  <Text style={[styles.statLbl, { color: colors.textMuted }]}>{isAr ? 'إجمالي العداد' : 'Total Counter'}</Text>
+                  <Text style={[styles.statLbl, { color: colors.textMuted }]}>{'إجمالي العداد'}</Text>
                 </View>
               </View>
             </>
@@ -264,7 +264,7 @@ export function AdminSnapsScreen() {
             <View style={styles.empty}>
               <Ionicons name="camera-outline" size={44} color={colors.textMuted} />
               <Text style={[styles.emptyText, { color: colors.textMuted }]}>
-                {isAr ? 'لا توجد لقطات مسجلة' : 'No snapshots recorded'}
+                {'لا توجد لقطات مسجلة'}
               </Text>
             </View>
           }

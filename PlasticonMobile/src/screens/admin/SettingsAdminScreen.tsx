@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+﻿import React, { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator, Alert, KeyboardAvoidingView, Modal,
   Platform, RefreshControl, ScrollView, StyleSheet, Switch,
@@ -10,7 +10,6 @@ import { api, uploadForm } from '../../api/client';
 import { ScreenHeader } from '../../components';
 import { radius, shadow, spacing, typography } from '../../theme';
 import { useAppTheme } from '../../context/ThemeContext';
-import { useLocale } from '../../context/LocaleContext';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -146,56 +145,55 @@ const chipStyles = StyleSheet.create({
 
 export function SettingsAdminScreen() {
   const { colors } = useAppTheme();
-  const { isAr } = useLocale();
 
   const t = {
-    overview:    isAr ? 'نظرة عامة'     : 'Overview',
-    production:  isAr ? 'الإنتاج'       : 'Production',
-    system:      isAr ? 'النظام'        : 'System',
-    users:       isAr ? 'المستخدمون'    : 'Users',
-    configured:  isAr ? 'مضبوط'         : 'Configured',
-    notConf:     isAr ? 'غير مضبوط'     : 'Not configured',
-    missing:     isAr ? 'أنواع ناقصة'   : 'Missing types',
-    lastUpd:     isAr ? 'آخر تحديث'     : 'Last updated',
-    save:        isAr ? 'حفظ'           : 'Save',
-    saving:      isAr ? 'جارٍ الحفظ...' : 'Saving...',
-    reset:       isAr ? 'إعادة تعيين'   : 'Reset',
-    noChanges:   isAr ? 'لا تغييرات'    : 'No changes',
-    piecesCarton: isAr ? 'قطع لكل كرتونة' : 'Pieces per carton',
-    qualityGroup: isAr ? 'الجودة والتنبيهات' : 'Quality & Alerts',
-    reportGroup:  isAr ? 'التقارير الدورية' : 'Scheduled Reports',
-    notifRules:   isAr ? 'قواعد الإشعارات' : 'Notification Rules',
-    qualInterval: isAr ? 'فترة فحص الجودة (دق)' : 'Quality check interval (min)',
-    qualReminder: isAr ? 'تذكير فحص الجودة (دق)' : 'Quality reminder (min)',
-    shiftReminder: isAr ? 'تذكير نهاية الوردية (دق)' : 'Shift end reminder (min)',
-    auditFreq:    isAr ? 'تردد مراجعة المخزون' : 'Inventory audit frequency',
-    weeklyDay:    isAr ? 'يوم التقرير الأسبوعي (1-7)' : 'Weekly report day (1-7)',
-    weeklyTime:   isAr ? 'وقت التقرير الأسبوعي (HH:MM)' : 'Weekly report time (HH:MM)',
-    monthlyDay:   isAr ? 'يوم التقرير الشهري (1-31)' : 'Monthly report day (1-31)',
-    monthlyTime:  isAr ? 'وقت التقرير الشهري (HH:MM)' : 'Monthly report time (HH:MM)',
-    addUser:     isAr ? 'إضافة مستخدم'  : 'Add User',
-    editUser:    isAr ? 'تعديل المستخدم' : 'Edit User',
-    deleteUser:  isAr ? 'حذف المستخدم؟' : 'Delete User?',
-    deleteMsg:   isAr ? 'لا يمكن التراجع عن هذا الإجراء.' : 'This action cannot be undone.',
-    cancel:      isAr ? 'إلغاء'         : 'Cancel',
-    delete:      isAr ? 'نعم، احذف'     : 'Yes, Delete',
-    search:      isAr ? 'بحث بالاسم...' : 'Search by name...',
-    allRoles:    isAr ? 'جميع الأدوار'  : 'All Roles',
-    fullName:    isAr ? 'الاسم الكامل *' : 'Full Name *',
-    username:    isAr ? 'اسم المستخدم'  : 'Username',
-    email:       isAr ? 'البريد الإلكتروني *' : 'Email *',
-    phone:       isAr ? 'الهاتف'        : 'Phone',
-    role:        isAr ? 'الدور'         : 'Role',
-    password:    isAr ? 'كلمة المرور *' : 'Password *',
-    newPassword: isAr ? 'كلمة المرور الجديدة (اختياري)' : 'New Password (optional)',
-    nationalId:  isAr ? 'رقم الهوية'   : 'National ID',
-    noUsers:     isAr ? 'لا توجد نتائج' : 'No users found',
-    saveNotif:   isAr ? 'حفظ قواعد الإشعارات' : 'Save notification rules',
-    adminOnly:   isAr ? 'الأدمن فقط'   : 'Admin only',
-    adminShift:  isAr ? 'الأدمن + الشفت' : 'Admin + shift',
-    enabled:     isAr ? 'مفعلة'         : 'Enabled',
-    productionHealth: isAr ? 'جاهزية الإنتاج' : 'Production readiness',
-    systemHealth:     isAr ? 'جاهزية النظام'  : 'System readiness',
+    overview:    'نظرة عامة',
+    production:  'الإنتاج',
+    system:      'النظام',
+    users:       'المستخدمون',
+    configured:  'مضبوط',
+    notConf:     'غير مضبوط',
+    missing:     'أنواع ناقصة',
+    lastUpd:     'آخر تحديث',
+    save:        'حفظ',
+    saving:      'جارٍ الحفظ...',
+    reset:       'إعادة تعيين',
+    noChanges:   'لا تغييرات',
+    piecesCarton: 'قطع لكل كرتونة',
+    qualityGroup: 'الجودة والتنبيهات',
+    reportGroup:  'التقارير الدورية',
+    notifRules:   'قواعد الإشعارات',
+    qualInterval: 'فترة فحص الجودة (دق)',
+    qualReminder: 'تذكير فحص الجودة (دق)',
+    shiftReminder: 'تذكير نهاية الوردية (دق)',
+    auditFreq:    'تردد مراجعة المخزون',
+    weeklyDay:    'يوم التقرير الأسبوعي (1-7)',
+    weeklyTime:   'وقت التقرير الأسبوعي (HH:MM)',
+    monthlyDay:   'يوم التقرير الشهري (1-31)',
+    monthlyTime:  'وقت التقرير الشهري (HH:MM)',
+    addUser:     'إضافة مستخدم',
+    editUser:    'تعديل المستخدم',
+    deleteUser:  'حذف المستخدم؟',
+    deleteMsg:   'لا يمكن التراجع عن هذا الإجراء.',
+    cancel:      'إلغاء',
+    delete:      'نعم، احذف',
+    search:      'بحث بالاسم...',
+    allRoles:    'جميع الأدوار',
+    fullName:    'الاسم الكامل *',
+    username:    'اسم المستخدم',
+    email:       'البريد الإلكتروني *',
+    phone:       'الهاتف',
+    role:        'الدور',
+    password:    'كلمة المرور *',
+    newPassword: 'كلمة المرور الجديدة (اختياري)',
+    nationalId:  'رقم الهوية',
+    noUsers:     'لا توجد نتائج',
+    saveNotif:   'حفظ قواعد الإشعارات',
+    adminOnly:   'الأدمن فقط',
+    adminShift:  'الأدمن + الشفت',
+    enabled:     'مفعلة',
+    productionHealth: 'جاهزية الإنتاج',
+    systemHealth:     'جاهزية النظام',
   };
 
   const [tab, setTab] = useState<Tab>('overview');
@@ -272,7 +270,7 @@ export function SettingsAdminScreen() {
     const val = Number(prodDrafts[type]);
     if (!Number.isInteger(val) || val <= 0) {
       setStatusOk(false);
-      setStatusMsg(isAr ? 'أدخل عددًا صحيحًا موجبًا' : 'Enter a positive integer');
+      setStatusMsg('أدخل عددًا صحيحًا موجبًا');
       return;
     }
     setSavingProd(type);
@@ -281,7 +279,7 @@ export function SettingsAdminScreen() {
       await api.put(`/settings/production/${type}`, { piecesPerCarton: val });
       await loadSettings();
       setStatusOk(true);
-      setStatusMsg(isAr ? 'تم حفظ إعدادات الإنتاج' : 'Production settings saved');
+      setStatusMsg('تم حفظ إعدادات الإنتاج');
     } catch (e: any) {
       setStatusOk(false);
       setStatusMsg(e?.message ?? 'خطأ');
@@ -307,7 +305,7 @@ export function SettingsAdminScreen() {
       });
       await loadSettings();
       setStatusOk(true);
-      setStatusMsg(isAr ? 'تم حفظ إعدادات النظام' : 'System settings saved');
+      setStatusMsg('تم حفظ إعدادات النظام');
     } catch (e: any) {
       setStatusOk(false);
       setStatusMsg(e?.message ?? 'خطأ');
@@ -324,7 +322,7 @@ export function SettingsAdminScreen() {
       setNotifRules(saved);
       setSavedNotif(saved);
       setStatusOk(true);
-      setStatusMsg(isAr ? 'تم حفظ قواعد الإشعارات' : 'Notification rules saved');
+      setStatusMsg('تم حفظ قواعد الإشعارات');
     } catch (e: any) {
       setStatusOk(false);
       setStatusMsg(e?.message ?? 'خطأ');
@@ -349,11 +347,11 @@ export function SettingsAdminScreen() {
 
   const saveUser = async () => {
     if (!userForm.fullName.trim() || !userForm.email.trim()) {
-      setUserFormErr(isAr ? 'الاسم والبريد الإلكتروني مطلوبان' : 'Name and email are required');
+      setUserFormErr('الاسم والبريد الإلكتروني مطلوبان');
       return;
     }
     if (userModal === 'add' && !userForm.password.trim()) {
-      setUserFormErr(isAr ? 'كلمة المرور مطلوبة' : 'Password is required');
+      setUserFormErr('كلمة المرور مطلوبة');
       return;
     }
     setUserFormSaving(true);
@@ -419,16 +417,16 @@ export function SettingsAdminScreen() {
   };
 
   const NOTIF_LABELS: Record<NotifKey, string> = {
-    PRODUCTION_CREATED: isAr ? 'عند إضافة إنتاج' : 'On production create',
-    PURCHASE_CREATED: isAr ? 'عند إضافة شراء' : 'On purchase create',
-    SALE_CREATED: isAr ? 'عند إضافة بيع' : 'On sale create',
-    INVENTORY_TRANSACTION_CREATED: isAr ? 'عند حركة مخزون' : 'On inventory transaction',
+    PRODUCTION_CREATED: 'عند إضافة إنتاج',
+    PURCHASE_CREATED: 'عند إضافة شراء',
+    SALE_CREATED: 'عند إضافة بيع',
+    INVENTORY_TRANSACTION_CREATED: 'عند حركة مخزون',
   };
 
   const AUDIT_LABELS: Partial<Record<AuditFreq, string>> = {
-    DAILY: isAr ? 'يومي' : 'Daily',
-    WEEKLY: isAr ? 'أسبوعي' : 'Weekly',
-    MONTHLY: isAr ? 'شهري' : 'Monthly',
+    DAILY: 'يومي',
+    WEEKLY: 'أسبوعي',
+    MONTHLY: 'شهري',
   };
   const DELIVERY_LABELS: Partial<Record<Delivery, string>> = {
     ADMIN_ONLY: t.adminOnly,
@@ -445,7 +443,7 @@ export function SettingsAdminScreen() {
   if (loading) {
     return (
       <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
-        <ScreenHeader title={isAr ? 'الإعدادات' : 'Settings'} showBack />
+        <ScreenHeader title={'الإعدادات'} showBack />
         <View style={styles.center}><ActivityIndicator size="large" color={colors.primary} /></View>
       </SafeAreaView>
     );
@@ -453,7 +451,7 @@ export function SettingsAdminScreen() {
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
-      <ScreenHeader title={isAr ? 'الإعدادات' : 'Settings'} showBack />
+      <ScreenHeader title={'الإعدادات'} showBack />
 
       {/* ── Tab bar ── */}
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={[styles.tabBar, { backgroundColor: colors.surface, borderBottomColor: colors.border }]} contentContainerStyle={styles.tabBarContent}>
@@ -506,7 +504,7 @@ export function SettingsAdminScreen() {
             {/* KPI cards */}
             <View style={styles.kpiGrid}>
               <KpiCard
-                label={isAr ? 'إعدادات الإنتاج' : 'Production settings'}
+                label={'إعدادات الإنتاج'}
                 value={overview?.productionSettingsCount ?? 0}
                 sub={overview?.productionSettingsCount ? t.configured : t.notConf}
                 color="#2563EB"
@@ -520,7 +518,7 @@ export function SettingsAdminScreen() {
             </View>
             <View style={styles.kpiGrid}>
               <KpiCard
-                label={isAr ? 'إعدادات النظام' : 'System settings'}
+                label={'إعدادات النظام'}
                 value={overview?.hasSystemSetting ? '✓' : '—'}
                 sub={overview?.latestSystemSetting ? `ID ${overview.latestSystemSetting.id}` : t.notConf}
                 color={overview?.hasSystemSetting ? '#7C3AED' : '#64748B'}
@@ -530,7 +528,7 @@ export function SettingsAdminScreen() {
                 value={overview?.latestSystemSetting?.updatedAt
                   ? new Date(overview.latestSystemSetting.updatedAt).toLocaleDateString()
                   : '—'}
-                sub={isAr ? 'آخر تحديث للنظام' : 'Latest system update'}
+                sub={'آخر تحديث للنظام'}
                 color="#F59E0B"
               />
             </View>
@@ -550,7 +548,7 @@ export function SettingsAdminScreen() {
                 <SectionCard key={type} title={type}>
                   <View style={[styles.badge, { backgroundColor: existing ? 'rgba(22,163,74,0.1)' : 'rgba(245,158,11,0.1)' }]}>
                     <Text style={{ fontSize: 12, fontWeight: '700', color: existing ? '#16A34A' : '#D97706' }}>
-                      {existing ? `${t.configured} — ${existing.piecesPerCarton} ${isAr ? 'قطعة' : 'pcs'}` : t.notConf}
+                      {existing ? `${t.configured} — ${existing.piecesPerCarton} ${'قطعة'}` : t.notConf}
                     </Text>
                   </View>
                   <FieldInput
@@ -629,7 +627,7 @@ export function SettingsAdminScreen() {
                       <Text style={{ fontSize: 13, fontWeight: '600', color: colors.text }}>{NOTIF_LABELS[key]}</Text>
                       {rule.enabled && (
                         <ChipSelect<Delivery>
-                          label={isAr ? 'الوصول' : 'Delivery'}
+                          label={'الوصول'}
                           options={['ADMIN_ONLY', 'ADMIN_AND_SHIFT']}
                           value={rule.delivery}
                           onChange={v => setNotifRules(p => ({ ...p, rules: { ...p.rules, [key]: { ...p.rules[key], delivery: v } } }))}

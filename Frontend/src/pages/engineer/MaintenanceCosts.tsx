@@ -38,9 +38,8 @@ interface CostRecord {
 const emptyForm = { maintenanceId: "", laborHours: "", laborCostPerHour: "", sparesTotal: "", notes: "" };
 
 export default function MaintenanceCosts() {
-  const { locale } = useLocale();
   const { user } = useAuth();
-  const nav = (en: string, ar: string) => locale === "ar" ? ar : en;
+  const nav = (_en: string, ar: string) => ar;
 
   const role = user?.role ?? "";
   const isAdmin = role === "ADMIN";

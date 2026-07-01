@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+﻿import React, { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator, Alert, RefreshControl, ScrollView,
   StyleSheet, Text, TouchableOpacity, View,
@@ -11,7 +11,6 @@ import { StatCard } from '../../components';
 import { api } from '../../api/client';
 import { radius, shadow, spacing, typography } from '../../theme';
 import { useAppTheme } from '../../context/ThemeContext';
-import { useLocale } from '../../context/LocaleContext';
 
 interface DashData {
   machinesTotal:     number;
@@ -51,7 +50,6 @@ function QuickLink({ icon, label, color, onPress, colors }: { icon: string; labe
 
 export function EngineerDashScreen() {
   const { colors } = useAppTheme();
-  const { isAr } = useLocale();
   const { user } = useAuth();
   const navigation = useNavigation<any>();
   const firstName = (user?.fullName ?? 'Engineer').split(' ')[0];
@@ -88,8 +86,8 @@ export function EngineerDashScreen() {
       }
     } catch (e: any) {
       Alert.alert(
-        isAr ? 'خطأ' : 'Error',
-        e?.message ?? (isAr ? 'فشلت العملية' : 'Action failed'),
+        'خطأ',
+        e?.message ?? ('فشلت العملية'),
       );
     } finally {
       setActionLoading(false);
@@ -143,12 +141,12 @@ export function EngineerDashScreen() {
       >
         <View style={styles.greeting}>
           <View>
-            <Text style={[styles.greetSub, { color: colors.textMuted }]}>{isAr ? 'لوحة التحكم' : 'Dashboard'}</Text>
+            <Text style={[styles.greetSub, { color: colors.textMuted }]}>{'لوحة التحكم'}</Text>
             <Text style={[styles.greetName, { color: colors.text }]}>{firstName} ⚙️</Text>
           </View>
           <TouchableOpacity style={[styles.analyticBtn, { backgroundColor: colors.primaryLight }]} onPress={() => navigation.navigate('Engineering', { screen: 'ProductionAnalytics' })}>
             <Ionicons name="analytics" size={16} color={colors.primary} />
-            <Text style={[styles.analyticText, { color: colors.primary }]}>{isAr ? 'تحليل الإنتاج' : 'Production Analytics'}</Text>
+            <Text style={[styles.analyticText, { color: colors.primary }]}>{'تحليل الإنتاج'}</Text>
           </TouchableOpacity>
         </View>
 
@@ -158,16 +156,16 @@ export function EngineerDashScreen() {
             <View style={[styles.checkDot, { backgroundColor: checkedIn ? colors.success : colors.danger }]} />
             <View>
               <Text style={[styles.checkStatus, { color: colors.text }]}>
-                {checkedIn ? (isAr ? 'مسجّل الدخول' : 'Checked In') : (isAr ? 'لم تسجّل دخولاً' : 'Not Checked In')}
+                {checkedIn ? ('مسجّل الدخول') : ('لم تسجّل دخولاً')}
               </Text>
               {checkedIn && checkInTime ? (
                 <Text style={[styles.checkSince, { color: colors.textMuted }]}>
-                  {isAr ? 'منذ' : 'Since'}{' '}
+                  {'منذ'}{' '}
                   {new Date(checkInTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                 </Text>
               ) : (
                 <Text style={[styles.checkSince, { color: colors.textMuted }]}>
-                  {isAr ? 'سجّل دخولك للبدء' : 'Check in to start your shift'}
+                  {'سجّل دخولك للبدء'}
                 </Text>
               )}
             </View>
@@ -180,39 +178,39 @@ export function EngineerDashScreen() {
           >
             {actionLoading
               ? <ActivityIndicator size="small" color="#fff" />
-              : <Text style={styles.checkBtnText}>{checkedIn ? (isAr ? 'خروج' : 'Check Out') : (isAr ? 'دخول' : 'Check In')}</Text>
+              : <Text style={styles.checkBtnText}>{checkedIn ? ('خروج') : ('دخول')}</Text>
             }
           </TouchableOpacity>
         </View>
 
         {/* KPI row */}
         <View style={styles.kpiRow}>
-          <StatCard label={isAr ? 'الآلات بخير' : 'Machines OK'}  value={`${data?.machinesOp ?? 0}/${data?.machinesTotal ?? 0}`} icon="hardware-chip" color={colors.success}  style={styles.kpi} />
-          <StatCard label={isAr ? 'صيانة مفتوحة' : 'Open Maint.'} value={String(data?.openMaintenance ?? 0)}                     icon="construct"    color={colors.warning}  style={styles.kpi} />
+          <StatCard label={'الآلات بخير'}  value={`${data?.machinesOp ?? 0}/${data?.machinesTotal ?? 0}`} icon="hardware-chip" color={colors.success}  style={styles.kpi} />
+          <StatCard label={'صيانة مفتوحة'} value={String(data?.openMaintenance ?? 0)}                     icon="construct"    color={colors.warning}  style={styles.kpi} />
         </View>
         <View style={styles.kpiRow}>
-          <StatCard label={isAr ? 'نجاح الجودة' : 'Quality Pass'} value={`${data?.qualityPassRate ?? 0}%`}                       icon="shield-checkmark" color={colors.info}  style={styles.kpi} />
-          <StatCard label={isAr ? 'القسم' : 'Dept'}               value={user?.department ?? '—'}                                icon="business"     color={colors.accent}   style={styles.kpi} />
+          <StatCard label={'نجاح الجودة'} value={`${data?.qualityPassRate ?? 0}%`}                       icon="shield-checkmark" color={colors.info}  style={styles.kpi} />
+          <StatCard label={'القسم'}               value={user?.department ?? '—'}                                icon="business"     color={colors.accent}   style={styles.kpi} />
         </View>
 
         {/* Quick links */}
-        <Text style={[styles.sectionLabel, { color: colors.textMuted }]}>{isAr ? 'وصول سريع' : 'QUICK ACCESS'}</Text>
+        <Text style={[styles.sectionLabel, { color: colors.textMuted }]}>{'وصول سريع'}</Text>
         <View style={styles.qlGrid}>
-          <QuickLink icon="construct-outline"        label={isAr ? 'الصيانة' : 'Maintenance'}  color={colors.warning}  onPress={() => navigation.navigate('Engineering', { screen: 'MaintenancePage' })} colors={colors} />
-          <QuickLink icon="hardware-chip-outline"    label={isAr ? 'الآلات' : 'Machines'}      color={colors.primary}  onPress={() => navigation.navigate('Engineering', { screen: 'MachineHealth'  })} colors={colors} />
-          <QuickLink icon="shield-checkmark-outline" label={isAr ? 'الجودة' : 'Quality'}       color={colors.success}  onPress={() => navigation.navigate('Engineering', { screen: 'QualityChecks'  })} colors={colors} />
-          <QuickLink icon="chatbubble-ellipses-outline" label={isAr ? 'أدوات الذكاء' : 'AI Tools'} color={colors.info} onPress={() => navigation.navigate('AITools',     { screen: 'AIHub'     })} colors={colors} />
+          <QuickLink icon="construct-outline"        label={'الصيانة'}  color={colors.warning}  onPress={() => navigation.navigate('Engineering', { screen: 'MaintenancePage' })} colors={colors} />
+          <QuickLink icon="hardware-chip-outline"    label={'الآلات'}      color={colors.primary}  onPress={() => navigation.navigate('Engineering', { screen: 'MachineHealth'  })} colors={colors} />
+          <QuickLink icon="shield-checkmark-outline" label={'الجودة'}       color={colors.success}  onPress={() => navigation.navigate('Engineering', { screen: 'QualityChecks'  })} colors={colors} />
+          <QuickLink icon="chatbubble-ellipses-outline" label={'أدوات الذكاء'} color={colors.info} onPress={() => navigation.navigate('AITools',     { screen: 'AIHub'     })} colors={colors} />
         </View>
 
         {/* Recent maintenance */}
-        <Text style={[styles.sectionLabel, { color: colors.textMuted }]}>{isAr ? 'الصيانة الأخيرة' : 'RECENT MAINTENANCE'}</Text>
+        <Text style={[styles.sectionLabel, { color: colors.textMuted }]}>{'الصيانة الأخيرة'}</Text>
         <View style={[styles.alertCard, { backgroundColor: colors.surface }]}>
           {data?.recentMaint.length ? data.recentMaint.map((item, idx) => (
             <AlertRow key={`${item.id}-${idx}`} item={item} colors={colors} />
           )) : (
             <View style={styles.empty}>
               <Ionicons name="checkmark-circle-outline" size={28} color={colors.success} />
-              <Text style={[styles.emptyText, { color: colors.textMuted }]}>{isAr ? 'لا توجد مشاكل صيانة' : 'No maintenance issues'}</Text>
+              <Text style={[styles.emptyText, { color: colors.textMuted }]}>{'لا توجد مشاكل صيانة'}</Text>
             </View>
           )}
         </View>

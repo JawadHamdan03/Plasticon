@@ -102,8 +102,8 @@ export default function ExpenseTracking() {
 
   return (
     <ModulePageShell
-      title={{"تتبع المصروفات"}}
-      subtitle={{"تسجيل ومراقبة مصروفات المصنع"}}
+      title={"تتبع المصروفات"}
+      subtitle={"تسجيل ومراقبة مصروفات المصنع"}
       icon={<Receipt size={22} />}
     >
       {/* KPIs */}
@@ -130,7 +130,7 @@ export default function ExpenseTracking() {
         )}
         <div className="relative">
           <Search size={14} className="absolute start-2.5 top-1/2 -translate-y-1/2 text-[var(--text-secondary)]" />
-          <input className="input ps-8 h-8 text-sm w-44" placeholder={{"بحث..."}}
+          <input className="input ps-8 h-8 text-sm w-44" placeholder={"بحث..."}
             value={search} onChange={(e) => setSearch(e.target.value)} />
         </div>
         <select className="input text-sm h-8 min-w-[160px]" value={filterCat} onChange={(e) => setFilterCat(e.target.value)}>

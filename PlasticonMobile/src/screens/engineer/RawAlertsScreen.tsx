@@ -1,5 +1,6 @@
-import React, { useCallback, useEffect, useState } from 'react';
+﻿import React, { useCallback, useEffect, useState } from 'react';
 import {
+import { useLocale } from '../../context/LocaleContext';
   ActivityIndicator, Alert, FlatList, KeyboardAvoidingView,
   Modal, Platform, RefreshControl, ScrollView, StyleSheet,
   Text, TextInput, TouchableOpacity, View,
@@ -10,7 +11,6 @@ import { api } from '../../api/client';
 import { Button, ScreenHeader } from '../../components';
 import { radius, shadow, spacing, typography } from '../../theme';
 import { useAppTheme } from '../../context/ThemeContext';
-import { useLocale } from '../../context/LocaleContext';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -70,12 +70,12 @@ function AlertCard({ item, onEdit, onThreshold }: {
       <View style={styles.qtyRow}>
         <View style={styles.qtyBlock}>
           <Text style={[styles.qtyVal, { color: item.status !== 'OK' ? meta.color : colors.text }]}>{item.currentQuantity}</Text>
-          <Text style={[styles.qtyLabel, { color: colors.textMuted }]}>{isAr ? 'الحالي' : 'Current'}</Text>
+          <Text style={[styles.qtyLabel, { color: colors.textMuted }]}>{'الحالي'}</Text>
         </View>
         <View style={[styles.qtyDivider, { backgroundColor: colors.border }]} />
         <View style={styles.qtyBlock}>
           <Text style={[styles.qtyVal, { color: colors.text }]}>{item.minQuantity}</Text>
-          <Text style={[styles.qtyLabel, { color: colors.textMuted }]}>{isAr ? 'الحد الأدنى' : 'Min Stock'}</Text>
+          <Text style={[styles.qtyLabel, { color: colors.textMuted }]}>{'الحد الأدنى'}</Text>
         </View>
       </View>
 
@@ -86,7 +86,7 @@ function AlertCard({ item, onEdit, onThreshold }: {
           activeOpacity={0.75}
         >
           <Ionicons name="create-outline" size={14} color={colors.primary} />
-          <Text style={[styles.cardBtnText, { color: colors.primary }]}>{isAr ? 'تحديث المخزون' : 'Update Stock'}</Text>
+          <Text style={[styles.cardBtnText, { color: colors.primary }]}>{'تحديث المخزون'}</Text>
         </TouchableOpacity>
         <TouchableOpacity
           onPress={() => onThreshold(item)}
@@ -94,7 +94,7 @@ function AlertCard({ item, onEdit, onThreshold }: {
           activeOpacity={0.75}
         >
           <Ionicons name="options-outline" size={14} color={colors.warning} />
-          <Text style={[styles.cardBtnText, { color: colors.warning }]}>{isAr ? 'الحد الأدنى' : 'Set Min'}</Text>
+          <Text style={[styles.cardBtnText, { color: colors.warning }]}>{'الحد الأدنى'}</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -144,7 +144,7 @@ export function RawAlertsScreen() {
     if (!editItem) return;
     const qty = parseFloat(newQty);
     if (isNaN(qty) || qty < 0) {
-      Alert.alert(isAr ? 'تحقق' : 'Validation', isAr ? 'أدخل كمية صحيحة' : 'Enter a valid quantity.');
+      Alert.alert('تحقق', 'أدخل كمية صحيحة');
       return;
     }
     setSaving(true);
@@ -153,7 +153,7 @@ export function RawAlertsScreen() {
       setAlerts(prev => prev.map(a => a.id === editItem.id ? { ...a, currentQuantity: qty } : a));
       setEditItem(null);
     } catch (e: any) {
-      Alert.alert(isAr ? 'خطأ' : 'Error', e.message ?? 'Failed to update.');
+      Alert.alert('خطأ', e.message ?? 'Failed to update.');
     } finally {
       setSaving(false);
     }
@@ -168,7 +168,7 @@ export function RawAlertsScreen() {
     if (!threshItem) return;
     const min = parseFloat(newThresh);
     if (isNaN(min) || min < 0) {
-      Alert.alert(isAr ? 'تحقق' : 'Validation', isAr ? 'أدخل حداً صحيحاً' : 'Enter a valid threshold.');
+      Alert.alert('تحقق', 'أدخل حداً صحيحاً');
       return;
     }
     setSavingThresh(true);
@@ -177,7 +177,7 @@ export function RawAlertsScreen() {
       setAlerts(prev => prev.map(a => a.id === threshItem.id ? { ...a, minQuantity: min } : a));
       setThreshItem(null);
     } catch (e: any) {
-      Alert.alert(isAr ? 'خطأ' : 'Error', e.message ?? 'Failed to update threshold.');
+      Alert.alert('خطأ', e.message ?? 'Failed to update threshold.');
     } finally {
       setSavingThresh(false);
     }
@@ -189,8 +189,8 @@ export function RawAlertsScreen() {
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
       <ScreenHeader
-        title={isAr ? 'تنبيهات المواد الخام' : 'Raw Material Alerts'}
-        subtitle={criticalCount > 0 ? `${criticalCount} ${isAr ? 'حرج' : 'critical'}` : (isAr ? 'كل شيء جيد' : 'All clear')}
+        title={'تنبيهات المواد الخام'}
+        subtitle={criticalCount > 0 ? `${criticalCount} ${'حرج'}` : ('كل شيء جيد')}
         showBack
       />
 
@@ -198,15 +198,15 @@ export function RawAlertsScreen() {
       <View style={styles.statsRow}>
         <View style={[styles.statCard, { backgroundColor: colors.surface }]}>
           <Text style={[styles.statVal, { color: colors.text }]}>{alerts.length}</Text>
-          <Text style={[styles.statLabel, { color: colors.textMuted }]}>{isAr ? 'المجموع' : 'Total'}</Text>
+          <Text style={[styles.statLabel, { color: colors.textMuted }]}>{'المجموع'}</Text>
         </View>
         <View style={[styles.statCard, { backgroundColor: colors.surface }]}>
           <Text style={[styles.statVal, { color: colors.warning }]}>{lowCount}</Text>
-          <Text style={[styles.statLabel, { color: colors.textMuted }]}>{isAr ? 'منخفض' : 'Low'}</Text>
+          <Text style={[styles.statLabel, { color: colors.textMuted }]}>{'منخفض'}</Text>
         </View>
         <View style={[styles.statCard, { backgroundColor: colors.surface }]}>
           <Text style={[styles.statVal, { color: colors.danger }]}>{criticalCount}</Text>
-          <Text style={[styles.statLabel, { color: colors.textMuted }]}>{isAr ? 'حرج' : 'Critical'}</Text>
+          <Text style={[styles.statLabel, { color: colors.textMuted }]}>{'حرج'}</Text>
         </View>
       </View>
 
@@ -225,7 +225,7 @@ export function RawAlertsScreen() {
           ListEmptyComponent={
             <View style={styles.empty}>
               <Ionicons name="checkmark-circle-outline" size={44} color={colors.success} />
-              <Text style={[styles.emptyText, { color: colors.textMuted }]}>{isAr ? 'لا توجد بيانات مواد' : 'No material data'}</Text>
+              <Text style={[styles.emptyText, { color: colors.textMuted }]}>{'لا توجد بيانات مواد'}</Text>
             </View>
           }
         />
@@ -237,10 +237,10 @@ export function RawAlertsScreen() {
           <View style={[styles.sheet, { backgroundColor: colors.surface }]}>
             <View style={[styles.handle, { backgroundColor: colors.border }]} />
             <Text style={[styles.sheetTitle, { color: colors.text }]}>
-              {isAr ? 'تحديث المخزون' : 'Update Stock'} — {editItem?.name}
+              {'تحديث المخزون'} — {editItem?.name}
             </Text>
             <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>
-              {isAr ? 'الكمية الجديدة' : 'New Quantity'} ({editItem?.unit})
+              {'الكمية الجديدة'} ({editItem?.unit})
             </Text>
             <TextInput
               style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
@@ -250,8 +250,8 @@ export function RawAlertsScreen() {
               placeholderTextColor={colors.textMuted}
             />
             <View style={styles.actions}>
-              <Button variant="ghost" onPress={() => setEditItem(null)} style={styles.actionBtn}>{isAr ? 'إلغاء' : 'Cancel'}</Button>
-              <Button onPress={handleStockSave} loading={saving} style={styles.actionBtn}>{isAr ? 'حفظ' : 'Save'}</Button>
+              <Button variant="ghost" onPress={() => setEditItem(null)} style={styles.actionBtn}>{'إلغاء'}</Button>
+              <Button onPress={handleStockSave} loading={saving} style={styles.actionBtn}>{'حفظ'}</Button>
             </View>
           </View>
         </KeyboardAvoidingView>
@@ -263,10 +263,10 @@ export function RawAlertsScreen() {
           <View style={[styles.sheet, { backgroundColor: colors.surface }]}>
             <View style={[styles.handle, { backgroundColor: colors.border }]} />
             <Text style={[styles.sheetTitle, { color: colors.text }]}>
-              {isAr ? 'تعيين الحد الأدنى' : 'Set Minimum Threshold'} — {threshItem?.name}
+              {'تعيين الحد الأدنى'} — {threshItem?.name}
             </Text>
             <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>
-              {isAr ? 'الحد الأدنى للمخزون' : 'Minimum Stock Level'} ({threshItem?.unit})
+              {'الحد الأدنى للمخزون'} ({threshItem?.unit})
             </Text>
             <TextInput
               style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
@@ -276,8 +276,8 @@ export function RawAlertsScreen() {
               placeholderTextColor={colors.textMuted}
             />
             <View style={styles.actions}>
-              <Button variant="ghost" onPress={() => setThreshItem(null)} style={styles.actionBtn}>{isAr ? 'إلغاء' : 'Cancel'}</Button>
-              <Button onPress={handleThreshSave} loading={savingThresh} style={styles.actionBtn}>{isAr ? 'حفظ' : 'Save'}</Button>
+              <Button variant="ghost" onPress={() => setThreshItem(null)} style={styles.actionBtn}>{'إلغاء'}</Button>
+              <Button onPress={handleThreshSave} loading={savingThresh} style={styles.actionBtn}>{'حفظ'}</Button>
             </View>
           </View>
         </KeyboardAvoidingView>

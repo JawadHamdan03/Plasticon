@@ -1,5 +1,6 @@
-import React, { useCallback, useEffect, useState } from 'react';
+﻿import React, { useCallback, useEffect, useState } from 'react';
 import {
+import { useLocale } from '../../context/LocaleContext';
   ActivityIndicator, Dimensions, RefreshControl,
   ScrollView, StyleSheet, Text, TouchableOpacity, View,
 } from 'react-native';
@@ -10,7 +11,6 @@ import { api } from '../../api/client';
 import { ScreenHeader } from '../../components';
 import { radius, spacing, typography } from '../../theme';
 import { useAppTheme } from '../../context/ThemeContext';
-import { useLocale } from '../../context/LocaleContext';
 
 const W = Dimensions.get('window').width;
 const CHART_W = W - spacing.md * 2 - 2;
@@ -101,6 +101,7 @@ const ROLE_COLORS: Record<string, string> = {
 
 function SectionHeader({ icon, title, color }: { icon: string; title: string; color: string }) {
   const { colors } = useAppTheme();
+  const { isAr } = useLocale();
   return (
     <View style={[sectionStyles.header, { borderLeftColor: color }]}>
       <Ionicons name={icon as any} size={16} color={color} />
@@ -111,6 +112,7 @@ function SectionHeader({ icon, title, color }: { icon: string; title: string; co
 
 function KpiRow({ items }: { items: { label: string; value: string; color: string }[] }) {
   const { colors } = useAppTheme();
+  const { isAr } = useLocale();
   return (
     <View style={kpiStyles.row}>
       {items.map((item) => (
@@ -125,6 +127,7 @@ function KpiRow({ items }: { items: { label: string; value: string; color: strin
 
 function ChartCard({ children, title }: { children: React.ReactNode; title: string }) {
   const { colors } = useAppTheme();
+  const { isAr } = useLocale();
   return (
     <View style={[chartCardStyles.wrap, { backgroundColor: colors.surface }]}>
       <Text style={[chartCardStyles.title, { color: colors.textSecondary }]}>{title}</Text>
@@ -135,6 +138,7 @@ function ChartCard({ children, title }: { children: React.ReactNode; title: stri
 
 function LegendRow({ items }: { items: { label: string; color: string; value: string | number }[] }) {
   const { colors } = useAppTheme();
+  const { isAr } = useLocale();
   return (
     <View style={legendStyles.wrap}>
       {items.map((i) => (
@@ -165,7 +169,7 @@ function DayRangeSelector({ days, onChange }: { days: number; onChange: (d: numb
       {DAY_PRESETS.map(d => {
         const active = days === d;
         const label = d === 1
-          ? (isAr ? 'اليوم' : 'Today')
+          ? ('اليوم')
           : isAr ? `${d}ي` : `${d}d`;
         return (
           <TouchableOpacity
@@ -251,10 +255,10 @@ export function AdminAnalyticsScreen() {
     return (
       <>
         <KpiRow items={[
-          { label: isAr ? 'اليوم'    : 'Today',  value: fmtNum(prod?.todayPieces),  color: '#3b82f6' },
-          { label: isAr ? 'الأسبوع' : 'Week',   value: fmtNum(prod?.weekPieces),   color: '#10b981' },
-          { label: isAr ? 'الشهر'   : 'Month',  value: fmtNum(prod?.monthPieces),  color: '#f59e0b' },
-          { label: isAr ? 'كراتين اليوم' : 'Cartons', value: fmtNum(prod?.todayCartons), color: '#8b5cf6' },
+          { label: 'اليوم',  value: fmtNum(prod?.todayPieces),  color: '#3b82f6' },
+          { label: 'الأسبوع',   value: fmtNum(prod?.weekPieces),   color: '#10b981' },
+          { label: 'الشهر',  value: fmtNum(prod?.monthPieces),  color: '#f59e0b' },
+          { label: 'كراتين اليوم', value: fmtNum(prod?.todayCartons), color: '#8b5cf6' },
         ]} />
 
         <ChartCard title={isAr ? `قطع الإنتاج — آخر ${days} أيام` : `Production Pieces — Last ${days}d`}>
@@ -293,23 +297,23 @@ export function AdminAnalyticsScreen() {
     const labels       = allMonths.length ? allMonths : ['—'];
 
     const finPie = buildPie([
-      { label: isAr ? 'مبيعات'  : 'Sales',     value: overview?.salesThisMonth ?? 0 },
-      { label: isAr ? 'مشتريات' : 'Purchases', value: overview?.purchasesThisMonth ?? 0 },
-      { label: isAr ? 'مصروفات' : 'Expenses',  value: overview?.expensesThisMonth ?? 0 },
-      { label: isAr ? 'رواتب'   : 'Payroll',   value: overview?.payrollThisMonth ?? 0 },
+      { label: 'مبيعات',     value: overview?.salesThisMonth ?? 0 },
+      { label: 'مشتريات', value: overview?.purchasesThisMonth ?? 0 },
+      { label: 'مصروفات',  value: overview?.expensesThisMonth ?? 0 },
+      { label: 'رواتب',   value: overview?.payrollThisMonth ?? 0 },
     ], ['#10b981','#3b82f6','#f59e0b','#ef4444'], pieTextColor);
 
     return (
       <>
         <KpiRow items={[
-          { label: isAr ? 'مبيعات'  : 'Sales',    value: fmtMoney(overview?.salesThisMonth),    color: '#10b981' },
-          { label: isAr ? 'مشتريات': 'Purchases', value: fmtMoney(overview?.purchasesThisMonth), color: '#3b82f6' },
-          { label: isAr ? 'مصروفات': 'Expenses',  value: fmtMoney(overview?.expensesThisMonth),  color: '#f59e0b' },
-          { label: isAr ? 'رواتب'  : 'Payroll',   value: fmtMoney(overview?.payrollThisMonth),   color: '#ef4444' },
+          { label: 'مبيعات',    value: fmtMoney(overview?.salesThisMonth),    color: '#10b981' },
+          { label: 'مشتريات', value: fmtMoney(overview?.purchasesThisMonth), color: '#3b82f6' },
+          { label: 'مصروفات',  value: fmtMoney(overview?.expensesThisMonth),  color: '#f59e0b' },
+          { label: 'رواتب',   value: fmtMoney(overview?.payrollThisMonth),   color: '#ef4444' },
         ]} />
 
         {finPie.length > 0 && (
-          <ChartCard title={isAr ? 'توزيع المالية (الشهر الحالي)' : 'Finance Breakdown (This Month)'}>
+          <ChartCard title={'توزيع المالية (الشهر الحالي)'}>
             <PieChart
               data={finPie}
               width={CHART_W} height={180}
@@ -322,7 +326,7 @@ export function AdminAnalyticsScreen() {
           </ChartCard>
         )}
 
-        <ChartCard title={isAr ? 'المبيعات — آخر 6 أشهر' : 'Sales — Last 6 Months'}>
+        <ChartCard title={'المبيعات — آخر 6 أشهر'}>
           <LineChart
             data={{ labels, datasets: [{ data: salesVals, color: (o = 1) => `rgba(16,185,129,${o})` }] }}
             width={CHART_W} height={200}
@@ -332,7 +336,7 @@ export function AdminAnalyticsScreen() {
           />
         </ChartCard>
 
-        <ChartCard title={isAr ? 'المصروفات — آخر 6 أشهر' : 'Expenses — Last 6 Months'}>
+        <ChartCard title={'المصروفات — آخر 6 أشهر'}>
           <LineChart
             data={{ labels, datasets: [{ data: expVals, color: (o = 1) => `rgba(249,115,22,${o})` }] }}
             width={CHART_W} height={200}
@@ -343,8 +347,8 @@ export function AdminAnalyticsScreen() {
         </ChartCard>
 
         <KpiRow items={[
-          { label: isAr ? 'فواتير معلقة' : 'Pending Invoices', value: String(overview?.invoicesPending ?? 0), color: '#f59e0b' },
-          { label: isAr ? 'فواتير متأخرة': 'Overdue Invoices', value: String(overview?.invoicesOverdue ?? 0), color: '#ef4444' },
+          { label: 'فواتير معلقة', value: String(overview?.invoicesPending ?? 0), color: '#f59e0b' },
+          { label: 'فواتير متأخرة', value: String(overview?.invoicesOverdue ?? 0), color: '#ef4444' },
         ]} />
       </>
     );
@@ -367,14 +371,14 @@ export function AdminAnalyticsScreen() {
     return (
       <>
         <KpiRow items={[
-          { label: isAr ? 'إجمالي الموظفين' : 'Total Staff',    value: String(overview?.totalUsers ?? 0),  color: '#3b82f6' },
-          { label: isAr ? 'نشطون'           : 'Active',         value: String(overview?.activeUsers ?? 0), color: '#10b981' },
-          { label: isAr ? 'حضور اليوم'      : 'Today Attendance',value: String(overview?.attendanceToday ?? 0), color: '#8b5cf6' },
-          { label: isAr ? 'متأخرون اليوم'   : 'Late Today',     value: String(overview?.lateToday ?? 0),   color: '#f59e0b' },
+          { label: 'إجمالي الموظفين',    value: String(overview?.totalUsers ?? 0),  color: '#3b82f6' },
+          { label: 'نشطون',         value: String(overview?.activeUsers ?? 0), color: '#10b981' },
+          { label: 'حضور اليوم',value: String(overview?.attendanceToday ?? 0), color: '#8b5cf6' },
+          { label: 'متأخرون اليوم',     value: String(overview?.lateToday ?? 0),   color: '#f59e0b' },
         ]} />
 
         {rolePie.length > 0 && (
-          <ChartCard title={isAr ? 'توزيع الموظفين حسب الدور' : 'Staff by Role'}>
+          <ChartCard title={'توزيع الموظفين حسب الدور'}>
             <PieChart
               data={rolePie}
               width={CHART_W} height={200}
@@ -397,8 +401,8 @@ export function AdminAnalyticsScreen() {
             yAxisLabel="" yAxisSuffix=""
           />
           <LegendRow items={[
-            { label: isAr ? 'حضور' : 'Present', color: '#8b5cf6', value: '' },
-            ...attData.map((d) => ({ label: d.date, color: '#8b5cf6', value: `${d.present} (${d.late} ${isAr ? 'متأخر' : 'late'})` })).slice(0, 3),
+            { label: 'حضور', color: '#8b5cf6', value: '' },
+            ...attData.map((d) => ({ label: d.date, color: '#8b5cf6', value: `${d.present} (${d.late} ${'متأخر'})` })).slice(0, 3),
           ]} />
         </ChartCard>
       </>
@@ -429,14 +433,14 @@ export function AdminAnalyticsScreen() {
     return (
       <>
         <KpiRow items={[
-          { label: isAr ? 'إجمالي الآلات'     : 'Total Machines',    value: String(overview?.totalMachines ?? 0),     color: '#3b82f6' },
-          { label: isAr ? 'تعمل'              : 'Operational',       value: String(overview?.operationalMachines ?? 0),color: '#10b981' },
-          { label: isAr ? 'صيانة الشهر'       : 'Maintenance/Month', value: String(overview?.maintenanceThisMonth ?? 0), color: '#f59e0b' },
-          { label: isAr ? 'جداول متأخرة'      : 'Overdue Schedules', value: String(overview?.overdueSchedules ?? 0),  color: '#ef4444' },
+          { label: 'إجمالي الآلات',    value: String(overview?.totalMachines ?? 0),     color: '#3b82f6' },
+          { label: 'تعمل',       value: String(overview?.operationalMachines ?? 0),color: '#10b981' },
+          { label: 'صيانة الشهر', value: String(overview?.maintenanceThisMonth ?? 0), color: '#f59e0b' },
+          { label: 'جداول متأخرة', value: String(overview?.overdueSchedules ?? 0),  color: '#ef4444' },
         ]} />
 
         {machPie.length > 0 && (
-          <ChartCard title={isAr ? 'حالة الآلات' : 'Machine Status'}>
+          <ChartCard title={'حالة الآلات'}>
             <PieChart
               data={machPie}
               width={CHART_W} height={200}
@@ -459,7 +463,7 @@ export function AdminAnalyticsScreen() {
           />
         </ChartCard>
 
-        <ChartCard title={isAr ? 'بلاغات الصيانة — آخر 6 أشهر' : 'Maintenance Reports — Last 6 Months'}>
+        <ChartCard title={'بلاغات الصيانة — آخر 6 أشهر'}>
           <BarChart
             data={{ labels: maintLbls, datasets: [{ data: maintVals }] }}
             width={CHART_W} height={180}
@@ -471,7 +475,7 @@ export function AdminAnalyticsScreen() {
         </ChartCard>
 
         {qualData.length > 0 && (
-          <ChartCard title={isAr ? 'مشاكل الجودة حسب الخطورة' : 'Quality Issues by Severity'}>
+          <ChartCard title={'مشاكل الجودة حسب الخطورة'}>
             <BarChart
               data={{ labels: qualLbls, datasets: [{ data: qualVals }] }}
               width={CHART_W} height={180}
@@ -490,11 +494,11 @@ export function AdminAnalyticsScreen() {
 
         {/* Inventory */}
         <KpiRow items={[
-          { label: isAr ? 'إجمالي المواد'   : 'Raw Materials',  value: String(overview?.totalRawMaterials ?? 0), color: '#06b6d4' },
-          { label: isAr ? 'نفدت المخزون'    : 'Out of Stock',   value: String(overview?.outOfStockCount ?? 0),   color: '#ef4444' },
+          { label: 'إجمالي المواد',  value: String(overview?.totalRawMaterials ?? 0), color: '#06b6d4' },
+          { label: 'نفدت المخزون',   value: String(overview?.outOfStockCount ?? 0),   color: '#ef4444' },
         ]} />
         {(overview?.lowStockMaterials ?? []).length > 0 && (
-          <ChartCard title={isAr ? 'مواد قاربت النفاد' : 'Low Stock Materials'}>
+          <ChartCard title={'مواد قاربت النفاد'}>
             {(overview!.lowStockMaterials!).map((m) => {
               const pct = Math.min(100, Math.round((m.currentQuantity / Math.max(m.minQuantity, 1)) * 100));
               return (
@@ -523,7 +527,7 @@ export function AdminAnalyticsScreen() {
       <>
         {quotData.length > 0 && (
           <>
-            <ChartCard title={isAr ? 'عروض الأسعار حسب الحالة' : 'Quotations by Status'}>
+            <ChartCard title={'عروض الأسعار حسب الحالة'}>
               <BarChart
                 data={{ labels: quotLbls, datasets: [{ data: quotVals }] }}
                 width={CHART_W} height={180}
@@ -541,8 +545,8 @@ export function AdminAnalyticsScreen() {
           </>
         )}
         <KpiRow items={[
-          { label: isAr ? 'مبيعات الشهر'  : 'Sales/Month',     value: fmtMoney(overview?.salesThisMonth),    color: '#10b981' },
-          { label: isAr ? 'مشتريات الشهر' : 'Purchases/Month', value: fmtMoney(overview?.purchasesThisMonth), color: '#3b82f6' },
+          { label: 'مبيعات الشهر',     value: fmtMoney(overview?.salesThisMonth),    color: '#10b981' },
+          { label: 'مشتريات الشهر', value: fmtMoney(overview?.purchasesThisMonth), color: '#3b82f6' },
         ]} />
       </>
     );
@@ -559,16 +563,16 @@ export function AdminAnalyticsScreen() {
   };
 
   const TAB_LABELS: Record<Tab, string> = {
-    Production:  isAr ? 'الإنتاج' : 'Production',
-    Finance:     isAr ? 'المالية' : 'Finance',
-    HR:          isAr ? 'الموارد' : 'HR',
-    Engineering: isAr ? 'الهندسة' : 'Engineering',
-    Sales:       isAr ? 'المبيعات': 'Sales',
+    Production:  'الإنتاج',
+    Finance:     'المالية',
+    HR:          'الموارد',
+    Engineering: 'الهندسة',
+    Sales:       'المبيعات',
   };
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
-      <ScreenHeader title={isAr ? 'التحليلات' : 'Analytics'} showBack />
+      <ScreenHeader title={'التحليلات'} showBack />
 
       {/* Tab bar */}
       <ScrollView

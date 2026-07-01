@@ -8,11 +8,9 @@ import {
   Wrench, CheckSquare, AlertTriangle, Lightbulb, Activity, Target,
   Factory, Shield, Calendar, Boxes, Receipt, ClipboardCheck,
   UserCheck, Layers, Search, Package, PieChart, CreditCard, Percent, Wallet, CheckCircle,
-  Truck, Award, UserPlus, Sun, Moon, Briefcase, Sparkles, Bot,
+  Truck, Award, UserPlus, Briefcase, Sparkles, Bot,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
-import { useLocale } from "../context/LocaleContext";
-import { useTheme } from "../context/ThemeContext";
 import { API_BASE_URL } from "../lib/api";
 import logo from "../assets/plasticonLogo.png";
 import { DateTimeBadge } from "./DateTimeBadge";
@@ -398,17 +396,15 @@ function getNavSectionsBi(role: string): NavSectionBi[] {
   ];
 }
 
-function roleLabel(role: string, locale: string) {
-  const map: Record<string, { en: string; ar: string }> = {
-    ADMIN: { en: "Administrator", ar: "مدير" },
-    ENGINEER: { en: "Engineer", ar: "مهندس" },
-    ACCOUNTANT: { en: "Accountant", ar: "محاسب" },
-    WORKER: { en: "Worker", ar: "عامل" },
-    SALES_REP: { en: "Sales Rep", ar: "مندوب مبيعات" },
+function roleLabel(role: string) {
+  const map: Record<string, string> = {
+    ADMIN: "مدير",
+    ENGINEER: "مهندس",
+    ACCOUNTANT: "محاسب",
+    WORKER: "عامل",
+    SALES_REP: "مندوب مبيعات",
   };
-  const entry = map[role];
-  if (!entry) return role;
-  return locale === "ar" ? entry.ar : entry.en;
+  return map[role] ?? role;
 }
 
 function initials(name: string) {
@@ -424,9 +420,6 @@ export function AppScaffold({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, signOut } = useAuth();
-  const { locale } = useLocale();
-  const { theme, setTheme } = useTheme();
-
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [pendingRequests, setPendingRequests] = useState(0);
   const [unread, setUnread] = useState(0);
@@ -441,7 +434,6 @@ export function AppScaffold({ children }: { children: ReactNode }) {
   const searchRef = useRef<HTMLDivElement>(null);
 
   const role = String(user?.role ?? "WORKER").toUpperCase();
-  const isAr = locale === "ar";
 
   const filteredSearch = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
@@ -592,7 +584,7 @@ export function AppScaffold({ children }: { children: ReactNode }) {
           <img src={logo} alt="Plasticon" className="app-sidebar__logo" />
           <div className="app-sidebar__brand-text">
             <span className="app-sidebar__brand-name">Plasticon</span>
-            <span className="app-sidebar__brand-sub">{isAr ? "إدارة المصنع" : "Factory Management"}</span>
+            <span className="app-sidebar__brand-sub">{"إدارة المصنع"}</span>
           </div>
         </div>
 
@@ -601,7 +593,7 @@ export function AppScaffold({ children }: { children: ReactNode }) {
           {sectionsBi.map((section) => (
             <div key={section.label.en}>
               <p className="app-sidebar__section-label">
-                {isAr ? section.label.ar : section.label.en}
+                {section.label.ar}
               </p>
               {section.items.map((item) => (
                 <Link
@@ -611,7 +603,7 @@ export function AppScaffold({ children }: { children: ReactNode }) {
                 >
                   <span className="app-sidebar__link-icon">{item.icon}</span>
                   <span className="app-sidebar__link-label">
-                    {isAr ? item.label.ar : item.label.en}
+                    {item.label.ar}
                   </span>
                   {item.to === "/admin/registration-requests" && pendingRequests > 0 && (
                     <span style={{ marginInlineStart: "auto", background: "var(--orange-500,#f97316)", color: "#fff", fontSize: ".6rem", fontWeight: 800, borderRadius: 999, minWidth: 16, height: 16, display: "flex", alignItems: "center", justifyContent: "center", padding: "0 4px" }}>
@@ -635,7 +627,7 @@ export function AppScaffold({ children }: { children: ReactNode }) {
             </div>
             <div className="app-sidebar__user-info">
               <p className="app-sidebar__user-name">{user?.name ?? "User"}</p>
-              <p className="app-sidebar__user-role">{roleLabel(role, locale)}</p>
+              <p className="app-sidebar__user-role">{roleLabel(role)}</p>
             </div>
           </div>
 
@@ -644,7 +636,7 @@ export function AppScaffold({ children }: { children: ReactNode }) {
             onClick={() => { signOut(); navigate("/login"); }}
           >
             <LogOut size={15} />
-            <span>{isAr ? "تسجيل الخروج" : "Sign Out"}</span>
+            <span>{"تسجيل الخروج"}</span>
           </button>
         </div>
       </aside>
@@ -668,7 +660,7 @@ export function AppScaffold({ children }: { children: ReactNode }) {
             <Search size={15} className="topbar-search__icon" />
             <input
               className="topbar-search__input"
-              placeholder={locale === "ar" ? "بحث سريع..." : "Quick search..."}
+              placeholder="بحث سريع..."
               value={searchQuery}
               onChange={(e) => { setSearchQuery(e.target.value); setSearchOpen(true); }}
               onFocus={() => setSearchOpen(true)}
@@ -683,12 +675,12 @@ export function AppScaffold({ children }: { children: ReactNode }) {
                     type="button"
                     onClick={() => { navigate(item.to); setSearchQuery(""); setSearchOpen(false); }}
                   >
-                    <span>{locale === "ar" ? item.labelAr : item.labelEn}</span>
+                    <span>{item.labelAr}</span>
                     <span style={{ fontSize: ".72rem", color: "var(--text-secondary)", opacity: .7 }}>{item.to}</span>
                   </button>
                 )) : (
                   <div style={{ padding: ".75rem 1rem", fontSize: ".84rem", color: "var(--text-secondary)" }}>
-                    {locale === "ar" ? "لا نتائج" : "No results"}
+                    {"لا نتائج"}
                   </div>
                 )}
               </div>
@@ -700,21 +692,6 @@ export function AppScaffold({ children }: { children: ReactNode }) {
             {/* Date & time */}
             <DateTimeBadge />
 
-            {/* Dark mode toggle */}
-            <button
-              type="button"
-              className="topbar-theme-btn"
-              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-              aria-label="Toggle dark mode"
-              title={theme === "dark"
-                ? (isAr ? "الوضع الفاتح" : "Switch to light mode")
-                : (isAr ? "الوضع الداكن" : "Switch to dark mode")}
-            >
-              {theme === "dark" ? <Sun size={15} /> : <Moon size={15} />}
-              <span className="topbar-theme-btn__label">
-                {theme === "dark" ? (isAr ? "فاتح" : "Light") : (isAr ? "داكن" : "Dark")}
-              </span>
-            </button>
             {/* Notifications */}
             <div style={{ position: "relative" }} ref={notifRef}>
               <button
@@ -774,19 +751,17 @@ export function AppScaffold({ children }: { children: ReactNode }) {
                   >
                     <div>
                       <p style={{ margin: 0, fontSize: ".88rem", fontWeight: 700, color: "var(--text-primary)" }}>
-                        {isAr ? "الإشعارات" : "Notifications"}
+                        {"الإشعارات"}
                       </p>
                       <p style={{ margin: 0, fontSize: ".75rem", color: "var(--text-secondary)" }}>
-                        {unread > 0
-                          ? isAr ? `${unread} غير مقروء` : `${unread} unread`
-                          : isAr ? "لا يوجد جديد" : "All caught up"}
+                        {unread > 0 ? `${unread} غير مقروء` : "لا يوجد جديد"}
                       </p>
                     </div>
                     <button
                       className="btn btn--ghost btn--sm"
                       onClick={() => { setNotifOpen(false); navigate("/notifications"); }}
                     >
-                      {isAr ? "عرض الكل" : "View all"}
+                      {"عرض الكل"}
                     </button>
                   </div>
 
@@ -820,7 +795,7 @@ export function AppScaffold({ children }: { children: ReactNode }) {
                     ) : (
                       <div className="empty-state" style={{ padding: "1.5rem" }}>
                         <Bell size={28} style={{ color: "var(--gray-300)" }} />
-                        <p className="empty-state__title" style={{ fontSize: ".88rem" }}>{isAr ? "لا توجد إشعارات" : "No notifications"}</p>
+                        <p className="empty-state__title" style={{ fontSize: ".88rem" }}>{"لا توجد إشعارات"}</p>
                       </div>
                     )}
                   </div>
@@ -831,7 +806,7 @@ export function AppScaffold({ children }: { children: ReactNode }) {
             {/* User avatar → profile */}
             <Link
               to="/profile"
-              title={isAr ? "الملف الشخصي" : "My Profile"}
+              title="الملف الشخصي"
               style={{
                 width: "34px",
                 height: "34px",
@@ -867,12 +842,10 @@ export function AppScaffold({ children }: { children: ReactNode }) {
             <div style={{ display: "flex", alignItems: "center", gap: ".6rem", fontSize: ".84rem" }}>
               <span style={{ fontSize: "1rem" }}>👋</span>
               <span style={{ fontWeight: 600, color: "var(--text-primary)" }}>
-                {isAr ? "أكمل ملفك الشخصي" : "Complete your profile"}
+                {"أكمل ملفك الشخصي"}
               </span>
               <span style={{ color: "var(--text-secondary)" }}>
-                {isAr
-                  ? "— أضف معلوماتك الشخصية وصورتك ووثائقك لمساعدة فريقك على التعرف عليك."
-                  : "— Add your personal info, photo, and documents to help your team know you better."}
+                {"— أضف معلوماتك الشخصية وصورتك ووثائقك لمساعدة فريقك على التعرف عليك."}
               </span>
             </div>
             <Link
@@ -884,7 +857,7 @@ export function AppScaffold({ children }: { children: ReactNode }) {
                 whiteSpace: "nowrap", flexShrink: 0,
               }}
             >
-              {isAr ? "أكمل الآن ←" : "Complete Now →"}
+              {"أكمل الآن ←"}
             </Link>
           </div>
         )}

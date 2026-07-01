@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+﻿import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator, Alert, Image, KeyboardAvoidingView, Modal, Platform,
   RefreshControl, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View,
@@ -10,7 +10,6 @@ import { api, uploadForm } from '../../api/client';
 import { ScreenHeader } from '../../components';
 import { radius, shadow, spacing, typography } from '../../theme';
 import { useAppTheme } from '../../context/ThemeContext';
-import { useLocale } from '../../context/LocaleContext';
 import { API_BASE } from '../../config';
 
 interface QualityIssue {
@@ -36,7 +35,6 @@ function toImageUri(stored?: string | null): string | null {
 
 export function QualityIssuesScreen() {
   const { colors } = useAppTheme();
-  const { isAr } = useLocale();
 
   const today0 = new Date().toISOString().slice(0, 10);
   const month0 = new Date().toISOString().slice(0, 7) + '-01';
@@ -83,18 +81,18 @@ export function QualityIssuesScreen() {
 
   const handleDelete = (issue: QualityIssue) => {
     Alert.alert(
-      isAr ? 'حذف التقرير' : 'Delete Report',
-      isAr ? 'هل أنت متأكد؟' : 'Are you sure?',
+      'حذف التقرير',
+      'هل أنت متأكد؟',
       [
-        { text: isAr ? 'إلغاء' : 'Cancel', style: 'cancel' },
+        { text: 'إلغاء', style: 'cancel' },
         {
-          text: isAr ? 'حذف' : 'Delete', style: 'destructive',
+          text: 'حذف', style: 'destructive',
           onPress: async () => {
             try {
               await api.delete(`/worker-tools/entries/quality/${issue.id}`);
               setIssues((prev) => prev.filter((i) => i.id !== issue.id));
             } catch (e: any) {
-              Alert.alert(isAr ? 'خطأ' : 'Error', e.message ?? 'Failed');
+              Alert.alert('خطأ', e.message ?? 'Failed');
             }
           },
         },
@@ -103,9 +101,9 @@ export function QualityIssuesScreen() {
   };
 
   const submit = async () => {
-    if (!batchCode.trim()) { Alert.alert(isAr ? 'مطلوب' : 'Required', isAr ? 'أدخل رمز الدُّفعة.' : 'Enter batch code.'); return; }
-    if (!machineLbl.trim()) { Alert.alert(isAr ? 'مطلوب' : 'Required', isAr ? 'أدخل اسم الآلة.' : 'Enter machine label.'); return; }
-    if (!issueType.trim()) { Alert.alert(isAr ? 'مطلوب' : 'Required', isAr ? 'أدخل نوع المشكلة.' : 'Enter issue type.'); return; }
+    if (!batchCode.trim()) { Alert.alert('مطلوب', 'أدخل رمز الدُّفعة.'); return; }
+    if (!machineLbl.trim()) { Alert.alert('مطلوب', 'أدخل اسم الآلة.'); return; }
+    if (!issueType.trim()) { Alert.alert('مطلوب', 'أدخل نوع المشكلة.'); return; }
     setSaving(true);
     try {
       const fd = new FormData();
@@ -121,13 +119,13 @@ export function QualityIssuesScreen() {
       setBatchCode(''); setMachineLbl(''); setIssueType(''); setDetails(''); setImage(null);
       setLoading(true); void load();
     } catch (e: any) {
-      Alert.alert(isAr ? 'خطأ' : 'Error', e.message ?? (isAr ? 'فشل الإبلاغ.' : 'Failed to report issue.'));
+      Alert.alert('خطأ', e.message ?? ('فشل الإبلاغ.'));
     } finally { setSaving(false); }
   };
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
-      <ScreenHeader title={isAr ? 'مشاكل الجودة' : 'Quality Issues'} subtitle={`${issues.length} ${isAr ? 'مسجل' : 'reported'}`} showBack />
+      <ScreenHeader title={'مشاكل الجودة'} subtitle={`${issues.length} ${'مسجل'}`} showBack />
       {loading ? (
         <View style={styles.center}><ActivityIndicator size="large" color={colors.warning} /></View>
       ) : (
@@ -160,13 +158,13 @@ export function QualityIssuesScreen() {
           </View>
           <TouchableOpacity style={[styles.addBtn, { backgroundColor: colors.warning }]} onPress={() => setModal(true)} activeOpacity={0.8}>
             <Ionicons name="alert-circle" size={20} color="#fff" />
-            <Text style={styles.addText}>{isAr ? 'الإبلاغ عن مشكلة جودة' : 'Report Quality Issue'}</Text>
+            <Text style={styles.addText}>{'الإبلاغ عن مشكلة جودة'}</Text>
           </TouchableOpacity>
 
           {filteredIssues.length === 0 ? (
             <View style={styles.empty}>
               <Ionicons name="shield-checkmark-outline" size={48} color={colors.success} />
-              <Text style={[styles.emptyText, { color: colors.textMuted }]}>{isAr ? 'لا توجد مشاكل جودة مسجلة' : 'No quality issues reported'}</Text>
+              <Text style={[styles.emptyText, { color: colors.textMuted }]}>{'لا توجد مشاكل جودة مسجلة'}</Text>
             </View>
           ) : (
             <View style={styles.list}>
@@ -206,21 +204,21 @@ export function QualityIssuesScreen() {
           <View style={[styles.sheet, { backgroundColor: colors.surface }]}>
             <View style={[styles.handle, { backgroundColor: colors.border }]} />
             <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-              <Text style={[styles.sheetTitle, { color: colors.text }]}>{isAr ? 'الإبلاغ عن مشكلة جودة' : 'Report Quality Issue'}</Text>
+              <Text style={[styles.sheetTitle, { color: colors.text }]}>{'الإبلاغ عن مشكلة جودة'}</Text>
 
-              <Text style={[styles.label, { color: colors.textMuted }]}>{isAr ? 'رمز الدُّفعة *' : 'Batch Code *'}</Text>
-              <TextInput style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]} placeholder={isAr ? 'مثال: BATCH-2024-001' : 'e.g. BATCH-2024-001'} placeholderTextColor={colors.textMuted} value={batchCode} onChangeText={setBatchCode} />
+              <Text style={[styles.label, { color: colors.textMuted }]}>{'رمز الدُّفعة *'}</Text>
+              <TextInput style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]} placeholder={'مثال: BATCH-2024-001'} placeholderTextColor={colors.textMuted} value={batchCode} onChangeText={setBatchCode} />
 
-              <Text style={[styles.label, { color: colors.textMuted }]}>{isAr ? 'اسم الآلة *' : 'Machine Label *'}</Text>
-              <TextInput style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]} placeholder={isAr ? 'مثال: خط PVC 2' : 'e.g. PVC Line 2'} placeholderTextColor={colors.textMuted} value={machineLbl} onChangeText={setMachineLbl} />
+              <Text style={[styles.label, { color: colors.textMuted }]}>{'اسم الآلة *'}</Text>
+              <TextInput style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]} placeholder={'مثال: خط PVC 2'} placeholderTextColor={colors.textMuted} value={machineLbl} onChangeText={setMachineLbl} />
 
-              <Text style={[styles.label, { color: colors.textMuted }]}>{isAr ? 'نوع المشكلة *' : 'Issue Type *'}</Text>
-              <TextInput style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]} placeholder={isAr ? 'مثال: عيب في الحجم، لون غير صحيح' : 'e.g. Size defect, Wrong color'} placeholderTextColor={colors.textMuted} value={issueType} onChangeText={setIssueType} />
+              <Text style={[styles.label, { color: colors.textMuted }]}>{'نوع المشكلة *'}</Text>
+              <TextInput style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]} placeholder={'مثال: عيب في الحجم، لون غير صحيح'} placeholderTextColor={colors.textMuted} value={issueType} onChangeText={setIssueType} />
 
-              <Text style={[styles.label, { color: colors.textMuted }]}>{isAr ? 'التفاصيل (اختياري)' : 'Details (optional)'}</Text>
-              <TextInput style={[styles.input, styles.inputMulti, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]} placeholder={isAr ? 'اشرح المشكلة بالتفصيل…' : 'Describe the quality issue in detail…'} placeholderTextColor={colors.textMuted} value={details} onChangeText={setDetails} multiline numberOfLines={3} />
+              <Text style={[styles.label, { color: colors.textMuted }]}>{'التفاصيل (اختياري)'}</Text>
+              <TextInput style={[styles.input, styles.inputMulti, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]} placeholder={'اشرح المشكلة بالتفصيل…'} placeholderTextColor={colors.textMuted} value={details} onChangeText={setDetails} multiline numberOfLines={3} />
 
-              <Text style={[styles.label, { color: colors.textMuted }]}>{isAr ? 'صورة (اختياري)' : 'Photo (optional)'}</Text>
+              <Text style={[styles.label, { color: colors.textMuted }]}>{'صورة (اختياري)'}</Text>
               <TouchableOpacity
                 style={[styles.photoPicker, { borderColor: colors.border, backgroundColor: colors.surfaceAlt }]}
                 onPress={pickImage}
@@ -231,7 +229,7 @@ export function QualityIssuesScreen() {
                 ) : (
                   <View style={styles.photoPlaceholder}>
                     <Ionicons name="camera-outline" size={22} color={colors.textMuted} />
-                    <Text style={[styles.photoLabel, { color: colors.textMuted }]}>{isAr ? 'اختر صورة' : 'Select Photo'}</Text>
+                    <Text style={[styles.photoLabel, { color: colors.textMuted }]}>{'اختر صورة'}</Text>
                   </View>
                 )}
               </TouchableOpacity>
@@ -239,10 +237,10 @@ export function QualityIssuesScreen() {
             </ScrollView>
             <View style={styles.actions}>
               <TouchableOpacity style={[styles.cancelBtn, { borderColor: colors.border }]} onPress={() => setModal(false)}>
-                <Text style={[styles.cancelText, { color: colors.textMuted }]}>{isAr ? 'إلغاء' : 'Cancel'}</Text>
+                <Text style={[styles.cancelText, { color: colors.textMuted }]}>{'إلغاء'}</Text>
               </TouchableOpacity>
               <TouchableOpacity style={[styles.submitBtn, { backgroundColor: colors.warning }]} onPress={submit} disabled={saving}>
-                {saving ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.submitText}>{isAr ? 'إبلاغ' : 'Report'}</Text>}
+                {saving ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.submitText}>{'إبلاغ'}</Text>}
               </TouchableOpacity>
             </View>
           </View>

@@ -1,5 +1,6 @@
-import React, { useCallback, useEffect, useState } from 'react';
+﻿import React, { useCallback, useEffect, useState } from 'react';
 import {
+import { useLocale } from '../../context/LocaleContext';
   ActivityIndicator,
   Alert,
   FlatList,
@@ -21,7 +22,6 @@ import { api } from '../../api/client';
 import { ScreenHeader, StatCard } from '../../components';
 import { radius, shadow, spacing, typography } from '../../theme';
 import { useAppTheme } from '../../context/ThemeContext';
-import { useLocale } from '../../context/LocaleContext';
 import { useAuth } from '../../auth/AuthContext';
 
 interface Machine { id: number; name: string; type?: string }
@@ -68,9 +68,9 @@ function RequestModal({ visible, isEdit, initial, machines, onClose, onSave, sav
   const set = (k: keyof FormState) => (v: string) => setForm((p) => ({ ...p, [k]: v }));
 
   const handleSave = async () => {
-    if (!form.partName.trim()) return Alert.alert(isAr ? 'تحقق' : 'Validation', isAr ? 'اسم القطعة مطلوب.' : 'Part name is required.');
-    if (!form.quantity.trim() || isNaN(Number(form.quantity))) return Alert.alert(isAr ? 'تحقق' : 'Validation', isAr ? 'الكمية يجب أن تكون رقماً.' : 'Quantity must be a number.');
-    if (!isEdit && !form.machineId) return Alert.alert(isAr ? 'تحقق' : 'Validation', isAr ? 'اختر آلة.' : 'Select a machine.');
+    if (!form.partName.trim()) return Alert.alert('تحقق', 'اسم القطعة مطلوب.');
+    if (!form.quantity.trim() || isNaN(Number(form.quantity))) return Alert.alert('تحقق', 'الكمية يجب أن تكون رقماً.');
+    if (!isEdit && !form.machineId) return Alert.alert('تحقق', 'اختر آلة.');
     await onSave(form);
   };
 
@@ -81,19 +81,19 @@ function RequestModal({ visible, isEdit, initial, machines, onClose, onSave, sav
         <View style={[styles.sheet, { backgroundColor: colors.surface }]}>
           <View style={[styles.sheetHandle, { backgroundColor: colors.border }]} />
           <Text style={[styles.sheetTitle, { color: colors.text }]}>
-            {isEdit ? (isAr ? 'تعديل الطلب' : 'Edit Request') : (isAr ? 'طلب قطعة جديدة' : 'New Part Request')}
+            {isEdit ? ('تعديل الطلب') : ('طلب قطعة جديدة')}
           </Text>
           <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-            <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{isAr ? 'اسم القطعة *' : 'Part Name *'}</Text>
-            <TextInput style={[styles.input, { backgroundColor: colors.surfaceAlt, borderColor: colors.border, color: colors.text }]} value={form.partName} onChangeText={set('partName')} placeholder={isAr ? 'مثال: Bearing 6205' : 'e.g. Bearing 6205'} placeholderTextColor={colors.textMuted} />
+            <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{'اسم القطعة *'}</Text>
+            <TextInput style={[styles.input, { backgroundColor: colors.surfaceAlt, borderColor: colors.border, color: colors.text }]} value={form.partName} onChangeText={set('partName')} placeholder={'مثال: Bearing 6205'} placeholderTextColor={colors.textMuted} />
 
-            <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{isAr ? 'الكمية *' : 'Quantity *'}</Text>
+            <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{'الكمية *'}</Text>
             <TextInput style={[styles.input, { backgroundColor: colors.surfaceAlt, borderColor: colors.border, color: colors.text }]} value={form.quantity} onChangeText={set('quantity')} placeholder="1" placeholderTextColor={colors.textMuted} keyboardType="numeric" />
 
             {/* Machine picker — only for new requests */}
             {!isEdit && machines.length > 0 && (
               <>
-                <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{isAr ? 'الآلة *' : 'Machine *'}</Text>
+                <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{'الآلة *'}</Text>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: spacing.md }}>
                   <View style={styles.chipRow}>
                     {machines.map((m) => (
@@ -115,18 +115,18 @@ function RequestModal({ visible, isEdit, initial, machines, onClose, onSave, sav
               </>
             )}
 
-            <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{isAr ? 'اسم المورد' : 'Supplier Name'}</Text>
-            <TextInput style={[styles.input, { backgroundColor: colors.surfaceAlt, borderColor: colors.border, color: colors.text }]} value={form.supplierName} onChangeText={set('supplierName')} placeholder={isAr ? 'اختياري' : 'Optional'} placeholderTextColor={colors.textMuted} />
+            <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{'اسم المورد'}</Text>
+            <TextInput style={[styles.input, { backgroundColor: colors.surfaceAlt, borderColor: colors.border, color: colors.text }]} value={form.supplierName} onChangeText={set('supplierName')} placeholder={'اختياري'} placeholderTextColor={colors.textMuted} />
 
-            <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{isAr ? 'ملاحظات' : 'Notes'}</Text>
-            <TextInput style={[styles.input, styles.multiline, { backgroundColor: colors.surfaceAlt, borderColor: colors.border, color: colors.text }]} value={form.notes} onChangeText={set('notes')} placeholder={isAr ? 'ملاحظات اختيارية' : 'Optional notes'} placeholderTextColor={colors.textMuted} multiline numberOfLines={3} textAlignVertical="top" />
+            <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{'ملاحظات'}</Text>
+            <TextInput style={[styles.input, styles.multiline, { backgroundColor: colors.surfaceAlt, borderColor: colors.border, color: colors.text }]} value={form.notes} onChangeText={set('notes')} placeholder={'ملاحظات اختيارية'} placeholderTextColor={colors.textMuted} multiline numberOfLines={3} textAlignVertical="top" />
           </ScrollView>
           <View style={styles.sheetActions}>
             <TouchableOpacity style={[styles.cancelBtn, { borderColor: colors.border }]} onPress={onClose}>
-              <Text style={[styles.cancelText, { color: colors.textSecondary }]}>{isAr ? 'إلغاء' : 'Cancel'}</Text>
+              <Text style={[styles.cancelText, { color: colors.textSecondary }]}>{'إلغاء'}</Text>
             </TouchableOpacity>
             <TouchableOpacity style={[styles.saveBtn, { backgroundColor: colors.primary }, saving && { opacity: 0.6 }]} onPress={handleSave} disabled={saving}>
-              {saving ? <ActivityIndicator size="small" color={colors.textInverse} /> : <Text style={[styles.saveText, { color: colors.textInverse }]}>{isAr ? 'حفظ' : 'Save'}</Text>}
+              {saving ? <ActivityIndicator size="small" color={colors.textInverse} /> : <Text style={[styles.saveText, { color: colors.textInverse }]}>{'حفظ'}</Text>}
             </TouchableOpacity>
           </View>
         </View>
@@ -160,7 +160,7 @@ function RequestCard({ item, onEdit, onMarkReceived }: {
         <View style={styles.cardLeft}>
           <Text style={[styles.partName, { color: colors.text }]} numberOfLines={1}>{item.partName}</Text>
           {item.machine && <Text style={[styles.sub, { color: colors.textMuted }]}>{item.machine.name}</Text>}
-          {item.supplierName && <Text style={[styles.sub, { color: colors.textMuted }]}>{isAr ? 'المورد: ' : 'Supplier: '}{item.supplierName}</Text>}
+          {item.supplierName && <Text style={[styles.sub, { color: colors.textMuted }]}>{'المورد: '}{item.supplierName}</Text>}
         </View>
         <View style={styles.qtyBlock}>
           <Text style={[styles.qty, { color: colors.primary }]}>×{item.quantity}</Text>
@@ -180,7 +180,7 @@ function RequestCard({ item, onEdit, onMarkReceived }: {
         {canEdit && (
           <TouchableOpacity style={[styles.receiveBtn, { backgroundColor: colors.success }]} onPress={onMarkReceived} activeOpacity={0.8}>
             <Ionicons name="checkmark" size={12} color="#fff" />
-            <Text style={styles.receiveBtnText}>{isAr ? 'استُلم' : 'Received'}</Text>
+            <Text style={styles.receiveBtnText}>{'استُلم'}</Text>
           </TouchableOpacity>
         )}
       </View>
@@ -212,7 +212,7 @@ export function SparePartsScreen() {
       setRequests(Array.isArray(res) ? res : []);
       setMachines(Array.isArray(mRes) ? mRes : []);
     } catch (e: any) {
-      Alert.alert(isAr ? 'خطأ' : 'Error', e?.message ?? (isAr ? 'فشل تحميل الطلبات' : 'Failed to load requests'));
+      Alert.alert('خطأ', e?.message ?? ('فشل تحميل الطلبات'));
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -229,7 +229,7 @@ export function SparePartsScreen() {
       await api.patch(`/spare-part-requests/${id}/received`, {});
       await load();
     } catch (e: any) {
-      Alert.alert(isAr ? 'خطأ' : 'Error', e?.message ?? (isAr ? 'فشل التحديث' : 'Failed to update'));
+      Alert.alert('خطأ', e?.message ?? ('فشل التحديث'));
     }
   };
 
@@ -256,7 +256,7 @@ export function SparePartsScreen() {
       setRefreshing(true);
       await load();
     } catch (e: any) {
-      Alert.alert(isAr ? 'خطأ' : 'Error', e?.message ?? (isAr ? 'فشل الحفظ' : 'Failed to save'));
+      Alert.alert('خطأ', e?.message ?? ('فشل الحفظ'));
     } finally {
       setSaving(false);
     }
@@ -278,8 +278,8 @@ export function SparePartsScreen() {
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
       <ScreenHeader
-        title={isAr ? 'طلبات قطع الغيار' : 'Spare Parts Requests'}
-        subtitle={`${pendingCount} ${isAr ? 'نشط' : 'active'}`}
+        title={'طلبات قطع الغيار'}
+        subtitle={`${pendingCount} ${'نشط'}`}
         showBack
       />
       {loading ? (
@@ -300,15 +300,15 @@ export function SparePartsScreen() {
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); void load(); }} tintColor={colors.primary} />}
           ListHeaderComponent={
             <View style={styles.statsRow}>
-              <StatCard label={isAr ? 'معلق' : 'Pending'}  value={String(pendingCount)}  icon="time"             color={colors.warning} style={styles.stat} />
-              <StatCard label={isAr ? 'مستلم' : 'Received'} value={String(receivedCount)} icon="checkmark-circle" color={colors.success} style={styles.stat} />
+              <StatCard label={'معلق'}  value={String(pendingCount)}  icon="time"             color={colors.warning} style={styles.stat} />
+              <StatCard label={'مستلم'} value={String(receivedCount)} icon="checkmark-circle" color={colors.success} style={styles.stat} />
             </View>
           }
           ListEmptyComponent={
             <View style={styles.empty}>
               <Ionicons name="settings-outline" size={44} color={colors.textMuted} />
               <Text style={[styles.emptyText, { color: colors.textMuted }]}>
-                {isAr ? 'لا توجد طلبات قطع غيار' : 'No spare part requests'}
+                {'لا توجد طلبات قطع غيار'}
               </Text>
             </View>
           }

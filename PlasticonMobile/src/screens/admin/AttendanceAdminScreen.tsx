@@ -1,5 +1,6 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+﻿import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
+import { useLocale } from '../../context/LocaleContext';
   ActivityIndicator, Alert, FlatList, KeyboardAvoidingView, Modal,
   Platform, Pressable, RefreshControl, ScrollView,
   StyleSheet, Text, TextInput, TouchableOpacity, View,
@@ -10,7 +11,6 @@ import { api } from '../../api/client';
 import { ScreenHeader } from '../../components';
 import { radius, shadow, spacing, typography } from '../../theme';
 import { useAppTheme } from '../../context/ThemeContext';
-import { useLocale } from '../../context/LocaleContext';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface AttRecord {
@@ -123,30 +123,30 @@ function RecordModal({ visible, mode, form, onChange, onSave, onCancel, saving, 
           <View style={[ms.handle, { backgroundColor: colors.border }]} />
           <Text style={[ms.title, { color: colors.text }]}>{title}</Text>
           <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-            <Text style={[ms.label, { color: colors.textSecondary }]}>{isAr ? 'وقت الدخول (HH:MM)' : 'Check-in time (HH:MM)'}</Text>
+            <Text style={[ms.label, { color: colors.textSecondary }]}>{'وقت الدخول (HH:MM)'}</Text>
             <TextInput
               style={[ms.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
               value={form.checkIn} onChangeText={(v) => onChange('checkIn', v)}
               placeholder="08:00" placeholderTextColor={colors.textMuted}
             />
-            <Text style={[ms.label, { color: colors.textSecondary }]}>{isAr ? 'وقت الخروج (HH:MM)' : 'Check-out time (HH:MM)'}</Text>
+            <Text style={[ms.label, { color: colors.textSecondary }]}>{'وقت الخروج (HH:MM)'}</Text>
             <TextInput
               style={[ms.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
               value={form.checkOut} onChangeText={(v) => onChange('checkOut', v)}
-              placeholder={isAr ? 'اتركه فارغاً إن لم يخرج' : 'Leave blank if still open'}
+              placeholder={'اتركه فارغاً إن لم يخرج'}
               placeholderTextColor={colors.textMuted}
             />
-            <Text style={[ms.label, { color: colors.textSecondary }]}>{isAr ? 'ملاحظات' : 'Notes'}</Text>
+            <Text style={[ms.label, { color: colors.textSecondary }]}>{'ملاحظات'}</Text>
             <TextInput
               style={[ms.input, ms.inputMulti, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
               value={form.notes} onChangeText={(v) => onChange('notes', v)}
-              placeholder={isAr ? 'ملاحظة اختيارية…' : 'Optional note…'}
+              placeholder={'ملاحظة اختيارية…'}
               placeholderTextColor={colors.textMuted} multiline numberOfLines={2}
             />
           </ScrollView>
           <View style={ms.actions}>
             <TouchableOpacity style={[ms.cancelBtn, { borderColor: colors.border }]} onPress={onCancel}>
-              <Text style={[ms.cancelText, { color: colors.textSecondary }]}>{isAr ? 'إلغاء' : 'Cancel'}</Text>
+              <Text style={[ms.cancelText, { color: colors.textSecondary }]}>{'إلغاء'}</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[ms.saveBtn, { backgroundColor: mode === 'add' ? '#16a34a' : colors.primary }, saving && { opacity: 0.6 }]}
@@ -154,7 +154,7 @@ function RecordModal({ visible, mode, form, onChange, onSave, onCancel, saving, 
             >
               {saving
                 ? <ActivityIndicator size="small" color="#fff" />
-                : <Text style={ms.saveText}>{isAr ? 'حفظ' : 'Save'}</Text>}
+                : <Text style={ms.saveText}>{'حفظ'}</Text>}
             </TouchableOpacity>
           </View>
         </View>
@@ -194,10 +194,10 @@ function UserPickerModal({ visible, users, onSelect, onClose, isAr, colors }: {
       <Pressable style={ms.bg} onPress={onClose} />
       <View style={[up.sheet, { backgroundColor: colors.surface }]}>
         <View style={[ms.handle, { backgroundColor: colors.border }]} />
-        <Text style={[ms.title, { color: colors.text }]}>{isAr ? 'اختر موظفاً' : 'Select Employee'}</Text>
+        <Text style={[ms.title, { color: colors.text }]}>{'اختر موظفاً'}</Text>
         <TextInput
           style={[ms.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
-          placeholder={isAr ? 'بحث…' : 'Search…'} placeholderTextColor={colors.textMuted}
+          placeholder={'بحث…'} placeholderTextColor={colors.textMuted}
           value={q} onChangeText={setQ}
         />
         <FlatList
@@ -210,7 +210,7 @@ function UserPickerModal({ visible, users, onSelect, onClose, isAr, colors }: {
               <Text style={[up.role, { color: colors.textMuted }]}>{u.role}</Text>
             </TouchableOpacity>
           )}
-          ListEmptyComponent={<Text style={[up.empty, { color: colors.textMuted }]}>{isAr ? 'لا نتائج' : 'No results'}</Text>}
+          ListEmptyComponent={<Text style={[up.empty, { color: colors.textMuted }]}>{'لا نتائج'}</Text>}
         />
       </View>
     </Modal>
@@ -359,7 +359,7 @@ export function AttendanceAdminScreen() {
         });
       } else if (modalMode === 'add') {
         const ci = toIso(editForm.checkIn);
-        if (!ci) { Alert.alert(isAr ? 'مطلوب' : 'Required', isAr ? 'وقت الدخول مطلوب' : 'Check-in time is required'); setSaving(false); return; }
+        if (!ci) { Alert.alert('مطلوب', 'وقت الدخول مطلوب'); setSaving(false); return; }
         await api.post('/attendance', {
           userId:   selectedUser.id,
           checkIn:  ci,
@@ -370,22 +370,22 @@ export function AttendanceAdminScreen() {
       closeModal();
       void loadRecords(true);
     } catch (e: any) {
-      Alert.alert(isAr ? 'خطأ' : 'Error', e?.message ?? (isAr ? 'فشل الحفظ' : 'Failed to save'));
+      Alert.alert('خطأ', e?.message ?? ('فشل الحفظ'));
     } finally { setSaving(false); }
   };
 
   const handleDelete = (rec: AttRecord, day: number) => {
     Alert.alert(
-      isAr ? 'حذف السجل' : 'Delete Record',
+      'حذف السجل',
       isAr ? `حذف سجل يوم ${day}؟` : `Delete record for day ${day}?`,
       [
-        { text: isAr ? 'إلغاء' : 'Cancel', style: 'cancel' },
-        { text: isAr ? 'حذف' : 'Delete', style: 'destructive', onPress: async () => {
+        { text: 'إلغاء', style: 'cancel' },
+        { text: 'حذف', style: 'destructive', onPress: async () => {
           try {
             await api.delete(`/attendance/${rec.id}`);
             void loadRecords(true);
           } catch (e: any) {
-            Alert.alert(isAr ? 'خطأ' : 'Error', e?.message);
+            Alert.alert('خطأ', e?.message);
           }
         }},
       ],
@@ -398,9 +398,9 @@ export function AttendanceAdminScreen() {
     try {
       const res = await api.put<AttSettings>('/attendance/settings', settingsForm);
       setSettings(res); setSettingsForm(res);
-      Alert.alert(isAr ? 'تم' : 'Saved', isAr ? 'تم حفظ الإعدادات.' : 'Settings saved.');
+      Alert.alert('تم', 'تم حفظ الإعدادات.');
     } catch (e: any) {
-      Alert.alert(isAr ? 'خطأ' : 'Error', e?.message);
+      Alert.alert('خطأ', e?.message);
     } finally { setSettingsSaving(false); }
   };
 
@@ -416,8 +416,8 @@ export function AttendanceAdminScreen() {
   return (
     <SafeAreaView style={[s.safe, { backgroundColor: colors.background }]}>
       <ScreenHeader
-        title={isAr ? 'الحضور والغياب' : 'Attendance & Absence'}
-        subtitle={isAr ? 'تقويم شهري لكل موظف' : 'Monthly calendar per employee'}
+        title={'الحضور والغياب'}
+        subtitle={'تقويم شهري لكل موظف'}
         showBack
         rightIcon="refresh-outline"
         onRightPress={() => void loadRecords(true)}
@@ -433,7 +433,7 @@ export function AttendanceAdminScreen() {
               color={tab === t ? colors.primary : colors.textMuted}
             />
             <Text style={[s.tabText, { color: tab === t ? colors.primary : colors.textMuted }]}>
-              {t === 'monthly' ? (isAr ? 'العرض الشهري' : 'Monthly View') : (isAr ? 'الإعدادات' : 'Settings')}
+              {t === 'monthly' ? ('العرض الشهري') : ('الإعدادات')}
             </Text>
           </TouchableOpacity>
         ))}
@@ -451,7 +451,7 @@ export function AttendanceAdminScreen() {
             <TouchableOpacity style={[s.empPicker, { borderColor: colors.border, backgroundColor: colors.surfaceAlt }]} onPress={() => setUserPickerOpen(true)}>
               <Ionicons name="person-outline" size={16} color={colors.primary} />
               <Text style={[s.empPickerText, { color: selectedUser ? colors.text : colors.textMuted }]} numberOfLines={1}>
-                {selectedUser ? `${selectedUser.fullName || selectedUser.username} · ${selectedUser.role}` : (isAr ? '— اختر موظفاً —' : '— Select employee —')}
+                {selectedUser ? `${selectedUser.fullName || selectedUser.username} · ${selectedUser.role}` : ('— اختر موظفاً —')}
               </Text>
               <Ionicons name="chevron-down" size={14} color={colors.textMuted} />
             </TouchableOpacity>
@@ -471,10 +471,10 @@ export function AttendanceAdminScreen() {
           {/* KPI cards */}
           {selectedUser && (
             <View style={s.kpiRow}>
-              <StatKpi label={isAr ? 'حاضر' : 'Present'}   value={stats.present} color="#10b981" />
-              <StatKpi label={isAr ? 'غائب' : 'Absent'}    value={stats.absent}  color="#ef4444" />
-              <StatKpi label={isAr ? 'متأخر' : 'Late'}     value={stats.late}    color="#f59e0b" />
-              <StatKpi label={isAr ? 'إضافي' : 'OT'}       value={stats.ot}      color="#8b5cf6" />
+              <StatKpi label={'حاضر'}   value={stats.present} color="#10b981" />
+              <StatKpi label={'غائب'}    value={stats.absent}  color="#ef4444" />
+              <StatKpi label={'متأخر'}     value={stats.late}    color="#f59e0b" />
+              <StatKpi label={'إضافي'}       value={stats.ot}      color="#8b5cf6" />
             </View>
           )}
 
@@ -482,7 +482,7 @@ export function AttendanceAdminScreen() {
           {!selectedUser ? (
             <View style={s.empty}>
               <Ionicons name="people-outline" size={44} color={colors.textMuted} />
-              <Text style={[s.emptyText, { color: colors.textMuted }]}>{isAr ? 'اختر موظفاً لعرض التقويم الشهري' : 'Select an employee to view their calendar'}</Text>
+              <Text style={[s.emptyText, { color: colors.textMuted }]}>{'اختر موظفاً لعرض التقويم الشهري'}</Text>
             </View>
           ) : loading ? (
             <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: 40 }} />
@@ -520,10 +520,10 @@ export function AttendanceAdminScreen() {
                       <Text style={[s.dur, { color: colors.textMuted }]}>{fmtDur(rec.checkIn, rec.checkOut)}</Text>
                     )}
                     {rec && (rec.lateMinutes ?? 0) > 0 && (
-                      <Text style={[s.lateText, { color: '#a16207' }]}>+{rec.lateMinutes}m {isAr ? 'تأخير' : 'late'}</Text>
+                      <Text style={[s.lateText, { color: '#a16207' }]}>+{rec.lateMinutes}m {'تأخير'}</Text>
                     )}
                     {rec && (rec.overtimeMinutes ?? 0) > 0 && (
-                      <Text style={[s.otText, { color: '#7c3aed' }]}>+{rec.overtimeMinutes}m {isAr ? 'إضافي' : 'OT'}</Text>
+                      <Text style={[s.otText, { color: '#7c3aed' }]}>+{rec.overtimeMinutes}m {'إضافي'}</Text>
                     )}
                     <Text style={[s.dateStr, { color: colors.textMuted }]}>{dateStr}</Text>
                   </View>
@@ -542,7 +542,7 @@ export function AttendanceAdminScreen() {
                     ) : isPast && !isFri ? (
                       <TouchableOpacity style={[s.addDayBtn, { borderColor: '#86efac', backgroundColor: '#dcfce7' }]} onPress={() => openAdd(day)}>
                         <Ionicons name="add" size={14} color="#15803d" />
-                        <Text style={[s.addDayText, { color: '#15803d' }]}>{isAr ? 'إضافة' : 'Add'}</Text>
+                        <Text style={[s.addDayText, { color: '#15803d' }]}>{'إضافة'}</Text>
                       </TouchableOpacity>
                     ) : null}
                   </View>
@@ -560,19 +560,17 @@ export function AttendanceAdminScreen() {
                 <Ionicons name="settings-outline" size={22} color={colors.warning} />
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={[s.settingsTitle, { color: colors.text }]}>{isAr ? 'فترات السماح' : 'Grace Periods'}</Text>
+                <Text style={[s.settingsTitle, { color: colors.text }]}>{'فترات السماح'}</Text>
                 <Text style={[s.settingsSub, { color: colors.textMuted }]}>
-                  {isAr
-                    ? 'الحضور ضمن نافذة السماح لا يُحسب تأخيراً. المغادرة ضمن نافذة الإضافي لا تُحسب إضافياً.'
-                    : 'Arrivals within the late grace window are not marked late. Departures within the OT window are not counted as overtime.'}
+                  {'الحضور ضمن نافذة السماح لا يُحسب تأخيراً. المغادرة ضمن نافذة الإضافي لا تُحسب إضافياً.'}
                 </Text>
               </View>
             </View>
 
             {/* Late grace */}
             <View style={[s.graceBlock, { backgroundColor: '#fef9c3', borderColor: '#fde68a' }]}>
-              <Text style={[s.graceLabel, { color: '#a16207' }]}>{isAr ? 'فترة سماح التأخير' : 'Late Grace Period'}</Text>
-              <Text style={[s.graceSaved, { color: '#a16207' }]}>{isAr ? 'محفوظ:' : 'Saved:'} {settings.lateGraceMinutes}m</Text>
+              <Text style={[s.graceLabel, { color: '#a16207' }]}>{'فترة سماح التأخير'}</Text>
+              <Text style={[s.graceSaved, { color: '#a16207' }]}>{'محفوظ:'} {settings.lateGraceMinutes}m</Text>
               <View style={s.graceInput}>
                 <TextInput
                   style={[s.graceNum, { borderColor: '#fde68a' }]}
@@ -580,14 +578,14 @@ export function AttendanceAdminScreen() {
                   onChangeText={(v) => setSettingsForm((p) => ({ ...p, lateGraceMinutes: Math.max(0, Number(v) || 0) }))}
                   keyboardType="numeric"
                 />
-                <Text style={{ color: '#a16207', fontWeight: '600' }}>{isAr ? 'دقيقة' : 'minutes'}</Text>
+                <Text style={{ color: '#a16207', fontWeight: '600' }}>{'دقيقة'}</Text>
               </View>
             </View>
 
             {/* OT grace */}
             <View style={[s.graceBlock, { backgroundColor: 'rgba(139,92,246,.07)', borderColor: 'rgba(139,92,246,.25)' }]}>
-              <Text style={[s.graceLabel, { color: '#7c3aed' }]}>{isAr ? 'فترة سماح الإضافي' : 'Overtime Grace Period'}</Text>
-              <Text style={[s.graceSaved, { color: '#7c3aed' }]}>{isAr ? 'محفوظ:' : 'Saved:'} {settings.overtimeGraceMinutes}m</Text>
+              <Text style={[s.graceLabel, { color: '#7c3aed' }]}>{'فترة سماح الإضافي'}</Text>
+              <Text style={[s.graceSaved, { color: '#7c3aed' }]}>{'محفوظ:'} {settings.overtimeGraceMinutes}m</Text>
               <View style={s.graceInput}>
                 <TextInput
                   style={[s.graceNum, { borderColor: 'rgba(139,92,246,.35)' }]}
@@ -595,7 +593,7 @@ export function AttendanceAdminScreen() {
                   onChangeText={(v) => setSettingsForm((p) => ({ ...p, overtimeGraceMinutes: Math.max(0, Number(v) || 0) }))}
                   keyboardType="numeric"
                 />
-                <Text style={{ color: '#7c3aed', fontWeight: '600' }}>{isAr ? 'دقيقة' : 'minutes'}</Text>
+                <Text style={{ color: '#7c3aed', fontWeight: '600' }}>{'دقيقة'}</Text>
               </View>
             </View>
 
@@ -607,11 +605,11 @@ export function AttendanceAdminScreen() {
                 ? <ActivityIndicator size="small" color="#fff" />
                 : <>
                     <Ionicons name="save-outline" size={16} color="#fff" />
-                    <Text style={s.saveSettingsText}>{isAr ? 'حفظ الإعدادات' : 'Save Settings'}</Text>
+                    <Text style={s.saveSettingsText}>{'حفظ الإعدادات'}</Text>
                   </>}
             </TouchableOpacity>
             <Text style={[s.settingsNote, { color: colors.textMuted }]}>
-              {isAr ? 'التغييرات تسري على الحضور الجديد فقط' : 'Changes apply to future check-ins only'}
+              {'التغييرات تسري على الحضور الجديد فقط'}
             </Text>
           </View>
         </ScrollView>

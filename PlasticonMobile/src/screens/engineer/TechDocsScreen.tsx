@@ -1,5 +1,6 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+﻿import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
+import { useLocale } from '../../context/LocaleContext';
   ActivityIndicator, Alert, Dimensions, FlatList, Image,
   KeyboardAvoidingView, Linking, Modal, Platform, Pressable,
   RefreshControl, ScrollView, StyleSheet, Text, TextInput,
@@ -12,7 +13,6 @@ import { api, uploadForm } from '../../api/client';
 import { ScreenHeader, StatCard } from '../../components';
 import { radius, shadow, spacing, typography } from '../../theme';
 import { useAppTheme } from '../../context/ThemeContext';
-import { useLocale } from '../../context/LocaleContext';
 import { API_BASE } from '../../config';
 
 const { width: SW, height: SH } = Dimensions.get('window');
@@ -140,18 +140,18 @@ function DocDetailSheet({ doc, onClose, onDeleted, onEdited }: {
       onClose();
       onEdited();
     } catch (e: any) {
-      Alert.alert(isAr ? 'خطأ' : 'Error', e?.message ?? 'Failed to update');
+      Alert.alert('خطأ', e?.message ?? 'Failed to update');
     } finally { setEditSaving(false); }
   };
 
   const handleDelete = () => {
     Alert.alert(
-      isAr ? 'حذف الوثيقة' : 'Delete Document',
+      'حذف الوثيقة',
       `"${doc.title}"?`,
       [
-        { text: isAr ? 'إلغاء' : 'Cancel', style: 'cancel' },
+        { text: 'إلغاء', style: 'cancel' },
         {
-          text: isAr ? 'حذف' : 'Delete', style: 'destructive',
+          text: 'حذف', style: 'destructive',
           onPress: async () => {
             setDeleting(true);
             try {
@@ -159,7 +159,7 @@ function DocDetailSheet({ doc, onClose, onDeleted, onEdited }: {
               onDeleted();
               onClose();
             } catch (e: any) {
-              Alert.alert(isAr ? 'خطأ' : 'Error', e?.message ?? 'Failed to delete');
+              Alert.alert('خطأ', e?.message ?? 'Failed to delete');
             } finally { setDeleting(false); }
           },
         },
@@ -198,12 +198,12 @@ function DocDetailSheet({ doc, onClose, onDeleted, onEdited }: {
               {/* ── Edit form (inline) ────────────────────────────── */}
               {editing && (
                 <View style={{ marginBottom: spacing.md, gap: spacing.sm }}>
-                  <Text style={[{ fontSize: 11, fontWeight: '700', color: colors.textMuted, textTransform: 'uppercase', letterSpacing: 0.5 }]}>{isAr ? 'تعديل الوثيقة' : 'Edit Document'}</Text>
+                  <Text style={[{ fontSize: 11, fontWeight: '700', color: colors.textMuted, textTransform: 'uppercase', letterSpacing: 0.5 }]}>{'تعديل الوثيقة'}</Text>
                   <TextInput
                     style={[styles.editInput, { borderColor: colors.primary, color: colors.text, backgroundColor: colors.surfaceAlt }]}
                     value={editTitle}
                     onChangeText={setEditTitle}
-                    placeholder={isAr ? 'العنوان' : 'Title'}
+                    placeholder={'العنوان'}
                     placeholderTextColor={colors.textMuted}
                   />
                   <ScrollView horizontal showsHorizontalScrollIndicator={false}>
@@ -222,7 +222,7 @@ function DocDetailSheet({ doc, onClose, onDeleted, onEdited }: {
                     style={[styles.editInput, styles.editInputMulti, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
                     value={editDesc}
                     onChangeText={setEditDesc}
-                    placeholder={isAr ? 'الوصف (اختياري)' : 'Description (optional)'}
+                    placeholder={'الوصف (اختياري)'}
                     placeholderTextColor={colors.textMuted}
                     multiline
                     numberOfLines={3}
@@ -236,7 +236,7 @@ function DocDetailSheet({ doc, onClose, onDeleted, onEdited }: {
                     {editSaving
                       ? <ActivityIndicator size="small" color="#fff" />
                       : <Ionicons name="checkmark" size={17} color="#fff" />}
-                    <Text style={styles.openBtnText}>{isAr ? 'حفظ التغييرات' : 'Save Changes'}</Text>
+                    <Text style={styles.openBtnText}>{'حفظ التغييرات'}</Text>
                   </TouchableOpacity>
                 </View>
               )}
@@ -260,7 +260,7 @@ function DocDetailSheet({ doc, onClose, onDeleted, onEdited }: {
                 {doc.downloadCount > 0 && (
                   <View style={styles.metaRow}>
                     <Ionicons name="eye-outline" size={13} color={colors.textMuted} />
-                    <Text style={[styles.metaText, { color: colors.textMuted }]}>{doc.downloadCount} {isAr ? 'مشاهدة' : 'views'}</Text>
+                    <Text style={[styles.metaText, { color: colors.textMuted }]}>{doc.downloadCount} {'مشاهدة'}</Text>
                   </View>
                 )}
                 {doc.fileName && (
@@ -275,7 +275,7 @@ function DocDetailSheet({ doc, onClose, onDeleted, onEdited }: {
               {photos.length > 0 && (
                 <>
                   <Text style={[styles.sectionLabel, { color: colors.textMuted }]}>
-                    {isAr ? 'الصور المرفقة' : 'Attached Photos'} ({photos.length})
+                    {'الصور المرفقة'} ({photos.length})
                   </Text>
                   <View style={styles.photoGrid}>
                     {photos.map((img, i) => (
@@ -306,8 +306,8 @@ function DocDetailSheet({ doc, onClose, onDeleted, onEdited }: {
                     <Ionicons name={fileIsImg ? 'image-outline' : 'document-outline'} size={17} color="#fff" />
                     <Text style={styles.openBtnText}>
                       {fileIsImg
-                        ? (isAr ? 'عرض الصورة' : 'View Image')
-                        : (isAr ? 'فتح الوثيقة' : 'Open Document')}
+                        ? ('عرض الصورة')
+                        : ('فتح الوثيقة')}
                     </Text>
                   </TouchableOpacity>
                 )}
@@ -321,7 +321,7 @@ function DocDetailSheet({ doc, onClose, onDeleted, onEdited }: {
                     ? <ActivityIndicator size="small" color={colors.danger} />
                     : <Ionicons name="trash-outline" size={17} color={colors.danger} />
                   }
-                  <Text style={[styles.deleteBtnText, { color: colors.danger }]}>{isAr ? 'حذف' : 'Delete'}</Text>
+                  <Text style={[styles.deleteBtnText, { color: colors.danger }]}>{'حذف'}</Text>
                 </TouchableOpacity>
               </View>
 
@@ -368,7 +368,7 @@ function DocCard({ item, onPress }: { item: TechDoc; onPress: () => void }) {
           )}
         </View>
         {item.description ? <Text style={[styles.docDesc, { color: colors.textMuted }]} numberOfLines={1}>{item.description}</Text> : null}
-        {item.uploadedBy  ? <Text style={[styles.uploader, { color: colors.textMuted }]}>{isAr ? 'بواسطة' : 'by'} {item.uploadedBy.fullName}</Text> : null}
+        {item.uploadedBy  ? <Text style={[styles.uploader, { color: colors.textMuted }]}>{'بواسطة'} {item.uploadedBy.fullName}</Text> : null}
       </View>
       <View style={styles.docChevron}>
         <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
@@ -393,13 +393,13 @@ function UploadModal({ visible, onClose, onUploaded }: {
 
   const pickFile = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== 'granted') { Alert.alert(isAr ? 'لم يُمنح الإذن' : 'Permission denied'); return; }
+    if (status !== 'granted') { Alert.alert('لم يُمنح الإذن'); return; }
     const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: 'images', allowsEditing: false, quality: 0.9 });
     if (!result.canceled) setFileUri(result.assets[0].uri);
   };
 
   const submit = async () => {
-    if (!form.title.trim()) { Alert.alert(isAr ? 'مطلوب' : 'Required', isAr ? 'العنوان مطلوب.' : 'Title is required.'); return; }
+    if (!form.title.trim()) { Alert.alert('مطلوب', 'العنوان مطلوب.'); return; }
     setSaving(true);
     try {
       const fd = new FormData();
@@ -410,7 +410,7 @@ function UploadModal({ visible, onClose, onUploaded }: {
       await uploadForm('/tech-documents', fd);
       onUploaded();
     } catch (e: any) {
-      Alert.alert(isAr ? 'خطأ' : 'Error', e?.message ?? (isAr ? 'فشل الرفع.' : 'Failed to upload.'));
+      Alert.alert('خطأ', e?.message ?? ('فشل الرفع.'));
     } finally { setSaving(false); }
   };
 
@@ -422,11 +422,11 @@ function UploadModal({ visible, onClose, onUploaded }: {
         <Pressable style={styles.overlayBg} onPress={onClose} />
         <View style={[styles.sheet, { backgroundColor: colors.surface }]}>
           <View style={[styles.handle, { backgroundColor: colors.border }]} />
-          <Text style={[styles.sheetTitle, { color: colors.text }]}>{isAr ? 'رفع وثيقة جديدة' : 'Upload New Document'}</Text>
+          <Text style={[styles.sheetTitle, { color: colors.text }]}>{'رفع وثيقة جديدة'}</Text>
           <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-            <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{isAr ? 'العنوان *' : 'Title *'}</Text>
-            <TextInput style={[styles.input, { backgroundColor: colors.surfaceAlt, borderColor: colors.border, color: colors.text }]} value={form.title} onChangeText={set('title')} placeholder={isAr ? 'مثال: دليل الآلة أ' : 'e.g. Machine A – User Manual'} placeholderTextColor={colors.textMuted} />
-            <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{isAr ? 'الفئة' : 'Category'}</Text>
+            <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{'العنوان *'}</Text>
+            <TextInput style={[styles.input, { backgroundColor: colors.surfaceAlt, borderColor: colors.border, color: colors.text }]} value={form.title} onChangeText={set('title')} placeholder={'مثال: دليل الآلة أ'} placeholderTextColor={colors.textMuted} />
+            <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{'الفئة'}</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: spacing.md }}>
               {uploadCats.map(cat => (
                 <TouchableOpacity key={cat}
@@ -438,21 +438,21 @@ function UploadModal({ visible, onClose, onUploaded }: {
                 </TouchableOpacity>
               ))}
             </ScrollView>
-            <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{isAr ? 'الوصف' : 'Description'}</Text>
-            <TextInput style={[styles.input, styles.inputMulti, { backgroundColor: colors.surfaceAlt, borderColor: colors.border, color: colors.text }]} value={form.description} onChangeText={set('description')} placeholder={isAr ? 'وصف مختصر...' : 'Brief description...'} placeholderTextColor={colors.textMuted} multiline textAlignVertical="top" />
+            <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{'الوصف'}</Text>
+            <TextInput style={[styles.input, styles.inputMulti, { backgroundColor: colors.surfaceAlt, borderColor: colors.border, color: colors.text }]} value={form.description} onChangeText={set('description')} placeholder={'وصف مختصر...'} placeholderTextColor={colors.textMuted} multiline textAlignVertical="top" />
             <TouchableOpacity style={[styles.fileBtn, { borderColor: colors.border, backgroundColor: colors.surfaceAlt }]} onPress={pickFile}>
               <Ionicons name={fileUri ? 'document' : 'document-outline'} size={18} color={fileUri ? colors.success : colors.primary} />
               <Text style={[styles.fileBtnText, { color: fileUri ? colors.success : colors.primary }]}>
-                {fileUri ? (isAr ? 'ملف محدد ✓' : 'File selected ✓') : (isAr ? 'اختيار ملف / صورة' : 'Choose file / image')}
+                {fileUri ? ('ملف محدد ✓') : ('اختيار ملف / صورة')}
               </Text>
             </TouchableOpacity>
           </ScrollView>
           <View style={styles.sheetFooter}>
             <TouchableOpacity style={[styles.cancelBtn, { borderColor: colors.border }]} onPress={onClose}>
-              <Text style={[styles.cancelText, { color: colors.textSecondary }]}>{isAr ? 'إلغاء' : 'Cancel'}</Text>
+              <Text style={[styles.cancelText, { color: colors.textSecondary }]}>{'إلغاء'}</Text>
             </TouchableOpacity>
             <TouchableOpacity style={[styles.saveBtn, { backgroundColor: colors.primary }, saving && { opacity: 0.6 }]} onPress={submit} disabled={saving}>
-              {saving ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.saveText}>{isAr ? 'رفع' : 'Upload'}</Text>}
+              {saving ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.saveText}>{'رفع'}</Text>}
             </TouchableOpacity>
           </View>
         </View>
@@ -501,8 +501,8 @@ export function TechDocsScreen() {
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
       <ScreenHeader
-        title={isAr ? 'الوثائق التقنية' : 'Technical Docs'}
-        subtitle={`${docs.length} ${isAr ? 'وثيقة' : 'documents'}`}
+        title={'الوثائق التقنية'}
+        subtitle={`${docs.length} ${'وثيقة'}`}
         showBack
       />
 
@@ -520,9 +520,9 @@ export function TechDocsScreen() {
             <>
               {/* KPI row */}
               <View style={styles.statsRow}>
-                <StatCard label={isAr ? 'الإجمالي' : 'Total'}     value={String(docs.length)}    icon="documents-outline"  color={colors.primary} style={styles.stat} />
-                <StatCard label={isAr ? 'جديد' : 'Recent'}        value={String(recentCount)}    icon="time-outline"       color={colors.success} style={styles.stat} />
-                <StatCard label={isAr ? 'مشاهدات' : 'Views'}      value={String(totalDownloads)} icon="eye-outline"        color={colors.warning} style={styles.stat} />
+                <StatCard label={'الإجمالي'}     value={String(docs.length)}    icon="documents-outline"  color={colors.primary} style={styles.stat} />
+                <StatCard label={'جديد'}        value={String(recentCount)}    icon="time-outline"       color={colors.success} style={styles.stat} />
+                <StatCard label={'مشاهدات'}      value={String(totalDownloads)} icon="eye-outline"        color={colors.warning} style={styles.stat} />
               </View>
 
               {/* Search */}
@@ -532,7 +532,7 @@ export function TechDocsScreen() {
                   style={[styles.searchInput, { color: colors.text }]}
                   value={search}
                   onChangeText={setSearch}
-                  placeholder={isAr ? 'بحث في الوثائق...' : 'Search documents...'}
+                  placeholder={'بحث في الوثائق...'}
                   placeholderTextColor={colors.textMuted}
                   returnKeyType="search"
                   autoCorrect={false}
@@ -561,7 +561,7 @@ export function TechDocsScreen() {
               {/* Result count when searching */}
               {q ? (
                 <Text style={[styles.resultCount, { color: colors.textMuted }]}>
-                  {filtered.length} {isAr ? 'نتيجة' : 'result(s)'}
+                  {filtered.length} {'نتيجة'}
                 </Text>
               ) : null}
             </>
@@ -570,7 +570,7 @@ export function TechDocsScreen() {
             <View style={styles.empty}>
               <Ionicons name="documents-outline" size={44} color={colors.textMuted} />
               <Text style={[styles.emptyText, { color: colors.textMuted }]}>
-                {q ? (isAr ? 'لا توجد نتائج' : 'No results found') : (isAr ? 'لا توجد وثائق' : 'No documents')}
+                {q ? ('لا توجد نتائج') : ('لا توجد وثائق')}
               </Text>
             </View>
           }

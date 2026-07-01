@@ -1,5 +1,6 @@
-import React, { useCallback, useEffect, useState } from 'react';
+﻿import React, { useCallback, useEffect, useState } from 'react';
 import {
+import { useLocale } from '../../context/LocaleContext';
   ActivityIndicator, FlatList, RefreshControl, ScrollView,
   StyleSheet, Text, TouchableOpacity, View,
 } from 'react-native';
@@ -10,7 +11,6 @@ import { ScreenHeader } from '../../components';
 import { DailyPayrollRecord, MonthlyPayroll } from '../../api/types';
 import { radius, shadow, spacing, typography } from '../../theme';
 import { useAppTheme } from '../../context/ThemeContext';
-import { useLocale } from '../../context/LocaleContext';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -72,7 +72,7 @@ function DayRow({ item }: { item: DailyPayrollRecord }) {
             <View style={styles.metaChip}>
               <Ionicons name="log-out-outline" size={11} color={missingCO ? colors.warning : colors.textMuted} />
               <Text style={[styles.metaText, { color: missingCO ? colors.warning : colors.textMuted }]}>
-                {missingCO ? (isAr ? 'مفقود' : 'Missing') : fmtTime(item.attendance?.checkOut)}
+                {missingCO ? ('مفقود') : fmtTime(item.attendance?.checkOut)}
               </Text>
             </View>
             <View style={styles.metaChip}>
@@ -90,7 +90,7 @@ function DayRow({ item }: { item: DailyPayrollRecord }) {
           <Text style={[styles.cardPay, { color: colors.text }]}>${fmtMoney(item.totalDailyPay)}</Text>
           <View style={[styles.pill, { backgroundColor: confirmed ? `${colors.success}18` : `${colors.warning}18` }]}>
             <Text style={[styles.pillText, { color: confirmed ? colors.success : colors.warning }]}>
-              {confirmed ? (isAr ? 'مؤكد' : 'Confirmed') : (isAr ? 'معلق' : 'Pending')}
+              {confirmed ? ('مؤكد') : ('معلق')}
             </Text>
           </View>
         </View>
@@ -118,24 +118,24 @@ function MonthCard({ item }: { item: MonthlyPayroll }) {
       <View style={styles.monthStats}>
         <View style={styles.monthStat}>
           <Text style={[styles.statVal, { color: colors.success }]}>${fmtMoney(item.totalSalary)}</Text>
-          <Text style={[styles.statLbl, { color: colors.textMuted }]}>{isAr ? 'إجمالي الراتب' : 'Total Salary'}</Text>
+          <Text style={[styles.statLbl, { color: colors.textMuted }]}>{'إجمالي الراتب'}</Text>
         </View>
         {item.totalHours != null && (
           <View style={styles.monthStat}>
             <Text style={[styles.statVal, { color: colors.primary }]}>{item.totalHours.toFixed(1)}h</Text>
-            <Text style={[styles.statLbl, { color: colors.textMuted }]}>{isAr ? 'إجمالي الساعات' : 'Total Hours'}</Text>
+            <Text style={[styles.statLbl, { color: colors.textMuted }]}>{'إجمالي الساعات'}</Text>
           </View>
         )}
         {item.baseSalary != null && (
           <View style={styles.monthStat}>
             <Text style={[styles.statVal, { color: colors.text }]}>${fmtMoneyShort(item.baseSalary)}</Text>
-            <Text style={[styles.statLbl, { color: colors.textMuted }]}>{isAr ? 'الأساسي' : 'Base'}</Text>
+            <Text style={[styles.statLbl, { color: colors.textMuted }]}>{'الأساسي'}</Text>
           </View>
         )}
         {(item.overtimeSalary ?? 0) > 0 && (
           <View style={styles.monthStat}>
             <Text style={[styles.statVal, { color: colors.warning }]}>+${fmtMoneyShort(item.overtimeSalary!)}</Text>
-            <Text style={[styles.statLbl, { color: colors.textMuted }]}>{isAr ? 'إضافي' : 'Overtime'}</Text>
+            <Text style={[styles.statLbl, { color: colors.textMuted }]}>{'إضافي'}</Text>
           </View>
         )}
       </View>
@@ -204,7 +204,7 @@ export function PayrollScreen() {
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
-      <ScreenHeader title={isAr ? 'راتبي' : 'My Payroll'} showBack />
+      <ScreenHeader title={'راتبي'} showBack />
 
       {/* ── Tab bar ─────────────────────────────────────────────────────── */}
       <ScrollView
@@ -245,15 +245,15 @@ export function PayrollScreen() {
               <View style={styles.statsRow}>
                 <View style={[styles.statCard, { backgroundColor: `${colors.warning}15` }]}>
                   <Text style={[styles.statNum, { color: colors.warning }]}>{pendingCnt}</Text>
-                  <Text style={[styles.statLbl, { color: colors.warning }]}>{isAr ? 'معلق' : 'Pending'}</Text>
+                  <Text style={[styles.statLbl, { color: colors.warning }]}>{'معلق'}</Text>
                 </View>
                 <View style={[styles.statCard, { backgroundColor: `${colors.success}15` }]}>
                   <Text style={[styles.statNum, { color: colors.success }]}>{confirmedCnt}</Text>
-                  <Text style={[styles.statLbl, { color: colors.success }]}>{isAr ? 'مؤكد' : 'Confirmed'}</Text>
+                  <Text style={[styles.statLbl, { color: colors.success }]}>{'مؤكد'}</Text>
                 </View>
                 <View style={[styles.statCard, { backgroundColor: colors.surface }]}>
                   <Text style={[styles.statNum, { color: colors.text }]}>${fmtMoneyShort(dailyTotal)}</Text>
-                  <Text style={[styles.statLbl, { color: colors.textMuted }]}>{isAr ? 'الإجمالي' : 'Total'}</Text>
+                  <Text style={[styles.statLbl, { color: colors.textMuted }]}>{'الإجمالي'}</Text>
                 </View>
               </View>
             )
@@ -264,7 +264,7 @@ export function PayrollScreen() {
               : <View style={styles.empty}>
                   <Ionicons name="today-outline" size={44} color={colors.textMuted} />
                   <Text style={[styles.emptyText, { color: colors.textMuted }]}>
-                    {isAr ? 'لا توجد سجلات يومية' : 'No daily records yet'}
+                    {'لا توجد سجلات يومية'}
                   </Text>
                 </View>
           }
@@ -286,7 +286,7 @@ export function PayrollScreen() {
               : <View style={styles.empty}>
                   <Ionicons name="calendar-outline" size={44} color={colors.textMuted} />
                   <Text style={[styles.emptyText, { color: colors.textMuted }]}>
-                    {isAr ? 'لا توجد سجلات شهرية' : 'No monthly records yet'}
+                    {'لا توجد سجلات شهرية'}
                   </Text>
                 </View>
           }
@@ -307,13 +307,13 @@ export function PayrollScreen() {
             <View style={styles.empty}>
               <Ionicons name="cash-outline" size={44} color={colors.textMuted} />
               <Text style={[styles.emptyText, { color: colors.textMuted }]}>
-                {isAr ? 'لا توجد بيانات راتب' : 'No salary data available'}
+                {'لا توجد بيانات راتب'}
               </Text>
             </View>
           ) : (
             <>
               <Text style={[styles.sectionTitle, { color: colors.text }]}>
-                {isAr ? 'معدلات الراتب حسب الدور' : 'Salary Rates by Role'}
+                {'معدلات الراتب حسب الدور'}
               </Text>
               {configs.map(c => {
                 const rc = ROLE_COLORS[c.role] ?? colors.primary;
@@ -331,15 +331,15 @@ export function PayrollScreen() {
                     <View style={styles.rateGrid}>
                       <View style={[styles.rateCell, { backgroundColor: `${colors.success}10`, borderColor: `${colors.success}30` }]}>
                         <Text style={[styles.rateCellVal, { color: colors.success }]}>${fmtMoneyShort(c.monthlySalary)}</Text>
-                        <Text style={[styles.rateCellLbl, { color: colors.textMuted }]}>{isAr ? 'شهرياً' : 'per month'}</Text>
+                        <Text style={[styles.rateCellLbl, { color: colors.textMuted }]}>{'شهرياً'}</Text>
                       </View>
                       <View style={[styles.rateCell, { backgroundColor: `${colors.primary}10`, borderColor: `${colors.primary}30` }]}>
                         <Text style={[styles.rateCellVal, { color: colors.primary }]}>${daily30.toFixed(2)}</Text>
-                        <Text style={[styles.rateCellLbl, { color: colors.textMuted }]}>{isAr ? 'يومياً' : 'per day'}</Text>
+                        <Text style={[styles.rateCellLbl, { color: colors.textMuted }]}>{'يومياً'}</Text>
                       </View>
                       <View style={[styles.rateCell, { backgroundColor: `${colors.warning}10`, borderColor: `${colors.warning}30` }]}>
                         <Text style={[styles.rateCellVal, { color: colors.warning }]}>${hourly.toFixed(2)}</Text>
-                        <Text style={[styles.rateCellLbl, { color: colors.textMuted }]}>{isAr ? 'ساعياً' : 'per hour'}</Text>
+                        <Text style={[styles.rateCellLbl, { color: colors.textMuted }]}>{'ساعياً'}</Text>
                       </View>
                     </View>
                   </View>
@@ -349,9 +349,7 @@ export function PayrollScreen() {
               <View style={[styles.noteBox, { backgroundColor: colors.surface, borderColor: colors.border }]}>
                 <Ionicons name="information-circle-outline" size={16} color={colors.textMuted} />
                 <Text style={[styles.noteText, { color: colors.textMuted }]}>
-                  {isAr
-                    ? 'الأسعار اليومية والساعية مبنية على 30 يوماً / 8 ساعات في اليوم. قد تختلف الرواتب الفعلية بسبب الإضافي أو الخصومات.'
-                    : 'Daily and hourly rates are based on 30 days / 8 hours per day. Actual pay may vary due to overtime or deductions.'}
+                  {'الأسعار اليومية والساعية مبنية على 30 يوماً / 8 ساعات في اليوم. قد تختلف الرواتب الفعلية بسبب الإضافي أو الخصومات.'}
                 </Text>
               </View>
             </>

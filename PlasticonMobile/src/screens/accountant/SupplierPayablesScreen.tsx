@@ -1,5 +1,6 @@
-import React, { useCallback, useEffect, useState } from 'react';
+﻿import React, { useCallback, useEffect, useState } from 'react';
 import {
+import { useLocale } from '../../context/LocaleContext';
   ActivityIndicator,
   Alert,
   FlatList,
@@ -21,7 +22,6 @@ import { api } from '../../api/client';
 import { ScreenHeader, StatCard } from '../../components';
 import { radius, shadow, spacing, typography } from '../../theme';
 import { useAppTheme } from '../../context/ThemeContext';
-import { useLocale } from '../../context/LocaleContext';
 
 interface Payable {
   id: number;
@@ -52,6 +52,7 @@ function fmt(n: number) { return n.toLocaleString('en-US', { minimumFractionDigi
 
 function InlinePicker<T extends string>({ label, value, options, onChange }: { label: string; value: T; options: T[]; onChange: (v: T) => void }) {
   const { colors } = useAppTheme();
+  const { isAr } = useLocale();
   return (
     <View style={ps.wrap}>
       <Text style={[ps.label, { color: colors.textSecondary }]}>{label}</Text>
@@ -90,8 +91,8 @@ function PayModal({ visible, initial, onClose, onSave, saving }: {
   const set = (k: keyof FormState) => (v: string) => setForm((p) => ({ ...p, [k]: v }));
 
   const handleSave = async () => {
-    if (!form.supplierName.trim()) return Alert.alert(isAr ? 'تحقق' : 'Validation', isAr ? 'اسم المورد مطلوب.' : 'Supplier name is required.');
-    if (!form.amount.trim() || isNaN(Number(form.amount))) return Alert.alert(isAr ? 'تحقق' : 'Validation', isAr ? 'يجب أن يكون المبلغ رقمًا.' : 'Amount must be a number.');
+    if (!form.supplierName.trim()) return Alert.alert('تحقق', 'اسم المورد مطلوب.');
+    if (!form.amount.trim() || isNaN(Number(form.amount))) return Alert.alert('تحقق', 'يجب أن يكون المبلغ رقمًا.');
     await onSave(form);
   };
 
@@ -101,28 +102,28 @@ function PayModal({ visible, initial, onClose, onSave, saving }: {
         <Pressable style={styles.overlayBg} onPress={onClose} />
         <View style={[styles.sheet, { backgroundColor: colors.surface }]}>
           <View style={[styles.sheetHandle, { backgroundColor: colors.border }]} />
-          <Text style={[styles.sheetTitle, { color: colors.text }]}>{initial.supplierName ? (isAr ? 'تعديل مستحق' : 'Edit Payable') : (isAr ? 'مستحق جديد' : 'New Payable')}</Text>
+          <Text style={[styles.sheetTitle, { color: colors.text }]}>{initial.supplierName ? ('تعديل مستحق') : ('مستحق جديد')}</Text>
           <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-            <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{isAr ? 'اسم المورد *' : 'Supplier Name *'}</Text>
-            <TextInput style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]} value={form.supplierName} onChangeText={set('supplierName')} placeholder={isAr ? 'اسم المورد' : 'Supplier name'} placeholderTextColor={colors.textMuted} />
+            <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{'اسم المورد *'}</Text>
+            <TextInput style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]} value={form.supplierName} onChangeText={set('supplierName')} placeholder={'اسم المورد'} placeholderTextColor={colors.textMuted} />
 
-            <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{isAr ? 'المبلغ *' : 'Amount *'}</Text>
+            <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{'المبلغ *'}</Text>
             <TextInput style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]} value={form.amount} onChangeText={set('amount')} placeholder="0.00" placeholderTextColor={colors.textMuted} keyboardType="numeric" />
 
-            <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{isAr ? 'تاريخ الاستحقاق' : 'Due Date'}</Text>
+            <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{'تاريخ الاستحقاق'}</Text>
             <TextInput style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]} value={form.dueDate} onChangeText={set('dueDate')} placeholder="YYYY-MM-DD" placeholderTextColor={colors.textMuted} />
 
-            <InlinePicker label={isAr ? 'الحالة' : 'Status'} value={form.status} options={STATUS_OPTIONS} onChange={(v) => setForm((p) => ({ ...p, status: v }))} />
+            <InlinePicker label={'الحالة'} value={form.status} options={STATUS_OPTIONS} onChange={(v) => setForm((p) => ({ ...p, status: v }))} />
 
-            <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{isAr ? 'ملاحظات' : 'Notes'}</Text>
-            <TextInput style={[styles.input, styles.multiline, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]} value={form.notes} onChangeText={set('notes')} placeholder={isAr ? 'ملاحظات اختيارية' : 'Optional notes'} placeholderTextColor={colors.textMuted} multiline numberOfLines={3} textAlignVertical="top" />
+            <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{'ملاحظات'}</Text>
+            <TextInput style={[styles.input, styles.multiline, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]} value={form.notes} onChangeText={set('notes')} placeholder={'ملاحظات اختيارية'} placeholderTextColor={colors.textMuted} multiline numberOfLines={3} textAlignVertical="top" />
           </ScrollView>
           <View style={styles.sheetActions}>
             <TouchableOpacity style={[styles.cancelBtn, { borderColor: colors.border }]} onPress={onClose}>
-              <Text style={[styles.cancelText, { color: colors.textSecondary }]}>{isAr ? 'إلغاء' : 'Cancel'}</Text>
+              <Text style={[styles.cancelText, { color: colors.textSecondary }]}>{'إلغاء'}</Text>
             </TouchableOpacity>
             <TouchableOpacity style={[styles.saveBtn, { backgroundColor: colors.primary }, saving && { opacity: 0.6 }]} onPress={handleSave} disabled={saving}>
-              {saving ? <ActivityIndicator size="small" color={colors.textInverse} /> : <Text style={[styles.saveText, { color: colors.textInverse }]}>{isAr ? 'حفظ' : 'Save'}</Text>}
+              {saving ? <ActivityIndicator size="small" color={colors.textInverse} /> : <Text style={[styles.saveText, { color: colors.textInverse }]}>{'حفظ'}</Text>}
             </TouchableOpacity>
           </View>
         </View>
@@ -154,13 +155,13 @@ function PayCard({ item, onEdit, onDelete }: { item: Payable; onEdit: () => void
           <Text style={[styles.supplier, { color: colors.text }]} numberOfLines={1}>{name}</Text>
           {item.dueDate && (
             <Text style={[styles.ref, { color: colors.textMuted }]}>
-              {isAr ? 'الاستحقاق: ' : 'Due: '}{new Date(item.dueDate).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}
+              {'الاستحقاق: '}{new Date(item.dueDate).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}
             </Text>
           )}
         </View>
         <View style={styles.cardRight}>
           <Text style={[styles.balance, { color: isPaid ? colors.success : color }]}>${fmt(amount)}</Text>
-          <Text style={[styles.balLabel, { color: colors.textMuted }]}>{isPaid ? (isAr ? 'مدفوع' : 'paid') : (isAr ? 'مستحق' : 'owed')}</Text>
+          <Text style={[styles.balLabel, { color: colors.textMuted }]}>{isPaid ? ('مدفوع') : ('مستحق')}</Text>
         </View>
         <View style={styles.cardActions}>
           <TouchableOpacity onPress={onEdit} style={styles.actionBtn} hitSlop={6}>
@@ -197,7 +198,7 @@ export function SupplierPayablesScreen() {
       const res = await api.get<any>('/supplier-payables?limit=30');
       setRecords(Array.isArray(res) ? res : (res?.data ?? res?.items ?? res?.records ?? []));
     } catch (e: any) {
-      Alert.alert(isAr ? 'خطأ' : 'Error', e?.message ?? (isAr ? 'فشل تحميل المستحقات' : 'Failed to load payables'));
+      Alert.alert('خطأ', e?.message ?? ('فشل تحميل المستحقات'));
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -211,13 +212,13 @@ export function SupplierPayablesScreen() {
 
   const confirmDelete = (item: Payable) => {
     Alert.alert(
-      isAr ? 'حذف المستحق' : 'Delete Payable',
+      'حذف المستحق',
       isAr
         ? `حذف مستحق "${item.supplierName ?? item.supplier?.name ?? `#${item.id}`}"؟`
         : `Delete payable for "${item.supplierName ?? item.supplier?.name ?? `#${item.id}`}"?`,
       [
-        { text: isAr ? 'إلغاء' : 'Cancel', style: 'cancel' },
-        { text: isAr ? 'حذف' : 'Delete', style: 'destructive', onPress: () => void handleDelete(item.id) },
+        { text: 'إلغاء', style: 'cancel' },
+        { text: 'حذف', style: 'destructive', onPress: () => void handleDelete(item.id) },
       ],
     );
   };
@@ -228,7 +229,7 @@ export function SupplierPayablesScreen() {
       setRefreshing(true);
       await load();
     } catch (e: any) {
-      Alert.alert(isAr ? 'خطأ' : 'Error', e?.message ?? (isAr ? 'فشل الحذف' : 'Failed to delete'));
+      Alert.alert('خطأ', e?.message ?? ('فشل الحذف'));
     }
   };
 
@@ -251,7 +252,7 @@ export function SupplierPayablesScreen() {
       setRefreshing(true);
       await load();
     } catch (e: any) {
-      Alert.alert(isAr ? 'خطأ' : 'Error', e?.message ?? (isAr ? 'فشل الحفظ' : 'Failed to save'));
+      Alert.alert('خطأ', e?.message ?? ('فشل الحفظ'));
     } finally {
       setSaving(false);
     }
@@ -277,7 +278,7 @@ export function SupplierPayablesScreen() {
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
-      <ScreenHeader title={isAr ? 'مستحقات الموردين' : 'Supplier Payables'} showBack />
+      <ScreenHeader title={'مستحقات الموردين'} showBack />
       {loading ? (
         <View style={styles.center}><ActivityIndicator size="large" color={colors.primary} /></View>
       ) : (
@@ -291,12 +292,12 @@ export function SupplierPayablesScreen() {
           ListHeaderComponent={
             <View>
               <View style={styles.kpiRow}>
-                <StatCard label={isAr ? 'الإجمالي' : 'Total'} value={`$${fmt(totalAmt)}`} icon="business" color={colors.primary} style={styles.kpi} />
-                <StatCard label={isAr ? 'معلق' : 'Pending'} value={`$${fmt(pendingAmt)}`} icon="time" color={colors.warning} style={styles.kpi} />
+                <StatCard label={'الإجمالي'} value={`$${fmt(totalAmt)}`} icon="business" color={colors.primary} style={styles.kpi} />
+                <StatCard label={'معلق'} value={`$${fmt(pendingAmt)}`} icon="time" color={colors.warning} style={styles.kpi} />
               </View>
               <View style={[styles.kpiRow, { marginBottom: spacing.sm }]}>
-                <StatCard label={isAr ? 'مدفوع' : 'Paid'} value={String(paidCount)} icon="checkmark-circle" color={colors.success} style={styles.kpi} />
-                <StatCard label={isAr ? 'متأخر' : 'Overdue'} value={`$${fmt(overdueAmt)}`} icon="alert-circle" color={colors.danger} style={styles.kpi} />
+                <StatCard label={'مدفوع'} value={String(paidCount)} icon="checkmark-circle" color={colors.success} style={styles.kpi} />
+                <StatCard label={'متأخر'} value={`$${fmt(overdueAmt)}`} icon="alert-circle" color={colors.danger} style={styles.kpi} />
               </View>
               <View style={[styles.filterRow, { marginBottom: spacing.sm }]}>
                 {PAY_FILTERS.map((f) => (
@@ -314,7 +315,7 @@ export function SupplierPayablesScreen() {
           ListEmptyComponent={
             <View style={styles.empty}>
               <Ionicons name="business-outline" size={44} color={colors.textMuted} />
-              <Text style={[styles.emptyText, { color: colors.textMuted }]}>{isAr ? 'لا توجد سجلات' : 'No payables'}</Text>
+              <Text style={[styles.emptyText, { color: colors.textMuted }]}>{'لا توجد سجلات'}</Text>
             </View>
           }
         />

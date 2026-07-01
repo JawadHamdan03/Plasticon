@@ -148,9 +148,7 @@ export function QualityChecksPage() {
   return (
     <ModulePageShell
       title={"فحص الجودة"}
-      subtitle={isAr
-        ? "تسجيل ومتابعة مشاكل الجودة في خط الإنتاج"
-        : "Log and track quality issues on the production line"}
+      subtitle={"تسجيل ومتابعة مشاكل الجودة في خط الإنتاج"}
       icon={<CheckSquare size={22} />}
       actions={
         <div style={{ display: "flex", gap: ".5rem" }}>
@@ -228,9 +226,7 @@ export function QualityChecksPage() {
               {"وصف المشكلة والإجراءات"}
               <textarea rows={3} value={form.description}
                 onChange={e => setForm(p => ({ ...p, description: e.target.value }))}
-                placeholder={isAr
-                  ? "اشرح المشكلة بالتفصيل، والإجراءات التي تم اتخاذها..."
-                  : "Describe the issue in detail, and any corrective actions taken..."}
+                placeholder={"اشرح المشكلة بالتفصيل، والإجراءات التي تم اتخاذها..."}
                 style={{ padding: ".6rem .75rem", border: "1px solid var(--border-default)", borderRadius: "var(--radius-md)", background: "var(--bg-input)", fontSize: ".875rem", resize: "vertical", lineHeight: 1.55 }} />
             </label>
 

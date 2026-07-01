@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+﻿import React, { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -20,7 +20,6 @@ import { api } from '../../api/client';
 import { ScreenHeader } from '../../components';
 import { radius, shadow, spacing, typography } from '../../theme';
 import { useAppTheme } from '../../context/ThemeContext';
-import { useLocale } from '../../context/LocaleContext';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -75,7 +74,6 @@ interface EditModalProps {
 
 function EditModal({ shift, visible, onClose, onSaved }: EditModalProps) {
   const { colors } = useAppTheme();
-  const { isAr } = useLocale();
 
   const [name, setName]           = useState('');
   const [startTime, setStartTime] = useState('');
@@ -96,15 +94,15 @@ function EditModal({ shift, visible, onClose, onSaved }: EditModalProps) {
 
   async function save() {
     if (!name.trim()) {
-      Alert.alert(isAr ? 'تحقق' : 'Validation', isAr ? 'اسم الوردية مطلوب.' : 'Shift name is required.');
+      Alert.alert('تحقق', 'اسم الوردية مطلوب.');
       return;
     }
     if (startTime && !validateTime(startTime)) {
-      Alert.alert(isAr ? 'تحقق' : 'Validation', isAr ? 'يجب أن يكون وقت البدء بتنسيق HH:MM' : 'Start time must be in HH:MM format (e.g. 06:00).');
+      Alert.alert('تحقق', 'يجب أن يكون وقت البدء بتنسيق HH:MM');
       return;
     }
     if (endTime && !validateTime(endTime)) {
-      Alert.alert(isAr ? 'تحقق' : 'Validation', isAr ? 'يجب أن يكون وقت الانتهاء بتنسيق HH:MM' : 'End time must be in HH:MM format (e.g. 14:00).');
+      Alert.alert('تحقق', 'يجب أن يكون وقت الانتهاء بتنسيق HH:MM');
       return;
     }
     if (!shift) return;
@@ -118,7 +116,7 @@ function EditModal({ shift, visible, onClose, onSaved }: EditModalProps) {
       onSaved();
       onClose();
     } catch (err: any) {
-      Alert.alert(isAr ? 'خطأ' : 'Error', err?.message ?? 'Failed to update shift');
+      Alert.alert('خطأ', err?.message ?? 'Failed to update shift');
     } finally {
       setSaving(false);
     }
@@ -134,23 +132,23 @@ function EditModal({ shift, visible, onClose, onSaved }: EditModalProps) {
         <View style={[styles.sheet, { backgroundColor: colors.surface }]}>
           <View style={[styles.handle, { backgroundColor: colors.border }]} />
 
-          <Text style={[styles.sheetTitle, { color: colors.text }]}>{isAr ? 'تعديل الوردية' : 'Edit Shift'}</Text>
+          <Text style={[styles.sheetTitle, { color: colors.text }]}>{'تعديل الوردية'}</Text>
           {shift && (
             <Text style={[styles.sheetSub, { color: colors.textMuted }]}>ID #{shift.id}</Text>
           )}
 
           {/* Name */}
-          <Text style={[styles.label, { color: colors.text }]}>{isAr ? 'الاسم *' : 'Name *'}</Text>
+          <Text style={[styles.label, { color: colors.text }]}>{'الاسم *'}</Text>
           <TextInput
             style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
             value={name}
             onChangeText={setName}
-            placeholder={isAr ? 'مثال: وردية صباحية' : 'e.g. Morning Shift'}
+            placeholder={'مثال: وردية صباحية'}
             placeholderTextColor={colors.textMuted}
           />
 
           {/* Start Time */}
-          <Text style={[styles.label, { color: colors.text }]}>{isAr ? 'وقت البدء (HH:MM)' : 'Start Time (HH:MM)'}</Text>
+          <Text style={[styles.label, { color: colors.text }]}>{'وقت البدء (HH:MM)'}</Text>
           <TextInput
             style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
             value={startTime}
@@ -162,7 +160,7 @@ function EditModal({ shift, visible, onClose, onSaved }: EditModalProps) {
           />
 
           {/* End Time */}
-          <Text style={[styles.label, { color: colors.text }]}>{isAr ? 'وقت الانتهاء (HH:MM)' : 'End Time (HH:MM)'}</Text>
+          <Text style={[styles.label, { color: colors.text }]}>{'وقت الانتهاء (HH:MM)'}</Text>
           <TextInput
             style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
             value={endTime}
@@ -181,11 +179,11 @@ function EditModal({ shift, visible, onClose, onSaved }: EditModalProps) {
           >
             {saving
               ? <ActivityIndicator size="small" color={colors.textInverse} />
-              : <Text style={[styles.saveBtnText, { color: colors.textInverse }]}>{isAr ? 'حفظ التغييرات' : 'Save Changes'}</Text>}
+              : <Text style={[styles.saveBtnText, { color: colors.textInverse }]}>{'حفظ التغييرات'}</Text>}
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.cancelBtn} onPress={onClose} activeOpacity={0.7}>
-            <Text style={[styles.cancelText, { color: colors.textMuted }]}>{isAr ? 'إلغاء' : 'Cancel'}</Text>
+            <Text style={[styles.cancelText, { color: colors.textMuted }]}>{'إلغاء'}</Text>
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
@@ -202,7 +200,6 @@ interface ShiftCardProps {
 
 function ShiftCard({ item, onEdit }: ShiftCardProps) {
   const { colors } = useAppTheme();
-  const { isAr } = useLocale();
 
   const SHIFT_COLORS: Record<string, string> = {
     MORNING:   colors.warning,
@@ -243,7 +240,7 @@ function ShiftCard({ item, onEdit }: ShiftCardProps) {
           {count > 0 && (
             <View style={styles.workers}>
               <Ionicons name="people-outline" size={13} color={colors.textMuted} />
-              <Text style={[styles.workerCount, { color: colors.text }]}>{count} {isAr ? 'عمال' : 'workers'}</Text>
+              <Text style={[styles.workerCount, { color: colors.text }]}>{count} {'عمال'}</Text>
             </View>
           )}
         </View>
@@ -256,7 +253,6 @@ function ShiftCard({ item, onEdit }: ShiftCardProps) {
 
 export function ShiftsAdminScreen() {
   const { colors } = useAppTheme();
-  const { isAr } = useLocale();
 
   const [shifts, setShifts]         = useState<Shift[]>([]);
   const [loading, setLoading]       = useState(true);
@@ -270,7 +266,7 @@ export function ShiftsAdminScreen() {
       setShifts(Array.isArray(res) ? res : []);
     } catch (e: any) {
       console.warn('ShiftsAdminScreen load error:', e?.message ?? e);
-      Alert.alert(isAr ? 'خطأ' : 'Error', e?.message ?? 'Failed to load shifts');
+      Alert.alert('خطأ', e?.message ?? 'Failed to load shifts');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -292,8 +288,8 @@ export function ShiftsAdminScreen() {
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
       <ScreenHeader
-        title={isAr ? 'الورديات' : 'Shifts'}
-        subtitle={`${shifts.length} ${isAr ? 'ورديات' : 'shifts'}`}
+        title={'الورديات'}
+        subtitle={`${shifts.length} ${'ورديات'}`}
         showBack
       />
 
@@ -318,7 +314,7 @@ export function ShiftsAdminScreen() {
           ListEmptyComponent={
             <View style={styles.empty}>
               <Ionicons name="time-outline" size={44} color={colors.textMuted} />
-              <Text style={[styles.emptyText, { color: colors.textMuted }]}>{isAr ? 'لا توجد ورديات' : 'No shifts configured'}</Text>
+              <Text style={[styles.emptyText, { color: colors.textMuted }]}>{'لا توجد ورديات'}</Text>
             </View>
           }
         />

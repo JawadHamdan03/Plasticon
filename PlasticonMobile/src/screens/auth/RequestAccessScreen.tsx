@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import {
+import { useLocale } from '../../context/LocaleContext';
   KeyboardAvoidingView, Platform, ScrollView,
   StyleSheet, Text, TouchableOpacity, View,
 } from 'react-native';
@@ -13,7 +14,6 @@ import { Input }  from '../../components/Input';
 import { AuthStackParamList } from '../../navigation/types';
 import { radius, spacing, typography } from '../../theme';
 import { useAppTheme } from '../../context/ThemeContext';
-import { useLocale } from '../../context/LocaleContext';
 
 type Nav = NativeStackNavigationProp<AuthStackParamList>;
 
@@ -34,14 +34,14 @@ export function RequestAccessScreen() {
   const [submitted,  setSubmitted]  = useState(false);
 
   const ROLE_META: Record<Role, { label: string; desc: string; color: string }> = {
-    WORKER:     { label: isAr ? 'عامل' : 'Worker',       desc: isAr ? 'الإنتاج والحضور' : 'Production & attendance',  color: colors.accent },
-    ENGINEER:   { label: isAr ? 'مهندس' : 'Engineer',    desc: isAr ? 'الآلات والصيانة' : 'Machines & maintenance',   color: colors.info },
-    ACCOUNTANT: { label: isAr ? 'محاسب' : 'Accountant',  desc: isAr ? 'المالية والفواتير' : 'Finance & invoices',     color: colors.success },
+    WORKER:     { label: 'عامل',       desc: 'الإنتاج والحضور',  color: colors.accent },
+    ENGINEER:   { label: 'مهندس',    desc: 'الآلات والصيانة',   color: colors.info },
+    ACCOUNTANT: { label: 'محاسب',  desc: 'المالية والفواتير',     color: colors.success },
   };
 
   const submit = async () => {
     if (!fullName.trim() || !email.trim()) {
-      setError(isAr ? 'الاسم الكامل والبريد الإلكتروني مطلوبان.' : 'Full name and email are required.');
+      setError('الاسم الكامل والبريد الإلكتروني مطلوبان.');
       return;
     }
     setError('');
@@ -56,7 +56,7 @@ export function RequestAccessScreen() {
       });
       setSubmitted(true);
     } catch (e: any) {
-      setError(e.message ?? (isAr ? 'فشل تقديم الطلب. يرجى المحاولة مرة أخرى.' : 'Failed to submit request. Please try again.'));
+      setError(e.message ?? ('فشل تقديم الطلب. يرجى المحاولة مرة أخرى.'));
     } finally {
       setLoading(false);
     }
@@ -70,7 +70,7 @@ export function RequestAccessScreen() {
             <Ionicons name="checkmark-circle" size={44} color={colors.success} />
           </View>
           <Text style={[styles.doneTitle, { color: colors.text }]}>
-            {isAr ? 'تم تقديم الطلب!' : 'Request submitted!'}
+            {'تم تقديم الطلب!'}
           </Text>
           <Text style={[styles.doneSub, { color: colors.textMuted }]}>
             {isAr
@@ -78,7 +78,7 @@ export function RequestAccessScreen() {
               : "Your access request has been sent to an administrator. You'll be notified by email once it's reviewed."}
           </Text>
           <Button fullWidth onPress={() => navigation.navigate('Login')} style={styles.btn}>
-            {isAr ? 'العودة لتسجيل الدخول' : 'Back to Sign In'}
+            {'العودة لتسجيل الدخول'}
           </Button>
         </View>
       </SafeAreaView>
@@ -96,9 +96,9 @@ export function RequestAccessScreen() {
           <View style={styles.logoWrap}>
             <Ionicons name="shield-checkmark" size={28} color={colors.accent} />
           </View>
-          <Text style={styles.brandName}>{isAr ? 'طلب الوصول' : 'Request Access'}</Text>
+          <Text style={styles.brandName}>{'طلب الوصول'}</Text>
           <Text style={[styles.brandSub, { color: colors.tabInactive }]}>
-            {isAr ? 'سيراجع المسؤول طلبك' : 'An admin will review your request'}
+            {'سيراجع المسؤول طلبك'}
           </Text>
         </View>
 
@@ -111,13 +111,13 @@ export function RequestAccessScreen() {
         >
           <View style={[styles.handle, { backgroundColor: colors.border }]} />
 
-          <Input label={`${isAr ? 'الاسم الكامل' : 'Full Name'} *`}      value={fullName}   onChangeText={setFullName}   placeholder="Mohamamd Esawi"                    icon="person-outline"   autoCapitalize="words" />
-          <Input label={`${isAr ? 'البريد الإلكتروني' : 'Email Address'} *`} value={email}  onChangeText={setEmail}      placeholder="mhmd@plasticon.com"             icon="mail-outline"     keyboardType="email-address" autoCapitalize="none" autoCorrect={false} />
-          <Input label={isAr ? 'القسم' : 'Department'}                    value={department} onChangeText={setDepartment} placeholder={isAr ? 'مثال: الإنتاج، المالية' : 'e.g. Production, Finance'} icon="business-outline" />
+          <Input label={`${'الاسم الكامل'} *`}      value={fullName}   onChangeText={setFullName}   placeholder="Mohamamd Esawi"                    icon="person-outline"   autoCapitalize="words" />
+          <Input label={`${'البريد الإلكتروني'} *`} value={email}  onChangeText={setEmail}      placeholder="mhmd@plasticon.com"             icon="mail-outline"     keyboardType="email-address" autoCapitalize="none" autoCorrect={false} />
+          <Input label={'القسم'}                    value={department} onChangeText={setDepartment} placeholder={'مثال: الإنتاج، المالية'} icon="business-outline" />
 
           {/* Role picker */}
           <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>
-            {isAr ? 'الدور المطلوب *' : 'Requested Role *'}
+            {'الدور المطلوب *'}
           </Text>
           <View style={styles.roleGrid}>
             {ROLES.map((r) => {
@@ -141,10 +141,10 @@ export function RequestAccessScreen() {
           </View>
 
           <Input
-            label={isAr ? 'السبب (اختياري)' : 'Reason (optional)'}
+            label={'السبب (اختياري)'}
             value={reason}
             onChangeText={setReason}
-            placeholder={isAr ? 'اشرح باختصار لماذا تحتاج الوصول…' : 'Briefly explain why you need access…'}
+            placeholder={'اشرح باختصار لماذا تحتاج الوصول…'}
             icon="chatbubble-outline"
             multiline
             numberOfLines={3}
@@ -158,16 +158,16 @@ export function RequestAccessScreen() {
           ) : null}
 
           <Button onPress={submit} loading={loading} fullWidth size="lg" style={styles.btn}>
-            {isAr ? 'تقديم الطلب' : 'Submit Request'}
+            {'تقديم الطلب'}
           </Button>
 
           <View style={styles.footer}>
             <Text style={[styles.footerText, { color: colors.textMuted }]}>
-              {isAr ? 'لديك حساب بالفعل؟ ' : 'Already have an account? '}
+              {'لديك حساب بالفعل؟ '}
             </Text>
             <TouchableOpacity onPress={() => navigation.navigate('Login')}>
               <Text style={[styles.footerLink, { color: colors.primary }]}>
-                {isAr ? 'تسجيل الدخول' : 'Sign In'}
+                {'تسجيل الدخول'}
               </Text>
             </TouchableOpacity>
           </View>

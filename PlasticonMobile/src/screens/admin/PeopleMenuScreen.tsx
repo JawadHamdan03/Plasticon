@@ -1,34 +1,32 @@
-import React from 'react';
+﻿import React from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { radius, shadow, spacing, typography } from '../../theme';
 import { useAppTheme } from '../../context/ThemeContext';
-import { useLocale } from '../../context/LocaleContext';
 
 export function PeopleMenuScreen() {
   const { colors } = useAppTheme();
-  const { isAr } = useLocale();
   const navigation = useNavigation<any>();
 
   const ITEMS = [
-    { icon: 'people',     label: isAr ? 'المستخدمون' : 'Users',                  desc: isAr ? 'إدارة المستخدمين والأدوار' : 'Manage users and roles',                          screen: 'Users',            color: colors.primary },
-    { icon: 'calendar',   label: isAr ? 'الحضور' : 'Attendance Admin',            desc: isAr ? 'عرض سجلات الحضور' : 'View attendance records',                                  screen: 'AttendanceAdmin',  color: colors.info },
-    { icon: 'cash',       label: isAr ? 'الرواتب' : 'Payroll Admin',              desc: isAr ? 'إدارة الرواتب' : 'Manage payroll',                                              screen: 'PayrollAdmin',     color: colors.success },
-    { icon: 'document',   label: isAr ? 'سجلات العمال' : 'Worker Records',        desc: isAr ? 'لقطات وسجلات نشاط العمال اليومية' : 'Daily worker activity snapshots and logs', screen: 'WorkerRecords',    color: colors.accent },
-    { icon: 'construct',  label: isAr ? 'نظرة عامة للمهندس' : 'Engineer Overview', desc: isAr ? 'صحة الآلات والصيانة حسب المهندس' : 'Machine health and maintenance by engineer', screen: 'EngineerOverview', color: colors.warning },
-    { icon: 'person-add', label: isAr ? 'طلبات التسجيل' : 'Registration Requests', desc: isAr ? 'الموافقة على تسجيلات المستخدمين الجديدة أو رفضها' : 'Approve or reject new user registrations', screen: 'Registrations', color: colors.danger },
+    { icon: 'people',     label: 'المستخدمون',                  desc: 'إدارة المستخدمين والأدوار',                          screen: 'Users',            color: colors.primary },
+    { icon: 'calendar',   label: 'الحضور',            desc: 'عرض سجلات الحضور',                                  screen: 'AttendanceAdmin',  color: colors.info },
+    { icon: 'cash',       label: 'الرواتب',              desc: 'إدارة الرواتب',                                              screen: 'PayrollAdmin',     color: colors.success },
+    { icon: 'document',   label: 'سجلات العمال',        desc: 'لقطات وسجلات نشاط العمال اليومية', screen: 'WorkerRecords',    color: colors.accent },
+    { icon: 'construct',  label: 'نظرة عامة للمهندس', desc: 'صحة الآلات والصيانة حسب المهندس', screen: 'EngineerOverview', color: colors.warning },
+    { icon: 'person-add', label: 'طلبات التسجيل', desc: 'الموافقة على تسجيلات المستخدمين الجديدة أو رفضها', screen: 'Registrations', color: colors.danger },
   ];
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <Text style={[styles.title, { color: colors.text }]}>
-          {isAr ? 'الأشخاص' : 'People'}
+          {'الأشخاص'}
         </Text>
         <Text style={[styles.sub, { color: colors.textMuted }]}>
-          {isAr ? 'إدارة المستخدمين والقوى العاملة' : 'User and workforce management'}
+          {'إدارة المستخدمين والقوى العاملة'}
         </Text>
         <View style={styles.list}>
           {ITEMS.map((item) => (

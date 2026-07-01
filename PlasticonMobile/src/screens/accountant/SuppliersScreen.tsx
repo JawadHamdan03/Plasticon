@@ -1,5 +1,6 @@
-import React, { useCallback, useEffect, useState } from 'react';
+﻿import React, { useCallback, useEffect, useState } from 'react';
 import {
+import { useLocale } from '../../context/LocaleContext';
   ActivityIndicator,
   Alert,
   FlatList,
@@ -21,7 +22,6 @@ import { api } from '../../api/client';
 import { ScreenHeader } from '../../components';
 import { radius, shadow, spacing, typography } from '../../theme';
 import { useAppTheme } from '../../context/ThemeContext';
-import { useLocale } from '../../context/LocaleContext';
 
 // ─── Interfaces ───────────────────────────────────────────────────────────────
 
@@ -69,6 +69,7 @@ function FormField({
   keyboardType?: 'default' | 'phone-pad' | 'email-address'; required?: boolean;
 }) {
   const { colors } = useAppTheme();
+  const { isAr } = useLocale();
   return (
     <View style={styles.fieldWrap}>
       <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>
@@ -97,13 +98,13 @@ function CategoryPicker({
   const [open, setOpen] = useState(false);
   return (
     <View style={styles.fieldWrap}>
-      <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{isAr ? 'الفئة' : 'Category'}</Text>
+      <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{'الفئة'}</Text>
       <Pressable
         style={[styles.pickerBtn, { backgroundColor: colors.surfaceAlt, borderColor: colors.border }]}
         onPress={() => setOpen(true)}
       >
         <Text style={value ? [styles.pickerValue, { color: colors.text }] : [styles.pickerPlaceholder, { color: colors.textMuted }]}>
-          {value ? value.replace(/_/g, ' ') : (isAr ? 'اختر الفئة…' : 'Select category…')}
+          {value ? value.replace(/_/g, ' ') : ('اختر الفئة…')}
         </Text>
         <Ionicons name="chevron-down" size={16} color={colors.textMuted} />
       </Pressable>
@@ -111,7 +112,7 @@ function CategoryPicker({
       <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
         <Pressable style={styles.pickerOverlay} onPress={() => setOpen(false)}>
           <View style={[styles.pickerSheet, { backgroundColor: colors.surface }]}>
-            <Text style={[styles.pickerSheetTitle, { color: colors.text }]}>{isAr ? 'اختر الفئة' : 'Select Category'}</Text>
+            <Text style={[styles.pickerSheetTitle, { color: colors.text }]}>{'اختر الفئة'}</Text>
             {(['', ...CATEGORIES] as (SupplierCategory | '')[]).map((cat) => (
               <Pressable
                 key={cat}
@@ -119,7 +120,7 @@ function CategoryPicker({
                 onPress={() => { onSelect(cat); setOpen(false); }}
               >
                 <Text style={[styles.pickerItemText, { color: colors.text }, cat === value && { color: colors.primary, fontWeight: '700' }]}>
-                  {cat ? cat.replace(/_/g, ' ') : (isAr ? 'لا شيء' : 'None')}
+                  {cat ? cat.replace(/_/g, ' ') : ('لا شيء')}
                 </Text>
                 {cat === value && <Ionicons name="checkmark" size={16} color={colors.primary} />}
               </Pressable>
@@ -169,7 +170,7 @@ function SupplierCard({
         {item.totalOrders != null && (
           <View style={styles.footerItem}>
             <Ionicons name="cube-outline" size={13} color={colors.textMuted} />
-            <Text style={[styles.footerText, { color: colors.text }]}>{item.totalOrders} {isAr ? 'طلبات' : 'orders'}</Text>
+            <Text style={[styles.footerText, { color: colors.text }]}>{item.totalOrders} {'طلبات'}</Text>
           </View>
         )}
       </View>
@@ -178,11 +179,11 @@ function SupplierCard({
       <View style={[styles.actionRow, { borderTopColor: colors.border }]}>
         <TouchableOpacity style={[styles.editBtn, { backgroundColor: colors.primaryLight }]} onPress={onEdit} activeOpacity={0.8}>
           <Ionicons name="create-outline" size={15} color={colors.primary} />
-          <Text style={[styles.editBtnText, { color: colors.primary }]}>{isAr ? 'تعديل' : 'Edit'}</Text>
+          <Text style={[styles.editBtnText, { color: colors.primary }]}>{'تعديل'}</Text>
         </TouchableOpacity>
         <TouchableOpacity style={[styles.deleteBtn, { backgroundColor: `${colors.danger}12` }]} onPress={onDelete} activeOpacity={0.8}>
           <Ionicons name="trash-outline" size={15} color={colors.danger} />
-          <Text style={[styles.deleteBtnText, { color: colors.danger }]}>{isAr ? 'حذف' : 'Delete'}</Text>
+          <Text style={[styles.deleteBtnText, { color: colors.danger }]}>{'حذف'}</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -208,7 +209,7 @@ export function SuppliersScreen() {
       const res = await api.get<any>('/suppliers?limit=30');
       setSuppliers(Array.isArray(res) ? res : (res?.data ?? res?.items ?? res?.suppliers ?? []));
     } catch (err: unknown) {
-      Alert.alert(isAr ? 'خطأ' : 'Error', err instanceof Error ? err.message : (isAr ? 'فشل تحميل الموردين' : 'Failed to load suppliers.'));
+      Alert.alert('خطأ', err instanceof Error ? err.message : ('فشل تحميل الموردين'));
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -238,7 +239,7 @@ export function SuppliersScreen() {
 
   const handleSave = async () => {
     if (!form.name.trim()) {
-      Alert.alert(isAr ? 'تحقق' : 'Validation', isAr ? 'اسم المورد مطلوب.' : 'Supplier name is required.');
+      Alert.alert('تحقق', 'اسم المورد مطلوب.');
       return;
     }
     setSaving(true);
@@ -259,7 +260,7 @@ export function SuppliersScreen() {
       setModalOpen(false);
       await load();
     } catch (err: unknown) {
-      Alert.alert(isAr ? 'خطأ' : 'Error', err instanceof Error ? err.message : (isAr ? 'فشل حفظ المورد.' : 'Failed to save supplier.'));
+      Alert.alert('خطأ', err instanceof Error ? err.message : ('فشل حفظ المورد.'));
     } finally {
       setSaving(false);
     }
@@ -267,19 +268,19 @@ export function SuppliersScreen() {
 
   const handleDelete = (item: Supplier) => {
     Alert.alert(
-      isAr ? 'حذف المورد' : 'Delete Supplier',
+      'حذف المورد',
       isAr ? `هل تريد حذف "${item.name}"؟ لا يمكن التراجع عن هذا.` : `Are you sure you want to delete "${item.name}"? This cannot be undone.`,
       [
-        { text: isAr ? 'إلغاء' : 'Cancel', style: 'cancel' },
+        { text: 'إلغاء', style: 'cancel' },
         {
-          text: isAr ? 'حذف' : 'Delete',
+          text: 'حذف',
           style: 'destructive',
           onPress: async () => {
             try {
               await api.delete(`/suppliers/${item.id}`);
               await load();
             } catch (err: unknown) {
-              Alert.alert(isAr ? 'خطأ' : 'Error', err instanceof Error ? err.message : (isAr ? 'فشل حذف المورد.' : 'Failed to delete supplier.'));
+              Alert.alert('خطأ', err instanceof Error ? err.message : ('فشل حذف المورد.'));
             }
           },
         },
@@ -303,8 +304,8 @@ export function SuppliersScreen() {
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
       <ScreenHeader
-        title={isAr ? 'الموردون' : 'Suppliers'}
-        subtitle={`${suppliers.length} ${isAr ? 'موردين' : 'suppliers'}`}
+        title={'الموردون'}
+        subtitle={`${suppliers.length} ${'موردين'}`}
         showBack
       />
 
@@ -339,7 +340,7 @@ export function SuppliersScreen() {
                 style={[styles.searchInput, { color: colors.text }]}
                 value={search}
                 onChangeText={setSearch}
-                placeholder={isAr ? 'بحث في الموردين...' : 'Search suppliers...'}
+                placeholder={'بحث في الموردين...'}
                 placeholderTextColor={colors.textMuted}
                 returnKeyType="search"
                 autoCorrect={false}
@@ -355,9 +356,9 @@ export function SuppliersScreen() {
             <View style={styles.empty}>
               <Ionicons name="business-outline" size={44} color={colors.textMuted} />
               <Text style={[styles.emptyText, { color: colors.textMuted }]}>
-                {q ? (isAr ? 'لا توجد نتائج' : 'No results found') : (isAr ? 'لا يوجد موردون بعد' : 'No suppliers yet')}
+                {q ? ('لا توجد نتائج') : ('لا يوجد موردون بعد')}
               </Text>
-              {!q && <Text style={[styles.emptyHint, { color: colors.textMuted }]}>{isAr ? 'اضغط + لإضافة أول مورد' : 'Tap + to add the first one'}</Text>}
+              {!q && <Text style={[styles.emptyHint, { color: colors.textMuted }]}>{'اضغط + لإضافة أول مورد'}</Text>}
             </View>
           }
         />
@@ -385,10 +386,10 @@ export function SuppliersScreen() {
                 onPress={() => setModalOpen(false)}
                 style={({ pressed }) => [styles.modalClose, pressed && { opacity: 0.6 }]}
               >
-                <Text style={[styles.modalCancel, { color: colors.textMuted }]}>{isAr ? 'إلغاء' : 'Cancel'}</Text>
+                <Text style={[styles.modalCancel, { color: colors.textMuted }]}>{'إلغاء'}</Text>
               </Pressable>
               <Text style={[styles.modalTitle, { color: colors.text }]}>
-                {editing ? (isAr ? 'تعديل المورد' : 'Edit Supplier') : (isAr ? 'مورد جديد' : 'New Supplier')}
+                {editing ? ('تعديل المورد') : ('مورد جديد')}
               </Text>
               <Pressable
                 onPress={() => void handleSave()}
@@ -397,7 +398,7 @@ export function SuppliersScreen() {
               >
                 {saving
                   ? <ActivityIndicator size="small" color={colors.primary} />
-                  : <Text style={[styles.modalSave, { color: colors.primary }]}>{isAr ? 'حفظ' : 'Save'}</Text>
+                  : <Text style={[styles.modalSave, { color: colors.primary }]}>{'حفظ'}</Text>
                 }
               </Pressable>
             </View>
@@ -407,11 +408,11 @@ export function SuppliersScreen() {
               showsVerticalScrollIndicator={false}
               keyboardShouldPersistTaps="handled"
             >
-              <FormField label={isAr ? 'اسم المورد' : 'Supplier Name'}   value={form.name}          onChangeText={setField('name')}          required />
-              <FormField label={isAr ? 'الشخص المسؤول' : 'Contact Person'}  value={form.contactPerson} onChangeText={setField('contactPerson')} />
-              <FormField label={isAr ? 'الهاتف' : 'Phone'}           value={form.phone}         onChangeText={setField('phone')}         keyboardType="phone-pad" />
-              <FormField label={isAr ? 'البريد الإلكتروني' : 'Email'}           value={form.email}         onChangeText={setField('email')}         keyboardType="email-address" />
-              <FormField label={isAr ? 'العنوان' : 'Address'}         value={form.address}       onChangeText={setField('address')}       multiline />
+              <FormField label={'اسم المورد'}   value={form.name}          onChangeText={setField('name')}          required />
+              <FormField label={'الشخص المسؤول'}  value={form.contactPerson} onChangeText={setField('contactPerson')} />
+              <FormField label={'الهاتف'}           value={form.phone}         onChangeText={setField('phone')}         keyboardType="phone-pad" />
+              <FormField label={'البريد الإلكتروني'}           value={form.email}         onChangeText={setField('email')}         keyboardType="email-address" />
+              <FormField label={'العنوان'}         value={form.address}       onChangeText={setField('address')}       multiline />
               <CategoryPicker
                 value={form.category}
                 onSelect={(c) => setForm((f) => ({ ...f, category: c }))}

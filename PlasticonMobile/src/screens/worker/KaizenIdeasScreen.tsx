@@ -1,5 +1,6 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+﻿import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
+import { useLocale } from '../../context/LocaleContext';
   ActivityIndicator, Alert, Modal, RefreshControl, ScrollView,
   StyleSheet, Text, TextInput, TouchableOpacity, View,
 } from 'react-native';
@@ -9,7 +10,6 @@ import { api } from '../../api/client';
 import { ScreenHeader } from '../../components';
 import { radius, shadow, spacing, typography } from '../../theme';
 import { useAppTheme } from '../../context/ThemeContext';
-import { useLocale } from '../../context/LocaleContext';
 
 interface KaizenIdea {
   id: number;
@@ -76,18 +76,18 @@ export function KaizenIdeasScreen() {
 
   const handleDelete = (idea: KaizenIdea) => {
     Alert.alert(
-      isAr ? 'حذف الفكرة' : 'Delete Idea',
-      isAr ? 'هل أنت متأكد؟' : 'Are you sure?',
+      'حذف الفكرة',
+      'هل أنت متأكد؟',
       [
-        { text: isAr ? 'إلغاء' : 'Cancel', style: 'cancel' },
+        { text: 'إلغاء', style: 'cancel' },
         {
-          text: isAr ? 'حذف' : 'Delete', style: 'destructive',
+          text: 'حذف', style: 'destructive',
           onPress: async () => {
             try {
               await api.delete(`/worker-tools/entries/kaizen/${idea.id}`);
               setIdeas((prev) => prev.filter((i) => i.id !== idea.id));
             } catch (e: any) {
-              Alert.alert(isAr ? 'خطأ' : 'Error', e.message ?? 'Failed');
+              Alert.alert('خطأ', e.message ?? 'Failed');
             }
           },
         },
@@ -96,8 +96,8 @@ export function KaizenIdeasScreen() {
   };
 
   const submit = async () => {
-    if (!title.trim()) { Alert.alert(isAr ? 'مطلوب' : 'Required', isAr ? 'أدخل عنوان الفكرة.' : 'Enter an idea title.'); return; }
-    if (!details.trim()) { Alert.alert(isAr ? 'مطلوب' : 'Required', isAr ? 'اشرح فكرتك.' : 'Describe your idea.'); return; }
+    if (!title.trim()) { Alert.alert('مطلوب', 'أدخل عنوان الفكرة.'); return; }
+    if (!details.trim()) { Alert.alert('مطلوب', 'اشرح فكرتك.'); return; }
     setSaving(true);
     try {
       await api.post('/worker-tools/kaizen', {
@@ -108,13 +108,13 @@ export function KaizenIdeasScreen() {
       setModal(false); setTitle(''); setDetails(''); setImpact('');
       setLoading(true); void load();
     } catch (e: any) {
-      Alert.alert(isAr ? 'خطأ' : 'Error', e.message ?? (isAr ? 'فشل إرسال الفكرة.' : 'Failed to submit idea.'));
+      Alert.alert('خطأ', e.message ?? ('فشل إرسال الفكرة.'));
     } finally { setSaving(false); }
   };
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
-      <ScreenHeader title={isAr ? 'أفكار كايزن' : 'Kaizen Ideas'} subtitle={`${ideas.length} ${isAr ? 'مقدمة' : 'submitted'}`} showBack />
+      <ScreenHeader title={'أفكار كايزن'} subtitle={`${ideas.length} ${'مقدمة'}`} showBack />
       {loading ? (
         <View style={styles.center}><ActivityIndicator size="large" color={colors.success} /></View>
       ) : (
@@ -147,14 +147,14 @@ export function KaizenIdeasScreen() {
           </View>
           <TouchableOpacity style={[styles.addBtn, { backgroundColor: colors.success }]} onPress={() => setModal(true)} activeOpacity={0.8}>
             <Ionicons name="bulb" size={20} color="#fff" />
-            <Text style={styles.addText}>{isAr ? 'تقديم فكرة تحسين' : 'Submit Improvement Idea'}</Text>
+            <Text style={styles.addText}>{'تقديم فكرة تحسين'}</Text>
           </TouchableOpacity>
 
           {filteredIdeas.length === 0 ? (
             <View style={styles.empty}>
               <Ionicons name="bulb-outline" size={48} color={colors.textMuted} />
-              <Text style={[styles.emptyText, { color: colors.text }]}>{isAr ? 'لم يتم تقديم أفكار بعد' : 'No ideas submitted yet'}</Text>
-              <Text style={[styles.emptyHint, { color: colors.textMuted }]}>{isAr ? 'شارك أفكار التحسين للمصنع' : 'Share improvement ideas for the factory'}</Text>
+              <Text style={[styles.emptyText, { color: colors.text }]}>{'لم يتم تقديم أفكار بعد'}</Text>
+              <Text style={[styles.emptyHint, { color: colors.textMuted }]}>{'شارك أفكار التحسين للمصنع'}</Text>
             </View>
           ) : (
             <View style={styles.list}>
@@ -180,7 +180,7 @@ export function KaizenIdeasScreen() {
 
                     {idea.estimated_impact ? (
                       <Text style={[styles.impact, { color: colors.primary }]}>
-                        {isAr ? 'التأثير: ' : 'Impact: '}{idea.estimated_impact}
+                        {'التأثير: '}{idea.estimated_impact}
                       </Text>
                     ) : null}
 
@@ -196,7 +196,7 @@ export function KaizenIdeasScreen() {
 
                     {idea.review_note ? (
                       <Text style={[styles.reviewNote, { color: colors.textMuted, borderTopColor: colors.border }]}>
-                        {isAr ? 'ملاحظة المراجع: ' : 'Reviewer note: '}{idea.review_note}
+                        {'ملاحظة المراجع: '}{idea.review_note}
                       </Text>
                     ) : null}
                   </View>
@@ -211,23 +211,23 @@ export function KaizenIdeasScreen() {
         <View style={styles.overlay}>
           <View style={[styles.sheet, { backgroundColor: colors.surface }]}>
             <View style={[styles.handle, { backgroundColor: colors.border }]} />
-            <Text style={[styles.sheetTitle, { color: colors.text }]}>{isAr ? 'فكرة كايزن جديدة' : 'New Kaizen Idea'}</Text>
+            <Text style={[styles.sheetTitle, { color: colors.text }]}>{'فكرة كايزن جديدة'}</Text>
 
-            <Text style={[styles.label, { color: colors.textMuted }]}>{isAr ? 'العنوان *' : 'Title *'}</Text>
-            <TextInput style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]} placeholder={isAr ? 'عنوان الفكرة' : 'Brief idea title'} placeholderTextColor={colors.textMuted} value={title} onChangeText={setTitle} />
+            <Text style={[styles.label, { color: colors.textMuted }]}>{'العنوان *'}</Text>
+            <TextInput style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]} placeholder={'عنوان الفكرة'} placeholderTextColor={colors.textMuted} value={title} onChangeText={setTitle} />
 
-            <Text style={[styles.label, { color: colors.textMuted }]}>{isAr ? 'التفاصيل *' : 'Details *'}</Text>
-            <TextInput style={[styles.input, styles.inputMulti, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]} placeholder={isAr ? 'اشرح الفكرة بالتفصيل…' : 'Describe the improvement in detail…'} placeholderTextColor={colors.textMuted} value={details} onChangeText={setDetails} multiline numberOfLines={4} />
+            <Text style={[styles.label, { color: colors.textMuted }]}>{'التفاصيل *'}</Text>
+            <TextInput style={[styles.input, styles.inputMulti, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]} placeholder={'اشرح الفكرة بالتفصيل…'} placeholderTextColor={colors.textMuted} value={details} onChangeText={setDetails} multiline numberOfLines={4} />
 
-            <Text style={[styles.label, { color: colors.textMuted }]}>{isAr ? 'التأثير المتوقع (اختياري)' : 'Estimated Impact (optional)'}</Text>
-            <TextInput style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]} placeholder={isAr ? 'مثال: تقليل الهدر 20%' : 'e.g. Reduce waste by 20%'} placeholderTextColor={colors.textMuted} value={impact} onChangeText={setImpact} />
+            <Text style={[styles.label, { color: colors.textMuted }]}>{'التأثير المتوقع (اختياري)'}</Text>
+            <TextInput style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]} placeholder={'مثال: تقليل الهدر 20%'} placeholderTextColor={colors.textMuted} value={impact} onChangeText={setImpact} />
 
             <View style={styles.actions}>
               <TouchableOpacity style={[styles.cancelBtn, { borderColor: colors.border }]} onPress={() => setModal(false)}>
-                <Text style={[styles.cancelText, { color: colors.textMuted }]}>{isAr ? 'إلغاء' : 'Cancel'}</Text>
+                <Text style={[styles.cancelText, { color: colors.textMuted }]}>{'إلغاء'}</Text>
               </TouchableOpacity>
               <TouchableOpacity style={[styles.submitBtn, { backgroundColor: colors.success }]} onPress={submit} disabled={saving}>
-                {saving ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.submitText}>{isAr ? 'إرسال' : 'Submit'}</Text>}
+                {saving ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.submitText}>{'إرسال'}</Text>}
               </TouchableOpacity>
             </View>
           </View>

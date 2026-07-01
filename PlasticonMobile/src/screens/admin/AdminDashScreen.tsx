@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+﻿import React, { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -7,7 +7,6 @@ import { api } from '../../api/client';
 import { ScreenHeader } from '../../components';
 import { radius, shadow, spacing, typography } from '../../theme';
 import { useAppTheme } from '../../context/ThemeContext';
-import { useLocale } from '../../context/LocaleContext';
 
 interface Overview {
   totalUsers?: number;
@@ -62,7 +61,6 @@ function fmt(n: number) {
 
 export function AdminDashScreen() {
   const { colors } = useAppTheme();
-  const { isAr } = useLocale();
   const [data, setData]         = useState<Overview | null>(null);
   const [loading, setLoading]   = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -83,16 +81,16 @@ export function AdminDashScreen() {
   useEffect(() => { void load(); }, [load]);
 
   const shortcuts = [
-    { icon: 'bar-chart',     label: isAr ? 'التحليلات' : 'Analytics',  color: '#FF6B35',      screen: 'Analytics' },
-    { icon: 'people',        label: isAr ? 'المستخدمون' : 'Users',    color: colors.primary, screen: 'Users' },
-    { icon: 'hardware-chip', label: isAr ? 'الآلات' : 'Machines',     color: colors.info,    screen: 'Machines' },
-    { icon: 'shield',        label: isAr ? 'سجلات التدقيق' : 'Audit', color: colors.warning, screen: 'AuditLogs' },
-    { icon: 'person-add',    label: isAr ? 'طلبات' : 'Requests',      color: colors.success, screen: 'Registrations' },
+    { icon: 'bar-chart',     label: 'التحليلات',  color: '#FF6B35',      screen: 'Analytics' },
+    { icon: 'people',        label: 'المستخدمون',    color: colors.primary, screen: 'Users' },
+    { icon: 'hardware-chip', label: 'الآلات',     color: colors.info,    screen: 'Machines' },
+    { icon: 'shield',        label: 'سجلات التدقيق', color: colors.warning, screen: 'AuditLogs' },
+    { icon: 'person-add',    label: 'طلبات',      color: colors.success, screen: 'Registrations' },
   ];
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
-      <ScreenHeader title={isAr ? 'لوحة التحكم' : 'Admin Dashboard'} />
+      <ScreenHeader title={'لوحة التحكم'} />
       {loading ? (
         <View style={styles.center}>
           <ActivityIndicator size="large" color={colors.primary} />
@@ -110,51 +108,51 @@ export function AdminDashScreen() {
           }
         >
           {/* People */}
-          <KpiSection title={isAr ? 'الأشخاص' : 'People'} icon="people" colors={colors}>
-            <Kpi label={isAr ? 'إجمالي المستخدمين' : 'Total Users'}  value={data?.totalUsers ?? 0} colors={colors} />
-            <Kpi label={isAr ? 'نشط اليوم' : 'Active Today'}         value={data?.activeUsers ?? 0} color={colors.success} colors={colors} />
-            <Kpi label={isAr ? 'طلبات معلقة' : 'Pending Regs.'}      value={data?.pendingRegistrations ?? 0} color={data?.pendingRegistrations ? colors.danger : colors.textMuted} colors={colors} />
+          <KpiSection title={'الأشخاص'} icon="people" colors={colors}>
+            <Kpi label={'إجمالي المستخدمين'}  value={data?.totalUsers ?? 0} colors={colors} />
+            <Kpi label={'نشط اليوم'}         value={data?.activeUsers ?? 0} color={colors.success} colors={colors} />
+            <Kpi label={'طلبات معلقة'}      value={data?.pendingRegistrations ?? 0} color={data?.pendingRegistrations ? colors.danger : colors.textMuted} colors={colors} />
           </KpiSection>
 
           {/* Attendance */}
-          <KpiSection title={isAr ? 'الحضور اليوم' : 'Attendance Today'} icon="calendar" colors={colors}>
-            <Kpi label={isAr ? 'حاضر' : 'Present'}  value={data?.attendanceToday ?? 0} color={colors.success} colors={colors} />
-            <Kpi label={isAr ? 'متأخر' : 'Late'}     value={data?.lateToday ?? 0}       color={data?.lateToday ? colors.warning : colors.textMuted} colors={colors} />
-            <Kpi label={isAr ? 'الورديات' : 'Shifts'} value={data?.totalShifts ?? 0} colors={colors} />
+          <KpiSection title={'الحضور اليوم'} icon="calendar" colors={colors}>
+            <Kpi label={'حاضر'}  value={data?.attendanceToday ?? 0} color={colors.success} colors={colors} />
+            <Kpi label={'متأخر'}     value={data?.lateToday ?? 0}       color={data?.lateToday ? colors.warning : colors.textMuted} colors={colors} />
+            <Kpi label={'الورديات'} value={data?.totalShifts ?? 0} colors={colors} />
           </KpiSection>
 
           {/* Production */}
-          <KpiSection title={isAr ? 'الإنتاج' : 'Production'} icon="cube" colors={colors}>
-            <Kpi label={isAr ? 'اليوم (كرتون)' : 'Today (cartons)'} value={(data?.production?.todayCartons ?? 0).toLocaleString()} color={colors.primary} colors={colors} />
-            <Kpi label={isAr ? 'اليوم (قطع)' : 'Today (pcs)'}       value={(data?.production?.todayPieces ?? 0).toLocaleString()} colors={colors} />
-            <Kpi label={isAr ? 'الشهر (كرتون)' : 'Month (cartons)'} value={(data?.production?.monthCartons ?? 0).toLocaleString()} color={colors.info} colors={colors} />
+          <KpiSection title={'الإنتاج'} icon="cube" colors={colors}>
+            <Kpi label={'اليوم (كرتون)'} value={(data?.production?.todayCartons ?? 0).toLocaleString()} color={colors.primary} colors={colors} />
+            <Kpi label={'اليوم (قطع)'}       value={(data?.production?.todayPieces ?? 0).toLocaleString()} colors={colors} />
+            <Kpi label={'الشهر (كرتون)'} value={(data?.production?.monthCartons ?? 0).toLocaleString()} color={colors.info} colors={colors} />
           </KpiSection>
 
           {/* Machines */}
-          <KpiSection title={isAr ? 'الآلات' : 'Machines'} icon="hardware-chip" colors={colors}>
-            <Kpi label={isAr ? 'المجموع' : 'Total'}          value={data?.totalMachines ?? 0} colors={colors} />
-            <Kpi label={isAr ? 'تشغيلية' : 'Operational'}    value={data?.operationalMachines ?? 0} color={colors.success} colors={colors} />
-            <Kpi label={isAr ? 'صيانة' : 'Maintenance'}      value={data?.maintenanceThisMonth ?? 0} color={colors.warning} colors={colors} />
+          <KpiSection title={'الآلات'} icon="hardware-chip" colors={colors}>
+            <Kpi label={'المجموع'}          value={data?.totalMachines ?? 0} colors={colors} />
+            <Kpi label={'تشغيلية'}    value={data?.operationalMachines ?? 0} color={colors.success} colors={colors} />
+            <Kpi label={'صيانة'}      value={data?.maintenanceThisMonth ?? 0} color={colors.warning} colors={colors} />
           </KpiSection>
 
           {/* Quality */}
-          <KpiSection title={isAr ? 'الجودة' : 'Quality'} icon="shield-checkmark" colors={colors}>
-            <Kpi label={isAr ? 'هذا الأسبوع' : 'This Week'}      value={data?.qualityThisWeek ?? 0} colors={colors} />
-            <Kpi label={isAr ? 'مشاكل مفتوحة' : 'Open Issues'}   value={data?.openQualityIssues ?? 0} color={data?.openQualityIssues ? colors.danger : colors.success} colors={colors} />
-            <Kpi label={isAr ? 'صيانة متأخرة' : 'Overdue Maint.'} value={data?.overdueSchedules ?? 0} color={data?.overdueSchedules ? colors.danger : colors.textMuted} colors={colors} />
+          <KpiSection title={'الجودة'} icon="shield-checkmark" colors={colors}>
+            <Kpi label={'هذا الأسبوع'}      value={data?.qualityThisWeek ?? 0} colors={colors} />
+            <Kpi label={'مشاكل مفتوحة'}   value={data?.openQualityIssues ?? 0} color={data?.openQualityIssues ? colors.danger : colors.success} colors={colors} />
+            <Kpi label={'صيانة متأخرة'} value={data?.overdueSchedules ?? 0} color={data?.overdueSchedules ? colors.danger : colors.textMuted} colors={colors} />
           </KpiSection>
 
           {/* Inventory */}
-          <KpiSection title={isAr ? 'المخزون' : 'Inventory'} icon="archive" colors={colors}>
-            <Kpi label={isAr ? 'مواد خام' : 'Raw Materials'} value={data?.totalRawMaterials ?? 0} colors={colors} />
-            <Kpi label={isAr ? 'نفاد المخزون' : 'Out of Stock'} value={data?.outOfStockCount ?? 0} color={data?.outOfStockCount ? colors.danger : colors.success} colors={colors} />
+          <KpiSection title={'المخزون'} icon="archive" colors={colors}>
+            <Kpi label={'مواد خام'} value={data?.totalRawMaterials ?? 0} colors={colors} />
+            <Kpi label={'نفاد المخزون'} value={data?.outOfStockCount ?? 0} color={data?.outOfStockCount ? colors.danger : colors.success} colors={colors} />
           </KpiSection>
 
           {/* Finance */}
-          <KpiSection title={isAr ? 'المالية' : 'Finance'} icon="cash" colors={colors}>
-            <Kpi label={isAr ? 'المبيعات (شهر)' : 'Sales (month)'}    value={fmt(data?.salesThisMonth ?? 0)}    color={colors.success} colors={colors} />
-            <Kpi label={isAr ? 'المشتريات' : 'Purchases'}              value={fmt(data?.purchasesThisMonth ?? 0)} color={colors.info} colors={colors} />
-            <Kpi label={isAr ? 'الرواتب (شهر)' : 'Payroll (month)'}   value={fmt(data?.payrollThisMonth ?? 0)}   color={colors.warning} colors={colors} />
+          <KpiSection title={'المالية'} icon="cash" colors={colors}>
+            <Kpi label={'المبيعات (شهر)'}    value={fmt(data?.salesThisMonth ?? 0)}    color={colors.success} colors={colors} />
+            <Kpi label={'المشتريات'}              value={fmt(data?.purchasesThisMonth ?? 0)} color={colors.info} colors={colors} />
+            <Kpi label={'الرواتب (شهر)'}   value={fmt(data?.payrollThisMonth ?? 0)}   color={colors.warning} colors={colors} />
           </KpiSection>
 
           {/* Recent Production */}
@@ -163,7 +161,7 @@ export function AdminDashScreen() {
               <View style={styles.sectionHeader}>
                 <Ionicons name="time-outline" size={16} color={colors.primary} />
                 <Text style={[styles.sectionTitle, { color: colors.text }]}>
-                  {isAr ? 'الإنتاج الأخير' : 'Recent Production'}
+                  {'الإنتاج الأخير'}
                 </Text>
               </View>
               {data.recentProduction.slice(0, 4).map((r, idx) => (
@@ -172,7 +170,7 @@ export function AdminDashScreen() {
                     {r.machineName ?? `Record #${r.id}`}
                   </Text>
                   <Text style={[styles.recentVal, { color: colors.primary }]}>
-                    {(r.cartonsCount ?? 0).toLocaleString()} {isAr ? 'كرتون' : 'cartons'}
+                    {(r.cartonsCount ?? 0).toLocaleString()} {'كرتون'}
                   </Text>
                 </View>
               ))}
@@ -184,7 +182,7 @@ export function AdminDashScreen() {
             <View style={styles.sectionHeader}>
               <Ionicons name="apps-outline" size={16} color={colors.primary} />
               <Text style={[styles.sectionTitle, { color: colors.text }]}>
-                {isAr ? 'الإجراءات السريعة' : 'Quick Access'}
+                {'الإجراءات السريعة'}
               </Text>
             </View>
             <View style={styles.shortcuts}>

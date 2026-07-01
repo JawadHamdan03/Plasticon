@@ -1,5 +1,6 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+﻿import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
+import { useLocale } from '../../context/LocaleContext';
   ActivityIndicator, Alert, FlatList, RefreshControl,
   ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View,
 } from 'react-native';
@@ -9,7 +10,6 @@ import { api } from '../../api/client';
 import { ScreenHeader } from '../../components';
 import { radius, shadow, spacing, typography } from '../../theme';
 import { useAppTheme } from '../../context/ThemeContext';
-import { useLocale } from '../../context/LocaleContext';
 
 /* ─── Types ─────────────────────────────────────────────────────────────── */
 interface Machine { id: number; name: string; type: string | null; }
@@ -205,16 +205,16 @@ export function AdminProductionScreen() {
   const handleSaveKwh = async () => {
     const price = parseFloat(kwhInput);
     if (!price || price <= 0) {
-      Alert.alert(isAr ? 'خطأ' : 'Error', isAr ? 'أدخل سعرًا صحيحًا' : 'Enter a valid price');
+      Alert.alert('خطأ', 'أدخل سعرًا صحيحًا');
       return;
     }
     setSavingKwh(true);
     try {
       await api.post('/electricity/kwh-price', { price });
-      Alert.alert(isAr ? 'تم' : 'Saved', isAr ? 'تم حفظ السعر بنجاح' : 'Price saved successfully');
+      Alert.alert('تم', 'تم حفظ السعر بنجاح');
       void loadElectricity();
     } catch {
-      Alert.alert(isAr ? 'خطأ' : 'Error', isAr ? 'فشل الحفظ' : 'Failed to save');
+      Alert.alert('خطأ', 'فشل الحفظ');
     } finally { setSavingKwh(false); }
   };
 
@@ -255,23 +255,23 @@ export function AdminProductionScreen() {
   const renderOverview = () => (
     <View style={styles.tabContent}>
       <View style={styles.kpiGrid}>
-        <KpiCard icon="📋" label={isAr ? 'إجمالي السجلات' : 'Total Records'} value={overview?.totals.totalRecords ?? 0} gradient={['#3b82f6', '#1d4ed8']} colors={colors} />
-        <KpiCard icon="📦" label={isAr ? 'إجمالي الكراتين' : 'Total Cartons'} value={fmt(overview?.totals.totalCartons ?? 0)} gradient={['#10b981', '#059669']} colors={colors} />
-        <KpiCard icon="🔢" label={isAr ? 'إجمالي القطع' : 'Total Pieces'} value={fmt(overview?.totals.totalPieces ?? 0)} gradient={['#f97316', '#ea580c']} colors={colors} />
-        <KpiCard icon="🧢" label={isAr ? 'كراتين الكابس' : 'Caps Cartons'} value={fmt(capsTotal)} gradient={['#06b6d4', '#0284c7']} colors={colors} />
-        <KpiCard icon="🏭" label={isAr ? 'صناديق البريفورم' : 'Preform Boxes'} value={fmt(preformTotal)} gradient={['#8b5cf6', '#7c3aed']} colors={colors} />
+        <KpiCard icon="📋" label={'إجمالي السجلات'} value={overview?.totals.totalRecords ?? 0} gradient={['#3b82f6', '#1d4ed8']} colors={colors} />
+        <KpiCard icon="📦" label={'إجمالي الكراتين'} value={fmt(overview?.totals.totalCartons ?? 0)} gradient={['#10b981', '#059669']} colors={colors} />
+        <KpiCard icon="🔢" label={'إجمالي القطع'} value={fmt(overview?.totals.totalPieces ?? 0)} gradient={['#f97316', '#ea580c']} colors={colors} />
+        <KpiCard icon="🧢" label={'كراتين الكابس'} value={fmt(capsTotal)} gradient={['#06b6d4', '#0284c7']} colors={colors} />
+        <KpiCard icon="🏭" label={'صناديق البريفورم'} value={fmt(preformTotal)} gradient={['#8b5cf6', '#7c3aed']} colors={colors} />
       </View>
 
       {byShift.length > 0 && (
         <View style={[styles.tableCard, { backgroundColor: colors.surface }]}>
           <Text style={[styles.tableTitle, { color: colors.text }]}>
-            {isAr ? 'ملخص حسب الشفت' : 'Summary by Shift'}
+            {'ملخص حسب الشفت'}
           </Text>
           <View style={[styles.tableHeader, { borderBottomColor: colors.border }]}>
-            <Text style={[styles.th, { flex: 2, color: colors.textMuted }]}>{isAr ? 'الشفت' : 'Shift'}</Text>
-            <Text style={[styles.th, { color: colors.textMuted }]}>{isAr ? 'السجلات' : 'Records'}</Text>
-            <Text style={[styles.th, { color: colors.textMuted }]}>{isAr ? 'كراتين' : 'Cartons'}</Text>
-            <Text style={[styles.th, { color: colors.textMuted }]}>{isAr ? 'قطع' : 'Pieces'}</Text>
+            <Text style={[styles.th, { flex: 2, color: colors.textMuted }]}>{'الشفت'}</Text>
+            <Text style={[styles.th, { color: colors.textMuted }]}>{'السجلات'}</Text>
+            <Text style={[styles.th, { color: colors.textMuted }]}>{'كراتين'}</Text>
+            <Text style={[styles.th, { color: colors.textMuted }]}>{'قطع'}</Text>
           </View>
           {byShift.map((row) => (
             <View key={row.shiftId ?? 'none'} style={[styles.tableRow, { borderBottomColor: colors.border }]}>
@@ -291,16 +291,16 @@ export function AdminProductionScreen() {
     <View style={styles.tabContent}>
       {dailyData.length === 0 ? (
         <View style={[styles.emptyBox, { backgroundColor: colors.surface }]}>
-          <Text style={[styles.emptyText, { color: colors.textMuted }]}>{isAr ? 'لا توجد بيانات' : 'No data'}</Text>
+          <Text style={[styles.emptyText, { color: colors.textMuted }]}>{'لا توجد بيانات'}</Text>
         </View>
       ) : (
         <View style={[styles.tableCard, { backgroundColor: colors.surface }]}>
-          <Text style={[styles.tableTitle, { color: colors.text }]}>{isAr ? 'التقرير اليومي' : 'Daily Production Report'}</Text>
+          <Text style={[styles.tableTitle, { color: colors.text }]}>{'التقرير اليومي'}</Text>
           <View style={[styles.tableHeader, { borderBottomColor: colors.border }]}>
-            <Text style={[styles.th, { flex: 2, color: colors.textMuted }]}>{isAr ? 'التاريخ' : 'Date'}</Text>
-            <Text style={[styles.th, { color: colors.textMuted }]}>{isAr ? 'كابس' : 'Caps'}</Text>
-            <Text style={[styles.th, { color: colors.textMuted }]}>{isAr ? 'بريفورم' : 'Preform'}</Text>
-            <Text style={[styles.th, { color: colors.textMuted }]}>{isAr ? 'قطع' : 'Pcs'}</Text>
+            <Text style={[styles.th, { flex: 2, color: colors.textMuted }]}>{'التاريخ'}</Text>
+            <Text style={[styles.th, { color: colors.textMuted }]}>{'كابس'}</Text>
+            <Text style={[styles.th, { color: colors.textMuted }]}>{'بريفورم'}</Text>
+            <Text style={[styles.th, { color: colors.textMuted }]}>{'قطع'}</Text>
           </View>
           {dailyData.map((row) => (
             <View key={row.date} style={[styles.tableRow, { borderBottomColor: colors.border }]}>
@@ -320,17 +320,17 @@ export function AdminProductionScreen() {
     <View style={styles.tabContent}>
       {shiftData.length === 0 ? (
         <View style={[styles.emptyBox, { backgroundColor: colors.surface }]}>
-          <Text style={[styles.emptyText, { color: colors.textMuted }]}>{isAr ? 'لا توجد بيانات' : 'No data'}</Text>
+          <Text style={[styles.emptyText, { color: colors.textMuted }]}>{'لا توجد بيانات'}</Text>
         </View>
       ) : (
         <View style={[styles.tableCard, { backgroundColor: colors.surface }]}>
-          <Text style={[styles.tableTitle, { color: colors.text }]}>{isAr ? 'إنتاج الشفتات يومياً' : 'Shift Production Breakdown'}</Text>
+          <Text style={[styles.tableTitle, { color: colors.text }]}>{'إنتاج الشفتات يومياً'}</Text>
           <View style={[styles.tableHeader, { borderBottomColor: colors.border }]}>
-            <Text style={[styles.th, { flex: 2, color: colors.textMuted }]}>{isAr ? 'التاريخ' : 'Date'}</Text>
-            <Text style={[styles.th, { flex: 1.5, color: colors.textMuted }]}>{isAr ? 'الشفت' : 'Shift'}</Text>
-            <Text style={[styles.th, { color: colors.textMuted }]}>{isAr ? 'كابس' : 'Caps'}</Text>
-            <Text style={[styles.th, { color: colors.textMuted }]}>{isAr ? 'بريفورم' : 'Pre'}</Text>
-            <Text style={[styles.th, { color: colors.textMuted }]}>{isAr ? 'قطع' : 'Pcs'}</Text>
+            <Text style={[styles.th, { flex: 2, color: colors.textMuted }]}>{'التاريخ'}</Text>
+            <Text style={[styles.th, { flex: 1.5, color: colors.textMuted }]}>{'الشفت'}</Text>
+            <Text style={[styles.th, { color: colors.textMuted }]}>{'كابس'}</Text>
+            <Text style={[styles.th, { color: colors.textMuted }]}>{'بريفورم'}</Text>
+            <Text style={[styles.th, { color: colors.textMuted }]}>{'قطع'}</Text>
           </View>
           {shiftData.map((row) => (
             <View key={`${row.date}-${row.shiftId}`} style={[styles.tableRow, { borderBottomColor: colors.border }]}>
@@ -373,11 +373,11 @@ export function AdminProductionScreen() {
           </View>
           <View style={styles.recordStat}>
             <Ionicons name="cube-outline" size={13} color={colors.textMuted} />
-            <Text style={[styles.recordStatText, { color: colors.text }]}>{item.cartonsCount ?? 0} {isAr ? 'كرتون' : 'cartons'}</Text>
+            <Text style={[styles.recordStatText, { color: colors.text }]}>{item.cartonsCount ?? 0} {'كرتون'}</Text>
           </View>
           <View style={styles.recordStat}>
             <Ionicons name="layers-outline" size={13} color={colors.textMuted} />
-            <Text style={[styles.recordStatText, { color: colors.primary, fontWeight: '700' }]}>{fmt(item.totalPieces ?? 0)} {isAr ? 'قطعة' : 'pcs'}</Text>
+            <Text style={[styles.recordStatText, { color: colors.primary, fontWeight: '700' }]}>{fmt(item.totalPieces ?? 0)} {'قطعة'}</Text>
           </View>
         </View>
       </View>
@@ -393,7 +393,7 @@ export function AdminProductionScreen() {
           onPress={() => setFilterMachineId(null)}
         >
           <Text style={[styles.chipText, { color: filterMachineId === null ? '#fff' : colors.textMuted }]}>
-            {isAr ? 'الكل' : 'All'}
+            {'الكل'}
           </Text>
         </TouchableOpacity>
         {machines.map((m) => (
@@ -410,12 +410,12 @@ export function AdminProductionScreen() {
       </ScrollView>
 
       <Text style={[styles.recordCount, { color: colors.textMuted }]}>
-        {filteredRecords.length} {isAr ? 'سجل' : 'records'}
+        {filteredRecords.length} {'سجل'}
       </Text>
 
       {filteredRecords.length === 0 ? (
         <View style={[styles.emptyBox, { backgroundColor: colors.surface }]}>
-          <Text style={[styles.emptyText, { color: colors.textMuted }]}>{isAr ? 'لا توجد سجلات' : 'No records'}</Text>
+          <Text style={[styles.emptyText, { color: colors.textMuted }]}>{'لا توجد سجلات'}</Text>
         </View>
       ) : (
         filteredRecords.slice(0, 50).map((r) => (
@@ -430,17 +430,17 @@ export function AdminProductionScreen() {
     <View style={styles.tabContent}>
       {byUser.length === 0 ? (
         <View style={[styles.emptyBox, { backgroundColor: colors.surface }]}>
-          <Text style={[styles.emptyText, { color: colors.textMuted }]}>{isAr ? 'لا توجد بيانات' : 'No data'}</Text>
+          <Text style={[styles.emptyText, { color: colors.textMuted }]}>{'لا توجد بيانات'}</Text>
         </View>
       ) : (
         <View style={[styles.tableCard, { backgroundColor: colors.surface }]}>
-          <Text style={[styles.tableTitle, { color: colors.text }]}>{isAr ? 'الإنتاج حسب العامل' : 'Production by Worker'}</Text>
+          <Text style={[styles.tableTitle, { color: colors.text }]}>{'الإنتاج حسب العامل'}</Text>
           <View style={[styles.tableHeader, { borderBottomColor: colors.border }]}>
             <Text style={[styles.th, { width: 28, color: colors.textMuted }]}>#</Text>
-            <Text style={[styles.th, { flex: 2, color: colors.textMuted }]}>{isAr ? 'الاسم' : 'Name'}</Text>
-            <Text style={[styles.th, { color: colors.textMuted }]}>{isAr ? 'سجلات' : 'Recs'}</Text>
-            <Text style={[styles.th, { color: colors.textMuted }]}>{isAr ? 'كراتين' : 'Cartons'}</Text>
-            <Text style={[styles.th, { color: colors.textMuted }]}>{isAr ? 'قطع' : 'Pieces'}</Text>
+            <Text style={[styles.th, { flex: 2, color: colors.textMuted }]}>{'الاسم'}</Text>
+            <Text style={[styles.th, { color: colors.textMuted }]}>{'سجلات'}</Text>
+            <Text style={[styles.th, { color: colors.textMuted }]}>{'كراتين'}</Text>
+            <Text style={[styles.th, { color: colors.textMuted }]}>{'قطع'}</Text>
           </View>
           {byUser.map((w, i) => (
             <View key={w.userId} style={[styles.tableRow, { borderBottomColor: colors.border }]}>
@@ -466,7 +466,7 @@ export function AdminProductionScreen() {
             <Ionicons name="flash" size={22} color={colors.warning} />
           </View>
           <View>
-            <Text style={[styles.kwhLabel, { color: colors.textMuted }]}>{isAr ? 'سعر الكيلوواط' : 'kWh Price'}</Text>
+            <Text style={[styles.kwhLabel, { color: colors.textMuted }]}>{'سعر الكيلوواط'}</Text>
             <Text style={[styles.kwhValue, { color: colors.text }]}>
               {kwhPrice > 0 ? `${kwhPrice.toFixed(4)} ILS` : '—'}
             </Text>
@@ -488,17 +488,17 @@ export function AdminProductionScreen() {
           >
             {savingKwh
               ? <ActivityIndicator size="small" color="#fff" />
-              : <Text style={styles.kwhSaveBtnText}>{isAr ? 'حفظ' : 'Save'}</Text>}
+              : <Text style={styles.kwhSaveBtnText}>{'حفظ'}</Text>}
           </TouchableOpacity>
         </View>
       </View>
 
       {/* Electricity filter */}
       <View style={[styles.filterCard, { backgroundColor: colors.surface }]}>
-        <Text style={[styles.filterLabel, { color: colors.textMuted }]}>{isAr ? 'تصفية' : 'Filter'}</Text>
+        <Text style={[styles.filterLabel, { color: colors.textMuted }]}>{'تصفية'}</Text>
         <View style={styles.filterRow}>
           <View style={styles.filterField}>
-            <Text style={[styles.filterFieldLabel, { color: colors.textMuted }]}>{isAr ? 'من' : 'From'}</Text>
+            <Text style={[styles.filterFieldLabel, { color: colors.textMuted }]}>{'من'}</Text>
             <TextInput
               style={[styles.filterInput, { backgroundColor: colors.background, borderColor: colors.border, color: colors.text }]}
               value={elFromDate} onChangeText={setElFromDate}
@@ -506,7 +506,7 @@ export function AdminProductionScreen() {
             />
           </View>
           <View style={styles.filterField}>
-            <Text style={[styles.filterFieldLabel, { color: colors.textMuted }]}>{isAr ? 'إلى' : 'To'}</Text>
+            <Text style={[styles.filterFieldLabel, { color: colors.textMuted }]}>{'إلى'}</Text>
             <TextInput
               style={[styles.filterInput, { backgroundColor: colors.background, borderColor: colors.border, color: colors.text }]}
               value={elToDate} onChangeText={setElToDate}
@@ -514,7 +514,7 @@ export function AdminProductionScreen() {
             />
           </View>
           <View style={styles.filterField}>
-            <Text style={[styles.filterFieldLabel, { color: colors.textMuted }]}>{isAr ? 'الشفت' : 'Shift'}</Text>
+            <Text style={[styles.filterFieldLabel, { color: colors.textMuted }]}>{'الشفت'}</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ maxHeight: 36 }}>
               <View style={{ flexDirection: 'row', gap: 4 }}>
                 <TouchableOpacity
@@ -522,7 +522,7 @@ export function AdminProductionScreen() {
                   onPress={() => setElShiftId('')}
                 >
                   <Text style={[styles.smallChipText, { color: elShiftId === '' ? '#fff' : colors.textMuted }]}>
-                    {isAr ? 'الكل' : 'All'}
+                    {'الكل'}
                   </Text>
                 </TouchableOpacity>
                 {shifts.map((s) => (
@@ -542,13 +542,13 @@ export function AdminProductionScreen() {
         </View>
         <View style={styles.filterActions}>
           <TouchableOpacity style={[styles.applyBtn, { backgroundColor: colors.primary }]} onPress={() => void loadElectricity()}>
-            <Text style={styles.applyBtnText}>{isAr ? 'تطبيق' : 'Apply'}</Text>
+            <Text style={styles.applyBtnText}>{'تطبيق'}</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.clearBtn, { borderColor: colors.border }]}
             onPress={() => { setElFromDate(''); setElToDate(''); setElShiftId(''); }}
           >
-            <Text style={[styles.clearBtnText, { color: colors.textMuted }]}>{isAr ? 'مسح' : 'Clear'}</Text>
+            <Text style={[styles.clearBtnText, { color: colors.textMuted }]}>{'مسح'}</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -557,7 +557,7 @@ export function AdminProductionScreen() {
       {elReadings.length > 0 && (
         <View style={[styles.elTotals, { backgroundColor: 'rgba(249,115,22,.08)', borderColor: 'rgba(249,115,22,.25)' }]}>
           <Text style={[styles.elTotalsText, { color: '#f97316' }]}>
-            ⚡ {isAr ? 'الإجمالي:' : 'Total:'} {elTotalKwh.toFixed(2)} kWh — {isAr ? 'التكلفة:' : 'Cost:'} {elTotalCost.toFixed(2)} ILS
+            ⚡ {'الإجمالي:'} {elTotalKwh.toFixed(2)} kWh — {'التكلفة:'} {elTotalCost.toFixed(2)} ILS
           </Text>
         </View>
       )}
@@ -567,7 +567,7 @@ export function AdminProductionScreen() {
         <ActivityIndicator color={colors.primary} style={{ marginTop: 20 }} />
       ) : elReadings.length === 0 ? (
         <View style={[styles.emptyBox, { backgroundColor: colors.surface }]}>
-          <Text style={[styles.emptyText, { color: colors.textMuted }]}>{isAr ? 'لا توجد قراءات' : 'No readings'}</Text>
+          <Text style={[styles.emptyText, { color: colors.textMuted }]}>{'لا توجد قراءات'}</Text>
         </View>
       ) : (
         elReadings.map((r) => {
@@ -590,16 +590,16 @@ export function AdminProductionScreen() {
               </View>
               <View style={[styles.elCardStats, { borderTopColor: colors.border }]}>
                 <View style={styles.elStat}>
-                  <Text style={[styles.elStatLabel, { color: colors.textMuted }]}>{isAr ? 'بداية' : 'Start'}</Text>
+                  <Text style={[styles.elStatLabel, { color: colors.textMuted }]}>{'بداية'}</Text>
                   <Text style={[styles.elStatValue, { color: colors.text }]}>{r.startReading}</Text>
                 </View>
                 <Ionicons name="arrow-forward" size={12} color={colors.textMuted} />
                 <View style={styles.elStat}>
-                  <Text style={[styles.elStatLabel, { color: colors.textMuted }]}>{isAr ? 'نهاية' : 'End'}</Text>
+                  <Text style={[styles.elStatLabel, { color: colors.textMuted }]}>{'نهاية'}</Text>
                   <Text style={[styles.elStatValue, { color: colors.text }]}>{r.endReading}</Text>
                 </View>
                 <View style={[styles.elStat, { marginStart: 'auto' }]}>
-                  <Text style={[styles.elStatLabel, { color: colors.textMuted }]}>{isAr ? 'استهلاك' : 'kWh'}</Text>
+                  <Text style={[styles.elStatLabel, { color: colors.textMuted }]}>{'استهلاك'}</Text>
                   <Text style={[styles.elStatValue, { color: colors.primary, fontWeight: '700' }]}>
                     {(r.consumption ?? 0).toFixed(2)}
                   </Text>
@@ -626,7 +626,7 @@ export function AdminProductionScreen() {
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
-      <ScreenHeader title={isAr ? 'الإنتاج' : 'Production'} subtitle={isAr ? 'سجلات الإنتاج والتحليلات' : 'Production records & analytics'} />
+      <ScreenHeader title={'الإنتاج'} subtitle={'سجلات الإنتاج والتحليلات'} />
 
       <ScrollView
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
@@ -644,11 +644,11 @@ export function AdminProductionScreen() {
             <View style={{ flex: 1 }}>
               {currentShift ? (
                 <>
-                  <Text style={styles.shiftLabel}>{isAr ? 'الشفت الحالي' : 'Current Shift'}</Text>
+                  <Text style={styles.shiftLabel}>{'الشفت الحالي'}</Text>
                   <Text style={[styles.shiftName, { color: colors.text }]}>{currentShift.name}</Text>
                 </>
               ) : (
-                <Text style={[styles.noShift, { color: colors.textMuted }]}>{isAr ? 'لا يوجد شفت نشط' : 'No active shift'}</Text>
+                <Text style={[styles.noShift, { color: colors.textMuted }]}>{'لا يوجد شفت نشط'}</Text>
               )}
             </View>
           </View>
@@ -659,7 +659,7 @@ export function AdminProductionScreen() {
           <View style={[styles.filterCard, { backgroundColor: colors.surface }]}>
             <View style={styles.filterRow}>
               <View style={styles.filterField}>
-                <Text style={[styles.filterFieldLabel, { color: colors.textMuted }]}>{isAr ? 'من تاريخ' : 'From Date'}</Text>
+                <Text style={[styles.filterFieldLabel, { color: colors.textMuted }]}>{'من تاريخ'}</Text>
                 <TextInput
                   style={[styles.filterInput, { backgroundColor: colors.background, borderColor: colors.border, color: colors.text }]}
                   value={fromDate} onChangeText={setFromDate}
@@ -667,7 +667,7 @@ export function AdminProductionScreen() {
                 />
               </View>
               <View style={styles.filterField}>
-                <Text style={[styles.filterFieldLabel, { color: colors.textMuted }]}>{isAr ? 'إلى تاريخ' : 'To Date'}</Text>
+                <Text style={[styles.filterFieldLabel, { color: colors.textMuted }]}>{'إلى تاريخ'}</Text>
                 <TextInput
                   style={[styles.filterInput, { backgroundColor: colors.background, borderColor: colors.border, color: colors.text }]}
                   value={toDate} onChangeText={setToDate}
@@ -677,13 +677,13 @@ export function AdminProductionScreen() {
             </View>
             <View style={styles.filterActions}>
               <TouchableOpacity style={[styles.applyBtn, { backgroundColor: colors.primary }]} onPress={() => void loadProduction()}>
-                <Text style={styles.applyBtnText}>{isAr ? 'تطبيق' : 'Apply'}</Text>
+                <Text style={styles.applyBtnText}>{'تطبيق'}</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.clearBtn, { borderColor: colors.border }]}
                 onPress={() => { setFromDate(''); setToDate(''); }}
               >
-                <Text style={[styles.clearBtnText, { color: colors.textMuted }]}>{isAr ? 'مسح' : 'Clear'}</Text>
+                <Text style={[styles.clearBtnText, { color: colors.textMuted }]}>{'مسح'}</Text>
               </TouchableOpacity>
             </View>
           </View>

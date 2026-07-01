@@ -1,5 +1,6 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+﻿import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
+import { useLocale } from '../../context/LocaleContext';
   ActivityIndicator, Alert, FlatList, RefreshControl,
   ScrollView, StyleSheet, Switch, Text, TextInput,
   TouchableOpacity, View,
@@ -10,7 +11,6 @@ import { api } from '../../api/client';
 import { ScreenHeader } from '../../components';
 import { radius, shadow, spacing, typography } from '../../theme';
 import { useAppTheme } from '../../context/ThemeContext';
-import { useLocale } from '../../context/LocaleContext';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -152,7 +152,7 @@ export function PayrollAdminScreen() {
     try {
       const res = await api.get<DailyRecord[]>(`/payroll/daily?date=${d}&limit=50`);
       setDaily(Array.isArray(res) ? res : []);
-    } catch (e: any) { Alert.alert(isAr ? 'خطأ' : 'Error', e?.message ?? 'Failed'); }
+    } catch (e: any) { Alert.alert('خطأ', e?.message ?? 'Failed'); }
     finally { setDailyLoading(false); setDailyRefresh(false); }
   }, [dateFilter]); // eslint-disable-line
 
@@ -166,7 +166,7 @@ export function PayrollAdminScreen() {
       ]);
       setOverview(ov as Overview);
       setMonthlyRecords(Array.isArray(recs) ? recs : []);
-    } catch (e: any) { Alert.alert(isAr ? 'خطأ' : 'Error', e?.message ?? 'Failed'); }
+    } catch (e: any) { Alert.alert('خطأ', e?.message ?? 'Failed'); }
     finally { setMonthlyLoading(false); setMonthlyRefresh(false); }
   }, [monthFilter]); // eslint-disable-line
 
@@ -175,7 +175,7 @@ export function PayrollAdminScreen() {
     try {
       const res = await api.get<UserSalary[]>('/payroll/admin/user-salaries');
       setUserSalaries(Array.isArray(res) ? res : []);
-    } catch (e: any) { Alert.alert(isAr ? 'خطأ' : 'Error', e?.message ?? 'Failed'); }
+    } catch (e: any) { Alert.alert('خطأ', e?.message ?? 'Failed'); }
     finally { setSalariesLoading(false); setSalariesRefresh(false); }
   }, []); // eslint-disable-line
 
@@ -188,7 +188,7 @@ export function PayrollAdminScreen() {
       ]);
       setConfigs(Array.isArray(cfgs) ? cfgs : []);
       setDeductions(Array.isArray(rules) ? rules : []);
-    } catch (e: any) { Alert.alert(isAr ? 'خطأ' : 'Error', e?.message ?? 'Failed'); }
+    } catch (e: any) { Alert.alert('خطأ', e?.message ?? 'Failed'); }
     finally { setConfigLoading(false); setDedLoading(false); }
   }, []); // eslint-disable-line
 
@@ -203,17 +203,17 @@ export function PayrollAdminScreen() {
 
   const handleCalculateDaily = () => {
     Alert.alert(
-      isAr ? 'احتساب الرواتب' : 'Calculate Payroll',
-      `${isAr ? 'احتساب لـ' : 'Calculate for'} ${dateFilter}?`,
+      'احتساب الرواتب',
+      `${'احتساب لـ'} ${dateFilter}?`,
       [
-        { text: isAr ? 'إلغاء' : 'Cancel', style: 'cancel' },
-        { text: isAr ? 'احتساب' : 'Calculate', onPress: async () => {
+        { text: 'إلغاء', style: 'cancel' },
+        { text: 'احتساب', onPress: async () => {
             setCalculating(true);
             try {
               await api.post('/payroll/daily/calculate-date', { date: dateFilter });
               setDailyLoading(true); await loadDaily();
-              Alert.alert(isAr ? 'تم' : 'Done', isAr ? 'تم الاحتساب' : 'Payroll calculated');
-            } catch (e: any) { Alert.alert(isAr ? 'خطأ' : 'Error', e?.message ?? 'Failed'); }
+              Alert.alert('تم', 'تم الاحتساب');
+            } catch (e: any) { Alert.alert('خطأ', e?.message ?? 'Failed'); }
             finally { setCalculating(false); }
           },
         },
@@ -226,15 +226,15 @@ export function PayrollAdminScreen() {
     try {
       await api.post(`/payroll/daily/${id}/confirm`, {});
       setDaily(prev => prev.map(r => r.id === id ? { ...r, isConfirmed: true, confirmedAt: new Date().toISOString() } : r));
-    } catch (e: any) { Alert.alert(isAr ? 'خطأ' : 'Error', e?.message ?? 'Failed'); }
+    } catch (e: any) { Alert.alert('خطأ', e?.message ?? 'Failed'); }
     finally { setConfirmingId(null); }
   };
 
   const handleMarkLeave = (attendanceId: number, currentLeave: string | null) => {
     const options = [
-      { text: isAr ? 'مرضية'      : 'Sick',   value: 'SICK'   },
-      { text: isAr ? 'سنوية'      : 'Annual', value: 'ANNUAL' },
-      { text: isAr ? 'بدون أجر'   : 'Unpaid', value: 'UNPAID' },
+      { text: 'مرضية',   value: 'SICK'   },
+      { text: 'سنوية', value: 'ANNUAL' },
+      { text: 'بدون أجر', value: 'UNPAID' },
     ];
     const buttons: any[] = options.map(o => ({
       text: o.text + (currentLeave === o.value ? ' ✓' : ''),
@@ -243,40 +243,40 @@ export function PayrollAdminScreen() {
         try {
           await api.patch(`/payroll/admin/attendance/${attendanceId}/leave`, { leaveType: o.value });
           setDaily(prev => prev.map(r => r.attendance?.id === attendanceId ? { ...r, leaveType: o.value } : r));
-        } catch (e: any) { Alert.alert(isAr ? 'خطأ' : 'Error', e?.message ?? 'Failed'); }
+        } catch (e: any) { Alert.alert('خطأ', e?.message ?? 'Failed'); }
         finally { setMarkingLeave(false); }
       },
     }));
     if (currentLeave) {
       buttons.push({
-        text: isAr ? 'مسح الإجازة' : 'Clear Leave',
+        text: 'مسح الإجازة',
         style: 'destructive',
         onPress: async () => {
           setMarkingLeave(true);
           try {
             await api.patch(`/payroll/admin/attendance/${attendanceId}/leave`, { leaveType: null });
             setDaily(prev => prev.map(r => r.attendance?.id === attendanceId ? { ...r, leaveType: null } : r));
-          } catch (e: any) { Alert.alert(isAr ? 'خطأ' : 'Error', e?.message ?? 'Failed'); }
+          } catch (e: any) { Alert.alert('خطأ', e?.message ?? 'Failed'); }
           finally { setMarkingLeave(false); }
         },
       });
     }
-    buttons.push({ text: isAr ? 'إلغاء' : 'Cancel', style: 'cancel' });
-    Alert.alert(isAr ? 'نوع الإجازة' : 'Mark Leave Type', '', buttons);
+    buttons.push({ text: 'إلغاء', style: 'cancel' });
+    Alert.alert('نوع الإجازة', '', buttons);
   };
 
   // ── Monthly actions ───────────────────────────────────────────────────────────
 
   const handleCalculateMonthly = () => {
     Alert.alert(
-      isAr ? 'احتساب شهري' : 'Calculate Monthly',
-      `${isAr ? 'احتساب رواتب' : 'Calculate payrolls for'} ${monthFilter}?`,
+      'احتساب شهري',
+      `${'احتساب رواتب'} ${monthFilter}?`,
       [
-        { text: isAr ? 'إلغاء' : 'Cancel', style: 'cancel' },
-        { text: isAr ? 'احتساب' : 'Calculate', onPress: async () => {
+        { text: 'إلغاء', style: 'cancel' },
+        { text: 'احتساب', onPress: async () => {
             setCalcMonthly(true);
             try { await api.post('/payroll/monthly/calculate', { month: monthFilter }); await loadMonthly(); }
-            catch (e: any) { Alert.alert(isAr ? 'خطأ' : 'Error', e?.message ?? 'Failed'); }
+            catch (e: any) { Alert.alert('خطأ', e?.message ?? 'Failed'); }
             finally { setCalcMonthly(false); }
           },
         },
@@ -291,17 +291,17 @@ export function PayrollAdminScreen() {
       await api.put(`/payroll/${editMonthlyId}`, { totalSalary: Number(editMonthlyVal) });
       setMonthlyRecords(prev => prev.map(r => r.id === editMonthlyId ? { ...r, totalSalary: Number(editMonthlyVal) } : r));
       setEditMonthlyId(null);
-    } catch (e: any) { Alert.alert(isAr ? 'خطأ' : 'Error', e?.message ?? 'Failed'); }
+    } catch (e: any) { Alert.alert('خطأ', e?.message ?? 'Failed'); }
     finally { setSavingMonthly(false); }
   };
 
   const handleDeleteMonthly = (id: number) => {
-    Alert.alert(isAr ? 'حذف' : 'Delete', isAr ? 'حذف سجل الراتب؟' : 'Delete this payroll record? This cannot be undone.', [
-      { text: isAr ? 'إلغاء' : 'Cancel', style: 'cancel' },
-      { text: isAr ? 'حذف' : 'Delete', style: 'destructive', onPress: async () => {
+    Alert.alert('حذف', 'حذف سجل الراتب؟', [
+      { text: 'إلغاء', style: 'cancel' },
+      { text: 'حذف', style: 'destructive', onPress: async () => {
           setDeletingMoId(id);
           try { await api.delete(`/payroll/${id}`); setMonthlyRecords(prev => prev.filter(r => r.id !== id)); }
-          catch (e: any) { Alert.alert(isAr ? 'خطأ' : 'Error', e?.message ?? 'Failed'); }
+          catch (e: any) { Alert.alert('خطأ', e?.message ?? 'Failed'); }
           finally { setDeletingMoId(null); }
         },
       },
@@ -317,22 +317,22 @@ export function PayrollAdminScreen() {
       const monthlySalary = editSalaryVal.trim() === '' ? null : Number(editSalaryVal);
       await api.put(`/payroll/admin/user-salaries/${editSalaryUserId}`, { monthlySalary });
       await loadUserSalaries(); setEditSalaryUserId(null);
-    } catch (e: any) { Alert.alert(isAr ? 'خطأ' : 'Error', e?.message ?? 'Failed'); }
+    } catch (e: any) { Alert.alert('خطأ', e?.message ?? 'Failed'); }
     finally { setSavingUserSalary(false); }
   };
 
   const handleResetUserSalary = (userId: number, name: string) => {
     Alert.alert(
-      isAr ? 'إعادة تعيين' : 'Reset Salary',
-      `${isAr ? 'إعادة تعيين راتب' : 'Reset salary for'} ${name} ${isAr ? 'إلى راتب الدور الافتراضي؟' : 'to role default?'}`,
+      'إعادة تعيين',
+      `${'إعادة تعيين راتب'} ${name} ${'إلى راتب الدور الافتراضي؟'}`,
       [
-        { text: isAr ? 'إلغاء' : 'Cancel', style: 'cancel' },
-        { text: isAr ? 'إعادة تعيين' : 'Reset', onPress: async () => {
+        { text: 'إلغاء', style: 'cancel' },
+        { text: 'إعادة تعيين', onPress: async () => {
             setSavingUserSalary(true);
             try {
               await api.put(`/payroll/admin/user-salaries/${userId}`, { monthlySalary: null });
               await loadUserSalaries();
-            } catch (e: any) { Alert.alert(isAr ? 'خطأ' : 'Error', e?.message ?? 'Failed'); }
+            } catch (e: any) { Alert.alert('خطأ', e?.message ?? 'Failed'); }
             finally { setSavingUserSalary(false); }
           },
         },
@@ -348,7 +348,7 @@ export function PayrollAdminScreen() {
     try {
       await api.put('/payroll/salary-config', { role: editConfigRole, monthlySalary: Number(editConfigVal) });
       await loadConfig(); setEditConfigRole(null);
-    } catch (e: any) { Alert.alert(isAr ? 'خطأ' : 'Error', e?.message ?? 'Failed'); }
+    } catch (e: any) { Alert.alert('خطأ', e?.message ?? 'Failed'); }
     finally { setSavingConfig(false); }
   };
 
@@ -357,7 +357,7 @@ export function PayrollAdminScreen() {
     try {
       await api.put(`/payroll/admin/deduction-rules/${type}`, { isActive });
       setDeductions(prev => prev.map(r => r.type === type ? { ...r, isActive } : r));
-    } catch (e: any) { Alert.alert(isAr ? 'خطأ' : 'Error', e?.message ?? 'Failed'); }
+    } catch (e: any) { Alert.alert('خطأ', e?.message ?? 'Failed'); }
     finally { setTogglingRule(null); }
   };
 
@@ -373,7 +373,7 @@ export function PayrollAdminScreen() {
         ? { ...r, thresholdMinutes: Number(editThreshold), deductionValue: Number(editDedVal) }
         : r));
       setEditRuleType(null);
-    } catch (e: any) { Alert.alert(isAr ? 'خطأ' : 'Error', e?.message ?? 'Failed'); }
+    } catch (e: any) { Alert.alert('خطأ', e?.message ?? 'Failed'); }
     finally { setSavingRule(false); }
   };
 
@@ -388,8 +388,8 @@ export function PayrollAdminScreen() {
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
       <ScreenHeader
-        title={isAr ? 'إدارة الرواتب' : 'Payroll Management'}
-        subtitle={isAr ? 'تأكيد الرواتب اليومية وعرض التقارير الشهرية' : 'Confirm daily payrolls and view monthly reports'}
+        title={'إدارة الرواتب'}
+        subtitle={'تأكيد الرواتب اليومية وعرض التقارير الشهرية'}
         showBack
       />
 
@@ -431,19 +431,19 @@ export function PayrollAdminScreen() {
               <View style={styles.statsRow}>
                 <View style={[styles.kpiCard, { backgroundColor: '#f97316' }]}>
                   <Text style={styles.kpiNum}>{pendingCount}</Text>
-                  <Text style={styles.kpiLbl}>{isAr ? 'معلق' : 'Pending'}</Text>
+                  <Text style={styles.kpiLbl}>{'معلق'}</Text>
                 </View>
                 <View style={[styles.kpiCard, { backgroundColor: '#10b981' }]}>
                   <Text style={styles.kpiNum}>{confirmedCount}</Text>
-                  <Text style={styles.kpiLbl}>{isAr ? 'مؤكد' : 'Confirmed'}</Text>
+                  <Text style={styles.kpiLbl}>{'مؤكد'}</Text>
                 </View>
                 <View style={[styles.kpiCard, { backgroundColor: '#3b82f6' }]}>
                   <Text style={styles.kpiNum}>${fmt(dailyTotal)}</Text>
-                  <Text style={styles.kpiLbl}>{isAr ? 'الإجمالي' : 'Day Total'}</Text>
+                  <Text style={styles.kpiLbl}>{'الإجمالي'}</Text>
                 </View>
                 <View style={[styles.kpiCard, { backgroundColor: '#8b5cf6' }]}>
                   <Text style={styles.kpiNum}>{daily.length}</Text>
-                  <Text style={styles.kpiLbl}>{isAr ? 'موظفون' : 'Employees'}</Text>
+                  <Text style={styles.kpiLbl}>{'موظفون'}</Text>
                 </View>
               </View>
 
@@ -469,17 +469,17 @@ export function PayrollAdminScreen() {
                 >
                   {calculating
                     ? <ActivityIndicator size="small" color="#fff" />
-                    : <Text style={styles.smallBtnText}>{isAr ? 'احتساب' : 'Calc All'}</Text>}
+                    : <Text style={styles.smallBtnText}>{'احتساب'}</Text>}
                 </TouchableOpacity>
               </View>
 
               {/* Flag legend */}
               <View style={styles.legendRow}>
                 <View style={[styles.legendChip, { backgroundColor: '#fef9c3', borderColor: '#fde047' }]}>
-                  <Text style={[styles.legendText, { color: '#854d0e' }]}>⚠ {isAr ? 'بدون خروج' : 'Missing CO'}</Text>
+                  <Text style={[styles.legendText, { color: '#854d0e' }]}>⚠ {'بدون خروج'}</Text>
                 </View>
                 <View style={[styles.legendChip, { backgroundColor: '#fee2e2', borderColor: '#fca5a5' }]}>
-                  <Text style={[styles.legendText, { color: '#991b1b' }]}>⚠ {isAr ? 'يوم قصير' : 'Short day'}</Text>
+                  <Text style={[styles.legendText, { color: '#991b1b' }]}>⚠ {'يوم قصير'}</Text>
                 </View>
               </View>
             </View>
@@ -489,7 +489,7 @@ export function PayrollAdminScreen() {
               ? <View style={styles.center}><ActivityIndicator size="large" color={colors.primary} /></View>
               : <View style={styles.empty}>
                   <Ionicons name="cash-outline" size={44} color={colors.textMuted} />
-                  <Text style={[styles.emptyText, { color: colors.textMuted }]}>{isAr ? 'لا توجد سجلات لهذا اليوم' : 'No records for this date'}</Text>
+                  <Text style={[styles.emptyText, { color: colors.textMuted }]}>{'لا توجد سجلات لهذا اليوم'}</Text>
                 </View>
           }
           renderItem={({ item: r }) => {
@@ -512,15 +512,15 @@ export function PayrollAdminScreen() {
                       </View>
                       {r.date && <Text style={[styles.caption, { color: colors.textMuted }]}>{new Date(r.date).toLocaleDateString([], { month: 'short', day: 'numeric' })}</Text>}
                       {/* Flags */}
-                      {missingCO && <View style={[styles.flagChip, { backgroundColor: '#fef9c3', borderColor: '#fde047' }]}><Text style={[styles.flagText, { color: '#854d0e' }]}>⚠ {isAr ? 'بدون خروج' : 'No CO'}</Text></View>}
-                      {shortDay  && <View style={[styles.flagChip, { backgroundColor: '#fee2e2', borderColor: '#fca5a5' }]}><Text style={[styles.flagText, { color: '#991b1b' }]}>⚠ {isAr ? 'قصير' : 'Short'}</Text></View>}
+                      {missingCO && <View style={[styles.flagChip, { backgroundColor: '#fef9c3', borderColor: '#fde047' }]}><Text style={[styles.flagText, { color: '#854d0e' }]}>⚠ {'بدون خروج'}</Text></View>}
+                      {shortDay  && <View style={[styles.flagChip, { backgroundColor: '#fee2e2', borderColor: '#fca5a5' }]}><Text style={[styles.flagText, { color: '#991b1b' }]}>⚠ {'قصير'}</Text></View>}
                     </View>
                   </View>
                   <View style={{ alignItems: 'flex-end', gap: 4 }}>
                     <Text style={[styles.payAmt, { color: flagColor }]}>${fmtDec(r.totalDailyPay ?? 0)}</Text>
                     <View style={[styles.pill, { backgroundColor: confirmed ? `${colors.success}18` : `${colors.warning}18` }]}>
                       <Text style={[styles.pillText, { color: confirmed ? colors.success : colors.warning }]}>
-                        {confirmed ? (isAr ? 'مؤكد' : 'CONFIRMED') : (isAr ? 'معلق' : 'PENDING')}
+                        {confirmed ? ('مؤكد') : ('معلق')}
                       </Text>
                     </View>
                   </View>
@@ -535,7 +535,7 @@ export function PayrollAdminScreen() {
                   <View style={styles.infoChip}>
                     <Ionicons name="log-out-outline" size={11} color={missingCO ? colors.warning : colors.textMuted} />
                     <Text style={[styles.caption, { color: missingCO ? colors.warning : colors.textMuted }]}>
-                      {missingCO ? (isAr ? 'مفقود' : 'Missing') : fmtTime(r.attendance?.checkOut)}
+                      {missingCO ? ('مفقود') : fmtTime(r.attendance?.checkOut)}
                     </Text>
                   </View>
                   <View style={styles.infoChip}>
@@ -562,8 +562,8 @@ export function PayrollAdminScreen() {
                       <Ionicons name="medkit-outline" size={13} color={colors.textMuted} />
                       <Text style={[styles.leaveBtnText, { color: colors.textMuted }]}>
                         {r.leaveType
-                          ? (isAr ? 'تعديل الإجازة' : 'Edit Leave')
-                          : (isAr ? 'تحديد إجازة' : 'Mark Leave')}
+                          ? ('تعديل الإجازة')
+                          : ('تحديد إجازة')}
                       </Text>
                     </TouchableOpacity>
                   )}
@@ -577,7 +577,7 @@ export function PayrollAdminScreen() {
                     >
                       {confirmingId === r.id
                         ? <ActivityIndicator size="small" color="#fff" />
-                        : <><Ionicons name="checkmark-circle" size={14} color="#fff" /><Text style={styles.confirmText}>{isAr ? 'تأكيد الدفع' : 'Confirm Payment'}</Text></>
+                        : <><Ionicons name="checkmark-circle" size={14} color="#fff" /><Text style={styles.confirmText}>{'تأكيد الدفع'}</Text></>
                       }
                     </TouchableOpacity>
                   )}
@@ -618,7 +618,7 @@ export function PayrollAdminScreen() {
               onPress={handleCalculateMonthly}
               disabled={calcMonthly}
             >
-              {calcMonthly ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.smallBtnText}>{isAr ? 'احتساب' : 'Calc'}</Text>}
+              {calcMonthly ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.smallBtnText}>{'احتساب'}</Text>}
             </TouchableOpacity>
           </View>
 
@@ -630,26 +630,26 @@ export function PayrollAdminScreen() {
               <View style={styles.statsRow}>
                 <View style={[styles.kpiCard, { backgroundColor: '#3b82f6' }]}>
                   <Text style={styles.kpiNum}>{overview?.totals.payrollCount ?? 0}</Text>
-                  <Text style={styles.kpiLbl}>{isAr ? 'سجلات' : 'Records'}</Text>
+                  <Text style={styles.kpiLbl}>{'سجلات'}</Text>
                 </View>
                 <View style={[styles.kpiCard, { backgroundColor: '#10b981' }]}>
                   <Text style={styles.kpiNum}>${fmt(overview?.totals.totalPayout ?? 0)}</Text>
-                  <Text style={styles.kpiLbl}>{isAr ? 'الإجمالي' : 'Payout'}</Text>
+                  <Text style={styles.kpiLbl}>{'الإجمالي'}</Text>
                 </View>
                 <View style={[styles.kpiCard, { backgroundColor: '#8b5cf6' }]}>
                   <Text style={styles.kpiNum}>${fmt(overview?.totals.totalBaseSalary ?? 0)}</Text>
-                  <Text style={styles.kpiLbl}>{isAr ? 'الأساسي' : 'Base'}</Text>
+                  <Text style={styles.kpiLbl}>{'الأساسي'}</Text>
                 </View>
                 <View style={[styles.kpiCard, { backgroundColor: '#f97316' }]}>
                   <Text style={styles.kpiNum}>${fmt(overview?.totals.totalOvertimeSalary ?? 0)}</Text>
-                  <Text style={styles.kpiLbl}>{isAr ? 'الإضافي' : 'Overtime'}</Text>
+                  <Text style={styles.kpiLbl}>{'الإضافي'}</Text>
                 </View>
               </View>
 
               {/* By Role */}
               {(overview?.byRole ?? []).length > 0 && (
                 <View style={[styles.section, { backgroundColor: colors.surface }]}>
-                  <Text style={[styles.sectionTitle, { color: colors.text }]}>{isAr ? 'حسب الدور' : 'By Role'}</Text>
+                  <Text style={[styles.sectionTitle, { color: colors.text }]}>{'حسب الدور'}</Text>
                   {(overview?.byRole ?? []).map(r => {
                     const pct = overview ? (r.totalPayout / (overview.totals.totalPayout || 1)) * 100 : 0;
                     const c = ROLE_COLORS[r.role] ?? colors.primary;
@@ -662,7 +662,7 @@ export function PayrollAdminScreen() {
                         <View style={[styles.progressBg, { backgroundColor: colors.border }]}>
                           <View style={[styles.progressFill, { width: `${pct}%` as any, backgroundColor: c }]} />
                         </View>
-                        <Text style={[styles.caption, { color: colors.textMuted, marginTop: 2 }]}>{r.payrollCount} {isAr ? 'موظف' : 'employees'} · {pct.toFixed(0)}%</Text>
+                        <Text style={[styles.caption, { color: colors.textMuted, marginTop: 2 }]}>{r.payrollCount} {'موظف'} · {pct.toFixed(0)}%</Text>
                       </View>
                     );
                   })}
@@ -670,7 +670,7 @@ export function PayrollAdminScreen() {
               )}
 
               {/* Per-employee */}
-              <Text style={[styles.sectionTitle, { color: colors.text, marginTop: spacing.sm }]}>{isAr ? 'تفاصيل الموظفين' : 'Employee Details'}</Text>
+              <Text style={[styles.sectionTitle, { color: colors.text, marginTop: spacing.sm }]}>{'تفاصيل الموظفين'}</Text>
               {monthlyRecords.map(r => {
                 const isEd = editMonthlyId === r.id;
                 const rc = ROLE_COLORS[r.user?.role ?? ''] ?? colors.primary;
@@ -717,7 +717,7 @@ export function PayrollAdminScreen() {
                     </View>
                     <View style={[styles.cardFoot, { borderTopColor: colors.border }]}>
                       {r.totalHours != null && <View style={styles.infoChip}><Ionicons name="time-outline" size={11} color={colors.textMuted} /><Text style={[styles.caption, { color: colors.textMuted }]}>{r.totalHours.toFixed(1)}h</Text></View>}
-                      {r.baseSalary != null && <View style={styles.infoChip}><Ionicons name="cash-outline" size={11} color={colors.textMuted} /><Text style={[styles.caption, { color: colors.textMuted }]}>{isAr ? 'أساسي' : 'Base'}: ${fmt(r.baseSalary)}</Text></View>}
+                      {r.baseSalary != null && <View style={styles.infoChip}><Ionicons name="cash-outline" size={11} color={colors.textMuted} /><Text style={[styles.caption, { color: colors.textMuted }]}>{'أساسي'}: ${fmt(r.baseSalary)}</Text></View>}
                       {(r.overtimeSalary ?? 0) > 0 && <View style={styles.infoChip}><Ionicons name="add-circle-outline" size={11} color={colors.warning} /><Text style={[styles.caption, { color: colors.warning }]}>+${(r.overtimeSalary ?? 0).toFixed(1)} OT</Text></View>}
                     </View>
                   </View>
@@ -726,7 +726,7 @@ export function PayrollAdminScreen() {
               {monthlyRecords.length === 0 && !monthlyLoading && (
                 <View style={styles.empty}>
                   <Ionicons name="cash-outline" size={44} color={colors.textMuted} />
-                  <Text style={[styles.emptyText, { color: colors.textMuted }]}>{isAr ? 'لا سجلات لهذا الشهر' : 'No records for this month'}</Text>
+                  <Text style={[styles.emptyText, { color: colors.textMuted }]}>{'لا سجلات لهذا الشهر'}</Text>
                 </View>
               )}
             </>
@@ -750,9 +750,9 @@ export function PayrollAdminScreen() {
                 <Ionicons name="people" size={20} color="#fff" />
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={[styles.cardName, { color: colors.text }]}>{isAr ? 'رواتب الموظفين' : 'Employee Salaries'}</Text>
+                <Text style={[styles.cardName, { color: colors.text }]}>{'رواتب الموظفين'}</Text>
                 <Text style={[styles.caption, { color: colors.textMuted, marginTop: 2 }]}>
-                  {isAr ? 'اضبط الراتب الشهري لكل موظف. اترك فارغاً لاستخدام راتب الدور الافتراضي.' : 'Set a monthly salary per employee. Leave blank to use the role default.'}
+                  {'اضبط الراتب الشهري لكل موظف. اترك فارغاً لاستخدام راتب الدور الافتراضي.'}
                 </Text>
               </View>
             </View>
@@ -760,7 +760,7 @@ export function PayrollAdminScreen() {
           ListEmptyComponent={
             salariesLoading
               ? <View style={styles.center}><ActivityIndicator size="large" color={colors.primary} /></View>
-              : <View style={styles.empty}><Ionicons name="people-outline" size={44} color={colors.textMuted} /><Text style={[styles.emptyText, { color: colors.textMuted }]}>{isAr ? 'لا يوجد موظفون' : 'No employees found'}</Text></View>
+              : <View style={styles.empty}><Ionicons name="people-outline" size={44} color={colors.textMuted} /><Text style={[styles.emptyText, { color: colors.textMuted }]}>{'لا يوجد موظفون'}</Text></View>
           }
           renderItem={({ item: u }) => {
             const isEd = editSalaryUserId === u.id;
@@ -774,7 +774,7 @@ export function PayrollAdminScreen() {
                     <Text style={[styles.cardName, { color: colors.text }]}>{u.fullName}</Text>
                     <View style={styles.pillRow}>
                       <View style={[styles.pill, { backgroundColor: `${rc}18` }]}><Text style={[styles.pillText, { color: rc }]}>{u.role}</Text></View>
-                      {isCustom && <View style={[styles.pill, { backgroundColor: `${colors.info}18` }]}><Text style={[styles.pillText, { color: colors.info }]}>{isAr ? 'مخصص' : 'Custom'}</Text></View>}
+                      {isCustom && <View style={[styles.pill, { backgroundColor: `${colors.info}18` }]}><Text style={[styles.pillText, { color: colors.info }]}>{'مخصص'}</Text></View>}
                     </View>
                   </View>
                   {isEd ? (
@@ -838,9 +838,9 @@ export function PayrollAdminScreen() {
               <Ionicons name="settings" size={20} color="#fff" />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={[styles.cardName, { color: colors.text }]}>{isAr ? 'إعداد الرواتب الشهرية' : 'Monthly Salary Configuration'}</Text>
+              <Text style={[styles.cardName, { color: colors.text }]}>{'إعداد الرواتب الشهرية'}</Text>
               <Text style={[styles.caption, { color: colors.textMuted, marginTop: 2 }]}>
-                {isAr ? 'الراتب اليومي = الشهري ÷ 30' : 'Daily rate = monthly ÷ 30'}
+                {'الراتب اليومي = الشهري ÷ 30'}
               </Text>
             </View>
           </View>
@@ -894,9 +894,9 @@ export function PayrollAdminScreen() {
                   <Ionicons name="alert-circle" size={18} color="#fff" />
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={[styles.cardName, { color: colors.text }]}>{isAr ? 'قواعد الخصم التلقائي' : 'Automated Deduction Rules'}</Text>
+                  <Text style={[styles.cardName, { color: colors.text }]}>{'قواعد الخصم التلقائي'}</Text>
                   <Text style={[styles.caption, { color: colors.textMuted }]}>
-                    {isAr ? 'تُطبَّق تلقائياً عند حساب الرواتب اليومية' : 'Applied automatically when calculating daily payroll'}
+                    {'تُطبَّق تلقائياً عند حساب الرواتب اليومية'}
                   </Text>
                 </View>
               </View>
@@ -925,7 +925,7 @@ export function PayrollAdminScreen() {
                               />
                           }
                           <Text style={[styles.caption, { color: rule.isActive ? colors.primary : colors.textMuted, fontWeight: '700' }]}>
-                            {rule.isActive ? (isAr ? 'مُفعَّل' : 'Active') : (isAr ? 'معطَّل' : 'Inactive')}
+                            {rule.isActive ? ('مُفعَّل') : ('معطَّل')}
                           </Text>
                         </View>
                         <Text style={[styles.caption, { color: colors.textMuted, marginTop: 2 }]}>{isAr ? meta.descAr : meta.descEn}</Text>
@@ -935,7 +935,7 @@ export function PayrollAdminScreen() {
                           <View style={{ flexDirection: 'row', gap: 6, marginTop: spacing.xs, flexWrap: 'wrap' }}>
                             {meta.showThreshold && (
                               <View style={[styles.pill, { backgroundColor: colors.surfaceAlt }]}>
-                                <Text style={[styles.pillText, { color: colors.textMuted }]}>{isAr ? 'الحد' : 'Threshold'}: {rule.thresholdMinutes}min</Text>
+                                <Text style={[styles.pillText, { color: colors.textMuted }]}>{'الحد'}: {rule.thresholdMinutes}min</Text>
                               </View>
                             )}
                             {meta.showValue && (
@@ -947,7 +947,7 @@ export function PayrollAdminScreen() {
                               style={[styles.pill, { backgroundColor: `${colors.primary}15` }]}
                               onPress={() => { setEditRuleType(type); setEditThreshold(String(rule.thresholdMinutes)); setEditDedVal(String(rule.deductionValue)); }}
                             >
-                              <Text style={[styles.pillText, { color: colors.primary }]}><Ionicons name="pencil-outline" size={10} /> {isAr ? 'تعديل' : 'Edit'}</Text>
+                              <Text style={[styles.pillText, { color: colors.primary }]}><Ionicons name="pencil-outline" size={10} /> {'تعديل'}</Text>
                             </TouchableOpacity>
                           </View>
                         )}
@@ -958,22 +958,22 @@ export function PayrollAdminScreen() {
                       <View style={[styles.ruleEdit, { borderTopColor: colors.border }]}>
                         {meta.showThreshold && (
                           <View style={styles.editFieldRow}>
-                            <Text style={[styles.caption, { color: colors.textMuted }]}>{isAr ? 'الحد (دقيقة)' : 'Threshold (min)'}</Text>
+                            <Text style={[styles.caption, { color: colors.textMuted }]}>{'الحد (دقيقة)'}</Text>
                             <TextInput style={[styles.inlineInput, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt, width: 90 }]} value={editThreshold} onChangeText={setEditThreshold} keyboardType="number-pad" />
                           </View>
                         )}
                         {meta.showValue && (
                           <View style={styles.editFieldRow}>
-                            <Text style={[styles.caption, { color: colors.textMuted }]}>{isAr ? 'القيمة' : 'Value'} {type === 'SICK_LEAVE' ? '(%)' : '($)'}</Text>
+                            <Text style={[styles.caption, { color: colors.textMuted }]}>{'القيمة'} {type === 'SICK_LEAVE' ? '(%)' : '($)'}</Text>
                             <TextInput style={[styles.inlineInput, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt, width: 90 }]} value={editDedVal} onChangeText={setEditDedVal} keyboardType="decimal-pad" />
                           </View>
                         )}
                         <View style={{ flexDirection: 'row', gap: spacing.sm, marginTop: spacing.sm }}>
                           <TouchableOpacity style={[styles.smallBtn, { backgroundColor: colors.primary, flex: 2, paddingVertical: 10 }, savingRule && { opacity: 0.6 }]} onPress={() => void handleSaveRule()} disabled={savingRule}>
-                            {savingRule ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.smallBtnText}>{isAr ? 'حفظ' : 'Save'}</Text>}
+                            {savingRule ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.smallBtnText}>{'حفظ'}</Text>}
                           </TouchableOpacity>
                           <TouchableOpacity style={[styles.smallBtn, { backgroundColor: colors.surfaceAlt, flex: 1, paddingVertical: 10 }]} onPress={() => setEditRuleType(null)}>
-                            <Text style={[styles.smallBtnText, { color: colors.textMuted }]}>{isAr ? 'إلغاء' : 'Cancel'}</Text>
+                            <Text style={[styles.smallBtnText, { color: colors.textMuted }]}>{'إلغاء'}</Text>
                           </TouchableOpacity>
                         </View>
                       </View>

@@ -1,5 +1,6 @@
-import React, { useCallback, useEffect, useState } from 'react';
+﻿import React, { useCallback, useEffect, useState } from 'react';
 import {
+import { useLocale } from '../../context/LocaleContext';
   ActivityIndicator,
   Alert,
   FlatList,
@@ -21,7 +22,6 @@ import { api } from '../../api/client';
 import { ScreenHeader } from '../../components';
 import { radius, shadow, spacing, typography } from '../../theme';
 import { useAppTheme } from '../../context/ThemeContext';
-import { useLocale } from '../../context/LocaleContext';
 
 interface Workflow {
   id: number;
@@ -48,6 +48,7 @@ function InlinePicker<T extends string>({ label, value, options, onChange }: {
   label: string; value: T; options: T[]; onChange: (v: T) => void;
 }) {
   const { colors } = useAppTheme();
+  const { isAr } = useLocale();
   return (
     <View style={styles.pickerWrap}>
       <Text style={[styles.pickerLabel, { color: colors.textMuted }]}>{label}</Text>
@@ -90,7 +91,7 @@ function WorkflowCard({ item, onEdit, onDelete }: {
 
   const status = item.status ?? 'DRAFT';
   const meta   = STATUS_META[status] ?? STATUS_META.DRAFT;
-  const name   = item.workflowName ?? item.title ?? `${isAr ? 'سير عمل #' : 'Workflow #'}${item.id}`;
+  const name   = item.workflowName ?? item.title ?? `${'سير عمل #'}${item.id}`;
 
   return (
     <View style={[styles.card, { backgroundColor: colors.surface }]}>
@@ -101,7 +102,7 @@ function WorkflowCard({ item, onEdit, onDelete }: {
         <View style={styles.cardContent}>
           <Text style={[styles.title, { color: colors.text }]} numberOfLines={1}>{name}</Text>
           <Text style={[styles.requester, { color: colors.textMuted }]}>
-            {item.createdBy?.fullName ?? (isAr ? 'غير معروف' : 'Unknown')}
+            {item.createdBy?.fullName ?? ('غير معروف')}
           </Text>
         </View>
         <View style={styles.cardActions}>
@@ -119,12 +120,12 @@ function WorkflowCard({ item, onEdit, onDelete }: {
       <View style={[styles.footer, { borderTopColor: colors.border }]}>
         {(item.itemsCount ?? 0) > 0 && (
           <Text style={[styles.detail, { color: colors.textSecondary }]}>
-            {isAr ? 'العناصر:' : 'Items:'} <Text style={[styles.detailVal, { color: colors.text }]}>{item.itemsCount}</Text>
+            {'العناصر:'} <Text style={[styles.detailVal, { color: colors.text }]}>{item.itemsCount}</Text>
           </Text>
         )}
         {(item.approverCount ?? 0) > 0 && (
           <Text style={[styles.detail, { color: colors.textSecondary }]}>
-            {isAr ? 'المعتمدون:' : 'Approvers:'} <Text style={[styles.detailVal, { color: colors.text }]}>{item.approverCount}</Text>
+            {'المعتمدون:'} <Text style={[styles.detailVal, { color: colors.text }]}>{item.approverCount}</Text>
           </Text>
         )}
         <Text style={[styles.detail, { color: colors.textMuted }]}>
@@ -147,7 +148,7 @@ function WorkflowFormModal({ visible, initial, onClose, onSave, saving }: {
 
   const handleSave = async () => {
     if (!form.workflowName.trim()) {
-      Alert.alert(isAr ? 'تحقق' : 'Validation', isAr ? 'اسم سير العمل مطلوب.' : 'Workflow name is required.');
+      Alert.alert('تحقق', 'اسم سير العمل مطلوب.');
       return;
     }
     await onSave(form);
@@ -160,19 +161,19 @@ function WorkflowFormModal({ visible, initial, onClose, onSave, saving }: {
         <View style={[styles.sheet, { backgroundColor: colors.surface }]}>
           <View style={[styles.sheetHandle, { backgroundColor: colors.border }]} />
           <Text style={[styles.sheetTitle, { color: colors.text }]}>
-            {initial.workflowName ? (isAr ? 'تعديل سير العمل' : 'Edit Workflow') : (isAr ? 'سير عمل جديد' : 'New Workflow')}
+            {initial.workflowName ? ('تعديل سير العمل') : ('سير عمل جديد')}
           </Text>
           <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-            <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{isAr ? 'اسم سير العمل *' : 'Workflow Name *'}</Text>
+            <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{'اسم سير العمل *'}</Text>
             <TextInput
               style={[styles.input, { backgroundColor: colors.surfaceAlt, borderColor: colors.border, color: colors.text }]}
               value={form.workflowName}
               onChangeText={(v) => setForm((p) => ({ ...p, workflowName: v }))}
-              placeholder={isAr ? 'مثال: موافقة الشراء' : 'e.g. Purchase Approval'}
+              placeholder={'مثال: موافقة الشراء'}
               placeholderTextColor={colors.textMuted}
             />
             <InlinePicker
-              label={isAr ? 'الحالة' : 'Status'}
+              label={'الحالة'}
               value={form.status}
               options={WF_STATUS_OPTIONS}
               onChange={(v) => setForm((p) => ({ ...p, status: v }))}
@@ -180,7 +181,7 @@ function WorkflowFormModal({ visible, initial, onClose, onSave, saving }: {
           </ScrollView>
           <View style={styles.sheetActions}>
             <TouchableOpacity style={[styles.cancelBtn, { borderColor: colors.border }]} onPress={onClose}>
-              <Text style={[styles.cancelText, { color: colors.textSecondary }]}>{isAr ? 'إلغاء' : 'Cancel'}</Text>
+              <Text style={[styles.cancelText, { color: colors.textSecondary }]}>{'إلغاء'}</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.saveBtn, { backgroundColor: colors.primary }, saving && { opacity: 0.6 }]}
@@ -189,7 +190,7 @@ function WorkflowFormModal({ visible, initial, onClose, onSave, saving }: {
             >
               {saving
                 ? <ActivityIndicator size="small" color="#fff" />
-                : <Text style={styles.saveText}>{isAr ? 'حفظ' : 'Save'}</Text>}
+                : <Text style={styles.saveText}>{'حفظ'}</Text>}
             </TouchableOpacity>
           </View>
         </View>
@@ -213,7 +214,7 @@ export function ApprovalWorkflowsScreen() {
       const res = await api.get<any>('/approval-workflows?limit=30');
       setWorkflows(Array.isArray(res) ? res : (res?.data ?? res?.items ?? res?.workflows ?? []));
     } catch (e: any) {
-      Alert.alert(isAr ? 'خطأ' : 'Error', e?.message ?? (isAr ? 'فشل التحميل' : 'Failed to load workflows'));
+      Alert.alert('خطأ', e?.message ?? ('فشل التحميل'));
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -226,13 +227,13 @@ export function ApprovalWorkflowsScreen() {
   const openEdit   = (item: Workflow) => { setEditing(item); setModalVisible(true); };
 
   const confirmDelete = (item: Workflow) => {
-    const name = item.workflowName ?? item.title ?? `${isAr ? 'سير عمل #' : 'Workflow #'}${item.id}`;
+    const name = item.workflowName ?? item.title ?? `${'سير عمل #'}${item.id}`;
     Alert.alert(
-      isAr ? 'حذف سير العمل' : 'Delete Workflow',
+      'حذف سير العمل',
       isAr ? `حذف "${name}"؟ لا يمكن التراجع.` : `Delete "${name}"? This cannot be undone.`,
       [
-        { text: isAr ? 'إلغاء' : 'Cancel', style: 'cancel' },
-        { text: isAr ? 'حذف' : 'Delete', style: 'destructive', onPress: () => void handleDelete(item.id) },
+        { text: 'إلغاء', style: 'cancel' },
+        { text: 'حذف', style: 'destructive', onPress: () => void handleDelete(item.id) },
       ],
     );
   };
@@ -243,7 +244,7 @@ export function ApprovalWorkflowsScreen() {
       setRefreshing(true);
       await load();
     } catch (e: any) {
-      Alert.alert(isAr ? 'خطأ' : 'Error', e?.message ?? (isAr ? 'فشل الحذف' : 'Failed to delete'));
+      Alert.alert('خطأ', e?.message ?? ('فشل الحذف'));
     }
   };
 
@@ -260,7 +261,7 @@ export function ApprovalWorkflowsScreen() {
       setRefreshing(true);
       await load();
     } catch (e: any) {
-      Alert.alert(isAr ? 'خطأ' : 'Error', e?.message ?? (isAr ? 'فشل الحفظ' : 'Failed to save'));
+      Alert.alert('خطأ', e?.message ?? ('فشل الحفظ'));
     } finally {
       setSaving(false);
     }
@@ -272,12 +273,12 @@ export function ApprovalWorkflowsScreen() {
 
   const pending = workflows.filter((w) => w.status === 'DRAFT').length;
   const subtitle = pending > 0
-    ? `${pending} ${isAr ? 'في انتظار المراجعة' : 'awaiting review'}`
-    : `${workflows.length} ${isAr ? 'إجمالي' : 'total'}`;
+    ? `${pending} ${'في انتظار المراجعة'}`
+    : `${workflows.length} ${'إجمالي'}`;
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
-      <ScreenHeader title={isAr ? 'سير عمل الموافقات' : 'Approval Workflows'} subtitle={subtitle} showBack />
+      <ScreenHeader title={'سير عمل الموافقات'} subtitle={subtitle} showBack />
       {loading ? (
         <View style={styles.center}><ActivityIndicator size="large" color={colors.primary} /></View>
       ) : (
@@ -294,7 +295,7 @@ export function ApprovalWorkflowsScreen() {
             <View style={styles.empty}>
               <Ionicons name="git-merge-outline" size={44} color={colors.textMuted} />
               <Text style={[styles.emptyText, { color: colors.textMuted }]}>
-                {isAr ? 'لا توجد سير عمل بعد' : 'No workflows yet'}
+                {'لا توجد سير عمل بعد'}
               </Text>
             </View>
           }

@@ -1,28 +1,26 @@
-import React from 'react';
+﻿import React from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { radius, shadow, spacing, typography } from '../../theme';
 import { useAppTheme } from '../../context/ThemeContext';
-import { useLocale } from '../../context/LocaleContext';
 
 export function ExpenseMenuScreen() {
   const { colors } = useAppTheme();
-  const { isAr } = useLocale();
   const navigation = useNavigation<any>();
 
   const ITEMS = [
-    { icon: 'receipt',          label: isAr ? 'تتبع المصاريف' : 'Expense Tracking',     desc: isAr ? 'تسجيل وتصنيف جميع نفقات الأعمال' : 'Log and categorise all business expenses',          screen: 'Expenses',            color: colors.danger },
-    { icon: 'swap-horizontal',  label: isAr ? 'تسوية البنك' : 'Bank Reconciliation',     desc: isAr ? 'مطابقة كشوف البنك مع المعاملات المسجلة' : 'Match bank statements with recorded transactions', screen: 'BankReconciliation',  color: colors.success },
-    { icon: 'calculator',       label: isAr ? 'الامتثال الضريبي' : 'Tax Compliance',     desc: isAr ? 'إدارة تقديمات الضرائب وتقارير الامتثال' : 'Manage tax filings and compliance reports',       screen: 'TaxCompliance',       color: colors.warning },
+    { icon: 'receipt',          label: 'تتبع المصاريف',     desc: 'تسجيل وتصنيف جميع نفقات الأعمال',          screen: 'Expenses',            color: colors.danger },
+    { icon: 'swap-horizontal',  label: 'تسوية البنك',     desc: 'مطابقة كشوف البنك مع المعاملات المسجلة', screen: 'BankReconciliation',  color: colors.success },
+    { icon: 'calculator',       label: 'الامتثال الضريبي',     desc: 'إدارة تقديمات الضرائب وتقارير الامتثال',       screen: 'TaxCompliance',       color: colors.warning },
   ];
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <Text style={[styles.title, { color: colors.text }]}>{isAr ? 'المصاريف' : 'Expenses'}</Text>
-        <Text style={[styles.sub, { color: colors.textMuted }]}>{isAr ? 'إدارة المصاريف والامتثال' : 'Expense management and compliance'}</Text>
+        <Text style={[styles.title, { color: colors.text }]}>{'المصاريف'}</Text>
+        <Text style={[styles.sub, { color: colors.textMuted }]}>{'إدارة المصاريف والامتثال'}</Text>
         <View style={styles.list}>
           {ITEMS.map((item) => (
             <TouchableOpacity key={item.screen} style={[styles.item, { backgroundColor: colors.surface }]} onPress={() => navigation.navigate(item.screen)} activeOpacity={0.75}>

@@ -1,5 +1,6 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+﻿import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
+import { useLocale } from '../../context/LocaleContext';
   ActivityIndicator, Alert, FlatList, KeyboardAvoidingView, Modal,
   Platform, Pressable, RefreshControl, ScrollView,
   StyleSheet, Text, TextInput, TouchableOpacity, View,
@@ -10,7 +11,6 @@ import { api } from '../../api/client';
 import { ScreenHeader, StatCard } from '../../components';
 import { radius, shadow, spacing, typography } from '../../theme';
 import { useAppTheme } from '../../context/ThemeContext';
-import { useLocale } from '../../context/LocaleContext';
 
 function fmt(n: number) {
   return n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -100,9 +100,9 @@ export function InvoicesScreen() {
   useEffect(() => { void load(); }, [load]);
 
   const handleDelete = (inv: Invoice) => {
-    Alert.alert(isAr ? 'حذف' : 'Delete', isAr ? 'هل أنت متأكد؟' : 'Are you sure?', [
-      { text: isAr ? 'إلغاء' : 'Cancel', style: 'cancel' },
-      { text: isAr ? 'حذف' : 'Delete', style: 'destructive', onPress: async () => {
+    Alert.alert('حذف', 'هل أنت متأكد؟', [
+      { text: 'إلغاء', style: 'cancel' },
+      { text: 'حذف', style: 'destructive', onPress: async () => {
         try {
           await api.delete(`/invoices/${inv.id}`);
           setInvoices((p) => p.filter((x) => x.id !== inv.id));
@@ -129,7 +129,7 @@ export function InvoicesScreen() {
       let body: Record<string, unknown>;
       if (createType === 'REGULAR') {
         if (!regForm.customerName.trim() || !regForm.totalAmount) {
-          Alert.alert(isAr ? 'مطلوب' : 'Required', isAr ? 'أدخل اسم العميل والمبلغ' : 'Enter customer name and amount');
+          Alert.alert('مطلوب', 'أدخل اسم العميل والمبلغ');
           setSaving(false); return;
         }
         body = {
@@ -140,7 +140,7 @@ export function InvoicesScreen() {
         };
       } else {
         if (!srCustomer.trim()) {
-          Alert.alert(isAr ? 'مطلوب' : 'Required', isAr ? 'أدخل اسم العميل' : 'Enter customer name');
+          Alert.alert('مطلوب', 'أدخل اسم العميل');
           setSaving(false); return;
         }
         body = {
@@ -224,7 +224,7 @@ export function InvoicesScreen() {
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
-      <ScreenHeader title={isAr ? 'الفواتير' : 'Invoices'} showBack />
+      <ScreenHeader title={'الفواتير'} showBack />
 
       {loading ? (
         <View style={styles.center}><ActivityIndicator size="large" color={colors.primary} /></View>
@@ -238,19 +238,19 @@ export function InvoicesScreen() {
           ListHeaderComponent={
             <View>
               <View style={styles.kpiRow}>
-                <StatCard label={isAr ? 'الإجمالي' : 'Total Value'} value={`$${fmt(totalValue)}`} icon="cash" color={colors.primary} style={styles.kpi} />
-                <StatCard label={isAr ? 'شحنات' : 'Shipments'} value={String(shipments)} icon="car" color={colors.info} style={styles.kpi} />
+                <StatCard label={'الإجمالي'} value={`$${fmt(totalValue)}`} icon="cash" color={colors.primary} style={styles.kpi} />
+                <StatCard label={'شحنات'} value={String(shipments)} icon="car" color={colors.info} style={styles.kpi} />
               </View>
               <View style={[styles.kpiRow, { marginBottom: spacing.md }]}>
-                <StatCard label={isAr ? 'معلق' : 'Pending'} value={String(pending)} icon="time" color={colors.warning} style={styles.kpi} />
-                <StatCard label={isAr ? 'مؤكد' : 'Confirmed'} value={String(confirmed)} icon="checkmark-circle" color={colors.success} style={styles.kpi} />
+                <StatCard label={'معلق'} value={String(pending)} icon="time" color={colors.warning} style={styles.kpi} />
+                <StatCard label={'مؤكد'} value={String(confirmed)} icon="checkmark-circle" color={colors.success} style={styles.kpi} />
               </View>
 
               <View style={[styles.searchBar, { backgroundColor: colors.surface, borderColor: colors.border }]}>
                 <Ionicons name="search-outline" size={16} color={colors.textMuted} />
                 <TextInput
                   style={[styles.searchInput, { color: colors.text }]}
-                  placeholder={isAr ? 'بحث برقم الفاتورة، العميل، السائق…' : 'Search by number, customer, driver…'}
+                  placeholder={'بحث برقم الفاتورة، العميل، السائق…'}
                   placeholderTextColor={colors.textMuted}
                   value={search}
                   onChangeText={setSearch}
@@ -279,7 +279,7 @@ export function InvoicesScreen() {
 
               <TouchableOpacity style={[styles.addBtn, { backgroundColor: colors.primary }]} onPress={openCreate} activeOpacity={0.8}>
                 <Ionicons name="add-circle" size={20} color="#fff" />
-                <Text style={styles.addText}>{isAr ? 'إضافة فاتورة' : 'Add Invoice'}</Text>
+                <Text style={styles.addText}>{'إضافة فاتورة'}</Text>
               </TouchableOpacity>
             </View>
           }
@@ -301,12 +301,12 @@ export function InvoicesScreen() {
                     </Text>
                     {inv.dueDate ? (
                       <Text style={[styles.cardSub, { color: colors.textMuted }]}>
-                        {isAr ? 'الاستحقاق: ' : 'Due: '}{new Date(inv.dueDate).toLocaleDateString()}
+                        {'الاستحقاق: '}{new Date(inv.dueDate).toLocaleDateString()}
                       </Text>
                     ) : null}
                     {inv.driverName ? (
                       <Text style={[styles.cardSub, { color: colors.textMuted }]}>
-                        {isAr ? 'السائق: ' : 'Driver: '}{inv.driverName}
+                        {'السائق: '}{inv.driverName}
                       </Text>
                     ) : null}
                   </View>
@@ -326,20 +326,20 @@ export function InvoicesScreen() {
                   {inv.invoiceType === 'RECEIPT' && !inv.confirmedAt && (
                     <TouchableOpacity style={[styles.footerBtn, { borderColor: colors.success }]} onPress={() => handleConfirm(inv)}>
                       <Ionicons name="checkmark-circle" size={14} color={colors.success} />
-                      <Text style={[styles.footerBtnText, { color: colors.success }]}>{isAr ? 'تأكيد' : 'Confirm'}</Text>
+                      <Text style={[styles.footerBtnText, { color: colors.success }]}>{'تأكيد'}</Text>
                     </TouchableOpacity>
                   )}
                   <TouchableOpacity style={[styles.footerBtn, { borderColor: colors.info }]} onPress={() => openPayment(inv)}>
                     <Ionicons name="cash" size={14} color={colors.info} />
-                    <Text style={[styles.footerBtnText, { color: colors.info }]}>{isAr ? 'دفع' : 'Payment'}</Text>
+                    <Text style={[styles.footerBtnText, { color: colors.info }]}>{'دفع'}</Text>
                   </TouchableOpacity>
                   <TouchableOpacity style={[styles.footerBtn, { borderColor: colors.primary }]} onPress={() => openEdit(inv)}>
                     <Ionicons name="pencil" size={14} color={colors.primary} />
-                    <Text style={[styles.footerBtnText, { color: colors.primary }]}>{isAr ? 'تعديل' : 'Edit'}</Text>
+                    <Text style={[styles.footerBtnText, { color: colors.primary }]}>{'تعديل'}</Text>
                   </TouchableOpacity>
                   <TouchableOpacity style={[styles.footerBtn, { borderColor: colors.danger }]} onPress={() => handleDelete(inv)}>
                     <Ionicons name="trash-outline" size={14} color={colors.danger} />
-                    <Text style={[styles.footerBtnText, { color: colors.danger }]}>{isAr ? 'حذف' : 'Delete'}</Text>
+                    <Text style={[styles.footerBtnText, { color: colors.danger }]}>{'حذف'}</Text>
                   </TouchableOpacity>
                 </View>
               </View>
@@ -348,7 +348,7 @@ export function InvoicesScreen() {
           ListEmptyComponent={
             <View style={styles.empty}>
               <Ionicons name="document-text-outline" size={44} color={colors.textMuted} />
-              <Text style={[styles.emptyText, { color: colors.textMuted }]}>{isAr ? 'لا توجد فواتير' : 'No invoices'}</Text>
+              <Text style={[styles.emptyText, { color: colors.textMuted }]}>{'لا توجد فواتير'}</Text>
             </View>
           }
         />
@@ -360,9 +360,9 @@ export function InvoicesScreen() {
           <Pressable style={styles.overlayBg} onPress={() => setCreateModal(false)} />
           <View style={[styles.sheet, { backgroundColor: colors.surface }]}>
             <View style={[styles.handle, { backgroundColor: colors.border }]} />
-            <Text style={[styles.sheetTitle, { color: colors.text }]}>{isAr ? 'فاتورة جديدة' : 'New Invoice'}</Text>
+            <Text style={[styles.sheetTitle, { color: colors.text }]}>{'فاتورة جديدة'}</Text>
             <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-              <Text style={[styles.label, { color: colors.textMuted }]}>{isAr ? 'نوع الفاتورة *' : 'Invoice Type *'}</Text>
+              <Text style={[styles.label, { color: colors.textMuted }]}>{'نوع الفاتورة *'}</Text>
               <View style={styles.chipGroup}>
                 {(['REGULAR', 'SHIPMENT', 'RECEIPT'] as const).map((t) => (
                   <TouchableOpacity key={t}
@@ -376,14 +376,14 @@ export function InvoicesScreen() {
                 ))}
               </View>
 
-              <Text style={[styles.label, { color: colors.textMuted }]}>{isAr ? 'اسم العميل *' : 'Customer Name *'}</Text>
+              <Text style={[styles.label, { color: colors.textMuted }]}>{'اسم العميل *'}</Text>
               <TextInput style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
-                placeholder={isAr ? 'اسم العميل أو الشركة' : 'Customer or company name'}
+                placeholder={'اسم العميل أو الشركة'}
                 placeholderTextColor={colors.textMuted}
                 value={createType === 'REGULAR' ? regForm.customerName : srCustomer}
                 onChangeText={(v) => createType === 'REGULAR' ? setRegForm((p) => ({ ...p, customerName: v })) : setSrCustomer(v)} />
 
-              <Text style={[styles.label, { color: colors.textMuted }]}>{isAr ? 'رقم الفاتورة' : 'Invoice Number'}</Text>
+              <Text style={[styles.label, { color: colors.textMuted }]}>{'رقم الفاتورة'}</Text>
               <TextInput style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
                 placeholder="INV-001" placeholderTextColor={colors.textMuted}
                 value={createType === 'REGULAR' ? regForm.invoiceNumber : srInvNum}
@@ -391,12 +391,12 @@ export function InvoicesScreen() {
 
               {createType === 'REGULAR' && (
                 <>
-                  <Text style={[styles.label, { color: colors.textMuted }]}>{isAr ? 'المبلغ الإجمالي *' : 'Total Amount *'}</Text>
+                  <Text style={[styles.label, { color: colors.textMuted }]}>{'المبلغ الإجمالي *'}</Text>
                   <TextInput style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
                     placeholder="0.00" placeholderTextColor={colors.textMuted} keyboardType="decimal-pad"
                     value={regForm.totalAmount} onChangeText={(v) => setRegForm((p) => ({ ...p, totalAmount: v }))} />
 
-                  <Text style={[styles.label, { color: colors.textMuted }]}>{isAr ? 'تاريخ الاستحقاق' : 'Due Date'}</Text>
+                  <Text style={[styles.label, { color: colors.textMuted }]}>{'تاريخ الاستحقاق'}</Text>
                   <TextInput style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
                     placeholder="YYYY-MM-DD" placeholderTextColor={colors.textMuted}
                     value={regForm.dueDate} onChangeText={(v) => setRegForm((p) => ({ ...p, dueDate: v }))} />
@@ -405,20 +405,20 @@ export function InvoicesScreen() {
 
               {(createType === 'SHIPMENT' || createType === 'RECEIPT') && (
                 <>
-                  <Text style={[styles.label, { color: colors.textMuted }]}>{isAr ? 'اسم السائق' : 'Driver Name'}</Text>
+                  <Text style={[styles.label, { color: colors.textMuted }]}>{'اسم السائق'}</Text>
                   <TextInput style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
-                    placeholder={isAr ? 'اسم السائق' : 'Driver name'} placeholderTextColor={colors.textMuted}
+                    placeholder={'اسم السائق'} placeholderTextColor={colors.textMuted}
                     value={srDriver} onChangeText={setSrDriver} />
 
-                  <Text style={[styles.label, { color: colors.textMuted }]}>{isAr ? 'ملاحظات' : 'Notes'}</Text>
+                  <Text style={[styles.label, { color: colors.textMuted }]}>{'ملاحظات'}</Text>
                   <TextInput style={[styles.input, styles.inputMulti, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
-                    placeholder={isAr ? 'ملاحظات اختيارية…' : 'Optional notes…'}
+                    placeholder={'ملاحظات اختيارية…'}
                     placeholderTextColor={colors.textMuted} multiline numberOfLines={3}
                     value={srNotes} onChangeText={setSrNotes} />
                 </>
               )}
 
-              <Text style={[styles.label, { color: colors.textMuted }]}>{isAr ? 'العملة' : 'Currency'}</Text>
+              <Text style={[styles.label, { color: colors.textMuted }]}>{'العملة'}</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                 <View style={{ flexDirection: 'row', gap: spacing.xs, paddingBottom: spacing.sm }}>
                   {CURRENCIES.map((c) => {
@@ -438,10 +438,10 @@ export function InvoicesScreen() {
 
             <View style={styles.actions}>
               <TouchableOpacity style={[styles.cancelBtn, { borderColor: colors.border }]} onPress={() => setCreateModal(false)}>
-                <Text style={[styles.cancelText, { color: colors.textSecondary }]}>{isAr ? 'إلغاء' : 'Cancel'}</Text>
+                <Text style={[styles.cancelText, { color: colors.textSecondary }]}>{'إلغاء'}</Text>
               </TouchableOpacity>
               <TouchableOpacity style={[styles.saveBtn, { backgroundColor: colors.primary }, saving && { opacity: 0.6 }]} onPress={submitCreate} disabled={saving}>
-                {saving ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.saveText}>{isAr ? 'إنشاء' : 'Create'}</Text>}
+                {saving ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.saveText}>{'إنشاء'}</Text>}
               </TouchableOpacity>
             </View>
           </View>
@@ -454,7 +454,7 @@ export function InvoicesScreen() {
           <Pressable style={styles.overlayBg} onPress={() => setEditModal(false)} />
           <View style={[styles.sheet, { backgroundColor: colors.surface }]}>
             <View style={[styles.handle, { backgroundColor: colors.border }]} />
-            <Text style={[styles.sheetTitle, { color: colors.text }]}>{isAr ? 'تعديل الفاتورة' : 'Edit Invoice'}</Text>
+            <Text style={[styles.sheetTitle, { color: colors.text }]}>{'تعديل الفاتورة'}</Text>
             <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
               {[
                 { key: 'invoiceNumber', labelEn: 'Invoice Number', labelAr: 'رقم الفاتورة', ph: 'INV-001' },
@@ -479,10 +479,10 @@ export function InvoicesScreen() {
             </ScrollView>
             <View style={styles.actions}>
               <TouchableOpacity style={[styles.cancelBtn, { borderColor: colors.border }]} onPress={() => setEditModal(false)}>
-                <Text style={[styles.cancelText, { color: colors.textSecondary }]}>{isAr ? 'إلغاء' : 'Cancel'}</Text>
+                <Text style={[styles.cancelText, { color: colors.textSecondary }]}>{'إلغاء'}</Text>
               </TouchableOpacity>
               <TouchableOpacity style={[styles.saveBtn, { backgroundColor: colors.primary }, editSaving && { opacity: 0.6 }]} onPress={submitEdit} disabled={editSaving}>
-                {editSaving ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.saveText}>{isAr ? 'حفظ' : 'Save'}</Text>}
+                {editSaving ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.saveText}>{'حفظ'}</Text>}
               </TouchableOpacity>
             </View>
           </View>
@@ -495,8 +495,8 @@ export function InvoicesScreen() {
           <Pressable style={styles.overlayBg} onPress={() => setPayModal(false)} />
           <View style={[styles.sheet, { backgroundColor: colors.surface }]}>
             <View style={[styles.handle, { backgroundColor: colors.border }]} />
-            <Text style={[styles.sheetTitle, { color: colors.text }]}>{isAr ? 'تسجيل الدفع' : 'Record Payment'}</Text>
-            <Text style={[styles.label, { color: colors.textMuted }]}>{isAr ? 'حالة الدفع *' : 'Payment Status *'}</Text>
+            <Text style={[styles.sheetTitle, { color: colors.text }]}>{'تسجيل الدفع'}</Text>
+            <Text style={[styles.label, { color: colors.textMuted }]}>{'حالة الدفع *'}</Text>
             <View style={styles.chipGroup}>
               {PAYMENT_STATUSES.map((s) => (
                 <TouchableOpacity key={s}
@@ -511,10 +511,10 @@ export function InvoicesScreen() {
             </View>
             <View style={styles.actions}>
               <TouchableOpacity style={[styles.cancelBtn, { borderColor: colors.border }]} onPress={() => setPayModal(false)}>
-                <Text style={[styles.cancelText, { color: colors.textSecondary }]}>{isAr ? 'إلغاء' : 'Cancel'}</Text>
+                <Text style={[styles.cancelText, { color: colors.textSecondary }]}>{'إلغاء'}</Text>
               </TouchableOpacity>
               <TouchableOpacity style={[styles.saveBtn, { backgroundColor: colors.primary }, payLoading && { opacity: 0.6 }]} onPress={submitPayment} disabled={payLoading}>
-                {payLoading ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.saveText}>{isAr ? 'حفظ' : 'Save'}</Text>}
+                {payLoading ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.saveText}>{'حفظ'}</Text>}
               </TouchableOpacity>
             </View>
           </View>

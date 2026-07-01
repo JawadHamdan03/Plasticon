@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+﻿import React, { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, FlatList, RefreshControl, StyleSheet, Text, View, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -6,7 +6,6 @@ import { api } from '../../api/client';
 import { ScreenHeader } from '../../components';
 import { radius, shadow, spacing, typography } from '../../theme';
 import { useAppTheme } from '../../context/ThemeContext';
-import { useLocale } from '../../context/LocaleContext';
 
 interface TransferRecord {
   id: number;
@@ -28,7 +27,6 @@ function fmtDate(d?: string) {
 
 function TransferCard({ item }: { item: TransferRecord }) {
   const { colors } = useAppTheme();
-  const { isAr } = useLocale();
   const name = item.item?.name ?? item.itemName ?? `Transfer #${item.id}`;
   return (
     <View style={[styles.card, { backgroundColor: colors.surface }]}>
@@ -38,18 +36,18 @@ function TransferCard({ item }: { item: TransferRecord }) {
       </View>
       <View style={styles.route}>
         <View style={styles.location}>
-          <Text style={[styles.locationLabel, { color: colors.textMuted }]}>{isAr ? 'من' : 'From'}</Text>
+          <Text style={[styles.locationLabel, { color: colors.textMuted }]}>{'من'}</Text>
           <Text style={[styles.locationValue, { color: colors.text }]}>{item.fromLocation ?? '—'}</Text>
         </View>
         <Ionicons name="arrow-forward" size={16} color={colors.primary} />
         <View style={styles.location}>
-          <Text style={[styles.locationLabel, { color: colors.textMuted }]}>{isAr ? 'إلى' : 'To'}</Text>
+          <Text style={[styles.locationLabel, { color: colors.textMuted }]}>{'إلى'}</Text>
           <Text style={[styles.locationValue, { color: colors.text }]}>{item.toLocation ?? '—'}</Text>
         </View>
         {item.quantity != null && (
           <View style={styles.qty}>
             <Text style={[styles.qtyVal, { color: colors.primary }]}>{item.quantity}</Text>
-            <Text style={[styles.qtyLabel, { color: colors.textMuted }]}>{isAr ? 'وحدة' : 'units'}</Text>
+            <Text style={[styles.qtyLabel, { color: colors.textMuted }]}>{'وحدة'}</Text>
           </View>
         )}
       </View>
@@ -65,7 +63,6 @@ function TransferCard({ item }: { item: TransferRecord }) {
 
 export function TransferLogScreen() {
   const { colors } = useAppTheme();
-  const { isAr } = useLocale();
   const [logs, setLogs]         = useState<TransferRecord[]>([]);
   const [loading, setLoading]   = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -90,12 +87,12 @@ export function TransferLogScreen() {
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
-      <ScreenHeader title={isAr ? 'سجل النقل' : 'Transfer Log'} subtitle={isAr ? 'سجل حركة المعدات' : 'Equipment movement history'} showBack />
+      <ScreenHeader title={'سجل النقل'} subtitle={'سجل حركة المعدات'} showBack />
       {!isCheckedIn && !loading && (
         <View style={[styles.banner, { backgroundColor: `${colors.warning}15`, borderColor: `${colors.warning}50` }]}>
           <Ionicons name="warning-outline" size={16} color={colors.warning} />
           <Text style={[styles.bannerText, { color: colors.warning }]}>
-            {isAr ? 'يجب تسجيل الدخول لتسجيل عمليات النقل' : 'Check in to record equipment transfers'}
+            {'يجب تسجيل الدخول لتسجيل عمليات النقل'}
           </Text>
         </View>
       )}
@@ -112,7 +109,7 @@ export function TransferLogScreen() {
           ListEmptyComponent={
             <View style={styles.empty}>
               <Ionicons name="swap-horizontal-outline" size={44} color={colors.textMuted} />
-              <Text style={[styles.emptyText, { color: colors.textMuted }]}>{isAr ? 'لا توجد سجلات نقل' : 'No transfer records'}</Text>
+              <Text style={[styles.emptyText, { color: colors.textMuted }]}>{'لا توجد سجلات نقل'}</Text>
             </View>
           }
         />

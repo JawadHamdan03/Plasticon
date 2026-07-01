@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+﻿import React, { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator, Alert, FlatList, KeyboardAvoidingView,
   Modal, Platform, RefreshControl, ScrollView, StyleSheet,
@@ -10,7 +10,6 @@ import { api } from '../../api/client';
 import { Button, ScreenHeader } from '../../components';
 import { radius, shadow, spacing, typography } from '../../theme';
 import { useAppTheme } from '../../context/ThemeContext';
-import { useLocale } from '../../context/LocaleContext';
 
 interface Machine { id: number; name: string; type?: string }
 interface MaintenanceRecord {
@@ -29,7 +28,6 @@ function fmtDate(d: string) {
 
 function RecordCard({ item }: { item: MaintenanceRecord }) {
   const { colors } = useAppTheme();
-  const { isAr } = useLocale();
   return (
     <View style={[styles.card, { backgroundColor: colors.surface }]}>
       <View style={styles.cardTop}>
@@ -39,7 +37,7 @@ function RecordCard({ item }: { item: MaintenanceRecord }) {
       {item.downtimeMinutes != null && (
         <View style={styles.downtimeRow}>
           <Ionicons name="time-outline" size={13} color={colors.warning} />
-          <Text style={[styles.downtime, { color: colors.warning }]}>{item.downtimeMinutes} {isAr ? 'دقيقة توقف' : 'min downtime'}</Text>
+          <Text style={[styles.downtime, { color: colors.warning }]}>{item.downtimeMinutes} {'دقيقة توقف'}</Text>
         </View>
       )}
       {item.downtimeReason ? <Text style={[styles.reason, { color: colors.textSecondary }]} numberOfLines={2}>{item.downtimeReason}</Text> : null}
@@ -57,7 +55,6 @@ function CreateModal({ visible, machines, onClose, onSuccess }: {
   visible: boolean; machines: Machine[]; onClose: () => void; onSuccess: () => void;
 }) {
   const { colors } = useAppTheme();
-  const { isAr } = useLocale();
   const [machineId, setMachineId] = useState('');
   const [downtime, setDowntime]   = useState('');
   const [reason, setReason]       = useState('');
@@ -68,7 +65,7 @@ function CreateModal({ visible, machines, onClose, onSuccess }: {
   const reset = () => { setMachineId(''); setDowntime(''); setReason(''); setParts(''); setReport(''); };
 
   const submit = async () => {
-    if (!machineId) { Alert.alert(isAr ? 'مطلوب' : 'Required', isAr ? 'اختر آلة.' : 'Select a machine.'); return; }
+    if (!machineId) { Alert.alert('مطلوب', 'اختر آلة.'); return; }
     setSaving(true);
     try {
       await api.post('/maintenance', {
@@ -81,17 +78,17 @@ function CreateModal({ visible, machines, onClose, onSuccess }: {
       reset();
       onSuccess();
     } catch (err: any) {
-      Alert.alert(isAr ? 'خطأ' : 'Error', err.message ?? (isAr ? 'فشل الحفظ.' : 'Failed to save.'));
+      Alert.alert('خطأ', err.message ?? ('فشل الحفظ.'));
     } finally {
       setSaving(false);
     }
   };
 
   const FIELDS = [
-    { label: isAr ? 'وقت التوقف (دقائق)' : 'Downtime (minutes)', val: downtime, set: setDowntime, keyboard: 'numeric' as const },
-    { label: isAr ? 'السبب / الوصف' : 'Reason / Description', val: reason, set: setReason, multi: true },
-    { label: isAr ? 'القطع المستخدمة' : 'Parts Used', val: parts, set: setParts },
-    { label: isAr ? 'ملاحظات التقرير' : 'Report Notes', val: report, set: setReport, multi: true },
+    { label: 'وقت التوقف (دقائق)', val: downtime, set: setDowntime, keyboard: 'numeric' as const },
+    { label: 'السبب / الوصف', val: reason, set: setReason, multi: true },
+    { label: 'القطع المستخدمة', val: parts, set: setParts },
+    { label: 'ملاحظات التقرير', val: report, set: setReport, multi: true },
   ];
 
   return (
@@ -99,9 +96,9 @@ function CreateModal({ visible, machines, onClose, onSuccess }: {
       <KeyboardAvoidingView style={styles.overlay} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         <View style={[styles.sheet, { backgroundColor: colors.surface }]}>
           <View style={[styles.handle, { backgroundColor: colors.border }]} />
-          <Text style={[styles.sheetTitle, { color: colors.text }]}>{isAr ? 'تسجيل صيانة' : 'Log Maintenance'}</Text>
+          <Text style={[styles.sheetTitle, { color: colors.text }]}>{'تسجيل صيانة'}</Text>
           <ScrollView showsVerticalScrollIndicator={false}>
-            <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{isAr ? 'الآلة *' : 'Machine *'}</Text>
+            <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{'الآلة *'}</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: spacing.md }}>
               {machines.map((m, idx) => (
                 <TouchableOpacity
@@ -133,8 +130,8 @@ function CreateModal({ visible, machines, onClose, onSuccess }: {
               </View>
             ))}
             <View style={styles.actions}>
-              <Button variant="ghost" onPress={() => { reset(); onClose(); }} style={styles.actionBtn}>{isAr ? 'إلغاء' : 'Cancel'}</Button>
-              <Button onPress={submit} loading={saving} style={styles.actionBtn}>{isAr ? 'حفظ' : 'Save'}</Button>
+              <Button variant="ghost" onPress={() => { reset(); onClose(); }} style={styles.actionBtn}>{'إلغاء'}</Button>
+              <Button onPress={submit} loading={saving} style={styles.actionBtn}>{'حفظ'}</Button>
             </View>
           </ScrollView>
         </View>
@@ -145,7 +142,6 @@ function CreateModal({ visible, machines, onClose, onSuccess }: {
 
 export function MaintenancePage() {
   const { colors } = useAppTheme();
-  const { isAr } = useLocale();
   const [records, setRecords]     = useState<MaintenanceRecord[]>([]);
   const [machines, setMachines]   = useState<Machine[]>([]);
   const [loading, setLoading]     = useState(true);
@@ -170,7 +166,7 @@ export function MaintenancePage() {
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
-      <ScreenHeader title={isAr ? 'سجلات الصيانة' : 'Maintenance Records'} showBack />
+      <ScreenHeader title={'سجلات الصيانة'} showBack />
       {loading ? (
         <View style={styles.center}><ActivityIndicator size="large" color={colors.primary} /></View>
       ) : (
@@ -184,7 +180,7 @@ export function MaintenancePage() {
           ListEmptyComponent={
             <View style={styles.empty}>
               <Ionicons name="construct-outline" size={44} color={colors.textMuted} />
-              <Text style={[styles.emptyText, { color: colors.textMuted }]}>{isAr ? 'لا توجد سجلات بعد' : 'No records yet'}</Text>
+              <Text style={[styles.emptyText, { color: colors.textMuted }]}>{'لا توجد سجلات بعد'}</Text>
             </View>
           }
         />

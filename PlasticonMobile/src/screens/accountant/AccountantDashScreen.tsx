@@ -1,5 +1,6 @@
-import React, { useCallback, useEffect, useState } from 'react';
+﻿import React, { useCallback, useEffect, useState } from 'react';
 import {
+import { useLocale } from '../../context/LocaleContext';
   ActivityIndicator, RefreshControl, ScrollView,
   StyleSheet, Text, TouchableOpacity, View,
 } from 'react-native';
@@ -10,7 +11,6 @@ import { useAuth } from '../../auth/AuthContext';
 import { api } from '../../api/client';
 import { radius, shadow, spacing, typography } from '../../theme';
 import { useAppTheme } from '../../context/ThemeContext';
-import { useLocale } from '../../context/LocaleContext';
 
 interface DashData {
   totalRevenue:    number;
@@ -110,7 +110,7 @@ export function AccountantDashScreen() {
         {/* Header */}
         <View style={styles.header}>
           <View>
-            <Text style={[styles.greetSub, { color: colors.textMuted }]}>{isAr ? 'نظرة عامة' : 'Overview'}</Text>
+            <Text style={[styles.greetSub, { color: colors.textMuted }]}>{'نظرة عامة'}</Text>
             <Text style={[styles.greetName, { color: colors.text }]}>{isAr ? `مرحباً، ${firstName}` : `Hello, ${firstName}`}</Text>
           </View>
           <TouchableOpacity
@@ -119,7 +119,7 @@ export function AccountantDashScreen() {
             activeOpacity={0.8}
           >
             <Ionicons name="bar-chart" size={16} color={colors.accent} />
-            <Text style={[styles.reportBtnText, { color: colors.accent }]}>{isAr ? 'تقارير مالية' : 'Financial Reports'}</Text>
+            <Text style={[styles.reportBtnText, { color: colors.accent }]}>{'تقارير مالية'}</Text>
           </TouchableOpacity>
         </View>
 
@@ -128,23 +128,23 @@ export function AccountantDashScreen() {
         ) : (
           <>
             {/* KPI grid */}
-            <Text style={[styles.sectionLabel, { color: colors.textMuted }]}>{isAr ? 'الملخص المالي' : 'FINANCIAL SUMMARY'}</Text>
+            <Text style={[styles.sectionLabel, { color: colors.textMuted }]}>{'الملخص المالي'}</Text>
             <View style={styles.kpiGrid}>
-              <KpiCard label={isAr ? 'إجمالي الإيرادات' : 'Total Revenue'}    value={fmt(data?.totalRevenue ?? 0)}     icon="trending-up"       color={colors.success} onPress={() => navigation.navigate('FinanceDash')}           colors={colors} />
-              <KpiCard label={isAr ? 'إجمالي المصروفات' : 'Total Expenses'}   value={fmt(data?.totalExpenses ?? 0)}    icon="trending-down"     color={colors.danger}  onPress={() => navigation.navigate('Expenses')}              colors={colors} />
-              <KpiCard label={isAr ? 'صافي الربح' : 'Net Profit'}             value={fmt(data?.netProfit ?? 0)}        icon="cash"              color={(data?.netProfit ?? 0) >= 0 ? colors.success : colors.danger}                                          colors={colors} />
-              <KpiCard label={isAr ? 'مستقبلات العملاء' : 'Customer Receivables'} value={fmt(data?.openReceivables ?? 0)} icon="arrow-down-circle" color={colors.primary} onPress={() => navigation.navigate('CustomerReceivables')} colors={colors} />
-              <KpiCard label={isAr ? 'مستحقات الموردين' : 'Supplier Payables'}    value={fmt(data?.openPayables ?? 0)}    icon="arrow-up-circle"   color={colors.warning} onPress={() => navigation.navigate('SupplierPayables')}    colors={colors} />
-              <KpiCard label={isAr ? 'الفواتير' : 'Invoices'}                value={String(data?.pendingInvoices ?? 0)} icon="document-text"    color={colors.info}    onPress={() => navigation.navigate('Invoices')}              colors={colors} />
+              <KpiCard label={'إجمالي الإيرادات'}    value={fmt(data?.totalRevenue ?? 0)}     icon="trending-up"       color={colors.success} onPress={() => navigation.navigate('FinanceDash')}           colors={colors} />
+              <KpiCard label={'إجمالي المصروفات'}   value={fmt(data?.totalExpenses ?? 0)}    icon="trending-down"     color={colors.danger}  onPress={() => navigation.navigate('Expenses')}              colors={colors} />
+              <KpiCard label={'صافي الربح'}             value={fmt(data?.netProfit ?? 0)}        icon="cash"              color={(data?.netProfit ?? 0) >= 0 ? colors.success : colors.danger}                                          colors={colors} />
+              <KpiCard label={'مستقبلات العملاء'} value={fmt(data?.openReceivables ?? 0)} icon="arrow-down-circle" color={colors.primary} onPress={() => navigation.navigate('CustomerReceivables')} colors={colors} />
+              <KpiCard label={'مستحقات الموردين'}    value={fmt(data?.openPayables ?? 0)}    icon="arrow-up-circle"   color={colors.warning} onPress={() => navigation.navigate('SupplierPayables')}    colors={colors} />
+              <KpiCard label={'الفواتير'}                value={String(data?.pendingInvoices ?? 0)} icon="document-text"    color={colors.info}    onPress={() => navigation.navigate('Invoices')}              colors={colors} />
             </View>
 
             {/* Quick links */}
-            <Text style={[styles.sectionLabel, { color: colors.textMuted }]}>{isAr ? 'وصول سريع' : 'QUICK ACCESS'}</Text>
+            <Text style={[styles.sectionLabel, { color: colors.textMuted }]}>{'وصول سريع'}</Text>
             <View style={styles.qlGrid}>
-              <QuickLink icon="document-text"  label={isAr ? 'الفواتير' : 'Invoices'}              color={colors.primary} onPress={() => navigation.navigate('Invoices')}           colors={colors} />
-              <QuickLink icon="receipt"        label={isAr ? 'المصروفات' : 'Expenses'}             color={colors.danger}  onPress={() => navigation.navigate('Expenses')}           colors={colors} />
-              <QuickLink icon="checkmark-done" label={isAr ? 'سير الموافقات' : 'Approval Workflows'} color={colors.success} onPress={() => navigation.navigate('ApprovalWorkflows')} colors={colors} />
-              <QuickLink icon="hardware-chip"  label={isAr ? 'أدوات الذكاء' : 'AI Tools'}          color={colors.info}    onPress={() => navigation.navigate('AIHub')}              colors={colors} />
+              <QuickLink icon="document-text"  label={'الفواتير'}              color={colors.primary} onPress={() => navigation.navigate('Invoices')}           colors={colors} />
+              <QuickLink icon="receipt"        label={'المصروفات'}             color={colors.danger}  onPress={() => navigation.navigate('Expenses')}           colors={colors} />
+              <QuickLink icon="checkmark-done" label={'سير الموافقات'} color={colors.success} onPress={() => navigation.navigate('ApprovalWorkflows')} colors={colors} />
+              <QuickLink icon="hardware-chip"  label={'أدوات الذكاء'}          color={colors.info}    onPress={() => navigation.navigate('AIHub')}              colors={colors} />
             </View>
           </>
         )}

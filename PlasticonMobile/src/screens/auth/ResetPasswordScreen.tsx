@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import {
   KeyboardAvoidingView, Platform, ScrollView,
   StyleSheet, Text, TouchableOpacity, View,
@@ -13,7 +13,6 @@ import { Input }  from '../../components/Input';
 import { AuthStackParamList } from '../../navigation/types';
 import { radius, spacing, typography } from '../../theme';
 import { useAppTheme } from '../../context/ThemeContext';
-import { useLocale } from '../../context/LocaleContext';
 
 type Nav   = NativeStackNavigationProp<AuthStackParamList>;
 type Route = RouteProp<AuthStackParamList, 'ResetPassword'>;
@@ -22,7 +21,6 @@ export function ResetPasswordScreen() {
   const navigation = useNavigation<Nav>();
   const route      = useRoute<Route>();
   const { colors } = useAppTheme();
-  const { isAr } = useLocale();
 
   const [token,    setToken]    = useState(route.params?.token ?? '');
   const [password, setPassword] = useState('');
@@ -32,17 +30,17 @@ export function ResetPasswordScreen() {
   const [done,     setDone]     = useState(false);
 
   const submit = async () => {
-    if (!token.trim()) { setError(isAr ? 'يرجى إدخال رمز الاسترداد.' : 'Please enter the reset code from your email.'); return; }
-    if (!password)     { setError(isAr ? 'يرجى إدخال كلمة مرور جديدة.' : 'Please enter a new password.'); return; }
-    if (password !== confirm) { setError(isAr ? 'كلمتا المرور غير متطابقتين.' : 'Passwords do not match.'); return; }
-    if (password.length < 6)  { setError(isAr ? 'يجب أن تتكون كلمة المرور من 6 أحرف على الأقل.' : 'Password must be at least 6 characters.'); return; }
+    if (!token.trim()) { setError('يرجى إدخال رمز الاسترداد.'); return; }
+    if (!password)     { setError('يرجى إدخال كلمة مرور جديدة.'); return; }
+    if (password !== confirm) { setError('كلمتا المرور غير متطابقتين.'); return; }
+    if (password.length < 6)  { setError('يجب أن تتكون كلمة المرور من 6 أحرف على الأقل.'); return; }
     setError('');
     setLoading(true);
     try {
       await api.post('/auth/reset-password', { token: token.trim(), password });
       setDone(true);
     } catch (e: any) {
-      setError(e.message ?? (isAr ? 'فشل إعادة تعيين كلمة المرور. قد تكون الرابط منتهية الصلاحية.' : 'Failed to reset password. The link may have expired.'));
+      setError(e.message ?? ('فشل إعادة تعيين كلمة المرور. قد تكون الرابط منتهية الصلاحية.'));
     } finally {
       setLoading(false);
     }
@@ -59,9 +57,9 @@ export function ResetPasswordScreen() {
           <View style={styles.logoWrap}>
             <Ionicons name="lock-open" size={28} color={colors.accent} />
           </View>
-          <Text style={styles.brandName}>{isAr ? 'إعادة تعيين كلمة المرور' : 'Reset Password'}</Text>
+          <Text style={styles.brandName}>{'إعادة تعيين كلمة المرور'}</Text>
           <Text style={[styles.brandSub, { color: colors.tabInactive }]}>
-            {isAr ? 'أدخل الرمز من بريدك الإلكتروني' : 'Enter the code from your email'}
+            {'أدخل الرمز من بريدك الإلكتروني'}
           </Text>
         </View>
 
@@ -80,41 +78,39 @@ export function ResetPasswordScreen() {
                 <Ionicons name="checkmark-circle" size={48} color={colors.success} />
               </View>
               <Text style={[styles.doneTitle, { color: colors.text }]}>
-                {isAr ? 'تم إعادة تعيين كلمة المرور!' : 'Password reset!'}
+                {'تم إعادة تعيين كلمة المرور!'}
               </Text>
               <Text style={[styles.doneSub, { color: colors.textMuted }]}>
-                {isAr
-                  ? 'تم تحديث كلمة مرورك بنجاح. يمكنك الآن تسجيل الدخول بكلمة مرورك الجديدة.'
-                  : 'Your password has been updated successfully. You can now sign in with your new password.'}
+                {'تم تحديث كلمة مرورك بنجاح. يمكنك الآن تسجيل الدخول بكلمة مرورك الجديدة.'}
               </Text>
               <Button fullWidth onPress={() => navigation.navigate('Login')} style={styles.btn}>
-                {isAr ? 'العودة لتسجيل الدخول' : 'Back to Sign In'}
+                {'العودة لتسجيل الدخول'}
               </Button>
             </View>
           ) : (
             <>
               <Input
-                label={isAr ? 'رمز الاسترداد' : 'Reset Code'}
+                label={'رمز الاسترداد'}
                 value={token}
                 onChangeText={setToken}
-                placeholder={isAr ? 'الصق الرمز من بريدك الإلكتروني' : 'Paste the code from your email'}
+                placeholder={'الصق الرمز من بريدك الإلكتروني'}
                 icon="key-outline"
                 autoCapitalize="none"
                 autoCorrect={false}
               />
               <Input
-                label={isAr ? 'كلمة المرور الجديدة' : 'New Password'}
+                label={'كلمة المرور الجديدة'}
                 value={password}
                 onChangeText={setPassword}
-                placeholder={isAr ? 'الحد الأدنى 6 أحرف' : 'Min. 6 characters'}
+                placeholder={'الحد الأدنى 6 أحرف'}
                 icon="lock-closed-outline"
                 isPassword
               />
               <Input
-                label={isAr ? 'تأكيد كلمة المرور الجديدة' : 'Confirm New Password'}
+                label={'تأكيد كلمة المرور الجديدة'}
                 value={confirm}
                 onChangeText={setConfirm}
-                placeholder={isAr ? 'كرر كلمة المرور الجديدة' : 'Repeat new password'}
+                placeholder={'كرر كلمة المرور الجديدة'}
                 icon="shield-checkmark-outline"
                 isPassword
                 returnKeyType="done"
@@ -129,13 +125,13 @@ export function ResetPasswordScreen() {
               ) : null}
 
               <Button onPress={submit} loading={loading} fullWidth size="lg" style={styles.btn}>
-                {isAr ? 'إعادة تعيين كلمة المرور' : 'Reset Password'}
+                {'إعادة تعيين كلمة المرور'}
               </Button>
 
               <TouchableOpacity style={styles.backRow} onPress={() => navigation.navigate('Login')}>
                 <Ionicons name="arrow-back" size={16} color={colors.primary} />
                 <Text style={[styles.backLink, { color: colors.primary }]}>
-                  {isAr ? 'العودة لتسجيل الدخول' : 'Back to Sign In'}
+                  {'العودة لتسجيل الدخول'}
                 </Text>
               </TouchableOpacity>
             </>

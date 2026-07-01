@@ -1,6 +1,4 @@
 import type { ReactNode } from "react";
-import { appCopy } from "../content/appCopy";
-import { useLocale } from "../context/LocaleContext";
 
 type ModulePageShellProps = {
   title: string;
@@ -17,73 +15,23 @@ export function ModulePageShell({
   actions,
   icon,
 }: ModulePageShellProps) {
-  const { locale } = useLocale();
-  const copy = appCopy[locale];
-
   return (
-    <div
-      style={{
-        background: "var(--bg-card)",
-        border: "1px solid var(--border-default)",
-        borderRadius: "var(--radius-xl)",
-        boxShadow: "var(--shadow-card)",
-        padding: "1.5rem",
-      }}
-    >
-      <header
-        style={{
-          display: "flex",
-          flexWrap: "wrap",
-          alignItems: "flex-start",
-          justifyContent: "space-between",
-          gap: "1rem",
-          borderBottom: "1px solid var(--border-default)",
-          paddingBottom: "1.25rem",
-          marginBottom: "1.25rem",
-        }}
-      >
-        <div style={{ display: "flex", gap: "1rem", alignItems: "flex-start", minWidth: 0 }}>
-          {icon && (
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", marginTop: ".375rem" }}>
-              {icon}
-            </div>
-          )}
-          <div style={{ minWidth: 0 }}>
-            <p
-              style={{
-                margin: 0,
-                fontSize: ".7rem",
-                fontWeight: 700,
-                textTransform: "uppercase",
-                letterSpacing: ".14em",
-                color: "var(--text-secondary)",
-              }}
-            >
-              {copy.appName}
-            </p>
-            <h1
-              style={{
-                margin: ".375rem 0 0",
-                fontSize: "1.5rem",
-                fontWeight: 800,
-                letterSpacing: "-.025em",
-                color: "var(--text-primary)",
-              }}
-            >
-              {title}
-            </h1>
-            <p style={{ margin: ".375rem 0 0", fontSize: ".875rem", color: "var(--text-secondary)", lineHeight: 1.6 }}>
-              {subtitle}
-            </p>
+    <div className="module-shell">
+      <header className="module-shell__header">
+        <div className="module-shell__header-text">
+          <div className="module-shell__brand" style={{ paddingInlineStart: ".75rem" }}>
+            {icon
+              ? <span style={{ display: "inline-flex", alignItems: "center", gap: ".4rem" }}>{icon} Plasticon</span>
+              : "Plasticon"}
           </div>
+          <h1 className="module-shell__title" style={{ paddingInlineStart: ".75rem" }}>{title}</h1>
+          <p className="module-shell__subtitle" style={{ paddingInlineStart: ".75rem" }}>{subtitle}</p>
         </div>
         {actions && (
-          <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: ".5rem" }}>
-            {actions}
-          </div>
+          <div className="module-shell__actions">{actions}</div>
         )}
       </header>
-      <div>{children}</div>
+      <div className="module-shell__body">{children}</div>
     </div>
   );
 }

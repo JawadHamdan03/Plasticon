@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+﻿import React, { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator, RefreshControl, ScrollView,
   StyleSheet, Text, View,
@@ -9,7 +9,6 @@ import { api } from '../../api/client';
 import { ScreenHeader } from '../../components';
 import { radius, shadow, spacing, typography } from '../../theme';
 import { useAppTheme } from '../../context/ThemeContext';
-import { useLocale } from '../../context/LocaleContext';
 
 interface PurchaseItem {
   quantity:    number;
@@ -33,10 +32,9 @@ function fmt(n: number) {
 
 function PurchaseCard({ item }: { item: Purchase }) {
   const { colors } = useAppTheme();
-  const { isAr } = useLocale();
   const date     = new Date(item.date ?? item.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
   const itemDesc = item.items && item.items.length > 0
-    ? item.items.map((i) => `${i.material?.name ?? (isAr ? 'صنف' : 'Item')} ×${i.quantity}`).join(', ')
+    ? item.items.map((i) => `${i.material?.name ?? ('صنف')} ×${i.quantity}`).join(', ')
     : null;
 
   return (
@@ -46,7 +44,7 @@ function PurchaseCard({ item }: { item: Purchase }) {
           <Ionicons name="cart" size={20} color={colors.info} />
         </View>
         <View style={styles.cardBody}>
-          <Text style={[styles.cardTitle, { color: colors.text }]}>{item.supplier?.name ?? `${isAr ? 'شراء' : 'Purchase'} #${item.id}`}</Text>
+          <Text style={[styles.cardTitle, { color: colors.text }]}>{item.supplier?.name ?? `${'شراء'} #${item.id}`}</Text>
           {itemDesc && <Text style={[styles.cardSub, { color: colors.textMuted }]} numberOfLines={1}>{itemDesc}</Text>}
           <Text style={[styles.cardDate, { color: colors.textMuted }]}>{date}</Text>
         </View>
@@ -54,7 +52,7 @@ function PurchaseCard({ item }: { item: Purchase }) {
       </View>
       {item.receivedBy && (
         <Text style={[styles.receivedBy, { color: colors.textMuted, borderTopColor: colors.border }]}>
-          {isAr ? 'بواسطة' : 'By'}: {item.receivedBy.fullName}
+          {'بواسطة'}: {item.receivedBy.fullName}
         </Text>
       )}
     </View>
@@ -63,7 +61,6 @@ function PurchaseCard({ item }: { item: Purchase }) {
 
 export function PurchasesScreen() {
   const { colors } = useAppTheme();
-  const { isAr } = useLocale();
   const [items,      setItems]      = useState<Purchase[]>([]);
   const [loading,    setLoading]    = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -86,7 +83,7 @@ export function PurchasesScreen() {
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
-      <ScreenHeader title={isAr ? 'المشتريات' : 'Purchases'} subtitle={isAr ? 'طلبات الشراء والمشتريات' : 'Purchase orders and procurement'} showBack />
+      <ScreenHeader title={'المشتريات'} subtitle={'طلبات الشراء والمشتريات'} showBack />
       {loading ? (
         <View style={styles.center}><ActivityIndicator size="large" color={colors.primary} /></View>
       ) : (
@@ -98,20 +95,20 @@ export function PurchasesScreen() {
           <View style={[styles.kpiRow, { backgroundColor: colors.surface }]}>
             <View style={styles.kpi}>
               <Text style={[styles.kpiVal, { color: colors.primary }]}>{items.length}</Text>
-              <Text style={[styles.kpiLabel, { color: colors.textMuted }]}>{isAr ? 'إجمالي الطلبات' : 'Total Orders'}</Text>
+              <Text style={[styles.kpiLabel, { color: colors.textMuted }]}>{'إجمالي الطلبات'}</Text>
             </View>
             <View style={styles.kpi}>
               <Text style={[styles.kpiVal, { color: colors.success }]}>
                 ${totalValue.toLocaleString('en-US', { maximumFractionDigits: 0 })}
               </Text>
-              <Text style={[styles.kpiLabel, { color: colors.textMuted }]}>{isAr ? 'إجمالي القيمة' : 'Total Value'}</Text>
+              <Text style={[styles.kpiLabel, { color: colors.textMuted }]}>{'إجمالي القيمة'}</Text>
             </View>
           </View>
 
           {items.length === 0 ? (
             <View style={styles.empty}>
               <Ionicons name="cart-outline" size={44} color={colors.textMuted} />
-              <Text style={[styles.emptyText, { color: colors.textMuted }]}>{isAr ? 'لا توجد أوامر شراء' : 'No purchase orders found'}</Text>
+              <Text style={[styles.emptyText, { color: colors.textMuted }]}>{'لا توجد أوامر شراء'}</Text>
             </View>
           ) : (
             <View style={styles.list}>

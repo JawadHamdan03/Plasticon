@@ -1,5 +1,6 @@
-import React, { useCallback, useEffect, useState } from 'react';
+﻿import React, { useCallback, useEffect, useState } from 'react';
 import {
+import { useLocale } from '../../context/LocaleContext';
   ActivityIndicator, Alert, FlatList, Modal, RefreshControl,
   ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View,
 } from 'react-native';
@@ -10,7 +11,6 @@ import { useAuth } from '../../auth/AuthContext';
 import { ScreenHeader } from '../../components';
 import { radius, spacing, typography } from '../../theme';
 import { useAppTheme } from '../../context/ThemeContext';
-import { useLocale } from '../../context/LocaleContext';
 
 type Customer = { id: number; name: string; phone: string | null; email: string | null; address: string | null };
 
@@ -57,7 +57,7 @@ export function CustomersScreen() {
 
   const handleCreate = async () => {
     if (!form.name.trim()) {
-      Alert.alert(isAr ? 'الاسم مطلوب' : 'Name is required');
+      Alert.alert('الاسم مطلوب');
       return;
     }
     setSaving(true);
@@ -72,7 +72,7 @@ export function CustomersScreen() {
       setForm(BLANK);
       void load();
     } catch (e: any) {
-      Alert.alert(isAr ? 'خطأ' : 'Error', e?.message ?? 'Error');
+      Alert.alert('خطأ', e?.message ?? 'Error');
     } finally {
       setSaving(false);
     }
@@ -122,14 +122,14 @@ export function CustomersScreen() {
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['bottom']}>
-      <ScreenHeader title={isAr ? 'عملائي' : 'My Customers'} />
+      <ScreenHeader title={'عملائي'} />
 
       {/* Search */}
       <View style={[styles.searchWrap, { backgroundColor: colors.surface, borderColor: colors.border }]}>
         <Ionicons name="search-outline" size={16} color={colors.textSecondary} />
         <TextInput
           style={[styles.searchInput, { color: colors.text }]}
-          placeholder={isAr ? 'بحث...' : 'Search...'}
+          placeholder={'بحث...'}
           placeholderTextColor={colors.textSecondary}
           value={search}
           onChangeText={setSearch}
@@ -141,9 +141,9 @@ export function CustomersScreen() {
       ) : error ? (
         <View style={styles.emptyBox}>
           <Ionicons name="cloud-offline-outline" size={40} color={colors.textSecondary} />
-          <Text style={[styles.empty, { color: colors.text, fontWeight: '700' }]}>{isAr ? 'تعذّر الاتصال' : 'Connection failed'}</Text>
+          <Text style={[styles.empty, { color: colors.text, fontWeight: '700' }]}>{'تعذّر الاتصال'}</Text>
           <TouchableOpacity style={[styles.retryBtn, { backgroundColor: colors.accent }]} onPress={() => { setLoading(true); void load(); }}>
-            <Text style={styles.retryText}>{isAr ? 'إعادة المحاولة' : 'Retry'}</Text>
+            <Text style={styles.retryText}>{'إعادة المحاولة'}</Text>
           </TouchableOpacity>
         </View>
       ) : (
@@ -157,11 +157,11 @@ export function CustomersScreen() {
             <View style={styles.emptyBox}>
               <Ionicons name="people-outline" size={40} color={colors.textSecondary} />
               <Text style={[styles.empty, { color: colors.textSecondary }]}>
-                {search ? (isAr ? 'لا توجد نتائج' : 'No results') : (isAr ? 'لا يوجد عملاء بعد' : 'No customers yet')}
+                {search ? ('لا توجد نتائج') : ('لا يوجد عملاء بعد')}
               </Text>
               {isSalesRep && !search && (
                 <TouchableOpacity style={[styles.retryBtn, { backgroundColor: colors.accent }]} onPress={() => setShowCreate(true)}>
-                  <Text style={styles.retryText}>{isAr ? 'إضافة عميل' : 'Add Customer'}</Text>
+                  <Text style={styles.retryText}>{'إضافة عميل'}</Text>
                 </TouchableOpacity>
               )}
             </View>
@@ -182,23 +182,23 @@ export function CustomersScreen() {
           <View style={[styles.sheet, { backgroundColor: colors.surface }]}>
             <View style={[styles.handle, { backgroundColor: colors.border }]} />
             <View style={styles.sheetHeader}>
-              <Text style={[styles.sheetTitle, { color: colors.text }]}>{isAr ? 'إضافة عميل جديد' : 'Add New Customer'}</Text>
+              <Text style={[styles.sheetTitle, { color: colors.text }]}>{'إضافة عميل جديد'}</Text>
               <TouchableOpacity onPress={() => setShowCreate(false)}>
                 <Ionicons name="close" size={22} color={colors.textSecondary} />
               </TouchableOpacity>
             </View>
 
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ padding: spacing.md }}>
-              <Text style={[styles.label, { color: colors.textSecondary }]}>{isAr ? 'الاسم *' : 'Name *'}</Text>
+              <Text style={[styles.label, { color: colors.textSecondary }]}>{'الاسم *'}</Text>
               <TextInput
                 style={[styles.input, { color: colors.text, borderColor: colors.border, backgroundColor: colors.background }]}
-                placeholder={isAr ? 'اسم العميل...' : 'Customer name...'}
+                placeholder={'اسم العميل...'}
                 placeholderTextColor={colors.textSecondary}
                 value={form.name}
                 onChangeText={(v) => setForm((f) => ({ ...f, name: v }))}
               />
 
-              <Text style={[styles.label, { color: colors.textSecondary }]}>{isAr ? 'الهاتف' : 'Phone'}</Text>
+              <Text style={[styles.label, { color: colors.textSecondary }]}>{'الهاتف'}</Text>
               <TextInput
                 style={[styles.input, { color: colors.text, borderColor: colors.border, backgroundColor: colors.background }]}
                 placeholder="05X-XXXXXXX"
@@ -208,7 +208,7 @@ export function CustomersScreen() {
                 onChangeText={(v) => setForm((f) => ({ ...f, phone: v }))}
               />
 
-              <Text style={[styles.label, { color: colors.textSecondary }]}>{isAr ? 'البريد الإلكتروني' : 'Email'}</Text>
+              <Text style={[styles.label, { color: colors.textSecondary }]}>{'البريد الإلكتروني'}</Text>
               <TextInput
                 style={[styles.input, { color: colors.text, borderColor: colors.border, backgroundColor: colors.background }]}
                 placeholder="example@email.com"
@@ -219,10 +219,10 @@ export function CustomersScreen() {
                 onChangeText={(v) => setForm((f) => ({ ...f, email: v }))}
               />
 
-              <Text style={[styles.label, { color: colors.textSecondary }]}>{isAr ? 'العنوان' : 'Address'}</Text>
+              <Text style={[styles.label, { color: colors.textSecondary }]}>{'العنوان'}</Text>
               <TextInput
                 style={[styles.input, { color: colors.text, borderColor: colors.border, backgroundColor: colors.background }]}
-                placeholder={isAr ? 'المدينة، الشارع...' : 'City, Street...'}
+                placeholder={'المدينة، الشارع...'}
                 placeholderTextColor={colors.textSecondary}
                 value={form.address}
                 onChangeText={(v) => setForm((f) => ({ ...f, address: v }))}
@@ -230,7 +230,7 @@ export function CustomersScreen() {
 
               <View style={styles.actions}>
                 <TouchableOpacity style={[styles.cancelBtn, { borderColor: colors.border }]} onPress={() => setShowCreate(false)}>
-                  <Text style={{ color: colors.textSecondary, fontWeight: '600' }}>{isAr ? 'إلغاء' : 'Cancel'}</Text>
+                  <Text style={{ color: colors.textSecondary, fontWeight: '600' }}>{'إلغاء'}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={[styles.submitBtn, { backgroundColor: saving ? colors.textSecondary : colors.accent }]}
@@ -238,7 +238,7 @@ export function CustomersScreen() {
                   disabled={saving}
                 >
                   <Ionicons name="add" size={16} color="#fff" />
-                  <Text style={styles.submitText}>{saving ? (isAr ? 'جارٍ الحفظ...' : 'Saving...') : (isAr ? 'إضافة' : 'Add Customer')}</Text>
+                  <Text style={styles.submitText}>{saving ? ('جارٍ الحفظ...') : ('إضافة')}</Text>
                 </TouchableOpacity>
               </View>
             </ScrollView>

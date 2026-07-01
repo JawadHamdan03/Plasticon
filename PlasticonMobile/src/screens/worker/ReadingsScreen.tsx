@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+﻿import React, { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator, Alert, Image, RefreshControl, ScrollView,
   StyleSheet, Text, TextInput, TouchableOpacity, View,
@@ -10,7 +10,6 @@ import { api, uploadForm } from '../../api/client';
 import { ScreenHeader } from '../../components';
 import { radius, shadow, spacing, typography } from '../../theme';
 import { useAppTheme } from '../../context/ThemeContext';
-import { useLocale } from '../../context/LocaleContext';
 
 interface Reading {
   id:        number;
@@ -24,7 +23,6 @@ interface Reading {
 
 export function ReadingsScreen() {
   const { colors } = useAppTheme();
-  const { isAr } = useLocale();
   const [readings,   setReadings]   = useState<Reading[]>([]);
   const [loading,    setLoading]    = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -49,7 +47,7 @@ export function ReadingsScreen() {
     if (fromCamera) {
       const perm = await ImagePicker.requestCameraPermissionsAsync();
       if (!perm.granted) {
-        Alert.alert(isAr ? 'إذن مطلوب' : 'Permission required', isAr ? 'يجب السماح بالوصول إلى الكاميرا.' : 'Camera access is required.');
+        Alert.alert('إذن مطلوب', 'يجب السماح بالوصول إلى الكاميرا.');
         return;
       }
       const res = await ImagePicker.launchCameraAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 0.8 });
@@ -60,7 +58,7 @@ export function ReadingsScreen() {
     } else {
       const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (!perm.granted) {
-        Alert.alert(isAr ? 'إذن مطلوب' : 'Permission required', isAr ? 'يجب السماح بالوصول إلى مكتبة الصور.' : 'Media library access is required.');
+        Alert.alert('إذن مطلوب', 'يجب السماح بالوصول إلى مكتبة الصور.');
         return;
       }
       const res = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 0.8 });
@@ -73,19 +71,19 @@ export function ReadingsScreen() {
 
   const showPhotoOptions = () => {
     Alert.alert(
-      isAr ? 'إضافة صورة العداد' : 'Add Meter Photo',
-      isAr ? 'اختر طريقة التقاط الصورة' : 'Choose how to add a photo',
+      'إضافة صورة العداد',
+      'اختر طريقة التقاط الصورة',
       [
-        { text: isAr ? 'الكاميرا' : 'Camera',         onPress: () => capturePhoto(true)  },
-        { text: isAr ? 'من المعرض' : 'Gallery',       onPress: () => capturePhoto(false) },
-        { text: isAr ? 'إلغاء' : 'Cancel', style: 'cancel' },
+        { text: 'الكاميرا',         onPress: () => capturePhoto(true)  },
+        { text: 'من المعرض',       onPress: () => capturePhoto(false) },
+        { text: 'إلغاء', style: 'cancel' },
       ],
     );
   };
 
   const submit = async () => {
     if (!value.trim() || isNaN(Number(value))) {
-      Alert.alert(isAr ? 'مطلوب' : 'Required', isAr ? 'أدخل قيمة قراءة صالحة.' : 'Please enter a valid reading value.');
+      Alert.alert('مطلوب', 'أدخل قيمة قراءة صالحة.');
       return;
     }
     setSaving(true);
@@ -105,13 +103,13 @@ export function ReadingsScreen() {
       setValue(''); setNotes(''); setPhotoUri(null); setShowForm(false);
       setLoading(true); void load();
     } catch (e: any) {
-      Alert.alert(isAr ? 'خطأ' : 'Error', e.message ?? (isAr ? 'فشل حفظ القراءة.' : 'Failed to save reading.'));
+      Alert.alert('خطأ', e.message ?? ('فشل حفظ القراءة.'));
     } finally { setSaving(false); }
   };
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
-      <ScreenHeader title={isAr ? 'القراءات' : 'Readings'} subtitle={isAr ? 'قراءات عداد الكهرباء' : 'Electricity meter readings'} showBack />
+      <ScreenHeader title={'القراءات'} subtitle={'قراءات عداد الكهرباء'} showBack />
       <ScrollView
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
@@ -120,7 +118,7 @@ export function ReadingsScreen() {
         {showForm ? (
           <View style={[styles.form, { backgroundColor: colors.surface }]}>
             <View style={styles.formTitleRow}>
-              <Text style={[styles.formTitle, { color: colors.text }]}>{isAr ? 'تسجيل قراءة جديدة' : 'Log New Reading'}</Text>
+              <Text style={[styles.formTitle, { color: colors.text }]}>{'تسجيل قراءة جديدة'}</Text>
               <TouchableOpacity onPress={showPhotoOptions} style={[styles.cameraBtn, { backgroundColor: `${colors.warning}15` }]}>
                 <Ionicons name="camera" size={20} color={colors.warning} />
               </TouchableOpacity>
@@ -136,13 +134,13 @@ export function ReadingsScreen() {
             ) : (
               <TouchableOpacity style={[styles.photoPlaceholder, { borderColor: colors.border, backgroundColor: colors.surfaceAlt }]} onPress={showPhotoOptions} activeOpacity={0.75}>
                 <Ionicons name="camera-outline" size={22} color={colors.textMuted} />
-                <Text style={[styles.photoPlaceholderText, { color: colors.textMuted }]}>{isAr ? 'التقط صورة العداد (اختياري)' : 'Tap to photo meter (optional)'}</Text>
+                <Text style={[styles.photoPlaceholderText, { color: colors.textMuted }]}>{'التقط صورة العداد (اختياري)'}</Text>
               </TouchableOpacity>
             )}
 
             <TextInput
               style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
-              placeholder={isAr ? 'قيمة العداد (كيلوواط/ساعة)' : 'Meter value (kWh)'}
+              placeholder={'قيمة العداد (كيلوواط/ساعة)'}
               placeholderTextColor={colors.textMuted}
               value={value}
               onChangeText={setValue}
@@ -150,7 +148,7 @@ export function ReadingsScreen() {
             />
             <TextInput
               style={[styles.input, styles.inputMulti, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
-              placeholder={isAr ? 'ملاحظات (اختياري)' : 'Notes (optional)'}
+              placeholder={'ملاحظات (اختياري)'}
               placeholderTextColor={colors.textMuted}
               value={notes}
               onChangeText={setNotes}
@@ -159,17 +157,17 @@ export function ReadingsScreen() {
             />
             <View style={styles.formRow}>
               <TouchableOpacity style={[styles.cancelBtn, { borderColor: colors.border }]} onPress={() => { setShowForm(false); setPhotoUri(null); }}>
-                <Text style={[styles.cancelText, { color: colors.textMuted }]}>{isAr ? 'إلغاء' : 'Cancel'}</Text>
+                <Text style={[styles.cancelText, { color: colors.textMuted }]}>{'إلغاء'}</Text>
               </TouchableOpacity>
               <TouchableOpacity style={[styles.saveBtn, { backgroundColor: colors.warning }]} onPress={submit} disabled={saving}>
-                {saving ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.saveText}>{isAr ? 'حفظ' : 'Save'}</Text>}
+                {saving ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.saveText}>{'حفظ'}</Text>}
               </TouchableOpacity>
             </View>
           </View>
         ) : (
           <TouchableOpacity style={[styles.addBtn, { backgroundColor: colors.warning }]} onPress={() => setShowForm(true)} activeOpacity={0.8}>
             <Ionicons name="add-circle" size={20} color="#fff" />
-            <Text style={styles.addText}>{isAr ? 'تسجيل قراءة' : 'Log Reading'}</Text>
+            <Text style={styles.addText}>{'تسجيل قراءة'}</Text>
           </TouchableOpacity>
         )}
 
@@ -177,7 +175,7 @@ export function ReadingsScreen() {
           readings.length === 0 ? (
             <View style={styles.empty}>
               <Ionicons name="flash-outline" size={44} color={colors.textMuted} />
-              <Text style={[styles.emptyText, { color: colors.textMuted }]}>{isAr ? 'لا توجد قراءات مسجلة' : 'No readings logged'}</Text>
+              <Text style={[styles.emptyText, { color: colors.textMuted }]}>{'لا توجد قراءات مسجلة'}</Text>
             </View>
           ) : (
             <View style={styles.list}>

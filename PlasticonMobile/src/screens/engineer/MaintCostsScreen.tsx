@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+﻿import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator, Alert, FlatList, KeyboardAvoidingView,
   Modal, Platform, RefreshControl, ScrollView, StyleSheet,
@@ -10,7 +10,6 @@ import { api } from '../../api/client';
 import { ScreenHeader, StatCard } from '../../components';
 import { radius, shadow, spacing, typography } from '../../theme';
 import { useAppTheme } from '../../context/ThemeContext';
-import { useLocale } from '../../context/LocaleContext';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -45,7 +44,6 @@ function fmtDate(d: string) { return new Date(d).toLocaleDateString([], { month:
 
 function CostCard({ item, onEdit, onDelete }: { item: CostRecord; onEdit: (i: CostRecord) => void; onDelete: (id: number) => void }) {
   const { colors } = useAppTheme();
-  const { isAr } = useLocale();
   const total = item.totalCost ?? 0;
 
   return (
@@ -72,19 +70,19 @@ function CostCard({ item, onEdit, onDelete }: { item: CostRecord; onEdit: (i: Co
         <View style={[styles.breakdown, { borderTopColor: colors.border }]}>
           {item.laborHours != null && (
             <View style={styles.bItem}>
-              <Text style={[styles.bLabel, { color: colors.textMuted }]}>{isAr ? 'عمل' : 'Labor'}</Text>
+              <Text style={[styles.bLabel, { color: colors.textMuted }]}>{'عمل'}</Text>
               <Text style={[styles.bVal, { color: colors.text }]}>${fmt(item.laborTotal ?? 0)}</Text>
             </View>
           )}
           {item.sparesTotal != null && (
             <View style={styles.bItem}>
-              <Text style={[styles.bLabel, { color: colors.textMuted }]}>{isAr ? 'قطع غيار' : 'Spares'}</Text>
+              <Text style={[styles.bLabel, { color: colors.textMuted }]}>{'قطع غيار'}</Text>
               <Text style={[styles.bVal, { color: colors.text }]}>${fmt(item.sparesTotal)}</Text>
             </View>
           )}
           {item.laborHours != null && (
             <View style={styles.bItem}>
-              <Text style={[styles.bLabel, { color: colors.textMuted }]}>{isAr ? 'ساعات' : 'Hours'}</Text>
+              <Text style={[styles.bLabel, { color: colors.textMuted }]}>{'ساعات'}</Text>
               <Text style={[styles.bVal, { color: colors.text }]}>{item.laborHours}h</Text>
             </View>
           )}
@@ -107,7 +105,6 @@ function CreateModal({
   editing?: CostRecord | null;
 }) {
   const { colors } = useAppTheme();
-  const { isAr } = useLocale();
 
   const [records, setRecords]       = useState<MaintenanceRecord[]>([]);
   const [maintenanceId, setMaintenanceId] = useState('');
@@ -141,7 +138,7 @@ function CreateModal({
 
   const submit = async () => {
     if (!editing && !maintenanceId) {
-      Alert.alert(isAr ? 'مطلوب' : 'Required', isAr ? 'اختر سجل صيانة.' : 'Select a maintenance record.');
+      Alert.alert('مطلوب', 'اختر سجل صيانة.');
       return;
     }
     setSaving(true);
@@ -165,7 +162,7 @@ function CreateModal({
       reset();
       onSuccess();
     } catch (err: any) {
-      Alert.alert(isAr ? 'خطأ' : 'Error', err.message ?? 'Failed to save.');
+      Alert.alert('خطأ', err.message ?? 'Failed to save.');
     } finally {
       setSaving(false);
     }
@@ -177,14 +174,14 @@ function CreateModal({
         <View style={[styles.sheet, { backgroundColor: colors.surface }]}>
           <View style={[styles.handle, { backgroundColor: colors.border }]} />
           <Text style={[styles.sheetTitle, { color: colors.text }]}>
-            {editing ? (isAr ? 'تعديل التكلفة' : 'Edit Cost') : (isAr ? 'إضافة تكلفة صيانة' : 'Add Maintenance Cost')}
+            {editing ? ('تعديل التكلفة') : ('إضافة تكلفة صيانة')}
           </Text>
           <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
 
             {/* Maintenance record selector — only when creating */}
             {!editing && (
               <>
-                <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{isAr ? 'سجل الصيانة *' : 'Maintenance Record *'}</Text>
+                <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{'سجل الصيانة *'}</Text>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: spacing.md }}>
                   {records.slice(0, 20).map(r => (
                     <TouchableOpacity
@@ -203,9 +200,9 @@ function CreateModal({
             )}
 
             {[
-              { label: isAr ? 'ساعات العمل' : 'Labor Hours', val: laborHours, set: setLaborHours },
-              { label: isAr ? 'تكلفة الساعة ($)' : 'Cost per Hour ($)', val: laborRate, set: setLaborRate },
-              { label: isAr ? 'تكلفة قطع الغيار ($)' : 'Spares Cost ($)', val: sparesTotal, set: setSparesTotal },
+              { label: 'ساعات العمل', val: laborHours, set: setLaborHours },
+              { label: 'تكلفة الساعة ($)', val: laborRate, set: setLaborRate },
+              { label: 'تكلفة قطع الغيار ($)', val: sparesTotal, set: setSparesTotal },
             ].map(f => (
               <View key={f.label} style={styles.field}>
                 <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{f.label}</Text>
@@ -223,22 +220,22 @@ function CreateModal({
             {totalCost > 0 && (
               <View style={[styles.preview, { backgroundColor: `${colors.danger}10`, borderColor: `${colors.danger}30` }]}>
                 <View style={styles.previewRow}>
-                  <Text style={[styles.previewLabel, { color: colors.textMuted }]}>{isAr ? 'تكلفة العمل' : 'Labor Total'}</Text>
+                  <Text style={[styles.previewLabel, { color: colors.textMuted }]}>{'تكلفة العمل'}</Text>
                   <Text style={[styles.previewVal, { color: colors.text }]}>${fmt(laborTotal)}</Text>
                 </View>
                 <View style={styles.previewRow}>
-                  <Text style={[styles.previewLabel, { color: colors.textMuted }]}>{isAr ? 'قطع الغيار' : 'Spares'}</Text>
+                  <Text style={[styles.previewLabel, { color: colors.textMuted }]}>{'قطع الغيار'}</Text>
                   <Text style={[styles.previewVal, { color: colors.text }]}>${fmt(parseFloat(sparesTotal) || 0)}</Text>
                 </View>
                 <View style={[styles.previewRow, styles.previewTotal]}>
-                  <Text style={[styles.previewLabel, { color: colors.danger, fontWeight: '700' }]}>{isAr ? 'الإجمالي' : 'Total'}</Text>
+                  <Text style={[styles.previewLabel, { color: colors.danger, fontWeight: '700' }]}>{'الإجمالي'}</Text>
                   <Text style={[styles.previewVal, { color: colors.danger, fontWeight: '800', fontSize: 16 }]}>${fmt(totalCost)}</Text>
                 </View>
               </View>
             )}
 
             <View style={styles.field}>
-              <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{isAr ? 'ملاحظات' : 'Notes'}</Text>
+              <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{'ملاحظات'}</Text>
               <TextInput
                 style={[styles.input, styles.inputMulti, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
                 multiline numberOfLines={3}
@@ -249,7 +246,7 @@ function CreateModal({
 
             <View style={styles.actions}>
               <TouchableOpacity style={[styles.cancelBtn, { borderColor: colors.border }]} onPress={onClose}>
-                <Text style={[styles.cancelText, { color: colors.textMuted }]}>{isAr ? 'إلغاء' : 'Cancel'}</Text>
+                <Text style={[styles.cancelText, { color: colors.textMuted }]}>{'إلغاء'}</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.saveBtn, { backgroundColor: colors.primary }, saving && { opacity: 0.6 }]}
@@ -257,7 +254,7 @@ function CreateModal({
               >
                 {saving
                   ? <ActivityIndicator size="small" color="#fff" />
-                  : <Text style={styles.saveBtnText}>{isAr ? 'حفظ' : 'Save'}</Text>
+                  : <Text style={styles.saveBtnText}>{'حفظ'}</Text>
                 }
               </TouchableOpacity>
             </View>
@@ -272,7 +269,6 @@ function CreateModal({
 
 export function MaintCostsScreen() {
   const { colors } = useAppTheme();
-  const { isAr } = useLocale();
 
   const today0 = new Date().toISOString().slice(0, 10);
   const month0 = new Date().toISOString().slice(0, 7) + '-01';
@@ -305,18 +301,18 @@ export function MaintCostsScreen() {
 
   const handleDelete = (id: number) => {
     Alert.alert(
-      isAr ? 'حذف السجل' : 'Delete Record',
-      isAr ? 'هل أنت متأكد؟ لا يمكن التراجع.' : 'Delete this cost record? This cannot be undone.',
+      'حذف السجل',
+      'هل أنت متأكد؟ لا يمكن التراجع.',
       [
-        { text: isAr ? 'إلغاء' : 'Cancel', style: 'cancel' },
+        { text: 'إلغاء', style: 'cancel' },
         {
-          text: isAr ? 'حذف' : 'Delete', style: 'destructive',
+          text: 'حذف', style: 'destructive',
           onPress: async () => {
             try {
               await api.delete(`/maintenance-costs/${id}`);
               setCosts(prev => prev.filter(c => c.id !== id));
             } catch (e: any) {
-              Alert.alert(isAr ? 'خطأ' : 'Error', e.message ?? 'Failed to delete.');
+              Alert.alert('خطأ', e.message ?? 'Failed to delete.');
             }
           },
         },
@@ -326,7 +322,7 @@ export function MaintCostsScreen() {
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
-      <ScreenHeader title={isAr ? 'تكاليف الصيانة' : 'Maintenance Costs'} showBack />
+      <ScreenHeader title={'تكاليف الصيانة'} showBack />
       {loading ? (
         <View style={styles.center}><ActivityIndicator size="large" color={colors.primary} /></View>
       ) : (
@@ -346,7 +342,7 @@ export function MaintCostsScreen() {
           ListHeaderComponent={
             <>
               <StatCard
-                label={isAr ? 'إجمالي تكاليف الصيانة' : 'Total Maintenance Cost'}
+                label={'إجمالي تكاليف الصيانة'}
                 value={`$${fmt(filteredTotal)}`}
                 icon="cash"
                 color={colors.danger}
@@ -374,7 +370,7 @@ export function MaintCostsScreen() {
           ListEmptyComponent={
             <View style={styles.empty}>
               <Ionicons name="cash-outline" size={44} color={colors.textMuted} />
-              <Text style={[styles.emptyText, { color: colors.textMuted }]}>{isAr ? 'لا توجد سجلات تكاليف' : 'No cost records'}</Text>
+              <Text style={[styles.emptyText, { color: colors.textMuted }]}>{'لا توجد سجلات تكاليف'}</Text>
             </View>
           }
         />

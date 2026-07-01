@@ -1,5 +1,6 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+﻿import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
+import { useLocale } from '../../context/LocaleContext';
   ActivityIndicator, Alert, FlatList, Image, KeyboardAvoidingView,
   Modal, Platform, RefreshControl, ScrollView, StyleSheet, Switch,
   Text, TextInput, TouchableOpacity, View,
@@ -12,7 +13,6 @@ import { ScreenHeader } from '../../components';
 import { radius, shadow, spacing, typography } from '../../theme';
 import { API_BASE } from '../../config';
 import { useAppTheme } from '../../context/ThemeContext';
-import { useLocale } from '../../context/LocaleContext';
 
 interface Shift { id: number; name: string; }
 
@@ -93,19 +93,19 @@ function ReadingCard({
 
       <View style={[styles.readingRow, { borderTopColor: colors.border }]}>
         <View style={styles.readingItem}>
-          <Text style={[styles.readingLbl, { color: colors.textMuted }]}>{isAr ? 'بداية' : 'Start'}</Text>
+          <Text style={[styles.readingLbl, { color: colors.textMuted }]}>{'بداية'}</Text>
           <Text style={[styles.readingVal, { color: colors.text }]}>{item.startReading}</Text>
         </View>
         <Ionicons name="arrow-forward" size={14} color={colors.textMuted} />
         <View style={styles.readingItem}>
-          <Text style={[styles.readingLbl, { color: colors.textMuted }]}>{isAr ? 'نهاية' : 'End'}</Text>
+          <Text style={[styles.readingLbl, { color: colors.textMuted }]}>{'نهاية'}</Text>
           <Text style={[styles.readingVal, { color: colors.text }]}>{item.endReading}</Text>
         </View>
         {consumption != null && (
           <>
             <View style={[styles.readingDivider, { backgroundColor: colors.border }]} />
             <View style={styles.readingItem}>
-              <Text style={[styles.readingLbl, { color: colors.textMuted }]}>{isAr ? 'استهلاك' : 'Usage'}</Text>
+              <Text style={[styles.readingLbl, { color: colors.textMuted }]}>{'استهلاك'}</Text>
               <Text style={[styles.readingVal, { color: colors.warning }]}>{consumption.toFixed(2)} kWh</Text>
             </View>
           </>
@@ -114,7 +114,7 @@ function ReadingCard({
           <>
             <View style={[styles.readingDivider, { backgroundColor: colors.border }]} />
             <View style={styles.readingItem}>
-              <Text style={[styles.readingLbl, { color: colors.textMuted }]}>{isAr ? 'تكلفة' : 'Cost'}</Text>
+              <Text style={[styles.readingLbl, { color: colors.textMuted }]}>{'تكلفة'}</Text>
               <Text style={[styles.readingVal, { color: colors.success }]}>${item.shiftCost.toFixed(2)}</Text>
             </View>
           </>
@@ -124,7 +124,7 @@ function ReadingCard({
       {item.isMeterReset && (
         <View style={[styles.resetBadge, { backgroundColor: `${colors.danger}15` }]}>
           <Ionicons name="refresh-circle" size={12} color={colors.danger} />
-          <Text style={[styles.resetText, { color: colors.danger }]}>{isAr ? 'إعادة ضبط العداد' : 'Meter Reset'}</Text>
+          <Text style={[styles.resetText, { color: colors.danger }]}>{'إعادة ضبط العداد'}</Text>
         </View>
       )}
 
@@ -195,7 +195,7 @@ function ElectricityForm({
 
   const submit = async () => {
     if (!date || isNaN(start) || isNaN(end)) {
-      Alert.alert(isAr ? 'مطلوب' : 'Required', isAr ? 'التاريخ وقراءات البداية والنهاية مطلوبة' : 'Date, start and end readings are required.');
+      Alert.alert('مطلوب', 'التاريخ وقراءات البداية والنهاية مطلوبة');
       return;
     }
     setSaving(true);
@@ -228,7 +228,7 @@ function ElectricityForm({
       }
       onSuccess();
     } catch (err: any) {
-      Alert.alert(isAr ? 'خطأ' : 'Error', err.message ?? (isAr ? 'فشل الحفظ' : 'Failed to save.'));
+      Alert.alert('خطأ', err.message ?? ('فشل الحفظ'));
     } finally {
       setSaving(false);
     }
@@ -245,12 +245,12 @@ function ElectricityForm({
         >
           <View style={[styles.handle, { backgroundColor: colors.border }]} />
           <Text style={[styles.sheetTitle, { color: colors.text }]}>
-            {editing ? (isAr ? 'تعديل القراءة' : 'Edit Reading') : (isAr ? 'قراءة جديدة' : 'New Reading')}
+            {editing ? ('تعديل القراءة') : ('قراءة جديدة')}
           </Text>
 
           {/* Date */}
           <View style={styles.field}>
-            <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{isAr ? 'التاريخ *' : 'Date *'}</Text>
+            <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{'التاريخ *'}</Text>
             <TextInput
               style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
               placeholder="YYYY-MM-DD"
@@ -263,7 +263,7 @@ function ElectricityForm({
           {/* Shift Picker */}
           {shifts.length > 0 && (
             <View style={styles.field}>
-              <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{isAr ? 'الوردية' : 'Shift'}</Text>
+              <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{'الوردية'}</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                 <View style={styles.chipRow}>
                   {shifts.map((s) => (
@@ -283,7 +283,7 @@ function ElectricityForm({
           {/* Start & End */}
           <View style={styles.rowFields}>
             <View style={[styles.field, { flex: 1 }]}>
-              <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{isAr ? 'بداية (kWh) *' : 'Start kWh *'}</Text>
+              <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{'بداية (kWh) *'}</Text>
               <TextInput
                 style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
                 placeholder="0"
@@ -294,7 +294,7 @@ function ElectricityForm({
               />
             </View>
             <View style={[styles.field, { flex: 1 }]}>
-              <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{isAr ? 'نهاية (kWh) *' : 'End kWh *'}</Text>
+              <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{'نهاية (kWh) *'}</Text>
               <TextInput
                 style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
                 placeholder="0"
@@ -308,7 +308,7 @@ function ElectricityForm({
 
           {/* Meter Reset Toggle */}
           <View style={[styles.field, styles.switchRow]}>
-            <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{isAr ? 'إعادة ضبط العداد؟' : 'Meter Reset?'}</Text>
+            <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{'إعادة ضبط العداد؟'}</Text>
             <Switch
               value={isMeterReset}
               onValueChange={setReset}
@@ -319,10 +319,10 @@ function ElectricityForm({
 
           {isMeterReset && (
             <View style={styles.field}>
-              <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{isAr ? 'الحد الأقصى للعداد' : 'Max Meter Value'}</Text>
+              <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{'الحد الأقصى للعداد'}</Text>
               <TextInput
                 style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
-                placeholder={isAr ? 'القيمة القصوى قبل الإعادة' : 'Max value before reset'}
+                placeholder={'القيمة القصوى قبل الإعادة'}
                 placeholderTextColor={colors.textMuted}
                 keyboardType="decimal-pad"
                 value={maxMeterVal}
@@ -335,12 +335,12 @@ function ElectricityForm({
           {consumption != null && !isNaN(consumption) && (
             <View style={[styles.preview, { backgroundColor: `${colors.warning}12`, borderColor: `${colors.warning}30` }]}>
               <View style={styles.previewItem}>
-                <Text style={[styles.previewLbl, { color: colors.textMuted }]}>{isAr ? 'الاستهلاك' : 'Consumption'}</Text>
+                <Text style={[styles.previewLbl, { color: colors.textMuted }]}>{'الاستهلاك'}</Text>
                 <Text style={[styles.previewVal, { color: colors.warning }]}>{consumption.toFixed(2)} kWh</Text>
               </View>
               {cost != null && (
                 <View style={styles.previewItem}>
-                  <Text style={[styles.previewLbl, { color: colors.textMuted }]}>{isAr ? 'التكلفة التقديرية' : 'Est. Cost'}</Text>
+                  <Text style={[styles.previewLbl, { color: colors.textMuted }]}>{'التكلفة التقديرية'}</Text>
                   <Text style={[styles.previewVal, { color: colors.success }]}>${cost.toFixed(2)}</Text>
                 </View>
               )}
@@ -349,10 +349,10 @@ function ElectricityForm({
 
           {/* Notes */}
           <View style={styles.field}>
-            <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{isAr ? 'ملاحظات' : 'Notes'}</Text>
+            <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{'ملاحظات'}</Text>
             <TextInput
               style={[styles.input, styles.inputMulti, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
-              placeholder={isAr ? 'ملاحظات اختيارية...' : 'Optional notes...'}
+              placeholder={'ملاحظات اختيارية...'}
               placeholderTextColor={colors.textMuted}
               multiline numberOfLines={2}
               value={notes}
@@ -363,7 +363,7 @@ function ElectricityForm({
           {/* Photo (new readings only) */}
           {!editing && (
             <View style={styles.field}>
-              <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{isAr ? 'صورة' : 'Photo'}</Text>
+              <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{'صورة'}</Text>
               <TouchableOpacity
                 style={[styles.imgPicker, { borderColor: colors.border, backgroundColor: colors.surfaceAlt }]}
                 onPress={async () => {
@@ -382,7 +382,7 @@ function ElectricityForm({
                 ) : (
                   <View style={styles.imgPickerPlaceholder}>
                     <Ionicons name="camera-outline" size={22} color={colors.textMuted} />
-                    <Text style={[styles.imgPickerText, { color: colors.textMuted }]}>{isAr ? 'اختر صورة' : 'Select photo'}</Text>
+                    <Text style={[styles.imgPickerText, { color: colors.textMuted }]}>{'اختر صورة'}</Text>
                   </View>
                 )}
               </TouchableOpacity>
@@ -391,10 +391,10 @@ function ElectricityForm({
 
           <View style={styles.formActions}>
             <TouchableOpacity style={[styles.cancelBtn, { borderColor: colors.border }]} onPress={onClose}>
-              <Text style={[styles.cancelText, { color: colors.textMuted }]}>{isAr ? 'إلغاء' : 'Cancel'}</Text>
+              <Text style={[styles.cancelText, { color: colors.textMuted }]}>{'إلغاء'}</Text>
             </TouchableOpacity>
             <TouchableOpacity style={[styles.saveBtn, { backgroundColor: colors.warning }]} onPress={submit} disabled={saving}>
-              {saving ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.saveText}>{isAr ? 'حفظ' : 'Save'}</Text>}
+              {saving ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.saveText}>{'حفظ'}</Text>}
             </TouchableOpacity>
           </View>
         </ScrollView>
@@ -448,18 +448,18 @@ export function ElectricityScreen() {
 
   const handleDelete = (r: ElectricityReading) => {
     Alert.alert(
-      isAr ? 'حذف القراءة' : 'Delete Reading',
-      isAr ? 'هل أنت متأكد؟' : 'Are you sure?',
+      'حذف القراءة',
+      'هل أنت متأكد؟',
       [
-        { text: isAr ? 'إلغاء' : 'Cancel', style: 'cancel' },
+        { text: 'إلغاء', style: 'cancel' },
         {
-          text: isAr ? 'حذف' : 'Delete', style: 'destructive',
+          text: 'حذف', style: 'destructive',
           onPress: async () => {
             try {
               await api.delete(`/electricity/readings/${r.id}`);
               setReadings((prev) => prev.filter((x) => x.id !== r.id));
             } catch (e: any) {
-              Alert.alert(isAr ? 'خطأ' : 'Error', e.message ?? 'Failed to delete.');
+              Alert.alert('خطأ', e.message ?? 'Failed to delete.');
             }
           },
         },
@@ -474,8 +474,8 @@ export function ElectricityScreen() {
     try {
       await api.post('/electricity/kwh-price', { price });
       setKwhPrice(price);
-      Alert.alert(isAr ? 'تم' : 'Done', isAr ? 'تم تحديث سعر الكيلوواط' : 'kWh price updated');
-    } catch (e: any) { Alert.alert(isAr ? 'خطأ' : 'Error', e?.message ?? 'Failed'); }
+      Alert.alert('تم', 'تم تحديث سعر الكيلوواط');
+    } catch (e: any) { Alert.alert('خطأ', e?.message ?? 'Failed'); }
     finally { setSavingKwh(false); }
   };
 
@@ -498,8 +498,8 @@ export function ElectricityScreen() {
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
       <ScreenHeader
-        title={isAr ? 'الكهرباء' : 'Electricity'}
-        subtitle={`${filteredReadings.length} ${isAr ? 'قراءات' : 'readings'}`}
+        title={'الكهرباء'}
+        subtitle={`${filteredReadings.length} ${'قراءات'}`}
         showBack
       />
 
@@ -536,7 +536,7 @@ export function ElectricityScreen() {
                   <View style={[styles.statCard, { backgroundColor: colors.surface }]}>
                     <Ionicons name="cash" size={20} color={colors.success} />
                     <Text style={[styles.statVal, { color: colors.success }]}>${totalCost.toFixed(0)}</Text>
-                    <Text style={[styles.statLbl, { color: colors.textMuted }]}>{isAr ? 'التكلفة' : 'Total Cost'}</Text>
+                    <Text style={[styles.statLbl, { color: colors.textMuted }]}>{'التكلفة'}</Text>
                   </View>
                 )}
               </View>
@@ -549,7 +549,7 @@ export function ElectricityScreen() {
                   </View>
                   <View>
                     <Text style={[styles.kwhLabel, { color: colors.textMuted }]}>
-                      {isAr ? 'سعر الكيلوواط/ساعة' : 'kWh Price'}
+                      {'سعر الكيلوواط/ساعة'}
                     </Text>
                     <Text style={[styles.kwhValue, { color: colors.text }]}>
                       {kwhPrice > 0 ? `${kwhPrice.toFixed(4)} ILS` : '—'}
@@ -575,7 +575,7 @@ export function ElectricityScreen() {
                       ? <ActivityIndicator size="small" color="#fff" />
                       : <Ionicons name="save-outline" size={15} color="#fff" />
                     }
-                    <Text style={styles.kwhSaveBtnText}>{isAr ? 'حفظ' : 'Save'}</Text>
+                    <Text style={styles.kwhSaveBtnText}>{'حفظ'}</Text>
                   </TouchableOpacity>
                 </View>
               </View>
@@ -608,7 +608,7 @@ export function ElectricityScreen() {
                       onPress={() => setFilterShiftId(null)}
                     >
                       <Text style={[styles.elShiftText, { color: filterShiftId === null ? '#fff' : colors.textMuted }]}>
-                        {isAr ? 'كل الوردات' : 'All Shifts'}
+                        {'كل الوردات'}
                       </Text>
                     </TouchableOpacity>
                     {shifts.map((s) => (
@@ -629,7 +629,7 @@ export function ElectricityScreen() {
             <View style={styles.empty}>
               <Ionicons name="flash-outline" size={44} color={colors.textMuted} />
               <Text style={[styles.emptyText, { color: colors.textMuted }]}>
-                {isAr ? 'لا توجد قراءات كهربائية' : 'No electricity readings'}
+                {'لا توجد قراءات كهربائية'}
               </Text>
             </View>
           }

@@ -13,7 +13,6 @@ import { Input }  from '../../components/Input';
 import { AuthStackParamList } from '../../navigation/types';
 import { radius, spacing, typography } from '../../theme';
 import { useAppTheme } from '../../context/ThemeContext';
-import { useLocale } from '../../context/LocaleContext';
 
 type Nav   = NativeStackNavigationProp<AuthStackParamList>;
 type Route = RouteProp<AuthStackParamList, 'VerifyEmail'>;
@@ -23,7 +22,6 @@ export function VerifyEmailScreen() {
   const route      = useRoute<Route>();
   const email      = route.params?.email ?? '';
   const { colors } = useAppTheme();
-  const { isAr } = useLocale();
 
   const [token,    setToken]    = useState('');
   const [loading,  setLoading]  = useState(false);
@@ -32,21 +30,21 @@ export function VerifyEmailScreen() {
   const [verified, setVerified] = useState(false);
 
   const submit = async () => {
-    if (!token.trim()) { setError(isAr ? 'يرجى إدخال رمز التحقق.' : 'Please enter your verification code.'); return; }
+    if (!token.trim()) { setError('يرجى إدخال رمز التحقق.'); return; }
     setError('');
     setLoading(true);
     try {
       await api.post('/auth/verify-email', { token: token.trim() });
       setVerified(true);
     } catch (e: any) {
-      setError(e.message ?? (isAr ? 'رمز غير صالح أو منتهي الصلاحية. يرجى المحاولة مرة أخرى.' : 'Invalid or expired code. Please try again.'));
+      setError(e.message ?? 'رمز غير صالح أو منتهي الصلاحية. يرجى المحاولة مرة أخرى.');
     } finally {
       setLoading(false);
     }
   };
 
   const resend = async () => {
-    if (!email) { setError(isAr ? 'البريد الإلكتروني غير متوفر. يرجى التسجيل مرة أخرى.' : 'Email address not available. Please register again.'); return; }
+    if (!email) { setError('البريد الإلكتروني غير متوفر. يرجى التسجيل مرة أخرى.'); return; }
     setResending(true);
     try {
       await api.post('/auth/resend-verification', { email });
@@ -68,9 +66,9 @@ export function VerifyEmailScreen() {
           <View style={styles.logoWrap}>
             <Ionicons name="mail-open" size={28} color={colors.accent} />
           </View>
-          <Text style={styles.brandName}>{isAr ? 'التحقق من البريد' : 'Verify Email'}</Text>
+          <Text style={styles.brandName}>{'التحقق من البريد'}</Text>
           <Text style={[styles.brandSub, { color: colors.tabInactive }]}>
-            {isAr ? 'تحقق من بريدك الوارد للحصول على الرمز' : 'Check your inbox for the code'}
+            {'تحقق من بريدك الوارد للحصول على الرمز'}
           </Text>
         </View>
 
@@ -84,13 +82,13 @@ export function VerifyEmailScreen() {
                 <Ionicons name="checkmark-circle" size={48} color={colors.success} />
               </View>
               <Text style={[styles.doneTitle, { color: colors.text }]}>
-                {isAr ? 'تم التحقق من البريد!' : 'Email verified!'}
+                {'تم التحقق من البريد!'}
               </Text>
               <Text style={[styles.doneSub, { color: colors.textMuted }]}>
-                {isAr ? 'حسابك نشط الآن. يمكنك تسجيل الدخول.' : 'Your account is now active. You can sign in.'}
+                {'حسابك نشط الآن. يمكنك تسجيل الدخول.'}
               </Text>
               <Button fullWidth onPress={() => navigation.navigate('Login')} style={styles.btn}>
-                {isAr ? 'تسجيل الدخول' : 'Sign In'}
+                {'تسجيل الدخول'}
               </Button>
             </View>
           ) : (
@@ -99,16 +97,16 @@ export function VerifyEmailScreen() {
                 <View style={[styles.emailHint, { backgroundColor: `${colors.primary}10` }]}>
                   <Ionicons name="mail-outline" size={16} color={colors.primary} />
                   <Text style={[styles.emailHintText, { color: colors.primary }]}>
-                    {isAr ? 'أرسل إلى ' : 'Sent to '}<Text style={styles.emailBold}>{email}</Text>
+                    {'أرسل إلى '}<Text style={styles.emailBold}>{email}</Text>
                   </Text>
                 </View>
               ) : null}
 
               <Input
-                label={isAr ? 'رمز التحقق' : 'Verification Code'}
+                label={'رمز التحقق'}
                 value={token}
                 onChangeText={setToken}
-                placeholder={isAr ? 'أدخل الرمز من بريدك الإلكتروني' : 'Enter the code from your email'}
+                placeholder={'أدخل الرمز من بريدك الإلكتروني'}
                 icon="key-outline"
                 autoCapitalize="none"
                 autoCorrect={false}
@@ -125,16 +123,16 @@ export function VerifyEmailScreen() {
               ) : null}
 
               <Button onPress={submit} loading={loading} fullWidth size="lg" style={styles.btn}>
-                {isAr ? 'التحقق من البريد' : 'Verify Email'}
+                {'التحقق من البريد'}
               </Button>
 
               <View style={styles.resendRow}>
                 <Text style={[styles.resendLabel, { color: colors.textMuted }]}>
-                  {isAr ? 'لم تستلمه؟ ' : "Didn't receive it? "}
+                  {'لم تستلمه؟ '}
                 </Text>
                 <TouchableOpacity onPress={resend} disabled={resending}>
                   <Text style={[styles.resendLink, { color: colors.primary }, resending && { opacity: 0.5 }]}>
-                    {resending ? (isAr ? 'جاري الإرسال…' : 'Sending…') : (isAr ? 'إعادة إرسال' : 'Resend email')}
+                    {resending ? 'جاري الإرسال…' : 'إعادة إرسال'}
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -142,7 +140,7 @@ export function VerifyEmailScreen() {
               <TouchableOpacity style={styles.backRow} onPress={() => navigation.navigate('Login')}>
                 <Ionicons name="arrow-back" size={16} color={colors.primary} />
                 <Text style={[styles.backLink, { color: colors.primary }]}>
-                  {isAr ? 'العودة لتسجيل الدخول' : 'Back to Sign In'}
+                  {'العودة لتسجيل الدخول'}
                 </Text>
               </TouchableOpacity>
             </View>

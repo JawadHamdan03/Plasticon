@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+﻿import React, { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator, RefreshControl, ScrollView,
   StyleSheet, Text, View,
@@ -9,7 +9,6 @@ import { api } from '../../api/client';
 import { ScreenHeader } from '../../components';
 import { radius, shadow, spacing, typography } from '../../theme';
 import { useAppTheme } from '../../context/ThemeContext';
-import { useLocale } from '../../context/LocaleContext';
 
 interface InventoryItem {
   id:          string;
@@ -24,7 +23,6 @@ interface InventoryItem {
 
 export function InventoryAdminScreen() {
   const { colors } = useAppTheme();
-  const { isAr } = useLocale();
   const [items,      setItems]      = useState<InventoryItem[]>([]);
   const [loading,    setLoading]    = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -48,7 +46,7 @@ export function InventoryAdminScreen() {
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
-      <ScreenHeader title={isAr ? 'المخزون' : 'Inventory'} subtitle={isAr ? 'نظرة عامة على إدارة المخزون' : 'Stock management overview'} />
+      <ScreenHeader title={'المخزون'} subtitle={'نظرة عامة على إدارة المخزون'} />
       {loading ? (
         <View style={styles.center}><ActivityIndicator size="large" color={colors.primary} /></View>
       ) : (
@@ -60,22 +58,22 @@ export function InventoryAdminScreen() {
           <View style={[styles.statsRow, { backgroundColor: colors.surface }]}>
             <View style={styles.stat}>
               <Text style={[styles.statVal, { color: colors.primary }]}>{items.length}</Text>
-              <Text style={[styles.statLabel, { color: colors.textMuted }]}>{isAr ? 'أصناف' : 'SKUs'}</Text>
+              <Text style={[styles.statLabel, { color: colors.textMuted }]}>{'أصناف'}</Text>
             </View>
             <View style={styles.stat}>
               <Text style={[styles.statVal, { color: colors.warning }]}>{lowCount}</Text>
-              <Text style={[styles.statLabel, { color: colors.textMuted }]}>{isAr ? 'إعادة طلب' : 'Reorder'}</Text>
+              <Text style={[styles.statLabel, { color: colors.textMuted }]}>{'إعادة طلب'}</Text>
             </View>
             <View style={styles.stat}>
               <Text style={[styles.statVal, { color: colors.info }]}>${totalCost.toLocaleString('en-US', { maximumFractionDigits: 0 })}</Text>
-              <Text style={[styles.statLabel, { color: colors.textMuted }]}>{isAr ? 'إجمالي القيمة' : 'Total Value'}</Text>
+              <Text style={[styles.statLabel, { color: colors.textMuted }]}>{'إجمالي القيمة'}</Text>
             </View>
           </View>
 
           {items.length === 0 ? (
             <View style={styles.empty}>
               <Ionicons name="archive-outline" size={44} color={colors.textMuted} />
-              <Text style={[styles.emptyText, { color: colors.textMuted }]}>{isAr ? 'لا توجد أصناف في المخزون' : 'No inventory items found'}</Text>
+              <Text style={[styles.emptyText, { color: colors.textMuted }]}>{'لا توجد أصناف في المخزون'}</Text>
             </View>
           ) : (
             <View style={styles.list}>
@@ -88,7 +86,7 @@ export function InventoryAdminScreen() {
                     </View>
                     <View style={styles.cardBody}>
                       <Text style={[styles.cardTitle, { color: colors.text }]}>{item.name}</Text>
-                      <Text style={[styles.cardSub, { color: colors.textMuted }]}>{item.category ?? (isAr ? 'عام' : 'General')}{item.supplier ? ` · ${item.supplier}` : ''}</Text>
+                      <Text style={[styles.cardSub, { color: colors.textMuted }]}>{item.category ?? ('عام')}{item.supplier ? ` · ${item.supplier}` : ''}</Text>
                     </View>
                     <View style={styles.qtyWrap}>
                       <Text style={[styles.qtyVal, { color: isLow ? colors.warning : colors.text }]}>{item.quantity}</Text>

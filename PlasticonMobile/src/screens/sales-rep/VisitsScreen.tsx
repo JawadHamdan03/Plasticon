@@ -1,5 +1,6 @@
-import React, { useCallback, useEffect, useState } from 'react';
+﻿import React, { useCallback, useEffect, useState } from 'react';
 import {
+import { useLocale } from '../../context/LocaleContext';
   ActivityIndicator, Alert, FlatList, Modal, RefreshControl,
   ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View,
 } from 'react-native';
@@ -10,7 +11,6 @@ import { useAuth } from '../../auth/AuthContext';
 import { ScreenHeader } from '../../components';
 import { radius, spacing, typography } from '../../theme';
 import { useAppTheme } from '../../context/ThemeContext';
-import { useLocale } from '../../context/LocaleContext';
 
 type Customer = { id: number; name: string };
 type Visit = {
@@ -62,7 +62,7 @@ export function VisitsScreen() {
   };
 
   const handleCreate = async () => {
-    if (!customerId) { Alert.alert(isAr ? 'اختر عميلاً' : 'Select a customer'); return; }
+    if (!customerId) { Alert.alert('اختر عميلاً'); return; }
     setSaving(true);
     try {
       await api.post('/sales-rep/visits', {
@@ -76,7 +76,7 @@ export function VisitsScreen() {
       resetForm();
       void load();
     } catch (e: any) {
-      Alert.alert(isAr ? 'خطأ' : 'Error', e?.message ?? 'Error');
+      Alert.alert('خطأ', e?.message ?? 'Error');
     } finally {
       setSaving(false);
     }
@@ -104,7 +104,7 @@ export function VisitsScreen() {
         <View style={styles.infoRow}>
           <Ionicons name="time-outline" size={12} color={colors.textSecondary} />
           <Text style={[styles.infoText, { color: colors.textSecondary }]}>
-            {isAr ? 'الزيارة القادمة:' : 'Next:'} {new Date(item.nextVisitAt).toLocaleDateString()}
+            {'الزيارة القادمة:'} {new Date(item.nextVisitAt).toLocaleDateString()}
           </Text>
         </View>
       ) : null}
@@ -113,7 +113,7 @@ export function VisitsScreen() {
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['bottom']}>
-      <ScreenHeader title={isAr ? 'سجل الزيارات' : 'Visit Log'} />
+      <ScreenHeader title={'سجل الزيارات'} />
       {loading ? (
         <ActivityIndicator color={colors.accent} style={{ marginTop: 40 }} />
       ) : (
@@ -126,10 +126,10 @@ export function VisitsScreen() {
           ListEmptyComponent={
             <View style={styles.emptyBox}>
               <Ionicons name="location-outline" size={40} color={colors.textSecondary} />
-              <Text style={[styles.empty, { color: colors.textSecondary }]}>{isAr ? 'لا توجد زيارات' : 'No visits logged'}</Text>
+              <Text style={[styles.empty, { color: colors.textSecondary }]}>{'لا توجد زيارات'}</Text>
               {isSalesRep && (
                 <TouchableOpacity style={[styles.emptyBtn, { backgroundColor: colors.accent }]} onPress={() => setShowModal(true)}>
-                  <Text style={styles.emptyBtnText}>{isAr ? 'سجّل زيارة' : 'Log a Visit'}</Text>
+                  <Text style={styles.emptyBtnText}>{'سجّل زيارة'}</Text>
                 </TouchableOpacity>
               )}
             </View>
@@ -149,16 +149,16 @@ export function VisitsScreen() {
         <View style={styles.modalOverlay}>
           <View style={[styles.modalSheet, { backgroundColor: colors.surface }]}>
             <View style={styles.modalHeader}>
-              <Text style={[styles.modalTitle, { color: colors.text }]}>{isAr ? 'زيارة جديدة' : 'New Visit'}</Text>
+              <Text style={[styles.modalTitle, { color: colors.text }]}>{'زيارة جديدة'}</Text>
               <TouchableOpacity onPress={() => { setShowModal(false); resetForm(); }}>
                 <Ionicons name="close" size={22} color={colors.textSecondary} />
               </TouchableOpacity>
             </View>
             <ScrollView style={{ maxHeight: 460 }} showsVerticalScrollIndicator={false}>
-              <Text style={[styles.label, { color: colors.textSecondary }]}>{isAr ? 'العميل' : 'Customer'}</Text>
+              <Text style={[styles.label, { color: colors.textSecondary }]}>{'العميل'}</Text>
               <View style={[styles.pickerWrap, { backgroundColor: colors.background, borderColor: colors.border }]}>
                 {customers.length === 0 ? (
-                  <Text style={{ color: colors.textSecondary, padding: 8 }}>{isAr ? 'لا يوجد عملاء' : 'No customers'}</Text>
+                  <Text style={{ color: colors.textSecondary, padding: 8 }}>{'لا يوجد عملاء'}</Text>
                 ) : customers.map((c) => (
                   <TouchableOpacity
                     key={c.id}
@@ -171,7 +171,7 @@ export function VisitsScreen() {
                 ))}
               </View>
 
-              <Text style={[styles.label, { color: colors.textSecondary }]}>{isAr ? 'تاريخ الزيارة' : 'Visit Date'}</Text>
+              <Text style={[styles.label, { color: colors.textSecondary }]}>{'تاريخ الزيارة'}</Text>
               <TextInput
                 style={[styles.input, { color: colors.text, borderColor: colors.border, backgroundColor: colors.background }]}
                 placeholder="YYYY-MM-DD"
@@ -180,16 +180,16 @@ export function VisitsScreen() {
                 onChangeText={setVisitDate}
               />
 
-              <Text style={[styles.label, { color: colors.textSecondary }]}>{isAr ? 'النتيجة' : 'Outcome'}</Text>
+              <Text style={[styles.label, { color: colors.textSecondary }]}>{'النتيجة'}</Text>
               <TextInput
                 style={[styles.input, { color: colors.text, borderColor: colors.border, backgroundColor: colors.background }]}
-                placeholder={isAr ? 'تم الاتفاق، قيد النظر...' : 'Agreed, Pending...'}
+                placeholder={'تم الاتفاق، قيد النظر...'}
                 placeholderTextColor={colors.textSecondary}
                 value={outcome}
                 onChangeText={setOutcome}
               />
 
-              <Text style={[styles.label, { color: colors.textSecondary }]}>{isAr ? 'الزيارة القادمة' : 'Next Visit Date'}</Text>
+              <Text style={[styles.label, { color: colors.textSecondary }]}>{'الزيارة القادمة'}</Text>
               <TextInput
                 style={[styles.input, { color: colors.text, borderColor: colors.border, backgroundColor: colors.background }]}
                 placeholder="YYYY-MM-DD"
@@ -198,10 +198,10 @@ export function VisitsScreen() {
                 onChangeText={setNextVisitAt}
               />
 
-              <Text style={[styles.label, { color: colors.textSecondary }]}>{isAr ? 'ملاحظات' : 'Notes'}</Text>
+              <Text style={[styles.label, { color: colors.textSecondary }]}>{'ملاحظات'}</Text>
               <TextInput
                 style={[styles.input, styles.textarea, { color: colors.text, borderColor: colors.border, backgroundColor: colors.background }]}
-                placeholder={isAr ? 'ملاحظات...' : 'Notes...'}
+                placeholder={'ملاحظات...'}
                 placeholderTextColor={colors.textSecondary}
                 value={notes}
                 onChangeText={setNotes}
@@ -215,7 +215,7 @@ export function VisitsScreen() {
               onPress={handleCreate}
               disabled={saving}
             >
-              <Text style={styles.submitText}>{saving ? (isAr ? 'جارٍ الحفظ...' : 'Saving...') : (isAr ? 'تسجيل الزيارة' : 'Log Visit')}</Text>
+              <Text style={styles.submitText}>{saving ? ('جارٍ الحفظ...') : ('تسجيل الزيارة')}</Text>
             </TouchableOpacity>
           </View>
         </View>

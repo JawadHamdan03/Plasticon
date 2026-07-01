@@ -1,10 +1,9 @@
-import React from 'react';
+﻿import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { spacing } from '../../theme';
 import { useAppTheme } from '../../context/ThemeContext';
-import { useLocale } from '../../context/LocaleContext';
 
 interface Props {
   title: string;
@@ -13,7 +12,6 @@ interface Props {
 
 export function PlaceholderScreen({ title, icon = 'construct-outline' }: Props) {
   const { colors } = useAppTheme();
-  const { isAr } = useLocale();
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
       <View style={styles.container}>
@@ -21,10 +19,10 @@ export function PlaceholderScreen({ title, icon = 'construct-outline' }: Props) 
           <Ionicons name={icon} size={40} color={colors.primary} />
         </View>
         <Text style={[styles.title, { color: colors.text }]}>{title}</Text>
-        <Text style={[styles.subtitle, { color: colors.textMuted }]}>{isAr ? 'قريباً في المرحلة القادمة' : 'Coming in the next phase'}</Text>
+        <Text style={[styles.subtitle, { color: colors.textMuted }]}>{'قريباً في المرحلة القادمة'}</Text>
         <View style={[styles.pill, { backgroundColor: colors.accentLight }]}>
           <View style={[styles.dot, { backgroundColor: colors.accent }]} />
-          <Text style={[styles.pillText, { color: colors.accentDark }]}>{isAr ? 'قيد التطوير' : 'In development'}</Text>
+          <Text style={[styles.pillText, { color: colors.accentDark }]}>{'قيد التطوير'}</Text>
         </View>
       </View>
     </SafeAreaView>

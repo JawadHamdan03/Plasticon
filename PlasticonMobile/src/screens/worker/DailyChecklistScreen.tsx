@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+﻿import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator, Alert, KeyboardAvoidingView, Modal,
   Platform, RefreshControl, ScrollView, StyleSheet, Text,
@@ -10,7 +10,6 @@ import { api } from '../../api/client';
 import { ScreenHeader } from '../../components';
 import { radius, shadow, spacing, typography } from '../../theme';
 import { useAppTheme } from '../../context/ThemeContext';
-import { useLocale } from '../../context/LocaleContext';
 
 interface ChecklistEntry {
   id: number;
@@ -24,11 +23,8 @@ const SHIFT_PHASES = ['START', 'END'] as const;
 
 export function DailyChecklistScreen() {
   const { colors } = useAppTheme();
-  const { isAr } = useLocale();
 
-  const DEFAULT_TASKS = isAr
-    ? 'فحص بصري للماكينة\nفحص معدات السلامة\nتجهيز المواد'
-    : 'Machine visual check\nSafety equipment check\nMaterial ready';
+  const DEFAULT_TASKS = 'فحص بصري للماكينة\nفحص معدات السلامة\nتجهيز المواد';
 
   const today0 = new Date().toISOString().slice(0, 10);
   const month0 = new Date().toISOString().slice(0, 7) + '-01';
@@ -56,18 +52,18 @@ export function DailyChecklistScreen() {
 
   const handleDelete = (entry: ChecklistEntry) => {
     Alert.alert(
-      isAr ? 'حذف القائمة' : 'Delete Checklist',
-      isAr ? 'هل أنت متأكد؟' : 'Are you sure?',
+      'حذف القائمة',
+      'هل أنت متأكد؟',
       [
-        { text: isAr ? 'إلغاء' : 'Cancel', style: 'cancel' },
+        { text: 'إلغاء', style: 'cancel' },
         {
-          text: isAr ? 'حذف' : 'Delete', style: 'destructive',
+          text: 'حذف', style: 'destructive',
           onPress: async () => {
             try {
               await api.delete(`/worker-tools/entries/checklist/${entry.id}`);
               setEntries((prev) => prev.filter((e) => e.id !== entry.id));
             } catch (e: any) {
-              Alert.alert(isAr ? 'خطأ' : 'Error', e.message ?? 'Failed');
+              Alert.alert('خطأ', e.message ?? 'Failed');
             }
           },
         },
@@ -89,11 +85,11 @@ export function DailyChecklistScreen() {
       .filter(Boolean)
       .map((label) => ({ label, done: true }));
     if (tasks.length === 0) {
-      Alert.alert(isAr ? 'مطلوب' : 'Required', isAr ? 'أدخل مهمة واحدة على الأقل.' : 'Enter at least one task.');
+      Alert.alert('مطلوب', 'أدخل مهمة واحدة على الأقل.');
       return;
     }
     if (!signature.trim()) {
-      Alert.alert(isAr ? 'مطلوب' : 'Required', isAr ? 'التوقيع الرقمي مطلوب.' : 'Digital signature is required.');
+      Alert.alert('مطلوب', 'التوقيع الرقمي مطلوب.');
       return;
     }
     setSaving(true);
@@ -107,7 +103,7 @@ export function DailyChecklistScreen() {
       setLoading(true);
       void load();
     } catch (e: any) {
-      Alert.alert(isAr ? 'خطأ' : 'Error', e.message ?? (isAr ? 'فشل الإرسال' : 'Failed to submit'));
+      Alert.alert('خطأ', e.message ?? ('فشل الإرسال'));
     } finally { setSaving(false); }
   };
 
@@ -116,14 +112,14 @@ export function DailyChecklistScreen() {
 
   const phaseLabel = (p: string) =>
     p === 'START'
-      ? (isAr ? 'بداية الوردية' : 'Shift Start')
-      : (isAr ? 'نهاية الوردية' : 'Shift End');
+      ? ('بداية الوردية')
+      : ('نهاية الوردية');
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
       <ScreenHeader
-        title={isAr ? 'قائمة الوردية' : 'Shift Checklist'}
-        subtitle={`${filteredEntries.length} ${isAr ? 'مسجل' : 'submitted'}`}
+        title={'قائمة الوردية'}
+        subtitle={`${filteredEntries.length} ${'مسجل'}`}
         showBack
       />
 
@@ -137,7 +133,7 @@ export function DailyChecklistScreen() {
         >
           <TouchableOpacity style={[styles.addBtn, { backgroundColor: colors.primary }]} onPress={openModal} activeOpacity={0.8}>
             <Ionicons name="clipboard" size={20} color="#fff" />
-            <Text style={styles.addText}>{isAr ? 'تسجيل قائمة وردية' : 'Submit Shift Checklist'}</Text>
+            <Text style={styles.addText}>{'تسجيل قائمة وردية'}</Text>
           </TouchableOpacity>
 
           <View style={[styles.filterBar, { backgroundColor: colors.surface }]}>
@@ -161,7 +157,7 @@ export function DailyChecklistScreen() {
           {filteredEntries.length === 0 ? (
             <View style={styles.empty}>
               <Ionicons name="clipboard-outline" size={48} color={colors.textMuted} />
-              <Text style={[styles.emptyText, { color: colors.textMuted }]}>{isAr ? 'لا توجد قوائم مسجلة' : 'No checklists submitted'}</Text>
+              <Text style={[styles.emptyText, { color: colors.textMuted }]}>{'لا توجد قوائم مسجلة'}</Text>
             </View>
           ) : (
             <View style={styles.list}>
@@ -199,7 +195,7 @@ export function DailyChecklistScreen() {
 
                     {entry.digital_signature ? (
                       <Text style={[styles.sig, { color: colors.textMuted }]}>
-                        {isAr ? 'التوقيع: ' : 'Signed: '}{entry.digital_signature}
+                        {'التوقيع: '}{entry.digital_signature}
                       </Text>
                     ) : null}
                   </View>
@@ -216,10 +212,10 @@ export function DailyChecklistScreen() {
             <View style={[styles.handle, { backgroundColor: colors.border }]} />
             <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
               <Text style={[styles.sheetTitle, { color: colors.text }]}>
-                {isAr ? 'قائمة وردية جديدة' : 'New Shift Checklist'}
+                {'قائمة وردية جديدة'}
               </Text>
 
-              <Text style={[styles.label, { color: colors.textMuted }]}>{isAr ? 'مرحلة الوردية *' : 'Shift Phase *'}</Text>
+              <Text style={[styles.label, { color: colors.textMuted }]}>{'مرحلة الوردية *'}</Text>
               <View style={styles.phaseRow}>
                 {SHIFT_PHASES.map((p) => {
                   const pColor = p === 'START' ? colors.success : colors.primary;
@@ -238,11 +234,11 @@ export function DailyChecklistScreen() {
               </View>
 
               <Text style={[styles.label, { color: colors.textMuted }]}>
-                {isAr ? 'المهام * (كل مهمة في سطر)' : 'Tasks * (one per line)'}
+                {'المهام * (كل مهمة في سطر)'}
               </Text>
               <TextInput
                 style={[styles.input, styles.inputMulti, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
-                placeholder={isAr ? 'أدخل المهام، كل مهمة في سطر...' : 'Enter tasks, one per line...'}
+                placeholder={'أدخل المهام، كل مهمة في سطر...'}
                 placeholderTextColor={colors.textMuted}
                 value={tasksText}
                 onChangeText={setTasksText}
@@ -250,10 +246,10 @@ export function DailyChecklistScreen() {
                 numberOfLines={5}
               />
 
-              <Text style={[styles.label, { color: colors.textMuted }]}>{isAr ? 'التوقيع الرقمي *' : 'Digital Signature *'}</Text>
+              <Text style={[styles.label, { color: colors.textMuted }]}>{'التوقيع الرقمي *'}</Text>
               <TextInput
                 style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
-                placeholder={isAr ? 'اسمك أو رمزك' : 'Your name or ID'}
+                placeholder={'اسمك أو رمزك'}
                 placeholderTextColor={colors.textMuted}
                 value={signature}
                 onChangeText={setSignature}
@@ -261,12 +257,12 @@ export function DailyChecklistScreen() {
 
               <View style={styles.actions}>
                 <TouchableOpacity style={[styles.cancelBtn, { borderColor: colors.border }]} onPress={() => setModal(false)}>
-                  <Text style={[styles.cancelText, { color: colors.textMuted }]}>{isAr ? 'إلغاء' : 'Cancel'}</Text>
+                  <Text style={[styles.cancelText, { color: colors.textMuted }]}>{'إلغاء'}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={[styles.submitBtn, { backgroundColor: colors.primary }]} onPress={submit} disabled={saving}>
                   {saving
                     ? <ActivityIndicator size="small" color="#fff" />
-                    : <Text style={styles.submitText}>{isAr ? 'إرسال' : 'Submit'}</Text>
+                    : <Text style={styles.submitText}>{'إرسال'}</Text>
                   }
                 </TouchableOpacity>
               </View>

@@ -1,9 +1,8 @@
-import React from 'react';
+﻿import React from 'react';
 import { createBottomTabNavigator }   from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons }                   from '@expo/vector-icons';
 import { useAppTheme }                from '../context/ThemeContext';
-import { useLocale }                  from '../context/LocaleContext';
 import { useUnreadCount }             from '../hooks/useUnreadCount';
 
 import {
@@ -73,7 +72,6 @@ const Tab = createBottomTabNavigator<SalesRepTabParamList>();
 
 export function SalesRepTabs() {
   const { colors }    = useAppTheme();
-  const { isAr }      = useLocale();
   const unreadCount   = useUnreadCount();
 
   return (
@@ -102,9 +100,9 @@ export function SalesRepTabs() {
         },
       })}
     >
-      <Tab.Screen name="Overview" component={OverviewNavigator} options={{ tabBarLabel: isAr ? 'نظرة عامة' : 'Overview' }} />
+      <Tab.Screen name="Overview" component={OverviewNavigator} options={{ tabBarLabel: 'نظرة عامة' }} />
       <Tab.Screen name="Sales"    component={SalesNavigator}    options={{ tabBarLabel: isAr ? 'مبيعاتي'   : 'My Sales' }} />
-      <Tab.Screen name="Personal" component={PersonalNavigator} options={{ tabBarLabel: isAr ? 'شخصي' : 'Personal', tabBarBadge: unreadCount > 0 ? unreadCount : undefined }} />
+      <Tab.Screen name="Personal" component={PersonalNavigator} options={{ tabBarLabel: 'شخصي', tabBarBadge: unreadCount > 0 ? unreadCount : undefined }} />
     </Tab.Navigator>
   );
 }

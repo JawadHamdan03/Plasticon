@@ -2,9 +2,8 @@ import React from 'react';
 import { createBottomTabNavigator }   from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons }                   from '@expo/vector-icons';
-import { useAppTheme }                from '../context/ThemeContext';
-import { useLocale }                  from '../context/LocaleContext';
-import { useUnreadCount }             from '../hooks/useUnreadCount';
+import { useAppTheme }    from '../context/ThemeContext';
+import { useUnreadCount } from '../hooks/useUnreadCount';
 
 import {
   AdminTabParamList,
@@ -222,7 +221,6 @@ const Tab = createBottomTabNavigator<AdminTabParamList>();
 
 export function AdminTabs() {
   const { colors }  = useAppTheme();
-  const { isAr }    = useLocale();
   const unreadCount = useUnreadCount();
   return (
     <Tab.Navigator
@@ -252,11 +250,11 @@ export function AdminTabs() {
         },
       })}
     >
-      <Tab.Screen name="Dashboard"   component={DashNavigator}  options={{ tabBarLabel: isAr ? 'الرئيسية'  : 'Dashboard'   }} />
-      <Tab.Screen name="Operations"  component={OpsNavigator}   options={{ tabBarLabel: isAr ? 'العمليات'  : 'Operations'  }} />
-      <Tab.Screen name="Finance"     component={FinNavigator}   options={{ tabBarLabel: isAr ? 'المالية'   : 'Finance'     }} />
-      <Tab.Screen name="Engineering" component={EngNavigator}   options={{ tabBarLabel: isAr ? 'الهندسة'   : 'Engineering' }} />
-      <Tab.Screen name="More"        component={MoreNavigator}  options={{ tabBarLabel: isAr ? 'المزيد' : 'More', tabBarBadge: unreadCount > 0 ? unreadCount : undefined }} />
+      <Tab.Screen name="Dashboard"   component={DashNavigator}  options={{ tabBarLabel: 'الرئيسية' }} />
+      <Tab.Screen name="Operations"  component={OpsNavigator}   options={{ tabBarLabel: 'العمليات' }} />
+      <Tab.Screen name="Finance"     component={FinNavigator}   options={{ tabBarLabel: 'المالية'  }} />
+      <Tab.Screen name="Engineering" component={EngNavigator}   options={{ tabBarLabel: 'الهندسة'  }} />
+      <Tab.Screen name="More"        component={MoreNavigator}  options={{ tabBarLabel: 'المزيد', tabBarBadge: unreadCount > 0 ? unreadCount : undefined }} />
     </Tab.Navigator>
   );
 }

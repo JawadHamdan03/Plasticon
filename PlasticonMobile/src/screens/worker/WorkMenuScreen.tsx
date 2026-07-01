@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -43,34 +43,34 @@ export function WorkMenuScreen() {
   const { user } = useAuth();
 
   const PRODUCTION_ITEMS: MenuItem[] = [
-    { icon: 'cube',         label: isAr ? 'تسجيل الإنتاج'  : 'Production Log',  desc: isAr ? 'تسجيل مخرجات الإنتاج'      : 'Record production output',            color: colors.primary, screen: 'Production'   },
-    { icon: 'camera',       label: isAr ? 'اللقطات'        : 'Snapshots',        desc: isAr ? 'قراءات الآلة والكهرباء'     : 'Machine counter & electricity reads',  color: '#8b5cf6',      screen: 'Snapshots'    },
-    { icon: 'flag',         label: isAr ? 'الأهداف اليومية': 'Daily Targets',     desc: isAr ? 'أهداف اليوم'                : "Today's production goals",             color: colors.success, screen: 'DailyTargets' },
+    { icon: 'cube',         label: 'تسجيل الإنتاج',  desc: 'تسجيل مخرجات الإنتاج',            color: colors.primary, screen: 'Production'   },
+    { icon: 'camera',       label: 'اللقطات',        desc: 'قراءات الآلة والكهرباء',  color: '#8b5cf6',      screen: 'Snapshots'    },
+    { icon: 'flag',         label: 'الأهداف اليومية',     desc: isAr ? 'أهداف اليوم'                : "Today's production goals",             color: colors.success, screen: 'DailyTargets' },
   ];
 
   const REPORTING_ITEMS: MenuItem[] = [
-    { icon: 'warning',          label: isAr ? 'توقف الآلات' : 'Machine Stops',   desc: isAr ? 'الإبلاغ عن توقف الآلة' : 'Report full machine stoppages',         color: colors.danger,  screen: 'MachineStops'   },
-    { icon: 'pause-circle',     label: isAr ? 'توقفات مايكرو' : 'Micro Stops',   desc: isAr ? 'تسجيل الانقطاعات القصيرة' : 'Log brief production interruptions',  color: colors.info,    screen: 'MicroStops'     },
-    { icon: 'trash',            label: isAr ? 'هدر المواد' : 'Material Waste',   desc: isAr ? 'تسجيل المواد المهدرة' : 'Log scrap and waste materials',            color: '#E67E22',      screen: 'MaterialWaste'  },
-    { icon: 'alert-circle',     label: isAr ? 'مشاكل الجودة' : 'Quality Issues', desc: isAr ? 'الإبلاغ عن العيوب' : 'Report defects and problems',                color: colors.warning, screen: 'QualityIssues'  },
-    { icon: 'checkmark-circle', label: isAr ? 'قائمة التحقق' : 'Daily Checklist', desc: isAr ? 'فحوصات السلامة' : 'Safety and pre-start checks',                 color: colors.success, screen: 'DailyChecklist' },
+    { icon: 'warning',          label: 'توقف الآلات',   desc: 'الإبلاغ عن توقف الآلة',         color: colors.danger,  screen: 'MachineStops'   },
+    { icon: 'pause-circle',     label: 'توقفات مايكرو',   desc: 'تسجيل الانقطاعات القصيرة',  color: colors.info,    screen: 'MicroStops'     },
+    { icon: 'trash',            label: 'هدر المواد',   desc: 'تسجيل المواد المهدرة',            color: '#E67E22',      screen: 'MaterialWaste'  },
+    { icon: 'alert-circle',     label: 'مشاكل الجودة', desc: 'الإبلاغ عن العيوب',                color: colors.warning, screen: 'QualityIssues'  },
+    { icon: 'checkmark-circle', label: 'قائمة التحقق', desc: 'فحوصات السلامة',                 color: colors.success, screen: 'DailyChecklist' },
   ];
 
   const ELECTRICITY_ITEMS: MenuItem[] = [
-    { icon: 'flash-outline', label: isAr ? 'تنبيهات الكهرباء' : 'Electricity Alerts', desc: isAr ? 'عرض تنبيهات الاستهلاك' : 'View power consumption alerts',   color: colors.warning, screen: 'ElectricityAlerts' },
-    { icon: 'document-text', label: isAr ? 'سجل الكهرباء' : 'Electricity Record',     desc: isAr ? 'تصفح سجل القراءات' : 'Browse all meter reading history',    color: colors.info,    screen: 'ElectricityRecord' },
+    { icon: 'flash-outline', label: 'تنبيهات الكهرباء', desc: 'عرض تنبيهات الاستهلاك',   color: colors.warning, screen: 'ElectricityAlerts' },
+    { icon: 'document-text', label: 'سجل الكهرباء',     desc: 'تصفح سجل القراءات',    color: colors.info,    screen: 'ElectricityRecord' },
   ];
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.pageHeader}>
-          <Text style={styles.pageTitle}>{isAr ? 'عملي' : 'My Work'}</Text>
-          <Text style={[styles.pageSub, { color: colors.textMuted }]}>{user?.department ?? (isAr ? 'أرضية المصنع' : 'Factory Floor')}</Text>
+          <Text style={styles.pageTitle}>{'عملي'}</Text>
+          <Text style={[styles.pageSub, { color: colors.textMuted }]}>{user?.department ?? ('أرضية المصنع')}</Text>
         </View>
-        <Section title={isAr ? 'الإنتاج' : 'Production'}   items={PRODUCTION_ITEMS}   colors={colors} />
-        <Section title={isAr ? 'التقارير' : 'Reporting'}    items={REPORTING_ITEMS}    colors={colors} />
-        <Section title={isAr ? 'الكهرباء' : 'Electricity'}  items={ELECTRICITY_ITEMS}  colors={colors} />
+        <Section title={'الإنتاج'}   items={PRODUCTION_ITEMS}   colors={colors} />
+        <Section title={'التقارير'}    items={REPORTING_ITEMS}    colors={colors} />
+        <Section title={'الكهرباء'}  items={ELECTRICITY_ITEMS}  colors={colors} />
       </ScrollView>
     </SafeAreaView>
   );

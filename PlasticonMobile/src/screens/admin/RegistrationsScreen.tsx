@@ -1,5 +1,6 @@
-import React, { useCallback, useEffect, useState } from 'react';
+﻿import React, { useCallback, useEffect, useState } from 'react';
 import {
+import { useLocale } from '../../context/LocaleContext';
   ActivityIndicator, Alert, FlatList, KeyboardAvoidingView,
   Modal, Platform, RefreshControl, ScrollView, StyleSheet,
   Text, TextInput, TouchableOpacity, View,
@@ -10,7 +11,6 @@ import { api } from '../../api/client';
 import { ScreenHeader } from '../../components';
 import { radius, shadow, spacing, typography } from '../../theme';
 import { useAppTheme } from '../../context/ThemeContext';
-import { useLocale } from '../../context/LocaleContext';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -70,8 +70,8 @@ function ApproveModal({
   const handleApprove = async () => {
     if (needsShift && shifts.length > 0 && !selectedShiftId) {
       Alert.alert(
-        isAr ? 'مطلوب' : 'Required',
-        isAr ? 'يرجى تحديد وردية للدور المختار.' : 'Please select a shift for this role.',
+        'مطلوب',
+        'يرجى تحديد وردية للدور المختار.',
       );
       return;
     }
@@ -82,7 +82,7 @@ function ApproveModal({
       await api.patch(`/registration-requests/${request.id}/approve`, body);
       onSuccess();
     } catch (e: any) {
-      Alert.alert(isAr ? 'خطأ' : 'Error', e.message ?? 'Failed to approve');
+      Alert.alert('خطأ', e.message ?? 'Failed to approve');
     } finally {
       setSaving(false);
     }
@@ -101,7 +101,7 @@ function ApproveModal({
             </View>
             <View style={{ flex: 1 }}>
               <Text style={[styles.modalTitle, { color: colors.text }]}>
-                {isAr ? 'الموافقة على الطلب' : 'Approve Request'}
+                {'الموافقة على الطلب'}
               </Text>
               <Text style={[styles.modalSub, { color: colors.textMuted }]} numberOfLines={1}>
                 {request.fullName} · {request.email}
@@ -112,7 +112,7 @@ function ApproveModal({
           <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
             {/* Role selector */}
             <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>
-              {isAr ? 'اختر الدور *' : 'Select Role *'}
+              {'اختر الدور *'}
             </Text>
             <View style={styles.roleGrid}>
               {ROLES.map((role) => {
@@ -142,7 +142,7 @@ function ApproveModal({
                 </Text>
                 {shifts.length === 0 ? (
                   <Text style={[styles.noShifts, { color: colors.textMuted }]}>
-                    {isAr ? 'لا توجد وردياات. أنشئ وردية أولاً.' : 'No shifts configured. Create a shift first.'}
+                    {'لا توجد وردياات. أنشئ وردية أولاً.'}
                   </Text>
                 ) : (
                   <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: spacing.md }}>
@@ -173,13 +173,13 @@ function ApproveModal({
             {/* Review note */}
             <View style={styles.field}>
               <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>
-                {isAr ? 'ملاحظة المراجعة (اختياري)' : 'Review Note (optional)'}
+                {'ملاحظة المراجعة (اختياري)'}
               </Text>
               <TextInput
                 style={[styles.input, styles.inputMulti, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
                 multiline
                 numberOfLines={2}
-                placeholder={isAr ? 'ملاحظة...' : 'e.g. Assigned to morning shift'}
+                placeholder={'ملاحظة...'}
                 placeholderTextColor={colors.textMuted}
                 value={reviewNote}
                 onChangeText={setReviewNote}
@@ -198,7 +198,7 @@ function ApproveModal({
 
             <View style={styles.modalActions}>
               <TouchableOpacity style={[styles.cancelBtn, { borderColor: colors.border }]} onPress={onClose}>
-                <Text style={[styles.cancelText, { color: colors.textMuted }]}>{isAr ? 'إلغاء' : 'Cancel'}</Text>
+                <Text style={[styles.cancelText, { color: colors.textMuted }]}>{'إلغاء'}</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[
@@ -212,7 +212,7 @@ function ApproveModal({
               >
                 {saving
                   ? <ActivityIndicator size="small" color="#fff" />
-                  : <Text style={styles.approveBtnText}>{isAr ? 'موافقة وإنشاء حساب' : 'Approve & Create Account'}</Text>
+                  : <Text style={styles.approveBtnText}>{'موافقة وإنشاء حساب'}</Text>
                 }
               </TouchableOpacity>
             </View>
@@ -282,11 +282,11 @@ function RegCard({
         <View style={[styles.actions, { borderTopColor: colors.border }]}>
           <TouchableOpacity style={[styles.btn, { backgroundColor: colors.success }]} onPress={() => onApprove(item)} activeOpacity={0.8}>
             <Ionicons name="checkmark" size={16} color="#fff" />
-            <Text style={styles.btnText}>{isAr ? 'موافقة' : 'Approve'}</Text>
+            <Text style={styles.btnText}>{'موافقة'}</Text>
           </TouchableOpacity>
           <TouchableOpacity style={[styles.btn, { backgroundColor: colors.danger }]} onPress={() => onReject(item)} activeOpacity={0.8}>
             <Ionicons name="close" size={16} color="#fff" />
-            <Text style={styles.btnText}>{isAr ? 'رفض' : 'Reject'}</Text>
+            <Text style={styles.btnText}>{'رفض'}</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -329,18 +329,18 @@ export function RegistrationsScreen() {
 
   const handleReject = (item: RegRequest) => {
     Alert.alert(
-      isAr ? 'رفض الطلب' : 'Reject Request',
+      'رفض الطلب',
       isAr ? `هل أنت متأكد من رفض طلب ${item.fullName}؟` : `Reject registration request from ${item.fullName}?`,
       [
-        { text: isAr ? 'إلغاء' : 'Cancel', style: 'cancel' },
+        { text: 'إلغاء', style: 'cancel' },
         {
-          text: isAr ? 'رفض' : 'Reject', style: 'destructive',
+          text: 'رفض', style: 'destructive',
           onPress: async () => {
             try {
               await api.patch(`/registration-requests/${item.id}/reject`, { reviewNote: '' });
               void load();
             } catch (e: any) {
-              Alert.alert(isAr ? 'خطأ' : 'Error', e.message ?? 'Failed to reject');
+              Alert.alert('خطأ', e.message ?? 'Failed to reject');
             }
           },
         },
@@ -360,8 +360,8 @@ export function RegistrationsScreen() {
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
       <ScreenHeader
-        title={isAr ? 'طلبات التسجيل' : 'Registration Requests'}
-        subtitle={pending > 0 ? `${pending} ${isAr ? 'معلق' : 'pending'}` : (isAr ? 'لا يوجد معلق' : 'All resolved')}
+        title={'طلبات التسجيل'}
+        subtitle={pending > 0 ? `${pending} ${'معلق'}` : ('لا يوجد معلق')}
         showBack
       />
 
@@ -408,7 +408,7 @@ export function RegistrationsScreen() {
             <View style={styles.empty}>
               <Ionicons name="person-add-outline" size={44} color={colors.textMuted} />
               <Text style={[styles.emptyText, { color: colors.textMuted }]}>
-                {isAr ? 'لا توجد طلبات تسجيل' : 'No registration requests'}
+                {'لا توجد طلبات تسجيل'}
               </Text>
             </View>
           }

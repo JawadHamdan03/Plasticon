@@ -82,57 +82,75 @@ const QUOTATION_COLOR: Record<string, string> = { PENDING: "#f59e0b", APPROVED: 
 function HeroCard({ icon, label, value, sub, gradient, alert }: {
   icon: React.ReactNode; label: string; value: string | number; sub?: string; gradient: string; alert?: boolean;
 }) {
+  const color = gradient.includes("3b82f6") ? "#3b82f6"
+    : gradient.includes("10b981") ? "#10b981"
+    : gradient.includes("f97316") || gradient.includes("f59e0b") ? "#f97316"
+    : gradient.includes("8b5cf6") ? "#8b5cf6"
+    : gradient.includes("ef4444") ? "#ef4444"
+    : gradient.includes("0ea5e9") ? "#0ea5e9"
+    : "#f97316";
   return (
-    <div style={{ background: gradient, borderRadius: 14, padding: "1.1rem 1.25rem", color: "#fff", boxShadow: "0 4px 16px rgba(0,0,0,.12)", position: "relative", overflow: "hidden" }}>
-      <div style={{ position: "absolute", right: -10, top: -10, opacity: .15, transform: "scale(2.8)" }}>{icon}</div>
-      <div style={{ display: "flex", alignItems: "center", gap: ".5rem", marginBottom: ".5rem", opacity: .9 }}>
-        {icon}
-        <span style={{ fontSize: ".72rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: ".04em" }}>{label}</span>
-        {alert && <span style={{ marginLeft: "auto", background: "rgba(255,255,255,.25)", borderRadius: 999, padding: "1px 6px", fontSize: ".62rem", fontWeight: 800 }}>!</span>}
-      </div>
-      <p style={{ margin: 0, fontSize: "2rem", fontWeight: 900, lineHeight: 1 }}>{value}</p>
-      {sub && <p style={{ margin: ".25rem 0 0", fontSize: ".75rem", opacity: .8 }}>{sub}</p>}
+    <div className="kpi-cell" style={{ "--kpi-color": color, "--kpi-bg": `${color}14` } as React.CSSProperties}>
+      <div className="kpi-cell__icon-wrap">{icon}</div>
+      <div className="kpi-cell__label">{label}</div>
+      <div className="kpi-cell__value">{value}</div>
+      {sub && <div className="kpi-cell__sub">{sub}</div>}
+      {alert && <div className="kpi-cell__alert" />}
     </div>
   );
 }
+
 function SectionCard({ title, icon, children }: { title: string; icon: React.ReactNode; children: React.ReactNode }) {
   return (
-    <div style={{ background: "var(--bg-card)", border: "1px solid var(--border-default)", borderRadius: 14, padding: "1.25rem", display: "flex", flexDirection: "column", gap: "1rem" }}>
-      <div style={{ display: "flex", alignItems: "center", gap: ".5rem", borderBottom: "1px solid var(--border-default)", paddingBottom: ".75rem" }}>
-        <span style={{ color: "var(--orange-500,#f97316)" }}>{icon}</span>
-        <h3 style={{ margin: 0, fontSize: ".9rem", fontWeight: 800 }}>{title}</h3>
+    <div className="cell-group">
+      <div className="cell-group__header">
+        <div className="cell-group__header-icon">{icon}</div>
+        <span className="cell-group__title">{title}</span>
       </div>
-      {children}
+      <div className="cell-group__body">{children}</div>
     </div>
   );
 }
+
 function BarRow({ label, value, max, color, suffix = "" }: { label: string; value: number; max: number; color: string; suffix?: string }) {
   const pct = max > 0 ? Math.min((value / max) * 100, 100) : 0;
   return (
-    <div>
-      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: ".3rem", fontSize: ".8rem" }}>
-        <span style={{ color: "var(--text-secondary)" }}>{label}</span>
-        <strong style={{ color: "var(--text-primary)" }}>{fmt(value)}{suffix}</strong>
-      </div>
-      <div style={{ height: 7, borderRadius: 999, background: "var(--border-default)", overflow: "hidden" }}>
-        <div style={{ height: "100%", width: `${pct}%`, background: color, borderRadius: 999, transition: "width .6s ease" }} />
+    <div className="cell">
+      <div className="cell__content">
+        <div className="cell-progress">
+          <div className="cell-progress__labels">
+            <span style={{ color: "var(--text-secondary)", fontWeight: 600, fontSize: ".8rem" }}>{label}</span>
+            <strong style={{ color, fontSize: ".82rem" }}>{fmt(value)}{suffix}</strong>
+          </div>
+          <div className="cell-progress__track">
+            <div className="cell-progress__fill" style={{ width: `${pct}%`, background: color }} />
+          </div>
+        </div>
       </div>
     </div>
   );
 }
+
 function StatPill({ label, value, color }: { label: string; value: number; color: string }) {
   return (
-    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: ".5rem .75rem", borderRadius: 8, background: "var(--bg-surface)", border: "1px solid var(--border-default)" }}>
-      <span style={{ fontSize: ".8rem", color: "var(--text-secondary)", fontWeight: 600 }}>{label}</span>
-      <span style={{ fontSize: ".9rem", fontWeight: 800, color }}>{value}</span>
+    <div className="cell">
+      <div className="cell__content">
+        <span className="cell__label">{label}</span>
+      </div>
+      <div className="cell__end">
+        <span className="cell__value" style={{ color, fontSize: "1rem", fontWeight: 900 }}>{value}</span>
+      </div>
     </div>
   );
 }
+
 function AlertItem({ icon, label, color }: { icon: React.ReactNode; label: string; color: string }) {
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: ".5rem", padding: ".5rem .75rem", borderRadius: 8, background: "#fff", border: `1px solid ${color}33` }}>
-      <span style={{ color, flexShrink: 0 }}>{icon}</span>
-      <span style={{ fontSize: ".78rem", fontWeight: 600, color: "var(--text-primary)" }}>{label}</span>
+    <div className="cell cell--accent" style={{ "--cell-accent": color } as React.CSSProperties}>
+      <div className="cell__icon" style={{ background: `${color}14`, color }}>{icon}</div>
+      <div className="cell__content">
+        <span className="cell__label">{label}</span>
+      </div>
     </div>
   );
 }
@@ -141,12 +159,12 @@ function AlertItem({ icon, label, color }: { icon: React.ReactNode; label: strin
 
 function ChartCard({ title, icon, children, fullWidth = false }: { title: string; icon?: React.ReactNode; children: React.ReactNode; fullWidth?: boolean }) {
   return (
-    <div style={{ background: "var(--bg-card)", border: "1px solid var(--border-default)", borderRadius: 14, padding: "1.1rem 1.25rem", gridColumn: fullWidth ? "1 / -1" : undefined }}>
-      <div style={{ display: "flex", alignItems: "center", gap: ".5rem", marginBottom: "1rem", paddingBottom: ".65rem", borderBottom: "1px solid var(--border-default)" }}>
-        {icon && <span style={{ color: "var(--orange-500,#f97316)" }}>{icon}</span>}
-        <span style={{ fontSize: ".88rem", fontWeight: 800 }}>{title}</span>
+    <div className="cell-group" style={{ gridColumn: fullWidth ? "1 / -1" : undefined }}>
+      <div className="cell-group__header">
+        {icon && <div className="cell-group__header-icon">{icon}</div>}
+        <span className="cell-group__title">{title}</span>
       </div>
-      {children}
+      <div style={{ padding: "1rem 1.25rem" }}>{children}</div>
     </div>
   );
 }
@@ -628,7 +646,7 @@ export function DashboardAnalyticsPage() {
         <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
 
           {/* Row 0: Hero KPI Strip */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: "1rem" }}>
+          <div className="kpi-strip">
             <HeroCard icon={<Users size={18} />} label="المستخدمون النشطون" value={d.activeUsers}
               sub={`${d.totalUsers} إجمالي · ${d.pendingRegistrations} معلق`}
               gradient="linear-gradient(135deg,#3b82f6,#1d4ed8)" alert={d.pendingRegistrations > 0} />
@@ -652,38 +670,34 @@ export function DashboardAnalyticsPage() {
 
           {/* Row 1: People + Production */}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(340px, 1fr))", gap: "1rem" }}>
-            <SectionCard title="الأفراد والحضور" icon={<Users size={16} />}>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(80px, 1fr))", gap: ".5rem" }}>
+            <SectionCard title="الأفراد والحضور" icon={<Users size={15} />}>
+              <div className="stat-grid">
                 {(["WORKER", "ENGINEER", "ACCOUNTANT", "ADMIN"] as const).map((role) => {
                   const count = d.usersByRole.find((r) => r.role === role)?.count ?? 0;
                   return (
-                    <div key={role} style={{ background: ROLE_GRADIENT[role], borderRadius: 10, padding: ".65rem .5rem", color: "#fff", textAlign: "center" }}>
-                      <p style={{ margin: "0 0 .2rem", fontSize: ".6rem", opacity: .9, fontWeight: 700, textTransform: "uppercase" }}>{role}</p>
-                      <p style={{ margin: 0, fontSize: "1.6rem", fontWeight: 900, lineHeight: 1 }}>{count}</p>
+                    <div key={role} className="stat-tile">
+                      <span className="stat-tile__value" style={{ color: ROLE_COLOR[role] }}>{count}</span>
+                      <span className="stat-tile__label">{role}</span>
                     </div>
                   );
                 })}
               </div>
-              <div style={{ display: "grid", gridTemplateColumns: COL2, gap: ".4rem" }}>
-                <StatPill label="حاضرون اليوم" value={d.attendanceToday} color="#16a34a" />
-                <StatPill label="متأخرون" value={d.lateToday} color={d.lateToday > 0 ? "#f97316" : "#16a34a"} />
-                <StatPill label="نسبة الحضور %" value={attendanceRate} color={attendanceRate >= 80 ? "#16a34a" : "#f97316"} />
-                <StatPill label="طلبات تسجيل معلقة" value={d.pendingRegistrations} color={d.pendingRegistrations > 0 ? "#f97316" : "#64748b"} />
-              </div>
+              <StatPill label="حاضرون اليوم" value={d.attendanceToday} color="#16a34a" />
+              <StatPill label="متأخرون" value={d.lateToday} color={d.lateToday > 0 ? "#f97316" : "#16a34a"} />
+              <StatPill label="نسبة الحضور %" value={attendanceRate} color={attendanceRate >= 80 ? "#16a34a" : "#f97316"} />
+              <StatPill label="طلبات تسجيل معلقة" value={d.pendingRegistrations} color={d.pendingRegistrations > 0 ? "#f97316" : "#64748b"} />
             </SectionCard>
 
-            <SectionCard title="مخرجات الإنتاج" icon={<Factory size={16} />}>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(110px, 1fr))", gap: ".5rem" }}>
+            <SectionCard title="مخرجات الإنتاج" icon={<Factory size={15} />}>
+              <div className="stat-grid">
                 {[
                   { label: "اليوم", pieces: d.production.todayPieces, cartons: d.production.todayCartons },
-                  { label: "هذا الأسبوع", pieces: d.production.weekPieces, cartons: d.production.weekCartons },
-                  { label: "هذا الشهر", pieces: d.production.monthPieces, cartons: d.production.monthCartons },
+                  { label: "الأسبوع", pieces: d.production.weekPieces, cartons: d.production.weekCartons },
+                  { label: "الشهر", pieces: d.production.monthPieces, cartons: d.production.monthCartons },
                 ].map((p) => (
-                  <div key={p.label} style={{ background: "rgba(249,115,22,.07)", border: "1px solid rgba(249,115,22,.15)", borderRadius: 10, padding: ".75rem .5rem", textAlign: "center" }}>
-                    <p style={{ margin: "0 0 .3rem", fontSize: ".62rem", fontWeight: 700, color: "var(--text-secondary)", textTransform: "uppercase" }}>{p.label}</p>
-                    <p style={{ margin: "0 0 .1rem", fontSize: "1.25rem", fontWeight: 900, color: "#f97316" }}>{fmtMoney(p.pieces)}</p>
-                    <p style={{ margin: 0, fontSize: ".65rem", color: "var(--text-secondary)" }}>قطعة</p>
-                    <p style={{ margin: ".25rem 0 0", fontSize: ".78rem", fontWeight: 700 }}>{fmtMoney(p.cartons)}<span style={{ fontSize: ".62rem", color: "var(--text-secondary)", fontWeight: 400 }}> كرتون</span></p>
+                  <div key={p.label} className="stat-tile">
+                    <span className="stat-tile__value" style={{ color: "#f97316" }}>{fmtMoney(p.pieces)}</span>
+                    <span className="stat-tile__label">{p.label} · {fmtMoney(p.cartons)} كرتون</span>
                   </div>
                 ))}
               </div>

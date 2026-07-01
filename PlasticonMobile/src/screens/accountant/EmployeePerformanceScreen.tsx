@@ -1,5 +1,6 @@
-import React, { useCallback, useEffect, useState } from 'react';
+﻿import React, { useCallback, useEffect, useState } from 'react';
 import {
+import { useLocale } from '../../context/LocaleContext';
   ActivityIndicator, Alert, FlatList, KeyboardAvoidingView, Modal,
   Platform, Pressable, RefreshControl, ScrollView,
   StyleSheet, Text, TextInput, TouchableOpacity, View,
@@ -10,7 +11,6 @@ import { api } from '../../api/client';
 import { ScreenHeader, StatCard } from '../../components';
 import { radius, shadow, spacing, typography } from '../../theme';
 import { useAppTheme } from '../../context/ThemeContext';
-import { useLocale } from '../../context/LocaleContext';
 
 interface PerfRecord {
   id: number;
@@ -39,6 +39,7 @@ function gradeInfo(score: number, colors: any) {
 
 function ScoreBar({ label, value, color }: { label: string; value: number; color: string }) {
   const { colors } = useAppTheme();
+  const { isAr } = useLocale();
   return (
     <View style={{ marginBottom: 6 }}>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
@@ -102,9 +103,9 @@ export function EmployeePerformanceScreen() {
   useEffect(() => { void load(); }, [load]);
 
   const handleDelete = (r: PerfRecord) => {
-    Alert.alert(isAr ? 'حذف' : 'Delete', isAr ? 'هل أنت متأكد؟' : 'Are you sure?', [
-      { text: isAr ? 'إلغاء' : 'Cancel', style: 'cancel' },
-      { text: isAr ? 'حذف' : 'Delete', style: 'destructive', onPress: async () => {
+    Alert.alert('حذف', 'هل أنت متأكد؟', [
+      { text: 'إلغاء', style: 'cancel' },
+      { text: 'حذف', style: 'destructive', onPress: async () => {
         try {
           await api.delete(`/performance/${r.id}`);
           setRecords((p) => p.filter((x) => x.id !== r.id));
@@ -119,7 +120,7 @@ export function EmployeePerformanceScreen() {
       await api.post('/performance/calculate', {});
       setRefreshing(true);
       await load();
-      Alert.alert(isAr ? 'تم' : 'Done', isAr ? 'تم حساب الأداء بنجاح' : 'Performance calculated successfully');
+      Alert.alert('تم', 'تم حساب الأداء بنجاح');
     } catch (e: any) {
       Alert.alert('خطأ', e.message ?? 'فشلت العملية');
     } finally { setCalculating(false); }
@@ -127,14 +128,14 @@ export function EmployeePerformanceScreen() {
 
   const submit = async () => {
     if (!form.userId) {
-      Alert.alert(isAr ? 'مطلوب' : 'Required', isAr ? 'اختر الموظف' : 'Select employee'); return;
+      Alert.alert('مطلوب', 'اختر الموظف'); return;
     }
     const scores = [form.productionScore, form.qualityScore, form.attendanceScore, form.kaizenScore];
     if (scores.some((s) => !s || isNaN(Number(s)) || Number(s) < 0 || Number(s) > 100)) {
-      Alert.alert(isAr ? 'مطلوب' : 'Required', isAr ? 'أدخل درجات صحيحة (0-100)' : 'Enter valid scores (0-100)'); return;
+      Alert.alert('مطلوب', 'أدخل درجات صحيحة (0-100)'); return;
     }
     if (!form.periodDate) {
-      Alert.alert(isAr ? 'مطلوب' : 'Required', isAr ? 'أدخل تاريخ الفترة' : 'Enter period date'); return;
+      Alert.alert('مطلوب', 'أدخل تاريخ الفترة'); return;
     }
     setSaving(true);
     try {
@@ -182,7 +183,7 @@ export function EmployeePerformanceScreen() {
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
-      <ScreenHeader title={isAr ? 'أداء الموظفين' : 'Employee Performance'} showBack />
+      <ScreenHeader title={'أداء الموظفين'} showBack />
 
       {loading ? (
         <View style={styles.center}><ActivityIndicator size="large" color={colors.primary} /></View>
@@ -196,14 +197,14 @@ export function EmployeePerformanceScreen() {
           ListHeaderComponent={
             <View>
               <View style={styles.kpiRow}>
-                <StatCard label={isAr ? 'التقييمات' : 'Assessments'} value={String(records.length)} icon="bar-chart" color={colors.primary} style={styles.kpi} />
-                <StatCard label={isAr ? 'متوسط' : 'Avg Score'} value={avgScore.toFixed(1)} icon="trending-up" color={colors.info} style={styles.kpi} />
-                <StatCard label={isAr ? 'ممتاز' : 'Excellent'} value={String(excellent)} icon="star" color={colors.success} style={styles.kpi} />
+                <StatCard label={'التقييمات'} value={String(records.length)} icon="bar-chart" color={colors.primary} style={styles.kpi} />
+                <StatCard label={'متوسط'} value={avgScore.toFixed(1)} icon="trending-up" color={colors.info} style={styles.kpi} />
+                <StatCard label={'ممتاز'} value={String(excellent)} icon="star" color={colors.success} style={styles.kpi} />
               </View>
 
               {leaderboard.length > 0 && (
                 <View style={[styles.leaderCard, { backgroundColor: colors.surface }]}>
-                  <Text style={[styles.leaderTitle, { color: colors.text }]}>{isAr ? '🏆 المتصدرون' : '🏆 Top Performers'}</Text>
+                  <Text style={[styles.leaderTitle, { color: colors.text }]}>{'🏆 المتصدرون'}</Text>
                   {leaderboard.map((l, idx) => (
                     <View key={l.name} style={styles.leaderRow}>
                       <Text style={[styles.leaderRank, { color: idx === 0 ? '#F59E0B' : colors.textMuted }]}>#{idx + 1}</Text>
@@ -220,11 +221,11 @@ export function EmployeePerformanceScreen() {
                   onPress={handleCalculate} disabled={calculating}>
                   {calculating
                     ? <ActivityIndicator size="small" color={colors.info} />
-                    : <><Ionicons name="calculator" size={16} color={colors.info} /><Text style={[styles.calcText, { color: colors.info }]}>{isAr ? 'احتساب تلقائي' : 'Auto-Calculate'}</Text></>}
+                    : <><Ionicons name="calculator" size={16} color={colors.info} /><Text style={[styles.calcText, { color: colors.info }]}>{'احتساب تلقائي'}</Text></>}
                 </TouchableOpacity>
                 <TouchableOpacity style={[styles.addBtn, { backgroundColor: colors.primary, flex: 1 }]} onPress={() => { setForm(EMPTY); setModal(true); }} activeOpacity={0.8}>
                   <Ionicons name="add-circle" size={20} color="#fff" />
-                  <Text style={styles.addText}>{isAr ? 'إضافة تقييم' : 'Add Assessment'}</Text>
+                  <Text style={styles.addText}>{'إضافة تقييم'}</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -260,10 +261,10 @@ export function EmployeePerformanceScreen() {
 
                 {isOpen && (
                   <View style={[styles.expandedBody, { borderTopColor: colors.border }]}>
-                    <ScoreBar label={isAr ? 'الإنتاج (40%)' : 'Production (40%)'} value={Number(r.productionScore)} color={colors.primary} />
-                    <ScoreBar label={isAr ? 'الجودة (30%)'  : 'Quality (30%)'}    value={Number(r.qualityScore)}    color={colors.success} />
-                    <ScoreBar label={isAr ? 'الحضور (20%)' : 'Attendance (20%)'} value={Number(r.attendanceScore)} color={colors.info} />
-                    <ScoreBar label={isAr ? 'كايزن (10%)'  : 'Kaizen (10%)'}     value={Number(r.kaizenScore)}     color={colors.accent} />
+                    <ScoreBar label={'الإنتاج (40%)'} value={Number(r.productionScore)} color={colors.primary} />
+                    <ScoreBar label={'الجودة (30%)'}    value={Number(r.qualityScore)}    color={colors.success} />
+                    <ScoreBar label={'الحضور (20%)'} value={Number(r.attendanceScore)} color={colors.info} />
+                    <ScoreBar label={'كايزن (10%)'}     value={Number(r.kaizenScore)}     color={colors.accent} />
                     {r.notes ? <Text style={[styles.cardSub, { color: colors.textMuted, marginTop: 6 }]}>{r.notes}</Text> : null}
                   </View>
                 )}
@@ -273,7 +274,7 @@ export function EmployeePerformanceScreen() {
           ListEmptyComponent={
             <View style={styles.empty}>
               <Ionicons name="people-outline" size={44} color={colors.textMuted} />
-              <Text style={[styles.emptyText, { color: colors.textMuted }]}>{isAr ? 'لا توجد تقييمات' : 'No assessments yet'}</Text>
+              <Text style={[styles.emptyText, { color: colors.textMuted }]}>{'لا توجد تقييمات'}</Text>
             </View>
           }
         />
@@ -284,9 +285,9 @@ export function EmployeePerformanceScreen() {
           <Pressable style={styles.overlayBg} onPress={() => setModal(false)} />
           <View style={[styles.sheet, { backgroundColor: colors.surface }]}>
             <View style={[styles.handle, { backgroundColor: colors.border }]} />
-            <Text style={[styles.sheetTitle, { color: colors.text }]}>{isAr ? 'تقييم جديد' : 'New Assessment'}</Text>
+            <Text style={[styles.sheetTitle, { color: colors.text }]}>{'تقييم جديد'}</Text>
             <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-              <Text style={[styles.label, { color: colors.textMuted }]}>{isAr ? 'الموظف *' : 'Employee *'}</Text>
+              <Text style={[styles.label, { color: colors.textMuted }]}>{'الموظف *'}</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: spacing.sm }}>
                 <View style={{ flexDirection: 'row', gap: spacing.xs }}>
                   {users.map((u) => (
@@ -302,7 +303,7 @@ export function EmployeePerformanceScreen() {
                 </View>
               </ScrollView>
 
-              <Text style={[styles.label, { color: colors.textMuted }]}>{isAr ? 'نوع الفترة *' : 'Period Type *'}</Text>
+              <Text style={[styles.label, { color: colors.textMuted }]}>{'نوع الفترة *'}</Text>
               <View style={[styles.chipGroup, { marginBottom: spacing.sm }]}>
                 {PERIOD_TYPES.map((t) => (
                   <TouchableOpacity key={t}
@@ -316,7 +317,7 @@ export function EmployeePerformanceScreen() {
                 ))}
               </View>
 
-              <Text style={[styles.label, { color: colors.textMuted }]}>{isAr ? 'تاريخ الفترة *' : 'Period Date *'}</Text>
+              <Text style={[styles.label, { color: colors.textMuted }]}>{'تاريخ الفترة *'}</Text>
               <TextInput style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
                 placeholder="YYYY-MM-DD" placeholderTextColor={colors.textMuted}
                 value={form.periodDate} onChangeText={(v) => setForm((p) => ({ ...p, periodDate: v }))} />
@@ -335,19 +336,19 @@ export function EmployeePerformanceScreen() {
                 </View>
               ))}
 
-              <Text style={[styles.label, { color: colors.textMuted }]}>{isAr ? 'ملاحظات' : 'Notes'}</Text>
+              <Text style={[styles.label, { color: colors.textMuted }]}>{'ملاحظات'}</Text>
               <TextInput style={[styles.input, styles.inputMulti, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
-                placeholder={isAr ? 'ملاحظات اختيارية…' : 'Optional notes…'}
+                placeholder={'ملاحظات اختيارية…'}
                 placeholderTextColor={colors.textMuted} multiline numberOfLines={3}
                 value={form.notes} onChangeText={(v) => setForm((p) => ({ ...p, notes: v }))} />
             </ScrollView>
 
             <View style={styles.actions}>
               <TouchableOpacity style={[styles.cancelBtn, { borderColor: colors.border }]} onPress={() => setModal(false)}>
-                <Text style={[styles.cancelText, { color: colors.textSecondary }]}>{isAr ? 'إلغاء' : 'Cancel'}</Text>
+                <Text style={[styles.cancelText, { color: colors.textSecondary }]}>{'إلغاء'}</Text>
               </TouchableOpacity>
               <TouchableOpacity style={[styles.saveBtn, { backgroundColor: colors.primary }, saving && { opacity: 0.6 }]} onPress={submit} disabled={saving}>
-                {saving ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.saveText}>{isAr ? 'حفظ' : 'Save'}</Text>}
+                {saving ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.saveText}>{'حفظ'}</Text>}
               </TouchableOpacity>
             </View>
           </View>

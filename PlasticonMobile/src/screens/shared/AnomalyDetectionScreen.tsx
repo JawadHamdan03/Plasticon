@@ -1,5 +1,6 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+﻿import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
+import { useLocale } from '../../context/LocaleContext';
   ActivityIndicator,
   FlatList,
   KeyboardAvoidingView,
@@ -18,7 +19,6 @@ import { useAuth } from '../../auth/AuthContext';
 import { api, ragApi } from '../../api/client';
 import { radius, shadow, spacing, typography } from '../../theme';
 import { useAppTheme } from '../../context/ThemeContext';
-import { useLocale } from '../../context/LocaleContext';
 
 interface Anomaly {
   id:          string;
@@ -106,7 +106,7 @@ export function AnomalyDetectionScreen() {
         role:    user?.role?.toLowerCase() ?? 'admin',
         context: 'anomaly_detection',
       });
-      const reply = res.reply ?? res.response ?? res.answer ?? (isAr ? 'لا تحليل متاح.' : 'No analysis available.');
+      const reply = res.reply ?? res.response ?? res.answer ?? ('لا تحليل متاح.');
       setMessages((prev) => [
         ...prev.filter((m) => m.id !== 'loading'),
         { id: (Date.now() + 1).toString(), role: 'assistant', text: reply },
@@ -114,7 +114,7 @@ export function AnomalyDetectionScreen() {
     } catch (err: any) {
       setMessages((prev) => [
         ...prev.filter((m) => m.id !== 'loading'),
-        { id: (Date.now() + 1).toString(), role: 'assistant', text: `${isAr ? 'الخدمة غير متاحة. ' : 'Service unavailable. '}(${err.message ?? 'Network error'})` },
+        { id: (Date.now() + 1).toString(), role: 'assistant', text: `${'الخدمة غير متاحة. '}(${err.message ?? 'Network error'})` },
       ]);
     } finally {
       setSending(false);
@@ -131,19 +131,19 @@ export function AnomalyDetectionScreen() {
           <Ionicons name="warning" size={18} color={colors.danger} />
         </View>
         <View style={styles.headerText}>
-          <Text style={[styles.headerTitle, { color: colors.text }]}>{isAr ? 'كشف الشذوذات' : 'Anomaly Detection'}</Text>
-          <Text style={[styles.headerSub, { color: colors.textMuted }]}>{loading ? (isAr ? 'جارٍ التحميل…' : 'Loading…') : `${anomalies.length} ${isAr ? 'مكتشف' : 'detected'} · ${critical} ${isAr ? 'حرج' : 'critical'}`}</Text>
+          <Text style={[styles.headerTitle, { color: colors.text }]}>{'كشف الشذوذات'}</Text>
+          <Text style={[styles.headerSub, { color: colors.textMuted }]}>{loading ? ('جارٍ التحميل…') : `${anomalies.length} ${'مكتشف'} · ${critical} ${'حرج'}`}</Text>
         </View>
       </View>
 
       <View style={[styles.tabs, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
         <TouchableOpacity style={[styles.tabBtn, tab === 'alerts' && { borderBottomColor: colors.danger, borderBottomWidth: 2 }]} onPress={() => setTab('alerts')}>
           <Ionicons name="alert-circle" size={16} color={tab === 'alerts' ? colors.danger : colors.textMuted} />
-          <Text style={[styles.tabLabel, { color: tab === 'alerts' ? colors.danger : colors.textMuted }]}>{isAr ? 'التنبيهات' : 'Alerts'}</Text>
+          <Text style={[styles.tabLabel, { color: tab === 'alerts' ? colors.danger : colors.textMuted }]}>{'التنبيهات'}</Text>
         </TouchableOpacity>
         <TouchableOpacity style={[styles.tabBtn, tab === 'chat' && { borderBottomColor: colors.primary, borderBottomWidth: 2 }]} onPress={() => setTab('chat')}>
           <Ionicons name="chatbubble-ellipses" size={16} color={tab === 'chat' ? colors.primary : colors.textMuted} />
-          <Text style={[styles.tabLabel, { color: tab === 'chat' ? colors.primary : colors.textMuted }]}>{isAr ? 'تحليل الذكاء الاصطناعي' : 'AI Analysis'}</Text>
+          <Text style={[styles.tabLabel, { color: tab === 'chat' ? colors.primary : colors.textMuted }]}>{'تحليل الذكاء الاصطناعي'}</Text>
         </TouchableOpacity>
       </View>
 
@@ -159,7 +159,7 @@ export function AnomalyDetectionScreen() {
             {anomalies.length === 0 ? (
               <View style={styles.empty}>
                 <Ionicons name="checkmark-circle" size={44} color={colors.success} />
-                <Text style={[styles.emptyText, { color: colors.textMuted }]}>{isAr ? 'لا توجد شذوذات مكتشفة' : 'No anomalies detected'}</Text>
+                <Text style={[styles.emptyText, { color: colors.textMuted }]}>{'لا توجد شذوذات مكتشفة'}</Text>
               </View>
             ) : (
               <View style={styles.list}>
@@ -212,7 +212,7 @@ export function AnomalyDetectionScreen() {
                     {msg.loading ? (
                       <View style={styles.typingRow}>
                         <ActivityIndicator size="small" color={colors.danger} />
-                        <Text style={[styles.typingText, { color: colors.danger }]}>{isAr ? 'جارٍ التحليل…' : 'Analyzing…'}</Text>
+                        <Text style={[styles.typingText, { color: colors.danger }]}>{'جارٍ التحليل…'}</Text>
                       </View>
                     ) : (
                       <Text style={[styles.bubbleText, { color: colors.text }, isUser && styles.textUser]}>{msg.text}</Text>
@@ -225,7 +225,7 @@ export function AnomalyDetectionScreen() {
           <View style={[styles.inputBar, { backgroundColor: colors.surface, borderTopColor: colors.border }]}>
             <TextInput
               style={[styles.textInput, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
-              placeholder={isAr ? 'اسأل عن الشذوذات أو الاتجاهات…' : 'Ask about anomalies or trends…'}
+              placeholder={'اسأل عن الشذوذات أو الاتجاهات…'}
               placeholderTextColor={colors.textMuted}
               value={input}
               onChangeText={setInput}

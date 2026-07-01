@@ -1,7 +1,10 @@
-﻿import { useEffect, useState } from "react";
-import { BarChart3 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { BarChart3, Box, ShoppingCart, Clock, Cpu } from "lucide-react";
 import { ModulePageShell } from "../../components/ModulePageShell";
 import { Card } from "../../components/ui/card";
+import { KpiCard } from "../../components/ui/kpi-card";
+import { LoadingCenter } from "../../components/ui/spinner";
+import { EmptyState } from "../../components/ui/empty-state";
 import { API_BASE_URL } from "../../lib/api";
 
 function authHeaders(): Record<string, string> {
@@ -23,8 +26,6 @@ interface ProductionRecord {
 }
 
 export default function ProductionAnalytics() {
-  const { locale } = useLocale();
-  const nav = (en: string, ar: string) => locale === "ar" ? ar : en;
   const [data, setData] = useState<ProductionRecord[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -41,20 +42,13 @@ export default function ProductionAnalytics() {
         const raw: ProductionRecord[] = Array.isArray(json) ? json : (json.data ?? []);
         setData(raw);
       }
-    } catch { /* silent */ } finally { setLoading(false); }
+    } catch { } finally { setLoading(false); }
   };
 
-  const totalPieces  = data.reduce((s, r) => s + (r.totalPieces ?? 0), 0);
-  const totalCartons = data.reduce((s, r) => s + (r.cartonsCount ?? 0), 0);
-  const totalDowntime = data.reduce((s, r) => s + (r.downtimeMinutes ?? 0), 0);
+  const totalPieces    = data.reduce((s, r) => s + (r.totalPieces ?? 0), 0);
+  const totalCartons   = data.reduce((s, r) => s + (r.cartonsCount ?? 0), 0);
+  const totalDowntime  = data.reduce((s, r) => s + (r.downtimeMinutes ?? 0), 0);
   const uniqueMachines = new Set(data.map((r) => r.machine?.id).filter(Boolean)).size;
-
-  const kpis = [
-    { label: "إجمالي القطع",    value: totalPieces.toLocaleString(),           gradient: "linear-gradient(135deg,#3b82f6,#1d4ed8)" },
-    { label: "إجمالي الكراتين",  value: totalCartons.toLocaleString(),           gradient: "linear-gradient(135deg,#10b981,#059669)" },
-    { label: "إجمالي التوقف",   value: `${(totalDowntime / 60).toFixed(1)}h`,  gradient: "linear-gradient(135deg,#f59e0b,#d97706)" },
-    { label: "الآلات النشطة",    value: String(uniqueMachines),                  gradient: "linear-gradient(135deg,#8b5cf6,#7c3aed)" },
-  ];
 
   return (
     <ModulePageShell
@@ -62,25 +56,24 @@ export default function ProductionAnalytics() {
       subtitle={"سجلات الإنتاج واتجاهات المخرجات"}
       icon={<BarChart3 size={22} />}
     >
-      {/* KPIs */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: ".75rem", marginBottom: "1.25rem" }}>
-        {kpis.map((k) => (
-          <div key={k.label} style={{ borderRadius: 14, padding: "1rem 1.1rem", background: k.gradient, color: "#fff", boxShadow: "0 4px 12px rgba(0,0,0,.15)" }}>
-            <p style={{ margin: 0, fontSize: ".72rem", fontWeight: 600, opacity: .85, textTransform: "uppercase", letterSpacing: ".06em" }}>{k.label}</p>
-            <p style={{ margin: ".25rem 0 0", fontSize: "1.7rem", fontWeight: 900, lineHeight: 1.1 }}>{k.value}</p>
-          </div>
-        ))}
+      {/* KPI strip */}
+      <div className="grid grid-cols-[repeat(auto-fit,minmax(150px,1fr))] gap-3">
+        <KpiCard label="إجمالي القطع"    value={totalPieces.toLocaleString()}          icon={<Box size={16} />}         color="blue" />
+        <KpiCard label="إجمالي الكراتين"  value={totalCartons.toLocaleString()}          icon={<ShoppingCart size={16} />} color="green" />
+        <KpiCard label="إجمالي التوقف"   value={`${(totalDowntime / 60).toFixed(1)}h`} icon={<Clock size={16} />}        color="orange" />
+        <KpiCard label="الآلات النشطة"    value={String(uniqueMachines)}                 icon={<Cpu size={16} />}          color="purple" />
       </div>
 
       <Card className="overflow-hidden">
         <div className="overflow-x-auto">
           {loading ? (
-            <div className="flex justify-center p-10"><div className="spinner" /></div>
+            <LoadingCenter />
           ) : data.length === 0 ? (
-            <div className="p-10 text-center text-[var(--text-secondary)]">
-              <BarChart3 size={32} className="mx-auto mb-3 opacity-30" />
-              <p className="font-medium">{"لا توجد سجلات إنتاج"}</p>
-            </div>
+            <EmptyState
+              icon={<BarChart3 size={24} />}
+              title="لا توجد سجلات إنتاج"
+              description="لم يتم تسجيل أي بيانات إنتاج حتى الآن"
+            />
           ) : (
             <table className="data-table w-full">
               <thead>
@@ -101,15 +94,15 @@ export default function ProductionAnalytics() {
                     <td className="font-medium">{row.worker?.fullName ?? "—"}</td>
                     <td>{row.machine?.name ?? "—"}</td>
                     <td>{row.shift?.name ?? "—"}</td>
-                    <td className="font-bold" style={{ color: "#1d4ed8" }}>{(row.totalPieces ?? 0).toLocaleString()}</td>
+                    <td className="font-bold text-(--blue-700)">{(row.totalPieces ?? 0).toLocaleString()}</td>
                     <td>{(row.cartonsCount ?? 0).toLocaleString()}</td>
-                    <td className="text-sm text-[var(--text-secondary)]">
+                    <td className="text-sm text-(--text-secondary)">
                       {row.downtimeMinutes ? `${row.downtimeMinutes}min` : "—"}
                     </td>
-                    <td className="text-sm text-[var(--text-secondary)]">
+                    <td className="text-sm text-(--text-secondary)">
                       {row.downtimeReason ? row.downtimeReason.replace(/_/g, " ") : "—"}
                     </td>
-                    <td className="text-sm text-[var(--text-secondary)]">
+                    <td className="text-sm text-(--text-secondary)">
                       {new Date(row.createdAt).toLocaleDateString()}
                     </td>
                   </tr>

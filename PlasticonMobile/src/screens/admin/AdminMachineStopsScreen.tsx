@@ -1,5 +1,6 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+﻿import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
+import { useLocale } from '../../context/LocaleContext';
   ActivityIndicator, Alert, FlatList, RefreshControl,
   StyleSheet, Text, TextInput, TouchableOpacity, View,
 } from 'react-native';
@@ -9,7 +10,6 @@ import { api } from '../../api/client';
 import { ScreenHeader } from '../../components';
 import { radius, shadow, spacing, typography } from '../../theme';
 import { useAppTheme } from '../../context/ThemeContext';
-import { useLocale } from '../../context/LocaleContext';
 
 type Priority = 'CRITICAL' | 'HIGH' | 'NORMAL';
 type Filter   = 'all' | 'open' | 'resolved';
@@ -37,8 +37,8 @@ const P_COLOR: Record<Priority, string> = {
 function elapsed(isoStart: string, isoEnd?: string | null, isAr?: boolean) {
   const end = isoEnd ? new Date(isoEnd).getTime() : Date.now();
   const mins = Math.floor((end - new Date(isoStart).getTime()) / 60000);
-  if (mins < 60) return `${mins}${isAr ? 'د' : 'm'}`;
-  return `${Math.floor(mins / 60)}${isAr ? 'س' : 'h'} ${mins % 60}${isAr ? 'د' : 'm'}`;
+  if (mins < 60) return `${mins}${'د'}`;
+  return `${Math.floor(mins / 60)}${'س'} ${mins % 60}${'د'}`;
 }
 
 function fmtTime(iso: string) {
@@ -77,14 +77,14 @@ export function AdminMachineStopsScreen() {
 
   const handleResolve = (stop: StopAlert) => {
     Alert.alert(
-      isAr ? 'تأكيد الحل' : 'Confirm Resolve',
+      'تأكيد الحل',
       isAr
         ? `هل تأكدت من حل توقف "${stop.machine_label}"؟`
         : `Confirm that "${stop.machine_label}" stop has been resolved?`,
       [
-        { text: isAr ? 'إلغاء' : 'Cancel', style: 'cancel' },
+        { text: 'إلغاء', style: 'cancel' },
         {
-          text: isAr ? 'نعم، تم الحل' : 'Mark Resolved',
+          text: 'نعم، تم الحل',
           onPress: async () => {
             try {
               await api.patch(`/worker-tools/admin/machine-stop-alerts/${stop.id}/resolve`, {});
@@ -94,7 +94,7 @@ export function AdminMachineStopsScreen() {
                   : s,
               ));
             } catch (e: any) {
-              Alert.alert(isAr ? 'خطأ' : 'Error', e.message ?? 'Failed');
+              Alert.alert('خطأ', e.message ?? 'Failed');
             }
           },
         },
@@ -135,9 +135,9 @@ export function AdminMachineStopsScreen() {
             <View style={[styles.statusBadge, { backgroundColor: colors.success + '18' }]}>
               <Ionicons name="checkmark-circle" size={12} color={colors.success} />
               <Text style={[styles.statusText, { color: colors.success }]}>
-                {isAr ? 'محلول' : 'Resolved'}
+                {'محلول'}
                 {item.response_minutes != null
-                  ? ` · ${Math.round(item.response_minutes)}${isAr ? 'د' : 'm'}`
+                  ? ` · ${Math.round(item.response_minutes)}${'د'}`
                   : ''}
               </Text>
             </View>
@@ -145,7 +145,7 @@ export function AdminMachineStopsScreen() {
             <View style={[styles.statusBadge, { backgroundColor: pColor + '15' }]}>
               <Ionicons name="time-outline" size={12} color={pColor} />
               <Text style={[styles.statusText, { color: pColor }]}>
-                {elapsed(item.started_at, null, isAr)} {isAr ? 'منذ' : 'ago'}
+                {elapsed(item.started_at, null, isAr)} {'منذ'}
               </Text>
             </View>
           )}
@@ -174,7 +174,7 @@ export function AdminMachineStopsScreen() {
             >
               <Ionicons name="checkmark" size={13} color={colors.success} />
               <Text style={[styles.resolveBtnText, { color: colors.success }]}>
-                {isAr ? 'حُل' : 'Resolve'}
+                {'حُل'}
               </Text>
             </TouchableOpacity>
           )}
@@ -186,8 +186,8 @@ export function AdminMachineStopsScreen() {
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
       <ScreenHeader
-        title={isAr ? 'توقفات الآلات' : 'Machine Stops'}
-        subtitle={`${totalOpen} ${isAr ? 'مفتوح' : 'open'}`}
+        title={'توقفات الآلات'}
+        subtitle={`${totalOpen} ${'مفتوح'}`}
         showBack
       />
 
@@ -195,15 +195,15 @@ export function AdminMachineStopsScreen() {
       <View style={styles.statsRow}>
         <View style={[styles.statCard, { backgroundColor: '#EF444415' }]}>
           <Text style={[styles.statNum, { color: '#EF4444' }]}>{criticalOpen}</Text>
-          <Text style={[styles.statLbl, { color: '#EF4444' }]}>{isAr ? 'حرج' : 'Critical'}</Text>
+          <Text style={[styles.statLbl, { color: '#EF4444' }]}>{'حرج'}</Text>
         </View>
         <View style={[styles.statCard, { backgroundColor: '#F9731615' }]}>
           <Text style={[styles.statNum, { color: '#F97316' }]}>{highOpen}</Text>
-          <Text style={[styles.statLbl, { color: '#F97316' }]}>{isAr ? 'عالٍ' : 'High'}</Text>
+          <Text style={[styles.statLbl, { color: '#F97316' }]}>{'عالٍ'}</Text>
         </View>
         <View style={[styles.statCard, { backgroundColor: colors.surface }]}>
           <Text style={[styles.statNum, { color: colors.text }]}>{filteredStops.length}</Text>
-          <Text style={[styles.statLbl, { color: colors.textMuted }]}>{isAr ? 'إجمالي' : 'Total'}</Text>
+          <Text style={[styles.statLbl, { color: colors.textMuted }]}>{'إجمالي'}</Text>
         </View>
       </View>
 
@@ -258,7 +258,7 @@ export function AdminMachineStopsScreen() {
             <View style={styles.empty}>
               <Ionicons name="checkmark-circle-outline" size={48} color={colors.success} />
               <Text style={[styles.emptyText, { color: colors.textMuted }]}>
-                {isAr ? 'لا توجد توقفات' : 'No machine stops'}
+                {'لا توجد توقفات'}
               </Text>
             </View>
           }

@@ -353,7 +353,7 @@ export default function EmployeePerformance() {
           <div className="flex items-center gap-3 p-3 rounded-lg mb-4" style={{ background: "var(--bg-surface-2, #f8fafc)", border: "1px solid var(--border-default)" }}>
             <span className="text-sm font-medium text-[var(--text-secondary)]">{"الدرجة الإجمالية المحسوبة:"}</span>
             <span className="text-xl font-bold text-[var(--text-primary)]">{computedTotal(form)}</span>
-            <GradeBadge score={parseFloat(computedTotal(form))} isAr={isAr} />
+            <GradeBadge score={parseFloat(computedTotal(form))} />
           </div>
 
           <div className="mb-3">
@@ -413,7 +413,7 @@ export default function EmployeePerformance() {
 
                   {/* Right: score */}
                   <div className="flex items-center gap-3 flex-shrink-0">
-                    <GradeBadge score={r.totalScore} isAr={isAr} />
+                    <GradeBadge score={r.totalScore} />
                     <div className="text-end">
                       <p className="text-xl font-bold" style={{ color: gm.color }}>{r.totalScore.toFixed(1)}</p>
                       <p className="text-xs text-[var(--text-secondary)]">/100</p>

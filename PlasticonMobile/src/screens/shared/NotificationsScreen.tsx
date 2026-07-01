@@ -1,5 +1,6 @@
-import React, { useCallback, useEffect, useState } from 'react';
+﻿import React, { useCallback, useEffect, useState } from 'react';
 import {
+import { useLocale } from '../../context/LocaleContext';
   ActivityIndicator, FlatList, Modal, RefreshControl, ScrollView,
   StyleSheet, Text, TextInput, TouchableOpacity, View,
 } from 'react-native';
@@ -10,7 +11,6 @@ import { api } from '../../api/client';
 import { Notification } from '../../api/types';
 import { radius, shadow, spacing, typography } from '../../theme';
 import { useAppTheme } from '../../context/ThemeContext';
-import { useLocale } from '../../context/LocaleContext';
 
 const NOTIF_TYPES = [
   'SYSTEM_MESSAGE', 'PRODUCTION_ALERT', 'MAINTENANCE_URGENT',
@@ -35,7 +35,7 @@ const TYPE_ICON: Record<string, string> = {
 function fmtAgo(iso: string, isAr: boolean) {
   const diff = Date.now() - new Date(iso).getTime();
   const m = Math.floor(diff / 60000);
-  if (m < 1)  return isAr ? 'الآن'             : 'Just now';
+  if (m < 1)  return 'الآن';
   if (m < 60) return isAr ? `${m}د`             : `${m}m ago`;
   const h = Math.floor(m / 60);
   if (h < 24) return isAr ? `${h}س`             : `${h}h ago`;
@@ -164,7 +164,7 @@ function AdminSendModal({
           <View style={[styles.sheetHandle, { backgroundColor: colors.border }]} />
           <View style={styles.sheetHeader}>
             <Text style={[styles.sheetTitle, { color: colors.text }]}>
-              {isAr ? 'إرسال إشعار' : 'Send Notification'}
+              {'إرسال إشعار'}
             </Text>
             <TouchableOpacity onPress={onClose}>
               <Ionicons name="close" size={22} color={colors.textMuted} />
@@ -172,7 +172,7 @@ function AdminSendModal({
           </View>
 
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ padding: spacing.md }}>
-            <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>{isAr ? 'النوع' : 'Type'}</Text>
+            <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>{'النوع'}</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: spacing.md }}>
               <View style={{ flexDirection: 'row' }}>
                 {NOTIF_TYPES.map(t => (
@@ -183,15 +183,15 @@ function AdminSendModal({
               </View>
             </ScrollView>
 
-            <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>{isAr ? 'الهدف' : 'Target'}</Text>
+            <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>{'الهدف'}</Text>
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginBottom: spacing.md }}>
               {(['ALL', 'ROLE', 'USER', 'SHIFT'] as const).map(t => (
                 <TouchableOpacity key={t} style={chip(form.targetType === t)} onPress={() => U('targetType', t)}>
                   <Text style={chipTxt(form.targetType === t)}>
-                    {t === 'ALL' ? (isAr ? 'الكل' : 'All')
-                      : t === 'USER'  ? (isAr ? 'مستخدم' : 'User')
-                      : t === 'SHIFT' ? (isAr ? 'وردية' : 'Shift')
-                      :                 (isAr ? 'دور' : 'Role')}
+                    {t === 'ALL' ? ('الكل')
+                      : t === 'USER'  ? ('مستخدم')
+                      : t === 'SHIFT' ? ('وردية')
+                      :                 ('دور')}
                   </Text>
                 </TouchableOpacity>
               ))}
@@ -199,7 +199,7 @@ function AdminSendModal({
 
             {form.targetType === 'ROLE' && (
               <>
-                <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>{isAr ? 'اختر الدور' : 'Select Role'}</Text>
+                <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>{'اختر الدور'}</Text>
                 <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginBottom: spacing.md }}>
                   {ROLES.map(r => (
                     <TouchableOpacity key={r.key} style={[chip(form.role === r.key), { marginBottom: 6 }]} onPress={() => U('role', r.key)}>
@@ -212,7 +212,7 @@ function AdminSendModal({
 
             {form.targetType === 'USER' && users.length > 0 && (
               <>
-                <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>{isAr ? 'اختر مستخدم' : 'Select User'}</Text>
+                <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>{'اختر مستخدم'}</Text>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: spacing.md }}>
                   <View style={{ flexDirection: 'row' }}>
                     {users.map(u => (
@@ -226,7 +226,7 @@ function AdminSendModal({
             )}
             {form.targetType === 'SHIFT' && shifts.length > 0 && (
               <>
-                <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>{isAr ? 'اختر وردية' : 'Select Shift'}</Text>
+                <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>{'اختر وردية'}</Text>
                 <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginBottom: spacing.md }}>
                   {shifts.map(s => (
                     <TouchableOpacity key={s.id} style={[chip(form.shiftId === String(s.id)), { marginBottom: 6 }]} onPress={() => U('shiftId', String(s.id))}>
@@ -237,21 +237,21 @@ function AdminSendModal({
               </>
             )}
 
-            <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>{isAr ? 'العنوان *' : 'Title *'}</Text>
+            <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>{'العنوان *'}</Text>
             <TextInput
               style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
               value={form.title}
               onChangeText={v => U('title', v)}
-              placeholder={isAr ? 'عنوان الإشعار' : 'Notification title'}
+              placeholder={'عنوان الإشعار'}
               placeholderTextColor={colors.textMuted}
             />
 
-            <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>{isAr ? 'الرسالة *' : 'Message *'}</Text>
+            <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>{'الرسالة *'}</Text>
             <TextInput
               style={[styles.input, styles.textarea, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
               value={form.message}
               onChangeText={v => U('message', v)}
-              placeholder={isAr ? 'محتوى الإشعار' : 'Notification message'}
+              placeholder={'محتوى الإشعار'}
               placeholderTextColor={colors.textMuted}
               multiline
               numberOfLines={3}
@@ -259,12 +259,12 @@ function AdminSendModal({
 
             <View style={styles.modalActions}>
               <TouchableOpacity style={[styles.modalBtn, { borderColor: colors.border, borderWidth: 1.5 }]} onPress={onClose}>
-                <Text style={{ color: colors.textMuted, fontWeight: '600' }}>{isAr ? 'إلغاء' : 'Cancel'}</Text>
+                <Text style={{ color: colors.textMuted, fontWeight: '600' }}>{'إلغاء'}</Text>
               </TouchableOpacity>
               <TouchableOpacity style={[styles.modalBtn, { flex: 2, backgroundColor: colors.primary }]} onPress={send} disabled={sending}>
                 {sending
                   ? <ActivityIndicator size="small" color="#fff" />
-                  : <Text style={{ color: '#fff', fontWeight: '700' }}>{isAr ? 'إرسال' : 'Send'}</Text>
+                  : <Text style={{ color: '#fff', fontWeight: '700' }}>{'إرسال'}</Text>
                 }
               </TouchableOpacity>
             </View>
@@ -328,7 +328,7 @@ export function NotificationsScreen() {
       <View style={[styles.header, { borderBottomColor: colors.border }]}>
         <View style={styles.headerLeft}>
           <Text style={[styles.headerTitle, { color: colors.text }]}>
-            {isAr ? 'الإشعارات' : 'Notifications'}
+            {'الإشعارات'}
           </Text>
           {unreadCount > 0 && (
             <View style={[styles.badge, { backgroundColor: colors.danger }]}>
@@ -342,7 +342,7 @@ export function NotificationsScreen() {
             onPress={markAllRead}
           >
             <Text style={[styles.markAllText, { color: colors.primary }]}>
-              {isAr ? 'تحديد الكل كمقروء' : 'Mark all read'}
+              {'تحديد الكل كمقروء'}
             </Text>
           </TouchableOpacity>
         )}
@@ -358,8 +358,8 @@ export function NotificationsScreen() {
           >
             <Text style={[styles.tabText, { color: tab === t ? colors.primary : colors.textMuted }]}>
               {t === 'all'
-                ? (isAr ? 'الكل' : 'All')
-                : `${isAr ? 'غير مقروء' : 'Unread'}${unreadCount > 0 ? ` (${unreadCount})` : ''}`}
+                ? ('الكل')
+                : `${'غير مقروء'}${unreadCount > 0 ? ` (${unreadCount})` : ''}`}
             </Text>
           </TouchableOpacity>
         ))}
@@ -386,8 +386,8 @@ export function NotificationsScreen() {
               <Ionicons name="notifications-off-outline" size={44} color={colors.textMuted} />
               <Text style={[styles.emptyText, { color: colors.textMuted }]}>
                 {tab === 'unread'
-                  ? (isAr ? 'لا توجد إشعارات غير مقروءة' : 'No unread notifications')
-                  : (isAr ? 'لا توجد إشعارات' : 'No notifications')}
+                  ? ('لا توجد إشعارات غير مقروءة')
+                  : ('لا توجد إشعارات')}
               </Text>
             </View>
           }

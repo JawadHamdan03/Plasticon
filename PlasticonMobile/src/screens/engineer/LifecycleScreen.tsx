@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+﻿import React, { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, FlatList, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -48,12 +48,12 @@ function LifecycleCard({ item }: { item: HealthRecord }) {
         </View>
         <View style={[styles.scoreBadge, { backgroundColor: `${scoreColor}18`, borderColor: `${scoreColor}40` }]}>
           <Text style={[styles.scoreText, { color: scoreColor }]}>{score}</Text>
-          <Text style={[styles.scoreLabel, { color: colors.textMuted }]}>{isAr ? 'نقاط' : 'score'}</Text>
+          <Text style={[styles.scoreLabel, { color: colors.textMuted }]}>{'نقاط'}</Text>
         </View>
       </View>
 
       <View style={styles.barRow}>
-        <Text style={[styles.barLabel, { color: colors.textMuted }]}>{isAr ? 'الصحة' : 'Health'}</Text>
+        <Text style={[styles.barLabel, { color: colors.textMuted }]}>{'الصحة'}</Text>
         <View style={[styles.barTrack, { backgroundColor: colors.border }]}>
           <View style={[styles.barFill, { width: `${score}%`, backgroundColor: scoreColor }]} />
         </View>
@@ -63,11 +63,11 @@ function LifecycleCard({ item }: { item: HealthRecord }) {
       <View style={[styles.metrics, { borderTopColor: colors.border }]}>
         <View style={styles.metric}>
           <Text style={[styles.metricVal, { color: colors.text }]}>{item.efficiencyRating}%</Text>
-          <Text style={[styles.metricLabel, { color: colors.textMuted }]}>{isAr ? 'الكفاءة' : 'Efficiency'}</Text>
+          <Text style={[styles.metricLabel, { color: colors.textMuted }]}>{'الكفاءة'}</Text>
         </View>
         <View style={styles.metric}>
           <Text style={[styles.metricVal, { color: colors.text }]}>{item.maintenanceHours}h</Text>
-          <Text style={[styles.metricLabel, { color: colors.textMuted }]}>{isAr ? 'ساعات الصيانة' : 'Maint. Hrs'}</Text>
+          <Text style={[styles.metricLabel, { color: colors.textMuted }]}>{'ساعات الصيانة'}</Text>
         </View>
         <View style={styles.metric}>
           <View style={[styles.statusDot, { backgroundColor: meta.color }]} />
@@ -105,12 +105,12 @@ export function LifecycleScreen() {
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
-      <ScreenHeader title={isAr ? 'تتبع دورة الحياة' : 'Lifecycle Tracking'} subtitle={isAr ? 'نقاط صحة المعدات' : 'Equipment health scores'} showBack />
+      <ScreenHeader title={'تتبع دورة الحياة'} subtitle={'نقاط صحة المعدات'} showBack />
       {!isCheckedIn && !loading && (
         <View style={[styles.banner, { backgroundColor: `${colors.warning}15`, borderColor: `${colors.warning}50` }]}>
           <Ionicons name="warning-outline" size={16} color={colors.warning} />
           <Text style={[styles.bannerText, { color: colors.warning }]}>
-            {isAr ? 'يجب تسجيل الدخول لتسجيل بيانات المعدات' : 'Check in to record equipment data'}
+            {'يجب تسجيل الدخول لتسجيل بيانات المعدات'}
           </Text>
         </View>
       )}
@@ -127,7 +127,7 @@ export function LifecycleScreen() {
           ListEmptyComponent={
             <View style={styles.empty}>
               <Ionicons name="refresh-circle-outline" size={44} color={colors.textMuted} />
-              <Text style={[styles.emptyText, { color: colors.textMuted }]}>{isAr ? 'لا توجد بيانات دورة حياة' : 'No lifecycle data'}</Text>
+              <Text style={[styles.emptyText, { color: colors.textMuted }]}>{'لا توجد بيانات دورة حياة'}</Text>
             </View>
           }
         />

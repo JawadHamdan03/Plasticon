@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+﻿import React, { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, FlatList, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -6,7 +6,6 @@ import { api } from '../../api/client';
 import { ScreenHeader } from '../../components';
 import { radius, shadow, spacing, typography } from '../../theme';
 import { useAppTheme } from '../../context/ThemeContext';
-import { useLocale } from '../../context/LocaleContext';
 
 interface Schedule {
   id: number;
@@ -32,7 +31,6 @@ function isPast(d?: string) {
 
 function ScheduleCard({ item }: { item: Schedule }) {
   const { colors } = useAppTheme();
-  const { isAr } = useLocale();
 
   const STATUS_COLOR: Record<string, string> = {
     PENDING:     colors.warning,
@@ -50,17 +48,17 @@ function ScheduleCard({ item }: { item: Schedule }) {
       <View style={styles.cardTop}>
         <Text style={[styles.machineName, { color: colors.text }]} numberOfLines={1}>{item.machine?.name ?? `Schedule #${item.id}`}</Text>
         <View style={[styles.badge, { backgroundColor: `${color}15` }]}>
-          <Text style={[styles.badgeText, { color }]}>{overdue ? (isAr ? 'متأخر' : 'OVERDUE') : status}</Text>
+          <Text style={[styles.badgeText, { color }]}>{overdue ? ('متأخر') : status}</Text>
         </View>
       </View>
       {item.scheduleType && <Text style={[styles.type, { color: colors.textMuted }]}>{item.scheduleType} · {item.frequency}</Text>}
       <View style={styles.dates}>
         <View style={styles.dateBlock}>
-          <Text style={[styles.dateLabel, { color: colors.textMuted }]}>{isAr ? 'الموعد القادم' : 'Next Due'}</Text>
+          <Text style={[styles.dateLabel, { color: colors.textMuted }]}>{'الموعد القادم'}</Text>
           <Text style={[styles.dateValue, { color: colors.text }, overdue && { color: colors.danger }]}>{fmtDate(item.nextScheduledDate)}</Text>
         </View>
         <View style={styles.dateBlock}>
-          <Text style={[styles.dateLabel, { color: colors.textMuted }]}>{isAr ? 'آخر تنفيذ' : 'Last Done'}</Text>
+          <Text style={[styles.dateLabel, { color: colors.textMuted }]}>{'آخر تنفيذ'}</Text>
           <Text style={[styles.dateValue, { color: colors.text }]}>{fmtDate(item.lastScheduledDate ?? undefined)}</Text>
         </View>
       </View>
@@ -76,7 +74,6 @@ function ScheduleCard({ item }: { item: Schedule }) {
 
 export function MaintScheduleScreen() {
   const { colors } = useAppTheme();
-  const { isAr } = useLocale();
   const [schedules, setSchedules] = useState<Schedule[]>([]);
   const [loading, setLoading]     = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -96,7 +93,7 @@ export function MaintScheduleScreen() {
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
-      <ScreenHeader title={isAr ? 'جدول الصيانة الوقائية' : 'PM Schedule'} subtitle={isAr ? 'الصيانة الوقائية' : 'Preventive maintenance'} showBack />
+      <ScreenHeader title={'جدول الصيانة الوقائية'} subtitle={'الصيانة الوقائية'} showBack />
       {loading ? (
         <View style={styles.center}><ActivityIndicator size="large" color={colors.primary} /></View>
       ) : (
@@ -110,7 +107,7 @@ export function MaintScheduleScreen() {
           ListEmptyComponent={
             <View style={styles.empty}>
               <Ionicons name="calendar-outline" size={44} color={colors.textMuted} />
-              <Text style={[styles.emptyText, { color: colors.textMuted }]}>{isAr ? 'لا توجد جداول' : 'No schedules'}</Text>
+              <Text style={[styles.emptyText, { color: colors.textMuted }]}>{'لا توجد جداول'}</Text>
             </View>
           }
         />

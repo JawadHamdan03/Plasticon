@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+﻿import React, { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -60,21 +60,21 @@ export function FinanceDashScreen() {
   const profit        = data?.netProfit ?? data?.profit ?? 0;
 
   const quickLinks = [
-    { icon: 'document-text', label: isAr ? 'التقارير'  : 'Reports',  color: colors.primary, screen: 'FinancialReports' },
-    { icon: 'analytics',     label: isAr ? 'التحليل'   : 'Analysis', color: colors.info,    screen: 'CostAnalysis' },
-    { icon: 'wallet',        label: isAr ? 'الميزانية' : 'Budget',   color: colors.success, screen: 'BudgetPlanning' },
+    { icon: 'document-text', label: 'التقارير',  color: colors.primary, screen: 'FinancialReports' },
+    { icon: 'analytics',     label: 'التحليل', color: colors.info,    screen: 'CostAnalysis' },
+    { icon: 'wallet',        label: 'الميزانية',   color: colors.success, screen: 'BudgetPlanning' },
   ];
 
   const costBreakdown = [
-    { label: isAr ? 'المواد الخام'    : 'Raw Materials',    value: data?.rawMaterialCost ?? 0,    color: colors.warning },
-    { label: isAr ? 'الكهرباء'        : 'Electricity',       value: data?.electricityCost ?? 0,    color: colors.info },
-    { label: isAr ? 'الرواتب'         : 'Salaries',          value: data?.salaryCost ?? 0,          color: colors.accent },
-    { label: isAr ? 'مصروفات أخرى'   : 'Other Expenses',    value: data?.approvedExpenses ?? 0,   color: colors.danger },
+    { label: 'المواد الخام',    value: data?.rawMaterialCost ?? 0,    color: colors.warning },
+    { label: 'الكهرباء',       value: data?.electricityCost ?? 0,    color: colors.info },
+    { label: 'الرواتب',          value: data?.salaryCost ?? 0,          color: colors.accent },
+    { label: 'مصروفات أخرى',    value: data?.approvedExpenses ?? 0,   color: colors.danger },
   ];
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
-      <ScreenHeader title={isAr ? 'لوحة المالية' : 'Finance Dashboard'} showBack />
+      <ScreenHeader title={'لوحة المالية'} showBack />
       {loading ? <View style={styles.center}><ActivityIndicator size="large" color={colors.primary} /></View> : (
         <ScrollView
           contentContainerStyle={styles.content}
@@ -82,18 +82,18 @@ export function FinanceDashScreen() {
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); void load(); }} tintColor={colors.primary} />}
         >
           <View style={styles.kpiRow}>
-            <StatCard label={isAr ? 'إيرادات المبيعات' : 'Sales Revenue'}  value={`$${fmt(totalRevenue)}`}   icon="trending-up"   color={colors.success} style={styles.kpi} />
-            <StatCard label={isAr ? 'إجمالي المصروفات' : 'Total Expenses'} value={`$${fmt(totalExpenses)}`}  icon="trending-down" color={colors.danger}  style={styles.kpi} />
+            <StatCard label={'إيرادات المبيعات'}  value={`$${fmt(totalRevenue)}`}   icon="trending-up"   color={colors.success} style={styles.kpi} />
+            <StatCard label={'إجمالي المصروفات'} value={`$${fmt(totalExpenses)}`}  icon="trending-down" color={colors.danger}  style={styles.kpi} />
           </View>
           <View style={styles.kpiRow}>
-            <StatCard label={isAr ? 'صافي الربح'     : 'Net Profit'}    value={`$${fmt(profit)}`}                         icon="cash"    color={profit >= 0 ? colors.success : colors.danger} style={styles.kpi} />
-            <StatCard label={isAr ? 'تكلفة الرواتب'  : 'Salary Cost'}   value={`$${fmt(data?.salaryCost ?? 0)}`}          icon="people"  color={colors.info} style={styles.kpi} />
+            <StatCard label={'صافي الربح'}    value={`$${fmt(profit)}`}                         icon="cash"    color={profit >= 0 ? colors.success : colors.danger} style={styles.kpi} />
+            <StatCard label={'تكلفة الرواتب'}   value={`$${fmt(data?.salaryCost ?? 0)}`}          icon="people"  color={colors.info} style={styles.kpi} />
           </View>
 
           {(data?.rawMaterialCost != null || data?.electricityCost != null) && (
             <View style={[styles.section, { backgroundColor: colors.surface }]}>
               <Text style={[styles.sectionTitle, { color: colors.text }]}>
-                {isAr ? 'توزيع التكاليف' : 'Cost Breakdown'}
+                {'توزيع التكاليف'}
               </Text>
               {costBreakdown.map((row) => (
                 <View key={row.label} style={[styles.alertRow, { borderBottomColor: colors.border }]}>
@@ -107,7 +107,7 @@ export function FinanceDashScreen() {
 
           <View style={[styles.section, { backgroundColor: colors.surface }]}>
             <Text style={[styles.sectionTitle, { color: colors.text }]}>
-              {isAr ? 'الوصول السريع' : 'Quick Access'}
+              {'الوصول السريع'}
             </Text>
             <View style={styles.qlRow}>
               {quickLinks.map((q) => (
@@ -127,7 +127,7 @@ export function FinanceDashScreen() {
           {invoicePending > 0 && (
             <View style={[styles.section, { backgroundColor: colors.surface }]}>
               <Text style={[styles.sectionTitle, { color: colors.text }]}>
-                {isAr ? 'تنبيهات' : 'Alerts'}
+                {'تنبيهات'}
               </Text>
               <View style={[styles.alertRow, { borderBottomColor: colors.border }]}>
                 <Ionicons name="alert-circle" size={18} color={colors.warning} />

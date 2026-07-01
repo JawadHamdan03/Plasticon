@@ -1,5 +1,6 @@
-import React, { useCallback, useEffect, useState } from 'react';
+﻿import React, { useCallback, useEffect, useState } from 'react';
 import {
+import { useLocale } from '../../context/LocaleContext';
   ActivityIndicator,
   Alert,
   FlatList,
@@ -21,7 +22,6 @@ import { api } from '../../api/client';
 import { ScreenHeader, StatCard } from '../../components';
 import { radius, shadow, spacing, typography } from '../../theme';
 import { useAppTheme } from '../../context/ThemeContext';
-import { useLocale } from '../../context/LocaleContext';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -83,6 +83,7 @@ function InlinePicker<T extends string>({
   onChange: (v: T) => void;
 }) {
   const { colors } = useAppTheme();
+  const { isAr } = useLocale();
   return (
     <View style={pickerStyles.wrap}>
       <Text style={[pickerStyles.label, { color: colors.text }]}>{label}</Text>
@@ -152,7 +153,7 @@ function BudgetCard({
     <View style={[styles.card, { backgroundColor: colors.surface }]}>
       <View style={styles.cardTop}>
         <View style={styles.cardLeft}>
-          <Text style={[styles.title, { color: colors.text }]} numberOfLines={1}>{item.title ?? item.category ?? `${isAr ? 'ميزانية' : 'Budget'} #${item.id}`}</Text>
+          <Text style={[styles.title, { color: colors.text }]} numberOfLines={1}>{item.title ?? item.category ?? `${'ميزانية'} #${item.id}`}</Text>
           <Text style={[styles.sub, { color: colors.textMuted }]}>{item.department ?? item.category ?? item.period ?? item.month ?? '—'}</Text>
         </View>
         <View style={styles.cardActions}>
@@ -171,8 +172,8 @@ function BudgetCard({
         <View style={[styles.fill, { width: `${pct}%` as any, backgroundColor: barColor }]} />
       </View>
       <View style={styles.nums}>
-        <Text style={[styles.numLabel, { color: colors.text }]}>{isAr ? 'المنفق:' : 'Spent:'} <Text style={[styles.numVal, { color: colors.text }]}>${fmt(spent)}</Text></Text>
-        <Text style={[styles.numLabel, { color: colors.text }]}>{isAr ? 'الميزانية:' : 'Budget:'} <Text style={[styles.numVal, { color: colors.text }]}>${fmt(budget)}</Text></Text>
+        <Text style={[styles.numLabel, { color: colors.text }]}>{'المنفق:'} <Text style={[styles.numVal, { color: colors.text }]}>${fmt(spent)}</Text></Text>
+        <Text style={[styles.numLabel, { color: colors.text }]}>{'الميزانية:'} <Text style={[styles.numVal, { color: colors.text }]}>${fmt(budget)}</Text></Text>
         <Text style={[styles.numLabel, { color: barColor }]}>{Math.round(pct)}%</Text>
       </View>
     </View>
@@ -205,9 +206,9 @@ function BudgetFormModal({
   const set = (k: keyof FormState) => (v: string) => setForm((p) => ({ ...p, [k]: v }));
 
   const handleSave = async () => {
-    if (!form.title.trim()) return Alert.alert(isAr ? 'تحقق' : 'Validation', isAr ? 'العنوان مطلوب.' : 'Title is required.');
+    if (!form.title.trim()) return Alert.alert('تحقق', 'العنوان مطلوب.');
     if (!form.totalBudget.trim() || isNaN(Number(form.totalBudget)))
-      return Alert.alert(isAr ? 'تحقق' : 'Validation', isAr ? 'يجب أن تكون الميزانية رقماً.' : 'Total budget must be a number.');
+      return Alert.alert('تحقق', 'يجب أن تكون الميزانية رقماً.');
     await onSave(form);
   };
 
@@ -220,28 +221,28 @@ function BudgetFormModal({
         <Pressable style={styles.overlayBg} onPress={onClose} />
         <View style={[styles.sheet, { backgroundColor: colors.surface }]}>
           <View style={[styles.sheetHandle, { backgroundColor: colors.border }]} />
-          <Text style={[styles.sheetTitle, { color: colors.text }]}>{initial.title ? (isAr ? 'تعديل الميزانية' : 'Edit Budget') : (isAr ? 'ميزانية جديدة' : 'New Budget')}</Text>
+          <Text style={[styles.sheetTitle, { color: colors.text }]}>{initial.title ? ('تعديل الميزانية') : ('ميزانية جديدة')}</Text>
 
           <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-            <Text style={[styles.fieldLabel, { color: colors.text }]}>{isAr ? 'العنوان *' : 'Title *'}</Text>
+            <Text style={[styles.fieldLabel, { color: colors.text }]}>{'العنوان *'}</Text>
             <TextInput
               style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
               value={form.title}
               onChangeText={set('title')}
-              placeholder={isAr ? 'مثال: عمليات الربع الأول' : 'e.g. Q1 Operations'}
+              placeholder={'مثال: عمليات الربع الأول'}
               placeholderTextColor={colors.textMuted}
             />
 
-            <Text style={[styles.fieldLabel, { color: colors.text }]}>{isAr ? 'القسم' : 'Department'}</Text>
+            <Text style={[styles.fieldLabel, { color: colors.text }]}>{'القسم'}</Text>
             <TextInput
               style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
               value={form.department}
               onChangeText={set('department')}
-              placeholder={isAr ? 'مثال: الإنتاج' : 'e.g. Production'}
+              placeholder={'مثال: الإنتاج'}
               placeholderTextColor={colors.textMuted}
             />
 
-            <Text style={[styles.fieldLabel, { color: colors.text }]}>{isAr ? 'إجمالي الميزانية *' : 'Total Budget *'}</Text>
+            <Text style={[styles.fieldLabel, { color: colors.text }]}>{'إجمالي الميزانية *'}</Text>
             <TextInput
               style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
               value={form.totalBudget}
@@ -251,7 +252,7 @@ function BudgetFormModal({
               keyboardType="numeric"
             />
 
-            <Text style={[styles.fieldLabel, { color: colors.text }]}>{isAr ? 'المنفق' : 'Amount Spent'}</Text>
+            <Text style={[styles.fieldLabel, { color: colors.text }]}>{'المنفق'}</Text>
             <TextInput
               style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
               value={form.spent}
@@ -261,17 +262,17 @@ function BudgetFormModal({
               keyboardType="numeric"
             />
 
-            <Text style={[styles.fieldLabel, { color: colors.text }]}>{isAr ? 'الفترة' : 'Period'}</Text>
+            <Text style={[styles.fieldLabel, { color: colors.text }]}>{'الفترة'}</Text>
             <TextInput
               style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
               value={form.period}
               onChangeText={set('period')}
-              placeholder={isAr ? 'مثال: 2025-Q1' : 'e.g. 2025-Q1'}
+              placeholder={'مثال: 2025-Q1'}
               placeholderTextColor={colors.textMuted}
             />
 
             <InlinePicker
-              label={isAr ? 'الحالة' : 'Status'}
+              label={'الحالة'}
               value={form.status}
               options={STATUS_OPTIONS}
               onChange={(v) => setForm((p) => ({ ...p, status: v }))}
@@ -280,7 +281,7 @@ function BudgetFormModal({
 
           <View style={styles.sheetActions}>
             <TouchableOpacity style={[styles.cancelBtn, { borderColor: colors.border }]} onPress={onClose}>
-              <Text style={[styles.cancelText, { color: colors.textSecondary }]}>{isAr ? 'إلغاء' : 'Cancel'}</Text>
+              <Text style={[styles.cancelText, { color: colors.textSecondary }]}>{'إلغاء'}</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.saveBtn, { backgroundColor: colors.primary }, saving && { opacity: 0.6 }]}
@@ -289,7 +290,7 @@ function BudgetFormModal({
             >
               {saving
                 ? <ActivityIndicator size="small" color={colors.textInverse} />
-                : <Text style={[styles.saveText, { color: colors.textInverse }]}>{isAr ? 'حفظ' : 'Save'}</Text>}
+                : <Text style={[styles.saveText, { color: colors.textInverse }]}>{'حفظ'}</Text>}
             </TouchableOpacity>
           </View>
         </View>
@@ -316,7 +317,7 @@ export function BudgetPlanningScreen() {
       const res = await api.get<any>('/budgets?limit=20');
       setPlans(Array.isArray(res) ? res : (res?.data ?? res?.items ?? res?.budgets ?? []));
     } catch (e: any) {
-      Alert.alert(isAr ? 'خطأ' : 'Error', e?.message ?? (isAr ? 'فشل تحميل الميزانيات' : 'Failed to load budgets'));
+      Alert.alert('خطأ', e?.message ?? ('فشل تحميل الميزانيات'));
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -337,11 +338,11 @@ export function BudgetPlanningScreen() {
 
   const confirmDelete = (item: BudgetPlan) => {
     Alert.alert(
-      isAr ? 'حذف الميزانية' : 'Delete Budget',
-      `${isAr ? 'حذف' : 'Delete'} "${item.title ?? item.category ?? `${isAr ? 'ميزانية' : 'Budget'} #${item.id}`}"? ${isAr ? 'لا يمكن التراجع عن هذا.' : 'This cannot be undone.'}`,
+      'حذف الميزانية',
+      `${'حذف'} "${item.title ?? item.category ?? `${'ميزانية'} #${item.id}`}"? ${'لا يمكن التراجع عن هذا.'}`,
       [
-        { text: isAr ? 'إلغاء' : 'Cancel', style: 'cancel' },
-        { text: isAr ? 'حذف' : 'Delete', style: 'destructive', onPress: () => void handleDelete(item.id) },
+        { text: 'إلغاء', style: 'cancel' },
+        { text: 'حذف', style: 'destructive', onPress: () => void handleDelete(item.id) },
       ],
     );
   };
@@ -352,7 +353,7 @@ export function BudgetPlanningScreen() {
       setRefreshing(true);
       await load();
     } catch (e: any) {
-      Alert.alert(isAr ? 'خطأ' : 'Error', e?.message ?? (isAr ? 'فشل الحذف' : 'Failed to delete'));
+      Alert.alert('خطأ', e?.message ?? ('فشل الحذف'));
     }
   };
 
@@ -378,7 +379,7 @@ export function BudgetPlanningScreen() {
       setRefreshing(true);
       await load();
     } catch (e: any) {
-      Alert.alert(isAr ? 'خطأ' : 'Error', e?.message ?? (isAr ? 'فشل الحفظ' : 'Failed to save'));
+      Alert.alert('خطأ', e?.message ?? ('فشل الحفظ'));
     } finally {
       setSaving(false);
     }
@@ -401,7 +402,7 @@ export function BudgetPlanningScreen() {
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
-      <ScreenHeader title={isAr ? 'تخطيط الميزانية' : 'Budget Planning'} subtitle={`${plans.length} ${isAr ? 'خطط' : 'plans'}`} showBack />
+      <ScreenHeader title={'تخطيط الميزانية'} subtitle={`${plans.length} ${'خطط'}`} showBack />
 
       {loading ? (
         <View style={styles.center}>
@@ -429,15 +430,15 @@ export function BudgetPlanningScreen() {
           }
           ListHeaderComponent={
             <View style={styles.kpiRow}>
-              <StatCard label={isAr ? 'المخصص' : 'Allocated'} value={`$${fmt(totalAllocated)}`} icon="wallet" color={colors.primary} style={styles.kpi} />
-              <StatCard label={isAr ? 'المنفق' : 'Spent'} value={`$${fmt(totalSpent)}`} icon="cash" color={colors.warning} style={styles.kpi} />
-              <StatCard label={isAr ? 'المتبقي' : 'Remaining'} value={`$${fmt(remaining)}`} icon="trending-up" color={remaining >= 0 ? colors.success : colors.danger} style={styles.kpi} />
+              <StatCard label={'المخصص'} value={`$${fmt(totalAllocated)}`} icon="wallet" color={colors.primary} style={styles.kpi} />
+              <StatCard label={'المنفق'} value={`$${fmt(totalSpent)}`} icon="cash" color={colors.warning} style={styles.kpi} />
+              <StatCard label={'المتبقي'} value={`$${fmt(remaining)}`} icon="trending-up" color={remaining >= 0 ? colors.success : colors.danger} style={styles.kpi} />
             </View>
           }
           ListEmptyComponent={
             <View style={styles.empty}>
               <Ionicons name="wallet-outline" size={44} color={colors.textMuted} />
-              <Text style={[styles.emptyText, { color: colors.textMuted }]}>{isAr ? 'لا توجد خطط ميزانية' : 'No budget plans'}</Text>
+              <Text style={[styles.emptyText, { color: colors.textMuted }]}>{'لا توجد خطط ميزانية'}</Text>
             </View>
           }
         />

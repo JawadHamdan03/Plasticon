@@ -1,5 +1,6 @@
-import React, { useCallback, useEffect, useState } from 'react';
+﻿import React, { useCallback, useEffect, useState } from 'react';
 import {
+import { useLocale } from '../../context/LocaleContext';
   ActivityIndicator,
   Alert,
   Image,
@@ -24,7 +25,6 @@ import { useAuth } from '../../auth/AuthContext';
 import { API_BASE } from '../../config';
 import { radius, shadow, spacing, typography, roleColor } from '../../theme';
 import { useAppTheme } from '../../context/ThemeContext';
-import { useLocale } from '../../context/LocaleContext';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -200,18 +200,18 @@ export function ProfileScreen() {
 
   const handlePhotoPress = () => {
     Alert.alert(
-      isAr ? 'تغيير الصورة الشخصية' : 'Change Photo',
+      'تغيير الصورة الشخصية',
       '',
       [
         {
-          text: isAr ? 'الكاميرا' : 'Camera',
+          text: 'الكاميرا',
           onPress: () => void pickPhoto('camera'),
         },
         {
-          text: isAr ? 'المعرض' : 'Gallery',
+          text: 'المعرض',
           onPress: () => void pickPhoto('library'),
         },
-        { text: isAr ? 'إلغاء' : 'Cancel', style: 'cancel' },
+        { text: 'إلغاء', style: 'cancel' },
       ],
     );
   };
@@ -222,7 +222,7 @@ export function ProfileScreen() {
       : ImagePicker.requestMediaLibraryPermissionsAsync;
     const { status } = await permFn();
     if (status !== 'granted') {
-      Alert.alert(isAr ? 'لم يُمنح الإذن' : 'Permission denied');
+      Alert.alert('لم يُمنح الإذن');
       return;
     }
     const result = source === 'camera'
@@ -237,7 +237,7 @@ export function ProfileScreen() {
       await uploadForm('/profile/me/photo', fd);
       await load();
     } catch (e: any) {
-      Alert.alert(isAr ? 'خطأ' : 'Error', e.message ?? 'Upload failed');
+      Alert.alert('خطأ', e.message ?? 'Upload failed');
     } finally {
       setPhotoUploading(false);
     }
@@ -262,7 +262,7 @@ export function ProfileScreen() {
 
   const handleSave = async () => {
     if (!form.fullName.trim()) {
-      Alert.alert(isAr ? 'تحقق' : 'Validation', isAr ? 'الاسم الكامل مطلوب' : 'Full name is required.');
+      Alert.alert('تحقق', 'الاسم الكامل مطلوب');
       return;
     }
     setSaving(true);
@@ -281,7 +281,7 @@ export function ProfileScreen() {
       await load();
       setEditOpen(false);
     } catch (e: any) {
-      Alert.alert(isAr ? 'خطأ' : 'Error', e.message ?? 'Failed to save profile.');
+      Alert.alert('خطأ', e.message ?? 'Failed to save profile.');
     } finally {
       setSaving(false);
     }
@@ -292,7 +292,7 @@ export function ProfileScreen() {
   const pickDocFile = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert(isAr ? 'لم يُمنح الإذن' : 'Permission denied');
+      Alert.alert('لم يُمنح الإذن');
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: 'images', quality: 0.9 });
@@ -301,7 +301,7 @@ export function ProfileScreen() {
 
   const handleDocUpload = async () => {
     if (!docFile) {
-      Alert.alert(isAr ? 'اختر ملفاً' : 'Choose a file first');
+      Alert.alert('اختر ملفاً');
       return;
     }
     setDocUploading(true);
@@ -317,7 +317,7 @@ export function ProfileScreen() {
       setDocType('OTHER');
       setDocModalOpen(false);
     } catch (e: any) {
-      Alert.alert(isAr ? 'خطأ' : 'Error', e.message ?? 'Upload failed');
+      Alert.alert('خطأ', e.message ?? 'Upload failed');
     } finally {
       setDocUploading(false);
     }
@@ -325,19 +325,19 @@ export function ProfileScreen() {
 
   const handleDeleteDoc = (id: number) => {
     Alert.alert(
-      isAr ? 'حذف المستند' : 'Delete Document',
-      isAr ? 'هل أنت متأكد؟' : 'Are you sure?',
+      'حذف المستند',
+      'هل أنت متأكد؟',
       [
-        { text: isAr ? 'إلغاء' : 'Cancel', style: 'cancel' },
+        { text: 'إلغاء', style: 'cancel' },
         {
-          text: isAr ? 'حذف' : 'Delete', style: 'destructive',
+          text: 'حذف', style: 'destructive',
           onPress: async () => {
             setDeletingDocId(id);
             try {
               await api.delete(`/profile/me/documents/${id}`);
               await load();
             } catch (e: any) {
-              Alert.alert(isAr ? 'خطأ' : 'Error', e.message ?? 'Delete failed');
+              Alert.alert('خطأ', e.message ?? 'Delete failed');
             } finally {
               setDeletingDocId(null);
             }
@@ -351,11 +351,11 @@ export function ProfileScreen() {
 
   const handleLogout = () => {
     Alert.alert(
-      isAr ? 'تسجيل الخروج' : 'Sign Out',
-      isAr ? 'هل أنت متأكد؟' : 'Are you sure you want to sign out?',
+      'تسجيل الخروج',
+      'هل أنت متأكد؟',
       [
-        { text: isAr ? 'إلغاء' : 'Cancel', style: 'cancel' },
-        { text: isAr ? 'تسجيل الخروج' : 'Sign Out', style: 'destructive', onPress: () => void logout() },
+        { text: 'إلغاء', style: 'cancel' },
+        { text: 'تسجيل الخروج', style: 'destructive', onPress: () => void logout() },
       ],
     );
   };
@@ -377,9 +377,9 @@ export function ProfileScreen() {
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
       <ScreenHeader
-        title={isAr ? 'الملف الشخصي' : 'Profile'}
+        title={'الملف الشخصي'}
         showBack
-        rightLabel={isAr ? 'تعديل' : 'Edit'}
+        rightLabel={'تعديل'}
         rightIcon="create-outline"
         onRightPress={openEdit}
       />
@@ -428,7 +428,7 @@ export function ProfileScreen() {
               <View style={styles.completionWrap}>
                 <View style={styles.completionHeader}>
                   <Text style={[styles.completionLabel, { color: colors.textMuted }]}>
-                    {isAr ? 'اكتمال الملف الشخصي' : 'Profile completion'}
+                    {'اكتمال الملف الشخصي'}
                   </Text>
                   <Text style={[styles.completionPct, { color: completion >= 80 ? '#16a34a' : colors.primary }]}>
                     {completion}%
@@ -452,12 +452,12 @@ export function ProfileScreen() {
           {/* ── Account info ── */}
           <View style={[styles.card, { backgroundColor: colors.surface }]}>
             <Text style={[styles.sectionLabel, { color: colors.textMuted }]}>
-              {isAr ? 'معلومات الحساب' : 'ACCOUNT INFO'}
+              {'معلومات الحساب'}
             </Text>
-            <InfoRow icon="person-outline"   label={isAr ? 'اسم المستخدم' : 'Username'}   value={display?.username}   colors={colors} />
-            <InfoRow icon="call-outline"     label={isAr ? 'الهاتف' : 'Phone'}             value={profile?.phone}      colors={colors} />
-            <InfoRow icon="calendar-outline" label={isAr ? 'تاريخ الميلاد' : 'Date of Birth'} value={profile?.dateOfBirth ? fmtDate(profile.dateOfBirth) : null} colors={colors} />
-            <InfoRow icon="location-outline" label={isAr ? 'العنوان' : 'Address'}          value={profile?.address}    colors={colors} />
+            <InfoRow icon="person-outline"   label={'اسم المستخدم'}   value={display?.username}   colors={colors} />
+            <InfoRow icon="call-outline"     label={'الهاتف'}             value={profile?.phone}      colors={colors} />
+            <InfoRow icon="calendar-outline" label={'تاريخ الميلاد'} value={profile?.dateOfBirth ? fmtDate(profile.dateOfBirth) : null} colors={colors} />
+            <InfoRow icon="location-outline" label={'العنوان'}          value={profile?.address}    colors={colors} />
             <InfoRow icon="logo-linkedin"    label="LinkedIn"                               value={profile?.linkedIn}   colors={colors} linkUrl={profile?.linkedIn ?? undefined} />
           </View>
 
@@ -465,7 +465,7 @@ export function ProfileScreen() {
           {profile?.bio ? (
             <View style={[styles.card, { backgroundColor: colors.surface }]}>
               <Text style={[styles.sectionLabel, { color: colors.textMuted }]}>
-                {isAr ? 'نبذة' : 'BIO'}
+                {'نبذة'}
               </Text>
               <Text style={[styles.bioText, { color: colors.text }]}>{profile.bio}</Text>
             </View>
@@ -475,7 +475,7 @@ export function ProfileScreen() {
           {skillsArr.length > 0 ? (
             <View style={[styles.card, { backgroundColor: colors.surface }]}>
               <Text style={[styles.sectionLabel, { color: colors.textMuted }]}>
-                {isAr ? 'المهارات' : 'SKILLS'}
+                {'المهارات'}
               </Text>
               <View style={styles.tagsWrap}>
                 {skillsArr.map(s => (
@@ -491,7 +491,7 @@ export function ProfileScreen() {
           <View style={[styles.card, { backgroundColor: colors.surface }]}>
             <View style={styles.cardTitleRow}>
               <Text style={[styles.sectionLabel, { color: colors.textMuted }]}>
-                {isAr ? 'المستندات' : 'DOCUMENTS'}
+                {'المستندات'}
               </Text>
               <TouchableOpacity
                 onPress={() => setDocModalOpen(true)}
@@ -500,14 +500,14 @@ export function ProfileScreen() {
               >
                 <Ionicons name="add" size={14} color={colors.primary} />
                 <Text style={[styles.uploadBtnText, { color: colors.primary }]}>
-                  {isAr ? 'رفع' : 'Upload'}
+                  {'رفع'}
                 </Text>
               </TouchableOpacity>
             </View>
 
             {docs.length === 0 ? (
               <Text style={[styles.emptyDocs, { color: colors.textMuted }]}>
-                {isAr ? 'لا توجد مستندات مرفوعة بعد.' : 'No documents uploaded yet.'}
+                {'لا توجد مستندات مرفوعة بعد.'}
               </Text>
             ) : (
               docs.map(doc => (
@@ -546,7 +546,7 @@ export function ProfileScreen() {
           >
             <Ionicons name="log-out-outline" size={20} color={colors.danger} />
             <Text style={[styles.signOutText, { color: colors.danger }]}>
-              {isAr ? 'تسجيل الخروج' : 'Sign Out'}
+              {'تسجيل الخروج'}
             </Text>
           </TouchableOpacity>
 
@@ -560,27 +560,27 @@ export function ProfileScreen() {
           <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
             <View style={[styles.modalHeader, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
               <Pressable onPress={() => setEditOpen(false)} style={({ pressed }) => [styles.modalClose, pressed && { opacity: 0.6 }]}>
-                <Text style={[styles.modalCancel, { color: colors.textMuted }]}>{isAr ? 'إلغاء' : 'Cancel'}</Text>
+                <Text style={[styles.modalCancel, { color: colors.textMuted }]}>{'إلغاء'}</Text>
               </Pressable>
-              <Text style={[styles.modalTitle, { color: colors.text }]}>{isAr ? 'تعديل الملف' : 'Edit Profile'}</Text>
+              <Text style={[styles.modalTitle, { color: colors.text }]}>{'تعديل الملف'}</Text>
               <Pressable onPress={() => void handleSave()} disabled={saving} style={({ pressed }) => [styles.modalSaveBtn, pressed && { opacity: 0.7 }]}>
                 {saving
                   ? <ActivityIndicator size="small" color={colors.primary} />
-                  : <Text style={[styles.modalSave, { color: colors.primary }]}>{isAr ? 'حفظ' : 'Save'}</Text>
+                  : <Text style={[styles.modalSave, { color: colors.primary }]}>{'حفظ'}</Text>
                 }
               </Pressable>
             </View>
 
             <ScrollView contentContainerStyle={styles.modalContent} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-              <FormField label={isAr ? 'الاسم الكامل' : 'Full Name'}       value={form.fullName}    onChangeText={setField('fullName')}    colors={colors} />
-              <FormField label={isAr ? 'الهاتف' : 'Phone'}                 value={form.phone}       onChangeText={setField('phone')}       keyboardType="phone-pad"   colors={colors} />
-              <FormField label={isAr ? 'المسمى الوظيفي' : 'Job Title'}     value={form.jobTitle}    onChangeText={setField('jobTitle')}    colors={colors} />
-              <FormField label={isAr ? 'القسم' : 'Department'}             value={form.department}  onChangeText={setField('department')}  colors={colors} />
-              <FormField label={isAr ? 'تاريخ الميلاد (YYYY-MM-DD)' : 'Date of Birth (YYYY-MM-DD)'} value={form.dateOfBirth} onChangeText={setField('dateOfBirth')} placeholder="YYYY-MM-DD" colors={colors} />
-              <FormField label={isAr ? 'العنوان' : 'Address'}              value={form.address}     onChangeText={setField('address')}     multiline                  colors={colors} />
+              <FormField label={'الاسم الكامل'}       value={form.fullName}    onChangeText={setField('fullName')}    colors={colors} />
+              <FormField label={'الهاتف'}                 value={form.phone}       onChangeText={setField('phone')}       keyboardType="phone-pad"   colors={colors} />
+              <FormField label={'المسمى الوظيفي'}     value={form.jobTitle}    onChangeText={setField('jobTitle')}    colors={colors} />
+              <FormField label={'القسم'}             value={form.department}  onChangeText={setField('department')}  colors={colors} />
+              <FormField label={'تاريخ الميلاد (YYYY-MM-DD)'} value={form.dateOfBirth} onChangeText={setField('dateOfBirth')} placeholder="YYYY-MM-DD" colors={colors} />
+              <FormField label={'العنوان'}              value={form.address}     onChangeText={setField('address')}     multiline                  colors={colors} />
               <FormField label="LinkedIn URL"                               value={form.linkedIn}    onChangeText={setField('linkedIn')}    keyboardType="url"         colors={colors} />
-              <FormField label={isAr ? 'المهارات (مفصولة بفاصلة)' : 'Skills (comma-separated)'} value={form.skills} onChangeText={setField('skills')} placeholder={isAr ? 'مثل: جودة، إنتاج' : 'e.g. Quality, Production'} colors={colors} />
-              <FormField label={isAr ? 'نبذة' : 'Bio'}                    value={form.bio}         onChangeText={setField('bio')}         multiline                  colors={colors} />
+              <FormField label={'المهارات (مفصولة بفاصلة)'} value={form.skills} onChangeText={setField('skills')} placeholder={'مثل: جودة، إنتاج'} colors={colors} />
+              <FormField label={'نبذة'}                    value={form.bio}         onChangeText={setField('bio')}         multiline                  colors={colors} />
             </ScrollView>
           </KeyboardAvoidingView>
         </SafeAreaView>
@@ -592,13 +592,13 @@ export function ProfileScreen() {
           <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
             <View style={[styles.modalHeader, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
               <Pressable onPress={() => setDocModalOpen(false)} style={({ pressed }) => [styles.modalClose, pressed && { opacity: 0.6 }]}>
-                <Text style={[styles.modalCancel, { color: colors.textMuted }]}>{isAr ? 'إلغاء' : 'Cancel'}</Text>
+                <Text style={[styles.modalCancel, { color: colors.textMuted }]}>{'إلغاء'}</Text>
               </Pressable>
-              <Text style={[styles.modalTitle, { color: colors.text }]}>{isAr ? 'رفع مستند' : 'Upload Document'}</Text>
+              <Text style={[styles.modalTitle, { color: colors.text }]}>{'رفع مستند'}</Text>
               <Pressable onPress={() => void handleDocUpload()} disabled={docUploading} style={({ pressed }) => [styles.modalSaveBtn, pressed && { opacity: 0.7 }]}>
                 {docUploading
                   ? <ActivityIndicator size="small" color={colors.primary} />
-                  : <Text style={[styles.modalSave, { color: colors.primary }]}>{isAr ? 'رفع' : 'Upload'}</Text>
+                  : <Text style={[styles.modalSave, { color: colors.primary }]}>{'رفع'}</Text>
                 }
               </Pressable>
             </View>
@@ -606,7 +606,7 @@ export function ProfileScreen() {
             <ScrollView contentContainerStyle={styles.modalContent} keyboardShouldPersistTaps="handled">
               {/* Doc type */}
               <Text style={[styles.fieldLabel, { color: colors.textMuted, marginBottom: 8 }]}>
-                {isAr ? 'نوع المستند' : 'Document Type'}
+                {'نوع المستند'}
               </Text>
               <View style={styles.docTypeRow}>
                 {(['CV', 'CERTIFICATE', 'OTHER'] as DocType[]).map(t => (
@@ -628,12 +628,12 @@ export function ProfileScreen() {
 
               {/* Doc title */}
               <View style={[styles.fieldWrap, { marginTop: spacing.md }]}>
-                <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{isAr ? 'العنوان' : 'Title'}</Text>
+                <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{'العنوان'}</Text>
                 <TextInput
                   style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.border, color: colors.text }]}
                   value={docTitle}
                   onChangeText={setDocTitle}
-                  placeholder={isAr ? 'مثل: شهادة هندسية 2024' : 'e.g. Engineering Certificate 2024'}
+                  placeholder={'مثل: شهادة هندسية 2024'}
                   placeholderTextColor={colors.textMuted}
                 />
               </View>
@@ -646,7 +646,7 @@ export function ProfileScreen() {
               >
                 <Ionicons name="image-outline" size={18} color={colors.primary} />
                 <Text style={[styles.filePickText, { color: docFile ? colors.text : colors.textMuted }]}>
-                  {docFile ? (docFile.fileName ?? 'Image selected') : (isAr ? 'اختر صورة من المعرض' : 'Choose image from gallery')}
+                  {docFile ? (docFile.fileName ?? 'Image selected') : ('اختر صورة من المعرض')}
                 </Text>
               </TouchableOpacity>
             </ScrollView>

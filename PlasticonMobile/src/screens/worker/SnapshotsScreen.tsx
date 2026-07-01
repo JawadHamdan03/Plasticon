@@ -1,5 +1,6 @@
-import React, { useCallback, useEffect, useState } from 'react';
+﻿import React, { useCallback, useEffect, useState } from 'react';
 import {
+import { useLocale } from '../../context/LocaleContext';
   ActivityIndicator, Alert, FlatList, Image, KeyboardAvoidingView,
   Modal, Platform, RefreshControl, ScrollView, StyleSheet,
   Text, TextInput, TouchableOpacity, View,
@@ -12,7 +13,6 @@ import { ScreenHeader } from '../../components';
 import { radius, shadow, spacing, typography } from '../../theme';
 import { API_BASE } from '../../config';
 import { useAppTheme } from '../../context/ThemeContext';
-import { useLocale } from '../../context/LocaleContext';
 
 interface WorkerSnapshot {
   id: number;
@@ -102,7 +102,7 @@ function PhotoPicker({ label, image, onCamera, onGallery, onClear, colors, isAr 
           activeOpacity={0.8}
         >
           <Ionicons name="camera" size={18} color="#fff" />
-          <Text style={styles.photoPickerBtnText}>{isAr ? 'كاميرا' : 'Camera'}</Text>
+          <Text style={styles.photoPickerBtnText}>{'كاميرا'}</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.photoPickerBtn, { backgroundColor: colors.surface, borderWidth: 1.5, borderColor: colors.border }]}
@@ -110,7 +110,7 @@ function PhotoPicker({ label, image, onCamera, onGallery, onClear, colors, isAr 
           activeOpacity={0.8}
         >
           <Ionicons name="images-outline" size={18} color={colors.text} />
-          <Text style={[styles.photoPickerBtnText, { color: colors.text }]}>{isAr ? 'معرض' : 'Gallery'}</Text>
+          <Text style={[styles.photoPickerBtnText, { color: colors.text }]}>{'معرض'}</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -146,7 +146,7 @@ function SnapCard({
       <View style={styles.metrics}>
         <View style={styles.metric}>
           <Text style={[styles.metricVal, { color: colors.primary }]}>{(item.machineCounter ?? 0).toLocaleString()}</Text>
-          <Text style={[styles.metricLabel, { color: colors.textMuted }]}>{isAr ? 'عداد' : 'Counter'}</Text>
+          <Text style={[styles.metricLabel, { color: colors.textMuted }]}>{'عداد'}</Text>
         </View>
         <View style={[styles.metricDivider, { backgroundColor: colors.border }]} />
         <View style={styles.metric}>
@@ -162,13 +162,13 @@ function SnapCard({
           {toImageUri(item.machineCounterImage) ? (
             <TouchableOpacity onPress={() => onImagePress(toImageUri(item.machineCounterImage)!)} style={styles.photoWrap}>
               <Image source={{ uri: toImageUri(item.machineCounterImage)! }} style={[styles.photo, { backgroundColor: colors.border }]} resizeMode="cover" />
-              <View style={styles.photoTag}><Text style={styles.photoTagText}>{isAr ? 'عداد' : 'Counter'}</Text></View>
+              <View style={styles.photoTag}><Text style={styles.photoTagText}>{'عداد'}</Text></View>
             </TouchableOpacity>
           ) : null}
           {toImageUri(item.electricityImage) ? (
             <TouchableOpacity onPress={() => onImagePress(toImageUri(item.electricityImage)!)} style={styles.photoWrap}>
               <Image source={{ uri: toImageUri(item.electricityImage)! }} style={[styles.photo, { backgroundColor: colors.border }]} resizeMode="cover" />
-              <View style={styles.photoTag}><Text style={styles.photoTagText}>{isAr ? 'كهرباء' : 'Electric'}</Text></View>
+              <View style={styles.photoTag}><Text style={styles.photoTagText}>{'كهرباء'}</Text></View>
             </TouchableOpacity>
           ) : null}
         </View>
@@ -211,13 +211,13 @@ function SnapModal({
 
   const submit = async () => {
     if (!machineLabel.trim()) {
-      Alert.alert(isAr ? 'مطلوب' : 'Required', isAr ? 'أدخل اسم الماكينة' : 'Machine label is required.');
+      Alert.alert('مطلوب', 'أدخل اسم الماكينة');
       return;
     }
     const counter = parseFloat(machineCounter);
     const kwh     = parseFloat(electricityKwh);
     if (isNaN(counter) || isNaN(kwh)) {
-      Alert.alert(isAr ? 'مطلوب' : 'Required', isAr ? 'أدخل قيم عددية صحيحة' : 'Enter valid numeric values.');
+      Alert.alert('مطلوب', 'أدخل قيم عددية صحيحة');
       return;
     }
     setSaving(true);
@@ -245,7 +245,7 @@ function SnapModal({
       }
       onSuccess();
     } catch (err: any) {
-      Alert.alert(isAr ? 'خطأ' : 'Error', err.message ?? (isAr ? 'فشل الحفظ' : 'Failed to save.'));
+      Alert.alert('خطأ', err.message ?? ('فشل الحفظ'));
     } finally {
       setSaving(false);
     }
@@ -262,13 +262,13 @@ function SnapModal({
         >
           <View style={[styles.handle, { backgroundColor: colors.border }]} />
           <Text style={[styles.sheetTitle, { color: colors.text }]}>
-            {editing ? (isAr ? 'تعديل اللقطة' : 'Edit Snapshot') : (isAr ? 'لقطة جديدة' : 'New Snapshot')}
+            {editing ? ('تعديل اللقطة') : ('لقطة جديدة')}
           </Text>
 
           {([
-            { label: isAr ? 'اسم الماكينة *'   : 'Machine Label *',    key: 'machineLabel',   val: machineLabel,   set: setMachineLabel,   kb: 'default' as const },
-            { label: isAr ? 'عداد الماكينة *'  : 'Machine Counter *',  key: 'machineCounter', val: machineCounter, set: setMachineCounter, kb: 'numeric' as const },
-            { label: isAr ? 'الكهرباء (kWh) *' : 'Electricity (kWh) *', key: 'electricityKwh', val: electricityKwh, set: setElectricityKwh, kb: 'decimal-pad' as const },
+            { label: 'اسم الماكينة *',    key: 'machineLabel',   val: machineLabel,   set: setMachineLabel,   kb: 'default' as const },
+            { label: 'عداد الماكينة *',  key: 'machineCounter', val: machineCounter, set: setMachineCounter, kb: 'numeric' as const },
+            { label: 'الكهرباء (kWh) *', key: 'electricityKwh', val: electricityKwh, set: setElectricityKwh, kb: 'decimal-pad' as const },
           ] as const).map((f) => (
             <View key={f.key} style={styles.field}>
               <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{f.label}</Text>
@@ -284,10 +284,10 @@ function SnapModal({
           ))}
 
           <View style={styles.field}>
-            <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{isAr ? 'ملاحظات' : 'Notes'}</Text>
+            <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{'ملاحظات'}</Text>
             <TextInput
               style={[styles.input, styles.inputMulti, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
-              placeholder={isAr ? 'ملاحظات اختيارية...' : 'Optional notes...'}
+              placeholder={'ملاحظات اختيارية...'}
               placeholderTextColor={colors.textMuted}
               multiline numberOfLines={3}
               value={notes}
@@ -297,9 +297,9 @@ function SnapModal({
 
           <View style={styles.photoPickers}>
             <View style={styles.photoPickerCol}>
-              <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{isAr ? 'صورة العداد' : 'Counter Photo'}</Text>
+              <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{'صورة العداد'}</Text>
               <PhotoPicker
-                label={isAr ? 'أضف صورة العداد' : 'Add counter photo'}
+                label={'أضف صورة العداد'}
                 image={machineImg}
                 onCamera={async () => { const img = await takePhoto();       if (img) setMachineImg(img); }}
                 onGallery={async () => { const img = await pickFromLibrary(); if (img) setMachineImg(img); }}
@@ -309,9 +309,9 @@ function SnapModal({
               />
             </View>
             <View style={styles.photoPickerCol}>
-              <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{isAr ? 'صورة الكهرباء' : 'Electricity Photo'}</Text>
+              <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{'صورة الكهرباء'}</Text>
               <PhotoPicker
-                label={isAr ? 'أضف صورة الكهرباء' : 'Add electricity photo'}
+                label={'أضف صورة الكهرباء'}
                 image={electricityImg}
                 onCamera={async () => { const img = await takePhoto();       if (img) setElectricityImg(img); }}
                 onGallery={async () => { const img = await pickFromLibrary(); if (img) setElectricityImg(img); }}
@@ -324,10 +324,10 @@ function SnapModal({
 
           <View style={styles.actions}>
             <TouchableOpacity style={[styles.cancelBtn, { borderColor: colors.border }]} onPress={onClose}>
-              <Text style={[styles.cancelText, { color: colors.textMuted }]}>{isAr ? 'إلغاء' : 'Cancel'}</Text>
+              <Text style={[styles.cancelText, { color: colors.textMuted }]}>{'إلغاء'}</Text>
             </TouchableOpacity>
             <TouchableOpacity style={[styles.saveBtn, { backgroundColor: colors.primary }]} onPress={submit} disabled={saving}>
-              {saving ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.saveText}>{isAr ? 'حفظ' : 'Save'}</Text>}
+              {saving ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.saveText}>{'حفظ'}</Text>}
             </TouchableOpacity>
           </View>
         </ScrollView>
@@ -369,18 +369,18 @@ export function SnapshotsScreen() {
 
   const handleDelete = (snap: WorkerSnapshot) => {
     Alert.alert(
-      isAr ? 'حذف اللقطة' : 'Delete Snapshot',
-      isAr ? 'هل أنت متأكد من الحذف؟' : 'Are you sure you want to delete this snapshot?',
+      'حذف اللقطة',
+      'هل أنت متأكد من الحذف؟',
       [
-        { text: isAr ? 'إلغاء' : 'Cancel', style: 'cancel' },
+        { text: 'إلغاء', style: 'cancel' },
         {
-          text: isAr ? 'حذف' : 'Delete', style: 'destructive',
+          text: 'حذف', style: 'destructive',
           onPress: async () => {
             try {
               await api.delete(`/settings/snapshots/${snap.id}`);
               setSnaps((prev) => prev.filter((s) => s.id !== snap.id));
             } catch (e: any) {
-              Alert.alert(isAr ? 'خطأ' : 'Error', e.message ?? 'Failed to delete.');
+              Alert.alert('خطأ', e.message ?? 'Failed to delete.');
             }
           },
         },
@@ -405,8 +405,8 @@ export function SnapshotsScreen() {
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
       <ScreenHeader
-        title={isAr ? 'لقطاتي' : 'My Snapshots'}
-        subtitle={`${visibleSnaps.length} ${isAr ? 'سجل' : 'records'}`}
+        title={'لقطاتي'}
+        subtitle={`${visibleSnaps.length} ${'سجل'}`}
         showBack
       />
 
@@ -444,7 +444,7 @@ export function SnapshotsScreen() {
                 <Ionicons name="search-outline" size={16} color={colors.textMuted} />
                 <TextInput
                   style={[styles.searchInput, { color: colors.text }]}
-                  placeholder={isAr ? 'بحث في اللقطات…' : 'Search snapshots…'}
+                  placeholder={'بحث في اللقطات…'}
                   placeholderTextColor={colors.textMuted}
                   value={search}
                   onChangeText={setSearch}
@@ -462,7 +462,7 @@ export function SnapshotsScreen() {
                   <Ionicons name="calendar-outline" size={13} color={colors.textMuted} />
                   <TextInput
                     style={[styles.filterText, { color: colors.text }]}
-                    placeholder={isAr ? 'من تاريخ' : 'From date'}
+                    placeholder={'من تاريخ'}
                     placeholderTextColor={colors.textMuted}
                     value={fromDate}
                     onChangeText={setFromDate}
@@ -472,7 +472,7 @@ export function SnapshotsScreen() {
                   <Ionicons name="calendar-outline" size={13} color={colors.textMuted} />
                   <TextInput
                     style={[styles.filterText, { color: colors.text }]}
-                    placeholder={isAr ? 'إلى تاريخ' : 'To date'}
+                    placeholder={'إلى تاريخ'}
                     placeholderTextColor={colors.textMuted}
                     value={toDate}
                     onChangeText={setToDate}
@@ -494,29 +494,29 @@ export function SnapshotsScreen() {
                 <View style={[styles.statsRow, { backgroundColor: colors.surface }]}>
                   <View style={styles.stat}>
                     <Text style={[styles.statVal, { color: colors.primary }]}>{visibleSnaps.length}</Text>
-                    <Text style={[styles.statLabel, { color: colors.textMuted }]}>{isAr ? 'سجل' : 'Records'}</Text>
+                    <Text style={[styles.statLabel, { color: colors.textMuted }]}>{'سجل'}</Text>
                   </View>
                   <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
                   <View style={styles.stat}>
                     <Text style={[styles.statVal, { color: colors.accent }]}>{totalElectricity.toFixed(1)}</Text>
-                    <Text style={[styles.statLabel, { color: colors.textMuted }]}>{isAr ? 'kWh إجمالي' : 'Total kWh'}</Text>
+                    <Text style={[styles.statLabel, { color: colors.textMuted }]}>{'kWh إجمالي'}</Text>
                   </View>
                   <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
                   <View style={styles.stat}>
                     <Text style={[styles.statVal, { color: colors.success }]}>{avgElectricity.toFixed(1)}</Text>
-                    <Text style={[styles.statLabel, { color: colors.textMuted }]}>{isAr ? 'متوسط kWh' : 'Avg kWh'}</Text>
+                    <Text style={[styles.statLabel, { color: colors.textMuted }]}>{'متوسط kWh'}</Text>
                   </View>
                   <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
                   <View style={styles.stat}>
                     <Text style={[styles.statVal, { color: counterDelta !== null && counterDelta < 0 ? colors.danger : colors.text }]}>
                       {counterDelta !== null ? (counterDelta >= 0 ? `+${counterDelta}` : String(counterDelta)) : '—'}
                     </Text>
-                    <Text style={[styles.statLabel, { color: colors.textMuted }]}>{isAr ? 'فرق العداد' : 'Δ Counter'}</Text>
+                    <Text style={[styles.statLabel, { color: colors.textMuted }]}>{'فرق العداد'}</Text>
                   </View>
                   <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
                   <View style={styles.stat}>
                     <Text style={[styles.statVal, { color: colors.info }]}>{uniqueMachines}</Text>
-                    <Text style={[styles.statLabel, { color: colors.textMuted }]}>{isAr ? 'آلات' : 'Machines'}</Text>
+                    <Text style={[styles.statLabel, { color: colors.textMuted }]}>{'آلات'}</Text>
                   </View>
                 </View>
               )}
@@ -526,7 +526,7 @@ export function SnapshotsScreen() {
             <View style={styles.empty}>
               <Ionicons name="camera-outline" size={44} color={colors.textMuted} />
               <Text style={[styles.emptyText, { color: colors.textMuted }]}>
-                {isAr ? 'لا توجد لقطات بعد' : 'No snapshots yet'}
+                {'لا توجد لقطات بعد'}
               </Text>
             </View>
           }
@@ -560,7 +560,7 @@ export function SnapshotsScreen() {
           <View style={styles.imgViewerHint}>
             <Ionicons name="expand-outline" size={13} color="rgba(255,255,255,0.6)" />
             <Text style={styles.imgViewerHintText}>
-              {isAr ? 'قرص بأصبعين للتكبير · انقر للإغلاق' : 'Pinch to zoom · tap × to close'}
+              {'قرص بأصبعين للتكبير · انقر للإغلاق'}
             </Text>
           </View>
           {/* Zoomable ScrollView */}

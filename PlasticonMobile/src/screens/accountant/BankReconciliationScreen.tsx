@@ -1,5 +1,6 @@
-import React, { useCallback, useEffect, useState } from 'react';
+﻿import React, { useCallback, useEffect, useState } from 'react';
 import {
+import { useLocale } from '../../context/LocaleContext';
   ActivityIndicator, Alert, FlatList, KeyboardAvoidingView, Modal,
   Platform, Pressable, RefreshControl, ScrollView,
   StyleSheet, Switch, Text, TextInput, TouchableOpacity, View,
@@ -10,7 +11,6 @@ import { api } from '../../api/client';
 import { ScreenHeader, StatCard } from '../../components';
 import { radius, shadow, spacing, typography } from '../../theme';
 import { useAppTheme } from '../../context/ThemeContext';
-import { useLocale } from '../../context/LocaleContext';
 
 function fmt(n: number) {
   return n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -64,9 +64,9 @@ export function BankReconciliationScreen() {
   };
 
   const handleDelete = (r: BankReconciliation) => {
-    Alert.alert(isAr ? 'حذف' : 'Delete', isAr ? 'هل أنت متأكد؟' : 'Are you sure?', [
-      { text: isAr ? 'إلغاء' : 'Cancel', style: 'cancel' },
-      { text: isAr ? 'حذف' : 'Delete', style: 'destructive', onPress: async () => {
+    Alert.alert('حذف', 'هل أنت متأكد؟', [
+      { text: 'إلغاء', style: 'cancel' },
+      { text: 'حذف', style: 'destructive', onPress: async () => {
         try {
           await api.delete(`/bank-reconciliations/${r.id}`);
           setRecords((p) => p.filter((x) => x.id !== r.id));
@@ -77,13 +77,13 @@ export function BankReconciliationScreen() {
 
   const submit = async () => {
     if (!form.accountName.trim()) {
-      Alert.alert(isAr ? 'مطلوب' : 'Required', isAr ? 'أدخل اسم الحساب' : 'Enter account name'); return;
+      Alert.alert('مطلوب', 'أدخل اسم الحساب'); return;
     }
     if (!form.bankBalance || isNaN(Number(form.bankBalance))) {
-      Alert.alert(isAr ? 'مطلوب' : 'Required', isAr ? 'أدخل رصيد البنك' : 'Enter bank balance'); return;
+      Alert.alert('مطلوب', 'أدخل رصيد البنك'); return;
     }
     if (!form.bookBalance || isNaN(Number(form.bookBalance))) {
-      Alert.alert(isAr ? 'مطلوب' : 'Required', isAr ? 'أدخل رصيد الدفاتر' : 'Enter book balance'); return;
+      Alert.alert('مطلوب', 'أدخل رصيد الدفاتر'); return;
     }
     setSaving(true);
     try {
@@ -115,7 +115,7 @@ export function BankReconciliationScreen() {
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
-      <ScreenHeader title={isAr ? 'مطابقة البنك' : 'Bank Reconciliation'} showBack />
+      <ScreenHeader title={'مطابقة البنك'} showBack />
 
       {!!apiError && (
         <View style={[styles.errorBanner, { backgroundColor: '#fef2f2', borderColor: '#fca5a5' }]}>
@@ -135,9 +135,9 @@ export function BankReconciliationScreen() {
           ListHeaderComponent={
             <View>
               <View style={styles.kpiRow}>
-                <StatCard label={isAr ? 'مطابق' : 'Reconciled'} value={String(reconciled)} icon="checkmark-circle" color={colors.success} style={styles.kpi} />
-                <StatCard label={isAr ? 'معلق' : 'Pending'} value={String(pending)} icon="time" color={colors.warning} style={styles.kpi} />
-                <StatCard label={isAr ? 'إجمالي البنك' : 'Total Bank'} value={`$${fmt(totalBank)}`} icon="business" color={colors.primary} style={styles.kpi} />
+                <StatCard label={'مطابق'} value={String(reconciled)} icon="checkmark-circle" color={colors.success} style={styles.kpi} />
+                <StatCard label={'معلق'} value={String(pending)} icon="time" color={colors.warning} style={styles.kpi} />
+                <StatCard label={'إجمالي البنك'} value={`$${fmt(totalBank)}`} icon="business" color={colors.primary} style={styles.kpi} />
               </View>
               <View style={[styles.filterRow, { marginBottom: spacing.sm }]}>
                 {FILTERS.map((f) => (
@@ -154,7 +154,7 @@ export function BankReconciliationScreen() {
               </View>
               <TouchableOpacity style={[styles.addBtn, { backgroundColor: colors.primary }]} onPress={openCreate} activeOpacity={0.8}>
                 <Ionicons name="add-circle" size={20} color="#fff" />
-                <Text style={styles.addText}>{isAr ? 'إضافة مطابقة' : 'Add Reconciliation'}</Text>
+                <Text style={styles.addText}>{'إضافة مطابقة'}</Text>
               </TouchableOpacity>
             </View>
           }
@@ -168,27 +168,27 @@ export function BankReconciliationScreen() {
                   <View style={{ flex: 1 }}>
                     <Text style={[styles.cardTitle, { color: colors.text }]}>{r.accountName}</Text>
                     <View style={styles.balRow}>
-                      <Text style={[styles.balLabel, { color: colors.textMuted }]}>{isAr ? 'بنك:' : 'Bank:'}</Text>
+                      <Text style={[styles.balLabel, { color: colors.textMuted }]}>{'بنك:'}</Text>
                       <Text style={[styles.balVal, { color: colors.text }]}>${fmt(Number(r.bankBalance))}</Text>
-                      <Text style={[styles.balLabel, { color: colors.textMuted }]}>{isAr ? 'دفاتر:' : 'Book:'}</Text>
+                      <Text style={[styles.balLabel, { color: colors.textMuted }]}>{'دفاتر:'}</Text>
                       <Text style={[styles.balVal, { color: colors.text }]}>${fmt(Number(r.bookBalance))}</Text>
                     </View>
                     <Text style={[styles.diffText, { color: balanced ? colors.success : colors.danger }]}>
                       {balanced
-                        ? (isAr ? '✓ متوازن' : '✓ Balanced')
-                        : `${isAr ? 'فرق: ' : 'Diff: '}$${fmt(Math.abs(diff))}`}
+                        ? ('✓ متوازن')
+                        : `${'فرق: '}$${fmt(Math.abs(diff))}`}
                     </Text>
                     {r.notes ? <Text style={[styles.cardSub, { color: colors.textMuted }]}>{r.notes}</Text> : null}
                     {r.reconciledBy ? (
                       <Text style={[styles.cardSub, { color: colors.textMuted }]}>
-                        {isAr ? 'بواسطة: ' : 'By: '}{r.reconciledBy.fullName}
+                        {'بواسطة: '}{r.reconciledBy.fullName}
                       </Text>
                     ) : null}
                   </View>
                   <View style={styles.cardRight}>
                     <View style={[styles.badge, { backgroundColor: r.reconciled ? colors.successLight : colors.warningLight }]}>
                       <Text style={[styles.badgeText, { color: r.reconciled ? colors.success : colors.warning }]}>
-                        {r.reconciled ? (isAr ? 'مطابق' : 'Done') : (isAr ? 'معلق' : 'Pending')}
+                        {r.reconciled ? ('مطابق') : ('معلق')}
                       </Text>
                     </View>
                     <View style={styles.actionRow}>
@@ -207,7 +207,7 @@ export function BankReconciliationScreen() {
           ListEmptyComponent={
             <View style={styles.empty}>
               <Ionicons name="git-compare-outline" size={44} color={colors.textMuted} />
-              <Text style={[styles.emptyText, { color: colors.textMuted }]}>{isAr ? 'لا توجد مطابقات' : 'No reconciliations'}</Text>
+              <Text style={[styles.emptyText, { color: colors.textMuted }]}>{'لا توجد مطابقات'}</Text>
             </View>
           }
         />
@@ -219,33 +219,33 @@ export function BankReconciliationScreen() {
           <View style={[styles.sheet, { backgroundColor: colors.surface }]}>
             <View style={[styles.handle, { backgroundColor: colors.border }]} />
             <Text style={[styles.sheetTitle, { color: colors.text }]}>
-              {editing ? (isAr ? 'تعديل المطابقة' : 'Edit Reconciliation') : (isAr ? 'مطابقة جديدة' : 'New Reconciliation')}
+              {editing ? ('تعديل المطابقة') : ('مطابقة جديدة')}
             </Text>
             <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-              <Text style={[styles.label, { color: colors.textMuted }]}>{isAr ? 'اسم الحساب *' : 'Account Name *'}</Text>
+              <Text style={[styles.label, { color: colors.textMuted }]}>{'اسم الحساب *'}</Text>
               <TextInput style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
-                placeholder={isAr ? 'مثال: بنك الأهلي' : 'e.g. Main Bank Account'}
+                placeholder={'مثال: بنك الأهلي'}
                 placeholderTextColor={colors.textMuted}
                 value={form.accountName} onChangeText={(v) => setForm((p) => ({ ...p, accountName: v }))} />
 
-              <Text style={[styles.label, { color: colors.textMuted }]}>{isAr ? 'رصيد البنك *' : 'Bank Balance *'}</Text>
+              <Text style={[styles.label, { color: colors.textMuted }]}>{'رصيد البنك *'}</Text>
               <TextInput style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
                 placeholder="0.00" placeholderTextColor={colors.textMuted} keyboardType="decimal-pad"
                 value={form.bankBalance} onChangeText={(v) => setForm((p) => ({ ...p, bankBalance: v }))} />
 
-              <Text style={[styles.label, { color: colors.textMuted }]}>{isAr ? 'رصيد الدفاتر *' : 'Book Balance *'}</Text>
+              <Text style={[styles.label, { color: colors.textMuted }]}>{'رصيد الدفاتر *'}</Text>
               <TextInput style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
                 placeholder="0.00" placeholderTextColor={colors.textMuted} keyboardType="decimal-pad"
                 value={form.bookBalance} onChangeText={(v) => setForm((p) => ({ ...p, bookBalance: v }))} />
 
-              <Text style={[styles.label, { color: colors.textMuted }]}>{isAr ? 'ملاحظات' : 'Notes'}</Text>
+              <Text style={[styles.label, { color: colors.textMuted }]}>{'ملاحظات'}</Text>
               <TextInput style={[styles.input, styles.inputMulti, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
-                placeholder={isAr ? 'ملاحظات اختيارية…' : 'Optional notes…'}
+                placeholder={'ملاحظات اختيارية…'}
                 placeholderTextColor={colors.textMuted} multiline numberOfLines={3}
                 value={form.notes} onChangeText={(v) => setForm((p) => ({ ...p, notes: v }))} />
 
               <View style={styles.switchRow}>
-                <Text style={[styles.switchLabel, { color: colors.text }]}>{isAr ? 'مطابق؟' : 'Reconciled?'}</Text>
+                <Text style={[styles.switchLabel, { color: colors.text }]}>{'مطابق؟'}</Text>
                 <Switch
                   value={form.reconciled}
                   onValueChange={(v) => setForm((p) => ({ ...p, reconciled: v }))}
@@ -256,10 +256,10 @@ export function BankReconciliationScreen() {
 
             <View style={styles.actions}>
               <TouchableOpacity style={[styles.cancelBtn, { borderColor: colors.border }]} onPress={() => setModal(false)}>
-                <Text style={[styles.cancelText, { color: colors.textSecondary }]}>{isAr ? 'إلغاء' : 'Cancel'}</Text>
+                <Text style={[styles.cancelText, { color: colors.textSecondary }]}>{'إلغاء'}</Text>
               </TouchableOpacity>
               <TouchableOpacity style={[styles.saveBtn, { backgroundColor: colors.primary }, saving && { opacity: 0.6 }]} onPress={submit} disabled={saving}>
-                {saving ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.saveText}>{isAr ? 'حفظ' : 'Save'}</Text>}
+                {saving ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.saveText}>{'حفظ'}</Text>}
               </TouchableOpacity>
             </View>
           </View>

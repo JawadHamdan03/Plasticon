@@ -1,28 +1,26 @@
-import React from 'react';
+﻿import React from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { radius, shadow, spacing, typography } from '../../theme';
 import { useAppTheme } from '../../context/ThemeContext';
-import { useLocale } from '../../context/LocaleContext';
 
 export function AccountantHRMenuScreen() {
   const { colors } = useAppTheme();
-  const { isAr } = useLocale();
   const navigation = useNavigation<any>();
 
   const ITEMS = [
-    { icon: 'time', label: isAr ? 'الحضور' : 'Attendance', desc: isAr ? 'جميع سجلات حضور العمال وتاريخها' : 'All worker attendance records and history', color: colors.success, screen: 'Attendance' },
-    { icon: 'cash', label: isAr ? 'الرواتب' : 'Payroll',   desc: isAr ? 'سجلات رواتب العمال وملخصاتها الشهرية' : 'Worker pay records and monthly summaries',  color: colors.accent,  screen: 'Payroll' },
+    { icon: 'time', label: 'الحضور', desc: 'جميع سجلات حضور العمال وتاريخها', color: colors.success, screen: 'Attendance' },
+    { icon: 'cash', label: 'الرواتب',   desc: 'سجلات رواتب العمال وملخصاتها الشهرية',  color: colors.accent,  screen: 'Payroll' },
   ];
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.pageHeader}>
-          <Text style={[styles.pageTitle, { color: colors.text }]}>{isAr ? 'الموارد البشرية' : 'HR'}</Text>
-          <Text style={[styles.pageSub, { color: colors.textMuted }]}>{isAr ? 'نظرة عامة على الموارد البشرية' : 'Human resources overview'}</Text>
+          <Text style={[styles.pageTitle, { color: colors.text }]}>{'الموارد البشرية'}</Text>
+          <Text style={[styles.pageSub, { color: colors.textMuted }]}>{'نظرة عامة على الموارد البشرية'}</Text>
         </View>
         <View style={styles.list}>
           {ITEMS.map((item) => (

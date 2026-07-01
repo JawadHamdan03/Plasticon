@@ -1,5 +1,6 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+﻿import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
+import { useLocale } from '../../context/LocaleContext';
   ActivityIndicator, FlatList, RefreshControl,
   StyleSheet, Text, TextInput, TouchableOpacity, View,
 } from 'react-native';
@@ -9,7 +10,6 @@ import { api } from '../../api/client';
 import { ScreenHeader } from '../../components';
 import { radius, shadow, spacing, typography } from '../../theme';
 import { useAppTheme } from '../../context/ThemeContext';
-import { useLocale } from '../../context/LocaleContext';
 
 interface WorkerItem {
   id: number;
@@ -36,13 +36,13 @@ function ItemCard({ item }: { item: WorkerItem }) {
   const { isAr } = useLocale();
 
   const FEATURE_META: Record<string, { icon: string; color: string; label: string }> = {
-    stops:     { icon: 'stop-circle',  color: colors.danger,   label: isAr ? 'توقف آلة' : 'Machine Stop' },
-    checklist: { icon: 'checkbox',     color: colors.success,  label: isAr ? 'قائمة تحقق' : 'Checklist' },
-    waste:     { icon: 'trash',        color: colors.warning,  label: isAr ? 'هدر مواد' : 'Material Waste' },
-    target:    { icon: 'flag',         color: colors.info,     label: isAr ? 'هدف يومي' : 'Daily Target' },
-    quality:   { icon: 'shield',       color: colors.primary,  label: isAr ? 'مشكلة جودة' : 'Quality Issue' },
-    micro:     { icon: 'pause-circle', color: colors.warning,  label: isAr ? 'توقف مؤقت' : 'Micro Stop' },
-    anomaly:   { icon: 'warning',      color: colors.danger,   label: isAr ? 'شذوذ' : 'Anomaly' },
+    stops:     { icon: 'stop-circle',  color: colors.danger,   label: 'توقف آلة' },
+    checklist: { icon: 'checkbox',     color: colors.success,  label: 'قائمة تحقق' },
+    waste:     { icon: 'trash',        color: colors.warning,  label: 'هدر مواد' },
+    target:    { icon: 'flag',         color: colors.info,     label: 'هدف يومي' },
+    quality:   { icon: 'shield',       color: colors.primary,  label: 'مشكلة جودة' },
+    micro:     { icon: 'pause-circle', color: colors.warning,  label: 'توقف مؤقت' },
+    anomaly:   { icon: 'warning',      color: colors.danger,   label: 'شذوذ' },
   };
 
   const meta = FEATURE_META[item.feature] ?? { icon: 'document', color: colors.textMuted, label: item.feature };
@@ -55,7 +55,7 @@ function ItemCard({ item }: { item: WorkerItem }) {
       </View>
       <View style={styles.cardBody}>
         <View style={styles.cardTop}>
-          <Text style={[styles.worker, { color: colors.text }]}>{item.worker_name ?? (isAr ? 'غير معروف' : 'Unknown')}</Text>
+          <Text style={[styles.worker, { color: colors.text }]}>{item.worker_name ?? ('غير معروف')}</Text>
           <View style={[styles.badge, { backgroundColor: `${meta.color}15` }]}>
             <Text style={[styles.badgeText, { color: meta.color }]}>{meta.label}</Text>
           </View>
@@ -127,7 +127,7 @@ export function WorkerRecordsScreen() {
         <Ionicons name="search-outline" size={16} color={colors.textMuted} />
         <TextInput
           style={[styles.searchInput, { color: colors.text }]}
-          placeholder={isAr ? 'بحث باسم العامل...' : 'Search worker name...'}
+          placeholder={'بحث باسم العامل...'}
           placeholderTextColor={colors.textMuted}
           value={search}
           onChangeText={setSearch}
@@ -144,7 +144,7 @@ export function WorkerRecordsScreen() {
           onPress={() => setActiveFeature(null)}
         >
           <Text style={[styles.chipText, { color: !activeFeature ? '#fff' : colors.textMuted }]}>
-            {isAr ? 'الكل' : 'All'}
+            {'الكل'}
           </Text>
         </TouchableOpacity>
         {FEATURE_KEYS.map((key) => {
@@ -173,8 +173,8 @@ export function WorkerRecordsScreen() {
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
       <ScreenHeader
-        title={isAr ? 'سجلات العمال' : 'Worker Records'}
-        subtitle={`${filtered.length} / ${items.length} ${isAr ? 'سجل' : 'records'}`}
+        title={'سجلات العمال'}
+        subtitle={`${filtered.length} / ${items.length} ${'سجل'}`}
         showBack
       />
       {loading ? <View style={styles.center}><ActivityIndicator size="large" color={colors.primary} /></View> : (
@@ -189,7 +189,7 @@ export function WorkerRecordsScreen() {
           ListEmptyComponent={
             <View style={styles.empty}>
               <Ionicons name="document-outline" size={44} color={colors.textMuted} />
-              <Text style={[styles.emptyText, { color: colors.textMuted }]}>{isAr ? 'لا توجد سجلات' : 'No records found'}</Text>
+              <Text style={[styles.emptyText, { color: colors.textMuted }]}>{'لا توجد سجلات'}</Text>
             </View>
           }
         />

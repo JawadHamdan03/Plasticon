@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -72,12 +72,12 @@ export function AccountantFinMenuScreen() {
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.pageHeader}>
-          <Text style={[styles.pageTitle, { color: colors.text }]}>{isAr ? 'المالية' : 'Finance'}</Text>
-          <Text style={[styles.pageSub, { color: colors.textMuted }]}>{isAr ? '١٨ أداة وتقرير' : '18 tools and reports'}</Text>
+          <Text style={[styles.pageTitle, { color: colors.text }]}>{'المالية'}</Text>
+          <Text style={[styles.pageSub, { color: colors.textMuted }]}>{'١٨ أداة وتقرير'}</Text>
         </View>
-        <Section title={isAr ? 'المالية الأساسية' : 'Core Finance'} items={CORE_ITEMS} colors={colors} isAr={isAr} />
-        <Section title={isAr ? 'العمليات' : 'Operations'}           items={OPS_ITEMS}  colors={colors} isAr={isAr} />
-        <Section title={isAr ? 'المزيد' : 'More'}                   items={MORE_ITEMS} colors={colors} isAr={isAr} />
+        <Section title={'المالية الأساسية'} items={CORE_ITEMS} colors={colors} isAr={isAr} />
+        <Section title={'العمليات'}           items={OPS_ITEMS}  colors={colors} isAr={isAr} />
+        <Section title={'المزيد'}                   items={MORE_ITEMS} colors={colors} isAr={isAr} />
       </ScrollView>
     </SafeAreaView>
   );

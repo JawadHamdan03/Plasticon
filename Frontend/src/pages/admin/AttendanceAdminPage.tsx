@@ -506,7 +506,7 @@ export function AttendanceAdminPage() {
                           <td style={{ padding:"7px 10px", fontWeight:500, whiteSpace:"nowrap", fontSize:".79rem" }}>{dateStr}</td>
 
                           {/* Status */}
-                          <td style={{ padding:"7px 10px" }}><StatusBadge status={status} isAr={isAr} /></td>
+                          <td style={{ padding:"7px 10px" }}><StatusBadge status={status} /></td>
 
                           {/* Check-in */}
                           <td style={{ padding:"7px 6px" }}>

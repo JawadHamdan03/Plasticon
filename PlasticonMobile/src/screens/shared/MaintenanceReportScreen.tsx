@@ -1,5 +1,6 @@
-import React, { useCallback, useRef, useState } from 'react';
+﻿import React, { useCallback, useRef, useState } from 'react';
 import {
+import { useLocale } from '../../context/LocaleContext';
   ActivityIndicator,
   FlatList,
   KeyboardAvoidingView,
@@ -16,7 +17,6 @@ import { useAuth } from '../../auth/AuthContext';
 import { ragApi } from '../../api/client';
 import { radius, shadow, spacing, typography } from '../../theme';
 import { useAppTheme } from '../../context/ThemeContext';
-import { useLocale } from '../../context/LocaleContext';
 
 interface Message {
   id:      string;
@@ -73,7 +73,7 @@ export function MaintenanceReportScreen() {
         role:    user?.role?.toLowerCase() ?? 'admin',
         context: 'maintenance_report',
       });
-      const reply = res.reply ?? res.response ?? res.answer ?? (isAr ? 'تعذّر إنشاء التقرير. حاول مجدداً.' : 'Unable to generate report. Please try again.');
+      const reply = res.reply ?? res.response ?? res.answer ?? ('تعذّر إنشاء التقرير. حاول مجدداً.');
       setMessages((prev) => [
         ...prev.filter((m) => m.id !== 'loading'),
         { id: (Date.now() + 1).toString(), role: 'assistant', text: reply },
@@ -81,7 +81,7 @@ export function MaintenanceReportScreen() {
     } catch (err: any) {
       setMessages((prev) => [
         ...prev.filter((m) => m.id !== 'loading'),
-        { id: (Date.now() + 1).toString(), role: 'assistant', text: `${isAr ? 'الخدمة غير متاحة. ' : 'Service unavailable. '}(${err.message ?? 'Network error'})` },
+        { id: (Date.now() + 1).toString(), role: 'assistant', text: `${'الخدمة غير متاحة. '}(${err.message ?? 'Network error'})` },
       ]);
     } finally {
       setSending(false);
@@ -96,8 +96,8 @@ export function MaintenanceReportScreen() {
           <Ionicons name="construct" size={18} color={colors.warning} />
         </View>
         <View>
-          <Text style={[styles.headerTitle, { color: colors.text }]}>{isAr ? 'تقرير الصيانة' : 'Maintenance Report'}</Text>
-          <Text style={[styles.headerSub, { color: colors.textMuted }]}>{isAr ? 'رؤى صيانة مولدة بالذكاء الاصطناعي' : 'AI-generated maintenance insights'}</Text>
+          <Text style={[styles.headerTitle, { color: colors.text }]}>{'تقرير الصيانة'}</Text>
+          <Text style={[styles.headerSub, { color: colors.textMuted }]}>{'رؤى صيانة مولدة بالذكاء الاصطناعي'}</Text>
         </View>
         <TouchableOpacity onPress={() => setMessages([WELCOME])} style={styles.clearBtn}>
           <Ionicons name="refresh-outline" size={20} color={colors.textMuted} />
@@ -115,7 +115,7 @@ export function MaintenanceReportScreen() {
           ListFooterComponent={
             messages.length <= 1 ? (
               <View style={styles.quickSection}>
-                <Text style={[styles.quickTitle, { color: colors.textMuted }]}>{isAr ? 'تقارير سريعة' : 'Quick Reports'}</Text>
+                <Text style={[styles.quickTitle, { color: colors.textMuted }]}>{'تقارير سريعة'}</Text>
                 <View style={styles.quickGrid}>
                   {QUICK_PROMPTS.map((q) => (
                     <TouchableOpacity
@@ -150,7 +150,7 @@ export function MaintenanceReportScreen() {
                   {msg.loading ? (
                     <View style={styles.typingRow}>
                       <ActivityIndicator size="small" color={colors.warning} />
-                      <Text style={[styles.typingText, { color: colors.warning }]}>{isAr ? 'جارٍ إنشاء التقرير…' : 'Generating report…'}</Text>
+                      <Text style={[styles.typingText, { color: colors.warning }]}>{'جارٍ إنشاء التقرير…'}</Text>
                     </View>
                   ) : (
                     <Text style={[styles.bubbleText, { color: colors.text }, isUser && styles.textUser]}>{msg.text}</Text>
@@ -163,7 +163,7 @@ export function MaintenanceReportScreen() {
         <View style={[styles.inputBar, { backgroundColor: colors.surface, borderTopColor: colors.border }]}>
           <TextInput
             style={[styles.textInput, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
-            placeholder={isAr ? 'اسأل عن تقرير صيانة…' : 'Ask for a maintenance report…'}
+            placeholder={'اسأل عن تقرير صيانة…'}
             placeholderTextColor={colors.textMuted}
             value={input}
             onChangeText={setInput}

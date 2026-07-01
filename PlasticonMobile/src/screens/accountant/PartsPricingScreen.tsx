@@ -1,5 +1,6 @@
-import React, { useCallback, useEffect, useState } from 'react';
+﻿import React, { useCallback, useEffect, useState } from 'react';
 import {
+import { useLocale } from '../../context/LocaleContext';
   ActivityIndicator, Alert, FlatList, RefreshControl,
   ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View,
 } from 'react-native';
@@ -9,7 +10,6 @@ import { api } from '../../api/client';
 import { ScreenHeader, StatCard } from '../../components';
 import { radius, shadow, spacing, typography } from '../../theme';
 import { useAppTheme } from '../../context/ThemeContext';
-import { useLocale } from '../../context/LocaleContext';
 
 function fmt(n: number) {
   return n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -82,7 +82,7 @@ export function PartsPricingScreen() {
   const handleSavePrice = async (itemId: number) => {
     const priceStr = prices[itemId];
     if (!priceStr || isNaN(Number(priceStr))) {
-      Alert.alert(isAr ? 'خطأ' : 'Error', isAr ? 'أدخل سعرًا صحيحًا' : 'Enter a valid price'); return;
+      Alert.alert('خطأ', 'أدخل سعرًا صحيحًا'); return;
     }
     setSaving((p) => ({ ...p, [itemId]: true }));
     try {
@@ -94,7 +94,7 @@ export function PartsPricingScreen() {
         ),
       })));
     } catch (e: any) {
-      Alert.alert(isAr ? 'خطأ' : 'Error', e.message ?? 'Failed to save price');
+      Alert.alert('خطأ', e.message ?? 'Failed to save price');
     } finally { setSaving((p) => ({ ...p, [itemId]: false })); }
   };
 
@@ -102,8 +102,8 @@ export function PartsPricingScreen() {
     const allPriced = inv.items.every((it) => it.unitPrice != null && Number(it.unitPrice) > 0);
     if (!allPriced) {
       Alert.alert(
-        isAr ? 'تنبيه' : 'Warning',
-        isAr ? 'يجب تسعير جميع القطع أولاً' : 'All parts must be priced first',
+        'تنبيه',
+        'يجب تسعير جميع القطع أولاً',
       );
       return;
     }
@@ -114,7 +114,7 @@ export function PartsPricingScreen() {
         i.id === inv.id ? { ...i, status: 'REVIEWED' } : i,
       ));
     } catch (e: any) {
-      Alert.alert(isAr ? 'خطأ' : 'Error', e.message ?? 'Failed to mark reviewed');
+      Alert.alert('خطأ', e.message ?? 'Failed to mark reviewed');
     } finally { setReviewing((p) => ({ ...p, [inv.id]: false })); }
   };
 
@@ -135,7 +135,7 @@ export function PartsPricingScreen() {
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
-      <ScreenHeader title={isAr ? 'تسعير القطع' : 'Parts Pricing'} showBack />
+      <ScreenHeader title={'تسعير القطع'} showBack />
 
       {loading ? (
         <View style={styles.center}><ActivityIndicator size="large" color={colors.primary} /></View>
@@ -149,9 +149,9 @@ export function PartsPricingScreen() {
           ListHeaderComponent={
             <View>
               <View style={styles.kpiRow}>
-                <StatCard label={isAr ? 'بانتظار التسعير' : 'Awaiting'} value={String(awaiting)} icon="time" color={colors.warning} style={styles.kpi} />
-                <StatCard label={isAr ? 'تمت المراجعة' : 'Reviewed'} value={String(reviewed)} icon="checkmark-circle" color={colors.success} style={styles.kpi} />
-                <StatCard label={isAr ? 'غير مكتمل' : 'Incomplete'} value={String(incomplete)} icon="alert-circle" color={colors.danger} style={styles.kpi} />
+                <StatCard label={'بانتظار التسعير'} value={String(awaiting)} icon="time" color={colors.warning} style={styles.kpi} />
+                <StatCard label={'تمت المراجعة'} value={String(reviewed)} icon="checkmark-circle" color={colors.success} style={styles.kpi} />
+                <StatCard label={'غير مكتمل'} value={String(incomplete)} icon="alert-circle" color={colors.danger} style={styles.kpi} />
               </View>
               <View style={[styles.filterRow, { marginBottom: spacing.md }]}>
                 {STATUS_FILTERS.map((f) => (
@@ -183,13 +183,13 @@ export function PartsPricingScreen() {
                       {MONTH_NAMES[(inv.month ?? 1) - 1]} {inv.year} — {inv.engineer?.fullName ?? '—'}
                     </Text>
                     <Text style={[styles.cardSub, { color: colors.textMuted }]}>
-                      {inv.items.length} {isAr ? 'قطعة' : 'parts'} · ${fmt(totalValue)}
+                      {inv.items.length} {'قطعة'} · ${fmt(totalValue)}
                     </Text>
                   </View>
                   <View style={styles.headerRight}>
                     {allPriced && inv.status === 'SUBMITTED' && (
                       <View style={[styles.badge, { backgroundColor: `${colors.info}15` }]}>
-                        <Text style={[styles.badgeText, { color: colors.info }]}>{isAr ? 'جاهز' : 'All Priced'}</Text>
+                        <Text style={[styles.badgeText, { color: colors.info }]}>{'جاهز'}</Text>
                       </View>
                     )}
                     <View style={[styles.badge, { backgroundColor: sc.bg }]}>
@@ -205,11 +205,11 @@ export function PartsPricingScreen() {
                       <View>
                         {/* Table Header */}
                         <View style={[styles.tableRow, { backgroundColor: colors.surfaceAlt }]}>
-                          <Text style={[styles.thCell, styles.colPart, { color: colors.textMuted }]}>{isAr ? 'القطعة' : 'Part'}</Text>
-                          <Text style={[styles.thCell, styles.colQty,  { color: colors.textMuted }]}>{isAr ? 'الكمية' : 'Qty'}</Text>
-                          <Text style={[styles.thCell, styles.colPrice,{ color: colors.textMuted }]}>{isAr ? 'سعر الوحدة' : 'Unit Price'}</Text>
-                          <Text style={[styles.thCell, styles.colTotal,{ color: colors.textMuted }]}>{isAr ? 'الإجمالي' : 'Total'}</Text>
-                          <Text style={[styles.thCell, styles.colAct,  { color: colors.textMuted }]}>{isAr ? 'حفظ' : 'Save'}</Text>
+                          <Text style={[styles.thCell, styles.colPart, { color: colors.textMuted }]}>{'القطعة'}</Text>
+                          <Text style={[styles.thCell, styles.colQty,  { color: colors.textMuted }]}>{'الكمية'}</Text>
+                          <Text style={[styles.thCell, styles.colPrice,{ color: colors.textMuted }]}>{'سعر الوحدة'}</Text>
+                          <Text style={[styles.thCell, styles.colTotal,{ color: colors.textMuted }]}>{'الإجمالي'}</Text>
+                          <Text style={[styles.thCell, styles.colAct,  { color: colors.textMuted }]}>{'حفظ'}</Text>
                         </View>
                         {/* Table Rows */}
                         {inv.items.map((it) => {
@@ -253,7 +253,7 @@ export function PartsPricingScreen() {
                           ? <ActivityIndicator size="small" color={colors.success} />
                           : <><Ionicons name="checkmark-done" size={16} color={allPriced ? colors.success : colors.textMuted} />
                             <Text style={[styles.reviewBtnText, { color: allPriced ? colors.success : colors.textMuted }]}>
-                              {isAr ? 'تأشير كمراجع' : 'Mark as Reviewed'}
+                              {'تأشير كمراجع'}
                             </Text></>}
                       </TouchableOpacity>
                     )}
@@ -265,7 +265,7 @@ export function PartsPricingScreen() {
           ListEmptyComponent={
             <View style={styles.empty}>
               <Ionicons name="pricetag-outline" size={44} color={colors.textMuted} />
-              <Text style={[styles.emptyText, { color: colors.textMuted }]}>{isAr ? 'لا توجد جرديات' : 'No inventories'}</Text>
+              <Text style={[styles.emptyText, { color: colors.textMuted }]}>{'لا توجد جرديات'}</Text>
             </View>
           }
         />

@@ -1,5 +1,6 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+﻿import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
+import { useLocale } from '../../context/LocaleContext';
   ActivityIndicator, FlatList, Keyboard, KeyboardAvoidingView,
   Modal, Platform, RefreshControl, ScrollView, StyleSheet, Text, TextInput,
   TouchableOpacity, View,
@@ -10,7 +11,6 @@ import { useAuth } from '../../auth/AuthContext';
 import { api } from '../../api/client';
 import { radius, shadow, spacing, typography } from '../../theme';
 import { useAppTheme } from '../../context/ThemeContext';
-import { useLocale } from '../../context/LocaleContext';
 import { useCall, type CallType } from '../../context/CallContext';
 
 interface ChatGroup {
@@ -56,8 +56,8 @@ function fmtDate(iso: string, isAr: boolean) {
   const today    = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
   const msgDay   = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
   const diff = today - msgDay;
-  if (diff === 0)         return isAr ? 'اليوم'    : 'Today';
-  if (diff === 86400000)  return isAr ? 'أمس'       : 'Yesterday';
+  if (diff === 0)         return 'اليوم';
+  if (diff === 86400000)  return 'أمس';
   return d.toLocaleDateString([], { month: 'short', day: 'numeric' });
 }
 
@@ -92,7 +92,7 @@ function GroupCard({ group, onPress }: { group: ChatGroup; onPress: () => void }
           <Text style={[styles.groupPreview, { color: colors.textMuted }]} numberOfLines={1}>
             {group.lastMessage
               ? `${group.lastMessage.sender?.fullName ?? ''}: ${group.lastMessage.content}`
-              : (isAr ? 'لا توجد رسائل بعد' : 'No messages yet')}
+              : ('لا توجد رسائل بعد')}
           </Text>
           {hasUnread && (
             <View style={[styles.unreadBadge, { backgroundColor: colors.primary }]}>
@@ -160,21 +160,21 @@ function AdminChatModal({
           <View style={[styles.sheetHandle, { backgroundColor: colors.border }]} />
           <View style={styles.sheetHeader}>
             <Text style={[styles.sheetTitle, { color: colors.text }]}>
-              {isAr ? 'إرسال رسالة مستهدفة' : 'Send Targeted Message'}
+              {'إرسال رسالة مستهدفة'}
             </Text>
             <TouchableOpacity onPress={onClose}>
               <Ionicons name="close" size={22} color={colors.textMuted} />
             </TouchableOpacity>
           </View>
           <ScrollView contentContainerStyle={{ padding: spacing.md }} showsVerticalScrollIndicator={false}>
-            <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>{isAr ? 'الهدف' : 'Target'}</Text>
+            <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>{'الهدف'}</Text>
             <View style={{ flexDirection: 'row', marginBottom: spacing.md }}>
               {(['AUDIENCE', 'USER', 'SHIFT'] as const).map(t => (
                 <TouchableOpacity key={t} style={chip(targetType === t)} onPress={() => setTargetType(t)}>
                   <Text style={chipTxt(targetType === t)}>
-                    {t === 'AUDIENCE' ? (isAr ? 'الجمهور' : 'Audience')
-                      : t === 'USER'  ? (isAr ? 'مستخدم' : 'User')
-                      :                  (isAr ? 'وردية'  : 'Shift')}
+                    {t === 'AUDIENCE' ? ('الجمهور')
+                      : t === 'USER'  ? ('مستخدم')
+                      :                  ('وردية')}
                   </Text>
                 </TouchableOpacity>
               ))}
@@ -216,12 +216,12 @@ function AdminChatModal({
               </ScrollView>
             )}
 
-            <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>{isAr ? 'الرسالة *' : 'Message *'}</Text>
+            <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>{'الرسالة *'}</Text>
             <TextInput
               style={[styles.input, styles.textarea, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
               value={content}
               onChangeText={setContent}
-              placeholder={isAr ? 'اكتب رسالتك هنا' : 'Write your message here'}
+              placeholder={'اكتب رسالتك هنا'}
               placeholderTextColor={colors.textMuted}
               multiline
               numberOfLines={4}
@@ -229,12 +229,12 @@ function AdminChatModal({
 
             <View style={styles.modalActions}>
               <TouchableOpacity style={[styles.modalBtn, { borderColor: colors.border, borderWidth: 1.5 }]} onPress={onClose}>
-                <Text style={{ color: colors.textMuted, fontWeight: '600' }}>{isAr ? 'إلغاء' : 'Cancel'}</Text>
+                <Text style={{ color: colors.textMuted, fontWeight: '600' }}>{'إلغاء'}</Text>
               </TouchableOpacity>
               <TouchableOpacity style={[styles.modalBtn, { flex: 2, backgroundColor: colors.primary }]} onPress={send} disabled={sending}>
                 {sending
                   ? <ActivityIndicator size="small" color="#fff" />
-                  : <Text style={{ color: '#fff', fontWeight: '700' }}>{isAr ? 'إرسال' : 'Send'}</Text>
+                  : <Text style={{ color: '#fff', fontWeight: '700' }}>{'إرسال'}</Text>
                 }
               </TouchableOpacity>
             </View>
@@ -272,36 +272,36 @@ function CreateGroupModal({
         <SafeAreaView style={[styles.sheet, { backgroundColor: colors.surface }]} edges={['bottom']}>
           <View style={[styles.sheetHandle, { backgroundColor: colors.border }]} />
           <View style={styles.sheetHeader}>
-            <Text style={[styles.sheetTitle, { color: colors.text }]}>{isAr ? 'إنشاء مجموعة' : 'Create Group'}</Text>
+            <Text style={[styles.sheetTitle, { color: colors.text }]}>{'إنشاء مجموعة'}</Text>
             <TouchableOpacity onPress={onClose}>
               <Ionicons name="close" size={22} color={colors.textMuted} />
             </TouchableOpacity>
           </View>
           <View style={{ padding: spacing.md }}>
-            <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>{isAr ? 'اسم المجموعة *' : 'Group Name *'}</Text>
+            <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>{'اسم المجموعة *'}</Text>
             <TextInput
               style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
               value={name}
               onChangeText={setName}
-              placeholder={isAr ? 'اسم المجموعة' : 'Group name'}
+              placeholder={'اسم المجموعة'}
               placeholderTextColor={colors.textMuted}
             />
-            <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>{isAr ? 'الوصف' : 'Description'}</Text>
+            <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>{'الوصف'}</Text>
             <TextInput
               style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
               value={desc}
               onChangeText={setDesc}
-              placeholder={isAr ? 'وصف اختياري' : 'Optional description'}
+              placeholder={'وصف اختياري'}
               placeholderTextColor={colors.textMuted}
             />
             <View style={[styles.modalActions, { marginTop: spacing.md }]}>
               <TouchableOpacity style={[styles.modalBtn, { borderColor: colors.border, borderWidth: 1.5 }]} onPress={onClose}>
-                <Text style={{ color: colors.textMuted, fontWeight: '600' }}>{isAr ? 'إلغاء' : 'Cancel'}</Text>
+                <Text style={{ color: colors.textMuted, fontWeight: '600' }}>{'إلغاء'}</Text>
               </TouchableOpacity>
               <TouchableOpacity style={[styles.modalBtn, { flex: 2, backgroundColor: colors.primary }]} onPress={create} disabled={creating}>
                 {creating
                   ? <ActivityIndicator size="small" color="#fff" />
-                  : <Text style={{ color: '#fff', fontWeight: '700' }}>{isAr ? 'إنشاء' : 'Create'}</Text>
+                  : <Text style={{ color: '#fff', fontWeight: '700' }}>{'إنشاء'}</Text>
                 }
               </TouchableOpacity>
             </View>
@@ -360,13 +360,13 @@ function DirectMessageModal({
         <SafeAreaView style={[styles.sheet, { backgroundColor: colors.surface }]} edges={['bottom']}>
           <View style={[styles.sheetHandle, { backgroundColor: colors.border }]} />
           <View style={styles.sheetHeader}>
-            <Text style={[styles.sheetTitle, { color: colors.text }]}>{isAr ? 'رسالة مباشرة' : 'Direct Message'}</Text>
+            <Text style={[styles.sheetTitle, { color: colors.text }]}>{'رسالة مباشرة'}</Text>
             <TouchableOpacity onPress={onClose}>
               <Ionicons name="close" size={22} color={colors.textMuted} />
             </TouchableOpacity>
           </View>
           <ScrollView contentContainerStyle={{ padding: spacing.md }} showsVerticalScrollIndicator={false}>
-            <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>{isAr ? 'إلى' : 'To'}</Text>
+            <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>{'إلى'}</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: spacing.md }}>
               <View style={{ flexDirection: 'row' }}>
                 {users.map(u => (
@@ -377,12 +377,12 @@ function DirectMessageModal({
               </View>
             </ScrollView>
 
-            <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>{isAr ? 'الرسالة *' : 'Message *'}</Text>
+            <Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>{'الرسالة *'}</Text>
             <TextInput
               style={[styles.input, styles.textarea, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
               value={content}
               onChangeText={setContent}
-              placeholder={isAr ? 'اكتب رسالتك' : 'Write your message'}
+              placeholder={'اكتب رسالتك'}
               placeholderTextColor={colors.textMuted}
               multiline
               numberOfLines={3}
@@ -390,12 +390,12 @@ function DirectMessageModal({
 
             <View style={[styles.modalActions, { marginTop: spacing.sm }]}>
               <TouchableOpacity style={[styles.modalBtn, { borderColor: colors.border, borderWidth: 1.5 }]} onPress={onClose}>
-                <Text style={{ color: colors.textMuted, fontWeight: '600' }}>{isAr ? 'إلغاء' : 'Cancel'}</Text>
+                <Text style={{ color: colors.textMuted, fontWeight: '600' }}>{'إلغاء'}</Text>
               </TouchableOpacity>
               <TouchableOpacity style={[styles.modalBtn, { flex: 2, backgroundColor: colors.primary }]} onPress={send} disabled={sending}>
                 {sending
                   ? <ActivityIndicator size="small" color="#fff" />
-                  : <Text style={{ color: '#fff', fontWeight: '700' }}>{isAr ? 'إرسال' : 'Send'}</Text>
+                  : <Text style={{ color: '#fff', fontWeight: '700' }}>{'إرسال'}</Text>
                 }
               </TouchableOpacity>
             </View>
@@ -426,15 +426,15 @@ function CallPickerModal({
           <View style={styles.sheetHeader}>
             <Text style={[styles.sheetTitle, { color: c.text }]}>
               {callType === 'video'
-                ? (isAr ? 'مكالمة فيديو' : 'Video Call')
-                : (isAr ? 'مكالمة صوتية' : 'Voice Call')}
+                ? ('مكالمة فيديو')
+                : ('مكالمة صوتية')}
             </Text>
             <TouchableOpacity onPress={onClose}>
               <Ionicons name="close" size={22} color={c.textMuted} />
             </TouchableOpacity>
           </View>
           <Text style={[styles.fieldLabel, { color: c.textSecondary, paddingHorizontal: spacing.md }]}>
-            {isAr ? 'اختر شخصاً للاتصال به' : 'Select who to call'}
+            {'اختر شخصاً للاتصال به'}
           </Text>
           <ScrollView contentContainerStyle={{ padding: spacing.md }}>
             {members.map(m => (
@@ -575,9 +575,9 @@ export function ChatScreen() {
             <Ionicons name="chatbubbles" size={18} color={colors.primary} />
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={[styles.headerTitle, { color: colors.text }]}>{isAr ? 'المحادثات' : 'Chat'}</Text>
+            <Text style={[styles.headerTitle, { color: colors.text }]}>{'المحادثات'}</Text>
             <Text style={[styles.headerSub, { color: colors.textMuted }]}>
-              {groups.length} {isAr ? 'مجموعة' : 'groups'}
+              {groups.length} {'مجموعة'}
             </Text>
           </View>
         </View>
@@ -602,10 +602,10 @@ export function ChatScreen() {
               <View style={styles.empty}>
                 <Ionicons name="chatbubbles-outline" size={44} color={colors.textMuted} />
                 <Text style={[styles.emptyText, { color: colors.textMuted }]}>
-                  {isAr ? 'لا توجد مجموعات بعد' : 'No groups yet'}
+                  {'لا توجد مجموعات بعد'}
                 </Text>
                 <Text style={[styles.emptyHint, { color: colors.textMuted }]}>
-                  {isAr ? 'ينشئ المديرون مجموعات الدردشة' : 'Admins create chat groups'}
+                  {'ينشئ المديرون مجموعات الدردشة'}
                 </Text>
               </View>
             }
@@ -631,7 +631,7 @@ export function ChatScreen() {
               >
                 <Ionicons name="add-circle-outline" size={18} color={colors.primary} />
                 <Text style={[styles.fabItemText, { color: colors.text }]}>
-                  {isAr ? 'إنشاء مجموعة' : 'Create Group'}
+                  {'إنشاء مجموعة'}
                 </Text>
               </TouchableOpacity>
             )}
@@ -642,7 +642,7 @@ export function ChatScreen() {
               >
                 <Ionicons name="megaphone-outline" size={18} color={colors.warning} />
                 <Text style={[styles.fabItemText, { color: colors.text }]}>
-                  {isAr ? 'رسالة مستهدفة' : 'Targeted Message'}
+                  {'رسالة مستهدفة'}
                 </Text>
               </TouchableOpacity>
             )}
@@ -653,7 +653,7 @@ export function ChatScreen() {
               >
                 <Ionicons name="chatbubble-outline" size={18} color={colors.primary} />
                 <Text style={[styles.fabItemText, { color: colors.text }]}>
-                  {isAr ? 'رسالة مباشرة' : 'Direct Message'}
+                  {'رسالة مباشرة'}
                 </Text>
               </TouchableOpacity>
             )}
@@ -707,7 +707,7 @@ export function ChatScreen() {
           </Text>
           {activeGroup?._count && (
             <Text style={[styles.headerSub, { color: colors.textMuted }]}>
-              {activeGroup._count.members} {isAr ? 'عضو' : 'members'}
+              {activeGroup._count.members} {'عضو'}
             </Text>
           )}
         </View>
@@ -735,7 +735,7 @@ export function ChatScreen() {
             <View style={styles.empty}>
               <Ionicons name="chatbubbles-outline" size={44} color={colors.textMuted} />
               <Text style={[styles.emptyText, { color: colors.textMuted }]}>
-                {isAr ? 'لا توجد رسائل بعد. ابدأ المحادثة!' : 'No messages yet. Start the conversation!'}
+                {'لا توجد رسائل بعد. ابدأ المحادثة!'}
               </Text>
             </View>
           }
@@ -794,7 +794,7 @@ export function ChatScreen() {
         </TouchableOpacity>
         <TextInput
           style={[styles.textInput, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
-          placeholder={isAr ? 'اكتب رسالة…' : 'Type a message…'}
+          placeholder={'اكتب رسالة…'}
           placeholderTextColor={colors.textMuted}
           value={input}
           onChangeText={setInput}

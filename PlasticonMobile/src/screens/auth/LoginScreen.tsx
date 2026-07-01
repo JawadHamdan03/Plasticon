@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import {
   Image,
   KeyboardAvoidingView,
@@ -19,7 +19,6 @@ import { Input }  from '../../components/Input';
 import { AuthStackParamList } from '../../navigation/types';
 import { radius, spacing, typography } from '../../theme';
 import { useAppTheme } from '../../context/ThemeContext';
-import { useLocale } from '../../context/LocaleContext';
 
 const plasticonLogin = require('../../../assets/plasticonLogin.png') as number;
 
@@ -29,7 +28,6 @@ export function LoginScreen() {
   const { login } = useAuth();
   const navigation = useNavigation<Nav>();
   const { colors } = useAppTheme();
-  const { isAr } = useLocale();
 
   const [email,    setEmail]    = useState('');
   const [password, setPassword] = useState('');
@@ -38,7 +36,7 @@ export function LoginScreen() {
 
   const handleLogin = async () => {
     if (!email.trim() || !password) {
-      setError(isAr ? 'يرجى إدخال البريد الإلكتروني وكلمة المرور.' : 'Please enter your email and password.');
+      setError('يرجى إدخال البريد الإلكتروني وكلمة المرور.');
       return;
     }
     setError('');
@@ -46,7 +44,7 @@ export function LoginScreen() {
     try {
       await login(email.trim().toLowerCase(), password);
     } catch (err) {
-      setError(err instanceof Error ? err.message : (isAr ? 'فشل تسجيل الدخول. يرجى المحاولة مرة أخرى.' : 'Login failed. Please try again.'));
+      setError(err instanceof Error ? err.message : ('فشل تسجيل الدخول. يرجى المحاولة مرة أخرى.'));
     } finally {
       setLoading(false);
     }
@@ -73,15 +71,15 @@ export function LoginScreen() {
           <View style={[styles.formHandle, { backgroundColor: colors.border }]} />
 
           <Text style={[styles.welcomeTitle, { color: colors.text }]}>
-            {isAr ? 'مرحباً بعودتك' : 'Welcome back'}
+            {'مرحباً بعودتك'}
           </Text>
           <Text style={[styles.welcomeSub, { color: colors.textMuted }]}>
-            {isAr ? 'تسجيل الدخول للمتابعة إلى لوحتك' : 'Sign in to continue to your dashboard'}
+            {'تسجيل الدخول للمتابعة إلى لوحتك'}
           </Text>
 
           <View style={styles.form}>
             <Input
-              label={isAr ? 'البريد الإلكتروني' : 'Email address'}
+              label={'البريد الإلكتروني'}
               value={email}
               onChangeText={setEmail}
               keyboardType="email-address"
@@ -91,11 +89,11 @@ export function LoginScreen() {
               icon="mail-outline"
             />
             <Input
-              label={isAr ? 'كلمة المرور' : 'Password'}
+              label={'كلمة المرور'}
               value={password}
               onChangeText={setPassword}
               isPassword
-              placeholder={isAr ? 'أدخل كلمة المرور' : 'Enter your password'}
+              placeholder={'أدخل كلمة المرور'}
               icon="lock-closed-outline"
               returnKeyType="done"
               onSubmitEditing={handleLogin}
@@ -107,13 +105,13 @@ export function LoginScreen() {
               </View>
             ) : null}
             <Button onPress={handleLogin} loading={loading} fullWidth size="lg" style={styles.signInBtn}>
-              {isAr ? 'تسجيل الدخول' : 'Sign In'}
+              {'تسجيل الدخول'}
             </Button>
           </View>
 
           <TouchableOpacity style={styles.forgotRow} onPress={() => navigation.navigate('ForgotPassword')}>
             <Text style={[styles.forgotLink, { color: colors.primary }]}>
-              {isAr ? 'نسيت كلمة المرور؟' : 'Forgot password?'}
+              {'نسيت كلمة المرور؟'}
             </Text>
           </TouchableOpacity>
 
@@ -124,7 +122,7 @@ export function LoginScreen() {
           >
             <Ionicons name="shield-checkmark-outline" size={16} color={colors.success} />
             <Text style={[styles.requestBtnText, { color: colors.success }]}>
-              {isAr ? 'طلب الوصول' : 'Request Access'}
+              {'طلب الوصول'}
             </Text>
           </TouchableOpacity>
 

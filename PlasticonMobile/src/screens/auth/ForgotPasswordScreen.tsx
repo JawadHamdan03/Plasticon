@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import {
+import { useLocale } from '../../context/LocaleContext';
   KeyboardAvoidingView, Platform, StyleSheet,
   Text, TouchableOpacity, View,
 } from 'react-native';
@@ -13,7 +14,6 @@ import { Input }  from '../../components/Input';
 import { AuthStackParamList } from '../../navigation/types';
 import { radius, spacing, typography } from '../../theme';
 import { useAppTheme } from '../../context/ThemeContext';
-import { useLocale } from '../../context/LocaleContext';
 
 type Nav = NativeStackNavigationProp<AuthStackParamList>;
 
@@ -27,14 +27,14 @@ export function ForgotPasswordScreen() {
   const [sent,    setSent]    = useState(false);
 
   const submit = async () => {
-    if (!email.trim()) { setError(isAr ? 'يرجى إدخال بريدك الإلكتروني.' : 'Please enter your email address.'); return; }
+    if (!email.trim()) { setError('يرجى إدخال بريدك الإلكتروني.'); return; }
     setError('');
     setLoading(true);
     try {
       await api.post('/auth/forgot-password', { email: email.trim().toLowerCase() });
       setSent(true);
     } catch (e: any) {
-      setError(e.message ?? (isAr ? 'فشل إرسال بريد الاسترداد. يرجى المحاولة مرة أخرى.' : 'Failed to send reset email. Please try again.'));
+      setError(e.message ?? ('فشل إرسال بريد الاسترداد. يرجى المحاولة مرة أخرى.'));
     } finally {
       setLoading(false);
     }
@@ -51,7 +51,7 @@ export function ForgotPasswordScreen() {
           <View style={styles.logoWrap}>
             <Ionicons name="key" size={28} color={colors.accent} />
           </View>
-          <Text style={styles.brandName}>{isAr ? 'نسيت كلمة المرور؟' : 'Forgot Password?'}</Text>
+          <Text style={styles.brandName}>{'نسيت كلمة المرور؟'}</Text>
           <Text style={[styles.brandSub, { color: colors.tabInactive }]}>
             {isAr ? 'سنرسل رابط الاسترداد إلى بريدك' : "We'll send a reset link to your email"}
           </Text>
@@ -67,26 +67,24 @@ export function ForgotPasswordScreen() {
                 <Ionicons name="checkmark-circle" size={48} color={colors.success} />
               </View>
               <Text style={[styles.sentTitle, { color: colors.text }]}>
-                {isAr ? 'تم الإرسال!' : 'Email sent!'}
+                {'تم الإرسال!'}
               </Text>
               <Text style={[styles.sentSub, { color: colors.textMuted }]}>
-                {isAr
-                  ? 'تحقق من صندوق الوارد للحصول على رابط إعادة تعيين كلمة المرور.\nقد يستغرق بضع دقائق.'
-                  : 'Check your inbox for a password reset link.\nIt may take a few minutes to arrive.'}
+                {'تحقق من صندوق الوارد للحصول على رابط إعادة تعيين كلمة المرور.\nقد يستغرق بضع دقائق.'}
               </Text>
               <Button fullWidth onPress={() => navigation.navigate('ResetPassword', {})} style={styles.btn}>
-                {isAr ? 'أدخل رمز الاسترداد' : 'Enter Reset Code'}
+                {'أدخل رمز الاسترداد'}
               </Button>
               <TouchableOpacity onPress={() => navigation.navigate('Login')}>
                 <Text style={[styles.backLink, { color: colors.primary }]}>
-                  {isAr ? 'العودة لتسجيل الدخول' : 'Back to Sign In'}
+                  {'العودة لتسجيل الدخول'}
                 </Text>
               </TouchableOpacity>
             </View>
           ) : (
             <View style={styles.formWrap}>
               <Input
-                label={isAr ? 'البريد الإلكتروني' : 'Email address'}
+                label={'البريد الإلكتروني'}
                 value={email}
                 onChangeText={setEmail}
                 keyboardType="email-address"
@@ -106,13 +104,13 @@ export function ForgotPasswordScreen() {
               ) : null}
 
               <Button onPress={submit} loading={loading} fullWidth size="lg" style={styles.btn}>
-                {isAr ? 'إرسال رابط الاسترداد' : 'Send Reset Link'}
+                {'إرسال رابط الاسترداد'}
               </Button>
 
               <TouchableOpacity style={styles.backRow} onPress={() => navigation.navigate('Login')}>
                 <Ionicons name="arrow-back" size={16} color={colors.primary} />
                 <Text style={[styles.backLink, { color: colors.primary }]}>
-                  {isAr ? 'العودة لتسجيل الدخول' : 'Back to Sign In'}
+                  {'العودة لتسجيل الدخول'}
                 </Text>
               </TouchableOpacity>
             </View>

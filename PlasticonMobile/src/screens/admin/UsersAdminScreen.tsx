@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+﻿import React, { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -21,7 +21,6 @@ import { api } from '../../api/client';
 import { ScreenHeader } from '../../components';
 import { radius, shadow, spacing, typography } from '../../theme';
 import { useAppTheme } from '../../context/ThemeContext';
-import { useLocale } from '../../context/LocaleContext';
 
 // ─── Interfaces ───────────────────────────────────────────────────────────────
 
@@ -60,7 +59,6 @@ interface EditModalProps {
 
 function EditModal({ user, shifts, visible, onClose, onSaved }: EditModalProps) {
   const { colors } = useAppTheme();
-  const { isAr } = useLocale();
 
   const ROLE_COLOR: Record<string, string> = {
     ADMIN:      '#7C3AED',
@@ -94,7 +92,7 @@ function EditModal({ user, shifts, visible, onClose, onSaved }: EditModalProps) 
   async function save() {
     if (!user) return;
     if (!fullName.trim()) {
-      Alert.alert(isAr ? 'تحقق' : 'Validation', isAr ? 'الاسم الكامل مطلوب' : 'Full name is required');
+      Alert.alert('تحقق', 'الاسم الكامل مطلوب');
       return;
     }
     setSaving(true);
@@ -115,7 +113,7 @@ function EditModal({ user, shifts, visible, onClose, onSaved }: EditModalProps) 
       onSaved();
       onClose();
     } catch (err: any) {
-      Alert.alert(isAr ? 'خطأ' : 'Error', err?.message ?? 'Failed to update user');
+      Alert.alert('خطأ', err?.message ?? 'Failed to update user');
     } finally {
       setSaving(false);
     }
@@ -132,45 +130,45 @@ function EditModal({ user, shifts, visible, onClose, onSaved }: EditModalProps) 
           {/* Handle */}
           <View style={[styles.handle, { backgroundColor: colors.border }]} />
 
-          <Text style={[styles.sheetTitle, { color: colors.text }]}>{isAr ? 'تعديل المستخدم' : 'Edit User'}</Text>
+          <Text style={[styles.sheetTitle, { color: colors.text }]}>{'تعديل المستخدم'}</Text>
           {user && (
             <Text style={[styles.sheetSub, { color: colors.textMuted }]}>{user.email}</Text>
           )}
 
           <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
           {/* Full name */}
-          <Text style={[styles.label, { color: colors.text }]}>{isAr ? 'الاسم الكامل' : 'Full Name'}</Text>
+          <Text style={[styles.label, { color: colors.text }]}>{'الاسم الكامل'}</Text>
           <TextInput
             style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
             value={fullName}
             onChangeText={setFullName}
-            placeholder={isAr ? 'الاسم الكامل' : 'Full name'}
+            placeholder={'الاسم الكامل'}
             placeholderTextColor={colors.textMuted}
           />
 
           {/* Phone */}
-          <Text style={[styles.label, { color: colors.text }]}>{isAr ? 'الهاتف' : 'Phone'}</Text>
+          <Text style={[styles.label, { color: colors.text }]}>{'الهاتف'}</Text>
           <TextInput
             style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
             value={phone}
             onChangeText={setPhone}
-            placeholder={isAr ? 'رقم الهاتف' : 'Phone number'}
+            placeholder={'رقم الهاتف'}
             placeholderTextColor={colors.textMuted}
             keyboardType="phone-pad"
           />
 
           {/* Department */}
-          <Text style={[styles.label, { color: colors.text }]}>{isAr ? 'القسم' : 'Department'}</Text>
+          <Text style={[styles.label, { color: colors.text }]}>{'القسم'}</Text>
           <TextInput
             style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
             value={department}
             onChangeText={setDepartment}
-            placeholder={isAr ? 'اسم القسم' : 'Department name'}
+            placeholder={'اسم القسم'}
             placeholderTextColor={colors.textMuted}
           />
 
           {/* Active status toggle */}
-          <Text style={[styles.label, { color: colors.text }]}>{isAr ? 'الحالة' : 'Status'}</Text>
+          <Text style={[styles.label, { color: colors.text }]}>{'الحالة'}</Text>
           <View style={styles.toggleRow}>
             <TouchableOpacity
               style={[styles.toggleBtn, isActive && { backgroundColor: colors.success, borderColor: colors.success }]}
@@ -178,7 +176,7 @@ function EditModal({ user, shifts, visible, onClose, onSaved }: EditModalProps) 
               activeOpacity={0.75}
             >
               <Text style={[styles.toggleText, { color: isActive ? colors.textInverse : colors.textSecondary }]}>
-                {isAr ? 'نشط' : 'Active'}
+                {'نشط'}
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
@@ -187,13 +185,13 @@ function EditModal({ user, shifts, visible, onClose, onSaved }: EditModalProps) 
               activeOpacity={0.75}
             >
               <Text style={[styles.toggleText, { color: !isActive ? colors.textInverse : colors.textSecondary }]}>
-                {isAr ? 'غير نشط' : 'Inactive'}
+                {'غير نشط'}
               </Text>
             </TouchableOpacity>
           </View>
 
           {/* Role picker */}
-          <Text style={[styles.label, { color: colors.text }]}>{isAr ? 'الدور' : 'Role'}</Text>
+          <Text style={[styles.label, { color: colors.text }]}>{'الدور'}</Text>
           <View style={styles.roleRow}>
             {ROLES.map((r) => (
               <TouchableOpacity
@@ -215,13 +213,13 @@ function EditModal({ user, shifts, visible, onClose, onSaved }: EditModalProps) 
           {needsShift && (
             <>
               <Text style={[styles.label, { color: colors.text }]}>
-                {isAr ? 'الوردية' : 'Shift'}{shifts.length > 0 ? ` (${shifts.map((s) => `${s.id}: ${s.name ?? s.shiftType}`).join(', ')})` : ' ID'}
+                {'الوردية'}{shifts.length > 0 ? ` (${shifts.map((s) => `${s.id}: ${s.name ?? s.shiftType}`).join(', ')})` : ' ID'}
               </Text>
               <TextInput
                 style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
                 value={shiftId}
                 onChangeText={setShiftId}
-                placeholder={isAr ? 'أدخل رقم الوردية' : 'Enter shift ID'}
+                placeholder={'أدخل رقم الوردية'}
                 placeholderTextColor={colors.textMuted}
                 keyboardType="number-pad"
               />
@@ -236,11 +234,11 @@ function EditModal({ user, shifts, visible, onClose, onSaved }: EditModalProps) 
           >
             {saving
               ? <ActivityIndicator size="small" color={colors.textInverse} />
-              : <Text style={[styles.saveBtnText, { color: colors.textInverse }]}>{isAr ? 'حفظ التغييرات' : 'Save Changes'}</Text>}
+              : <Text style={[styles.saveBtnText, { color: colors.textInverse }]}>{'حفظ التغييرات'}</Text>}
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.cancelBtn} onPress={onClose} activeOpacity={0.7}>
-            <Text style={[styles.cancelText, { color: colors.textMuted }]}>{isAr ? 'إلغاء' : 'Cancel'}</Text>
+            <Text style={[styles.cancelText, { color: colors.textMuted }]}>{'إلغاء'}</Text>
           </TouchableOpacity>
           </ScrollView>
         </View>
@@ -258,7 +256,6 @@ interface UserCardProps {
 
 function UserCard({ item, onEdit }: UserCardProps) {
   const { colors } = useAppTheme();
-  const { isAr } = useLocale();
 
   const ROLE_COLOR: Record<string, string> = {
     ADMIN:      '#7C3AED',
@@ -289,7 +286,7 @@ function UserCard({ item, onEdit }: UserCardProps) {
         )}
         {item.isActive === false && (
           <View style={[styles.inactiveBadge, { backgroundColor: `${colors.textMuted}20` }]}>
-            <Text style={[styles.inactiveText, { color: colors.textMuted }]}>{isAr ? 'غير نشط' : 'Inactive'}</Text>
+            <Text style={[styles.inactiveText, { color: colors.textMuted }]}>{'غير نشط'}</Text>
           </View>
         )}
         <TouchableOpacity
@@ -308,7 +305,6 @@ function UserCard({ item, onEdit }: UserCardProps) {
 
 export function UsersAdminScreen() {
   const { colors } = useAppTheme();
-  const { isAr } = useLocale();
 
   const [users, setUsers]         = useState<User[]>([]);
   const [shifts, setShifts]       = useState<Shift[]>([]);
@@ -327,7 +323,7 @@ export function UsersAdminScreen() {
       setShifts(Array.isArray(shiftsRes) ? shiftsRes : []);
     } catch (e: any) {
       console.warn('UsersAdminScreen load error:', e?.message ?? e);
-      Alert.alert(isAr ? 'خطأ' : 'Error', e?.message ?? 'Failed to load users');
+      Alert.alert('خطأ', e?.message ?? 'Failed to load users');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -349,8 +345,8 @@ export function UsersAdminScreen() {
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
       <ScreenHeader
-        title={isAr ? 'المستخدمون' : 'Users'}
-        subtitle={`${users.length} ${isAr ? 'حساب' : 'accounts'}`}
+        title={'المستخدمون'}
+        subtitle={`${users.length} ${'حساب'}`}
         showBack
       />
 
@@ -375,7 +371,7 @@ export function UsersAdminScreen() {
           ListEmptyComponent={
             <View style={styles.empty}>
               <Ionicons name="people-outline" size={44} color={colors.textMuted} />
-              <Text style={[styles.emptyText, { color: colors.textMuted }]}>{isAr ? 'لا يوجد مستخدمون' : 'No users found'}</Text>
+              <Text style={[styles.emptyText, { color: colors.textMuted }]}>{'لا يوجد مستخدمون'}</Text>
             </View>
           }
         />

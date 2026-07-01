@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+﻿import React, { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator, Alert, FlatList, KeyboardAvoidingView,
   Modal, Platform, RefreshControl, ScrollView, StyleSheet,
@@ -10,7 +10,6 @@ import { api } from '../../api/client';
 import { Button, ScreenHeader } from '../../components';
 import { radius, shadow, spacing, typography } from '../../theme';
 import { useAppTheme } from '../../context/ThemeContext';
-import { useLocale } from '../../context/LocaleContext';
 
 interface Shift { id: number; name: string; }
 interface Machine { id: number; name: string; type: string; }
@@ -100,7 +99,6 @@ function calcCapPieces(cartons: string, piecesPerCarton: number): number {
 
 export function ProductionScreen() {
   const { colors } = useAppTheme();
-  const { isAr } = useLocale();
   const [records, setRecords] = useState<ProductionRecord[]>([]);
   const [shifts, setShifts] = useState<Shift[]>([]);
   const [machines, setMachines] = useState<Machine[]>([]);
@@ -183,18 +181,18 @@ export function ProductionScreen() {
 
   const handleDelete = (record: ProductionRecord) => {
     Alert.alert(
-      isAr ? 'حذف السجل' : 'Delete Record',
-      isAr ? 'هل أنت متأكد من حذف هذا السجل؟' : 'Are you sure you want to delete this record?',
+      'حذف السجل',
+      'هل أنت متأكد من حذف هذا السجل؟',
       [
-        { text: isAr ? 'إلغاء' : 'Cancel', style: 'cancel' },
+        { text: 'إلغاء', style: 'cancel' },
         {
-          text: isAr ? 'حذف' : 'Delete', style: 'destructive',
+          text: 'حذف', style: 'destructive',
           onPress: async () => {
             try {
               await api.delete(`/production/${record.id}`);
               setRecords(prev => prev.filter(r => r.id !== record.id));
             } catch (e: any) {
-              Alert.alert(isAr ? 'خطأ' : 'Error', e.message ?? 'Failed to delete');
+              Alert.alert('خطأ', e.message ?? 'Failed to delete');
             }
           },
         },
@@ -204,18 +202,18 @@ export function ProductionScreen() {
 
   const handleSubmit = async () => {
     if (!form.shiftId) {
-      Alert.alert(isAr ? 'مطلوب' : 'Required', isAr ? 'اختر الشفت' : 'Select a shift');
+      Alert.alert('مطلوب', 'اختر الشفت');
       return;
     }
 
     if (form.productType === 'CAPS') {
       if (!form.cartonsCount || parseInt(form.cartonsCount) <= 0) {
-        Alert.alert(isAr ? 'مطلوب' : 'Required', isAr ? 'أدخل عدد الكراتين' : 'Enter cartons count');
+        Alert.alert('مطلوب', 'أدخل عدد الكراتين');
         return;
       }
     } else {
       if (!form.cavities || !form.cycles || !form.numberOfBoxes) {
-        Alert.alert(isAr ? 'مطلوب' : 'Required', isAr ? 'أدخل بيانات الصناديق' : 'Enter box data');
+        Alert.alert('مطلوب', 'أدخل بيانات الصناديق');
         return;
       }
     }
@@ -260,7 +258,7 @@ export function ProductionScreen() {
       setLoading(true);
       void load();
     } catch (e: any) {
-      Alert.alert(isAr ? 'خطأ' : 'Error', e.message ?? 'Failed to save');
+      Alert.alert('خطأ', e.message ?? 'Failed to save');
     } finally {
       setSaving(false);
     }
@@ -270,7 +268,7 @@ export function ProductionScreen() {
     const machineType = item.machine?.type?.trim().toUpperCase() ?? '';
     const isCaps = machineType === 'CAPS' || machineType.includes('CAP');
     const accentColor = isCaps ? colors.primary : colors.info;
-    const typeLabel = isCaps ? (isAr ? 'كابات' : 'Caps') : (isAr ? 'بريفورم' : 'Preforms');
+    const typeLabel = isCaps ? ('كابات') : ('بريفورم');
     const net = item.netGoodPieces ?? item.totalPieces ?? 0;
     const total = item.totalPieces ?? 0;
     const damaged = item.damagedPieces ?? 0;
@@ -301,19 +299,19 @@ export function ProductionScreen() {
         <View style={styles.metricsRow}>
           <View style={[styles.metric, { backgroundColor: accentColor + '10', borderRadius: radius.md }]}>
             <Text style={[styles.metricVal, { color: accentColor }]}>{total.toLocaleString()}</Text>
-            <Text style={[styles.metricLbl, { color: colors.textMuted }]}>{isAr ? 'إجمالي' : 'Total'}</Text>
+            <Text style={[styles.metricLbl, { color: colors.textMuted }]}>{'إجمالي'}</Text>
           </View>
           <View style={[styles.metric, { backgroundColor: colors.success + '10', borderRadius: radius.md }]}>
             <Text style={[styles.metricVal, { color: colors.success }]}>{net.toLocaleString()}</Text>
-            <Text style={[styles.metricLbl, { color: colors.textMuted }]}>{isAr ? 'صالح' : 'Good'}</Text>
+            <Text style={[styles.metricLbl, { color: colors.textMuted }]}>{'صالح'}</Text>
           </View>
           <View style={[styles.metric, { backgroundColor: damaged > 0 ? colors.danger + '10' : colors.border + '30', borderRadius: radius.md }]}>
             <Text style={[styles.metricVal, { color: damaged > 0 ? colors.danger : colors.textMuted }]}>{damaged.toLocaleString()}</Text>
-            <Text style={[styles.metricLbl, { color: colors.textMuted }]}>{isAr ? 'تالف' : 'Damaged'}</Text>
+            <Text style={[styles.metricLbl, { color: colors.textMuted }]}>{'تالف'}</Text>
           </View>
           <View style={[styles.metric, { backgroundColor: yieldPct >= 95 ? colors.success + '10' : colors.warning + '10', borderRadius: radius.md }]}>
             <Text style={[styles.metricVal, { color: yieldPct >= 95 ? colors.success : colors.warning }]}>{yieldPct}%</Text>
-            <Text style={[styles.metricLbl, { color: colors.textMuted }]}>{isAr ? 'جودة' : 'Yield'}</Text>
+            <Text style={[styles.metricLbl, { color: colors.textMuted }]}>{'جودة'}</Text>
           </View>
         </View>
 
@@ -353,8 +351,8 @@ export function ProductionScreen() {
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
       <ScreenHeader
-        title={isAr ? 'الإنتاج' : 'Production'}
-        subtitle={`${records.length} ${isAr ? 'سجل' : 'records'}`}
+        title={'الإنتاج'}
+        subtitle={`${records.length} ${'سجل'}`}
         showBack
       />
 
@@ -375,17 +373,17 @@ export function ProductionScreen() {
               <View style={[styles.statCard, { backgroundColor: colors.primary + '15', borderWidth: 1, borderColor: colors.primary + '30' }]}>
                 <Ionicons name="cube-outline" size={22} color={colors.primary} />
                 <Text style={[styles.statVal, { color: colors.primary }]}>{records.length}</Text>
-                <Text style={[styles.statLbl, { color: colors.textMuted }]}>{isAr ? 'سجل' : 'Records'}</Text>
+                <Text style={[styles.statLbl, { color: colors.textMuted }]}>{'سجل'}</Text>
               </View>
               <View style={[styles.statCard, { backgroundColor: colors.success + '15', borderWidth: 1, borderColor: colors.success + '30' }]}>
                 <Ionicons name="checkmark-circle" size={22} color={colors.success} />
                 <Text style={[styles.statVal, { color: colors.success }]}>{totalGood.toLocaleString()}</Text>
-                <Text style={[styles.statLbl, { color: colors.textMuted }]}>{isAr ? 'صالح' : 'Good Pcs'}</Text>
+                <Text style={[styles.statLbl, { color: colors.textMuted }]}>{'صالح'}</Text>
               </View>
               <View style={[styles.statCard, { backgroundColor: colors.danger + '15', borderWidth: 1, borderColor: colors.danger + '30' }]}>
                 <Ionicons name="close-circle" size={22} color={colors.danger} />
                 <Text style={[styles.statVal, { color: colors.danger }]}>{totalDamaged.toLocaleString()}</Text>
-                <Text style={[styles.statLbl, { color: colors.textMuted }]}>{isAr ? 'تالف' : 'Damaged'}</Text>
+                <Text style={[styles.statLbl, { color: colors.textMuted }]}>{'تالف'}</Text>
               </View>
             </View>
           }
@@ -393,7 +391,7 @@ export function ProductionScreen() {
             <View style={styles.empty}>
               <Ionicons name="cube-outline" size={44} color={colors.textMuted} />
               <Text style={[styles.emptyText, { color: colors.textMuted }]}>
-                {isAr ? 'لا توجد سجلات إنتاج' : 'No production records yet'}
+                {'لا توجد سجلات إنتاج'}
               </Text>
             </View>
           }
@@ -416,8 +414,8 @@ export function ProductionScreen() {
             <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
               <Text style={[styles.sheetTitle, { color: colors.text }]}>
                 {editingId
-                  ? (isAr ? 'تعديل السجل' : 'Edit Record')
-                  : (isAr ? 'تسجيل الإنتاج' : 'Log Production')}
+                  ? ('تعديل السجل')
+                  : ('تسجيل الإنتاج')}
               </Text>
 
               {/* Product type tabs — only for new records */}
@@ -431,7 +429,7 @@ export function ProductionScreen() {
                       activeOpacity={0.8}
                     >
                       <Text style={[styles.typeTabText, { color: form.productType === t ? '#fff' : colors.textMuted }]}>
-                        {t === 'CAPS' ? (isAr ? 'كابات' : 'Caps') : (isAr ? 'بريفورم' : 'Preforms')}
+                        {t === 'CAPS' ? ('كابات') : ('بريفورم')}
                       </Text>
                     </TouchableOpacity>
                   ))}
@@ -439,7 +437,7 @@ export function ProductionScreen() {
               )}
 
               {/* Date */}
-              <Field label={isAr ? 'التاريخ' : 'Date'}>
+              <Field label={'التاريخ'}>
                 <TextInput
                   style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
                   value={form.date}
@@ -451,7 +449,7 @@ export function ProductionScreen() {
 
               {/* Shift picker */}
               {!editingId && (
-                <Field label={isAr ? 'الشفت *' : 'Shift *'}>
+                <Field label={'الشفت *'}>
                   <View style={styles.chipRow}>
                     {shifts.map(s => (
                       <TouchableOpacity
@@ -469,14 +467,14 @@ export function ProductionScreen() {
 
               {/* Machine picker */}
               {!editingId && (
-                <Field label={isAr ? 'الماكينة (اختياري)' : 'Machine (optional)'}>
+                <Field label={'الماكينة (اختياري)'}>
                   <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipRow}>
                     <TouchableOpacity
                       style={[styles.chip, { borderColor: colors.border }, form.machineId === '' && { backgroundColor: colors.border }]}
                       onPress={() => setF('machineId', '')}
                       activeOpacity={0.8}
                     >
-                      <Text style={[styles.chipText, { color: colors.textMuted }]}>{isAr ? 'بلا' : 'None'}</Text>
+                      <Text style={[styles.chipText, { color: colors.textMuted }]}>{'بلا'}</Text>
                     </TouchableOpacity>
                     {filteredMachines.map(m => (
                       <TouchableOpacity
@@ -496,7 +494,7 @@ export function ProductionScreen() {
               {(form.productType === 'CAPS' || editingId) && (
                 <>
                   {!editingId && (
-                    <Field label={isAr ? 'عدد الكراتين *' : 'Cartons Count *'}>
+                    <Field label={'عدد الكراتين *'}>
                       <TextInput
                         style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
                         value={form.cartonsCount}
@@ -507,17 +505,17 @@ export function ProductionScreen() {
                       />
                       {form.cartonsCount ? (
                         <Text style={[styles.calcHint, { color: colors.primary }]}>
-                          = {calcCapPieces(form.cartonsCount, capsPerCarton).toLocaleString()} {isAr ? 'قطعة' : 'pcs'}
+                          = {calcCapPieces(form.cartonsCount, capsPerCarton).toLocaleString()} {'قطعة'}
                         </Text>
                       ) : null}
                     </Field>
                   )}
-                  <Field label={isAr ? 'لون الكاب (اختياري)' : 'Cap Color (optional)'}>
+                  <Field label={'لون الكاب (اختياري)'}>
                     <TextInput
                       style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
                       value={form.capColor}
                       onChangeText={v => setF('capColor', v)}
-                      placeholder={isAr ? 'مثال: أبيض' : 'e.g. White'}
+                      placeholder={'مثال: أبيض'}
                       placeholderTextColor={colors.textMuted}
                     />
                   </Field>
@@ -527,18 +525,18 @@ export function ProductionScreen() {
               {/* Preforms-specific fields */}
               {form.productType === 'PREFORMS' && !editingId && (
                 <>
-                  <Field label={isAr ? 'نوع البريفورم (اختياري)' : 'Preform Type (optional)'}>
+                  <Field label={'نوع البريفورم (اختياري)'}>
                     <TextInput
                       style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
                       value={form.preformType}
                       onChangeText={v => setF('preformType', v)}
-                      placeholder={isAr ? 'مثال: 28g 28mm' : 'e.g. 28g 28mm'}
+                      placeholder={'مثال: 28g 28mm'}
                       placeholderTextColor={colors.textMuted}
                     />
                   </Field>
                   <View style={styles.row3}>
                     <View style={styles.flex1}>
-                      <Field label={isAr ? 'تجاويف' : 'Cavities'}>
+                      <Field label={'تجاويف'}>
                         <TextInput
                           style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
                           value={form.cavities}
@@ -550,7 +548,7 @@ export function ProductionScreen() {
                       </Field>
                     </View>
                     <View style={styles.flex1}>
-                      <Field label={isAr ? 'دورات' : 'Cycles'}>
+                      <Field label={'دورات'}>
                         <TextInput
                           style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
                           value={form.cycles}
@@ -562,7 +560,7 @@ export function ProductionScreen() {
                       </Field>
                     </View>
                     <View style={styles.flex1}>
-                      <Field label={isAr ? 'صناديق' : 'Boxes'}>
+                      <Field label={'صناديق'}>
                         <TextInput
                           style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
                           value={form.numberOfBoxes}
@@ -576,14 +574,14 @@ export function ProductionScreen() {
                   </View>
                   {(form.cavities && form.cycles && form.numberOfBoxes) ? (
                     <Text style={[styles.calcHint, { color: colors.primary, marginBottom: spacing.sm }]}>
-                      = {calcPreformPieces(form.cavities, form.cycles, form.numberOfBoxes).toLocaleString()} {isAr ? 'قطعة' : 'pcs'}
+                      = {calcPreformPieces(form.cavities, form.cycles, form.numberOfBoxes).toLocaleString()} {'قطعة'}
                     </Text>
                   ) : null}
                 </>
               )}
 
               {/* Damaged pieces */}
-              <Field label={isAr ? 'القطع التالفة' : 'Damaged Pieces'}>
+              <Field label={'القطع التالفة'}>
                 <TextInput
                   style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
                   value={form.damagedPieces}
@@ -598,9 +596,9 @@ export function ProductionScreen() {
               {totalPieces > 0 && (
                 <View style={[styles.preview, { backgroundColor: colors.success + '12', borderColor: colors.success + '30' }]}>
                   <Text style={[styles.previewLabel, { color: colors.textMuted }]}>
-                    {isAr ? 'الإنتاج الصالح' : 'Net Good'}: {' '}
+                    {'الإنتاج الصالح'}: {' '}
                     <Text style={{ color: colors.success, fontWeight: '800' }}>{netGood.toLocaleString()}</Text>
-                    {' '}{isAr ? 'قطعة' : 'pcs'}
+                    {' '}{'قطعة'}
                   </Text>
                 </View>
               )}
@@ -609,12 +607,12 @@ export function ProductionScreen() {
               {!editingId && (
                 <>
                   <Text style={[styles.sectionTitle, { color: colors.text }]}>
-                    {isAr ? 'المواد الخام (اختياري)' : 'Raw Materials (optional)'}
+                    {'المواد الخام (اختياري)'}
                   </Text>
                   {form.productType === 'CAPS' ? (
                     <View style={styles.row2}>
                       <View style={styles.flex1}>
-                        <Field label={isAr ? 'HDPE (كيس)' : 'HDPE (bags)'}>
+                        <Field label={'HDPE (كيس)'}>
                           <TextInput
                             style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
                             value={form.rawHdpeUsed}
@@ -626,7 +624,7 @@ export function ProductionScreen() {
                         </Field>
                       </View>
                       <View style={styles.flex1}>
-                        <Field label={isAr ? 'LDPE (كيس)' : 'LDPE (bags)'}>
+                        <Field label={'LDPE (كيس)'}>
                           <TextInput
                             style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
                             value={form.rawLdpeUsed}
@@ -639,7 +637,7 @@ export function ProductionScreen() {
                       </View>
                     </View>
                   ) : (
-                    <Field label={isAr ? 'PET (كيس)' : 'PET (bags)'}>
+                    <Field label={'PET (كيس)'}>
                       <TextInput
                         style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
                         value={form.rawPetUsed}
@@ -650,7 +648,7 @@ export function ProductionScreen() {
                       />
                     </Field>
                   )}
-                  <Field label={isAr ? 'ملوّن (كجم)' : 'Colorant (kg)'}>
+                  <Field label={'ملوّن (كجم)'}>
                     <TextInput
                       style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
                       value={form.colorUsed}
@@ -664,12 +662,12 @@ export function ProductionScreen() {
               )}
 
               {/* Notes */}
-              <Field label={isAr ? 'ملاحظات (اختياري)' : 'Notes (optional)'}>
+              <Field label={'ملاحظات (اختياري)'}>
                 <TextInput
                   style={[styles.input, styles.inputMulti, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
                   value={form.notes}
                   onChangeText={v => setF('notes', v)}
-                  placeholder={isAr ? 'أي ملاحظات...' : 'Any remarks...'}
+                  placeholder={'أي ملاحظات...'}
                   placeholderTextColor={colors.textMuted}
                   multiline
                   numberOfLines={3}
@@ -679,10 +677,10 @@ export function ProductionScreen() {
             </ScrollView>
             <View style={styles.modalActions}>
               <Button variant="ghost" onPress={handleClose} style={styles.actionBtn}>
-                {isAr ? 'إلغاء' : 'Cancel'}
+                {'إلغاء'}
               </Button>
               <Button onPress={handleSubmit} loading={saving} style={styles.actionBtn}>
-                {isAr ? 'حفظ' : 'Save'}
+                {'حفظ'}
               </Button>
             </View>
           </View>

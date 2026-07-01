@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from 'react';
+﻿import React, { useEffect, useState } from 'react';
 import {
+import { useLocale } from '../../context/LocaleContext';
   ActivityIndicator, ScrollView, StyleSheet, Text, View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -9,7 +10,6 @@ import { api, ragApi } from '../../api/client';
 import { Button, ScreenHeader } from '../../components';
 import { radius, shadow, spacing, typography } from '../../theme';
 import { useAppTheme } from '../../context/ThemeContext';
-import { useLocale } from '../../context/LocaleContext';
 
 interface WorkerStats {
   attendanceRate:     number;
@@ -20,6 +20,7 @@ interface WorkerStats {
 
 function StatPill({ label, value, color }: { label: string; value: string; color: string }) {
   const { colors } = useAppTheme();
+  const { isAr } = useLocale();
   return (
     <View style={[styles.pill, { backgroundColor: `${color}15`, borderColor: `${color}30` }]}>
       <Text style={[styles.pillValue, { color }]}>{value}</Text>
@@ -91,9 +92,9 @@ Please provide:
 Keep it practical, warm, and factory-relevant.`,
         role: 'worker',
       });
-      setCoaching(res.reply ?? res.response ?? (isAr ? 'تعذر إنشاء النصائح. حاول مرة أخرى.' : 'Could not generate coaching tips. Try again.'));
+      setCoaching(res.reply ?? res.response ?? ('تعذر إنشاء النصائح. حاول مرة أخرى.'));
     } catch (err: any) {
-      setCoaching(`${isAr ? 'خطأ: ' : 'Error: '}${err.message ?? (isAr ? 'تعذر الوصول إلى الخدمة.' : 'Could not reach AI service.')}`);
+      setCoaching(`${'خطأ: '}${err.message ?? ('تعذر الوصول إلى الخدمة.')}`);
     } finally {
       setLoading(false);
     }
@@ -101,7 +102,7 @@ Keep it practical, warm, and factory-relevant.`,
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
-      <ScreenHeader title={isAr ? 'تدريب العامل' : 'Worker Coaching'} subtitle={isAr ? 'رؤى الأداء بالذكاء الاصطناعي' : 'AI performance insights'} showBack />
+      <ScreenHeader title={'تدريب العامل'} subtitle={'رؤى الأداء بالذكاء الاصطناعي'} showBack />
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={[styles.greetCard, { backgroundColor: colors.surface, borderLeftColor: colors.success }]}>
@@ -119,15 +120,15 @@ Keep it practical, warm, and factory-relevant.`,
           <ActivityIndicator color={colors.primary} style={{ marginBottom: spacing.lg }} />
         ) : (
           <View style={styles.pillRow}>
-            <StatPill label={isAr ? 'الحضور' : 'Attendance'} value={`${stats?.attendanceRate ?? 0}%`} color={colors.success} />
-            <StatPill label={isAr ? 'أيام التأخر' : 'Late Days'} value={String(stats?.lateCount ?? 0)} color={stats?.lateCount ? colors.warning : colors.success} />
-            <StatPill label={isAr ? 'الإنتاج' : 'Production'} value={(stats?.totalProduction ?? 0).toLocaleString()} color={colors.primary} />
-            <StatPill label={isAr ? 'المعدل / يوم' : 'Avg / Day'} value={String(stats?.avgDailyProduction ?? 0)} color={colors.info} />
+            <StatPill label={'الحضور'} value={`${stats?.attendanceRate ?? 0}%`} color={colors.success} />
+            <StatPill label={'أيام التأخر'} value={String(stats?.lateCount ?? 0)} color={stats?.lateCount ? colors.warning : colors.success} />
+            <StatPill label={'الإنتاج'} value={(stats?.totalProduction ?? 0).toLocaleString()} color={colors.primary} />
+            <StatPill label={'المعدل / يوم'} value={String(stats?.avgDailyProduction ?? 0)} color={colors.info} />
           </View>
         )}
 
         <Button onPress={getCoaching} loading={loading} fullWidth size="lg" style={styles.btn}>
-          {isAr ? 'احصل على نصائح التدريب' : 'Get Coaching Tips'}
+          {'احصل على نصائح التدريب'}
         </Button>
 
         {(loading || coaching) ? (
@@ -136,12 +137,12 @@ Keep it practical, warm, and factory-relevant.`,
               <View style={[styles.coachIconWrap, { backgroundColor: colors.successLight }]}>
                 <Ionicons name="school" size={18} color={colors.success} />
               </View>
-              <Text style={[styles.coachTitle, { color: colors.success }]}>{isAr ? 'جلسة التدريب' : 'Your Coaching Session'}</Text>
+              <Text style={[styles.coachTitle, { color: colors.success }]}>{'جلسة التدريب'}</Text>
             </View>
             {loading ? (
               <View style={styles.loadingRow}>
                 <ActivityIndicator color={colors.success} />
-                <Text style={[styles.loadingText, { color: colors.success }]}>{isAr ? 'جارٍ تخصيص التدريب…' : 'Personalising your coaching…'}</Text>
+                <Text style={[styles.loadingText, { color: colors.success }]}>{'جارٍ تخصيص التدريب…'}</Text>
               </View>
             ) : (
               <Text style={[styles.coachText, { color: colors.text }]}>{coaching}</Text>
@@ -151,9 +152,7 @@ Keep it practical, warm, and factory-relevant.`,
           <View style={styles.emptyHint}>
             <Ionicons name="bulb-outline" size={32} color={colors.textMuted} />
             <Text style={[styles.emptyText, { color: colors.textMuted }]}>
-              {isAr
-                ? 'اضغط على الزر أعلاه للحصول على نصائح تدريبية مخصصة بناءً على أدائك.'
-                : 'Tap the button above to receive personalised coaching tips based on your performance.'}
+              {'اضغط على الزر أعلاه للحصول على نصائح تدريبية مخصصة بناءً على أدائك.'}
             </Text>
           </View>
         )}

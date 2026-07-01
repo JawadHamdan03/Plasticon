@@ -77,6 +77,7 @@ const labelStyle: React.CSSProperties = { display: "flex", flexDirection: "colum
 export default function InvoiceManagement() {
   const { user }   = useAuth();
   const isAdmin    = user?.role === "ADMIN";
+  const t = (_en: string, ar: string) => ar;
 
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading,  setLoading]  = useState(true);
@@ -304,7 +305,7 @@ export default function InvoiceManagement() {
     const Icon = meta.icon;
     return (
       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold" style={{ background: meta.bg, color: meta.color }}>
-        <Icon size={10} />{meta.labelAr}
+        <Icon size={10} />{meta.label}
       </span>
     );
   };
@@ -607,7 +608,7 @@ export default function InvoiceManagement() {
                         return (
                           <div key={item.id} style={{ display: "grid", gridTemplateColumns: "120px 1fr 90px 110px 100px 30px", gap: ".4rem", marginBottom: ".4rem", alignItems: "center" }}>
                             <select style={{ ...inputCls, padding: ".38rem .5rem" }} value={item.itemType} onChange={e => patchSRItem(item.id, { itemType: e.target.value as ItemType })}>
-                              {ITEM_TYPES.map(it => <option key={it.value} value={it.value}>{it.ar}</option>)}
+                              {ITEM_TYPES.map(it => <option key={it.value} value={it.value}>{it.label}</option>)}
                             </select>
                             <input style={inputCls} placeholder={t("Color, e.g. Natural","اللون مثلاً طبيعي")} value={item.color} onChange={e => patchSRItem(item.id, { color: e.target.value })} />
                             <input type="number" min={0} style={{ ...inputCls, textAlign: "center" }} value={item.quantity} onChange={e => patchSRItem(item.id, { quantity: e.target.value })} />

@@ -1,5 +1,6 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+﻿import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
+import { useLocale } from '../../context/LocaleContext';
   ActivityIndicator, Alert, FlatList, KeyboardAvoidingView,
   Modal, Platform, RefreshControl, ScrollView, StyleSheet,
   Text, TextInput, TouchableOpacity, View,
@@ -10,7 +11,6 @@ import { api } from '../../api/client';
 import { ScreenHeader } from '../../components';
 import { radius, shadow, spacing, typography } from '../../theme';
 import { useAppTheme } from '../../context/ThemeContext';
-import { useLocale } from '../../context/LocaleContext';
 
 type Priority = 'CRITICAL' | 'HIGH' | 'NORMAL';
 
@@ -41,9 +41,9 @@ const PRIORITY_ICON: Record<Priority, string> = {
 
 function elapsedLabel(isoStart: string, isAr: boolean) {
   const mins = Math.floor((Date.now() - new Date(isoStart).getTime()) / 60000);
-  if (mins < 60) return `${mins} ${isAr ? 'د' : 'min'}`;
+  if (mins < 60) return `${mins} ${'د'}`;
   const hrs = Math.floor(mins / 60);
-  return `${hrs} ${isAr ? 'س' : 'h'} ${mins % 60} ${isAr ? 'د' : 'm'}`;
+  return `${hrs} ${'س'} ${mins % 60} ${'د'}`;
 }
 
 export function MachineStopsScreen() {
@@ -89,11 +89,11 @@ export function MachineStopsScreen() {
 
   const submit = async () => {
     if (!reason.trim()) {
-      Alert.alert(isAr ? 'مطلوب' : 'Required', isAr ? 'اشرح سبب التوقف' : 'Describe the stop reason');
+      Alert.alert('مطلوب', 'اشرح سبب التوقف');
       return;
     }
     const selectedMachine = machines.find(m => String(m.id) === machineId);
-    const label = selectedMachine?.name ?? (isAr ? 'آلة غير محددة' : 'Unspecified Machine');
+    const label = selectedMachine?.name ?? ('آلة غير محددة');
 
     setSaving(true);
     try {
@@ -106,7 +106,7 @@ export function MachineStopsScreen() {
       setLoading(true);
       void load();
     } catch (e: any) {
-      Alert.alert(isAr ? 'خطأ' : 'Error', e.message ?? (isAr ? 'فشل الإبلاغ' : 'Failed to report'));
+      Alert.alert('خطأ', e.message ?? ('فشل الإبلاغ'));
     } finally {
       setSaving(false);
     }
@@ -114,18 +114,18 @@ export function MachineStopsScreen() {
 
   const handleResolve = (stop: StopAlert) => {
     Alert.alert(
-      isAr ? 'تأكيد الحل' : 'Confirm Resolve',
-      isAr ? 'هل تم حل مشكلة هذه الآلة؟' : 'Has this machine stop been resolved?',
+      'تأكيد الحل',
+      'هل تم حل مشكلة هذه الآلة؟',
       [
-        { text: isAr ? 'إلغاء' : 'Cancel', style: 'cancel' },
+        { text: 'إلغاء', style: 'cancel' },
         {
-          text: isAr ? 'نعم، تم الحل' : 'Yes, Resolved',
+          text: 'نعم، تم الحل',
           onPress: async () => {
             try {
               await api.patch(`/worker-tools/machine-stop-alerts/${stop.id}/resolve`, {});
               void load();
             } catch (e: any) {
-              Alert.alert(isAr ? 'خطأ' : 'Error', e.message ?? 'Failed');
+              Alert.alert('خطأ', e.message ?? 'Failed');
             }
           },
         },
@@ -135,18 +135,18 @@ export function MachineStopsScreen() {
 
   const handleDelete = (stop: StopAlert) => {
     Alert.alert(
-      isAr ? 'حذف التنبيه' : 'Delete Alert',
-      isAr ? 'هل أنت متأكد من الحذف؟' : 'Are you sure you want to delete this alert?',
+      'حذف التنبيه',
+      'هل أنت متأكد من الحذف؟',
       [
-        { text: isAr ? 'إلغاء' : 'Cancel', style: 'cancel' },
+        { text: 'إلغاء', style: 'cancel' },
         {
-          text: isAr ? 'حذف' : 'Delete', style: 'destructive',
+          text: 'حذف', style: 'destructive',
           onPress: async () => {
             try {
               await api.delete(`/worker-tools/entries/stops/${stop.id}`);
               setStops((prev) => prev.filter((s) => s.id !== stop.id));
             } catch (e: any) {
-              Alert.alert(isAr ? 'خطأ' : 'Error', e.message ?? 'Failed');
+              Alert.alert('خطأ', e.message ?? 'Failed');
             }
           },
         },
@@ -177,8 +177,8 @@ export function MachineStopsScreen() {
             <View style={[styles.resolvedBadge, { backgroundColor: colors.success + '20' }]}>
               <Ionicons name="checkmark-circle" size={13} color={colors.success} />
               <Text style={[styles.resolvedText, { color: colors.success }]}>
-                {isAr ? 'تم الحل' : 'Resolved'}
-                {item.response_minutes != null ? ` (${Math.round(item.response_minutes)} ${isAr ? 'د' : 'min'})` : ''}
+                {'تم الحل'}
+                {item.response_minutes != null ? ` (${Math.round(item.response_minutes)} ${'د'})` : ''}
               </Text>
             </View>
           ) : (
@@ -204,7 +204,7 @@ export function MachineStopsScreen() {
                 activeOpacity={0.7}
               >
                 <Ionicons name="checkmark" size={14} color={colors.success} />
-                <Text style={[styles.resolveBtnText, { color: colors.success }]}>{isAr ? 'حُل' : 'Resolve'}</Text>
+                <Text style={[styles.resolveBtnText, { color: colors.success }]}>{'حُل'}</Text>
               </TouchableOpacity>
             )}
             <TouchableOpacity onPress={() => handleDelete(item)} hitSlop={8}>
@@ -219,8 +219,8 @@ export function MachineStopsScreen() {
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
       <ScreenHeader
-        title={isAr ? 'توقفات الآلات' : 'Machine Stops'}
-        subtitle={`${openCount} ${isAr ? 'مفتوح' : 'open'}`}
+        title={'توقفات الآلات'}
+        subtitle={`${openCount} ${'مفتوح'}`}
         showBack
       />
 
@@ -266,7 +266,7 @@ export function MachineStopsScreen() {
                 activeOpacity={0.8}
               >
                 <Ionicons name="warning" size={18} color="#fff" />
-                <Text style={styles.reportBtnText}>{isAr ? 'الإبلاغ عن توقف آلة' : 'Report Machine Stop'}</Text>
+                <Text style={styles.reportBtnText}>{'الإبلاغ عن توقف آلة'}</Text>
               </TouchableOpacity>
             </>
           }
@@ -274,7 +274,7 @@ export function MachineStopsScreen() {
             <View style={styles.empty}>
               <Ionicons name="checkmark-circle-outline" size={44} color={colors.success} />
               <Text style={[styles.emptyText, { color: colors.textMuted }]}>
-                {isAr ? 'لا توجد توقفات مسجلة' : 'No stops reported'}
+                {'لا توجد توقفات مسجلة'}
               </Text>
             </View>
           }
@@ -288,11 +288,11 @@ export function MachineStopsScreen() {
             <View style={[styles.handle, { backgroundColor: colors.border }]} />
             <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
               <Text style={[styles.sheetTitle, { color: colors.text }]}>
-                {isAr ? 'الإبلاغ عن توقف آلة' : 'Report Machine Stop'}
+                {'الإبلاغ عن توقف آلة'}
               </Text>
 
               {/* Priority */}
-              <Text style={[styles.label, { color: colors.textMuted }]}>{isAr ? 'الأولوية *' : 'Priority *'}</Text>
+              <Text style={[styles.label, { color: colors.textMuted }]}>{'الأولوية *'}</Text>
               <View style={styles.priorityRow}>
                 {(['CRITICAL', 'HIGH', 'NORMAL'] as Priority[]).map(p => (
                   <TouchableOpacity
@@ -306,7 +306,7 @@ export function MachineStopsScreen() {
                     activeOpacity={0.8}
                   >
                     <Text style={[styles.priorityChipText, { color: priority === p ? '#fff' : PRIORITY_COLOR[p] }]}>
-                      {p === 'CRITICAL' ? (isAr ? 'حرج' : 'Critical') : p === 'HIGH' ? (isAr ? 'عالٍ' : 'High') : (isAr ? 'عادي' : 'Normal')}
+                      {p === 'CRITICAL' ? ('حرج') : p === 'HIGH' ? ('عالٍ') : ('عادي')}
                     </Text>
                   </TouchableOpacity>
                 ))}
@@ -315,14 +315,14 @@ export function MachineStopsScreen() {
               {/* Machine picker */}
               {machines.length > 0 && (
                 <>
-                  <Text style={[styles.label, { color: colors.textMuted }]}>{isAr ? 'الآلة' : 'Machine'}</Text>
+                  <Text style={[styles.label, { color: colors.textMuted }]}>{'الآلة'}</Text>
                   <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipScroll}>
                     <TouchableOpacity
                       style={[styles.chip, { borderColor: colors.border }, machineId === '' && { backgroundColor: colors.border }]}
                       onPress={() => setMachineId('')}
                       activeOpacity={0.8}
                     >
-                      <Text style={[styles.chipText, { color: colors.textMuted }]}>{isAr ? 'غير محدد' : 'Unspecified'}</Text>
+                      <Text style={[styles.chipText, { color: colors.textMuted }]}>{'غير محدد'}</Text>
                     </TouchableOpacity>
                     {machines.map(m => (
                       <TouchableOpacity
@@ -339,10 +339,10 @@ export function MachineStopsScreen() {
               )}
 
               {/* Reason */}
-              <Text style={[styles.label, { color: colors.textMuted }]}>{isAr ? 'سبب التوقف *' : 'Stop Reason *'}</Text>
+              <Text style={[styles.label, { color: colors.textMuted }]}>{'سبب التوقف *'}</Text>
               <TextInput
                 style={[styles.input, styles.inputMulti, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
-                placeholder={isAr ? 'اشرح بالتفصيل سبب توقف الآلة…' : 'Describe in detail why the machine stopped…'}
+                placeholder={'اشرح بالتفصيل سبب توقف الآلة…'}
                 placeholderTextColor={colors.textMuted}
                 value={reason}
                 onChangeText={setReason}
@@ -356,7 +356,7 @@ export function MachineStopsScreen() {
                 style={[styles.cancelBtn, { borderColor: colors.border }]}
                 onPress={handleClose}
               >
-                <Text style={[styles.cancelText, { color: colors.textMuted }]}>{isAr ? 'إلغاء' : 'Cancel'}</Text>
+                <Text style={[styles.cancelText, { color: colors.textMuted }]}>{'إلغاء'}</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.submitBtn, { backgroundColor: colors.danger }]}
@@ -365,7 +365,7 @@ export function MachineStopsScreen() {
               >
                 {saving
                   ? <ActivityIndicator size="small" color="#fff" />
-                  : <Text style={styles.submitText}>{isAr ? 'إبلاغ' : 'Report'}</Text>
+                  : <Text style={styles.submitText}>{'إبلاغ'}</Text>
                 }
               </TouchableOpacity>
             </View>

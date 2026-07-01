@@ -1,5 +1,6 @@
-import React, { useCallback, useEffect, useState } from 'react';
+﻿import React, { useCallback, useEffect, useState } from 'react';
 import {
+import { useLocale } from '../../context/LocaleContext';
   ActivityIndicator, Alert, FlatList, Modal, RefreshControl,
   ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View,
 } from 'react-native';
@@ -10,7 +11,6 @@ import { useAuth } from '../../auth/AuthContext';
 import { ScreenHeader } from '../../components';
 import { radius, spacing, typography } from '../../theme';
 import { useAppTheme } from '../../context/ThemeContext';
-import { useLocale } from '../../context/LocaleContext';
 
 type Customer  = { id: number; name: string };
 type QuoteItem = { productType: string; size: string; quantity: number; pricePerUnit: number };
@@ -71,7 +71,7 @@ export function QuotationsScreen() {
   const total = items.reduce((s, i) => s + i.quantity * i.pricePerUnit, 0);
 
   const handleCreate = async () => {
-    if (!customerId) { Alert.alert(isAr ? 'اختر عميلاً' : 'Select a customer'); return; }
+    if (!customerId) { Alert.alert('اختر عميلاً'); return; }
     setSaving(true);
     try {
       await api.post('/sales-rep/quotations', {
@@ -92,10 +92,10 @@ export function QuotationsScreen() {
 
   const updateStatus = (id: number, status: string) => {
     Alert.alert(
-      isAr ? 'تغيير الحالة' : 'Change Status', `→ ${status}`,
+      'تغيير الحالة', `→ ${status}`,
       [
-        { text: isAr ? 'إلغاء' : 'Cancel', style: 'cancel' },
-        { text: isAr ? 'تأكيد' : 'Confirm', onPress: async () => {
+        { text: 'إلغاء', style: 'cancel' },
+        { text: 'تأكيد', onPress: async () => {
           try { await api.patch(`/sales-rep/quotations/${id}/status`, { status }); void load(); }
           catch { Alert.alert('خطأ'); }
         }},
@@ -114,7 +114,7 @@ export function QuotationsScreen() {
       </View>
       <Text style={[styles.amount, { color: colors.accent }]}>₪{item.totalAmount.toFixed(0)}</Text>
       {item.notes ? <Text style={[styles.notes, { color: colors.textSecondary }]}>{item.notes}</Text> : null}
-      <Text style={[styles.date, { color: colors.textSecondary }]}>{new Date(item.createdAt).toLocaleDateString()}{item.validUntil ? ` · ${isAr ? 'صالح حتى' : 'valid until'} ${new Date(item.validUntil).toLocaleDateString()}` : ''}</Text>
+      <Text style={[styles.date, { color: colors.textSecondary }]}>{new Date(item.createdAt).toLocaleDateString()}{item.validUntil ? ` · ${'صالح حتى'} ${new Date(item.validUntil).toLocaleDateString()}` : ''}</Text>
       <View style={styles.actions}>
         {['SENT', 'ACCEPTED', 'REJECTED'].filter((s) => s !== item.status).map((s) => (
           <TouchableOpacity key={s} style={[styles.actionBtn, { borderColor: STATUS_COLOR[s] }]} onPress={() => updateStatus(item.id, s)}>
@@ -127,7 +127,7 @@ export function QuotationsScreen() {
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['bottom']}>
-      <ScreenHeader title={isAr ? 'عروض الأسعار' : 'Quotations'} />
+      <ScreenHeader title={'عروض الأسعار'} />
       {loading ? (
         <ActivityIndicator color={colors.accent} style={{ marginTop: 40 }} />
       ) : (
@@ -140,10 +140,10 @@ export function QuotationsScreen() {
           ListEmptyComponent={
             <View style={styles.emptyBox}>
               <Ionicons name="document-text-outline" size={40} color={colors.textSecondary} />
-              <Text style={[styles.empty, { color: colors.textSecondary }]}>{isAr ? 'لا توجد عروض' : 'No quotations'}</Text>
+              <Text style={[styles.empty, { color: colors.textSecondary }]}>{'لا توجد عروض'}</Text>
               {isSalesRep && (
                 <TouchableOpacity style={[styles.emptyBtn, { backgroundColor: colors.accent }]} onPress={() => setShowModal(true)}>
-                  <Text style={styles.emptyBtnText}>{isAr ? 'إنشاء عرض' : 'Create Quotation'}</Text>
+                  <Text style={styles.emptyBtnText}>{'إنشاء عرض'}</Text>
                 </TouchableOpacity>
               )}
             </View>
@@ -163,13 +163,13 @@ export function QuotationsScreen() {
         <View style={styles.modalOverlay}>
           <View style={[styles.modalSheet, { backgroundColor: colors.surface }]}>
             <View style={styles.modalHeader}>
-              <Text style={[styles.modalTitle, { color: colors.text }]}>{isAr ? 'عرض جديد' : 'New Quotation'}</Text>
+              <Text style={[styles.modalTitle, { color: colors.text }]}>{'عرض جديد'}</Text>
               <TouchableOpacity onPress={() => { setShowModal(false); resetForm(); }}>
                 <Ionicons name="close" size={22} color={colors.textSecondary} />
               </TouchableOpacity>
             </View>
             <ScrollView style={{ maxHeight: 500 }} showsVerticalScrollIndicator={false}>
-              <Text style={[styles.label, { color: colors.textSecondary }]}>{isAr ? 'العميل' : 'Customer'}</Text>
+              <Text style={[styles.label, { color: colors.textSecondary }]}>{'العميل'}</Text>
               <View style={[styles.pickerWrap, { backgroundColor: colors.background, borderColor: colors.border }]}>
                 {customers.map((c) => (
                   <TouchableOpacity
@@ -185,10 +185,10 @@ export function QuotationsScreen() {
 
               {/* Items */}
               <View style={styles.itemsHeader}>
-                <Text style={[styles.label, { color: colors.textSecondary, marginTop: 0 }]}>{isAr ? 'البنود' : 'Items'}</Text>
+                <Text style={[styles.label, { color: colors.textSecondary, marginTop: 0 }]}>{'البنود'}</Text>
                 <TouchableOpacity onPress={addItem} style={[styles.addItemBtn, { borderColor: colors.accent }]}>
                   <Ionicons name="add" size={14} color={colors.accent} />
-                  <Text style={{ color: colors.accent, fontSize: 12, fontWeight: '700' }}>{isAr ? 'إضافة' : 'Add'}</Text>
+                  <Text style={{ color: colors.accent, fontSize: 12, fontWeight: '700' }}>{'إضافة'}</Text>
                 </TouchableOpacity>
               </View>
 
@@ -213,14 +213,14 @@ export function QuotationsScreen() {
                   <View style={styles.itemRowBottom}>
                     <TextInput
                       style={[styles.itemInput, { color: colors.text, borderColor: colors.border, flex: 2 }]}
-                      placeholder={isAr ? 'الحجم' : 'Size'}
+                      placeholder={'الحجم'}
                       placeholderTextColor={colors.textSecondary}
                       value={item.size}
                       onChangeText={(v) => updateItem(idx, 'size', v)}
                     />
                     <TextInput
                       style={[styles.itemInput, { color: colors.text, borderColor: colors.border, flex: 1 }]}
-                      placeholder={isAr ? 'الكمية' : 'Qty'}
+                      placeholder={'الكمية'}
                       placeholderTextColor={colors.textSecondary}
                       keyboardType="numeric"
                       value={String(item.quantity)}
@@ -228,7 +228,7 @@ export function QuotationsScreen() {
                     />
                     <TextInput
                       style={[styles.itemInput, { color: colors.text, borderColor: colors.border, flex: 2 }]}
-                      placeholder={isAr ? 'السعر ₪' : 'Price ₪'}
+                      placeholder={'السعر ₪'}
                       placeholderTextColor={colors.textSecondary}
                       keyboardType="decimal-pad"
                       value={item.pricePerUnit > 0 ? String(item.pricePerUnit) : ''}
@@ -239,11 +239,11 @@ export function QuotationsScreen() {
               ))}
 
               <View style={[styles.totalRow, { borderColor: colors.accent + '44', backgroundColor: colors.accent + '11' }]}>
-                <Text style={{ color: colors.textSecondary, fontWeight: '600' }}>{isAr ? 'الإجمالي:' : 'Total:'}</Text>
+                <Text style={{ color: colors.textSecondary, fontWeight: '600' }}>{'الإجمالي:'}</Text>
                 <Text style={{ color: colors.accent, fontWeight: '800', fontSize: 18 }}>₪{total.toFixed(2)}</Text>
               </View>
 
-              <Text style={[styles.label, { color: colors.textSecondary }]}>{isAr ? 'صالح حتى' : 'Valid Until'}</Text>
+              <Text style={[styles.label, { color: colors.textSecondary }]}>{'صالح حتى'}</Text>
               <TextInput
                 style={[styles.input, { color: colors.text, borderColor: colors.border, backgroundColor: colors.background }]}
                 placeholder="YYYY-MM-DD"
@@ -252,10 +252,10 @@ export function QuotationsScreen() {
                 onChangeText={setValidUntil}
               />
 
-              <Text style={[styles.label, { color: colors.textSecondary }]}>{isAr ? 'ملاحظات' : 'Notes'}</Text>
+              <Text style={[styles.label, { color: colors.textSecondary }]}>{'ملاحظات'}</Text>
               <TextInput
                 style={[styles.input, styles.textarea, { color: colors.text, borderColor: colors.border, backgroundColor: colors.background }]}
-                placeholder={isAr ? 'ملاحظات...' : 'Notes...'}
+                placeholder={'ملاحظات...'}
                 placeholderTextColor={colors.textSecondary}
                 value={notes}
                 onChangeText={setNotes}
@@ -269,7 +269,7 @@ export function QuotationsScreen() {
               onPress={handleCreate}
               disabled={saving}
             >
-              <Text style={styles.submitText}>{saving ? (isAr ? 'جارٍ الحفظ...' : 'Saving...') : (isAr ? 'إنشاء العرض' : 'Create Quotation')}</Text>
+              <Text style={styles.submitText}>{saving ? ('جارٍ الحفظ...') : ('إنشاء العرض')}</Text>
             </TouchableOpacity>
           </View>
         </View>

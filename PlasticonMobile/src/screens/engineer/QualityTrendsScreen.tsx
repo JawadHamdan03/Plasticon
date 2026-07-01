@@ -1,11 +1,10 @@
-import React, { useCallback, useEffect, useState } from 'react';
+﻿import React, { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { api } from '../../api/client';
 import { ScreenHeader, StatCard } from '../../components';
 import { radius, shadow, spacing, typography } from '../../theme';
 import { useAppTheme } from '../../context/ThemeContext';
-import { useLocale } from '../../context/LocaleContext';
 
 interface TrendData {
   totalChecks:  number;
@@ -33,7 +32,6 @@ function BarRow({ label, value, total, color }: { label: string; value: number; 
 
 export function QualityTrendsScreen() {
   const { colors } = useAppTheme();
-  const { isAr } = useLocale();
   const [data, setData]         = useState<TrendData | null>(null);
   const [loading, setLoading]   = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -54,7 +52,7 @@ export function QualityTrendsScreen() {
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
-      <ScreenHeader title={isAr ? 'اتجاهات الجودة' : 'Quality Trends'} showBack />
+      <ScreenHeader title={'اتجاهات الجودة'} showBack />
       {loading ? (
         <View style={styles.center}><ActivityIndicator size="large" color={colors.primary} /></View>
       ) : (
@@ -64,18 +62,18 @@ export function QualityTrendsScreen() {
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); void load(); }} tintColor={colors.primary} />}
         >
           <View style={styles.statRow}>
-            <StatCard label={isAr ? 'معدل النجاح'       : 'Pass Rate'}     value={`${data?.passRate ?? 0}%`}       icon="trending-up"      color={colors.success} style={styles.stat} />
-            <StatCard label={isAr ? 'إجمالي الفحوصات'   : 'Total Checks'}  value={String(data?.totalChecks ?? 0)}  icon="shield-checkmark" color={colors.primary} style={styles.stat} />
+            <StatCard label={'معدل النجاح'}     value={`${data?.passRate ?? 0}%`}       icon="trending-up"      color={colors.success} style={styles.stat} />
+            <StatCard label={'إجمالي الفحوصات'}  value={String(data?.totalChecks ?? 0)}  icon="shield-checkmark" color={colors.primary} style={styles.stat} />
           </View>
           <View style={styles.statRow}>
-            <StatCard label={isAr ? 'فشل'               : 'Failed'}        value={String(data?.failCount ?? 0)}    icon="close-circle"     color={colors.danger}  style={styles.stat} />
-            <StatCard label={isAr ? 'جزئي'              : 'Partial'}       value={String(data?.partialCount ?? 0)} icon="alert-circle"     color={colors.warning} style={styles.stat} />
+            <StatCard label={'فشل'}        value={String(data?.failCount ?? 0)}    icon="close-circle"     color={colors.danger}  style={styles.stat} />
+            <StatCard label={'جزئي'}       value={String(data?.partialCount ?? 0)} icon="alert-circle"     color={colors.warning} style={styles.stat} />
           </View>
 
           {data?.byMachine && data.byMachine.length > 0 && (
             <View style={[styles.section, { backgroundColor: colors.surface }]}>
               <Text style={[styles.sectionTitle, { color: colors.text }]}>
-                {isAr ? 'معدل النجاح حسب الآلة' : 'Pass Rate by Machine'}
+                {'معدل النجاح حسب الآلة'}
               </Text>
               {data.byMachine.map((m) => (
                 <BarRow key={m.machineName} label={m.machineName} value={m.pass} total={m.total} color={colors.success} />
@@ -86,7 +84,7 @@ export function QualityTrendsScreen() {
           {data?.byType && data.byType.length > 0 && (
             <View style={[styles.section, { backgroundColor: colors.surface }]}>
               <Text style={[styles.sectionTitle, { color: colors.text }]}>
-                {isAr ? 'معدل النجاح حسب نوع الفحص' : 'Pass Rate by Check Type'}
+                {'معدل النجاح حسب نوع الفحص'}
               </Text>
               {data.byType.map((t) => (
                 <BarRow key={t.checkType} label={t.checkType} value={t.pass} total={t.total} color={colors.primary} />

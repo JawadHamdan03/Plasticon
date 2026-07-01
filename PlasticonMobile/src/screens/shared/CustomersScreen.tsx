@@ -1,5 +1,6 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+﻿import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
+import { useLocale } from '../../context/LocaleContext';
   ActivityIndicator,
   FlatList,
   RefreshControl,
@@ -14,7 +15,6 @@ import { api } from '../../api/client';
 import { radius, shadow, spacing, typography } from '../../theme';
 import { ScreenHeader } from '../../components';
 import { useAppTheme } from '../../context/ThemeContext';
-import { useLocale } from '../../context/LocaleContext';
 
 interface Sale {
   id: number;
@@ -109,15 +109,15 @@ function CustomerCard({ item }: { item: CustomerEntry }) {
 
       <View style={styles.statsRow}>
         <View style={styles.statItem}>
-          <Text style={[styles.statLabel, { color: colors.textMuted }]}>{isAr ? 'إجمالي الدين' : 'Total Debt'}</Text>
+          <Text style={[styles.statLabel, { color: colors.textMuted }]}>{'إجمالي الدين'}</Text>
           <Text style={[styles.statValue, { color: colors.danger }]}>${formatCurrency(item.totalDebt)}</Text>
         </View>
         <View style={styles.statItem}>
-          <Text style={[styles.statLabel, { color: colors.textMuted }]}>{isAr ? 'المبيعات' : 'Sales'}</Text>
+          <Text style={[styles.statLabel, { color: colors.textMuted }]}>{'المبيعات'}</Text>
           <Text style={[styles.statValue, { color: colors.text }]}>{item.salesCount}</Text>
         </View>
         <View style={styles.statItem}>
-          <Text style={[styles.statLabel, { color: colors.textMuted }]}>{isAr ? 'آخر بيع' : 'Last Sale'}</Text>
+          <Text style={[styles.statLabel, { color: colors.textMuted }]}>{'آخر بيع'}</Text>
           <Text style={[styles.statValue, { color: colors.text }]}>{formatDate(item.lastSaleDate)}</Text>
         </View>
       </View>
@@ -144,7 +144,7 @@ export function CustomersScreen() {
       const raw: Sale[] = Array.isArray(res) ? res : [];
       setCustomers(groupSalesByCustomer(raw));
     } catch (err: any) {
-      setError(err?.message ?? (isAr ? 'فشل تحميل العملاء.' : 'Failed to load customers.'));
+      setError(err?.message ?? ('فشل تحميل العملاء.'));
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -166,13 +166,13 @@ export function CustomersScreen() {
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
-      <ScreenHeader title={isAr ? 'العملاء' : 'Customers'} showBack />
+      <ScreenHeader title={'العملاء'} showBack />
 
       <View style={[styles.searchWrap, { backgroundColor: colors.surface }]}>
         <Ionicons name="search-outline" size={18} color={colors.textMuted} style={styles.searchIcon} />
         <TextInput
           style={[styles.searchInput, { color: colors.text }]}
-          placeholder={isAr ? 'البحث بالاسم أو الهاتف أو البريد…' : 'Search by name, phone or email…'}
+          placeholder={'البحث بالاسم أو الهاتف أو البريد…'}
           placeholderTextColor={colors.textMuted}
           value={search}
           onChangeText={setSearch}
@@ -185,7 +185,7 @@ export function CustomersScreen() {
       {loading && !refreshing ? (
         <View style={styles.center}>
           <ActivityIndicator size="large" color={colors.primary} />
-          <Text style={[styles.loadingText, { color: colors.textMuted }]}>{isAr ? 'جارٍ تحميل العملاء…' : 'Loading customers…'}</Text>
+          <Text style={[styles.loadingText, { color: colors.textMuted }]}>{'جارٍ تحميل العملاء…'}</Text>
         </View>
       ) : error ? (
         <View style={styles.center}>
@@ -212,8 +212,8 @@ export function CustomersScreen() {
               <Ionicons name="people-outline" size={48} color={colors.textMuted} />
               <Text style={[styles.emptyText, { color: colors.textMuted }]}>
                 {search
-                  ? (isAr ? 'لا يوجد عملاء يطابقون البحث.' : 'No customers match your search.')
-                  : (isAr ? 'لا يوجد عملاء.' : 'No customers found.')}
+                  ? ('لا يوجد عملاء يطابقون البحث.')
+                  : ('لا يوجد عملاء.')}
               </Text>
             </View>
           }

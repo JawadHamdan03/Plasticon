@@ -3,7 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import { ModulePageShell } from "../../components/ModulePageShell";
 import { TruckLoader } from "../../components/TruckLoader";
 import { PhotoUploadButton } from "../../components/PhotoUploadButton";
-import { pictureUrl as globalPictureUrl, readApiError } from "../../lib/api";
+import { API_BASE_URL, pictureUrl as globalPictureUrl, readApiError } from "../../lib/api";
 import { confirmDialog } from "../../lib/dialog";
 import { createUserSocket } from "../../lib/socket";
 import { useLocale } from "../../context/LocaleContext";

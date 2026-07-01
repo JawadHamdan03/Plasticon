@@ -1,44 +1,42 @@
-import React from 'react';
+﻿import React from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { radius, shadow, spacing, typography } from '../../theme';
 import { useAppTheme } from '../../context/ThemeContext';
-import { useLocale } from '../../context/LocaleContext';
 
 export function AdminEngMenuScreen() {
   const { colors } = useAppTheme();
-  const { isAr } = useLocale();
   const navigation = useNavigation<any>();
 
   const SECTIONS = [
     {
-      title: isAr ? 'الصيانة' : 'Maintenance',
+      title: 'الصيانة',
       items: [
-        { icon: 'hammer',          label: isAr ? 'الصيانة' : 'Maintenance',          desc: isAr ? 'أوامر العمل ومهام الصيانة' : 'Work orders and maintenance tasks',           screen: 'Maintenance',         color: colors.warning },
-        { icon: 'calendar',        label: isAr ? 'جدول الصيانة' : 'Maint. Schedule', desc: isAr ? 'جدولة الصيانة الوقائية' : 'Preventive maintenance scheduling',              screen: 'MaintSchedule',       color: colors.info },
-        { icon: 'build',           label: isAr ? 'أوامر العمل' : 'Work Orders',      desc: isAr ? 'أوامر العمل النشطة والتكليفات' : 'Active work orders and assignments',       screen: 'WorkOrders',          color: colors.primary },
-        { icon: 'cash',            label: isAr ? 'تكاليف الصيانة' : 'Maintenance Costs', desc: isAr ? 'تتبع نفقات الصيانة' : 'Maintenance expenditure tracking',             screen: 'MaintCosts',          color: colors.danger },
+        { icon: 'hammer',          label: 'الصيانة',          desc: 'أوامر العمل ومهام الصيانة',           screen: 'Maintenance',         color: colors.warning },
+        { icon: 'calendar',        label: 'جدول الصيانة', desc: 'جدولة الصيانة الوقائية',              screen: 'MaintSchedule',       color: colors.info },
+        { icon: 'build',           label: 'أوامر العمل',      desc: 'أوامر العمل النشطة والتكليفات',       screen: 'WorkOrders',          color: colors.primary },
+        { icon: 'cash',            label: 'تكاليف الصيانة', desc: 'تتبع نفقات الصيانة',             screen: 'MaintCosts',          color: colors.danger },
       ],
     },
     {
-      title: isAr ? 'المعدات والمخزون' : 'Equipment & Inventory',
+      title: 'المعدات والمخزون',
       items: [
-        { icon: 'pulse',           label: isAr ? 'صحة الآلات' : 'Machine Health',       desc: isAr ? 'مراقبة صحة الآلات في الوقت الفعلي' : 'Real-time machine health monitoring',   screen: 'MachineHealth',       color: colors.success },
-        { icon: 'cog',             label: isAr ? 'قطع الغيار' : 'Spare Parts',           desc: isAr ? 'مخزون قطع الغيار وطلباتها' : 'Spare parts stock and requests',              screen: 'SpareParts',          color: colors.warning },
-        { icon: 'speedometer',     label: isAr ? 'المعايرة' : 'Calibration',             desc: isAr ? 'سجلات معايرة المعدات' : 'Equipment calibration records',                    screen: 'Calibration',         color: colors.accent },
-        { icon: 'git-branch',      label: isAr ? 'دورة حياة المعدات' : 'Equipment Lifecycle', desc: isAr ? 'تتبع الأصول وإهلاكها' : 'Asset lifecycle and depreciation tracking',   screen: 'Lifecycle',           color: colors.roleEngineer },
-        { icon: 'swap-horizontal', label: isAr ? 'نقل المعدات' : 'Equipment Transfer',   desc: isAr ? 'تتبع تنقلات موقع المعدات' : 'Track equipment location transfers',           screen: 'TransferLog',         color: colors.textMuted },
+        { icon: 'pulse',           label: 'صحة الآلات',       desc: 'مراقبة صحة الآلات في الوقت الفعلي',   screen: 'MachineHealth',       color: colors.success },
+        { icon: 'cog',             label: 'قطع الغيار',           desc: 'مخزون قطع الغيار وطلباتها',              screen: 'SpareParts',          color: colors.warning },
+        { icon: 'speedometer',     label: 'المعايرة',             desc: 'سجلات معايرة المعدات',                    screen: 'Calibration',         color: colors.accent },
+        { icon: 'git-branch',      label: 'دورة حياة المعدات', desc: 'تتبع الأصول وإهلاكها',   screen: 'Lifecycle',           color: colors.roleEngineer },
+        { icon: 'swap-horizontal', label: 'نقل المعدات',   desc: 'تتبع تنقلات موقع المعدات',           screen: 'TransferLog',         color: colors.textMuted },
       ],
     },
     {
-      title: isAr ? 'الجودة والإنتاج' : 'Quality & Production',
+      title: 'الجودة والإنتاج',
       items: [
-        { icon: 'checkmark-done',  label: isAr ? 'فحوصات الجودة' : 'Quality Checks',       desc: isAr ? 'نتائج الفحص وتتبع العيوب' : 'Inspection results and defect tracking',   screen: 'QualityChecks',       color: colors.success },
-{ icon: 'analytics',       label: isAr ? 'تحليلات الإنتاج' : 'Production Analytics', desc: isAr ? 'كفاءة الإخراج وتحليل العائد' : 'Output efficiency and yield analysis',  screen: 'ProductionAnalytics', color: colors.primary },
-        { icon: 'alert-circle',    label: isAr ? 'تنبيهات المواد الخام' : 'Raw Material Alerts', desc: isAr ? 'نقص المخزون وإشعارات إعادة الطلب' : 'Low stock and reorder notifications', screen: 'RawAlerts',      color: colors.danger },
-        { icon: 'document',        label: isAr ? 'الوثائق التقنية' : 'Tech Documents',       desc: isAr ? 'الأدلة التقنية وإجراءات التشغيل' : 'Technical manuals and SOPs',          screen: 'TechDocs',            color: colors.textMuted },
+        { icon: 'checkmark-done',  label: 'فحوصات الجودة',       desc: 'نتائج الفحص وتتبع العيوب',   screen: 'QualityChecks',       color: colors.success },
+{ icon: 'analytics',       label: 'تحليلات الإنتاج', desc: 'كفاءة الإخراج وتحليل العائد',  screen: 'ProductionAnalytics', color: colors.primary },
+        { icon: 'alert-circle',    label: 'تنبيهات المواد الخام', desc: 'نقص المخزون وإشعارات إعادة الطلب', screen: 'RawAlerts',      color: colors.danger },
+        { icon: 'document',        label: 'الوثائق التقنية',       desc: 'الأدلة التقنية وإجراءات التشغيل',          screen: 'TechDocs',            color: colors.textMuted },
       ],
     },
   ];
@@ -46,8 +44,8 @@ export function AdminEngMenuScreen() {
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <Text style={[styles.title, { color: colors.text }]}>{isAr ? 'الهندسة' : 'Engineering'}</Text>
-        <Text style={[styles.sub, { color: colors.textMuted }]}>{isAr ? 'إدارة الصيانة والمعدات والجودة' : 'Maintenance, equipment and quality management'}</Text>
+        <Text style={[styles.title, { color: colors.text }]}>{'الهندسة'}</Text>
+        <Text style={[styles.sub, { color: colors.textMuted }]}>{'إدارة الصيانة والمعدات والجودة'}</Text>
         {SECTIONS.map((section) => (
           <View key={section.title} style={styles.section}>
             <Text style={[styles.sectionTitle, { color: colors.textMuted }]}>{section.title.toUpperCase()}</Text>

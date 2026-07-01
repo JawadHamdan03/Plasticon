@@ -1,5 +1,6 @@
-import React, { useCallback, useEffect, useState } from 'react';
+﻿import React, { useCallback, useEffect, useState } from 'react';
 import {
+import { useLocale } from '../../context/LocaleContext';
   ActivityIndicator,
   Alert,
   FlatList,
@@ -20,7 +21,6 @@ import { api } from '../../api/client';
 import { ScreenHeader, StatCard } from '../../components';
 import { radius, shadow, spacing, typography } from '../../theme';
 import { useAppTheme } from '../../context/ThemeContext';
-import { useLocale } from '../../context/LocaleContext';
 
 // ─── Interfaces ───────────────────────────────────────────────────────────────
 
@@ -105,7 +105,7 @@ function FormModal({ machine, visible, onClose, onSaved }: FormModalProps) {
 
   async function save() {
     if (!name.trim()) {
-      Alert.alert(isAr ? 'تحقق' : 'Validation', isAr ? 'اسم الآلة مطلوب.' : 'Machine name is required.');
+      Alert.alert('تحقق', 'اسم الآلة مطلوب.');
       return;
     }
     setSaving(true);
@@ -119,7 +119,7 @@ function FormModal({ machine, visible, onClose, onSaved }: FormModalProps) {
       onSaved();
       onClose();
     } catch (err: any) {
-      Alert.alert(isAr ? 'خطأ' : 'Error', err?.message ?? 'Failed to save machine');
+      Alert.alert('خطأ', err?.message ?? 'Failed to save machine');
     } finally {
       setSaving(false);
     }
@@ -138,31 +138,31 @@ function FormModal({ machine, visible, onClose, onSaved }: FormModalProps) {
           <View style={[styles.handle, { backgroundColor: colors.border }]} />
 
           <Text style={[styles.sheetTitle, { color: colors.text }]}>
-            {isEdit ? (isAr ? 'تعديل الآلة' : 'Edit Machine') : (isAr ? 'آلة جديدة' : 'New Machine')}
+            {isEdit ? ('تعديل الآلة') : ('آلة جديدة')}
           </Text>
 
           {/* Name */}
-          <Text style={[styles.label, { color: colors.text }]}>{isAr ? 'الاسم *' : 'Name *'}</Text>
+          <Text style={[styles.label, { color: colors.text }]}>{'الاسم *'}</Text>
           <TextInput
             style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
             value={name}
             onChangeText={setName}
-            placeholder={isAr ? 'مثال: طارد أ' : 'e.g. Extruder A'}
+            placeholder={'مثال: طارد أ'}
             placeholderTextColor={colors.textMuted}
           />
 
           {/* Type */}
-          <Text style={[styles.label, { color: colors.text }]}>{isAr ? 'النوع' : 'Type'}</Text>
+          <Text style={[styles.label, { color: colors.text }]}>{'النوع'}</Text>
           <TextInput
             style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
             value={type}
             onChangeText={setType}
-            placeholder={isAr ? 'مثال: حاقن قوالب' : 'e.g. Injection Molder'}
+            placeholder={'مثال: حاقن قوالب'}
             placeholderTextColor={colors.textMuted}
           />
 
           {/* Status picker */}
-          <Text style={[styles.label, { color: colors.text }]}>{isAr ? 'الحالة' : 'Status'}</Text>
+          <Text style={[styles.label, { color: colors.text }]}>{'الحالة'}</Text>
           <View style={styles.statusGrid}>
             {STATUSES.map((s) => {
               const meta = STATUS_META[s];
@@ -196,12 +196,12 @@ function FormModal({ machine, visible, onClose, onSaved }: FormModalProps) {
             {saving
               ? <ActivityIndicator size="small" color={colors.textInverse} />
               : <Text style={[styles.saveBtnText, { color: colors.textInverse }]}>
-                  {isEdit ? (isAr ? 'حفظ التغييرات' : 'Save Changes') : (isAr ? 'إنشاء آلة' : 'Create Machine')}
+                  {isEdit ? ('حفظ التغييرات') : ('إنشاء آلة')}
                 </Text>}
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.cancelBtn} onPress={onClose} activeOpacity={0.7}>
-            <Text style={[styles.cancelText, { color: colors.textMuted }]}>{isAr ? 'إلغاء' : 'Cancel'}</Text>
+            <Text style={[styles.cancelText, { color: colors.textMuted }]}>{'إلغاء'}</Text>
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
@@ -243,7 +243,7 @@ function MachineCard({ item, onEdit, onDelete }: MachineCardProps) {
         <View style={styles.cardContent}>
           <Text style={[styles.name, { color: colors.text }]}>{item.name}</Text>
           <Text style={[styles.type, { color: colors.textMuted }]}>
-            {item.type ?? (isAr ? 'آلة' : 'Machine')}{item.location ? ` · ${item.location}` : ''}
+            {item.type ?? ('آلة')}{item.location ? ` · ${item.location}` : ''}
           </Text>
         </View>
         <View style={[styles.badge, { backgroundColor: `${meta.color}15` }]}>
@@ -254,11 +254,11 @@ function MachineCard({ item, onEdit, onDelete }: MachineCardProps) {
       {(item.serialNumber || item.lastMaintenance) && (
         <View style={[styles.detailRow, { borderTopColor: colors.border }]}>
           {item.serialNumber && (
-            <Text style={[styles.detail, { color: colors.text }]}>{isAr ? 'رقم المسلسل:' : 'SN:'} <Text style={[styles.detailVal, { color: colors.text }]}>{item.serialNumber}</Text></Text>
+            <Text style={[styles.detail, { color: colors.text }]}>{'رقم المسلسل:'} <Text style={[styles.detailVal, { color: colors.text }]}>{item.serialNumber}</Text></Text>
           )}
           {item.lastMaintenance && (
             <Text style={[styles.detail, { color: colors.text }]}>
-              {isAr ? 'آخر صيانة:' : 'Last maint:'} <Text style={[styles.detailVal, { color: colors.text }]}>
+              {'آخر صيانة:'} <Text style={[styles.detailVal, { color: colors.text }]}>
                 {new Date(item.lastMaintenance).toLocaleDateString([], { month: 'short', day: 'numeric' })}
               </Text>
             </Text>
@@ -269,12 +269,12 @@ function MachineCard({ item, onEdit, onDelete }: MachineCardProps) {
       <View style={[styles.cardActions, { borderTopColor: colors.border }]}>
         <TouchableOpacity style={styles.actionBtn} onPress={() => onEdit(item)} activeOpacity={0.75}>
           <Ionicons name="pencil-outline" size={14} color={colors.primary} />
-          <Text style={[styles.actionText, { color: colors.primary }]}>{isAr ? 'تعديل' : 'Edit'}</Text>
+          <Text style={[styles.actionText, { color: colors.primary }]}>{'تعديل'}</Text>
         </TouchableOpacity>
         <View style={[styles.actionDivider, { backgroundColor: colors.border }]} />
         <TouchableOpacity style={styles.actionBtn} onPress={() => onDelete(item)} activeOpacity={0.75}>
           <Ionicons name="trash-outline" size={14} color={colors.danger} />
-          <Text style={[styles.actionText, { color: colors.danger }]}>{isAr ? 'حذف' : 'Delete'}</Text>
+          <Text style={[styles.actionText, { color: colors.danger }]}>{'حذف'}</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -299,7 +299,7 @@ export function MachinesAdminScreen() {
       setMachines(Array.isArray(res) ? res : []);
     } catch (e: any) {
       console.warn('MachinesAdminScreen load error:', e?.message ?? e);
-      Alert.alert(isAr ? 'خطأ' : 'Error', e?.message ?? 'Failed to load machines');
+      Alert.alert('خطأ', e?.message ?? 'Failed to load machines');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -325,19 +325,19 @@ export function MachinesAdminScreen() {
 
   function confirmDelete(m: Machine) {
     Alert.alert(
-      isAr ? 'حذف الآلة' : 'Delete Machine',
+      'حذف الآلة',
       isAr ? `هل أنت متأكد أنك تريد حذف "${m.name}"؟ لا يمكن التراجع عن هذا الإجراء.` : `Are you sure you want to delete "${m.name}"? This action cannot be undone.`,
       [
-        { text: isAr ? 'إلغاء' : 'Cancel', style: 'cancel' },
+        { text: 'إلغاء', style: 'cancel' },
         {
-          text: isAr ? 'حذف' : 'Delete',
+          text: 'حذف',
           style: 'destructive',
           onPress: async () => {
             try {
               await api.delete(`/machines/${m.id}`);
               void load();
             } catch (err: any) {
-              Alert.alert(isAr ? 'خطأ' : 'Error', err?.message ?? 'Failed to delete machine');
+              Alert.alert('خطأ', err?.message ?? 'Failed to delete machine');
             }
           },
         },
@@ -351,8 +351,8 @@ export function MachinesAdminScreen() {
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
       <ScreenHeader
-        title={isAr ? 'الآلات' : 'Machines'}
-        subtitle={`${machines.length} ${isAr ? 'إجمالي' : 'total'}`}
+        title={'الآلات'}
+        subtitle={`${machines.length} ${'إجمالي'}`}
         showBack
       />
 
@@ -378,14 +378,14 @@ export function MachinesAdminScreen() {
           }
           ListHeaderComponent={
             <View style={styles.statsRow}>
-              <StatCard label={isAr ? 'يعمل' : 'Operational'} value={String(operational)} icon="checkmark-circle" color={colors.success} style={styles.stat} />
-              <StatCard label={isAr ? 'صيانة' : 'Maintenance'}  value={String(maintenance)}  icon="construct"        color={colors.warning} style={styles.stat} />
+              <StatCard label={'يعمل'} value={String(operational)} icon="checkmark-circle" color={colors.success} style={styles.stat} />
+              <StatCard label={'صيانة'}  value={String(maintenance)}  icon="construct"        color={colors.warning} style={styles.stat} />
             </View>
           }
           ListEmptyComponent={
             <View style={styles.empty}>
               <Ionicons name="hardware-chip-outline" size={44} color={colors.textMuted} />
-              <Text style={[styles.emptyText, { color: colors.textMuted }]}>{isAr ? 'لا توجد آلات' : 'No machines'}</Text>
+              <Text style={[styles.emptyText, { color: colors.textMuted }]}>{'لا توجد آلات'}</Text>
             </View>
           }
         />

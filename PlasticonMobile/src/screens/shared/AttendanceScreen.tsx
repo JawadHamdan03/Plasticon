@@ -1,5 +1,6 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+﻿import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
+import { useLocale } from '../../context/LocaleContext';
   ActivityIndicator,
   Alert,
   FlatList,
@@ -15,7 +16,6 @@ import { api } from '../../api/client';
 import { ScreenHeader } from '../../components';
 import { radius, shadow, spacing, typography } from '../../theme';
 import { useAppTheme } from '../../context/ThemeContext';
-import { useLocale } from '../../context/LocaleContext';
 
 interface AttendanceRecord {
   id: number;
@@ -33,7 +33,7 @@ function fmtTime(iso: string | null): string {
 
 function fmtDate(iso: string | null, isAr: boolean): string {
   if (!iso) return '—';
-  return new Date(iso).toLocaleDateString(isAr ? 'ar-EG' : 'en-US', {
+  return new Date(iso).toLocaleDateString('ar-EG', {
     weekday: 'short', month: 'short', day: 'numeric',
   });
 }
@@ -62,7 +62,7 @@ function RecordRow({ item, colors, isAr }: { item: AttendanceRecord; colors: any
           </Text>
           <View style={[styles.statusBadge, { backgroundColor: `${accentColor}18` }]}>
             <Text style={[styles.statusText, { color: accentColor }]}>
-              {isOpen ? (isAr ? 'داخل الشفت' : 'Open') : (isAr ? 'مكتمل' : 'Closed')}
+              {isOpen ? ('داخل الشفت') : ('مكتمل')}
             </Text>
           </View>
         </View>
@@ -171,12 +171,12 @@ export function AttendanceScreen() {
     try {
       await api.post(action === 'in' ? '/attendance/check-in' : '/attendance/check-out', {});
       setSuccessMsg(action === 'in'
-        ? (isAr ? 'تم تسجيل الدخول بنجاح' : 'Checked in successfully')
-        : (isAr ? 'تم تسجيل الخروج بنجاح' : 'Checked out successfully'),
+        ? ('تم تسجيل الدخول بنجاح')
+        : ('تم تسجيل الخروج بنجاح'),
       );
       await load();
     } catch (err: any) {
-      setErrorMsg(err?.message ?? (isAr ? 'فشلت العملية' : 'Action failed'));
+      setErrorMsg(err?.message ?? ('فشلت العملية'));
     } finally {
       setActionLoading('');
     }
@@ -184,11 +184,11 @@ export function AttendanceScreen() {
 
   const handleCheckOut = () => {
     Alert.alert(
-      isAr ? 'تسجيل الخروج' : 'Check Out',
-      isAr ? 'تأكيد تسجيل الخروج؟' : 'Confirm check out?',
+      'تسجيل الخروج',
+      'تأكيد تسجيل الخروج؟',
       [
-        { text: isAr ? 'إلغاء' : 'Cancel', style: 'cancel' },
-        { text: isAr ? 'خروج' : 'Check Out', style: 'destructive', onPress: () => void runAction('out') },
+        { text: 'إلغاء', style: 'cancel' },
+        { text: 'خروج', style: 'destructive', onPress: () => void runAction('out') },
       ],
     );
   };
@@ -196,8 +196,8 @@ export function AttendanceScreen() {
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
       <ScreenHeader
-        title={isAr ? 'حضوري' : 'My Attendance'}
-        subtitle={isAr ? 'سجل دخولك وخروجك وتابع سجلك اليومي' : 'Check in, check out, and review your attendance'}
+        title={'حضوري'}
+        subtitle={'سجل دخولك وخروجك وتابع سجلك اليومي'}
         showBack
       />
 
@@ -227,7 +227,7 @@ export function AttendanceScreen() {
                 <View style={styles.statusRow}>
                   <View style={[styles.statusDot, { backgroundColor: hasOpenAttendance ? colors.success : colors.textMuted }]} />
                   <Text style={[styles.statusLabel, { color: hasOpenAttendance ? colors.success : colors.textMuted }]}>
-                    {hasOpenAttendance ? (isAr ? 'داخل الشفت' : 'Shift open') : (isAr ? 'لا يوجد شفت نشط' : 'No active shift')}
+                    {hasOpenAttendance ? ('داخل الشفت') : ('لا يوجد شفت نشط')}
                   </Text>
                 </View>
 
@@ -236,19 +236,19 @@ export function AttendanceScreen() {
                   <View style={styles.stat}>
                     <Ionicons name="calendar-outline" size={18} color={colors.primary} />
                     <Text style={[styles.statValue, { color: colors.text }]}>{summary.total}</Text>
-                    <Text style={[styles.statLabel, { color: colors.textMuted }]}>{isAr ? 'أيام دوام' : 'Worked days'}</Text>
+                    <Text style={[styles.statLabel, { color: colors.textMuted }]}>{'أيام دوام'}</Text>
                   </View>
                   <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
                   <View style={styles.stat}>
                     <Ionicons name="sunny-outline" size={18} color={colors.warning} />
                     <Text style={[styles.statValue, { color: colors.text }]}>{summary.month}</Text>
-                    <Text style={[styles.statLabel, { color: colors.textMuted }]}>{isAr ? 'هذا الشهر' : 'This month'}</Text>
+                    <Text style={[styles.statLabel, { color: colors.textMuted }]}>{'هذا الشهر'}</Text>
                   </View>
                   <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
                   <View style={styles.stat}>
                     <Ionicons name="moon-outline" size={18} color={colors.info} />
                     <Text style={[styles.statValue, { color: colors.text }]}>{summary.fridays}</Text>
-                    <Text style={[styles.statLabel, { color: colors.textMuted }]}>{isAr ? 'جمع' : 'Fridays'}</Text>
+                    <Text style={[styles.statLabel, { color: colors.textMuted }]}>{'جمع'}</Text>
                   </View>
                 </View>
 
@@ -269,7 +269,7 @@ export function AttendanceScreen() {
                       : <Ionicons name="log-in-outline" size={20} color={hasOpenAttendance ? colors.textMuted : '#fff'} />
                     }
                     <Text style={[styles.btnText, { color: hasOpenAttendance ? colors.textMuted : '#fff' }]}>
-                      {isAr ? 'تسجيل الدخول' : 'Check In'}
+                      {'تسجيل الدخول'}
                     </Text>
                   </TouchableOpacity>
 
@@ -288,7 +288,7 @@ export function AttendanceScreen() {
                       : <Ionicons name="log-out-outline" size={20} color={hasOpenAttendance ? '#fff' : colors.textMuted} />
                     }
                     <Text style={[styles.btnText, { color: hasOpenAttendance ? '#fff' : colors.textMuted }]}>
-                      {isAr ? 'تسجيل الخروج' : 'Check Out'}
+                      {'تسجيل الخروج'}
                     </Text>
                   </TouchableOpacity>
                 </View>
@@ -309,7 +309,7 @@ export function AttendanceScreen() {
               </View>
 
               <Text style={[styles.histLabel, { color: colors.textMuted }]}>
-                {isAr ? 'سجل الحضور والغياب' : 'ATTENDANCE HISTORY'}
+                {'سجل الحضور والغياب'}
               </Text>
             </View>
           }
@@ -317,7 +317,7 @@ export function AttendanceScreen() {
             <View style={styles.empty}>
               <Ionicons name="calendar-outline" size={44} color={colors.textMuted} />
               <Text style={[styles.emptyText, { color: colors.textMuted }]}>
-                {isAr ? 'لا توجد سجلات حضور بعد' : 'No attendance records yet'}
+                {'لا توجد سجلات حضور بعد'}
               </Text>
             </View>
           }

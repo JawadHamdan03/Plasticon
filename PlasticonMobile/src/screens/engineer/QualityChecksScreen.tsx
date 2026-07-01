@@ -1,5 +1,6 @@
-import React, { useCallback, useEffect, useState } from 'react';
+﻿import React, { useCallback, useEffect, useState } from 'react';
 import {
+import { useLocale } from '../../context/LocaleContext';
   ActivityIndicator, Alert, FlatList, KeyboardAvoidingView,
   Modal, Platform, RefreshControl, ScrollView, StyleSheet,
   Text, TextInput, TouchableOpacity, View,
@@ -10,7 +11,6 @@ import { api } from '../../api/client';
 import { Button, ScreenHeader } from '../../components';
 import { radius, shadow, spacing, typography } from '../../theme';
 import { useAppTheme } from '../../context/ThemeContext';
-import { useLocale } from '../../context/LocaleContext';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -87,11 +87,11 @@ function CheckCard({ item, onResolve, onDelete, resolving }: {
           {resolved ? (
             <View style={[styles.badge, { backgroundColor: `${colors.success}18` }]}>
               <Ionicons name="checkmark-circle" size={11} color={colors.success} />
-              <Text style={[styles.badgeText, { color: colors.success }]}>{isAr ? 'محلول' : 'Resolved'}</Text>
+              <Text style={[styles.badgeText, { color: colors.success }]}>{'محلول'}</Text>
             </View>
           ) : (
             <View style={[styles.badge, { backgroundColor: `${colors.danger}12` }]}>
-              <Text style={[styles.badgeText, { color: colors.danger }]}>{isAr ? 'مفتوح' : 'Open'}</Text>
+              <Text style={[styles.badgeText, { color: colors.danger }]}>{'مفتوح'}</Text>
             </View>
           )}
         </View>
@@ -105,7 +105,7 @@ function CheckCard({ item, onResolve, onDelete, resolving }: {
         <Text style={[styles.date, { color: colors.textMuted }]}>{fmt(item.createdAt)}</Text>
         {item.engineer && (
           <Text style={[styles.eng, { color: colors.textMuted }]}>
-            {isAr ? 'بواسطة' : 'by'} {item.engineer.fullName}
+            {'بواسطة'} {item.engineer.fullName}
           </Text>
         )}
         {!resolved && (
@@ -119,7 +119,7 @@ function CheckCard({ item, onResolve, onDelete, resolving }: {
               ? <ActivityIndicator size="small" color={colors.success} />
               : <>
                   <Ionicons name="checkmark" size={12} color={colors.success} />
-                  <Text style={[styles.resolveBtnText, { color: colors.success }]}>{isAr ? 'حل' : 'Resolve'}</Text>
+                  <Text style={[styles.resolveBtnText, { color: colors.success }]}>{'حل'}</Text>
                 </>
             }
           </TouchableOpacity>
@@ -171,7 +171,7 @@ function CreateModal({ visible, onClose, onSuccess }: { visible: boolean; onClos
       reset();
       onSuccess();
     } catch (err: any) {
-      Alert.alert(isAr ? 'خطأ' : 'Error', err.message ?? 'Failed to save.');
+      Alert.alert('خطأ', err.message ?? 'Failed to save.');
     } finally {
       setSaving(false);
     }
@@ -182,13 +182,13 @@ function CreateModal({ visible, onClose, onSuccess }: { visible: boolean; onClos
       <KeyboardAvoidingView style={styles.overlay} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         <View style={[styles.sheet, { backgroundColor: colors.surface }]}>
           <View style={[styles.handle, { backgroundColor: colors.border }]} />
-          <Text style={[styles.sheetTitle, { color: colors.text }]}>{isAr ? 'تسجيل مشكلة جودة' : 'Log Quality Issue'}</Text>
+          <Text style={[styles.sheetTitle, { color: colors.text }]}>{'تسجيل مشكلة جودة'}</Text>
           <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
 
             {/* Machine */}
             {machines.length > 0 && (
               <>
-                <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{isAr ? 'الآلة' : 'Machine'}</Text>
+                <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{'الآلة'}</Text>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: spacing.md }}>
                   {machines.map((m) => (
                     <TouchableOpacity
@@ -205,7 +205,7 @@ function CreateModal({ visible, onClose, onSuccess }: { visible: boolean; onClos
             )}
 
             {/* Issue Type */}
-            <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{isAr ? 'نوع المشكلة *' : 'Issue Type *'}</Text>
+            <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{'نوع المشكلة *'}</Text>
             <View style={styles.chipGrid}>
               {ISSUE_TYPES.map((t) => (
                 <TouchableOpacity
@@ -222,7 +222,7 @@ function CreateModal({ visible, onClose, onSuccess }: { visible: boolean; onClos
             </View>
 
             {/* Severity */}
-            <Text style={[styles.fieldLabel, { color: colors.textMuted, marginTop: spacing.sm }]}>{isAr ? 'الخطورة *' : 'Severity *'}</Text>
+            <Text style={[styles.fieldLabel, { color: colors.textMuted, marginTop: spacing.sm }]}>{'الخطورة *'}</Text>
             <View style={styles.sevRow}>
               {SEVERITIES.map((s) => {
                 const meta = severityMeta(s, colors);
@@ -241,19 +241,19 @@ function CreateModal({ visible, onClose, onSuccess }: { visible: boolean; onClos
 
             {/* Description */}
             <View style={[styles.field, { marginTop: spacing.sm }]}>
-              <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{isAr ? 'الوصف' : 'Description'}</Text>
+              <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{'الوصف'}</Text>
               <TextInput
                 style={[styles.input, styles.inputMulti, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
                 multiline numberOfLines={3}
-                placeholder={isAr ? 'وصف المشكلة...' : 'Describe the issue...'}
+                placeholder={'وصف المشكلة...'}
                 placeholderTextColor={colors.textMuted}
                 value={description} onChangeText={setDescription}
               />
             </View>
 
             <View style={styles.actions}>
-              <Button variant="ghost" onPress={onClose} style={styles.actionBtn}>{isAr ? 'إلغاء' : 'Cancel'}</Button>
-              <Button onPress={submit} loading={saving} style={styles.actionBtn}>{isAr ? 'حفظ' : 'Save'}</Button>
+              <Button variant="ghost" onPress={onClose} style={styles.actionBtn}>{'إلغاء'}</Button>
+              <Button onPress={submit} loading={saving} style={styles.actionBtn}>{'حفظ'}</Button>
             </View>
           </ScrollView>
         </View>
@@ -303,7 +303,7 @@ export function QualityChecksScreen() {
       await api.patch(`/quality-checks/${id}/resolve`, {});
       setChecks(prev => prev.map(c => c.id === id ? { ...c, resolvedAt: new Date().toISOString() } : c));
     } catch (e: any) {
-      Alert.alert(isAr ? 'خطأ' : 'Error', e.message ?? 'Failed to resolve.');
+      Alert.alert('خطأ', e.message ?? 'Failed to resolve.');
     } finally {
       setResolvingId(null);
     }
@@ -311,19 +311,19 @@ export function QualityChecksScreen() {
 
   const handleDelete = (id: number) => {
     Alert.alert(
-      isAr ? 'حذف الفحص' : 'Delete Check',
-      isAr ? 'هل أنت متأكد؟ لا يمكن التراجع.' : 'Delete this quality check? This cannot be undone.',
+      'حذف الفحص',
+      'هل أنت متأكد؟ لا يمكن التراجع.',
       [
-        { text: isAr ? 'إلغاء' : 'Cancel', style: 'cancel' },
+        { text: 'إلغاء', style: 'cancel' },
         {
-          text: isAr ? 'حذف' : 'Delete', style: 'destructive',
+          text: 'حذف', style: 'destructive',
           onPress: async () => {
             setDeletingId(id);
             try {
               await api.delete(`/quality-checks/${id}`);
               setChecks(prev => prev.filter(c => c.id !== id));
             } catch (e: any) {
-              Alert.alert(isAr ? 'خطأ' : 'Error', e.message ?? 'Failed to delete.');
+              Alert.alert('خطأ', e.message ?? 'Failed to delete.');
             } finally {
               setDeletingId(null);
             }
@@ -344,21 +344,21 @@ export function QualityChecksScreen() {
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
-      <ScreenHeader title={isAr ? 'فحوصات الجودة' : 'Quality Checks'} showBack />
+      <ScreenHeader title={'فحوصات الجودة'} showBack />
 
       {/* Stats */}
       <View style={styles.statsRow}>
         <View style={[styles.statCard, { backgroundColor: colors.surface }]}>
           <Text style={[styles.statVal, { color: colors.danger }]}>{criticalOpen}</Text>
-          <Text style={[styles.statLabel, { color: colors.textMuted }]}>{isAr ? 'حرجة مفتوحة' : 'Critical Open'}</Text>
+          <Text style={[styles.statLabel, { color: colors.textMuted }]}>{'حرجة مفتوحة'}</Text>
         </View>
         <View style={[styles.statCard, { backgroundColor: colors.surface }]}>
           <Text style={[styles.statVal, { color: colors.warning }]}>{totalOpen}</Text>
-          <Text style={[styles.statLabel, { color: colors.textMuted }]}>{isAr ? 'مفتوحة' : 'Open'}</Text>
+          <Text style={[styles.statLabel, { color: colors.textMuted }]}>{'مفتوحة'}</Text>
         </View>
         <View style={[styles.statCard, { backgroundColor: colors.surface }]}>
           <Text style={[styles.statVal, { color: colors.success }]}>{checks.length - totalOpen}</Text>
-          <Text style={[styles.statLabel, { color: colors.textMuted }]}>{isAr ? 'محلولة' : 'Resolved'}</Text>
+          <Text style={[styles.statLabel, { color: colors.textMuted }]}>{'محلولة'}</Text>
         </View>
       </View>
 
@@ -398,7 +398,7 @@ export function QualityChecksScreen() {
           ListEmptyComponent={
             <View style={styles.empty}>
               <Ionicons name="shield-checkmark-outline" size={44} color={colors.textMuted} />
-              <Text style={[styles.emptyText, { color: colors.textMuted }]}>{isAr ? 'لا توجد فحوصات' : 'No quality checks'}</Text>
+              <Text style={[styles.emptyText, { color: colors.textMuted }]}>{'لا توجد فحوصات'}</Text>
             </View>
           }
         />

@@ -1,5 +1,6 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+﻿import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
+import { useLocale } from '../../context/LocaleContext';
   ActivityIndicator, Alert, Modal, RefreshControl, ScrollView,
   StyleSheet, Text, TextInput, TouchableOpacity, View,
 } from 'react-native';
@@ -9,7 +10,6 @@ import { api } from '../../api/client';
 import { ScreenHeader } from '../../components';
 import { radius, shadow, spacing, typography } from '../../theme';
 import { useAppTheme } from '../../context/ThemeContext';
-import { useLocale } from '../../context/LocaleContext';
 
 interface Target {
   id: number;
@@ -58,18 +58,18 @@ export function DailyTargetsScreen() {
 
   const handleDelete = (t: Target) => {
     Alert.alert(
-      isAr ? 'حذف الهدف' : 'Delete Target',
-      isAr ? 'هل أنت متأكد؟' : 'Are you sure?',
+      'حذف الهدف',
+      'هل أنت متأكد؟',
       [
-        { text: isAr ? 'إلغاء' : 'Cancel', style: 'cancel' },
+        { text: 'إلغاء', style: 'cancel' },
         {
-          text: isAr ? 'حذف' : 'Delete', style: 'destructive',
+          text: 'حذف', style: 'destructive',
           onPress: async () => {
             try {
               await api.delete(`/worker-tools/entries/target/${t.id}`);
               setTargets((prev) => prev.filter((x) => x.id !== t.id));
             } catch (e: any) {
-              Alert.alert(isAr ? 'خطأ' : 'Error', e.message ?? 'Failed');
+              Alert.alert('خطأ', e.message ?? 'Failed');
             }
           },
         },
@@ -79,11 +79,11 @@ export function DailyTargetsScreen() {
 
   const submit = async () => {
     if (!targetUnits.trim() || isNaN(Number(targetUnits)) || Number(targetUnits) < 0) {
-      Alert.alert(isAr ? 'مطلوب' : 'Required', isAr ? 'أدخل هدف الوحدات.' : 'Enter target units.');
+      Alert.alert('مطلوب', 'أدخل هدف الوحدات.');
       return;
     }
     if (!actualUnits.trim() || isNaN(Number(actualUnits)) || Number(actualUnits) < 0) {
-      Alert.alert(isAr ? 'مطلوب' : 'Required', isAr ? 'أدخل الوحدات الفعلية.' : 'Enter actual units.');
+      Alert.alert('مطلوب', 'أدخل الوحدات الفعلية.');
       return;
     }
     setSaving(true);
@@ -99,14 +99,14 @@ export function DailyTargetsScreen() {
       setTargetDate(new Date().toISOString().slice(0, 10));
       setLoading(true); void load();
     } catch (e: any) {
-      Alert.alert(isAr ? 'خطأ' : 'Error', e.message ?? (isAr ? 'فشل تسجيل الهدف.' : 'Failed to save target.'));
+      Alert.alert('خطأ', e.message ?? ('فشل تسجيل الهدف.'));
     } finally { setSaving(false); }
   };
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
       <ScreenHeader
-        title={isAr ? 'أهداف الإنتاج' : 'Daily Targets'}
+        title={'أهداف الإنتاج'}
         subtitle={isAr ? 'أهداف الإنتاج اليومية' : "Production goals"}
         showBack
       />
@@ -143,13 +143,13 @@ export function DailyTargetsScreen() {
             </View>
             <TouchableOpacity style={[styles.addBtn, { backgroundColor: colors.primary }]} onPress={() => setModal(true)} activeOpacity={0.8}>
               <Ionicons name="flag" size={20} color="#fff" />
-              <Text style={styles.addText}>{isAr ? 'تسجيل هدف يومي' : 'Log Daily Target'}</Text>
+              <Text style={styles.addText}>{'تسجيل هدف يومي'}</Text>
             </TouchableOpacity>
 
             {filteredTargets.length === 0 ? (
               <View style={styles.empty}>
                 <Ionicons name="flag-outline" size={48} color={colors.textMuted} />
-                <Text style={[styles.emptyText, { color: colors.textMuted }]}>{isAr ? 'لا توجد أهداف مسجلة' : 'No targets recorded'}</Text>
+                <Text style={[styles.emptyText, { color: colors.textMuted }]}>{'لا توجد أهداف مسجلة'}</Text>
               </View>
             ) : (
               <View style={styles.list}>
@@ -166,7 +166,7 @@ export function DailyTargetsScreen() {
                           <View style={[styles.badge, { backgroundColor: done ? `${colors.success}20` : `${colors.primary}20` }]}>
                             <Ionicons name={done ? 'checkmark-circle' : 'flag'} size={14} color={done ? colors.success : colors.primary} />
                             <Text style={[styles.badgeText, { color: done ? colors.success : colors.primary }]}>
-                              {done ? (isAr ? 'محقق' : 'Achieved') : (isAr ? 'جاري' : 'In Progress')}
+                              {done ? ('محقق') : ('جاري')}
                             </Text>
                           </View>
                           {t.target_date && (
@@ -184,7 +184,7 @@ export function DailyTargetsScreen() {
 
                       <View style={styles.progress}>
                         <Text style={[styles.progressLabel, { color: colors.textMuted }]}>
-                          {actual} / {target} {isAr ? 'وحدة' : 'units'}
+                          {actual} / {target} {'وحدة'}
                         </Text>
                         <Text style={[styles.progressPct, { color: colors.text }]}>{Math.round(pct)}%</Text>
                       </View>
@@ -204,26 +204,26 @@ export function DailyTargetsScreen() {
         <View style={styles.overlay}>
           <View style={[styles.sheet, { backgroundColor: colors.surface }]}>
             <View style={[styles.handle, { backgroundColor: colors.border }]} />
-            <Text style={[styles.sheetTitle, { color: colors.text }]}>{isAr ? 'تسجيل هدف يومي' : 'Log Daily Target'}</Text>
+            <Text style={[styles.sheetTitle, { color: colors.text }]}>{'تسجيل هدف يومي'}</Text>
 
-            <Text style={[styles.label, { color: colors.textMuted }]}>{isAr ? 'التاريخ *' : 'Date *'}</Text>
+            <Text style={[styles.label, { color: colors.textMuted }]}>{'التاريخ *'}</Text>
             <TextInput style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]} placeholder="YYYY-MM-DD" placeholderTextColor={colors.textMuted} value={targetDate} onChangeText={setTargetDate} />
 
-            <Text style={[styles.label, { color: colors.textMuted }]}>{isAr ? 'الهدف (وحدات) *' : 'Target Units *'}</Text>
+            <Text style={[styles.label, { color: colors.textMuted }]}>{'الهدف (وحدات) *'}</Text>
             <TextInput style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]} placeholder="e.g. 500" placeholderTextColor={colors.textMuted} value={targetUnits} onChangeText={setTargetUnits} keyboardType="decimal-pad" />
 
-            <Text style={[styles.label, { color: colors.textMuted }]}>{isAr ? 'الوحدات الفعلية *' : 'Actual Units *'}</Text>
+            <Text style={[styles.label, { color: colors.textMuted }]}>{'الوحدات الفعلية *'}</Text>
             <TextInput style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]} placeholder="e.g. 480" placeholderTextColor={colors.textMuted} value={actualUnits} onChangeText={setActualUnits} keyboardType="decimal-pad" />
 
-            <Text style={[styles.label, { color: colors.textMuted }]}>{isAr ? 'ملاحظة (اختياري)' : 'Note (optional)'}</Text>
-            <TextInput style={[styles.input, styles.inputMulti, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]} placeholder={isAr ? 'أي ملاحظات…' : 'Any notes…'} placeholderTextColor={colors.textMuted} value={note} onChangeText={setNote} multiline numberOfLines={3} />
+            <Text style={[styles.label, { color: colors.textMuted }]}>{'ملاحظة (اختياري)'}</Text>
+            <TextInput style={[styles.input, styles.inputMulti, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]} placeholder={'أي ملاحظات…'} placeholderTextColor={colors.textMuted} value={note} onChangeText={setNote} multiline numberOfLines={3} />
 
             <View style={styles.actions}>
               <TouchableOpacity style={[styles.cancelBtn, { borderColor: colors.border }]} onPress={() => setModal(false)}>
-                <Text style={[styles.cancelText, { color: colors.textMuted }]}>{isAr ? 'إلغاء' : 'Cancel'}</Text>
+                <Text style={[styles.cancelText, { color: colors.textMuted }]}>{'إلغاء'}</Text>
               </TouchableOpacity>
               <TouchableOpacity style={[styles.submitBtn, { backgroundColor: colors.primary }]} onPress={submit} disabled={saving}>
-                {saving ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.submitText}>{isAr ? 'حفظ' : 'Save'}</Text>}
+                {saving ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.submitText}>{'حفظ'}</Text>}
               </TouchableOpacity>
             </View>
           </View>

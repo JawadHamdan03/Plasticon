@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -68,12 +68,12 @@ export function EngineerEngMenuScreen() {
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.pageHeader}>
-          <Text style={[styles.pageTitle, { color: colors.text }]}>{isAr ? 'الهندسة' : 'Engineering'}</Text>
-          <Text style={[styles.pageSub, { color: colors.textMuted }]}>{isAr ? '١٤ أداة وشاشة' : '14 tools and monitors'}</Text>
+          <Text style={[styles.pageTitle, { color: colors.text }]}>{'الهندسة'}</Text>
+          <Text style={[styles.pageSub, { color: colors.textMuted }]}>{'١٤ أداة وشاشة'}</Text>
         </View>
-        <Section title={isAr ? 'الإنتاج' : 'Production'}            items={PRODUCTION_ITEMS}    colors={colors} isAr={isAr} />
-        <Section title={isAr ? 'الجودة والصيانة' : 'Quality & Maintenance'} items={QUALITY_MAINT_ITEMS} colors={colors} isAr={isAr} />
-        <Section title={isAr ? 'الآلات والمعدات' : 'Machines & Equipment'}  items={MACHINES_ITEMS}      colors={colors} isAr={isAr} />
+        <Section title={'الإنتاج'}            items={PRODUCTION_ITEMS}    colors={colors} isAr={isAr} />
+        <Section title={'الجودة والصيانة'} items={QUALITY_MAINT_ITEMS} colors={colors} isAr={isAr} />
+        <Section title={'الآلات والمعدات'}  items={MACHINES_ITEMS}      colors={colors} isAr={isAr} />
       </ScrollView>
     </SafeAreaView>
   );

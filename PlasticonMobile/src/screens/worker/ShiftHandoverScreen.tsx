@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import {
   ActivityIndicator, KeyboardAvoidingView, Platform,
   ScrollView, StyleSheet, Text, TextInput, View,
@@ -9,11 +9,9 @@ import { ragApi } from '../../api/client';
 import { Button, ScreenHeader } from '../../components';
 import { radius, shadow, spacing, typography } from '../../theme';
 import { useAppTheme } from '../../context/ThemeContext';
-import { useLocale } from '../../context/LocaleContext';
 
 export function ShiftHandoverScreen() {
   const { colors } = useAppTheme();
-  const { isAr } = useLocale();
   const [notes, setNotes]     = useState('');
   const [report, setReport]   = useState('');
   const [loading, setLoading] = useState(false);
@@ -35,9 +33,9 @@ Additional notes from operator: ${notes.trim() || 'None provided.'}
 Please use the Plasticon factory context and keep it concise and structured.`,
         role: 'worker',
       });
-      setReport(res.reply ?? res.response ?? (isAr ? 'تعذر إنشاء التقرير. حاول مرة أخرى.' : 'Could not generate report. Try again.'));
+      setReport(res.reply ?? res.response ?? ('تعذر إنشاء التقرير. حاول مرة أخرى.'));
     } catch (err: any) {
-      setReport(`${isAr ? 'خطأ: ' : 'Error: '}${err.message ?? (isAr ? 'تعذر الوصول إلى خدمة الذكاء الاصطناعي.' : 'Could not reach AI service.')}`);
+      setReport(`${'خطأ: '}${err.message ?? ('تعذر الوصول إلى خدمة الذكاء الاصطناعي.')}`);
     } finally {
       setLoading(false);
     }
@@ -45,23 +43,21 @@ Please use the Plasticon factory context and keep it concise and structured.`,
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
-      <ScreenHeader title={isAr ? 'تسليم الوردية' : 'Shift Handover'} subtitle={isAr ? 'تقرير تسليم بالذكاء الاصطناعي' : 'AI-generated handover report'} showBack />
+      <ScreenHeader title={'تسليم الوردية'} subtitle={'تقرير تسليم بالذكاء الاصطناعي'} showBack />
 
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
           <View style={[styles.infoBanner, { backgroundColor: colors.infoLight, borderLeftColor: colors.info }]}>
             <Ionicons name="information-circle-outline" size={18} color={colors.info} />
             <Text style={[styles.infoText, { color: colors.info }]}>
-              {isAr
-                ? 'أضف ملاحظات من وردية عملك. سيُنشئ الذكاء الاصطناعي تقرير تسليم منظماً للفريق التالي.'
-                : 'Add any notes from your shift. The AI will generate a structured handover report for the next team.'}
+              {'أضف ملاحظات من وردية عملك. سيُنشئ الذكاء الاصطناعي تقرير تسليم منظماً للفريق التالي.'}
             </Text>
           </View>
 
-          <Text style={[styles.label, { color: colors.textMuted }]}>{isAr ? 'ملاحظات الوردية (اختياري)' : 'Shift Notes (optional)'}</Text>
+          <Text style={[styles.label, { color: colors.textMuted }]}>{'ملاحظات الوردية (اختياري)'}</Text>
           <TextInput
             style={[styles.notesInput, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surface }]}
-            placeholder={isAr ? 'مثال: توقفت آلة A الساعة 14:00، هدر أعلى من المعتاد في خط 3...' : 'E.g. Machine A stopped at 14:00, waste higher than usual on Line 3...'}
+            placeholder={'مثال: توقفت آلة A الساعة 14:00، هدر أعلى من المعتاد في خط 3...'}
             placeholderTextColor={colors.textMuted}
             multiline
             numberOfLines={5}
@@ -70,19 +66,19 @@ Please use the Plasticon factory context and keep it concise and structured.`,
           />
 
           <Button onPress={generate} loading={loading} fullWidth size="lg" style={styles.btn}>
-            {isAr ? 'إنشاء التقرير' : 'Generate Report'}
+            {'إنشاء التقرير'}
           </Button>
 
           {(loading || report) ? (
             <View style={[styles.reportCard, { backgroundColor: colors.surface, borderTopColor: colors.primary }]}>
               <View style={styles.reportHeader}>
                 <Ionicons name="document-text" size={16} color={colors.primary} />
-                <Text style={[styles.reportTitle, { color: colors.primary }]}>{isAr ? 'تقرير التسليم' : 'Handover Report'}</Text>
+                <Text style={[styles.reportTitle, { color: colors.primary }]}>{'تقرير التسليم'}</Text>
               </View>
               {loading ? (
                 <View style={styles.generating}>
                   <ActivityIndicator color={colors.primary} />
-                  <Text style={[styles.generatingText, { color: colors.primary }]}>{isAr ? 'جارٍ إنشاء التقرير…' : 'Generating report…'}</Text>
+                  <Text style={[styles.generatingText, { color: colors.primary }]}>{'جارٍ إنشاء التقرير…'}</Text>
                 </View>
               ) : (
                 <Text style={[styles.reportText, { color: colors.text }]}>{report}</Text>

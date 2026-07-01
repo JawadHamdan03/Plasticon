@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -6,7 +6,6 @@ import { useNavigation } from '@react-navigation/native';
 import { ScreenHeader } from '../../components';
 import { radius, shadow, spacing, typography } from '../../theme';
 import { useAppTheme } from '../../context/ThemeContext';
-import { useLocale } from '../../context/LocaleContext';
 
 function MenuItem({ label, icon, color, onPress }: { label: string; icon: string; color: string; onPress: () => void }) {
   const { colors } = useAppTheme();
@@ -23,18 +22,17 @@ function MenuItem({ label, icon, color, onPress }: { label: string; icon: string
 
 export function EngineerMoreScreen() {
   const { colors } = useAppTheme();
-  const { isAr } = useLocale();
   const navigation = useNavigation<any>();
 
   const ITEMS = [
-    { label: isAr ? 'ملفي الشخصي' : 'My Profile',    icon: 'person-circle', screen: 'Profile',       color: colors.primary },
-    { label: isAr ? 'أدوات الذكاء الاصطناعي' : 'AI Tools', icon: 'hardware-chip', screen: 'AIHub',   color: '#7C3AED' },
-    { label: isAr ? 'الإشعارات' : 'Notifications',   icon: 'notifications',  screen: 'Notifications', color: colors.warning },
+    { label: 'ملفي الشخصي',    icon: 'person-circle', screen: 'Profile',       color: colors.primary },
+    { label: 'أدوات الذكاء الاصطناعي', icon: 'hardware-chip', screen: 'AIHub',   color: '#7C3AED' },
+    { label: 'الإشعارات',   icon: 'notifications',  screen: 'Notifications', color: colors.warning },
   ];
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
-      <ScreenHeader title={isAr ? 'المزيد' : 'More'} />
+      <ScreenHeader title={'المزيد'} />
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={[styles.section, { backgroundColor: colors.surface }]}>
           {ITEMS.map((item) => (

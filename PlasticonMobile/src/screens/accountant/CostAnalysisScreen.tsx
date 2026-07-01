@@ -1,5 +1,6 @@
-import React, { useCallback, useEffect, useState } from 'react';
+﻿import React, { useCallback, useEffect, useState } from 'react';
 import {
+import { useLocale } from '../../context/LocaleContext';
   ActivityIndicator, Alert, FlatList, KeyboardAvoidingView, Modal,
   Platform, Pressable, RefreshControl, ScrollView,
   StyleSheet, Text, TextInput, TouchableOpacity, View,
@@ -10,7 +11,6 @@ import { api } from '../../api/client';
 import { ScreenHeader, StatCard } from '../../components';
 import { radius, shadow, spacing, typography } from '../../theme';
 import { useAppTheme } from '../../context/ThemeContext';
-import { useLocale } from '../../context/LocaleContext';
 
 function fmt(n: number) {
   return n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -76,9 +76,9 @@ export function CostAnalysisScreen() {
   };
 
   const handleDelete = (c: CostAnalysis) => {
-    Alert.alert(isAr ? 'حذف' : 'Delete', isAr ? 'هل أنت متأكد؟' : 'Are you sure?', [
-      { text: isAr ? 'إلغاء' : 'Cancel', style: 'cancel' },
-      { text: isAr ? 'حذف' : 'Delete', style: 'destructive', onPress: async () => {
+    Alert.alert('حذف', 'هل أنت متأكد؟', [
+      { text: 'إلغاء', style: 'cancel' },
+      { text: 'حذف', style: 'destructive', onPress: async () => {
         try {
           await api.delete(`/cost-analysis/${c.id}`);
           setCosts((p) => p.filter((x) => x.id !== c.id));
@@ -89,10 +89,10 @@ export function CostAnalysisScreen() {
 
   const submit = async () => {
     if (!form.cost || isNaN(Number(form.cost))) {
-      Alert.alert(isAr ? 'مطلوب' : 'Required', isAr ? 'أدخل التكلفة' : 'Enter cost'); return;
+      Alert.alert('مطلوب', 'أدخل التكلفة'); return;
     }
     if (!form.period.trim()) {
-      Alert.alert(isAr ? 'مطلوب' : 'Required', isAr ? 'أدخل الفترة' : 'Enter period'); return;
+      Alert.alert('مطلوب', 'أدخل الفترة'); return;
     }
     setSaving(true);
     try {
@@ -124,7 +124,7 @@ export function CostAnalysisScreen() {
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
-      <ScreenHeader title={isAr ? 'تحليل التكاليف' : 'Cost Analysis'} showBack />
+      <ScreenHeader title={'تحليل التكاليف'} showBack />
 
       {!!apiError && (
         <View style={[styles.errorBanner, { backgroundColor: '#fef2f2', borderColor: '#fca5a5' }]}>
@@ -144,8 +144,8 @@ export function CostAnalysisScreen() {
           ListHeaderComponent={
             <View>
               <View style={styles.kpiRow}>
-                <StatCard label={isAr ? 'إجمالي التكاليف' : 'Total Cost'} value={`$${fmt(totalCost)}`} icon="analytics" color={colors.primary} style={styles.kpi} />
-                <StatCard label={isAr ? 'أعلى فئة' : 'Top Category'} value={isAr ? (CAT_AR[topCat] ?? topCat) : topCat} icon="podium" color={colors.accent} style={styles.kpi} />
+                <StatCard label={'إجمالي التكاليف'} value={`$${fmt(totalCost)}`} icon="analytics" color={colors.primary} style={styles.kpi} />
+                <StatCard label={'أعلى فئة'} value={isAr ? (CAT_AR[topCat] ?? topCat) : topCat} icon="podium" color={colors.accent} style={styles.kpi} />
               </View>
 
               {periods.length > 0 && (
@@ -155,7 +155,7 @@ export function CostAnalysisScreen() {
                       style={[styles.filterChip, !periodFilter && { backgroundColor: colors.primary, borderColor: colors.primary }]}
                       onPress={() => setPeriodFilter('')}>
                       <Text style={[styles.filterText, { color: !periodFilter ? '#fff' : colors.textMuted }]}>
-                        {isAr ? 'الكل' : 'All'}
+                        {'الكل'}
                       </Text>
                     </TouchableOpacity>
                     {periods.map((p) => (
@@ -171,7 +171,7 @@ export function CostAnalysisScreen() {
 
               <TouchableOpacity style={[styles.addBtn, { backgroundColor: colors.primary }]} onPress={openCreate} activeOpacity={0.8}>
                 <Ionicons name="add-circle" size={20} color="#fff" />
-                <Text style={styles.addText}>{isAr ? 'إضافة تحليل' : 'Add Analysis'}</Text>
+                <Text style={styles.addText}>{'إضافة تحليل'}</Text>
               </TouchableOpacity>
             </View>
           }
@@ -210,7 +210,7 @@ export function CostAnalysisScreen() {
           ListEmptyComponent={
             <View style={styles.empty}>
               <Ionicons name="analytics-outline" size={44} color={colors.textMuted} />
-              <Text style={[styles.emptyText, { color: colors.textMuted }]}>{isAr ? 'لا توجد تحليلات' : 'No cost analyses'}</Text>
+              <Text style={[styles.emptyText, { color: colors.textMuted }]}>{'لا توجد تحليلات'}</Text>
             </View>
           }
         />
@@ -222,10 +222,10 @@ export function CostAnalysisScreen() {
           <View style={[styles.sheet, { backgroundColor: colors.surface }]}>
             <View style={[styles.handle, { backgroundColor: colors.border }]} />
             <Text style={[styles.sheetTitle, { color: colors.text }]}>
-              {editing ? (isAr ? 'تعديل التحليل' : 'Edit Analysis') : (isAr ? 'تحليل تكاليف جديد' : 'New Cost Analysis')}
+              {editing ? ('تعديل التحليل') : ('تحليل تكاليف جديد')}
             </Text>
             <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-              <Text style={[styles.label, { color: colors.textMuted }]}>{isAr ? 'الفئة *' : 'Category *'}</Text>
+              <Text style={[styles.label, { color: colors.textMuted }]}>{'الفئة *'}</Text>
               <View style={styles.chipGroup}>
                 {CATEGORIES.map((cat) => (
                   <TouchableOpacity key={cat}
@@ -239,35 +239,35 @@ export function CostAnalysisScreen() {
                 ))}
               </View>
 
-              <Text style={[styles.label, { color: colors.textMuted }]}>{isAr ? 'التكلفة *' : 'Cost *'}</Text>
+              <Text style={[styles.label, { color: colors.textMuted }]}>{'التكلفة *'}</Text>
               <TextInput style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
                 placeholder="0.00" placeholderTextColor={colors.textMuted} keyboardType="decimal-pad"
                 value={form.cost} onChangeText={(v) => setForm((p) => ({ ...p, cost: v }))} />
 
-              <Text style={[styles.label, { color: colors.textMuted }]}>{isAr ? 'النسبة المئوية' : 'Percentage (%)'}</Text>
+              <Text style={[styles.label, { color: colors.textMuted }]}>{'النسبة المئوية'}</Text>
               <TextInput style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
                 placeholder="0.0" placeholderTextColor={colors.textMuted} keyboardType="decimal-pad"
                 value={form.percentage} onChangeText={(v) => setForm((p) => ({ ...p, percentage: v }))} />
 
-              <Text style={[styles.label, { color: colors.textMuted }]}>{isAr ? 'الفترة *' : 'Period *'}</Text>
+              <Text style={[styles.label, { color: colors.textMuted }]}>{'الفترة *'}</Text>
               <TextInput style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
-                placeholder={isAr ? 'مثال: يناير 2025' : 'e.g. January 2025'}
+                placeholder={'مثال: يناير 2025'}
                 placeholderTextColor={colors.textMuted}
                 value={form.period} onChangeText={(v) => setForm((p) => ({ ...p, period: v }))} />
 
-              <Text style={[styles.label, { color: colors.textMuted }]}>{isAr ? 'ملاحظات' : 'Notes'}</Text>
+              <Text style={[styles.label, { color: colors.textMuted }]}>{'ملاحظات'}</Text>
               <TextInput style={[styles.input, styles.inputMulti, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
-                placeholder={isAr ? 'ملاحظات اختيارية…' : 'Optional notes…'}
+                placeholder={'ملاحظات اختيارية…'}
                 placeholderTextColor={colors.textMuted} multiline numberOfLines={3}
                 value={form.notes} onChangeText={(v) => setForm((p) => ({ ...p, notes: v }))} />
             </ScrollView>
 
             <View style={styles.actions}>
               <TouchableOpacity style={[styles.cancelBtn, { borderColor: colors.border }]} onPress={() => setModal(false)}>
-                <Text style={[styles.cancelText, { color: colors.textSecondary }]}>{isAr ? 'إلغاء' : 'Cancel'}</Text>
+                <Text style={[styles.cancelText, { color: colors.textSecondary }]}>{'إلغاء'}</Text>
               </TouchableOpacity>
               <TouchableOpacity style={[styles.saveBtn, { backgroundColor: colors.primary }, saving && { opacity: 0.6 }]} onPress={submit} disabled={saving}>
-                {saving ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.saveText}>{isAr ? 'حفظ' : 'Save'}</Text>}
+                {saving ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.saveText}>{'حفظ'}</Text>}
               </TouchableOpacity>
             </View>
           </View>

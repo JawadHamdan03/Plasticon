@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+﻿import React, { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -8,8 +8,8 @@ import { api } from '../../api/client';
 import { ScreenHeader } from '../../components';
 import { radius, spacing, typography } from '../../theme';
 import { useAppTheme } from '../../context/ThemeContext';
-import { useLocale } from '../../context/LocaleContext';
 import type { SalesRepTabParamList } from '../../navigation/types';
+import { useLocale } from '../../context/LocaleContext';
 
 type DashboardData = {
   customerCount: number;
@@ -57,14 +57,14 @@ export function SalesRepHomeScreen() {
     : 0;
 
   const kpis = data ? [
-    { icon: 'people-outline' as const,           label: isAr ? 'عملائي'      : 'Customers',    value: String(data.customerCount),                   color: '#8b5cf6' },
-    { icon: 'checkmark-circle-outline' as const, label: isAr ? 'مقبولة'      : 'Accepted',     value: String(data.acceptedQuotations),              color: '#10b981' },
-    { icon: 'trending-up-outline' as const,      label: isAr ? 'قيمة العروض' : 'Quote Value',  value: `₪${Math.round(data.totalQuotationValue)}`,   color: '#3b82f6' },
+    { icon: 'people-outline' as const,           label: 'عملائي',    value: String(data.customerCount),                   color: '#8b5cf6' },
+    { icon: 'checkmark-circle-outline' as const, label: 'مقبولة',     value: String(data.acceptedQuotations),              color: '#10b981' },
+    { icon: 'trending-up-outline' as const,      label: 'قيمة العروض',  value: `₪${Math.round(data.totalQuotationValue)}`,   color: '#3b82f6' },
   ] : [];
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['bottom']}>
-      <ScreenHeader title={isAr ? 'لوحة المندوب' : 'Sales Dashboard'} />
+      <ScreenHeader title={'لوحة المندوب'} />
       <ScrollView
         contentContainerStyle={styles.container}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); void load(); }} />}
@@ -75,20 +75,20 @@ export function SalesRepHomeScreen() {
           <View style={styles.errorBox}>
             <Ionicons name="cloud-offline-outline" size={44} color={colors.textSecondary} />
             <Text style={[styles.errorTitle, { color: colors.text }]}>
-              {isAr ? 'تعذّر الاتصال بالخادم' : 'Could not reach the server'}
+              {'تعذّر الاتصال بالخادم'}
             </Text>
             <Text style={[styles.muted, { color: colors.textSecondary }]}>
-              {isAr ? 'تأكد من الاتصال بالشبكة' : 'Check your network connection'}
+              {'تأكد من الاتصال بالشبكة'}
             </Text>
             <TouchableOpacity
               style={[styles.retryBtn, { backgroundColor: colors.accent }]}
               onPress={() => { setLoading(true); void load(); }}
             >
-              <Text style={styles.retryText}>{isAr ? 'إعادة المحاولة' : 'Retry'}</Text>
+              <Text style={styles.retryText}>{'إعادة المحاولة'}</Text>
             </TouchableOpacity>
           </View>
         ) : !data ? (
-          <Text style={[styles.muted, { color: colors.textSecondary }]}>{isAr ? 'لا توجد بيانات' : 'No data'}</Text>
+          <Text style={[styles.muted, { color: colors.textSecondary }]}>{'لا توجد بيانات'}</Text>
         ) : (
           <>
             {/* KPI row */}
@@ -117,10 +117,10 @@ export function SalesRepHomeScreen() {
                 </View>
                 <View style={styles.progressLabels}>
                   <Text style={[styles.muted, { color: colors.textSecondary }]}>
-                    ₪{Math.round(data.currentTarget.achievedAmount)} {isAr ? 'محقق' : 'achieved'}
+                    ₪{Math.round(data.currentTarget.achievedAmount)} {'محقق'}
                   </Text>
                   <Text style={[styles.muted, { color: colors.textSecondary }]}>
-                    {isAr ? 'الهدف:' : 'Target:'} ₪{Math.round(data.currentTarget.targetAmount)}
+                    {'الهدف:'} ₪{Math.round(data.currentTarget.targetAmount)}
                   </Text>
                 </View>
               </View>
@@ -130,7 +130,7 @@ export function SalesRepHomeScreen() {
             <View style={[styles.card, { backgroundColor: colors.surface }]}>
               <View style={styles.cardTitleRow}>
                 <Ionicons name="grid-outline" size={15} color={colors.accent} />
-                <Text style={[styles.cardTitle, { color: colors.text }]}>{isAr ? 'الأدوات' : 'Quick Access'}</Text>
+                <Text style={[styles.cardTitle, { color: colors.text }]}>{'الأدوات'}</Text>
               </View>
               {QUICK_ACTIONS.map((item, idx) => (
                 <TouchableOpacity
@@ -146,7 +146,7 @@ export function SalesRepHomeScreen() {
                     <Text style={[styles.tileName, { color: colors.text }]}>{isAr ? item.labelAr : item.labelEn}</Text>
                     <Text style={[styles.tileSub, { color: colors.textSecondary }]}>{isAr ? item.subAr : item.subEn}</Text>
                   </View>
-                  <Ionicons name={isAr ? 'chevron-back' : 'chevron-forward'} size={14} color={colors.textSecondary} />
+                  <Ionicons name={'chevron-back'} size={14} color={colors.textSecondary} />
                 </TouchableOpacity>
               ))}
             </View>
@@ -156,9 +156,9 @@ export function SalesRepHomeScreen() {
               <View style={[styles.card, { backgroundColor: colors.surface }]}>
                 <View style={styles.cardTitleRow}>
                   <Ionicons name="document-text-outline" size={15} color={colors.accent} />
-                  <Text style={[styles.cardTitle, { color: colors.text }]}>{isAr ? 'آخر العروض' : 'Recent Quotations'}</Text>
+                  <Text style={[styles.cardTitle, { color: colors.text }]}>{'آخر العروض'}</Text>
                   <TouchableOpacity onPress={() => nav.navigate('Sales')}>
-                    <Text style={{ color: colors.accent, fontSize: 12, fontWeight: '600' }}>{isAr ? 'الكل ←' : 'All →'}</Text>
+                    <Text style={{ color: colors.accent, fontSize: 12, fontWeight: '600' }}>{'الكل ←'}</Text>
                   </TouchableOpacity>
                 </View>
                 {data.recentQuotations.map((q) => (
@@ -177,9 +177,9 @@ export function SalesRepHomeScreen() {
               <View style={[styles.card, { backgroundColor: colors.surface }]}>
                 <View style={styles.cardTitleRow}>
                   <Ionicons name="location-outline" size={15} color={colors.accent} />
-                  <Text style={[styles.cardTitle, { color: colors.text }]}>{isAr ? 'آخر الزيارات' : 'Recent Visits'}</Text>
+                  <Text style={[styles.cardTitle, { color: colors.text }]}>{'آخر الزيارات'}</Text>
                   <TouchableOpacity onPress={() => nav.navigate('Sales')}>
-                    <Text style={{ color: colors.accent, fontSize: 12, fontWeight: '600' }}>{isAr ? 'الكل ←' : 'All →'}</Text>
+                    <Text style={{ color: colors.accent, fontSize: 12, fontWeight: '600' }}>{'الكل ←'}</Text>
                   </TouchableOpacity>
                 </View>
                 {data.recentVisits.map((v) => (

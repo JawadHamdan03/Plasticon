@@ -1,5 +1,6 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+﻿import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
+import { useLocale } from '../../context/LocaleContext';
   ActivityIndicator,
   Alert,
   FlatList,
@@ -21,7 +22,6 @@ import { api } from '../../api/client';
 import { ScreenHeader } from '../../components';
 import { radius, shadow, spacing, typography } from '../../theme';
 import { useAppTheme } from '../../context/ThemeContext';
-import { useLocale } from '../../context/LocaleContext';
 
 interface WorkOrder {
   id: number;
@@ -85,6 +85,7 @@ function isOverdue(d?: string, status?: string) {
 
 function ChipRow({ label, value, options, onChange }: { label: string; value: string; options: string[]; onChange: (v: string) => void }) {
   const { colors } = useAppTheme();
+  const { isAr } = useLocale();
   return (
     <View style={styles.wrap}>
       <Text style={[styles.chipLabel, { color: colors.textMuted }]}>{label}</Text>
@@ -124,7 +125,7 @@ function WorkOrderModal({ visible, initial, machines, onClose, onSave, saving }:
   const isEdit = initial.machineId !== '' || initial.description !== '';
 
   const handleSave = async () => {
-    if (!form.machineId.trim()) return Alert.alert(isAr ? 'تحقق' : 'Validation', isAr ? 'الآلة مطلوبة.' : 'Machine is required.');
+    if (!form.machineId.trim()) return Alert.alert('تحقق', 'الآلة مطلوبة.');
     await onSave(form);
   };
 
@@ -134,9 +135,9 @@ function WorkOrderModal({ visible, initial, machines, onClose, onSave, saving }:
         <Pressable style={styles.overlayBg} onPress={onClose} />
         <View style={[styles.sheet, { backgroundColor: colors.surface }]}>
           <View style={[styles.sheetHandle, { backgroundColor: colors.border }]} />
-          <Text style={[styles.sheetTitle, { color: colors.text }]}>{isEdit ? (isAr ? 'تعديل أمر العمل' : 'Edit Work Order') : (isAr ? 'أمر عمل جديد' : 'New Work Order')}</Text>
+          <Text style={[styles.sheetTitle, { color: colors.text }]}>{isEdit ? ('تعديل أمر العمل') : ('أمر عمل جديد')}</Text>
           <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-            <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{isAr ? 'الآلة *' : 'Machine *'}</Text>
+            <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{'الآلة *'}</Text>
             {machines.length > 0 ? (
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: spacing.sm }}>
                 <View style={{ flexDirection: 'row', gap: spacing.sm }}>
@@ -158,25 +159,25 @@ function WorkOrderModal({ visible, initial, machines, onClose, onSave, saving }:
                 </View>
               </ScrollView>
             ) : (
-              <TextInput style={[styles.input, { backgroundColor: colors.surfaceAlt, borderColor: colors.border, color: colors.text }]} value={form.machineId} onChangeText={set('machineId')} placeholder={isAr ? 'رقم الآلة' : 'Machine ID'} placeholderTextColor={colors.textMuted} keyboardType="numeric" />
+              <TextInput style={[styles.input, { backgroundColor: colors.surfaceAlt, borderColor: colors.border, color: colors.text }]} value={form.machineId} onChangeText={set('machineId')} placeholder={'رقم الآلة'} placeholderTextColor={colors.textMuted} keyboardType="numeric" />
             )}
 
-            <ChipRow label={isAr ? 'نوع المهمة' : 'Task Type'} value={form.scheduleType} options={SCHEDULE_TYPES} onChange={(v) => setForm((p) => ({ ...p, scheduleType: v }))} />
-            <ChipRow label={isAr ? 'التكرار' : 'Frequency'} value={form.frequency} options={FREQUENCIES} onChange={(v) => setForm((p) => ({ ...p, frequency: v }))} />
-            <ChipRow label={isAr ? 'الحالة' : 'Status'} value={form.status} options={STATUS_OPTIONS} onChange={(v) => setForm((p) => ({ ...p, status: v as StatusOpt }))} />
+            <ChipRow label={'نوع المهمة'} value={form.scheduleType} options={SCHEDULE_TYPES} onChange={(v) => setForm((p) => ({ ...p, scheduleType: v }))} />
+            <ChipRow label={'التكرار'} value={form.frequency} options={FREQUENCIES} onChange={(v) => setForm((p) => ({ ...p, frequency: v }))} />
+            <ChipRow label={'الحالة'} value={form.status} options={STATUS_OPTIONS} onChange={(v) => setForm((p) => ({ ...p, status: v as StatusOpt }))} />
 
-            <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{isAr ? 'تاريخ الجدولة التالي' : 'Next Scheduled Date'}</Text>
+            <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{'تاريخ الجدولة التالي'}</Text>
             <TextInput style={[styles.input, { backgroundColor: colors.surfaceAlt, borderColor: colors.border, color: colors.text }]} value={form.nextScheduledDate} onChangeText={set('nextScheduledDate')} placeholder="YYYY-MM-DD" placeholderTextColor={colors.textMuted} />
 
-            <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{isAr ? 'الوصف' : 'Description'}</Text>
-            <TextInput style={[styles.input, styles.multiline, { backgroundColor: colors.surfaceAlt, borderColor: colors.border, color: colors.text }]} value={form.description} onChangeText={set('description')} placeholder={isAr ? 'وصف اختياري' : 'Optional description'} placeholderTextColor={colors.textMuted} multiline numberOfLines={3} textAlignVertical="top" />
+            <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{'الوصف'}</Text>
+            <TextInput style={[styles.input, styles.multiline, { backgroundColor: colors.surfaceAlt, borderColor: colors.border, color: colors.text }]} value={form.description} onChangeText={set('description')} placeholder={'وصف اختياري'} placeholderTextColor={colors.textMuted} multiline numberOfLines={3} textAlignVertical="top" />
           </ScrollView>
           <View style={styles.sheetActions}>
             <TouchableOpacity style={[styles.cancelBtn, { borderColor: colors.border }]} onPress={onClose}>
-              <Text style={[styles.cancelText, { color: colors.textSecondary }]}>{isAr ? 'إلغاء' : 'Cancel'}</Text>
+              <Text style={[styles.cancelText, { color: colors.textSecondary }]}>{'إلغاء'}</Text>
             </TouchableOpacity>
             <TouchableOpacity style={[styles.saveBtn, { backgroundColor: colors.primary }, saving && { opacity: 0.6 }]} onPress={handleSave} disabled={saving}>
-              {saving ? <ActivityIndicator size="small" color={colors.textInverse} /> : <Text style={[styles.saveText, { color: colors.textInverse }]}>{isAr ? 'حفظ' : 'Save'}</Text>}
+              {saving ? <ActivityIndicator size="small" color={colors.textInverse} /> : <Text style={[styles.saveText, { color: colors.textInverse }]}>{'حفظ'}</Text>}
             </TouchableOpacity>
           </View>
         </View>
@@ -232,7 +233,7 @@ function WorkOrderCard({ item, onEdit, onDelete, onChangeStatus, updatingId }: {
       {item.description ? <Text style={[styles.desc, { color: colors.textSecondary }]} numberOfLines={2}>{item.description}</Text> : null}
 
       <View style={styles.footer}>
-        <Text style={[styles.dueLabel, { color: colors.textMuted }]}>{isAr ? 'الموعد: ' : 'Due: '}<Text style={[styles.dueDate, { color: colors.text }]}>{fmtDate(item.nextScheduledDate)}</Text></Text>
+        <Text style={[styles.dueLabel, { color: colors.textMuted }]}>{'الموعد: '}<Text style={[styles.dueDate, { color: colors.text }]}>{fmtDate(item.nextScheduledDate)}</Text></Text>
         {item.assignedEngineer ? (
           <View style={styles.assignee}>
             <Ionicons name="person" size={11} color={colors.textMuted} />
@@ -246,19 +247,19 @@ function WorkOrderCard({ item, onEdit, onDelete, onChangeStatus, updatingId }: {
           {status === 'PENDING' && (
             <TouchableOpacity style={[styles.statusBtn, { backgroundColor: `${colors.info}15` }]} onPress={() => onChangeStatus(item.id, 'IN_PROGRESS')}>
               <Ionicons name="play-circle" size={13} color={colors.info} />
-              <Text style={[styles.statusBtnText, { color: colors.info }]}>{isAr ? 'ابدأ' : 'Start'}</Text>
+              <Text style={[styles.statusBtnText, { color: colors.info }]}>{'ابدأ'}</Text>
             </TouchableOpacity>
           )}
           {status === 'IN_PROGRESS' && (
             <TouchableOpacity style={[styles.statusBtn, { backgroundColor: `${colors.success}15` }]} onPress={() => onChangeStatus(item.id, 'COMPLETED')}>
               <Ionicons name="checkmark-circle" size={13} color={colors.success} />
-              <Text style={[styles.statusBtnText, { color: colors.success }]}>{isAr ? 'أكمل' : 'Complete'}</Text>
+              <Text style={[styles.statusBtnText, { color: colors.success }]}>{'أكمل'}</Text>
             </TouchableOpacity>
           )}
           {status === 'COMPLETED' && (
             <TouchableOpacity style={[styles.statusBtn, { backgroundColor: `${colors.warning}15` }]} onPress={() => onChangeStatus(item.id, 'PENDING')}>
               <Ionicons name="refresh-circle" size={13} color={colors.warning} />
-              <Text style={[styles.statusBtnText, { color: colors.warning }]}>{isAr ? 'إعادة فتح' : 'Reopen'}</Text>
+              <Text style={[styles.statusBtnText, { color: colors.warning }]}>{'إعادة فتح'}</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -290,7 +291,7 @@ export function WorkOrdersScreen() {
       setOrders(Array.isArray(woRes) ? woRes : []);
       setMachines(Array.isArray(mRes) ? mRes : []);
     } catch (e: any) {
-      Alert.alert(isAr ? 'خطأ' : 'Error', e?.message ?? (isAr ? 'فشل تحميل أوامر العمل' : 'Failed to load work orders'));
+      Alert.alert('خطأ', e?.message ?? ('فشل تحميل أوامر العمل'));
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -304,11 +305,11 @@ export function WorkOrdersScreen() {
 
   const confirmDelete = (item: WorkOrder) => {
     Alert.alert(
-      isAr ? 'حذف أمر العمل' : 'Delete Work Order',
-      `${isAr ? 'حذف' : 'Delete'} "${item.machine?.name ?? `WO #${item.id}`}"?`,
+      'حذف أمر العمل',
+      `${'حذف'} "${item.machine?.name ?? `WO #${item.id}`}"?`,
       [
-        { text: isAr ? 'إلغاء' : 'Cancel', style: 'cancel' },
-        { text: isAr ? 'حذف' : 'Delete', style: 'destructive', onPress: () => void handleDelete(item.id) },
+        { text: 'إلغاء', style: 'cancel' },
+        { text: 'حذف', style: 'destructive', onPress: () => void handleDelete(item.id) },
       ],
     );
   };
@@ -319,7 +320,7 @@ export function WorkOrdersScreen() {
       setRefreshing(true);
       await load();
     } catch (e: any) {
-      Alert.alert(isAr ? 'خطأ' : 'Error', e?.message ?? (isAr ? 'فشل الحذف' : 'Failed to delete'));
+      Alert.alert('خطأ', e?.message ?? ('فشل الحذف'));
     }
   };
 
@@ -329,7 +330,7 @@ export function WorkOrdersScreen() {
       await api.patch(`/maintenance-schedule/${id}`, { status });
       await load();
     } catch (e: any) {
-      Alert.alert(isAr ? 'خطأ' : 'Error', e?.message ?? (isAr ? 'فشل تحديث الحالة' : 'Failed to update status'));
+      Alert.alert('خطأ', e?.message ?? ('فشل تحديث الحالة'));
     } finally {
       setUpdatingId(null);
     }
@@ -355,7 +356,7 @@ export function WorkOrdersScreen() {
       setRefreshing(true);
       await load();
     } catch (e: any) {
-      Alert.alert(isAr ? 'خطأ' : 'Error', e?.message ?? (isAr ? 'فشل الحفظ' : 'Failed to save'));
+      Alert.alert('خطأ', e?.message ?? ('فشل الحفظ'));
     } finally {
       setSaving(false);
     }
@@ -391,7 +392,7 @@ export function WorkOrdersScreen() {
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
-      <ScreenHeader title={isAr ? 'أوامر العمل' : 'Work Orders'} subtitle={`${pending} ${isAr ? 'نشط' : 'active'} · ${completed} ${isAr ? 'مكتمل' : 'done'}`} showBack />
+      <ScreenHeader title={'أوامر العمل'} subtitle={`${pending} ${'نشط'} · ${completed} ${'مكتمل'}`} showBack />
       {loading ? (
         <View style={styles.center}><ActivityIndicator size="large" color={colors.primary} /></View>
       ) : (
@@ -429,7 +430,7 @@ export function WorkOrdersScreen() {
           ListEmptyComponent={
             <View style={styles.empty}>
               <Ionicons name="clipboard-outline" size={44} color={colors.textMuted} />
-              <Text style={[styles.emptyText, { color: colors.textMuted }]}>{isAr ? 'لا توجد أوامر عمل' : 'No work orders'}</Text>
+              <Text style={[styles.emptyText, { color: colors.textMuted }]}>{'لا توجد أوامر عمل'}</Text>
             </View>
           }
         />

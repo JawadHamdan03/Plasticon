@@ -1,28 +1,26 @@
-import React from 'react';
+﻿import React from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { radius, shadow, spacing, typography } from '../../theme';
 import { useAppTheme } from '../../context/ThemeContext';
-import { useLocale } from '../../context/LocaleContext';
 
 export function QualMenuScreen() {
   const { colors } = useAppTheme();
-  const { isAr } = useLocale();
   const navigation = useNavigation<any>();
 
   const ITEMS = [
-    { icon: 'shield-checkmark', label: isAr ? 'فحوصات الجودة' : 'Quality Checks',    desc: isAr ? 'تسجيل ومراجعة فحوصات جودة الدفعات' : 'Log and review batch quality inspections',     screen: 'QualityChecks', color: colors.success },
-{ icon: 'warning',          label: isAr ? 'تنبيهات المواد الخام' : 'Raw Material Alerts', desc: isAr ? 'تنبيهات نقص المخزون ومشاكل جودة المواد' : 'Low stock alerts and material quality issues', screen: 'RawAlerts',     color: colors.warning },
-    { icon: 'document-text',    label: isAr ? 'الوثائق التقنية' : 'Technical Docs',   desc: isAr ? 'إجراءات التشغيل وصحائف البيانات والوثائق الهندسية' : 'SOPs, datasheets, and engineering documents', screen: 'TechDocs',      color: colors.info },
+    { icon: 'shield-checkmark', label: 'فحوصات الجودة',    desc: 'تسجيل ومراجعة فحوصات جودة الدفعات',     screen: 'QualityChecks', color: colors.success },
+{ icon: 'warning',          label: 'تنبيهات المواد الخام', desc: 'تنبيهات نقص المخزون ومشاكل جودة المواد', screen: 'RawAlerts',     color: colors.warning },
+    { icon: 'document-text',    label: 'الوثائق التقنية',   desc: 'إجراءات التشغيل وصحائف البيانات والوثائق الهندسية', screen: 'TechDocs',      color: colors.info },
   ];
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <Text style={[styles.title, { color: colors.text }]}>{isAr ? 'الجودة' : 'Quality'}</Text>
-        <Text style={[styles.sub, { color: colors.textMuted }]}>{isAr ? 'ضبط الجودة والتوثيق' : 'Quality control and documentation'}</Text>
+        <Text style={[styles.title, { color: colors.text }]}>{'الجودة'}</Text>
+        <Text style={[styles.sub, { color: colors.textMuted }]}>{'ضبط الجودة والتوثيق'}</Text>
         <View style={styles.list}>
           {ITEMS.map((item) => (
             <TouchableOpacity key={item.screen} style={[styles.item, { backgroundColor: colors.surface }]} onPress={() => navigation.navigate(item.screen)} activeOpacity={0.75}>

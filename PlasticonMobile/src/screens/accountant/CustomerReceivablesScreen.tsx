@@ -1,5 +1,6 @@
-import React, { useCallback, useEffect, useState } from 'react';
+﻿import React, { useCallback, useEffect, useState } from 'react';
 import {
+import { useLocale } from '../../context/LocaleContext';
   ActivityIndicator,
   Alert,
   FlatList,
@@ -21,7 +22,6 @@ import { api } from '../../api/client';
 import { ScreenHeader, StatCard } from '../../components';
 import { radius, shadow, spacing, typography } from '../../theme';
 import { useAppTheme } from '../../context/ThemeContext';
-import { useLocale } from '../../context/LocaleContext';
 
 interface Receivable {
   id: number;
@@ -51,6 +51,7 @@ function fmt(n: number) { return n.toLocaleString('en-US', { minimumFractionDigi
 
 function InlinePicker<T extends string>({ label, value, options, onChange }: { label: string; value: T; options: T[]; onChange: (v: T) => void }) {
   const { colors } = useAppTheme();
+  const { isAr } = useLocale();
   return (
     <View style={ps.wrap}>
       <Text style={[ps.label, { color: colors.text }]}>{label}</Text>
@@ -87,8 +88,8 @@ function RecModal({ visible, initial, onClose, onSave, saving }: {
   const set = (k: keyof FormState) => (v: string) => setForm((p) => ({ ...p, [k]: v }));
 
   const handleSave = async () => {
-    if (!form.customerName.trim()) return Alert.alert(isAr ? 'تحقق' : 'Validation', isAr ? 'اسم العميل مطلوب.' : 'Customer name is required.');
-    if (!form.amount.trim() || isNaN(Number(form.amount))) return Alert.alert(isAr ? 'تحقق' : 'Validation', isAr ? 'يجب أن يكون المبلغ رقماً.' : 'Amount must be a number.');
+    if (!form.customerName.trim()) return Alert.alert('تحقق', 'اسم العميل مطلوب.');
+    if (!form.amount.trim() || isNaN(Number(form.amount))) return Alert.alert('تحقق', 'يجب أن يكون المبلغ رقماً.');
     await onSave(form);
   };
 
@@ -98,26 +99,26 @@ function RecModal({ visible, initial, onClose, onSave, saving }: {
         <Pressable style={styles.overlayBg} onPress={onClose} />
         <View style={[styles.sheet, { backgroundColor: colors.surface }]}>
           <View style={[styles.sheetHandle, { backgroundColor: colors.border }]} />
-          <Text style={[styles.sheetTitle, { color: colors.text }]}>{initial.customerName ? (isAr ? 'تعديل المستحق' : 'Edit Receivable') : (isAr ? 'مستحق جديد' : 'New Receivable')}</Text>
+          <Text style={[styles.sheetTitle, { color: colors.text }]}>{initial.customerName ? ('تعديل المستحق') : ('مستحق جديد')}</Text>
           <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-            <Text style={[styles.fieldLabel, { color: colors.text }]}>{isAr ? 'اسم العميل *' : 'Customer Name *'}</Text>
-            <TextInput style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]} value={form.customerName} onChangeText={set('customerName')} placeholder={isAr ? 'اسم العميل' : 'Customer name'} placeholderTextColor={colors.textMuted} />
+            <Text style={[styles.fieldLabel, { color: colors.text }]}>{'اسم العميل *'}</Text>
+            <TextInput style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]} value={form.customerName} onChangeText={set('customerName')} placeholder={'اسم العميل'} placeholderTextColor={colors.textMuted} />
 
-            <Text style={[styles.fieldLabel, { color: colors.text }]}>{isAr ? 'المبلغ *' : 'Amount *'}</Text>
+            <Text style={[styles.fieldLabel, { color: colors.text }]}>{'المبلغ *'}</Text>
             <TextInput style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]} value={form.amount} onChangeText={set('amount')} placeholder="0.00" placeholderTextColor={colors.textMuted} keyboardType="numeric" />
 
-            <Text style={[styles.fieldLabel, { color: colors.text }]}>{isAr ? 'تاريخ الاستحقاق' : 'Due Date'}</Text>
+            <Text style={[styles.fieldLabel, { color: colors.text }]}>{'تاريخ الاستحقاق'}</Text>
             <TextInput style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]} value={form.dueDate} onChangeText={set('dueDate')} placeholder="YYYY-MM-DD" placeholderTextColor={colors.textMuted} />
 
-            <InlinePicker label={isAr ? 'الحالة' : 'Status'} value={form.status} options={STATUS_OPTIONS} onChange={(v) => setForm((p) => ({ ...p, status: v }))} />
+            <InlinePicker label={'الحالة'} value={form.status} options={STATUS_OPTIONS} onChange={(v) => setForm((p) => ({ ...p, status: v }))} />
 
-            <Text style={[styles.fieldLabel, { color: colors.text }]}>{isAr ? 'ملاحظات' : 'Notes'}</Text>
-            <TextInput style={[styles.input, styles.multiline, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]} value={form.notes} onChangeText={set('notes')} placeholder={isAr ? 'ملاحظات اختيارية' : 'Optional notes'} placeholderTextColor={colors.textMuted} multiline numberOfLines={3} textAlignVertical="top" />
+            <Text style={[styles.fieldLabel, { color: colors.text }]}>{'ملاحظات'}</Text>
+            <TextInput style={[styles.input, styles.multiline, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]} value={form.notes} onChangeText={set('notes')} placeholder={'ملاحظات اختيارية'} placeholderTextColor={colors.textMuted} multiline numberOfLines={3} textAlignVertical="top" />
           </ScrollView>
           <View style={styles.sheetActions}>
-            <TouchableOpacity style={[styles.cancelBtn, { borderColor: colors.border }]} onPress={onClose}><Text style={[styles.cancelText, { color: colors.textSecondary }]}>{isAr ? 'إلغاء' : 'Cancel'}</Text></TouchableOpacity>
+            <TouchableOpacity style={[styles.cancelBtn, { borderColor: colors.border }]} onPress={onClose}><Text style={[styles.cancelText, { color: colors.textSecondary }]}>{'إلغاء'}</Text></TouchableOpacity>
             <TouchableOpacity style={[styles.saveBtn, { backgroundColor: colors.primary }, saving && { opacity: 0.6 }]} onPress={handleSave} disabled={saving}>
-              {saving ? <ActivityIndicator size="small" color={colors.textInverse} /> : <Text style={[styles.saveText, { color: colors.textInverse }]}>{isAr ? 'حفظ' : 'Save'}</Text>}
+              {saving ? <ActivityIndicator size="small" color={colors.textInverse} /> : <Text style={[styles.saveText, { color: colors.textInverse }]}>{'حفظ'}</Text>}
             </TouchableOpacity>
           </View>
         </View>
@@ -137,7 +138,7 @@ function RecCard({ item, onEdit, onDelete }: { item: Receivable; onEdit: () => v
   const status  = item.status ?? 'PENDING';
   const isPaid  = status === 'COLLECTED' || status === 'PAID';
   const color   = STATUS_COLOR[status] ?? STATUS_COLOR['PENDING'];
-  const name    = item.customerName ?? item.customer?.name ?? `${isAr ? 'سجل' : 'Record'} #${item.id}`;
+  const name    = item.customerName ?? item.customer?.name ?? `${'سجل'} #${item.id}`;
   const amount  = item.amount ?? 0;
 
   return (
@@ -147,13 +148,13 @@ function RecCard({ item, onEdit, onDelete }: { item: Receivable; onEdit: () => v
           <Text style={[styles.customer, { color: colors.text }]} numberOfLines={1}>{name}</Text>
           {item.dueDate && (
             <Text style={[styles.inv, { color: colors.textMuted }]}>
-              {isAr ? 'تاريخ الاستحقاق:' : 'Due:'} {new Date(item.dueDate).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}
+              {'تاريخ الاستحقاق:'} {new Date(item.dueDate).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}
             </Text>
           )}
         </View>
         <View style={styles.cardRight}>
           <Text style={[styles.balance, { color: isPaid ? colors.success : color }]}>${fmt(amount)}</Text>
-          <Text style={[styles.balLabel, { color: colors.textMuted }]}>{isPaid ? (isAr ? 'محصل' : 'collected') : (isAr ? 'متبقي' : 'outstanding')}</Text>
+          <Text style={[styles.balLabel, { color: colors.textMuted }]}>{isPaid ? ('محصل') : ('متبقي')}</Text>
         </View>
         <View style={styles.cardActions}>
           <TouchableOpacity onPress={onEdit} style={styles.actionBtn} hitSlop={6}>
@@ -191,7 +192,7 @@ export function CustomerReceivablesScreen() {
       const res = await api.get<any>('/customer-receivables?limit=30');
       setRecords(Array.isArray(res) ? res : (res?.data ?? res?.items ?? res?.records ?? []));
     } catch (e: any) {
-      Alert.alert(isAr ? 'خطأ' : 'Error', e?.message ?? (isAr ? 'فشل تحميل المستحقات' : 'Failed to load receivables'));
+      Alert.alert('خطأ', e?.message ?? ('فشل تحميل المستحقات'));
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -205,11 +206,11 @@ export function CustomerReceivablesScreen() {
 
   const confirmDelete = (item: Receivable) => {
     Alert.alert(
-      isAr ? 'حذف المستحق' : 'Delete Receivable',
-      `${isAr ? 'حذف سجل لـ' : 'Delete record for'} "${item.customerName ?? item.customer?.name ?? `#${item.id}`}"?`,
+      'حذف المستحق',
+      `${'حذف سجل لـ'} "${item.customerName ?? item.customer?.name ?? `#${item.id}`}"?`,
       [
-        { text: isAr ? 'إلغاء' : 'Cancel', style: 'cancel' },
-        { text: isAr ? 'حذف' : 'Delete', style: 'destructive', onPress: () => void handleDelete(item.id) },
+        { text: 'إلغاء', style: 'cancel' },
+        { text: 'حذف', style: 'destructive', onPress: () => void handleDelete(item.id) },
       ],
     );
   };
@@ -220,7 +221,7 @@ export function CustomerReceivablesScreen() {
       setRefreshing(true);
       await load();
     } catch (e: any) {
-      Alert.alert(isAr ? 'خطأ' : 'Error', e?.message ?? (isAr ? 'فشل الحذف' : 'Failed to delete'));
+      Alert.alert('خطأ', e?.message ?? ('فشل الحذف'));
     }
   };
 
@@ -243,7 +244,7 @@ export function CustomerReceivablesScreen() {
       setRefreshing(true);
       await load();
     } catch (e: any) {
-      Alert.alert(isAr ? 'خطأ' : 'Error', e?.message ?? (isAr ? 'فشل الحفظ' : 'Failed to save'));
+      Alert.alert('خطأ', e?.message ?? ('فشل الحفظ'));
     } finally {
       setSaving(false);
     }
@@ -268,7 +269,7 @@ export function CustomerReceivablesScreen() {
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
-      <ScreenHeader title={isAr ? 'مستحقات العملاء' : 'Customer Receivables'} showBack />
+      <ScreenHeader title={'مستحقات العملاء'} showBack />
       {loading ? (
         <View style={styles.center}><ActivityIndicator size="large" color={colors.primary} /></View>
       ) : (
@@ -282,12 +283,12 @@ export function CustomerReceivablesScreen() {
           ListHeaderComponent={
             <View>
               <View style={styles.kpiRow}>
-                <StatCard label={isAr ? 'الإجمالي' : 'Total'} value={`$${fmt(totalAmt)}`} icon="people" color={colors.primary} style={styles.kpi} />
-                <StatCard label={isAr ? 'معلق' : 'Pending'} value={`$${fmt(pendingAmt)}`} icon="time" color={colors.warning} style={styles.kpi} />
+                <StatCard label={'الإجمالي'} value={`$${fmt(totalAmt)}`} icon="people" color={colors.primary} style={styles.kpi} />
+                <StatCard label={'معلق'} value={`$${fmt(pendingAmt)}`} icon="time" color={colors.warning} style={styles.kpi} />
               </View>
               <View style={[styles.kpiRow, { marginBottom: spacing.sm }]}>
-                <StatCard label={isAr ? 'محصل' : 'Collected'} value={`$${fmt(collectedAmt)}`} icon="checkmark-circle" color={colors.success} style={styles.kpi} />
-                <StatCard label={isAr ? 'متأخر' : 'Overdue'} value={String(overdueCount)} icon="alert-circle" color={colors.danger} style={styles.kpi} />
+                <StatCard label={'محصل'} value={`$${fmt(collectedAmt)}`} icon="checkmark-circle" color={colors.success} style={styles.kpi} />
+                <StatCard label={'متأخر'} value={String(overdueCount)} icon="alert-circle" color={colors.danger} style={styles.kpi} />
               </View>
               <View style={[styles.filterRow, { marginBottom: spacing.sm }]}>
                 {STAT_FILTERS.map((f) => (
@@ -302,7 +303,7 @@ export function CustomerReceivablesScreen() {
               </View>
             </View>
           }
-          ListEmptyComponent={<View style={styles.empty}><Ionicons name="people-outline" size={44} color={colors.textMuted} /><Text style={[styles.emptyText, { color: colors.textMuted }]}>{isAr ? 'لا توجد مستحقات' : 'No receivables'}</Text></View>}
+          ListEmptyComponent={<View style={styles.empty}><Ionicons name="people-outline" size={44} color={colors.textMuted} /><Text style={[styles.emptyText, { color: colors.textMuted }]}>{'لا توجد مستحقات'}</Text></View>}
         />
       )}
 

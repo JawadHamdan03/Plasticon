@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+﻿import React, { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator, RefreshControl, ScrollView,
   StyleSheet, Text, View,
@@ -9,7 +9,6 @@ import { api } from '../../api/client';
 import { ScreenHeader } from '../../components';
 import { radius, shadow, spacing, typography } from '../../theme';
 import { useAppTheme } from '../../context/ThemeContext';
-import { useLocale } from '../../context/LocaleContext';
 
 interface SaleItem {
   machineType: string;
@@ -34,7 +33,6 @@ function fmt(n: number) {
 
 function SaleCard({ item }: { item: Sale }) {
   const { colors } = useAppTheme();
-  const { isAr } = useLocale();
   const date     = new Date(item.date ?? item.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
   const itemDesc = item.items && item.items.length > 0
     ? item.items.map((i) => `${i.machineType} ${i.size} ×${i.quantity}`).join(', ')
@@ -47,7 +45,7 @@ function SaleCard({ item }: { item: Sale }) {
           <Ionicons name="trending-up" size={20} color={colors.success} />
         </View>
         <View style={styles.cardBody}>
-          <Text style={[styles.cardTitle, { color: colors.text }]}>{item.customer?.name ?? `${isAr ? 'بيع' : 'Sale'} #${item.id}`}</Text>
+          <Text style={[styles.cardTitle, { color: colors.text }]}>{item.customer?.name ?? `${'بيع'} #${item.id}`}</Text>
           {itemDesc && <Text style={[styles.cardSub, { color: colors.textMuted }]} numberOfLines={1}>{itemDesc}</Text>}
           <Text style={[styles.cardDate, { color: colors.textMuted }]}>{date}</Text>
         </View>
@@ -55,7 +53,7 @@ function SaleCard({ item }: { item: Sale }) {
       </View>
       {item.soldBy && (
         <Text style={[styles.soldBy, { color: colors.textMuted, borderTopColor: colors.border }]}>
-          {isAr ? 'بواسطة' : 'By'}: {item.soldBy.fullName}
+          {'بواسطة'}: {item.soldBy.fullName}
         </Text>
       )}
     </View>
@@ -64,7 +62,6 @@ function SaleCard({ item }: { item: Sale }) {
 
 export function SalesAdminScreen() {
   const { colors } = useAppTheme();
-  const { isAr } = useLocale();
   const [sales,      setSales]      = useState<Sale[]>([]);
   const [loading,    setLoading]    = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -87,7 +84,7 @@ export function SalesAdminScreen() {
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
-      <ScreenHeader title={isAr ? 'المبيعات' : 'Sales'} subtitle={isAr ? 'طلبات البيع والإيرادات' : 'Sales orders and revenue'} />
+      <ScreenHeader title={'المبيعات'} subtitle={'طلبات البيع والإيرادات'} />
       {loading ? (
         <View style={styles.center}><ActivityIndicator size="large" color={colors.primary} /></View>
       ) : (
@@ -99,20 +96,20 @@ export function SalesAdminScreen() {
           <View style={[styles.kpiRow, { backgroundColor: colors.surface }]}>
             <View style={styles.kpi}>
               <Text style={[styles.kpiVal, { color: colors.primary }]}>{sales.length}</Text>
-              <Text style={[styles.kpiLabel, { color: colors.textMuted }]}>{isAr ? 'الطلبات' : 'Orders'}</Text>
+              <Text style={[styles.kpiLabel, { color: colors.textMuted }]}>{'الطلبات'}</Text>
             </View>
             <View style={styles.kpi}>
               <Text style={[styles.kpiVal, { color: colors.success }]}>
                 ${totalRevenue.toLocaleString('en-US', { maximumFractionDigits: 0 })}
               </Text>
-              <Text style={[styles.kpiLabel, { color: colors.textMuted }]}>{isAr ? 'إجمالي الإيرادات' : 'Total Revenue'}</Text>
+              <Text style={[styles.kpiLabel, { color: colors.textMuted }]}>{'إجمالي الإيرادات'}</Text>
             </View>
           </View>
 
           {sales.length === 0 ? (
             <View style={styles.empty}>
               <Ionicons name="bar-chart-outline" size={44} color={colors.textMuted} />
-              <Text style={[styles.emptyText, { color: colors.textMuted }]}>{isAr ? 'لا توجد سجلات مبيعات' : 'No sales records found'}</Text>
+              <Text style={[styles.emptyText, { color: colors.textMuted }]}>{'لا توجد سجلات مبيعات'}</Text>
             </View>
           ) : (
             <View style={styles.list}>

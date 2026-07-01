@@ -1,5 +1,6 @@
-import React, { useCallback, useEffect, useState } from 'react';
+﻿import React, { useCallback, useEffect, useState } from 'react';
 import {
+import { useLocale } from '../../context/LocaleContext';
   ActivityIndicator, Alert, FlatList, Modal, RefreshControl,
   ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View,
 } from 'react-native';
@@ -10,7 +11,6 @@ import { useAuth } from '../../auth/AuthContext';
 import { ScreenHeader } from '../../components';
 import { radius, spacing, typography } from '../../theme';
 import { useAppTheme } from '../../context/ThemeContext';
-import { useLocale } from '../../context/LocaleContext';
 
 type Target = {
   id: number; month: number; year: number;
@@ -64,7 +64,7 @@ export function TargetsScreen() {
 
   const handleCreate = async () => {
     if (!targetAmt || Number(targetAmt) <= 0) {
-      Alert.alert(isAr ? 'أدخل المبلغ المستهدف' : 'Enter target amount');
+      Alert.alert('أدخل المبلغ المستهدف');
       return;
     }
     setSaving(true);
@@ -81,7 +81,7 @@ export function TargetsScreen() {
       setYear(String(now.getFullYear()));
       void load();
     } catch (e: any) {
-      Alert.alert(isAr ? 'خطأ' : 'Error', e?.message ?? 'Error');
+      Alert.alert('خطأ', e?.message ?? 'Error');
     } finally {
       setSaving(false);
     }
@@ -94,7 +94,7 @@ export function TargetsScreen() {
       await api.patch(`/sales-rep/targets/${id}/achieved`, { achievedAmount: val });
       void load();
     } catch (e: any) {
-      Alert.alert(isAr ? 'خطأ' : 'Error', e?.message ?? 'Error');
+      Alert.alert('خطأ', e?.message ?? 'Error');
     } finally {
       setSavingAchieved(null);
     }
@@ -117,7 +117,7 @@ export function TargetsScreen() {
               {done && (
                 <View style={styles.doneBadge}>
                   <Ionicons name="checkmark-circle" size={12} color="#10b981" />
-                  <Text style={styles.doneBadgeText}>{isAr ? 'مكتمل' : 'Achieved'}</Text>
+                  <Text style={styles.doneBadgeText}>{'مكتمل'}</Text>
                 </View>
               )}
               {item.rep && (
@@ -146,7 +146,7 @@ export function TargetsScreen() {
         {isSalesRep && (
           <View style={[styles.updateRow, { borderTopColor: colors.border }]}>
             <Text style={[styles.updateLabel, { color: colors.textSecondary }]}>
-              {isAr ? 'الإنجاز الفعلي:' : 'Update achieved:'}
+              {'الإنجاز الفعلي:'}
             </Text>
             <TextInput
               style={[styles.updateInput, { color: colors.text, borderColor: colors.border, backgroundColor: colors.background }]}
@@ -161,7 +161,7 @@ export function TargetsScreen() {
             >
               {savingAchieved === item.id
                 ? <ActivityIndicator size="small" color="#fff" />
-                : <Text style={styles.updateBtnText}>{isAr ? 'تحديث' : 'Update'}</Text>
+                : <Text style={styles.updateBtnText}>{'تحديث'}</Text>
               }
             </TouchableOpacity>
           </View>
@@ -172,16 +172,16 @@ export function TargetsScreen() {
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['bottom']}>
-      <ScreenHeader title={isAr ? 'أهداف المبيعات' : 'Sales Targets'} />
+      <ScreenHeader title={'أهداف المبيعات'} />
 
       {loading ? (
         <ActivityIndicator color={colors.accent} style={{ marginTop: 40 }} />
       ) : error ? (
         <View style={styles.emptyBox}>
           <Ionicons name="cloud-offline-outline" size={40} color={colors.textSecondary} />
-          <Text style={[styles.empty, { color: colors.text, fontWeight: '700' }]}>{isAr ? 'تعذّر الاتصال' : 'Connection failed'}</Text>
+          <Text style={[styles.empty, { color: colors.text, fontWeight: '700' }]}>{'تعذّر الاتصال'}</Text>
           <TouchableOpacity style={[styles.retryBtn, { backgroundColor: colors.accent }]} onPress={() => { setLoading(true); void load(); }}>
-            <Text style={styles.retryText}>{isAr ? 'إعادة المحاولة' : 'Retry'}</Text>
+            <Text style={styles.retryText}>{'إعادة المحاولة'}</Text>
           </TouchableOpacity>
         </View>
       ) : (
@@ -195,11 +195,11 @@ export function TargetsScreen() {
             <View style={styles.emptyBox}>
               <Ionicons name="flag-outline" size={40} color={colors.textSecondary} />
               <Text style={[styles.empty, { color: colors.textSecondary }]}>
-                {isAr ? 'لا توجد أهداف بعد' : 'No targets set yet'}
+                {'لا توجد أهداف بعد'}
               </Text>
               {isSalesRep && (
                 <TouchableOpacity style={[styles.retryBtn, { backgroundColor: colors.accent }]} onPress={() => setShowCreate(true)}>
-                  <Text style={styles.retryText}>{isAr ? 'تعيين هدف' : 'Set Target'}</Text>
+                  <Text style={styles.retryText}>{'تعيين هدف'}</Text>
                 </TouchableOpacity>
               )}
             </View>
@@ -220,7 +220,7 @@ export function TargetsScreen() {
           <View style={[styles.sheet, { backgroundColor: colors.surface }]}>
             <View style={[styles.handle, { backgroundColor: colors.border }]} />
             <View style={styles.sheetHeader}>
-              <Text style={[styles.sheetTitle, { color: colors.text }]}>{isAr ? 'تعيين هدف جديد' : 'Set New Target'}</Text>
+              <Text style={[styles.sheetTitle, { color: colors.text }]}>{'تعيين هدف جديد'}</Text>
               <TouchableOpacity onPress={() => setShowCreate(false)}>
                 <Ionicons name="close" size={22} color={colors.textSecondary} />
               </TouchableOpacity>
@@ -228,7 +228,7 @@ export function TargetsScreen() {
 
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ padding: spacing.md }}>
               {/* Month picker */}
-              <Text style={[styles.label, { color: colors.textSecondary }]}>{isAr ? 'الشهر' : 'Month'}</Text>
+              <Text style={[styles.label, { color: colors.textSecondary }]}>{'الشهر'}</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: spacing.sm }}>
                 <View style={{ flexDirection: 'row', gap: 8 }}>
                   {Array.from({ length: 12 }, (_, i) => String(i + 1)).map((m) => (
@@ -246,7 +246,7 @@ export function TargetsScreen() {
               </ScrollView>
 
               {/* Year */}
-              <Text style={[styles.label, { color: colors.textSecondary }]}>{isAr ? 'السنة' : 'Year'}</Text>
+              <Text style={[styles.label, { color: colors.textSecondary }]}>{'السنة'}</Text>
               <TextInput
                 style={[styles.input, { color: colors.text, borderColor: colors.border, backgroundColor: colors.background }]}
                 keyboardType="number-pad"
@@ -255,7 +255,7 @@ export function TargetsScreen() {
               />
 
               {/* Target Amount */}
-              <Text style={[styles.label, { color: colors.textSecondary }]}>{isAr ? 'المبلغ المستهدف (₪) *' : 'Target Amount (₪) *'}</Text>
+              <Text style={[styles.label, { color: colors.textSecondary }]}>{'المبلغ المستهدف (₪) *'}</Text>
               <TextInput
                 style={[styles.input, { color: colors.text, borderColor: colors.border, backgroundColor: colors.background }]}
                 keyboardType="decimal-pad"
@@ -266,10 +266,10 @@ export function TargetsScreen() {
               />
 
               {/* Notes */}
-              <Text style={[styles.label, { color: colors.textSecondary }]}>{isAr ? 'ملاحظات' : 'Notes'}</Text>
+              <Text style={[styles.label, { color: colors.textSecondary }]}>{'ملاحظات'}</Text>
               <TextInput
                 style={[styles.input, styles.textarea, { color: colors.text, borderColor: colors.border, backgroundColor: colors.background }]}
-                placeholder={isAr ? 'ملاحظات اختيارية...' : 'Optional notes...'}
+                placeholder={'ملاحظات اختيارية...'}
                 placeholderTextColor={colors.textSecondary}
                 value={notes}
                 onChangeText={setNotes}
@@ -279,7 +279,7 @@ export function TargetsScreen() {
 
               <View style={styles.modalActions}>
                 <TouchableOpacity style={[styles.cancelBtn, { borderColor: colors.border }]} onPress={() => setShowCreate(false)}>
-                  <Text style={{ color: colors.textSecondary, fontWeight: '600' }}>{isAr ? 'إلغاء' : 'Cancel'}</Text>
+                  <Text style={{ color: colors.textSecondary, fontWeight: '600' }}>{'إلغاء'}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={[styles.submitBtn, { backgroundColor: saving ? colors.textSecondary : colors.accent }]}
@@ -287,7 +287,7 @@ export function TargetsScreen() {
                   disabled={saving}
                 >
                   <Ionicons name="flag" size={15} color="#fff" />
-                  <Text style={styles.submitText}>{saving ? (isAr ? 'جارٍ الحفظ...' : 'Saving...') : (isAr ? 'حفظ الهدف' : 'Save Target')}</Text>
+                  <Text style={styles.submitText}>{saving ? ('جارٍ الحفظ...') : ('حفظ الهدف')}</Text>
                 </TouchableOpacity>
               </View>
             </ScrollView>

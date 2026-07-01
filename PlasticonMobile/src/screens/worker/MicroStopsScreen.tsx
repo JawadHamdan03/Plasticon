@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+﻿import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator, Alert, Modal, RefreshControl, ScrollView,
   StyleSheet, Text, TextInput, TouchableOpacity, View,
@@ -9,7 +9,6 @@ import { api } from '../../api/client';
 import { ScreenHeader } from '../../components';
 import { radius, shadow, spacing, typography } from '../../theme';
 import { useAppTheme } from '../../context/ThemeContext';
-import { useLocale } from '../../context/LocaleContext';
 
 interface MicroStop {
   id: number;
@@ -21,7 +20,6 @@ interface MicroStop {
 
 export function MicroStopsScreen() {
   const { colors } = useAppTheme();
-  const { isAr } = useLocale();
   const today0 = new Date().toISOString().slice(0, 10);
   const month0 = new Date().toISOString().slice(0, 7) + '-01';
   const [fromDate, setFromDate] = useState(month0);
@@ -56,18 +54,18 @@ export function MicroStopsScreen() {
 
   const handleDelete = (stop: MicroStop) => {
     Alert.alert(
-      isAr ? 'حذف التوقف' : 'Delete Stop',
-      isAr ? 'هل أنت متأكد؟' : 'Are you sure?',
+      'حذف التوقف',
+      'هل أنت متأكد؟',
       [
-        { text: isAr ? 'إلغاء' : 'Cancel', style: 'cancel' },
+        { text: 'إلغاء', style: 'cancel' },
         {
-          text: isAr ? 'حذف' : 'Delete', style: 'destructive',
+          text: 'حذف', style: 'destructive',
           onPress: async () => {
             try {
               await api.delete(`/worker-tools/entries/micro/${stop.id}`);
               setStops((prev) => prev.filter((s) => s.id !== stop.id));
             } catch (e: any) {
-              Alert.alert(isAr ? 'خطأ' : 'Error', e.message ?? 'Failed');
+              Alert.alert('خطأ', e.message ?? 'Failed');
             }
           },
         },
@@ -76,9 +74,9 @@ export function MicroStopsScreen() {
   };
 
   const submit = async () => {
-    if (!machine.trim()) { Alert.alert(isAr ? 'مطلوب' : 'Required', isAr ? 'أدخل اسم الآلة.' : 'Enter machine label.'); return; }
-    if (!reason.trim()) { Alert.alert(isAr ? 'مطلوب' : 'Required', isAr ? 'اشرح سبب التوقف.' : 'Describe the stop reason.'); return; }
-    if (!duration.trim() || isNaN(Number(duration)) || Number(duration) < 0) { Alert.alert(isAr ? 'مطلوب' : 'Required', isAr ? 'أدخل مدة صالحة.' : 'Enter a valid duration.'); return; }
+    if (!machine.trim()) { Alert.alert('مطلوب', 'أدخل اسم الآلة.'); return; }
+    if (!reason.trim()) { Alert.alert('مطلوب', 'اشرح سبب التوقف.'); return; }
+    if (!duration.trim() || isNaN(Number(duration)) || Number(duration) < 0) { Alert.alert('مطلوب', 'أدخل مدة صالحة.'); return; }
     setSaving(true);
     try {
       await api.post('/worker-tools/micro-stops', {
@@ -89,15 +87,15 @@ export function MicroStopsScreen() {
       setModal(false); setReason(''); setDuration(''); setMachine('');
       setLoading(true); void load();
     } catch (e: any) {
-      Alert.alert(isAr ? 'خطأ' : 'Error', e.message ?? (isAr ? 'فشل تسجيل التوقف الصغير.' : 'Failed to log micro-stop.'));
+      Alert.alert('خطأ', e.message ?? ('فشل تسجيل التوقف الصغير.'));
     } finally { setSaving(false); }
   };
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
       <ScreenHeader
-        title={isAr ? 'التوقفات الصغيرة' : 'Micro Stops'}
-        subtitle={`${stops.length} ${isAr ? 'مسجل' : 'logged'} · ${totalMin.toFixed(0)} ${isAr ? 'دقيقة' : 'min total'}`}
+        title={'التوقفات الصغيرة'}
+        subtitle={`${stops.length} ${'مسجل'} · ${totalMin.toFixed(0)} ${'دقيقة'}`}
         showBack
       />
       {loading ? (
@@ -132,13 +130,13 @@ export function MicroStopsScreen() {
           </View>
           <TouchableOpacity style={[styles.addBtn, { backgroundColor: colors.info }]} onPress={() => setModal(true)} activeOpacity={0.8}>
             <Ionicons name="pause-circle" size={20} color="#fff" />
-            <Text style={styles.addText}>{isAr ? 'تسجيل توقف صغير' : 'Log Micro Stop'}</Text>
+            <Text style={styles.addText}>{'تسجيل توقف صغير'}</Text>
           </TouchableOpacity>
 
           {filteredStops.length === 0 ? (
             <View style={styles.empty}>
               <Ionicons name="checkmark-circle-outline" size={48} color={colors.success} />
-              <Text style={[styles.emptyText, { color: colors.textMuted }]}>{isAr ? 'لا توجد توقفات صغيرة' : 'No micro stops logged'}</Text>
+              <Text style={[styles.emptyText, { color: colors.textMuted }]}>{'لا توجد توقفات صغيرة'}</Text>
             </View>
           ) : (
             <View style={styles.list}>
@@ -146,7 +144,7 @@ export function MicroStopsScreen() {
                 <View key={`${s.id}-${idx}`} style={[styles.card, { backgroundColor: colors.surface }]}>
                   <View style={styles.durationBox}>
                     <Text style={[styles.durationNum, { color: colors.info }]}>{Number(s.duration_minutes).toFixed(0)}</Text>
-                    <Text style={[styles.durationUnit, { color: colors.textMuted }]}>{isAr ? 'دق' : 'min'}</Text>
+                    <Text style={[styles.durationUnit, { color: colors.textMuted }]}>{'دق'}</Text>
                   </View>
                   <View style={styles.cardBody}>
                     <Text style={[styles.cardMachine, { color: colors.primary }]}>{s.machine_label}</Text>
@@ -167,23 +165,23 @@ export function MicroStopsScreen() {
         <View style={styles.overlay}>
           <View style={[styles.sheet, { backgroundColor: colors.surface }]}>
             <View style={[styles.handle, { backgroundColor: colors.border }]} />
-            <Text style={[styles.sheetTitle, { color: colors.text }]}>{isAr ? 'تسجيل توقف صغير' : 'Log Micro Stop'}</Text>
+            <Text style={[styles.sheetTitle, { color: colors.text }]}>{'تسجيل توقف صغير'}</Text>
 
-            <Text style={[styles.label, { color: colors.textMuted }]}>{isAr ? 'الآلة / الخط *' : 'Machine / Line *'}</Text>
-            <TextInput style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]} placeholder={isAr ? 'مثال: خط 3، بثق A' : 'e.g. Line 3, Extruder A'} placeholderTextColor={colors.textMuted} value={machine} onChangeText={setMachine} />
+            <Text style={[styles.label, { color: colors.textMuted }]}>{'الآلة / الخط *'}</Text>
+            <TextInput style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]} placeholder={'مثال: خط 3، بثق A'} placeholderTextColor={colors.textMuted} value={machine} onChangeText={setMachine} />
 
-            <Text style={[styles.label, { color: colors.textMuted }]}>{isAr ? 'سبب التوقف *' : 'Stop Reason *'}</Text>
-            <TextInput style={[styles.input, styles.inputMulti, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]} placeholder={isAr ? 'اشرح ما سبب التوقف…' : 'Describe what caused the stop…'} placeholderTextColor={colors.textMuted} value={reason} onChangeText={setReason} multiline numberOfLines={3} />
+            <Text style={[styles.label, { color: colors.textMuted }]}>{'سبب التوقف *'}</Text>
+            <TextInput style={[styles.input, styles.inputMulti, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]} placeholder={'اشرح ما سبب التوقف…'} placeholderTextColor={colors.textMuted} value={reason} onChangeText={setReason} multiline numberOfLines={3} />
 
-            <Text style={[styles.label, { color: colors.textMuted }]}>{isAr ? 'المدة (بالدقائق) *' : 'Duration (minutes) *'}</Text>
+            <Text style={[styles.label, { color: colors.textMuted }]}>{'المدة (بالدقائق) *'}</Text>
             <TextInput style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]} placeholder="e.g. 5" placeholderTextColor={colors.textMuted} value={duration} onChangeText={setDuration} keyboardType="decimal-pad" />
 
             <View style={styles.actions}>
               <TouchableOpacity style={[styles.cancelBtn, { borderColor: colors.border }]} onPress={() => setModal(false)}>
-                <Text style={[styles.cancelText, { color: colors.textMuted }]}>{isAr ? 'إلغاء' : 'Cancel'}</Text>
+                <Text style={[styles.cancelText, { color: colors.textMuted }]}>{'إلغاء'}</Text>
               </TouchableOpacity>
               <TouchableOpacity style={[styles.submitBtn, { backgroundColor: colors.info }]} onPress={submit} disabled={saving}>
-                {saving ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.submitText}>{isAr ? 'تسجيل التوقف' : 'Log Stop'}</Text>}
+                {saving ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.submitText}>{'تسجيل التوقف'}</Text>}
               </TouchableOpacity>
             </View>
           </View>

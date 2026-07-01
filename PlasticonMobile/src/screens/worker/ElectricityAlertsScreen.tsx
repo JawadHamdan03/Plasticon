@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+﻿import React, { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator, RefreshControl, ScrollView,
   StyleSheet, Text, View,
@@ -9,7 +9,6 @@ import { api } from '../../api/client';
 import { ScreenHeader } from '../../components';
 import { radius, shadow, spacing, typography } from '../../theme';
 import { useAppTheme } from '../../context/ThemeContext';
-import { useLocale } from '../../context/LocaleContext';
 
 interface ElecAlert {
   id:        number;
@@ -22,7 +21,6 @@ interface ElecAlert {
 
 export function ElectricityAlertsScreen() {
   const { colors } = useAppTheme();
-  const { isAr } = useLocale();
   const [alerts,     setAlerts]     = useState<ElecAlert[]>([]);
   const [loading,    setLoading]    = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -50,7 +48,7 @@ export function ElectricityAlertsScreen() {
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
-      <ScreenHeader title={isAr ? 'تنبيهات الكهرباء' : 'Electricity Alerts'} subtitle={`${active.length} ${isAr ? 'نشط' : 'active'}`} showBack />
+      <ScreenHeader title={'تنبيهات الكهرباء'} subtitle={`${active.length} ${'نشط'}`} showBack />
       <ScrollView
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
@@ -61,14 +59,14 @@ export function ElectricityAlertsScreen() {
         ) : alerts.length === 0 ? (
           <View style={styles.empty}>
             <Ionicons name="flash-outline" size={48} color={colors.success} />
-            <Text style={[styles.emptyText, { color: colors.text }]}>{isAr ? 'لا توجد تنبيهات كهرباء' : 'No electricity alerts'}</Text>
-            <Text style={[styles.emptyHint, { color: colors.textMuted }]}>{isAr ? 'جميع الأنظمة تعمل بشكل طبيعي' : 'All systems operating normally'}</Text>
+            <Text style={[styles.emptyText, { color: colors.text }]}>{'لا توجد تنبيهات كهرباء'}</Text>
+            <Text style={[styles.emptyHint, { color: colors.textMuted }]}>{'جميع الأنظمة تعمل بشكل طبيعي'}</Text>
           </View>
         ) : (
           <>
             {active.length > 0 && (
               <>
-                <Text style={[styles.section, { color: colors.textMuted }]}>{isAr ? 'التنبيهات النشطة' : 'Active Alerts'}</Text>
+                <Text style={[styles.section, { color: colors.textMuted }]}>{'التنبيهات النشطة'}</Text>
                 <View style={styles.list}>
                   {active.map((a, idx) => {
                     const c = SEV_COLOR[a.severity?.toLowerCase() ?? 'medium'] ?? colors.warning;
@@ -76,7 +74,7 @@ export function ElectricityAlertsScreen() {
                       <View key={`${a.id}-${idx}`} style={[styles.card, { backgroundColor: colors.surface, borderLeftColor: c }]}>
                         <View style={styles.cardRow}>
                           <Ionicons name="flash" size={16} color={c} />
-                          <Text style={[styles.cardType, { color: c }]}>{a.type ?? (isAr ? 'تنبيه' : 'Alert')}</Text>
+                          <Text style={[styles.cardType, { color: c }]}>{a.type ?? ('تنبيه')}</Text>
                           {a.severity && (
                             <View style={[styles.badge, { backgroundColor: `${c}20` }]}>
                               <Text style={[styles.badgeText, { color: c }]}>{a.severity}</Text>
@@ -94,13 +92,13 @@ export function ElectricityAlertsScreen() {
 
             {resolved.length > 0 && (
               <>
-                <Text style={[styles.section, { marginTop: spacing.md, color: colors.textMuted }]}>{isAr ? 'تم الحل' : 'Resolved'}</Text>
+                <Text style={[styles.section, { marginTop: spacing.md, color: colors.textMuted }]}>{'تم الحل'}</Text>
                 <View style={styles.list}>
                   {resolved.map((a, idx) => (
                     <View key={`${a.id}-${idx}`} style={[styles.card, styles.cardResolved, { backgroundColor: colors.surface, borderLeftColor: colors.border }]}>
                       <View style={styles.cardRow}>
                         <Ionicons name="checkmark-circle" size={14} color={colors.success} />
-                        <Text style={[styles.cardType, { color: colors.textMuted }]}>{a.type ?? (isAr ? 'تنبيه' : 'Alert')}</Text>
+                        <Text style={[styles.cardType, { color: colors.textMuted }]}>{a.type ?? ('تنبيه')}</Text>
                       </View>
                       <Text style={[styles.cardMsg, { color: colors.textMuted }]}>{a.message}</Text>
                       <Text style={[styles.cardDate, { color: colors.textMuted }]}>{new Date(a.createdAt).toLocaleString()}</Text>

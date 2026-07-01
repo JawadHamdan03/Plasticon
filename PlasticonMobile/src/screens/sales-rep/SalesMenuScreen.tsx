@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -7,8 +7,8 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { ScreenHeader } from '../../components';
 import { radius, spacing, typography } from '../../theme';
 import { useAppTheme } from '../../context/ThemeContext';
-import { useLocale } from '../../context/LocaleContext';
 import type { SalesRepSalesStackParamList } from '../../navigation/types';
+import { useLocale } from '../../context/LocaleContext';
 
 type NavProp = NativeStackNavigationProp<SalesRepSalesStackParamList>;
 
@@ -26,7 +26,7 @@ export function SalesMenuScreen() {
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['bottom']}>
-      <ScreenHeader title={isAr ? 'أدوات المبيعات' : 'Sales Tools'} />
+      <ScreenHeader title={'أدوات المبيعات'} />
       <ScrollView contentContainerStyle={styles.container}>
         {MENU_ITEMS.map((item) => (
           <TouchableOpacity
@@ -41,7 +41,7 @@ export function SalesMenuScreen() {
             <Text style={[styles.label, { color: colors.text }]}>
               {isAr ? item.labelAr : item.labelEn}
             </Text>
-            <Ionicons name={isAr ? 'chevron-back' : 'chevron-forward'} size={18} color={colors.textSecondary} />
+            <Ionicons name={'chevron-back'} size={18} color={colors.textSecondary} />
           </TouchableOpacity>
         ))}
       </ScrollView>

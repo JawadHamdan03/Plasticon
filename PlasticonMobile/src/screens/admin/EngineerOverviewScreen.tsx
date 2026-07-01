@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+﻿import React, { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, FlatList, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -6,7 +6,6 @@ import { api } from '../../api/client';
 import { ScreenHeader, StatCard } from '../../components';
 import { radius, shadow, spacing, typography } from '../../theme';
 import { useAppTheme } from '../../context/ThemeContext';
-import { useLocale } from '../../context/LocaleContext';
 
 interface HealthRecord {
   id: number;
@@ -21,11 +20,10 @@ interface HealthRecord {
 
 function HealthCard({ item }: { item: HealthRecord }) {
   const { colors } = useAppTheme();
-  const { isAr } = useLocale();
 
   const eff   = item.efficiencyRating ?? 0;
   const color = eff >= 90 ? colors.success : eff >= 70 ? colors.warning : colors.danger;
-  const name  = item.machine?.name ?? item.machineName ?? `${isAr ? 'آلة' : 'Machine'} #${item.id}`;
+  const name  = item.machine?.name ?? item.machineName ?? `${'آلة'} #${item.id}`;
 
   return (
     <View style={[styles.card, { backgroundColor: colors.surface }]}>
@@ -40,16 +38,16 @@ function HealthCard({ item }: { item: HealthRecord }) {
       </View>
       <View style={styles.metrics}>
         <View style={styles.metric}>
-          <Text style={[styles.metricLabel, { color: colors.text }]}>{isAr ? 'الكفاءة' : 'Efficiency'}</Text>
+          <Text style={[styles.metricLabel, { color: colors.text }]}>{'الكفاءة'}</Text>
           <View style={[styles.barTrack, { backgroundColor: colors.border }]}>
             <View style={[styles.barFill, { width: `${eff}%`, backgroundColor: color }]} />
           </View>
         </View>
         {item.downtimePercentage != null && (
-          <Text style={[styles.detail, { color: colors.text }]}>{isAr ? 'وقت التوقف:' : 'Downtime:'} <Text style={[styles.detailVal, { color: colors.text }]}>{item.downtimePercentage}%</Text></Text>
+          <Text style={[styles.detail, { color: colors.text }]}>{'وقت التوقف:'} <Text style={[styles.detailVal, { color: colors.text }]}>{item.downtimePercentage}%</Text></Text>
         )}
         {item.maintenanceHours != null && (
-          <Text style={[styles.detail, { color: colors.text }]}>{isAr ? 'ساعات الصيانة:' : 'Maint Hours:'} <Text style={[styles.detailVal, { color: colors.text }]}>{item.maintenanceHours}h</Text></Text>
+          <Text style={[styles.detail, { color: colors.text }]}>{'ساعات الصيانة:'} <Text style={[styles.detailVal, { color: colors.text }]}>{item.maintenanceHours}h</Text></Text>
         )}
       </View>
     </View>
@@ -58,7 +56,6 @@ function HealthCard({ item }: { item: HealthRecord }) {
 
 export function EngineerOverviewScreen() {
   const { colors } = useAppTheme();
-  const { isAr } = useLocale();
 
   const [records, setRecords]   = useState<HealthRecord[]>([]);
   const [loading, setLoading]   = useState(true);
@@ -82,7 +79,7 @@ export function EngineerOverviewScreen() {
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
-      <ScreenHeader title={isAr ? 'نظرة المهندس' : 'Engineer Overview'} showBack />
+      <ScreenHeader title={'نظرة المهندس'} showBack />
       {loading ? (
         <View style={styles.center}><ActivityIndicator size="large" color={colors.primary} /></View>
       ) : (
@@ -101,7 +98,7 @@ export function EngineerOverviewScreen() {
           }
           ListHeaderComponent={
             <StatCard
-              label={isAr ? 'متوسط كفاءة الآلات' : 'Avg Machine Efficiency'}
+              label={'متوسط كفاءة الآلات'}
               value={`${avgEff}%`}
               icon="speedometer"
               color={avgEff >= 80 ? colors.success : colors.warning}
@@ -111,7 +108,7 @@ export function EngineerOverviewScreen() {
           ListEmptyComponent={
             <View style={styles.empty}>
               <Ionicons name="hardware-chip-outline" size={44} color={colors.textMuted} />
-              <Text style={[styles.emptyText, { color: colors.textMuted }]}>{isAr ? 'لا توجد سجلات صحة' : 'No health records'}</Text>
+              <Text style={[styles.emptyText, { color: colors.textMuted }]}>{'لا توجد سجلات صحة'}</Text>
             </View>
           }
         />

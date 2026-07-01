@@ -1,29 +1,27 @@
-import React from 'react';
+﻿import React from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { radius, shadow, spacing, typography } from '../../theme';
 import { useAppTheme } from '../../context/ThemeContext';
-import { useLocale } from '../../context/LocaleContext';
 
 export function AuditMenuScreen() {
   const { colors } = useAppTheme();
-  const { isAr } = useLocale();
   const navigation = useNavigation<any>();
 
   const ITEMS = [
-    { icon: 'shield-checkmark', label: isAr ? 'سجلات التدقيق' : 'Audit Logs',    desc: isAr ? 'سجل النشاط الكامل وتاريخ التغييرات' : 'Full system activity and change history',    screen: 'AuditLogs',     color: colors.primary },
-    { icon: 'camera',           label: isAr ? 'اللقطات' : 'Snapshots',           desc: isAr ? 'قراءات الآلات والكهرباء من العمال' : 'Machine and electricity readings by workers', screen: 'AdminSnaps',    color: colors.info },
-    { icon: 'hardware-chip',    label: isAr ? 'أدوات الذكاء الاصطناعي' : 'AI Tools', desc: isAr ? 'تقارير ورؤى إدارية بالذكاء الاصطناعي' : 'AI-powered admin reports and insights',      screen: 'AIHub',         color: '#7C3AED' },
-    { icon: 'notifications',    label: isAr ? 'الإشعارات' : 'Notifications',     desc: isAr ? 'تنبيهات النظام ومركز الإشعارات' : 'System alerts and notification centre',         screen: 'Notifications', color: colors.warning },
+    { icon: 'shield-checkmark', label: 'سجلات التدقيق',    desc: 'سجل النشاط الكامل وتاريخ التغييرات',    screen: 'AuditLogs',     color: colors.primary },
+    { icon: 'camera',           label: 'اللقطات',           desc: 'قراءات الآلات والكهرباء من العمال', screen: 'AdminSnaps',    color: colors.info },
+    { icon: 'hardware-chip',    label: 'أدوات الذكاء الاصطناعي', desc: 'تقارير ورؤى إدارية بالذكاء الاصطناعي',      screen: 'AIHub',         color: '#7C3AED' },
+    { icon: 'notifications',    label: 'الإشعارات',     desc: 'تنبيهات النظام ومركز الإشعارات',         screen: 'Notifications', color: colors.warning },
   ];
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <Text style={[styles.title, { color: colors.text }]}>{isAr ? 'التدقيق والأدوات' : 'Audit & Tools'}</Text>
-        <Text style={[styles.sub, { color: colors.textMuted }]}>{isAr ? 'مراقبة النظام وأدوات الذكاء الاصطناعي' : 'System monitoring and AI tools'}</Text>
+        <Text style={[styles.title, { color: colors.text }]}>{'التدقيق والأدوات'}</Text>
+        <Text style={[styles.sub, { color: colors.textMuted }]}>{'مراقبة النظام وأدوات الذكاء الاصطناعي'}</Text>
         <View style={styles.list}>
           {ITEMS.map((item) => (
             <TouchableOpacity key={item.screen} style={[styles.item, { backgroundColor: colors.surface }]} onPress={() => navigation.navigate(item.screen)} activeOpacity={0.75}>

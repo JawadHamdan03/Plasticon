@@ -1,5 +1,6 @@
-import React, { useCallback, useEffect, useState } from 'react';
+﻿import React, { useCallback, useEffect, useState } from 'react';
 import {
+import { useLocale } from '../../context/LocaleContext';
   ActivityIndicator, Alert, FlatList, Image, KeyboardAvoidingView,
   Modal, Platform, RefreshControl, ScrollView, StyleSheet, Switch,
   Text, TextInput, TouchableOpacity, View,
@@ -12,7 +13,6 @@ import { ScreenHeader } from '../../components';
 import { radius, shadow, spacing, typography } from '../../theme';
 import { API_BASE } from '../../config';
 import { useAppTheme } from '../../context/ThemeContext';
-import { useLocale } from '../../context/LocaleContext';
 
 interface Shift { id: number; name: string; }
 
@@ -95,19 +95,19 @@ function ReadingCard({
       {/* Readings row */}
       <View style={[styles.readingRow, { borderTopColor: colors.border }]}>
         <View style={[styles.readingBox, { backgroundColor: colors.surfaceAlt, borderColor: colors.border }]}>
-          <Text style={[styles.readingLbl, { color: colors.textMuted }]}>{isAr ? 'قراءة البداية' : 'Start'}</Text>
+          <Text style={[styles.readingLbl, { color: colors.textMuted }]}>{'قراءة البداية'}</Text>
           <Text style={[styles.readingVal, { color: colors.text }]}>{item.startReading.toLocaleString()}</Text>
         </View>
         <View style={[styles.arrowWrap, { backgroundColor: colors.border }]}>
           <Ionicons name="arrow-forward" size={12} color={colors.textMuted} />
         </View>
         <View style={[styles.readingBox, { backgroundColor: colors.surfaceAlt, borderColor: colors.border }]}>
-          <Text style={[styles.readingLbl, { color: colors.textMuted }]}>{isAr ? 'قراءة النهاية' : 'End'}</Text>
+          <Text style={[styles.readingLbl, { color: colors.textMuted }]}>{'قراءة النهاية'}</Text>
           <Text style={[styles.readingVal, { color: colors.text }]}>{item.endReading.toLocaleString()}</Text>
         </View>
         {item.shiftCost != null && item.shiftCost > 0 && (
           <View style={[styles.readingBox, { backgroundColor: `${colors.success}12`, borderColor: `${colors.success}25` }]}>
-            <Text style={[styles.readingLbl, { color: colors.textMuted }]}>{isAr ? 'التكلفة' : 'Cost'}</Text>
+            <Text style={[styles.readingLbl, { color: colors.textMuted }]}>{'التكلفة'}</Text>
             <Text style={[styles.readingVal, { color: colors.success }]}>${item.shiftCost.toFixed(2)}</Text>
           </View>
         )}
@@ -116,7 +116,7 @@ function ReadingCard({
       {item.isMeterReset && (
         <View style={[styles.resetBadge, { backgroundColor: `${colors.danger}15`, borderColor: `${colors.danger}25`, borderWidth: 1 }]}>
           <Ionicons name="refresh-circle" size={12} color={colors.danger} />
-          <Text style={[styles.resetText, { color: colors.danger }]}>{isAr ? 'إعادة ضبط العداد' : 'Meter Reset'}</Text>
+          <Text style={[styles.resetText, { color: colors.danger }]}>{'إعادة ضبط العداد'}</Text>
         </View>
       )}
 
@@ -174,7 +174,7 @@ function LogForm({
 
   const submit = async () => {
     if (!date || isNaN(start) || isNaN(end)) {
-      Alert.alert(isAr ? 'مطلوب' : 'Required', isAr ? 'التاريخ وقراءات البداية والنهاية مطلوبة' : 'Date, start and end readings are required.');
+      Alert.alert('مطلوب', 'التاريخ وقراءات البداية والنهاية مطلوبة');
       return;
     }
     setSaving(true);
@@ -195,7 +195,7 @@ function LogForm({
       await uploadForm('/electricity/readings', fd);
       onSuccess();
     } catch (err: any) {
-      Alert.alert(isAr ? 'خطأ' : 'Error', err.message ?? (isAr ? 'فشل الحفظ' : 'Failed to save.'));
+      Alert.alert('خطأ', err.message ?? ('فشل الحفظ'));
     } finally {
       setSaving(false);
     }
@@ -212,11 +212,11 @@ function LogForm({
         >
           <View style={[styles.handle, { backgroundColor: colors.border }]} />
           <Text style={[styles.sheetTitle, { color: colors.text }]}>
-            {isAr ? 'تسجيل قراءة' : 'Log Reading'}
+            {'تسجيل قراءة'}
           </Text>
 
           <View style={styles.field}>
-            <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{isAr ? 'التاريخ *' : 'Date *'}</Text>
+            <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{'التاريخ *'}</Text>
             <TextInput
               style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
               placeholder="YYYY-MM-DD"
@@ -228,7 +228,7 @@ function LogForm({
 
           {shifts.length > 0 && (
             <View style={styles.field}>
-              <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{isAr ? 'الوردية' : 'Shift'}</Text>
+              <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{'الوردية'}</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                 <View style={styles.chipRow}>
                   {shifts.map((s) => (
@@ -247,7 +247,7 @@ function LogForm({
 
           <View style={styles.rowFields}>
             <View style={[styles.field, { flex: 1 }]}>
-              <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{isAr ? 'بداية (kWh) *' : 'Start kWh *'}</Text>
+              <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{'بداية (kWh) *'}</Text>
               <TextInput
                 style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
                 placeholder="0"
@@ -258,7 +258,7 @@ function LogForm({
               />
             </View>
             <View style={[styles.field, { flex: 1 }]}>
-              <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{isAr ? 'نهاية (kWh) *' : 'End kWh *'}</Text>
+              <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{'نهاية (kWh) *'}</Text>
               <TextInput
                 style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
                 placeholder="0"
@@ -271,7 +271,7 @@ function LogForm({
           </View>
 
           <View style={[styles.field, styles.switchRow]}>
-            <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{isAr ? 'إعادة ضبط العداد؟' : 'Meter Reset?'}</Text>
+            <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{'إعادة ضبط العداد؟'}</Text>
             <Switch
               value={isMeterReset}
               onValueChange={setReset}
@@ -282,10 +282,10 @@ function LogForm({
 
           {isMeterReset && (
             <View style={styles.field}>
-              <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{isAr ? 'الحد الأقصى للعداد' : 'Max Meter Value'}</Text>
+              <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{'الحد الأقصى للعداد'}</Text>
               <TextInput
                 style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
-                placeholder={isAr ? 'القيمة القصوى قبل الإعادة' : 'Max value before reset'}
+                placeholder={'القيمة القصوى قبل الإعادة'}
                 placeholderTextColor={colors.textMuted}
                 keyboardType="decimal-pad"
                 value={maxMeterVal}
@@ -297,12 +297,12 @@ function LogForm({
           {consumption != null && !isNaN(consumption) && (
             <View style={[styles.preview, { backgroundColor: `${colors.warning}12`, borderColor: `${colors.warning}30` }]}>
               <View style={styles.previewItem}>
-                <Text style={[styles.previewLbl, { color: colors.textMuted }]}>{isAr ? 'الاستهلاك' : 'Consumption'}</Text>
+                <Text style={[styles.previewLbl, { color: colors.textMuted }]}>{'الاستهلاك'}</Text>
                 <Text style={[styles.previewVal, { color: colors.warning }]}>{consumption.toFixed(2)} kWh</Text>
               </View>
               {cost != null && (
                 <View style={styles.previewItem}>
-                  <Text style={[styles.previewLbl, { color: colors.textMuted }]}>{isAr ? 'التكلفة التقديرية' : 'Est. Cost'}</Text>
+                  <Text style={[styles.previewLbl, { color: colors.textMuted }]}>{'التكلفة التقديرية'}</Text>
                   <Text style={[styles.previewVal, { color: colors.success }]}>${cost.toFixed(2)}</Text>
                 </View>
               )}
@@ -310,10 +310,10 @@ function LogForm({
           )}
 
           <View style={styles.field}>
-            <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{isAr ? 'ملاحظات' : 'Notes'}</Text>
+            <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{'ملاحظات'}</Text>
             <TextInput
               style={[styles.input, styles.inputMulti, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
-              placeholder={isAr ? 'ملاحظات اختيارية...' : 'Optional notes...'}
+              placeholder={'ملاحظات اختيارية...'}
               placeholderTextColor={colors.textMuted}
               multiline numberOfLines={2}
               value={notes}
@@ -322,7 +322,7 @@ function LogForm({
           </View>
 
           <View style={styles.field}>
-            <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{isAr ? 'صورة' : 'Photo'}</Text>
+            <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{'صورة'}</Text>
             <TouchableOpacity
               style={[styles.imgPicker, { borderColor: colors.border, backgroundColor: colors.surfaceAlt }]}
               onPress={async () => {
@@ -341,7 +341,7 @@ function LogForm({
               ) : (
                 <View style={styles.imgPickerPlaceholder}>
                   <Ionicons name="camera-outline" size={22} color={colors.textMuted} />
-                  <Text style={[styles.imgPickerText, { color: colors.textMuted }]}>{isAr ? 'اختر صورة' : 'Select photo'}</Text>
+                  <Text style={[styles.imgPickerText, { color: colors.textMuted }]}>{'اختر صورة'}</Text>
                 </View>
               )}
             </TouchableOpacity>
@@ -349,10 +349,10 @@ function LogForm({
 
           <View style={styles.formActions}>
             <TouchableOpacity style={[styles.cancelBtn, { borderColor: colors.border }]} onPress={onClose}>
-              <Text style={[styles.cancelText, { color: colors.textMuted }]}>{isAr ? 'إلغاء' : 'Cancel'}</Text>
+              <Text style={[styles.cancelText, { color: colors.textMuted }]}>{'إلغاء'}</Text>
             </TouchableOpacity>
             <TouchableOpacity style={[styles.saveBtn, { backgroundColor: colors.warning }]} onPress={submit} disabled={saving}>
-              {saving ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.saveText}>{isAr ? 'حفظ' : 'Save'}</Text>}
+              {saving ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.saveText}>{'حفظ'}</Text>}
             </TouchableOpacity>
           </View>
         </ScrollView>
@@ -398,8 +398,8 @@ export function ElectricityRecordScreen() {
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
       <ScreenHeader
-        title={isAr ? 'سجل الكهرباء' : 'Electricity Record'}
-        subtitle={isAr ? 'سجل قراءات الوردية' : 'Shift meter readings'}
+        title={'سجل الكهرباء'}
+        subtitle={'سجل قراءات الوردية'}
         showBack
       />
 
@@ -426,7 +426,7 @@ export function ElectricityRecordScreen() {
             <View style={styles.empty}>
               <Ionicons name="flash-outline" size={44} color={colors.textMuted} />
               <Text style={[styles.emptyText, { color: colors.textMuted }]}>
-                {isAr ? 'لا توجد قراءات مسجلة' : 'No readings logged yet'}
+                {'لا توجد قراءات مسجلة'}
               </Text>
             </View>
           }

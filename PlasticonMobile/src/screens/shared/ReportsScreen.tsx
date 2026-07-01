@@ -1,5 +1,6 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+﻿import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
+import { useLocale } from '../../context/LocaleContext';
   ActivityIndicator, Alert, RefreshControl, ScrollView,
   StyleSheet, Text, TextInput, TouchableOpacity, View,
 } from 'react-native';
@@ -11,7 +12,6 @@ import { api } from '../../api/client';
 import { ScreenHeader } from '../../components';
 import { radius, shadow, spacing, typography } from '../../theme';
 import { useAppTheme } from '../../context/ThemeContext';
-import { useLocale } from '../../context/LocaleContext';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type TabKey = 'suppliers'|'customers'|'production'|'inventory'|'attendance'|'payroll'|'electricity'|'expenses'|'maintenance'|'quality'|'spareParts';
@@ -56,6 +56,7 @@ const yearStr   = () => String(new Date().getFullYear());
 // ─── Sub-components ───────────────────────────────────────────────────────────
 function KpiCard({ label, value, color }: { label: string; value: string | number; color: string }) {
   const { colors } = useAppTheme();
+  const { isAr } = useLocale();
   return (
     <View style={[styles.kpiCard, { backgroundColor: colors.surface }]}>
       <Text style={[styles.kpiVal, { color }]} numberOfLines={1}>{value}</Text>
@@ -66,15 +67,17 @@ function KpiCard({ label, value, color }: { label: string; value: string | numbe
 
 function SectionLoading() {
   const { colors } = useAppTheme();
+  const { isAr } = useLocale();
   return <View style={styles.sectionLoading}><ActivityIndicator color={colors.primary} /></View>;
 }
 
 function EmptySection({ isAr }: { isAr: boolean }) {
   const { colors } = useAppTheme();
+  const { isAr } = useLocale();
   return (
     <View style={styles.emptySection}>
       <Ionicons name="document-outline" size={36} color={colors.textMuted} />
-      <Text style={[styles.emptyTxt, { color: colors.textMuted }]}>{isAr ? 'لا توجد بيانات' : 'No data available'}</Text>
+      <Text style={[styles.emptyTxt, { color: colors.textMuted }]}>{'لا توجد بيانات'}</Text>
     </View>
   );
 }
@@ -85,15 +88,16 @@ function DateRangeRow({ fromDate, toDate, setFromDate, setToDate, onLoad, loadin
   onLoad?: () => void; loading: boolean; isAr: boolean;
 }) {
   const { colors } = useAppTheme();
+  const { isAr } = useLocale();
   const inputStyle = [styles.dateInput, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surface }];
   return (
     <View style={styles.filterRow}>
       <View style={styles.dateGroup}>
-        <Text style={[styles.filterLabel, { color: colors.textMuted }]}>{isAr ? 'من' : 'From'}</Text>
+        <Text style={[styles.filterLabel, { color: colors.textMuted }]}>{'من'}</Text>
         <TextInput style={inputStyle} placeholder="YYYY-MM-DD" placeholderTextColor={colors.textMuted} value={fromDate} onChangeText={setFromDate} />
       </View>
       <View style={styles.dateGroup}>
-        <Text style={[styles.filterLabel, { color: colors.textMuted }]}>{isAr ? 'إلى' : 'To'}</Text>
+        <Text style={[styles.filterLabel, { color: colors.textMuted }]}>{'إلى'}</Text>
         <TextInput style={inputStyle} placeholder="YYYY-MM-DD" placeholderTextColor={colors.textMuted} value={toDate} onChangeText={setToDate} />
       </View>
       {onLoad && (
@@ -113,6 +117,7 @@ function PeriodRow({ period, setPeriod, filterDate, setFilterDate, filterMonth, 
   onLoad: () => void; loading: boolean; isAr: boolean;
 }) {
   const { colors } = useAppTheme();
+  const { isAr } = useLocale();
   const PERIODS: { key: Period; en: string; ar: string }[] = [
     { key: 'daily',   en: 'Day',   ar: 'يوم'   },
     { key: 'weekly',  en: 'Week',  ar: 'أسبوع' },
@@ -143,7 +148,7 @@ function PeriodRow({ period, setPeriod, filterDate, setFilterDate, filterMonth, 
           <TextInput style={[inputStyle, { flex: 1 }]} placeholder="YYYY" placeholderTextColor={colors.textMuted} value={filterYear} onChangeText={setFilterYear} keyboardType="number-pad" />
         )}
         <TouchableOpacity style={[styles.loadBtn, { backgroundColor: colors.primary }]} onPress={onLoad} disabled={loading}>
-          {loading ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.loadBtnTxt}>{isAr ? 'تحميل' : 'Load'}</Text>}
+          {loading ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.loadBtnTxt}>{'تحميل'}</Text>}
         </TouchableOpacity>
       </View>
     </View>
@@ -153,7 +158,7 @@ function PeriodRow({ period, setPeriod, filterDate, setFilterDate, filterMonth, 
 // ─── PDF Builder ──────────────────────────────────────────────────────────────
 function buildPdfHtml(title: string, kpis: { label: string; value: string }[], rows: string[][], headers: string[], isAr: boolean): string {
   const now = new Date().toLocaleDateString([], { year: 'numeric', month: 'long', day: 'numeric' });
-  const dir = isAr ? 'rtl' : 'ltr';
+  const dir = 'rtl';
   const kpiHtml = kpis.map(k => `<div class="kpi"><div class="kv">${k.value}</div><div class="kl">${k.label}</div></div>`).join('');
   const headRow = headers.map(h => `<th>${h}</th>`).join('');
   const bodyRows = rows.slice(0, 100).map(r => `<tr>${r.map(c => `<td>${c}</td>`).join('')}</tr>`).join('');
@@ -166,12 +171,12 @@ h1{color:#3b82f6;font-size:22px;margin-bottom:4px}
 .kv{font-size:22px;font-weight:800;color:#1d4ed8}
 .kl{font-size:11px;color:#6b7280;margin-top:2px}
 table{width:100%;border-collapse:collapse;font-size:12px}
-th{background:#3b82f6;color:#fff;padding:8px 6px;text-align:${isAr ? 'right' : 'left'}}
+th{background:#3b82f6;color:#fff;padding:8px 6px;text-align:${'right'}}
 td{padding:7px 6px;border-bottom:1px solid #f3f4f6}
 tr:nth-child(even) td{background:#f8fafc}
 .footer{margin-top:32px;font-size:10px;color:#9ca3af;text-align:center}
 </style></head><body>
-<h1>${title}</h1><div class="date">${isAr ? 'تاريخ الإصدار' : 'Generated'}: ${now}</div>
+<h1>${title}</h1><div class="date">${'تاريخ الإصدار'}: ${now}</div>
 <div class="kpis">${kpiHtml}</div>
 <table><thead><tr>${headRow}</tr></thead><tbody>${bodyRows}</tbody></table>
 <div class="footer">Plasticon Factory Management System</div>
@@ -279,10 +284,10 @@ export function ReportsScreen() {
       const html = buildPdfHtml(title, kpis, rows, headers, isAr);
       const { uri } = await Print.printToFileAsync({ html, base64: false });
       const can = await Sharing.isAvailableAsync();
-      if (can) await Sharing.shareAsync(uri, { mimeType: 'application/pdf', dialogTitle: isAr ? 'مشاركة التقرير' : 'Share Report' });
-      else Alert.alert(isAr ? 'تم الحفظ' : 'Saved', uri);
+      if (can) await Sharing.shareAsync(uri, { mimeType: 'application/pdf', dialogTitle: 'مشاركة التقرير' });
+      else Alert.alert('تم الحفظ', uri);
     } catch (e: any) {
-      Alert.alert(isAr ? 'خطأ' : 'Error', e?.message ?? 'Export failed');
+      Alert.alert('خطأ', e?.message ?? 'Export failed');
     } finally { setExporting(false); }
   };
 
@@ -337,16 +342,16 @@ export function ReportsScreen() {
           <>
             <DateRangeRow fromDate={fromDate} toDate={toDate} setFromDate={setFromDate} setToDate={setToDate} loading={isLoading} isAr={isAr} />
             <View style={styles.kpiRow}>
-              <KpiCard label={isAr ? 'الموردون' : 'Suppliers'}      value={supplierRows.length}           color="#3b82f6" />
-              <KpiCard label={isAr ? 'الفواتير' : 'Invoices'}       value={filteredPurchases.length}       color="#0891b2" />
-              <KpiCard label={isAr ? 'الإجمالي' : 'Total'}          value={`$${fmt(total)}`}               color={colors.success} />
+              <KpiCard label={'الموردون'}      value={supplierRows.length}           color="#3b82f6" />
+              <KpiCard label={'الفواتير'}       value={filteredPurchases.length}       color="#0891b2" />
+              <KpiCard label={'الإجمالي'}          value={`$${fmt(total)}`}               color={colors.success} />
             </View>
             {isLoading ? <SectionLoading /> : supplierRows.length === 0 ? <EmptySection isAr={isAr} /> : supplierRows.map((r, i) => (
               <View key={i} style={[styles.row, { backgroundColor: colors.surface }]}>
                 <View style={[styles.rowIcon, { backgroundColor: '#3b82f620' }]}><Ionicons name="car-outline" size={16} color="#3b82f6" /></View>
                 <View style={styles.rowBody}>
                   <Text style={[styles.rowTitle, { color: colors.text }]}>{r.name}</Text>
-                  <Text style={[styles.rowSub, { color: colors.textMuted }]}>{r.count} {isAr ? 'فاتورة' : 'invoices'}</Text>
+                  <Text style={[styles.rowSub, { color: colors.textMuted }]}>{r.count} {'فاتورة'}</Text>
                 </View>
                 <Text style={[styles.rowAmt, { color: colors.success }]}>${fmt(r.total)}</Text>
               </View>
@@ -361,16 +366,16 @@ export function ReportsScreen() {
           <>
             <DateRangeRow fromDate={fromDate} toDate={toDate} setFromDate={setFromDate} setToDate={setToDate} loading={isLoading} isAr={isAr} />
             <View style={styles.kpiRow}>
-              <KpiCard label={isAr ? 'الزباين' : 'Customers'}       value={customerRows.length}            color="#10b981" />
-              <KpiCard label={isAr ? 'الطلبات' : 'Orders'}          value={filteredSales.length}           color="#0891b2" />
-              <KpiCard label={isAr ? 'الإيرادات' : 'Revenue'}       value={`$${fmt(total)}`}               color={colors.success} />
+              <KpiCard label={'الزباين'}       value={customerRows.length}            color="#10b981" />
+              <KpiCard label={'الطلبات'}          value={filteredSales.length}           color="#0891b2" />
+              <KpiCard label={'الإيرادات'}       value={`$${fmt(total)}`}               color={colors.success} />
             </View>
             {isLoading ? <SectionLoading /> : customerRows.length === 0 ? <EmptySection isAr={isAr} /> : customerRows.map((r, i) => (
               <View key={i} style={[styles.row, { backgroundColor: colors.surface }]}>
                 <View style={[styles.rowIcon, { backgroundColor: '#10b98120' }]}><Ionicons name="people-outline" size={16} color="#10b981" /></View>
                 <View style={styles.rowBody}>
                   <Text style={[styles.rowTitle, { color: colors.text }]}>{r.name}</Text>
-                  <Text style={[styles.rowSub, { color: colors.textMuted }]}>{r.count} {isAr ? 'طلب' : 'orders'}</Text>
+                  <Text style={[styles.rowSub, { color: colors.textMuted }]}>{r.count} {'طلب'}</Text>
                 </View>
                 <Text style={[styles.rowAmt, { color: colors.success }]}>${fmt(r.total)}</Text>
               </View>
@@ -385,9 +390,9 @@ export function ReportsScreen() {
           <>
             <PeriodRow period={period} setPeriod={setPeriod} filterDate={filterDate} setFilterDate={setFilterDate} filterMonth={filterMonth} setFilterMonth={setFilterMonth} filterYear={filterYear} setFilterYear={setFilterYear} onLoad={loadProduction} loading={isLoading} isAr={isAr} />
             <View style={styles.kpiRow}>
-              <KpiCard label={isAr ? 'السجلات' : 'Records'}         value={t?.recordsCount??0}             color="#8b5cf6" />
-              <KpiCard label={isAr ? 'القطع' : 'Pieces'}            value={fmt(t?.totalPieces??0)}         color={colors.primary} />
-              <KpiCard label={isAr ? 'كرتون' : 'Cartons'}           value={fmt(t?.totalCartons??0)}        color={colors.info} />
+              <KpiCard label={'السجلات'}         value={t?.recordsCount??0}             color="#8b5cf6" />
+              <KpiCard label={'القطع'}            value={fmt(t?.totalPieces??0)}         color={colors.primary} />
+              <KpiCard label={'كرتون'}           value={fmt(t?.totalCartons??0)}        color={colors.info} />
             </View>
             {isLoading ? <SectionLoading /> : !production ? <EmptySection isAr={isAr} /> : production.records.slice(0, 30).map((r, i) => (
               <View key={i} style={[styles.row, { backgroundColor: colors.surface }]}>
@@ -396,8 +401,8 @@ export function ReportsScreen() {
                   <Text style={[styles.rowSub, { color: colors.textMuted }]}>{r.userName} · {fmtDate(r.createdAt)}</Text>
                 </View>
                 <View style={styles.rowRight}>
-                  <Text style={[styles.rowAmt, { color: '#8b5cf6' }]}>{fmt(r.totalPieces)} {isAr ? 'ق' : 'pc'}</Text>
-                  <Text style={[styles.rowSub, { color: colors.textMuted }]}>{r.cartonsCount} {isAr ? 'كرتون' : 'cartons'}</Text>
+                  <Text style={[styles.rowAmt, { color: '#8b5cf6' }]}>{fmt(r.totalPieces)} {'ق'}</Text>
+                  <Text style={[styles.rowSub, { color: colors.textMuted }]}>{r.cartonsCount} {'كرتون'}</Text>
                 </View>
               </View>
             ))}
@@ -411,9 +416,9 @@ export function ReportsScreen() {
           <>
             <PeriodRow period={period} setPeriod={setPeriod} filterDate={filterDate} setFilterDate={setFilterDate} filterMonth={filterMonth} setFilterMonth={setFilterMonth} filterYear={filterYear} setFilterYear={setFilterYear} onLoad={loadInventory} loading={isLoading} isAr={isAr} />
             <View style={styles.kpiRow}>
-              <KpiCard label={isAr ? 'السجلات' : 'Records'}         value={t?.recordsCount??0}             color="#f97316" />
-              <KpiCard label={isAr ? 'وارد' : 'IN Qty'}             value={fmt(t?.totalInQuantity??0)}     color={colors.success} />
-              <KpiCard label={isAr ? 'صادر' : 'OUT Qty'}            value={fmt(t?.totalOutQuantity??0)}    color={colors.danger} />
+              <KpiCard label={'السجلات'}         value={t?.recordsCount??0}             color="#f97316" />
+              <KpiCard label={'وارد'}             value={fmt(t?.totalInQuantity??0)}     color={colors.success} />
+              <KpiCard label={'صادر'}            value={fmt(t?.totalOutQuantity??0)}    color={colors.danger} />
             </View>
             {isLoading ? <SectionLoading /> : !inventory ? <EmptySection isAr={isAr} /> : inventory.records.slice(0, 30).map((r, i) => (
               <View key={i} style={[styles.row, { backgroundColor: colors.surface }]}>
@@ -437,9 +442,9 @@ export function ReportsScreen() {
           <>
             <PeriodRow period={period} setPeriod={setPeriod} filterDate={filterDate} setFilterDate={setFilterDate} filterMonth={filterMonth} setFilterMonth={setFilterMonth} filterYear={filterYear} setFilterYear={setFilterYear} onLoad={loadAttendance} loading={isLoading} isAr={isAr} />
             <View style={styles.kpiRow}>
-              <KpiCard label={isAr ? 'السجلات' : 'Records'}         value={t?.recordsCount??0}             color="#06b6d4" />
-              <KpiCard label={isAr ? 'الغياب' : 'Absent'}           value={t?.absentCount??0}              color={colors.danger} />
-              <KpiCard label={isAr ? 'دقائق تأخير' : 'Late Mins'}   value={t?.totalLateMinutes??0}         color={colors.warning} />
+              <KpiCard label={'السجلات'}         value={t?.recordsCount??0}             color="#06b6d4" />
+              <KpiCard label={'الغياب'}           value={t?.absentCount??0}              color={colors.danger} />
+              <KpiCard label={'دقائق تأخير'}   value={t?.totalLateMinutes??0}         color={colors.warning} />
             </View>
             {isLoading ? <SectionLoading /> : !attendance ? <EmptySection isAr={isAr} /> : attendance.records.slice(0, 30).map((r, i) => (
               <View key={i} style={[styles.row, { backgroundColor: colors.surface }]}>
@@ -448,8 +453,8 @@ export function ReportsScreen() {
                   <Text style={[styles.rowSub, { color: colors.textMuted }]}>{r.shiftName ?? '—'} · {fmtDate(r.checkIn)}</Text>
                 </View>
                 <View style={styles.rowRight}>
-                  {r.lateMinutes > 0 && <Text style={[styles.rowSub, { color: colors.warning }]}>{r.lateMinutes} {isAr ? 'د تأخير' : 'min late'}</Text>}
-                  {r.overtimeMinutes > 0 && <Text style={[styles.rowSub, { color: colors.success }]}>{r.overtimeMinutes} {isAr ? 'د إضافي' : 'min OT'}</Text>}
+                  {r.lateMinutes > 0 && <Text style={[styles.rowSub, { color: colors.warning }]}>{r.lateMinutes} {'د تأخير'}</Text>}
+                  {r.overtimeMinutes > 0 && <Text style={[styles.rowSub, { color: colors.success }]}>{r.overtimeMinutes} {'د إضافي'}</Text>}
                 </View>
               </View>
             ))}
@@ -463,9 +468,9 @@ export function ReportsScreen() {
           <>
             <PeriodRow period={period} setPeriod={setPeriod} filterDate={filterDate} setFilterDate={setFilterDate} filterMonth={filterMonth} setFilterMonth={setFilterMonth} filterYear={filterYear} setFilterYear={setFilterYear} onLoad={loadPayroll} loading={isLoading} isAr={isAr} />
             <View style={styles.kpiRow}>
-              <KpiCard label={isAr ? 'السجلات' : 'Records'}         value={t?.recordsCount??0}             color="#ec4899" />
-              <KpiCard label={isAr ? 'الراتب الأساسي' : 'Base'}     value={`$${fmt(t?.totalBaseSalary??0)}`} color={colors.info} />
-              <KpiCard label={isAr ? 'إجمالي الصرف' : 'Payout'}     value={`$${fmt(t?.totalPayout??0)}`}   color={colors.success} />
+              <KpiCard label={'السجلات'}         value={t?.recordsCount??0}             color="#ec4899" />
+              <KpiCard label={'الراتب الأساسي'}     value={`$${fmt(t?.totalBaseSalary??0)}`} color={colors.info} />
+              <KpiCard label={'إجمالي الصرف'}     value={`$${fmt(t?.totalPayout??0)}`}   color={colors.success} />
             </View>
             {isLoading ? <SectionLoading /> : !payroll ? <EmptySection isAr={isAr} /> : payroll.records.slice(0, 30).map((r, i) => (
               <View key={i} style={[styles.row, { backgroundColor: colors.surface }]}>
@@ -486,15 +491,15 @@ export function ReportsScreen() {
           <>
             <DateRangeRow fromDate={fromDate} toDate={toDate} setFromDate={setFromDate} setToDate={setToDate} onLoad={loadElectricity} loading={isLoading} isAr={isAr} />
             <View style={styles.kpiRow}>
-              <KpiCard label={isAr ? 'الاستهلاك' : 'kWh'}           value={`${fmt(s?.totalConsumption??0,1)}`} color="#d97706" />
-              <KpiCard label={isAr ? 'التكلفة' : 'Cost'}            value={`$${fmt(s?.totalCost??0)}`}        color={colors.danger} />
-              <KpiCard label={isAr ? 'القراءات' : 'Readings'}       value={s?.totalReadings??0}                color={colors.info} />
+              <KpiCard label={'الاستهلاك'}           value={`${fmt(s?.totalConsumption??0,1)}`} color="#d97706" />
+              <KpiCard label={'التكلفة'}            value={`$${fmt(s?.totalCost??0)}`}        color={colors.danger} />
+              <KpiCard label={'القراءات'}       value={s?.totalReadings??0}                color={colors.info} />
             </View>
             {isLoading ? <SectionLoading /> : !electricity ? <EmptySection isAr={isAr} /> : electricity.days.slice(0, 30).map((d, i) => (
               <View key={i} style={[styles.row, { backgroundColor: colors.surface }]}>
                 <View style={styles.rowBody}>
                   <Text style={[styles.rowTitle, { color: colors.text }]}>{d.date}</Text>
-                  <Text style={[styles.rowSub, { color: colors.textMuted }]}>{d.shifts.length} {isAr ? 'شفتات' : 'shifts'}</Text>
+                  <Text style={[styles.rowSub, { color: colors.textMuted }]}>{d.shifts.length} {'شفتات'}</Text>
                 </View>
                 <View style={styles.rowRight}>
                   <Text style={[styles.rowAmt, { color: '#d97706' }]}>{fmt(d.totalConsumption,1)} kWh</Text>
@@ -513,9 +518,9 @@ export function ReportsScreen() {
           <>
             <DateRangeRow fromDate={fromDate} toDate={toDate} setFromDate={setFromDate} setToDate={setToDate} loading={isLoading} isAr={isAr} />
             <View style={styles.kpiRow}>
-              <KpiCard label={isAr ? 'العدد' : 'Count'}             value={filteredExpenses.length}        color="#ef4444" />
-              <KpiCard label={isAr ? 'الإجمالي' : 'Total'}          value={`$${fmt(total)}`}               color={colors.danger} />
-              <KpiCard label={isAr ? 'معتمد' : 'Approved'}          value={`$${fmt(approved)}`}            color={colors.success} />
+              <KpiCard label={'العدد'}             value={filteredExpenses.length}        color="#ef4444" />
+              <KpiCard label={'الإجمالي'}          value={`$${fmt(total)}`}               color={colors.danger} />
+              <KpiCard label={'معتمد'}          value={`$${fmt(approved)}`}            color={colors.success} />
             </View>
             {isLoading ? <SectionLoading /> : filteredExpenses.length === 0 ? <EmptySection isAr={isAr} /> : filteredExpenses.slice(0, 30).map((e, i) => (
               <View key={i} style={[styles.row, { backgroundColor: colors.surface }]}>
@@ -540,9 +545,9 @@ export function ReportsScreen() {
           <>
             <DateRangeRow fromDate={fromDate} toDate={toDate} setFromDate={setFromDate} setToDate={setToDate} loading={isLoading} isAr={isAr} />
             <View style={styles.kpiRow}>
-              <KpiCard label={isAr ? 'السجلات' : 'Records'}         value={filteredMaint.length}           color="#0891b2" />
-              <KpiCard label={isAr ? 'ساعات العمل' : 'Labor Hrs'}   value={fmt(totalHrs,1)}               color={colors.info} />
-              <KpiCard label={isAr ? 'إجمالي التكلفة' : 'Total Cost'} value={`$${fmt(total)}`}            color={colors.danger} />
+              <KpiCard label={'السجلات'}         value={filteredMaint.length}           color="#0891b2" />
+              <KpiCard label={'ساعات العمل'}   value={fmt(totalHrs,1)}               color={colors.info} />
+              <KpiCard label={'إجمالي التكلفة'} value={`$${fmt(total)}`}            color={colors.danger} />
             </View>
             {isLoading ? <SectionLoading /> : filteredMaint.length === 0 ? <EmptySection isAr={isAr} /> : filteredMaint.slice(0, 30).map((r, i) => (
               <View key={i} style={[styles.row, { backgroundColor: colors.surface }]}>
@@ -576,9 +581,9 @@ export function ReportsScreen() {
               })}
             </View>
             <View style={styles.kpiRow}>
-              <KpiCard label={isAr ? 'الإجمالي' : 'Total'}          value={filteredQuality.length}         color="#16a34a" />
-              <KpiCard label={isAr ? 'حرجة' : 'Critical'}           value={filteredQuality.filter(q=>q.severity==='CRITICAL').length} color={colors.danger} />
-              <KpiCard label={isAr ? 'محلولة' : 'Resolved'}         value={filteredQuality.filter(q=>q.resolvedAt).length} color={colors.success} />
+              <KpiCard label={'الإجمالي'}          value={filteredQuality.length}         color="#16a34a" />
+              <KpiCard label={'حرجة'}           value={filteredQuality.filter(q=>q.severity==='CRITICAL').length} color={colors.danger} />
+              <KpiCard label={'محلولة'}         value={filteredQuality.filter(q=>q.resolvedAt).length} color={colors.success} />
             </View>
             {isLoading ? <SectionLoading /> : filteredQuality.length === 0 ? <EmptySection isAr={isAr} /> : filteredQuality.slice(0, 30).map((r, i) => (
               <View key={i} style={[styles.row, { backgroundColor: colors.surface }]}>
@@ -615,9 +620,9 @@ export function ReportsScreen() {
               })}
             </View>
             <View style={styles.kpiRow}>
-              <KpiCard label={isAr ? 'الإجمالي' : 'Total'}          value={filteredSpareParts.length}      color="#7c3aed" />
-              <KpiCard label={isAr ? 'معلقة' : 'Pending'}           value={filteredSpareParts.filter(s=>s.status==='PENDING').length} color={colors.warning} />
-              <KpiCard label={isAr ? 'التكلفة' : 'Total Cost'}       value={`$${fmt(totalCost)}`}           color={colors.danger} />
+              <KpiCard label={'الإجمالي'}          value={filteredSpareParts.length}      color="#7c3aed" />
+              <KpiCard label={'معلقة'}           value={filteredSpareParts.filter(s=>s.status==='PENDING').length} color={colors.warning} />
+              <KpiCard label={'التكلفة'}       value={`$${fmt(totalCost)}`}           color={colors.danger} />
             </View>
             {isLoading ? <SectionLoading /> : filteredSpareParts.length === 0 ? <EmptySection isAr={isAr} /> : filteredSpareParts.slice(0, 30).map((r, i) => (
               <View key={i} style={[styles.row, { backgroundColor: colors.surface }]}>
@@ -641,7 +646,7 @@ export function ReportsScreen() {
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
-      <ScreenHeader title={isAr ? 'التقارير' : 'Reports'} subtitle={isAr ? 'تقارير المصنع الشاملة' : 'Comprehensive factory reports'} showBack />
+      <ScreenHeader title={'التقارير'} subtitle={'تقارير المصنع الشاملة'} showBack />
 
       {/* Tab bar */}
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={[styles.tabBar, { borderBottomColor: colors.border }]} contentContainerStyle={styles.tabBarContent}>
@@ -688,7 +693,7 @@ export function ReportsScreen() {
         >
           <Ionicons name={exporting ? 'hourglass-outline' : 'document-text'} size={18} color="#fff" />
           <Text style={styles.pdfBtnTxt}>
-            {exporting ? (isAr ? 'جارٍ التصدير...' : 'Exporting...') : (isAr ? 'تصدير PDF' : 'Export PDF')}
+            {exporting ? ('جارٍ التصدير...') : ('تصدير PDF')}
           </Text>
         </TouchableOpacity>
       </ScrollView>

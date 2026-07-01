@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -82,12 +82,12 @@ export function AIHubScreen() {
             <Ionicons name="hardware-chip" size={28} color={colors.primary} />
           </View>
           <View style={styles.bannerText}>
-            <Text style={[styles.bannerTitle, { color: colors.text }]}>{isAr ? 'مركز الذكاء الاصطناعي' : 'AI Hub'}</Text>
-            <Text style={[styles.bannerSub, { color: colors.textMuted }]}>{isAr ? 'مدعوم بذكاء بلاستيكون' : 'Powered by Plasticon Intelligence'}</Text>
+            <Text style={[styles.bannerTitle, { color: colors.text }]}>{'مركز الذكاء الاصطناعي'}</Text>
+            <Text style={[styles.bannerSub, { color: colors.textMuted }]}>{'مدعوم بذكاء بلاستيكون'}</Text>
           </View>
         </View>
 
-        <Text style={[styles.sectionLabel, { color: colors.textMuted }]}>{isAr ? 'الأدوات المتاحة' : 'AVAILABLE TOOLS'}</Text>
+        <Text style={[styles.sectionLabel, { color: colors.textMuted }]}>{'الأدوات المتاحة'}</Text>
         <View style={styles.grid}>
           {visibleTools.map((tool) => <ToolCard key={tool.title} tool={tool} role={role} />)}
         </View>

@@ -1,5 +1,6 @@
-import React, { useCallback, useEffect, useState } from 'react';
+﻿import React, { useCallback, useEffect, useState } from 'react';
 import {
+import { useLocale } from '../../context/LocaleContext';
   ActivityIndicator, Alert, FlatList, KeyboardAvoidingView, Linking, Modal,
   Platform, Pressable, RefreshControl, ScrollView,
   StyleSheet, Text, TextInput, TouchableOpacity, View,
@@ -10,7 +11,6 @@ import { api } from '../../api/client';
 import { ScreenHeader, StatCard } from '../../components';
 import { radius, shadow, spacing, typography } from '../../theme';
 import { useAppTheme } from '../../context/ThemeContext';
-import { useLocale } from '../../context/LocaleContext';
 
 interface FinancialReport {
   id: number;
@@ -61,9 +61,9 @@ export function FinancialReportsScreen() {
   };
 
   const handleDelete = (r: FinancialReport) => {
-    Alert.alert(isAr ? 'حذف' : 'Delete', isAr ? 'هل أنت متأكد؟' : 'Are you sure?', [
-      { text: isAr ? 'إلغاء' : 'Cancel', style: 'cancel' },
-      { text: isAr ? 'حذف' : 'Delete', style: 'destructive', onPress: async () => {
+    Alert.alert('حذف', 'هل أنت متأكد؟', [
+      { text: 'إلغاء', style: 'cancel' },
+      { text: 'حذف', style: 'destructive', onPress: async () => {
         try {
           await api.delete(`/financial-reports/${r.id}`);
           setReports((p) => p.filter((x) => x.id !== r.id));
@@ -74,10 +74,10 @@ export function FinancialReportsScreen() {
 
   const submit = async () => {
     if (!form.title.trim()) {
-      Alert.alert(isAr ? 'مطلوب' : 'Required', isAr ? 'أدخل عنوان التقرير' : 'Enter report title'); return;
+      Alert.alert('مطلوب', 'أدخل عنوان التقرير'); return;
     }
     if (!form.period.trim()) {
-      Alert.alert(isAr ? 'مطلوب' : 'Required', isAr ? 'أدخل الفترة' : 'Enter period'); return;
+      Alert.alert('مطلوب', 'أدخل الفترة'); return;
     }
     setSaving(true);
     try {
@@ -108,7 +108,7 @@ export function FinancialReportsScreen() {
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
-      <ScreenHeader title={isAr ? 'التقارير المالية' : 'Financial Reports'} showBack />
+      <ScreenHeader title={'التقارير المالية'} showBack />
 
       {!!apiError && (
         <View style={[styles.errorBanner, { backgroundColor: '#fef2f2', borderColor: '#fca5a5' }]}>
@@ -128,9 +128,9 @@ export function FinancialReportsScreen() {
           ListHeaderComponent={
             <View>
               <View style={[styles.kpiRow, { marginBottom: spacing.md }]}>
-                <StatCard label={isAr ? 'شهري' : 'Monthly'} value={String(monthly)} icon="calendar" color={colors.primary} style={styles.kpi} />
-                <StatCard label={isAr ? 'ربعي' : 'Quarterly'} value={String(quarterly)} icon="stats-chart" color={colors.accent} style={styles.kpi} />
-                <StatCard label={isAr ? 'سنوي' : 'Annual'} value={String(annual)} icon="trending-up" color={colors.success} style={styles.kpi} />
+                <StatCard label={'شهري'} value={String(monthly)} icon="calendar" color={colors.primary} style={styles.kpi} />
+                <StatCard label={'ربعي'} value={String(quarterly)} icon="stats-chart" color={colors.accent} style={styles.kpi} />
+                <StatCard label={'سنوي'} value={String(annual)} icon="trending-up" color={colors.success} style={styles.kpi} />
               </View>
               <View style={styles.filterRow}>
                 {FILTERS.map((f) => (
@@ -145,7 +145,7 @@ export function FinancialReportsScreen() {
               </View>
               <TouchableOpacity style={[styles.addBtn, { backgroundColor: colors.primary }]} onPress={openCreate} activeOpacity={0.8}>
                 <Ionicons name="add-circle" size={20} color="#fff" />
-                <Text style={styles.addText}>{isAr ? 'إضافة تقرير' : 'Add Report'}</Text>
+                <Text style={styles.addText}>{'إضافة تقرير'}</Text>
               </TouchableOpacity>
             </View>
           }
@@ -159,7 +159,7 @@ export function FinancialReportsScreen() {
                   <Text style={[styles.cardTitle, { color: colors.text }]} numberOfLines={1}>{r.title}</Text>
                   <Text style={[styles.cardSub, { color: colors.textMuted }]}>{r.period}</Text>
                   {r.generatedBy ? (
-                    <Text style={[styles.cardSub, { color: colors.textMuted }]}>{isAr ? 'بواسطة: ' : 'By: '}{r.generatedBy.fullName}</Text>
+                    <Text style={[styles.cardSub, { color: colors.textMuted }]}>{'بواسطة: '}{r.generatedBy.fullName}</Text>
                   ) : null}
                 </View>
                 <View style={styles.cardRight}>
@@ -182,7 +182,7 @@ export function FinancialReportsScreen() {
                   onPress={() => void Linking.openURL(r.pdfPath!)}
                 >
                   <Ionicons name="document-attach" size={14} color={colors.info} />
-                  <Text style={[styles.pdfText, { color: colors.info }]}>{isAr ? 'عرض PDF' : 'View PDF'}</Text>
+                  <Text style={[styles.pdfText, { color: colors.info }]}>{'عرض PDF'}</Text>
                 </TouchableOpacity>
               ) : null}
             </View>
@@ -190,7 +190,7 @@ export function FinancialReportsScreen() {
           ListEmptyComponent={
             <View style={styles.empty}>
               <Ionicons name="bar-chart-outline" size={44} color={colors.textMuted} />
-              <Text style={[styles.emptyText, { color: colors.textMuted }]}>{isAr ? 'لا توجد تقارير' : 'No reports yet'}</Text>
+              <Text style={[styles.emptyText, { color: colors.textMuted }]}>{'لا توجد تقارير'}</Text>
             </View>
           }
         />
@@ -202,16 +202,16 @@ export function FinancialReportsScreen() {
           <View style={[styles.sheet, { backgroundColor: colors.surface }]}>
             <View style={[styles.handle, { backgroundColor: colors.border }]} />
             <Text style={[styles.sheetTitle, { color: colors.text }]}>
-              {editing ? (isAr ? 'تعديل التقرير' : 'Edit Report') : (isAr ? 'تقرير جديد' : 'New Report')}
+              {editing ? ('تعديل التقرير') : ('تقرير جديد')}
             </Text>
             <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-              <Text style={[styles.label, { color: colors.textMuted }]}>{isAr ? 'العنوان *' : 'Title *'}</Text>
+              <Text style={[styles.label, { color: colors.textMuted }]}>{'العنوان *'}</Text>
               <TextInput style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
-                placeholder={isAr ? 'مثال: تقرير يناير 2025' : 'e.g. January 2025 Report'}
+                placeholder={'مثال: تقرير يناير 2025'}
                 placeholderTextColor={colors.textMuted}
                 value={form.title} onChangeText={(v) => setForm((p) => ({ ...p, title: v }))} />
 
-              <Text style={[styles.label, { color: colors.textMuted }]}>{isAr ? 'نوع التقرير *' : 'Report Type *'}</Text>
+              <Text style={[styles.label, { color: colors.textMuted }]}>{'نوع التقرير *'}</Text>
               <View style={styles.chipGroup}>
                 {REPORT_TYPES.map((t) => (
                   <TouchableOpacity key={t}
@@ -225,13 +225,13 @@ export function FinancialReportsScreen() {
                 ))}
               </View>
 
-              <Text style={[styles.label, { color: colors.textMuted }]}>{isAr ? 'الفترة *' : 'Period *'}</Text>
+              <Text style={[styles.label, { color: colors.textMuted }]}>{'الفترة *'}</Text>
               <TextInput style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
-                placeholder={isAr ? 'مثال: يناير 2025' : 'e.g. January 2025'}
+                placeholder={'مثال: يناير 2025'}
                 placeholderTextColor={colors.textMuted}
                 value={form.period} onChangeText={(v) => setForm((p) => ({ ...p, period: v }))} />
 
-              <Text style={[styles.label, { color: colors.textMuted }]}>{isAr ? 'رابط PDF (اختياري)' : 'PDF Path (optional)'}</Text>
+              <Text style={[styles.label, { color: colors.textMuted }]}>{'رابط PDF (اختياري)'}</Text>
               <TextInput style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
                 placeholder="https://..." placeholderTextColor={colors.textMuted}
                 value={form.pdfPath} onChangeText={(v) => setForm((p) => ({ ...p, pdfPath: v }))}
@@ -240,10 +240,10 @@ export function FinancialReportsScreen() {
 
             <View style={styles.actions}>
               <TouchableOpacity style={[styles.cancelBtn, { borderColor: colors.border }]} onPress={() => setModal(false)}>
-                <Text style={[styles.cancelText, { color: colors.textSecondary }]}>{isAr ? 'إلغاء' : 'Cancel'}</Text>
+                <Text style={[styles.cancelText, { color: colors.textSecondary }]}>{'إلغاء'}</Text>
               </TouchableOpacity>
               <TouchableOpacity style={[styles.saveBtn, { backgroundColor: colors.primary }, saving && { opacity: 0.6 }]} onPress={submit} disabled={saving}>
-                {saving ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.saveText}>{isAr ? 'حفظ' : 'Save'}</Text>}
+                {saving ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.saveText}>{'حفظ'}</Text>}
               </TouchableOpacity>
             </View>
           </View>

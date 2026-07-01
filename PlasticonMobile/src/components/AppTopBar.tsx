@@ -6,14 +6,14 @@ import { useNavigation } from '@react-navigation/native';
 import { User } from '../api/types';
 import { api } from '../api/client';
 import { useAppTheme } from '../context/ThemeContext';
-import { useLocale } from '../context/LocaleContext';
 import { roleColor, spacing, typography } from '../theme';
 
-const ROLE_LABEL: Record<string, { en: string; ar: string }> = {
-  ADMIN:      { en: 'Admin',      ar: 'مدير' },
-  WORKER:     { en: 'Worker',     ar: 'عامل' },
-  ENGINEER:   { en: 'Engineer',   ar: 'مهندس' },
-  ACCOUNTANT: { en: 'Accountant', ar: 'محاسب' },
+const ROLE_LABEL: Record<string, string> = {
+  ADMIN:      'مدير',
+  WORKER:     'عامل',
+  ENGINEER:   'مهندس',
+  ACCOUNTANT: 'محاسب',
+  SALES_REP:  'مندوب مبيعات',
 };
 
 interface Props {
@@ -21,13 +21,12 @@ interface Props {
 }
 
 export function AppTopBar({ user }: Props) {
-  const insets             = useSafeAreaInsets();
+  const insets   = useSafeAreaInsets();
   const { colors, isDark, toggleTheme } = useAppTheme();
-  const { locale, setLocale, isAr } = useLocale();
-  const navigation         = useNavigation();
-  const rColor             = roleColor(user.role);
-  const firstName          = user.fullName?.split(' ')[0] ?? user.username ?? 'User';
-  const roleLabel          = ROLE_LABEL[user.role] ?? { en: user.role, ar: user.role };
+  const navigation = useNavigation();
+  const rColor     = roleColor(user.role);
+  const firstName  = user.fullName?.split(' ')[0] ?? user.username ?? 'المستخدم';
+  const roleLabel  = ROLE_LABEL[user.role] ?? user.role;
 
   const [unreadCount, setUnreadCount] = useState(0);
 
@@ -43,8 +42,6 @@ export function AppTopBar({ user }: Props) {
   }, []);
 
   const openNotifications = () => {
-    // navigation is inside a nested stack — get the parent tab navigator so we
-    // can switch tabs, then push Notifications in the correct tab's stack.
     const tabNav = navigation.getParent<any>();
     const nav    = tabNav ?? navigation;
     if (user.role === 'ADMIN') {
@@ -63,9 +60,7 @@ export function AppTopBar({ user }: Props) {
         </View>
         <View>
           <Text style={[styles.logoName, { color: colors.textInverse }]}>PLASTICON</Text>
-          <Text style={styles.logoTagline}>
-            {isAr ? 'إدارة المصنع' : 'Factory Management'}
-          </Text>
+          <Text style={styles.logoTagline}>إدارة المصنع</Text>
         </View>
       </View>
 
@@ -105,9 +100,7 @@ export function AppTopBar({ user }: Props) {
           <Text style={styles.userName} numberOfLines={1}>{firstName}</Text>
           <View style={[styles.roleBadge, { backgroundColor: rColor + '22' }]}>
             <View style={[styles.roleDot, { backgroundColor: rColor }]} />
-            <Text style={[styles.roleText, { color: rColor }]}>
-              {locale === 'ar' ? roleLabel.ar : roleLabel.en}
-            </Text>
+            <Text style={[styles.roleText, { color: rColor }]}>{roleLabel}</Text>
           </View>
         </View>
       </View>
@@ -125,21 +118,17 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#1E2A3A',
   },
-
-  logoRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  logoMark: { width: 32, height: 32, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
+  logoRow:     { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  logoMark:    { width: 32, height: 32, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
   logoMarkText: { fontSize: 16, fontWeight: '900', letterSpacing: -0.5 },
   logoName:    { fontSize: 14, fontWeight: '800', letterSpacing: 1.5 },
   logoTagline: { fontSize: 9, fontWeight: '500', color: '#6B7A8D', letterSpacing: 0.5, marginTop: 1 },
-
   rightSection: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-
   iconBtn: {
     width: 30, height: 30, borderRadius: 8, borderWidth: 1,
     backgroundColor: 'rgba(255,255,255,0.05)',
     alignItems: 'center', justifyContent: 'center',
   },
-
   notifBadge: {
     position: 'absolute', top: -4, right: -4,
     minWidth: 14, height: 14, borderRadius: 7,
@@ -147,15 +136,6 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
   },
   notifBadgeText: { color: '#fff', fontSize: 8, fontWeight: '800' },
-
-  langPill: {
-    flexDirection: 'row', backgroundColor: 'rgba(255,255,255,0.06)',
-    borderRadius: 8, borderWidth: 1, borderColor: '#1E2A3A', padding: 2, gap: 2,
-  },
-  langBtn:        { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 },
-  langText:       { fontSize: 11, fontWeight: '700', color: '#6B7A8D' },
-  langTextActive: { color: '#0D1321' },
-
   userRow:   { alignItems: 'flex-end', gap: 4 },
   userName:  { ...typography.bodySmall, color: '#CBD5E1', fontWeight: '600', maxWidth: 80 },
   roleBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 99 },

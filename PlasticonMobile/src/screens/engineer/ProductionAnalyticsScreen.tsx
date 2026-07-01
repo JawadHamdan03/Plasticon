@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+﻿import React, { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, RefreshControl, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -6,7 +6,6 @@ import { api } from '../../api/client';
 import { ScreenHeader, StatCard } from '../../components';
 import { radius, shadow, spacing, typography } from '../../theme';
 import { useAppTheme } from '../../context/ThemeContext';
-import { useLocale } from '../../context/LocaleContext';
 
 interface WeeklyReport {
   weekStart: string;
@@ -38,7 +37,6 @@ function MachineRow({ item, max }: { item: WeeklyReport['byMachine'][0]; max: nu
 
 export function ProductionAnalyticsScreen() {
   const { colors } = useAppTheme();
-  const { isAr } = useLocale();
   const [data, setData]         = useState<WeeklyReport | null>(null);
   const [loading, setLoading]   = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -70,16 +68,16 @@ export function ProductionAnalyticsScreen() {
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
-      <ScreenHeader title={isAr ? 'تحليلات الإنتاج' : 'Production Analytics'} showBack />
+      <ScreenHeader title={'تحليلات الإنتاج'} showBack />
       {loading ? (
         <View style={styles.center}><ActivityIndicator size="large" color={colors.primary} /></View>
       ) : error ? (
         <View style={styles.center}>
           <Ionicons name="cloud-offline-outline" size={48} color={colors.danger} />
-          <Text style={[styles.emptyTitle, { color: colors.text }]}>{isAr ? 'فشل التحميل' : 'Failed to Load'}</Text>
+          <Text style={[styles.emptyTitle, { color: colors.text }]}>{'فشل التحميل'}</Text>
           <Text style={[styles.emptyMsg, { color: colors.textMuted }]}>{error}</Text>
           <TouchableOpacity style={[styles.retryBtn, { backgroundColor: colors.primary }]} onPress={() => { setLoading(true); void load(); }}>
-            <Text style={styles.retryText}>{isAr ? 'إعادة المحاولة' : 'Retry'}</Text>
+            <Text style={styles.retryText}>{'إعادة المحاولة'}</Text>
           </TouchableOpacity>
         </View>
       ) : (
@@ -92,27 +90,27 @@ export function ProductionAnalyticsScreen() {
             <View style={[styles.emptyCard, { backgroundColor: colors.surface }]}>
               <Ionicons name="bar-chart-outline" size={44} color={colors.textMuted} />
               <Text style={[styles.emptyTitle, { color: colors.text }]}>
-                {isAr ? 'لا توجد بيانات هذا الأسبوع' : 'No Data This Week'}
+                {'لا توجد بيانات هذا الأسبوع'}
               </Text>
               <Text style={[styles.emptyMsg, { color: colors.textMuted }]}>
-                {isAr ? 'لم يتم تسجيل أي بيانات إنتاج للأسبوع الحالي' : 'No production records have been logged for the current week'}
+                {'لم يتم تسجيل أي بيانات إنتاج للأسبوع الحالي'}
               </Text>
             </View>
           )}
 
           <View style={styles.kpiRow}>
-            <StatCard label={isAr ? 'إجمالي القطع'    : 'Total Pieces'} value={(data?.totals.totalPieces ?? 0).toLocaleString()} icon="cube"          color={colors.primary} style={styles.kpi} />
-            <StatCard label={isAr ? 'متوسط / يوم'     : 'Avg / Day'}    value={avgPerDay.toLocaleString()}                       icon="analytics"     color={colors.info}    style={styles.kpi} />
+            <StatCard label={'إجمالي القطع'} value={(data?.totals.totalPieces ?? 0).toLocaleString()} icon="cube"          color={colors.primary} style={styles.kpi} />
+            <StatCard label={'متوسط / يوم'}    value={avgPerDay.toLocaleString()}                       icon="analytics"     color={colors.info}    style={styles.kpi} />
           </View>
           <View style={styles.kpiRow}>
-            <StatCard label={isAr ? 'إجمالي السجلات'  : 'Total Logs'}   value={String(data?.totals.recordsCount ?? 0)}           icon="list"          color={colors.accent}  style={styles.kpi} />
-            <StatCard label={isAr ? 'أعلى آلة'        : 'Top Machine'}  value={hasData ? topMachine : '—'}                       icon="hardware-chip" color={colors.success} style={styles.kpi} />
+            <StatCard label={'إجمالي السجلات'}   value={String(data?.totals.recordsCount ?? 0)}           icon="list"          color={colors.accent}  style={styles.kpi} />
+            <StatCard label={'أعلى آلة'}  value={hasData ? topMachine : '—'}                       icon="hardware-chip" color={colors.success} style={styles.kpi} />
           </View>
 
           {byMachine.length > 0 && (
             <View style={[styles.section, { backgroundColor: colors.surface }]}>
               <Text style={[styles.sectionTitle, { color: colors.text }]}>
-                {isAr ? 'الإنتاج حسب الآلة' : 'Output by Machine'}
+                {'الإنتاج حسب الآلة'}
               </Text>
               {byMachine.map((m) => (
                 <MachineRow key={m.machineName} item={m} max={maxMachProd} />
@@ -123,7 +121,7 @@ export function ProductionAnalyticsScreen() {
           {byDay.length > 0 && (
             <View style={[styles.section, { backgroundColor: colors.surface }]}>
               <Text style={[styles.sectionTitle, { color: colors.text }]}>
-                {isAr ? 'الإنتاج اليومي (هذا الأسبوع)' : 'Daily Output (This Week)'}
+                {'الإنتاج اليومي (هذا الأسبوع)'}
               </Text>
               {byDay.map((t) => (
                 <View key={t.date} style={[styles.trendRow, { borderBottomColor: colors.border }]}>
@@ -131,7 +129,7 @@ export function ProductionAnalyticsScreen() {
                     {new Date(t.date + 'T12:00:00').toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' })}
                   </Text>
                   <Text style={[styles.trendVal, { color: colors.primary }]}>
-                    {(t.totalPieces ?? 0).toLocaleString()} {isAr ? 'وحدات' : 'units'}
+                    {(t.totalPieces ?? 0).toLocaleString()} {'وحدات'}
                   </Text>
                 </View>
               ))}

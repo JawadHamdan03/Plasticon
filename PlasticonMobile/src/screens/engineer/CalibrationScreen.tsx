@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+﻿import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -21,7 +21,6 @@ import { api } from '../../api/client';
 import { ScreenHeader } from '../../components';
 import { radius, shadow, spacing, typography } from '../../theme';
 import { useAppTheme } from '../../context/ThemeContext';
-import { useLocale } from '../../context/LocaleContext';
 
 interface HealthRecord {
   id: number;
@@ -94,18 +93,17 @@ function CalModal({ visible, machines, onClose, onSave, saving, initialForm, isE
   initialForm?: FormState; isEdit?: boolean;
 }) {
   const { colors } = useAppTheme();
-  const { isAr } = useLocale();
   const [form, setForm] = useState<FormState>(initialForm ?? DEFAULT_FORM);
   useEffect(() => { if (visible) setForm(initialForm ?? DEFAULT_FORM); }, [visible, initialForm]);
   const set = (k: keyof FormState) => (v: string) => setForm((p) => ({ ...p, [k]: v }));
 
   const handleSave = async () => {
     if (!form.machineId.trim()) {
-      Alert.alert(isAr ? 'تحقق' : 'Validation', isAr ? 'معرف الآلة مطلوب.' : 'Machine ID is required.');
+      Alert.alert('تحقق', 'معرف الآلة مطلوب.');
       return;
     }
     if (isNaN(Number(form.efficiencyRating))) {
-      Alert.alert(isAr ? 'تحقق' : 'Validation', isAr ? 'يجب أن تكون الكفاءة رقماً 0-100.' : 'Efficiency must be a number 0–100.');
+      Alert.alert('تحقق', 'يجب أن تكون الكفاءة رقماً 0-100.');
       return;
     }
     await onSave(form);
@@ -118,10 +116,10 @@ function CalModal({ visible, machines, onClose, onSave, saving, initialForm, isE
         <View style={[styles.sheet, { backgroundColor: colors.surface }]}>
           <View style={[styles.sheetHandle, { backgroundColor: colors.border }]} />
           <Text style={[styles.sheetTitle, { color: colors.text }]}>
-            {isEdit ? (isAr ? 'تعديل سجل المعايرة' : 'Edit Calibration Record') : (isAr ? 'سجل معايرة جديد' : 'New Calibration Record')}
+            {isEdit ? ('تعديل سجل المعايرة') : ('سجل معايرة جديد')}
           </Text>
           <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-            <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{isAr ? 'الآلة *' : 'Machine *'}</Text>
+            <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{'الآلة *'}</Text>
             {machines.length > 0 ? (
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: spacing.sm }}>
                 <View style={{ flexDirection: 'row', gap: spacing.sm }}>
@@ -146,51 +144,51 @@ function CalModal({ visible, machines, onClose, onSave, saving, initialForm, isE
                 style={[styles.input, { backgroundColor: colors.surfaceAlt, borderColor: colors.border, color: colors.text }]}
                 value={form.machineId}
                 onChangeText={set('machineId')}
-                placeholder={isAr ? 'معرف الآلة' : 'Machine ID'}
+                placeholder={'معرف الآلة'}
                 placeholderTextColor={colors.textMuted}
                 keyboardType="numeric"
               />
             )}
 
             <InlinePicker
-              label={isAr ? 'الحالة التشغيلية' : 'Operational Status'}
+              label={'الحالة التشغيلية'}
               value={form.operationalStatus}
               options={OPS_OPTIONS}
               onChange={(v) => setForm((p) => ({ ...p, operationalStatus: v }))}
             />
 
-            <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{isAr ? 'معدل الكفاءة (0-100)' : 'Efficiency Rating (0–100)'}</Text>
+            <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{'معدل الكفاءة (0-100)'}</Text>
             <TextInput
               style={[styles.input, { backgroundColor: colors.surfaceAlt, borderColor: colors.border, color: colors.text }]}
               value={form.efficiencyRating} onChangeText={set('efficiencyRating')}
               placeholder="100" placeholderTextColor={colors.textMuted} keyboardType="numeric"
             />
 
-            <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{isAr ? 'ساعات الصيانة' : 'Maintenance Hours'}</Text>
+            <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{'ساعات الصيانة'}</Text>
             <TextInput
               style={[styles.input, { backgroundColor: colors.surfaceAlt, borderColor: colors.border, color: colors.text }]}
               value={form.maintenanceHours} onChangeText={set('maintenanceHours')}
               placeholder="0" placeholderTextColor={colors.textMuted} keyboardType="numeric"
             />
 
-            <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{isAr ? 'نسبة التوقف %' : 'Downtime %'}</Text>
+            <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{'نسبة التوقف %'}</Text>
             <TextInput
               style={[styles.input, { backgroundColor: colors.surfaceAlt, borderColor: colors.border, color: colors.text }]}
               value={form.downtimePercentage} onChangeText={set('downtimePercentage')}
               placeholder="0" placeholderTextColor={colors.textMuted} keyboardType="numeric"
             />
 
-            <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{isAr ? 'ملاحظات' : 'Notes'}</Text>
+            <Text style={[styles.fieldLabel, { color: colors.textMuted }]}>{'ملاحظات'}</Text>
             <TextInput
               style={[styles.input, styles.multiline, { backgroundColor: colors.surfaceAlt, borderColor: colors.border, color: colors.text }]}
               value={form.notes} onChangeText={set('notes')}
-              placeholder={isAr ? 'ملاحظات اختيارية' : 'Optional notes'}
+              placeholder={'ملاحظات اختيارية'}
               placeholderTextColor={colors.textMuted} multiline numberOfLines={3} textAlignVertical="top"
             />
           </ScrollView>
           <View style={styles.sheetActions}>
             <TouchableOpacity style={[styles.cancelBtn, { borderColor: colors.border }]} onPress={onClose}>
-              <Text style={[styles.cancelText, { color: colors.textSecondary }]}>{isAr ? 'إلغاء' : 'Cancel'}</Text>
+              <Text style={[styles.cancelText, { color: colors.textSecondary }]}>{'إلغاء'}</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.saveBtn, { backgroundColor: colors.primary }, saving && { opacity: 0.6 }]}
@@ -199,7 +197,7 @@ function CalModal({ visible, machines, onClose, onSave, saving, initialForm, isE
             >
               {saving
                 ? <ActivityIndicator size="small" color="#fff" />
-                : <Text style={styles.saveText}>{isAr ? 'حفظ' : 'Save'}</Text>}
+                : <Text style={styles.saveText}>{'حفظ'}</Text>}
             </TouchableOpacity>
           </View>
         </View>
@@ -210,7 +208,6 @@ function CalModal({ visible, machines, onClose, onSave, saving, initialForm, isE
 
 function CalCard({ item, onEdit }: { item: HealthRecord; onEdit: () => void }) {
   const { colors } = useAppTheme();
-  const { isAr } = useLocale();
 
   const OPS_COLOR: Record<string, string> = {
     OPERATIONAL: colors.success, MAINTENANCE: colors.warning,
@@ -218,9 +215,9 @@ function CalCard({ item, onEdit }: { item: HealthRecord; onEdit: () => void }) {
   };
 
   function calStatus(eff: number) {
-    if (eff >= 90) return { label: isAr ? 'صالح'         : 'Valid',    color: colors.success, icon: 'checkmark-circle' as const };
-    if (eff >= 75) return { label: isAr ? 'مستحق قريباً' : 'Due Soon', color: colors.warning, icon: 'time' as const };
-    return               { label: isAr ? 'منتهي'         : 'Expired',  color: colors.danger,  icon: 'alert-circle' as const };
+    if (eff >= 90) return { label: 'صالح',    color: colors.success, icon: 'checkmark-circle' as const };
+    if (eff >= 75) return { label: 'مستحق قريباً', color: colors.warning, icon: 'time' as const };
+    return               { label: 'منتهي',  color: colors.danger,  icon: 'alert-circle' as const };
   }
 
   const { label, color, icon } = calStatus(item.efficiencyRating);
@@ -230,7 +227,7 @@ function CalCard({ item, onEdit }: { item: HealthRecord; onEdit: () => void }) {
     <View style={[styles.card, { backgroundColor: colors.surface, borderLeftColor: color, borderLeftWidth: 3 }]}>
       <View style={styles.cardTop}>
         <Text style={[styles.machineName, { color: colors.text }]} numberOfLines={1}>
-          {item.machine?.name ?? `${isAr ? 'سجل #' : 'Record #'}${item.id}`}
+          {item.machine?.name ?? `${'سجل #'}${item.id}`}
         </Text>
         <View style={styles.badges}>
           <View style={[styles.badge, { backgroundColor: `${opsColor}15` }]}>
@@ -247,17 +244,17 @@ function CalCard({ item, onEdit }: { item: HealthRecord; onEdit: () => void }) {
       </View>
       <View style={styles.details}>
         <View style={styles.detailBlock}>
-          <Text style={[styles.detailLabel, { color: colors.textMuted }]}>{isAr ? 'الكفاءة' : 'Efficiency'}</Text>
+          <Text style={[styles.detailLabel, { color: colors.textMuted }]}>{'الكفاءة'}</Text>
           <Text style={[styles.detailValue, { color }]}>{item.efficiencyRating}%</Text>
         </View>
         <View style={styles.detailBlock}>
-          <Text style={[styles.detailLabel, { color: colors.textMuted }]}>{isAr ? 'آخر معايرة' : 'Last Calibrated'}</Text>
+          <Text style={[styles.detailLabel, { color: colors.textMuted }]}>{'آخر معايرة'}</Text>
           <Text style={[styles.detailValue, { color: colors.text }]}>
             {new Date(item.recordedAt).toLocaleDateString([], { month: 'short', day: 'numeric' })}
           </Text>
         </View>
         <View style={styles.detailBlock}>
-          <Text style={[styles.detailLabel, { color: colors.textMuted }]}>{isAr ? 'التالية' : 'Next Due'}</Text>
+          <Text style={[styles.detailLabel, { color: colors.textMuted }]}>{'التالية'}</Text>
           <Text style={[styles.detailValue, { color: item.efficiencyRating < 75 ? colors.danger : colors.text }]}>
             {nextDue(item.recordedAt)}
           </Text>
@@ -270,7 +267,6 @@ function CalCard({ item, onEdit }: { item: HealthRecord; onEdit: () => void }) {
 
 export function CalibrationScreen() {
   const { colors } = useAppTheme();
-  const { isAr } = useLocale();
   const today0 = new Date().toISOString().slice(0, 10);
   const month0 = new Date().toISOString().slice(0, 7) + '-01';
   const [records, setRecords]       = useState<HealthRecord[]>([]);
@@ -311,8 +307,8 @@ export function CalibrationScreen() {
   const openCreate = () => {
     if (!isCheckedIn) {
       Alert.alert(
-        isAr ? 'تسجيل الدخول مطلوب' : 'Check-In Required',
-        isAr ? 'يجب تسجيل الدخول قبل إضافة سجل معايرة.' : 'You must check in before adding a calibration record.',
+        'تسجيل الدخول مطلوب',
+        'يجب تسجيل الدخول قبل إضافة سجل معايرة.',
       );
       return;
     }
@@ -342,7 +338,7 @@ export function CalibrationScreen() {
       setRefreshing(true);
       await load();
     } catch (e: any) {
-      Alert.alert(isAr ? 'خطأ' : 'Error', e?.message ?? (isAr ? 'فشل حفظ السجل' : 'Failed to save record'));
+      Alert.alert('خطأ', e?.message ?? ('فشل حفظ السجل'));
     } finally {
       setSaving(false);
     }
@@ -361,17 +357,17 @@ export function CalibrationScreen() {
 
   const expiredCount = filteredRecords.filter((r) => r.efficiencyRating < 75).length;
   const subtitle = expiredCount
-    ? `${expiredCount} ${isAr ? 'تحتاج اهتماماً' : 'need attention'}`
-    : (isAr ? 'كل المعايرات سليمة' : 'All calibrated');
+    ? `${expiredCount} ${'تحتاج اهتماماً'}`
+    : ('كل المعايرات سليمة');
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
-      <ScreenHeader title={isAr ? 'المعايرة' : 'Calibration'} subtitle={subtitle} showBack />
+      <ScreenHeader title={'المعايرة'} subtitle={subtitle} showBack />
       {!isCheckedIn && !loading && (
         <View style={[styles.notCheckedBanner, { backgroundColor: `${colors.warning}15`, borderColor: `${colors.warning}50` }]}>
           <Ionicons name="warning-outline" size={16} color={colors.warning} />
           <Text style={[styles.notCheckedText, { color: colors.warning }]}>
-            {isAr ? 'يجب تسجيل الدخول لإضافة سجلات معايرة' : 'Check in to add calibration records'}
+            {'يجب تسجيل الدخول لإضافة سجلات معايرة'}
           </Text>
         </View>
       )}
@@ -408,7 +404,7 @@ export function CalibrationScreen() {
             <View style={styles.empty}>
               <Ionicons name="checkmark-circle-outline" size={44} color={colors.textMuted} />
               <Text style={[styles.emptyText, { color: colors.textMuted }]}>
-                {isAr ? 'لا توجد سجلات معايرة' : 'No calibration records'}
+                {'لا توجد سجلات معايرة'}
               </Text>
             </View>
           }

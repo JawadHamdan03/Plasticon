@@ -1,180 +1,178 @@
-import React from 'react';
+﻿import React from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { radius, shadow, spacing, typography } from '../../theme';
 import { useAppTheme } from '../../context/ThemeContext';
-import { useLocale } from '../../context/LocaleContext';
 
 export function AdminMoreMenuScreen() {
   const navigation = useNavigation<any>();
   const { colors } = useAppTheme();
-  const { isAr } = useLocale();
 
   const SECTIONS = [
     {
-      title: isAr ? 'إدارة المستخدمين' : 'User Management',
+      title: 'إدارة المستخدمين',
       items: [
         {
           icon: 'people',
-          label: isAr ? 'المستخدمون' : 'Users',
-          desc:  isAr ? 'إدارة جميع حسابات المستخدمين والأدوار' : 'Manage all user accounts and roles',
+          label: 'المستخدمون',
+          desc:  'إدارة جميع حسابات المستخدمين والأدوار',
           screen: 'Users',
           color: colors.primary,
         },
         {
           icon: 'person-add',
-          label: isAr ? 'طلبات التسجيل' : 'Registrations',
-          desc:  isAr ? 'طلبات الوصول المعلقة والموافقات' : 'Pending access requests and approvals',
+          label: 'طلبات التسجيل',
+          desc:  'طلبات الوصول المعلقة والموافقات',
           screen: 'Registrations',
           color: colors.warning,
         },
         {
           icon: 'briefcase',
-          label: isAr ? 'نظرة عامة على المهندسين' : 'Engineer Overview',
-          desc:  isAr ? 'مراجعة أداء الفريق الهندسي' : 'Engineering team performance review',
+          label: 'نظرة عامة على المهندسين',
+          desc:  'مراجعة أداء الفريق الهندسي',
           screen: 'EngineerOverview',
           color: colors.roleEngineer,
         },
         {
           icon: 'people',
-          label: isAr ? 'العملاء' : 'Customers',
-          desc:  isAr ? 'حسابات العملاء المستمدة من سجلات المبيعات' : 'Customer accounts derived from sales records',
+          label: 'العملاء',
+          desc:  'حسابات العملاء المستمدة من سجلات المبيعات',
           screen: 'Customers',
           color: colors.info,
         },
       ],
     },
     {
-      title: isAr ? 'مندوبو المبيعات' : 'Sales Reps',
+      title: 'مندوبو المبيعات',
       items: [
         {
           icon: 'trending-up',
-          label: isAr ? 'لوحة المندوب' : 'Sales Dashboard',
-          desc:  isAr ? 'نظرة عامة على أداء المندوبين' : 'Sales rep performance overview',
+          label: 'لوحة المندوب',
+          desc:  'نظرة عامة على أداء المندوبين',
           screen: 'SalesRepDash',
           color: '#ec4899',
         },
         {
           icon: 'people',
-          label: isAr ? 'عملاء المندوبين' : 'Rep Customers',
-          desc:  isAr ? 'جميع عملاء المندوبين' : 'All sales rep customers',
+          label: 'عملاء المندوبين',
+          desc:  'جميع عملاء المندوبين',
           screen: 'SalesRepCustomers',
           color: '#8b5cf6',
         },
         {
           icon: 'document-text',
-          label: isAr ? 'عروض الأسعار' : 'Quotations',
-          desc:  isAr ? 'جميع عروض الأسعار' : 'All quotations from all reps',
+          label: 'عروض الأسعار',
+          desc:  'جميع عروض الأسعار',
           screen: 'SalesRepQuotations',
           color: '#3b82f6',
         },
         {
           icon: 'location',
-          label: isAr ? 'سجل الزيارات' : 'Visit Log',
-          desc:  isAr ? 'جميع زيارات العملاء' : 'All customer visit records',
+          label: 'سجل الزيارات',
+          desc:  'جميع زيارات العملاء',
           screen: 'SalesRepVisits',
           color: '#10b981',
         },
         {
           icon: 'flag',
-          label: isAr ? 'الأهداف' : 'Targets',
-          desc:  isAr ? 'أهداف المبيعات والإنجازات' : 'Sales targets and achievements',
+          label: 'الأهداف',
+          desc:  'أهداف المبيعات والإنجازات',
           screen: 'SalesRepTargets',
           color: '#f59e0b',
         },
         {
           icon: 'checkmark-circle',
-          label: isAr ? 'مراجعة الطلبات' : 'Rep Requests',
-          desc:  isAr ? 'مراجعة وموافقة طلبات المندوبين' : 'Review and approve rep requests',
+          label: 'مراجعة الطلبات',
+          desc:  'مراجعة وموافقة طلبات المندوبين',
           screen: 'SalesReview',
           color: '#ef4444',
         },
       ],
     },
     {
-      title: isAr ? 'أدوات الذكاء الاصطناعي' : 'AI Tools',
+      title: 'أدوات الذكاء الاصطناعي',
       items: [
         {
           icon: 'hardware-chip',
-          label: isAr ? 'المساعد الذكي' : 'AI Assistant',
-          desc:  isAr ? 'مساعد ذكي متعدد الأغراض للمصنع' : 'General-purpose factory AI assistant',
+          label: 'المساعد الذكي',
+          desc:  'مساعد ذكي متعدد الأغراض للمصنع',
           screen: 'AIHub',
           color: colors.primary,
         },
         {
           icon: 'document-text',
-          label: isAr ? 'استخراج الفواتير' : 'Invoice Extraction',
-          desc:  isAr ? 'استخراج البيانات من الفواتير بالذكاء الاصطناعي' : 'Extract data from invoices using AI',
+          label: 'استخراج الفواتير',
+          desc:  'استخراج البيانات من الفواتير بالذكاء الاصطناعي',
           screen: 'InvoiceExtraction',
           color: colors.success,
         },
         {
           icon: 'warning',
-          label: isAr ? 'كشف الانحرافات' : 'Anomaly Detection',
-          desc:  isAr ? 'الكشف عن الانحرافات في الإنتاج والمعدات' : 'Detect production and equipment anomalies',
+          label: 'كشف الانحرافات',
+          desc:  'الكشف عن الانحرافات في الإنتاج والمعدات',
           screen: 'AnomalyDetection',
           color: colors.danger,
         },
         {
           icon: 'construct',
-          label: isAr ? 'تقرير الصيانة' : 'Maintenance Report',
-          desc:  isAr ? 'ملخصات الصيانة المولدة بالذكاء الاصطناعي' : 'AI-generated maintenance summaries',
+          label: 'تقرير الصيانة',
+          desc:  'ملخصات الصيانة المولدة بالذكاء الاصطناعي',
           screen: 'MaintenanceReport',
           color: colors.warning,
         },
         {
           icon: 'swap-horizontal',
-          label: isAr ? 'تسليم الوردية' : 'Shift Handover',
-          desc:  isAr ? 'ملاحظات تسليم الوردية بمساعدة الذكاء الاصطناعي' : 'AI-assisted shift handover notes',
+          label: 'تسليم الوردية',
+          desc:  'ملاحظات تسليم الوردية بمساعدة الذكاء الاصطناعي',
           screen: 'ShiftHandover',
           color: colors.info,
         },
         {
           icon: 'school',
-          label: isAr ? 'تدريب العمال' : 'Worker Coaching',
-          desc:  isAr ? 'التدريب والتوجيه الذكي للعمال' : 'AI coaching and guidance for workers',
+          label: 'تدريب العمال',
+          desc:  'التدريب والتوجيه الذكي للعمال',
           screen: 'WorkerCoaching',
           color: colors.accent,
         },
       ],
     },
     {
-      title: isAr ? 'النظام' : 'System',
+      title: 'النظام',
       items: [
         {
           icon: 'shield',
-          label: isAr ? 'سجلات التدقيق' : 'Audit Logs',
-          desc:  isAr ? 'جميع إجراءات النظام وسجل التدقيق' : 'All system actions and audit trail',
+          label: 'سجلات التدقيق',
+          desc:  'جميع إجراءات النظام وسجل التدقيق',
           screen: 'AuditLogs',
           color: colors.info,
         },
         {
           icon: 'settings',
-          label: isAr ? 'الإعدادات' : 'Settings',
-          desc:  isAr ? 'إعدادات النظام والتفضيلات' : 'System-wide configuration and preferences',
+          label: 'الإعدادات',
+          desc:  'إعدادات النظام والتفضيلات',
           screen: 'Settings',
           color: colors.textMuted,
         },
         {
           icon: 'chatbubbles',
-          label: isAr ? 'الدردشة' : 'Chat',
-          desc:  isAr ? 'المراسلة والنقاش على مستوى الشركة' : 'Company-wide messaging and discussion',
+          label: 'الدردشة',
+          desc:  'المراسلة والنقاش على مستوى الشركة',
           screen: 'Chat',
           color: colors.primary,
         },
         {
           icon: 'notifications',
-          label: isAr ? 'الإشعارات' : 'Notifications',
-          desc:  isAr ? 'تنبيهات النظام وسجل الإشعارات' : 'System alerts and notification history',
+          label: 'الإشعارات',
+          desc:  'تنبيهات النظام وسجل الإشعارات',
           screen: 'Notifications',
           color: colors.accent,
         },
         {
           icon: 'person',
-          label: isAr ? 'ملفي الشخصي' : 'My Profile',
-          desc:  isAr ? 'إعدادات حسابك وتفضيلاتك' : 'Your account settings and preferences',
+          label: 'ملفي الشخصي',
+          desc:  'إعدادات حسابك وتفضيلاتك',
           screen: 'Profile',
           color: colors.success,
         },
@@ -186,10 +184,10 @@ export function AdminMoreMenuScreen() {
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <Text style={[styles.title, { color: colors.text }]}>
-          {isAr ? 'المزيد' : 'More Options'}
+          {'المزيد'}
         </Text>
         <Text style={[styles.sub, { color: colors.textMuted }]}>
-          {isAr ? 'إدارة المستخدمين وأدوات الذكاء الاصطناعي وإعدادات النظام' : 'User management, AI tools and system settings'}
+          {'إدارة المستخدمين وأدوات الذكاء الاصطناعي وإعدادات النظام'}
         </Text>
         {SECTIONS.map((section) => (
           <View key={section.title} style={styles.section}>
