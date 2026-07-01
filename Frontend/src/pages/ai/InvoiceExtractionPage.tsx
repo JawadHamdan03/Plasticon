@@ -1,4 +1,4 @@
-import { useRef, useState, type DragEvent, type ChangeEvent } from "react";
+﻿import { useRef, useState, type DragEvent, type ChangeEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { useLocale } from "../../context/LocaleContext";
@@ -70,9 +70,9 @@ function confColor(c?: "high" | "medium" | "low") {
   return "#ef4444";
 }
 function confLabel(c?: "high" | "medium" | "low", isAr = false): string {
-  if (c === "high")   return isAr ? "دقيق" : "High";
-  if (c === "medium") return isAr ? "متوسط" : "Medium";
-  return isAr ? "منخفض" : "Low";
+  if (c === "high")   return "دقيق";
+  if (c === "medium") return "متوسط";
+  return "منخفض";
 }
 
 // Map raw API response → EditableInvoice
@@ -177,7 +177,7 @@ export function InvoiceExtractionPage() {
     const f = files?.[0];
     if (!f) return;
     if (f.size > 10 * 1024 * 1024) {
-      setExtractError(isAr ? "الملف أكبر من 10 MB" : "File exceeds 10 MB");
+      setExtractError("الملف أكبر من 10 MB");
       return;
     }
     setFile(f);
@@ -301,8 +301,8 @@ export function InvoiceExtractionPage() {
     setSendError("");
     try {
       const total = invoice.totalAmount ?? invoice.subtotal ?? 0;
-      if (!invoice.invoiceNumber.trim()) throw new Error(isAr ? "رقم الفاتورة مطلوب" : "Invoice number is required");
-      if (total <= 0) throw new Error(isAr ? "المبلغ الإجمالي يجب أن يكون أكبر من صفر" : "Total amount must be greater than 0");
+      if (!invoice.invoiceNumber.trim()) throw new Error("رقم الفاتورة مطلوب");
+      if (total <= 0) throw new Error("المبلغ الإجمالي يجب أن يكون أكبر من صفر");
 
       const fallbackDue = new Date(Date.now() + 30 * 86400000).toISOString().split("T")[0];
       const body = {
@@ -346,10 +346,10 @@ export function InvoiceExtractionPage() {
   // ── Access guard ───────────────────────────────────────────────────────────
   if (!canUse) {
     return (
-      <ModulePageShell title={isAr ? "استخراج الفواتير بالذكاء الاصطناعي" : "AI Invoice Extraction"} subtitle="">
+      <ModulePageShell title={"استخراج الفواتير بالذكاء الاصطناعي"} subtitle="">
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "40vh", gap: "1rem", textAlign: "center" }}>
           <Sparkles size={40} style={{ color: "#6366f1", opacity: .5 }} />
-          <h2 style={{ margin: 0 }}>{isAr ? "هذه الميزة للمحاسبين والمديرين فقط" : "Accountants & Admins only"}</h2>
+          <h2 style={{ margin: 0 }}>{"هذه الميزة للمحاسبين والمديرين فقط"}</h2>
         </div>
       </ModulePageShell>
     );
@@ -360,7 +360,7 @@ export function InvoiceExtractionPage() {
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
     <ModulePageShell
-      title={isAr ? "استخراج الفواتير بالذكاء الاصطناعي" : "AI Invoice Extraction"}
+      title={"استخراج الفواتير بالذكاء الاصطناعي"}
       subtitle={isAr
         ? "ارفع الفاتورة، راجع البيانات المستخرجة وعدّلها إن لزم، ثم أرسلها"
         : "Upload an invoice, review & correct the extracted data, then save"}
@@ -371,7 +371,7 @@ export function InvoiceExtractionPage() {
           <CheckCircle size={20} style={{ color: "#10b981", flexShrink: 0 }} />
           <div style={{ flex: 1 }}>
             <p style={{ margin: 0, fontWeight: 700, fontSize: ".92rem", color: "#059669" }}>
-              {isAr ? "تم الإرسال بنجاح!" : "Sent to Invoices successfully!"}
+              {"تم الإرسال بنجاح!"}
             </p>
             <p style={{ margin: 0, fontSize: ".8rem", color: "var(--text-secondary)" }}>
               {saved.invoiceNumber} — {fmtMoney(saved.totalAmount, saved.currency ?? "ILS")}
@@ -379,7 +379,7 @@ export function InvoiceExtractionPage() {
           </div>
           <button type="button" onClick={() => navigate("/accountant/invoices")}
             style={{ display: "flex", alignItems: "center", gap: ".35rem", padding: ".45rem .9rem", background: "#059669", color: "#fff", border: "none", borderRadius: 8, fontSize: ".82rem", fontWeight: 700, cursor: "pointer" }}>
-            {isAr ? "عرض الفواتير" : "View Invoices"} <ArrowRight size={13} />
+            {"عرض الفواتير"} <ArrowRight size={13} />
           </button>
           <button type="button" onClick={() => setSaved(null)} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-secondary)" }}>
             <X size={16} />
@@ -391,7 +391,7 @@ export function InvoiceExtractionPage() {
       <div style={{ background: "var(--bg-card)", border: "1px solid var(--border-default)", borderRadius: 12, overflow: "hidden", marginBottom: "1.5rem" }}>
         <div style={{ padding: ".875rem 1.25rem", borderBottom: "1px solid var(--border-default)", background: "var(--bg-surface)", display: "flex", alignItems: "center", gap: ".6rem" }}>
           <Sparkles size={17} style={{ color: "#6366f1" }} />
-          <span style={{ fontWeight: 700, fontSize: ".92rem" }}>{isAr ? "رفع الفاتورة" : "Upload Invoice"}</span>
+          <span style={{ fontWeight: 700, fontSize: ".92rem" }}>{"رفع الفاتورة"}</span>
         </div>
         <div style={{ padding: "1.25rem" }}>
           {!file ? (
@@ -406,8 +406,8 @@ export function InvoiceExtractionPage() {
                 <Upload size={24} style={{ color: "#6366f1" }} />
               </div>
               <div>
-                <p style={{ margin: 0, fontWeight: 700, fontSize: ".95rem" }}>{isAr ? "اسحب وأفلت الفاتورة هنا" : "Drag & drop invoice here"}</p>
-                <p style={{ margin: ".25rem 0 0", fontSize: ".82rem", color: "var(--text-secondary)" }}>JPEG · PNG · WebP · PDF — {isAr ? "حد أقصى 10 MB" : "max 10 MB"}</p>
+                <p style={{ margin: 0, fontWeight: 700, fontSize: ".95rem" }}>{"اسحب وأفلت الفاتورة هنا"}</p>
+                <p style={{ margin: ".25rem 0 0", fontSize: ".82rem", color: "var(--text-secondary)" }}>JPEG · PNG · WebP · PDF — {"حد أقصى 10 MB"}</p>
               </div>
               <input ref={inputRef} type="file" accept="image/jpeg,image/png,image/webp,application/pdf" style={{ display: "none" }} onChange={(e) => handleFiles(e.target.files)} />
             </div>
@@ -429,13 +429,13 @@ export function InvoiceExtractionPage() {
                   <button type="button" disabled={extracting} onClick={() => void extract()}
                     style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: ".4rem", padding: ".6rem 1rem", background: extracting ? "var(--bg-surface)" : "#6366f1", color: extracting ? "var(--text-secondary)" : "#fff", border: "none", borderRadius: 8, fontWeight: 700, fontSize: ".875rem", cursor: extracting ? "default" : "pointer" }}>
                     {extracting
-                      ? <><div className="spinner" style={{ width: 14, height: 14, borderWidth: 2 }} />{isAr ? "جاري الاستخراج..." : "Extracting…"}</>
-                      : <><Sparkles size={14} />{isAr ? "استخراج بالذكاء الاصطناعي" : "Extract with AI"}</>}
+                      ? <><div className="spinner" style={{ width: 14, height: 14, borderWidth: 2 }} />{"جاري الاستخراج..."}</>
+                      : <><Sparkles size={14} />{"استخراج بالذكاء الاصطناعي"}</>}
                   </button>
                   {invoice && (
                     <button type="button" onClick={() => void extract()} disabled={extracting}
                       style={{ width: "100%", padding: ".5rem", background: "transparent", border: "1px solid var(--border-default)", borderRadius: 8, cursor: "pointer", fontSize: ".82rem", color: "var(--text-secondary)", display: "flex", alignItems: "center", justifyContent: "center", gap: ".35rem" }}>
-                      <Sparkles size={12} />{isAr ? "إعادة الاستخراج" : "Re-extract"}
+                      <Sparkles size={12} />{"إعادة الاستخراج"}
                     </button>
                   )}
                 </div>
@@ -444,12 +444,12 @@ export function InvoiceExtractionPage() {
               {/* Confidence legend */}
               <div style={{ background: "rgba(99,102,241,.04)", border: "1px solid rgba(99,102,241,.15)", borderRadius: 12, padding: "1.25rem" }}>
                 <p style={{ margin: "0 0 .75rem", fontWeight: 700, fontSize: ".88rem", color: "#6366f1", display: "flex", alignItems: "center", gap: ".4rem" }}>
-                  <Edit3 size={14} /> {isAr ? "تعليمات التحرير" : "How to edit"}
+                  <Edit3 size={14} /> {"تعليمات التحرير"}
                 </p>
                 {[
-                  { color: "#10b981", label: isAr ? "دقة عالية — تم التعرف بوضوح" : "High — clearly identified" },
-                  { color: "#f59e0b", label: isAr ? "دقة متوسطة — راجع الحقل" : "Medium — verify this field" },
-                  { color: "#ef4444", label: isAr ? "دقة منخفضة — يحتاج تصحيح" : "Low — needs correction" },
+                  { color: "#10b981", label: "دقة عالية — تم التعرف بوضوح" },
+                  { color: "#f59e0b", label: "دقة متوسطة — راجع الحقل" },
+                  { color: "#ef4444", label: "دقة منخفضة — يحتاج تصحيح" },
                 ].map(({ color, label }) => (
                   <div key={color} style={{ display: "flex", alignItems: "center", gap: ".5rem", marginBottom: ".4rem", fontSize: ".82rem" }}>
                     <span style={{ width: 10, height: 10, borderRadius: "50%", background: color, flexShrink: 0 }} />
@@ -473,7 +473,7 @@ export function InvoiceExtractionPage() {
           <div style={{ padding: ".875rem 1.25rem", borderBottom: "1px solid var(--border-default)", background: "rgba(99,102,241,.04)", display: "flex", alignItems: "center", gap: ".6rem" }}>
             <CheckCircle size={17} style={{ color: "#6366f1" }} />
             <span style={{ fontWeight: 700, fontSize: ".92rem" }}>
-              {isAr ? "بيانات الفاتورة — راجع وعدّل ثم أرسل" : "Invoice Data — Review, edit, then save"}
+              {"بيانات الفاتورة — راجع وعدّل ثم أرسل"}
             </span>
             <span style={{ marginInlineStart: "auto", padding: ".2rem .6rem", borderRadius: 999, fontSize: ".72rem", fontWeight: 700, background: "rgba(99,102,241,.12)", color: "#6366f1" }}>
               <Sparkles size={10} style={{ verticalAlign: "middle", marginBottom: 1 }} /> AI
@@ -497,19 +497,19 @@ export function InvoiceExtractionPage() {
             {/* ── Header fields ── */}
             <section>
               <p style={{ margin: "0 0 .65rem", fontSize: ".75rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: ".05em" }}>
-                {isAr ? "معلومات الفاتورة" : "Invoice Information"}
+                {"معلومات الفاتورة"}
               </p>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))", gap: ".75rem" }}>
-                <Field label={isAr ? "رقم الفاتورة" : "Invoice #"} value={invoice.invoiceNumber}
+                <Field label={"رقم الفاتورة"} value={invoice.invoiceNumber}
                   onChange={(v) => setField("invoiceNumber", v)} conf={conf.invoiceNumber} isAr={isAr}
                   placeholder="e.g. INV-2025-001" />
-                <Field label={isAr ? "تاريخ الإصدار" : "Issue Date"} value={invoice.date}
+                <Field label={"تاريخ الإصدار"} value={invoice.date}
                   onChange={(v) => setField("date", v)} conf={conf.date} isAr={isAr} type="date" />
-                <Field label={isAr ? "تاريخ الاستحقاق" : "Due Date"} value={invoice.dueDate}
+                <Field label={"تاريخ الاستحقاق"} value={invoice.dueDate}
                   onChange={(v) => setField("dueDate", v)} conf={conf.dueDate} isAr={isAr} type="date" />
                 <div style={{ display: "flex", flexDirection: "column", gap: ".2rem" }}>
                   <label style={{ fontSize: ".69rem", fontWeight: 700, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: ".03em" }}>
-                    {isAr ? "العملة" : "Currency"}
+                    {"العملة"}
                   </label>
                   <select value={invoice.currency} onChange={(e: ChangeEvent<HTMLSelectElement>) => setField("currency", e.target.value)}
                     style={{ padding: ".5rem .75rem", border: "1px solid var(--border-default)", borderRadius: 8, background: "var(--bg-surface)", color: "var(--text-primary)", fontSize: ".88rem" }}>
@@ -524,7 +524,7 @@ export function InvoiceExtractionPage() {
               {(["vendor", "customer"] as const).map((party) => (
                 <section key={party} style={{ background: "var(--bg-surface)", borderRadius: 10, padding: "1rem", border: "1px solid var(--border-default)" }}>
                   <p style={{ margin: "0 0 .65rem", fontSize: ".75rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: ".05em" }}>
-                    {party === "vendor" ? (isAr ? "المورّد" : "Vendor") : (isAr ? "العميل" : "Customer")}
+                    {party === "vendor" ? ("المورّد") : ("العميل")}
                   </p>
                   <div style={{ display: "flex", flexDirection: "column", gap: ".55rem" }}>
                     {(["name","phone","email","address","taxId"] as (keyof Party)[]).map((k) => (
@@ -546,16 +546,16 @@ export function InvoiceExtractionPage() {
             <section>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: ".65rem" }}>
                 <p style={{ margin: 0, fontSize: ".75rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: ".05em" }}>
-                  {isAr ? "بنود الفاتورة" : "Line Items"} ({invoice.items.length})
+                  {"بنود الفاتورة"} ({invoice.items.length})
                 </p>
                 <div style={{ display: "flex", gap: ".5rem" }}>
                   <button type="button" onClick={recalcTotals}
                     style={{ padding: ".3rem .7rem", border: "1px solid var(--border-default)", borderRadius: 6, background: "transparent", cursor: "pointer", fontSize: ".75rem", color: "var(--text-secondary)" }}>
-                    {isAr ? "إعادة حساب الإجماليات" : "Recalc totals"}
+                    {"إعادة حساب الإجماليات"}
                   </button>
                   <button type="button" onClick={addItem}
                     style={{ display: "flex", alignItems: "center", gap: ".3rem", padding: ".3rem .7rem", border: "none", borderRadius: 6, background: "#6366f1", color: "#fff", cursor: "pointer", fontSize: ".75rem", fontWeight: 700 }}>
-                    <Plus size={12} /> {isAr ? "إضافة بند" : "Add item"}
+                    <Plus size={12} /> {"إضافة بند"}
                   </button>
                 </div>
               </div>
@@ -564,10 +564,10 @@ export function InvoiceExtractionPage() {
                 <table style={{ width: "100%", borderCollapse: "collapse", fontSize: ".84rem" }}>
                   <thead>
                     <tr style={{ background: "var(--bg-surface)", borderBottom: "1px solid var(--border-default)" }}>
-                      <th style={{ padding: ".5rem .875rem", textAlign: "start", fontWeight: 700 }}>{isAr ? "الوصف" : "Description"}</th>
-                      <th style={{ padding: ".5rem .6rem", textAlign: "end", fontWeight: 700, width: 70 }}>{isAr ? "الكمية" : "Qty"}</th>
-                      <th style={{ padding: ".5rem .6rem", textAlign: "end", fontWeight: 700, width: 110 }}>{isAr ? "سعر الوحدة" : "Unit Price"}</th>
-                      <th style={{ padding: ".5rem .6rem", textAlign: "end", fontWeight: 700, width: 110 }}>{isAr ? "الإجمالي" : "Total"}</th>
+                      <th style={{ padding: ".5rem .875rem", textAlign: "start", fontWeight: 700 }}>{"الوصف"}</th>
+                      <th style={{ padding: ".5rem .6rem", textAlign: "end", fontWeight: 700, width: 70 }}>{"الكمية"}</th>
+                      <th style={{ padding: ".5rem .6rem", textAlign: "end", fontWeight: 700, width: 110 }}>{"سعر الوحدة"}</th>
+                      <th style={{ padding: ".5rem .6rem", textAlign: "end", fontWeight: 700, width: 110 }}>{"الإجمالي"}</th>
                       <th style={{ width: 36 }} />
                     </tr>
                   </thead>
@@ -575,7 +575,7 @@ export function InvoiceExtractionPage() {
                     {invoice.items.length === 0 && (
                       <tr>
                         <td colSpan={5} style={{ padding: "1.25rem", textAlign: "center", color: "var(--text-muted)", fontSize: ".82rem" }}>
-                          {isAr ? "لا توجد بنود — أضف يدوياً أو أعد الاستخراج" : "No items — add manually or re-extract"}
+                          {"لا توجد بنود — أضف يدوياً أو أعد الاستخراج"}
                         </td>
                       </tr>
                     )}
@@ -622,14 +622,14 @@ export function InvoiceExtractionPage() {
                 {/* Totals footer */}
                 <div style={{ padding: ".75rem 1rem", background: "var(--bg-surface)", borderTop: "1px solid var(--border-default)", display: "flex", flexDirection: "column", gap: ".4rem", alignItems: "flex-end" }}>
                   <div style={{ display: "grid", gridTemplateColumns: "auto auto", gap: ".5rem 1.5rem", alignItems: "center" }}>
-                    <span style={{ fontSize: ".83rem", color: "var(--text-secondary)" }}>{isAr ? "المجموع الفرعي" : "Subtotal"}</span>
+                    <span style={{ fontSize: ".83rem", color: "var(--text-secondary)" }}>{"المجموع الفرعي"}</span>
                     <input type="number" min="0" step="0.01" value={invoice.subtotal ?? ""}
                       onChange={(e) => setField("subtotal", e.target.value ? Number(e.target.value) : null)}
                       placeholder="0.00"
                       style={{ width: 110, textAlign: "end", border: "1px solid var(--border-default)", borderRadius: 6, padding: ".3rem .5rem", background: "var(--bg-default)", color: "var(--text-primary)", fontSize: ".84rem" }} />
 
                     <span style={{ fontSize: ".83rem", color: "var(--text-secondary)" }}>
-                      {isAr ? "الضريبة" : "Tax"}{invoice.taxRate ? ` (${invoice.taxRate}%)` : ""}
+                      {"الضريبة"}{invoice.taxRate ? ` (${invoice.taxRate}%)` : ""}
                     </span>
                     <input type="number" min="0" step="0.01" value={invoice.tax ?? ""}
                       onChange={(e) => {
@@ -639,7 +639,7 @@ export function InvoiceExtractionPage() {
                       placeholder="0.00"
                       style={{ width: 110, textAlign: "end", border: "1px solid var(--border-default)", borderRadius: 6, padding: ".3rem .5rem", background: "var(--bg-default)", color: "var(--text-primary)", fontSize: ".84rem" }} />
 
-                    <span style={{ fontSize: ".9rem", fontWeight: 800 }}>{isAr ? "الإجمالي" : "Total"}</span>
+                    <span style={{ fontSize: ".9rem", fontWeight: 800 }}>{"الإجمالي"}</span>
                     <input type="number" min="0" step="0.01" value={invoice.totalAmount ?? ""}
                       onChange={(e) => setField("totalAmount", e.target.value ? Number(e.target.value) : null)}
                       placeholder="0.00"
@@ -652,8 +652,8 @@ export function InvoiceExtractionPage() {
             {/* ── Notes & Payment terms ── */}
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
               {[
-                { key: "notes" as const, label: isAr ? "ملاحظات" : "Notes" },
-                { key: "paymentTerms" as const, label: isAr ? "شروط الدفع" : "Payment Terms" },
+                { key: "notes" as const, label: "ملاحظات" },
+                { key: "paymentTerms" as const, label: "شروط الدفع" },
               ].map(({ key, label }) => (
                 <div key={key} style={{ display: "flex", flexDirection: "column", gap: ".2rem" }}>
                   <label style={{ fontSize: ".69rem", fontWeight: 700, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: ".03em" }}>{label}</label>
@@ -674,8 +674,8 @@ export function InvoiceExtractionPage() {
                 <button type="button" disabled={sending} onClick={() => void sendToInvoices()}
                   style={{ display: "flex", alignItems: "center", gap: ".5rem", padding: ".7rem 1.5rem", background: sending ? "var(--bg-surface)" : "#6366f1", color: sending ? "var(--text-secondary)" : "#fff", border: "none", borderRadius: 8, fontWeight: 700, fontSize: ".9rem", cursor: sending ? "default" : "pointer" }}>
                   {sending
-                    ? <><div className="spinner" style={{ width: 15, height: 15, borderWidth: 2 }} />{isAr ? "جاري الإرسال..." : "Saving…"}</>
-                    : <>{isAr ? "إرسال إلى الفواتير" : "Save to Invoices"} <ArrowRight size={15} /></>}
+                    ? <><div className="spinner" style={{ width: 15, height: 15, borderWidth: 2 }} />{"جاري الإرسال..."}</>
+                    : <>{"إرسال إلى الفواتير"} <ArrowRight size={15} /></>}
                 </button>
                 <p style={{ margin: 0, fontSize: ".78rem", color: "var(--text-secondary)" }}>
                   {isAr

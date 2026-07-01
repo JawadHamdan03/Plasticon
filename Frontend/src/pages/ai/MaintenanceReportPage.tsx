@@ -1,4 +1,4 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import { Wrench, Settings, Clock, Package, AlertCircle, FileText } from "lucide-react";
 import { useLocale } from "../../context/LocaleContext";
 import { API_BASE_URL } from "../../lib/api";
@@ -53,7 +53,7 @@ export function MaintenanceReportPage() {
       }
       setReport(((await res.json()) as { report: string }).report);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed");
+      setError(err instanceof Error ? err.message : "فشل");
     } finally {
       setLoading(false);
     }
@@ -62,14 +62,14 @@ export function MaintenanceReportPage() {
   const selectedMachine = machines.find((m) => String(m.id) === machineId);
 
   return (
-    <div dir={isAr ? "rtl" : "ltr"} style={{ padding: "1.5rem", maxWidth: 1000, margin: "0 auto" }}>
+    <div dir="rtl" style={{ padding: "1.5rem", maxWidth: 1000, margin: "0 auto" }}>
       <AIKeyframes />
 
       <AIPageHeader
         icon={Wrench}
         gradient={["#0ea5e9", "#6366f1"]}
-        title={isAr ? "مولد تقرير الصيانة" : "Maintenance Report Generator"}
-        subtitle={isAr ? "أدخل تفاصيل العمل وسيولّد الذكاء الاصطناعي تقريراً رسمياً احترافياً" : "Enter what was done and AI generates a formal, professional maintenance report"}
+        title={"مولد تقرير الصيانة"}
+        subtitle={"أدخل تفاصيل العمل وسيولّد الذكاء الاصطناعي تقريراً رسمياً احترافياً"}
         badge="GPT-4o"
       />
 
@@ -77,11 +77,11 @@ export function MaintenanceReportPage() {
         {/* ── Form ── */}
         <div style={{ display: "flex", flexDirection: "column", gap: "1rem", background: "var(--bg-surface)", border: "1px solid var(--border-default)", borderRadius: 14, padding: "1.35rem", boxShadow: "0 2px 8px rgba(0,0,0,.06)" }}>
           <p style={{ margin: "0 0 .25rem", fontSize: ".82rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: ".05em" }}>
-            {isAr ? "تفاصيل الصيانة" : "Maintenance Details"}
+            {"تفاصيل الصيانة"}
           </p>
 
           {/* Machine */}
-          <FormField label={isAr ? "الماكينة" : "Machine"}>
+          <FormField label={"الماكينة"}>
             <div style={{ position: "relative" }}>
               <Settings size={14} style={{ position: "absolute", left: 11, top: "50%", transform: "translateY(-50%)", color: "var(--text-muted)", pointerEvents: "none" }} />
               <select
@@ -90,7 +90,7 @@ export function MaintenanceReportPage() {
                 onFocus={() => void loadMachines()}
                 style={{ ...inputCss, paddingLeft: "2rem", cursor: "pointer", appearance: "none" }}
               >
-                <option value="">{isAr ? "اختر ماكينة (اختياري)…" : "Select machine (optional)…"}</option>
+                <option value="">{"اختر ماكينة (اختياري)…"}</option>
                 {machines.map((m) => (
                   <option key={m.id} value={m.id}>{m.name}{m.type ? ` — ${m.type}` : ""}</option>
                 ))}
@@ -102,30 +102,30 @@ export function MaintenanceReportPage() {
           </FormField>
 
           {/* What was done */}
-          <FormField label={isAr ? "ما الذي تم إجراؤه؟" : "What was done?"} required hint={`${whatWasDone.length}/500`}>
+          <FormField label={"ما الذي تم إجراؤه؟"} required hint={`${whatWasDone.length}/500`}>
             <textarea
               value={whatWasDone}
               onChange={(e) => setWhatWasDone(e.target.value.slice(0, 500))}
               rows={5}
-              placeholder={isAr ? "صف خطوات العمل الذي تم إجراؤه بالتفصيل…" : "Describe the work performed step by step…"}
+              placeholder={"صف خطوات العمل الذي تم إجراؤه بالتفصيل…"}
               style={{ ...inputCss, resize: "vertical", lineHeight: 1.6, minHeight: 110 }}
             />
           </FormField>
 
           {/* Parts + Duration */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: ".75rem" }}>
-            <FormField label={isAr ? "القطع المستخدمة" : "Parts used"}>
+            <FormField label={"القطع المستخدمة"}>
               <div style={{ position: "relative" }}>
                 <Package size={14} style={{ position: "absolute", left: 11, top: "50%", transform: "translateY(-50%)", color: "var(--text-muted)", pointerEvents: "none" }} />
                 <input
                   type="text" value={partsUsed}
                   onChange={(e) => setPartsUsed(e.target.value)}
-                  placeholder={isAr ? "مضخة زيت، سير…" : "oil pump, belt…"}
+                  placeholder={"مضخة زيت، سير…"}
                   style={{ ...inputCss, paddingLeft: "2rem" }}
                 />
               </div>
             </FormField>
-            <FormField label={isAr ? "المدة (دقائق)" : "Duration (min)"}>
+            <FormField label={"المدة (دقائق)"}>
               <div style={{ position: "relative" }}>
                 <Clock size={14} style={{ position: "absolute", left: 11, top: "50%", transform: "translateY(-50%)", color: "var(--text-muted)", pointerEvents: "none" }} />
                 <input
@@ -139,25 +139,25 @@ export function MaintenanceReportPage() {
           </div>
 
           {/* Issue found */}
-          <FormField label={isAr ? "المشكلة المكتشفة" : "Issue found"}>
+          <FormField label={"المشكلة المكتشفة"}>
             <div style={{ position: "relative" }}>
               <AlertCircle size={14} style={{ position: "absolute", left: 11, top: "50%", transform: "translateY(-50%)", color: "var(--text-muted)", pointerEvents: "none" }} />
               <input
                 type="text" value={issueFound}
                 onChange={(e) => setIssueFound(e.target.value)}
-                placeholder={isAr ? "أي مشكلة اكتُشفت أثناء العمل…" : "Any issue discovered during work…"}
+                placeholder={"أي مشكلة اكتُشفت أثناء العمل…"}
                 style={{ ...inputCss, paddingLeft: "2rem" }}
               />
             </div>
           </FormField>
 
           {/* Notes */}
-          <FormField label={isAr ? "ملاحظات إضافية" : "Additional notes"}>
+          <FormField label={"ملاحظات إضافية"}>
             <textarea
               value={extraNotes}
               onChange={(e) => setExtraNotes(e.target.value)}
               rows={2}
-              placeholder={isAr ? "أي ملاحظات إضافية أو توصيات…" : "Any extra notes or recommendations…"}
+              placeholder={"أي ملاحظات إضافية أو توصيات…"}
               style={{ ...inputCss, resize: "vertical" }}
             />
           </FormField>
@@ -173,10 +173,10 @@ export function MaintenanceReportPage() {
             onClick={() => void generate()}
             disabled={!whatWasDone.trim()}
             loading={loading}
-            loadingText={isAr ? "جارٍ التوليد…" : "Generating…"}
+            loadingText={"جارٍ التوليد…"}
             icon={FileText}
           >
-            {isAr ? "توليد التقرير الرسمي" : "Generate Formal Report"}
+            {"توليد التقرير الرسمي"}
           </AIButton>
         </div>
 
@@ -184,8 +184,8 @@ export function MaintenanceReportPage() {
         {report ? (
           <div style={{ animation: "ai-fadein .3s" }}>
             <ReportCard
-              title={isAr ? "تقرير الصيانة" : "Maintenance Report"}
-              subtitle={selectedMachine ? selectedMachine.name : isAr ? "بدون ماكينة محددة" : "No machine specified"}
+              title={"تقرير الصيانة"}
+              subtitle={selectedMachine ? selectedMachine.name : "بدون ماكينة محددة"}
               report={report}
               onRegenerate={() => void generate()}
               loading={loading}
@@ -197,8 +197,8 @@ export function MaintenanceReportPage() {
             <AIEmptyState
               icon={FileText}
               color="#0ea5e9"
-              title={isAr ? "أدخل تفاصيل الصيانة" : "Enter maintenance details"}
-              description={isAr ? "بعد إدخال ما تم إجراؤه، سيولّد الذكاء الاصطناعي تقريراً رسمياً مهيكلاً." : "After describing the work done, AI will generate a structured formal report."}
+              title={"أدخل تفاصيل الصيانة"}
+              description={"بعد إدخال ما تم إجراؤه، سيولّد الذكاء الاصطناعي تقريراً رسمياً مهيكلاً."}
             />
           )
         )}

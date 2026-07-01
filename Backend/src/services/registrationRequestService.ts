@@ -185,7 +185,6 @@ export const approveRegistrationRequest = async (
     </div>
   `;
 
-  let setPasswordUrlDebug: string | undefined;
   if (isSmtpConfigured) {
     try {
       await sendEmail({
@@ -195,10 +194,12 @@ export const approveRegistrationRequest = async (
         html: emailBody,
       });
     } catch {
-      setPasswordUrlDebug = setPasswordUrl;
+      // Log to server console only — never expose tokens in API responses
+      console.log("[DEV] Failed to send email. Password set URL:", setPasswordUrl);
     }
   } else {
-    setPasswordUrlDebug = setPasswordUrl;
+    // Log to server console only — never expose tokens in API responses
+    console.log("[DEV] SMTP not configured. Password set URL:", setPasswordUrl);
   }
 
   return {
@@ -206,7 +207,6 @@ export const approveRegistrationRequest = async (
     data: {
       message: "Request approved and account created",
       userId: newUser.id,
-      ...(setPasswordUrlDebug ? { setPasswordUrl: setPasswordUrlDebug } : {}),
     },
   };
 };

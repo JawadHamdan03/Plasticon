@@ -1,4 +1,4 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import { AlertTriangle, Activity, TrendingDown, Clock, Factory } from "lucide-react";
 import { useLocale } from "../../context/LocaleContext";
 import { API_BASE_URL } from "../../lib/api";
@@ -61,7 +61,7 @@ export function AnomalyDetectionPage() {
       }
       setResult(await res.json() as Result);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed");
+      setError(err instanceof Error ? err.message : "فشل");
     } finally {
       setLoading(false);
     }
@@ -71,14 +71,14 @@ export function AnomalyDetectionPage() {
   const mediumCount = result?.anomalies.filter((a) => getSeverity(a) === "MEDIUM").length ?? 0;
 
   return (
-    <div dir={isAr ? "rtl" : "ltr"} style={{ padding: "1.5rem", maxWidth: 960, margin: "0 auto" }}>
+    <div dir="rtl" style={{ padding: "1.5rem", maxWidth: 960, margin: "0 auto" }}>
       <AIKeyframes />
 
       <AIPageHeader
         icon={AlertTriangle}
         gradient={["#dc2626", "#f97316"]}
-        title={isAr ? "كشف شذوذ الإنتاج" : "Production Anomaly Detection"}
-        subtitle={isAr ? "يحلل النظام بيانات الإنتاج ويكشف الحالات غير الطبيعية باستخدام GPT-4o" : "AI-powered analysis of production records to flag abnormal patterns using GPT-4o"}
+        title={"كشف شذوذ الإنتاج"}
+        subtitle={"يحلل النظام بيانات الإنتاج ويكشف الحالات غير الطبيعية باستخدام GPT-4o"}
         badge="GPT-4o"
       />
 
@@ -86,7 +86,7 @@ export function AnomalyDetectionPage() {
       <div style={{ display: "flex", alignItems: "flex-end", gap: "1rem", flexWrap: "wrap", marginBottom: "1.5rem", padding: "1.1rem 1.25rem", background: "var(--bg-surface)", border: "1px solid var(--border-default)", borderRadius: 12 }}>
         <div style={{ display: "flex", flexDirection: "column", gap: ".3rem" }}>
           <label style={{ fontSize: ".78rem", fontWeight: 600, color: "var(--text-secondary)" }}>
-            {isAr ? "الفترة الزمنية" : "Analysis window"}
+            {"الفترة الزمنية"}
           </label>
           <div style={{ display: "flex", gap: ".4rem", flexWrap: "wrap" }}>
             {[3, 7, 14, 30].map((d) => (
@@ -95,13 +95,13 @@ export function AnomalyDetectionPage() {
                 onClick={() => setDays(d)}
                 style={{ padding: ".45rem .9rem", borderRadius: 8, border: "1px solid", cursor: "pointer", fontSize: ".83rem", fontWeight: 600, transition: "all .15s", borderColor: days === d ? "#dc2626" : "var(--border-default)", background: days === d ? "#dc262614" : "transparent", color: days === d ? "#dc2626" : "var(--text-secondary)" }}
               >
-                {d}{isAr ? "ي" : "d"}
+                {d}{"ي"}
               </button>
             ))}
           </div>
         </div>
-        <AIButton gradient={["#dc2626", "#f97316"]} onClick={() => void run()} loading={loading} loadingText={isAr ? "جارٍ التحليل…" : "Analyzing…"} icon={Activity}>
-          {isAr ? "تشغيل الكشف" : "Run Detection"}
+        <AIButton gradient={["#dc2626", "#f97316"]} onClick={() => void run()} loading={loading} loadingText={"جارٍ التحليل…"} icon={Activity}>
+          {"تشغيل الكشف"}
         </AIButton>
       </div>
 
@@ -115,16 +115,16 @@ export function AnomalyDetectionPage() {
         <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem", animation: "ai-fadein .3s" }}>
           {/* Stats */}
           <div style={{ display: "flex", gap: ".75rem", flexWrap: "wrap" }}>
-            <StatCard label={isAr ? "إجمالي السجلات" : "Total Records"} value={result.recordCount} color="#6366f1" icon={Factory} />
-            <StatCard label={isAr ? "شذوذات مرتفعة" : "High Severity"} value={highCount} color="#dc2626" icon={AlertTriangle} subtext={isAr ? "تحتاج إجراءً فورياً" : "Needs immediate action"} />
-            <StatCard label={isAr ? "شذوذات متوسطة" : "Medium Severity"} value={mediumCount} color="#d97706" icon={TrendingDown} />
-            <StatCard label={isAr ? "الفترة (أيام)" : "Period (days)"} value={result.period?.days ?? days} color="#0ea5e9" icon={Clock} />
+            <StatCard label={"إجمالي السجلات"} value={result.recordCount} color="#6366f1" icon={Factory} />
+            <StatCard label={"شذوذات مرتفعة"} value={highCount} color="#dc2626" icon={AlertTriangle} subtext={"تحتاج إجراءً فورياً"} />
+            <StatCard label={"شذوذات متوسطة"} value={mediumCount} color="#d97706" icon={TrendingDown} />
+            <StatCard label={"الفترة (أيام)"} value={result.period?.days ?? days} color="#0ea5e9" icon={Clock} />
           </div>
 
           {/* AI report */}
           <ReportCard
-            title={isAr ? "تقرير الذكاء الاصطناعي" : "AI Analysis Report"}
-            subtitle={isAr ? `آخر ${result.period?.days ?? days} أيام — ${result.recordCount} سجل` : `Last ${result.period?.days ?? days} days — ${result.recordCount} records`}
+            title={"تقرير الذكاء الاصطناعي"}
+            subtitle={`آخر ${result.period?.days ?? days} أيام — ${result.recordCount} سجل`}
             report={result.summary}
             onRegenerate={() => void run()}
             loading={loading}
@@ -136,15 +136,15 @@ export function AnomalyDetectionPage() {
             <div style={{ background: "var(--bg-surface)", border: "1px solid var(--border-default)", borderRadius: 14, overflow: "hidden", boxShadow: "0 2px 8px rgba(0,0,0,.06)" }}>
               <div style={{ padding: ".9rem 1.15rem", borderBottom: "1px solid var(--border-default)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                 <div>
-                  <p style={{ margin: 0, fontSize: ".88rem", fontWeight: 700, color: "var(--text-primary)" }}>{isAr ? "تفاصيل الشذوذات" : "Anomaly Details"}</p>
-                  <p style={{ margin: ".1rem 0 0", fontSize: ".72rem", color: "var(--text-muted)" }}>{result.anomalies.length} {isAr ? "حالة مكتشفة" : "cases detected"}</p>
+                  <p style={{ margin: 0, fontSize: ".88rem", fontWeight: 700, color: "var(--text-primary)" }}>{"تفاصيل الشذوذات"}</p>
+                  <p style={{ margin: ".1rem 0 0", fontSize: ".72rem", color: "var(--text-muted)" }}>{result.anomalies.length} {"حالة مكتشفة"}</p>
                 </div>
               </div>
               <div style={{ overflowX: "auto" }}>
                 <table style={{ width: "100%", borderCollapse: "collapse", fontSize: ".82rem" }}>
                   <thead>
                     <tr style={{ background: "var(--bg-subtle)" }}>
-                      {["", isAr ? "التاريخ" : "Date", isAr ? "الماكينة" : "Machine", isAr ? "الشفت" : "Shift", isAr ? "العامل" : "Worker", isAr ? "القطع / المتوسط" : "Pieces / Avg", isAr ? "التوقف" : "Downtime", isAr ? "السبب" : "Reason"].map((h, i) => (
+                      {["", "التاريخ", "الماكينة", "الشفت", "العامل", "القطع / المتوسط", "التوقف", "السبب"].map((h, i) => (
                         <th key={i} style={{ padding: ".6rem .9rem", textAlign: "start", fontWeight: 600, color: "var(--text-secondary)", whiteSpace: "nowrap", fontSize: ".78rem", textTransform: "uppercase", letterSpacing: ".03em" }}>{h}</th>
                       ))}
                     </tr>
@@ -185,8 +185,8 @@ export function AnomalyDetectionPage() {
             <AIEmptyState
               icon={Activity}
               color="#16a34a"
-              title={isAr ? "لا توجد شذوذات" : "No anomalies detected"}
-              description={isAr ? "الإنتاج يسير بشكل طبيعي خلال الفترة المحددة." : "Production looks normal for the selected period."}
+              title={"لا توجد شذوذات"}
+              description={"الإنتاج يسير بشكل طبيعي خلال الفترة المحددة."}
             />
           )}
         </div>
@@ -196,8 +196,8 @@ export function AnomalyDetectionPage() {
         <AIEmptyState
           icon={AlertTriangle}
           color="#dc2626"
-          title={isAr ? "اختر الفترة وابدأ التحليل" : "Select a window and run detection"}
-          description={isAr ? "يقارن الذكاء الاصطناعي كل سجل بمتوسط الماكينة ويكشف الانحرافات الكبيرة." : "AI compares each record against its machine's average and flags significant deviations."}
+          title={"اختر الفترة وابدأ التحليل"}
+          description={"يقارن الذكاء الاصطناعي كل سجل بمتوسط الماكينة ويكشف الانحرافات الكبيرة."}
         />
       )}
     </div>

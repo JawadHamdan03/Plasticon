@@ -4,6 +4,9 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { SafeAreaInsetsContext, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../auth/AuthContext';
 import { AuthStackParamList } from './types';
+import { CallProvider }        from '../context/CallContext';
+import { IncomingCallModal }   from '../screens/shared/IncomingCallModal';
+import { ActiveCallScreen }    from '../screens/shared/ActiveCallScreen';
 
 import { LoginScreen }          from '../screens/auth/LoginScreen';
 import { RegisterScreen }       from '../screens/auth/RegisterScreen';
@@ -83,7 +86,13 @@ export function RootNavigator() {
     return <AuthStack />;
   }
 
-  return <AuthenticatedLayout role={user.role} user={user} />;
+  return (
+    <CallProvider>
+      <AuthenticatedLayout role={user.role} user={user} />
+      <IncomingCallModal />
+      <ActiveCallScreen />
+    </CallProvider>
+  );
 }
 
 const styles = StyleSheet.create({

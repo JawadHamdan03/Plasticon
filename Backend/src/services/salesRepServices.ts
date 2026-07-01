@@ -1,5 +1,5 @@
 import { prisma } from "../config/lib/prisma";
-import { QuotationStatus } from "../config/generated/prisma/client";
+import { QuotationStatus, UserRole } from "../config/generated/prisma/client";
 
 type ServiceResult<T> = { status: number; data?: T; message?: string };
 
@@ -52,6 +52,12 @@ export const assignCustomerToRep = async (
   customerId: number,
   repId: number,
 ): Promise<ServiceResult<unknown>> => {
+  const rep = await prisma.user.findFirst({
+    where: { id: repId, role: UserRole.SALES_REP, deletedAt: null },
+    select: { id: true },
+  });
+  if (!rep) return { status: 400, message: "Invalid sales rep" };
+
   const customer = await prisma.customer.update({
     where: { id: customerId },
     data:  { assignedSalesRepId: repId },
@@ -262,7 +268,13 @@ export const getAllSalesTargets = async (): Promise<ServiceResult<unknown>> => {
 export const updateTargetAchieved = async (
   id: number,
   achievedAmount: number,
+  callerId: number,
+  isAdmin: boolean,
 ): Promise<ServiceResult<unknown>> => {
+  const existing = await prisma.salesTarget.findUnique({ where: { id } });
+  if (!existing) return { status: 404, message: "Target not found" };
+  if (!isAdmin && existing.repId !== callerId) return { status: 403, message: "Forbidden" };
+
   const target = await prisma.salesTarget.update({
     where: { id },
     data:  { achievedAmount },

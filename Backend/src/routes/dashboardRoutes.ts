@@ -23,4 +23,10 @@ router.get(
   dashboardController.getQuickStatsHandler,
 );
 
+router.get(
+  "/charts",
+  authorizeRoles([UserRole.ADMIN]),
+  dashboardController.getChartsHandler,
+);
+
 export default router;

@@ -1,9 +1,9 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+﻿import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { ModulePageShell } from "../../components/ModulePageShell";
 import { TruckLoader } from "../../components/TruckLoader";
 import { PhotoUploadButton } from "../../components/PhotoUploadButton";
-import { API_BASE_URL, readApiError } from "../../lib/api";
+import { pictureUrl as globalPictureUrl, readApiError } from "../../lib/api";
 import { confirmDialog } from "../../lib/dialog";
 import { createUserSocket } from "../../lib/socket";
 import { useLocale } from "../../context/LocaleContext";
@@ -75,7 +75,7 @@ const normalizeSnapshotImagePath = (value: string | null) => {
     return value;
   }
 
-  return `${API_BASE_URL}/${value.replace(/^prisma\/?pictures\//, "pictures/")}`;
+  return globalPictureUrl(value);
 };
 
 export function WorkerSnapshotsPage({
@@ -101,89 +101,47 @@ export function WorkerSnapshotsPage({
     value === "anomaly";
 
   const text = useMemo(
-    () =>
-      locale === "ar"
-        ? {
-            title: "لوحة العامل الذكية",
-            subtitle:
-              "كل أدوات العامل: القراءات، بلاغات التوقف، الجودة، الهدر، المهام، والتحسين.",
-            machineLabel: "اسم/رمز الماكينة",
-            machineCounter: "قراءة عداد الماكينة",
-            electricityKwh: "قراءة الكهرباء (kWh)",
-            notes: "ملاحظات الشفت",
-            machineCounterImage: "صورة عداد الماكينة",
-            electricityImage: "صورة العداد الكهربائي",
-            submit: "تسجيل القراءة",
-            refresh: "تحديث",
-            clearFilters: "مسح الفلاتر",
-            searchSnapshots: "بحث في القراءات",
-            fromDate: "من تاريخ",
-            toDate: "إلى تاريخ",
-            edit: "تعديل",
-            remove: "حذف",
-            removeEntry: "حذف السجل",
-            cancel: "إلغاء",
-            saveChanges: "حفظ التغييرات",
-            loading: "جارٍ التحميل...",
-            noData: "لا توجد بيانات.",
-            invalid: "تأكد من إدخال البيانات بشكل صحيح.",
-            saved: "تم الحفظ بنجاح.",
-            updated: "تم التعديل بنجاح.",
-            deleted: "تم الحذف بنجاح.",
-            deleteConfirm: "هل تريد حذف هذا السجل؟",
-            profileTitle: "بطاقة العامل",
-            progressLabel: "تقدم اليوم",
-            summariesTitle: "ملخص القراءات",
-            entriesLabel: "السجلات الظاهرة",
-            totalElectricityLabel: "إجمالي الكهرباء",
-            averageElectricityLabel: "متوسط الكهرباء",
-            counterDeltaLabel: "فرق العداد",
-            machinesLabel: "الماكينات الظاهرة",
-            editHint:
-              "يمكنك تعديل السجل أو حذفه بعد الإرسال مباشرة من القائمة.",
-            toolsTitle: "أدوات تشغيل العامل",
-          }
-        : {
-            title: "Worker Operations Hub",
-            subtitle:
-              "All worker tools in one place: readings, stoppage alerts, quality, waste, shift tasks, and improvement actions.",
-            machineLabel: "Machine name/code",
-            machineCounter: "Machine counter reading",
-            electricityKwh: "Electricity reading (kWh)",
-            notes: "Shift notes",
-            machineCounterImage: "Machine counter image",
-            electricityImage: "Electric meter image",
-            submit: "Save reading",
-            refresh: "Refresh",
-            clearFilters: "Clear filters",
-            searchSnapshots: "Search readings",
-            fromDate: "From date",
-            toDate: "To date",
-            edit: "Edit",
-            remove: "Delete",
-            removeEntry: "Delete entry",
-            cancel: "Cancel",
-            saveChanges: "Save changes",
-            loading: "Loading...",
-            noData: "No data yet.",
-            invalid: "Please enter valid values.",
-            saved: "Saved successfully.",
-            updated: "Updated successfully.",
-            deleted: "Deleted successfully.",
-            deleteConfirm: "Delete this entry?",
-            profileTitle: "Worker Card",
-            progressLabel: "Today progress",
-            summariesTitle: "Reading summary",
-            entriesLabel: "Visible records",
-            totalElectricityLabel: "Total electricity",
-            averageElectricityLabel: "Average electricity",
-            counterDeltaLabel: "Counter delta",
-            machinesLabel: "Visible machines",
-            editHint:
-              "Edit or delete submitted readings directly from the list.",
-            toolsTitle: "Worker Tools",
-          },
-    [locale],
+    () => ({
+      title: "لوحة العامل الذكية",
+      subtitle:
+        "كل أدوات العامل: القراءات، بلاغات التوقف، الجودة، الهدر، المهام، والتحسين.",
+      machineLabel: "اسم/رمز الماكينة",
+      machineCounter: "قراءة عداد الماكينة",
+      electricityKwh: "قراءة الكهرباء (kWh)",
+      notes: "ملاحظات الشفت",
+      machineCounterImage: "صورة عداد الماكينة",
+      electricityImage: "صورة العداد الكهربائي",
+      submit: "تسجيل القراءة",
+      refresh: "تحديث",
+      clearFilters: "مسح الفلاتر",
+      searchSnapshots: "بحث في القراءات",
+      fromDate: "من تاريخ",
+      toDate: "إلى تاريخ",
+      edit: "تعديل",
+      remove: "حذف",
+      removeEntry: "حذف السجل",
+      cancel: "إلغاء",
+      saveChanges: "حفظ التغييرات",
+      loading: "جارٍ التحميل...",
+      noData: "لا توجد بيانات.",
+      invalid: "تأكد من إدخال البيانات بشكل صحيح.",
+      saved: "تم الحفظ بنجاح.",
+      updated: "تم التعديل بنجاح.",
+      deleted: "تم الحذف بنجاح.",
+      deleteConfirm: "هل تريد حذف هذا السجل؟",
+      profileTitle: "بطاقة العامل",
+      progressLabel: "تقدم اليوم",
+      summariesTitle: "ملخص القراءات",
+      entriesLabel: "السجلات الظاهرة",
+      totalElectricityLabel: "إجمالي الكهرباء",
+      averageElectricityLabel: "متوسط الكهرباء",
+      counterDeltaLabel: "فرق العداد",
+      machinesLabel: "الماكينات الظاهرة",
+      editHint:
+        "يمكنك تعديل السجل أو حذفه بعد الإرسال مباشرة من القائمة.",
+      toolsTitle: "أدوات تشغيل العامل",
+    }),
+    [],
   );
 
   const [draft, setDraft] = useState<SnapshotDraft>(defaultDraft);
@@ -483,8 +441,8 @@ export function WorkerSnapshotsPage({
 
   const deleteSnapshot = async (item: WorkerSnapshot) => {
     const confirmed = await confirmDialog(
-      locale === "ar" ? `حذف قراءة ${item.machineLabel}؟` : `Delete the reading for ${item.machineLabel}?`,
-      { danger: true, confirmText: locale === "ar" ? "حذف" : "Delete" },
+      `حذف قراءة ${item.machineLabel}؟`,
+      { danger: true, confirmText: "حذف" },
     );
     if (!confirmed) return;
 
@@ -774,14 +732,14 @@ export function WorkerSnapshotsPage({
   );
 
   const tabs: Array<{ id: ToolTab; label: string }> = [
-    { id: "stops", label: locale === "ar" ? "توقف فوري" : "Stop Alerts" },
-    { id: "checklist", label: locale === "ar" ? "مهام الشفت" : "Checklist" },
-    { id: "waste", label: locale === "ar" ? "هدر المواد" : "Waste" },
-    { id: "target", label: locale === "ar" ? "الهدف اليومي" : "Daily Target" },
+    { id: "stops", label: "توقف فوري" },
+    { id: "checklist", label: "مهام الشفت" },
+    { id: "waste", label: "هدر المواد" },
+    { id: "target", label: "الهدف اليومي" },
     { id: "kaizen", label: "Kaizen" },
-    { id: "quality", label: locale === "ar" ? "مشاكل الجودة" : "Quality" },
-    { id: "micro", label: locale === "ar" ? "توقف قصير" : "Micro-stops" },
-    { id: "anomaly", label: locale === "ar" ? "تنبيه كهرباء" : "Elec. Alert" },
+    { id: "quality", label: "مشاكل الجودة" },
+    { id: "micro", label: "توقف قصير" },
+    { id: "anomaly", label: "تنبيه كهرباء" },
   ];
 
   const tabIcons: Record<ToolTab, string> = {
@@ -807,14 +765,14 @@ export function WorkerSnapshotsPage({
   };
 
   const toolDescriptions: Record<ToolTab, string> = {
-    stops: locale === "ar" ? "أبلغ عن توقف فوري في الماكينة" : "Report an immediate machine stoppage",
-    checklist: locale === "ar" ? "أكمل قائمة مهام بداية/نهاية الشفت" : "Complete shift start/end task checklist",
-    waste: locale === "ar" ? "سجّل هدر المواد الخام" : "Record raw material waste",
-    target: locale === "ar" ? "سجّل الهدف اليومي والإنجاز الفعلي" : "Log daily target vs actual output",
-    kaizen: locale === "ar" ? "أرسل اقتراحاً لتحسين العمليات" : "Submit a process improvement suggestion",
-    quality: locale === "ar" ? "بلّغ عن مشكلة في الجودة" : "Report a quality defect or issue",
-    micro: locale === "ar" ? "سجّل توقفاً قصيراً للماكينة" : "Log a short machine micro-stop",
-    anomaly: locale === "ar" ? "اكتشاف استهلاك كهربائي غير طبيعي" : "Detect abnormal electricity consumption",
+    stops: "أبلغ عن توقف فوري في الماكينة",
+    checklist: "أكمل قائمة مهام بداية/نهاية الشفت",
+    waste: "سجّل هدر المواد الخام",
+    target: "سجّل الهدف اليومي والإنجاز الفعلي",
+    kaizen: "أرسل اقتراحاً لتحسين العمليات",
+    quality: "بلّغ عن مشكلة في الجودة",
+    micro: "سجّل توقفاً قصيراً للماكينة",
+    anomaly: "اكتشاف استهلاك كهربائي غير طبيعي",
   };
 
   return (
@@ -870,7 +828,7 @@ export function WorkerSnapshotsPage({
             <p className="wt-kpi-label">{text.entriesLabel}</p>
             <strong className="wt-kpi-value">{visibleSummary.entries}</strong>
             <small className="wt-kpi-sub">
-              {locale === "ar" ? "آخر تحديث" : "Last sync"}:{" "}
+              {"آخر تحديث"}:{" "}
               {lastSyncAt ? new Date(lastSyncAt).toLocaleTimeString() : "-"}
             </small>
           </div>
@@ -881,7 +839,7 @@ export function WorkerSnapshotsPage({
               {visibleSummary.totalElectricity.toFixed(2)}
             </strong>
             <small className="wt-kpi-sub">
-              kWh · {locale === "ar" ? "اليوم" : "Today"}:{" "}
+              kWh · {"اليوم"}:{" "}
               {todayStats.totalElectricity.toFixed(2)}
             </small>
           </div>
@@ -903,7 +861,7 @@ export function WorkerSnapshotsPage({
             <p className="wt-kpi-label">{text.machinesLabel}</p>
             <strong className="wt-kpi-value">{visibleSummary.uniqueMachines}</strong>
             <small className="wt-kpi-sub">
-              {locale === "ar" ? "آخر قراءة" : "Latest"}:{" "}
+              {"آخر قراءة"}:{" "}
               {latest ? new Date(latest.createdAt).toLocaleString() : "-"}
             </small>
           </div>
@@ -954,8 +912,8 @@ export function WorkerSnapshotsPage({
                 <div style={{ flex: 1 }}>
                   <h2 className="wt-card__header-title">
                     {editingSnapshotId !== null
-                      ? locale === "ar" ? "تعديل قراءة" : "Edit Reading"
-                      : locale === "ar" ? "تسجيل قراءة جديدة" : "New Reading"}
+                      ? "تعديل قراءة"
+                      : "تسجيل قراءة جديدة"}
                   </h2>
                   <p className="wt-card__header-sub">{text.editHint}</p>
                 </div>
@@ -977,7 +935,7 @@ export function WorkerSnapshotsPage({
                     <input
                       value={snapshotSearch}
                       onChange={(e) => setSnapshotSearch(e.target.value)}
-                      placeholder={locale === "ar" ? "ابحث..." : "Search..."}
+                      placeholder={"ابحث..."}
                     />
                   </div>
                   <div className="wt-field">
@@ -1082,7 +1040,7 @@ export function WorkerSnapshotsPage({
                   <div className="wt-field">
                     <label>{text.machineCounterImage}</label>
                     <PhotoUploadButton
-                      label={locale === "ar" ? "التقط صورة" : "Take a Photo"}
+                      label={"التقط صورة"}
                       selectedFileName={draft.machineCounterImage?.name ?? null}
                       onFileSelect={(file) => setDraft((p) => ({ ...p, machineCounterImage: file }))}
                     />
@@ -1090,7 +1048,7 @@ export function WorkerSnapshotsPage({
                   <div className="wt-field">
                     <label>{text.electricityImage}</label>
                     <PhotoUploadButton
-                      label={locale === "ar" ? "التقط صورة" : "Take a Photo"}
+                      label={"التقط صورة"}
                       selectedFileName={draft.electricityImage?.name ?? null}
                       onFileSelect={(file) => setDraft((p) => ({ ...p, electricityImage: file }))}
                     />
@@ -1105,7 +1063,7 @@ export function WorkerSnapshotsPage({
                       setDraft((p) => ({ ...p, machineLabel: latest?.machineLabel ?? p.machineLabel }))
                     }
                   >
-                    {locale === "ar" ? "استخدم آخر ماكينة" : "Use last machine"}
+                    {"استخدم آخر ماكينة"}
                   </button>
                   <button
                     type="button"
@@ -1148,14 +1106,14 @@ export function WorkerSnapshotsPage({
                 {activeTool === "stops" ? (
                   <div className="wt-form-grid">
                     <div className="wt-field">
-                      <label>{locale === "ar" ? "الماكينة" : "Machine"}</label>
+                      <label>{"الماكينة"}</label>
                       <input
                         value={stopForm.machineLabel}
                         onChange={(e) => setStopForm((p) => ({ ...p, machineLabel: e.target.value }))}
                       />
                     </div>
                     <div className="wt-field">
-                      <label>{locale === "ar" ? "الأولوية" : "Priority"}</label>
+                      <label>{"الأولوية"}</label>
                       <select
                         value={stopForm.priority}
                         onChange={(e) => setStopForm((p) => ({ ...p, priority: e.target.value }))}
@@ -1166,7 +1124,7 @@ export function WorkerSnapshotsPage({
                       </select>
                     </div>
                     <div className="wt-field wt-field--full">
-                      <label>{locale === "ar" ? "السبب" : "Reason"}</label>
+                      <label>{"السبب"}</label>
                       <input
                         value={stopForm.reason}
                         onChange={(e) => setStopForm((p) => ({ ...p, reason: e.target.value }))}
@@ -1179,7 +1137,7 @@ export function WorkerSnapshotsPage({
                         style={{ background: tabColors.stops }}
                         onClick={() => void submitStopAlert()}
                       >
-                        🛑 {locale === "ar" ? "إرسال البلاغ" : "Submit Alert"}
+                        🛑 {"إرسال البلاغ"}
                       </button>
                     </div>
                   </div>
@@ -1189,7 +1147,7 @@ export function WorkerSnapshotsPage({
                 {activeTool === "checklist" ? (
                   <div className="wt-form-grid">
                     <div className="wt-field">
-                      <label>{locale === "ar" ? "مرحلة الشفت" : "Shift Phase"}</label>
+                      <label>{"مرحلة الشفت"}</label>
                       <select
                         value={checklistForm.shiftPhase}
                         onChange={(e) => setChecklistForm((p) => ({ ...p, shiftPhase: e.target.value }))}
@@ -1199,14 +1157,14 @@ export function WorkerSnapshotsPage({
                       </select>
                     </div>
                     <div className="wt-field">
-                      <label>{locale === "ar" ? "التوقيع الرقمي" : "Digital Signature"}</label>
+                      <label>{"التوقيع الرقمي"}</label>
                       <input
                         value={checklistForm.digitalSignature}
                         onChange={(e) => setChecklistForm((p) => ({ ...p, digitalSignature: e.target.value }))}
                       />
                     </div>
                     <div className="wt-field wt-field--full">
-                      <label>{locale === "ar" ? "المهام (سطر لكل مهمة)" : "Tasks (one per line)"}</label>
+                      <label>{"المهام (سطر لكل مهمة)"}</label>
                       <textarea
                         value={checklistForm.tasksText}
                         rows={5}
@@ -1220,7 +1178,7 @@ export function WorkerSnapshotsPage({
                         style={{ background: tabColors.checklist }}
                         onClick={() => void submitChecklist()}
                       >
-                        ✅ {locale === "ar" ? "حفظ القائمة" : "Save Checklist"}
+                        ✅ {"حفظ القائمة"}
                       </button>
                     </div>
                   </div>
@@ -1230,28 +1188,28 @@ export function WorkerSnapshotsPage({
                 {activeTool === "waste" ? (
                   <div className="wt-form-grid">
                     <div className="wt-field">
-                      <label>{locale === "ar" ? "الماكينة" : "Machine"}</label>
+                      <label>{"الماكينة"}</label>
                       <input
                         value={wasteForm.machineLabel}
                         onChange={(e) => setWasteForm((p) => ({ ...p, machineLabel: e.target.value }))}
                       />
                     </div>
                     <div className="wt-field">
-                      <label>{locale === "ar" ? "نوع الماكينة" : "Machine Type"}</label>
+                      <label>{"نوع الماكينة"}</label>
                       <input
                         value={wasteForm.machineType}
                         onChange={(e) => setWasteForm((p) => ({ ...p, machineType: e.target.value }))}
                       />
                     </div>
                     <div className="wt-field">
-                      <label>{locale === "ar" ? "نوع المادة" : "Material"}</label>
+                      <label>{"نوع المادة"}</label>
                       <input
                         value={wasteForm.materialType}
                         onChange={(e) => setWasteForm((p) => ({ ...p, materialType: e.target.value }))}
                       />
                     </div>
                     <div className="wt-field">
-                      <label>{locale === "ar" ? "الكمية كغ" : "Waste Kg"}</label>
+                      <label>{"الكمية كغ"}</label>
                       <input
                         type="number"
                         value={wasteForm.wasteKg}
@@ -1259,7 +1217,7 @@ export function WorkerSnapshotsPage({
                       />
                     </div>
                     <div className="wt-field wt-field--full">
-                      <label>{locale === "ar" ? "سبب الهدر" : "Reason"}</label>
+                      <label>{"سبب الهدر"}</label>
                       <input
                         value={wasteForm.reason}
                         onChange={(e) => setWasteForm((p) => ({ ...p, reason: e.target.value }))}
@@ -1272,7 +1230,7 @@ export function WorkerSnapshotsPage({
                         style={{ background: tabColors.waste }}
                         onClick={() => void submitWaste()}
                       >
-                        🗑️ {locale === "ar" ? "حفظ الهدر" : "Save Waste"}
+                        🗑️ {"حفظ الهدر"}
                       </button>
                     </div>
                   </div>
@@ -1282,7 +1240,7 @@ export function WorkerSnapshotsPage({
                 {activeTool === "target" ? (
                   <div className="wt-form-grid">
                     <div className="wt-field">
-                      <label>{locale === "ar" ? "التاريخ" : "Date"}</label>
+                      <label>{"التاريخ"}</label>
                       <input
                         type="date"
                         value={targetForm.targetDate}
@@ -1290,14 +1248,14 @@ export function WorkerSnapshotsPage({
                       />
                     </div>
                     <div className="wt-field">
-                      <label>{locale === "ar" ? "ملاحظة" : "Note"}</label>
+                      <label>{"ملاحظة"}</label>
                       <input
                         value={targetForm.note}
                         onChange={(e) => setTargetForm((p) => ({ ...p, note: e.target.value }))}
                       />
                     </div>
                     <div className="wt-field">
-                      <label>{locale === "ar" ? "الهدف" : "Target Units"}</label>
+                      <label>{"الهدف"}</label>
                       <input
                         type="number"
                         value={targetForm.targetUnits}
@@ -1305,7 +1263,7 @@ export function WorkerSnapshotsPage({
                       />
                     </div>
                     <div className="wt-field">
-                      <label>{locale === "ar" ? "المنجز" : "Actual Units"}</label>
+                      <label>{"المنجز"}</label>
                       <input
                         type="number"
                         value={targetForm.actualUnits}
@@ -1319,7 +1277,7 @@ export function WorkerSnapshotsPage({
                         style={{ background: tabColors.target }}
                         onClick={() => void submitTarget()}
                       >
-                        🎯 {locale === "ar" ? "حفظ الإنجاز" : "Save Progress"}
+                        🎯 {"حفظ الإنجاز"}
                       </button>
                     </div>
                   </div>
@@ -1329,14 +1287,14 @@ export function WorkerSnapshotsPage({
                 {activeTool === "kaizen" ? (
                   <div className="wt-form-grid">
                     <div className="wt-field wt-field--full">
-                      <label>{locale === "ar" ? "عنوان الاقتراح" : "Suggestion Title"}</label>
+                      <label>{"عنوان الاقتراح"}</label>
                       <input
                         value={kaizenForm.title}
                         onChange={(e) => setKaizenForm((p) => ({ ...p, title: e.target.value }))}
                       />
                     </div>
                     <div className="wt-field wt-field--full">
-                      <label>{locale === "ar" ? "تفاصيل" : "Details"}</label>
+                      <label>{"تفاصيل"}</label>
                       <textarea
                         value={kaizenForm.details}
                         rows={4}
@@ -1344,7 +1302,7 @@ export function WorkerSnapshotsPage({
                       />
                     </div>
                     <div className="wt-field wt-field--full">
-                      <label>{locale === "ar" ? "الأثر المتوقع" : "Estimated Impact"}</label>
+                      <label>{"الأثر المتوقع"}</label>
                       <input
                         value={kaizenForm.estimatedImpact}
                         onChange={(e) => setKaizenForm((p) => ({ ...p, estimatedImpact: e.target.value }))}
@@ -1357,7 +1315,7 @@ export function WorkerSnapshotsPage({
                         style={{ background: tabColors.kaizen }}
                         onClick={() => void submitKaizen()}
                       >
-                        💡 {locale === "ar" ? "إرسال الاقتراح" : "Submit Suggestion"}
+                        💡 {"إرسال الاقتراح"}
                       </button>
                     </div>
                   </div>
@@ -1367,37 +1325,37 @@ export function WorkerSnapshotsPage({
                 {activeTool === "quality" ? (
                   <div className="wt-form-grid">
                     <div className="wt-field">
-                      <label>{locale === "ar" ? "رمز الدفعة" : "Batch Code"}</label>
+                      <label>{"رمز الدفعة"}</label>
                       <input
                         value={qualityForm.batchCode}
                         onChange={(e) => setQualityForm((p) => ({ ...p, batchCode: e.target.value }))}
                       />
                     </div>
                     <div className="wt-field">
-                      <label>{locale === "ar" ? "الماكينة" : "Machine"}</label>
+                      <label>{"الماكينة"}</label>
                       <input
                         value={qualityForm.machineLabel}
                         onChange={(e) => setQualityForm((p) => ({ ...p, machineLabel: e.target.value }))}
                       />
                     </div>
                     <div className="wt-field wt-field--full">
-                      <label>{locale === "ar" ? "نوع المشكلة" : "Issue Type"}</label>
+                      <label>{"نوع المشكلة"}</label>
                       <input
                         value={qualityForm.issueType}
                         onChange={(e) => setQualityForm((p) => ({ ...p, issueType: e.target.value }))}
                       />
                     </div>
                     <div className="wt-field wt-field--full">
-                      <label>{locale === "ar" ? "تفاصيل" : "Details"}</label>
+                      <label>{"تفاصيل"}</label>
                       <input
                         value={qualityForm.details}
                         onChange={(e) => setQualityForm((p) => ({ ...p, details: e.target.value }))}
                       />
                     </div>
                     <div className="wt-field wt-field--full">
-                      <label>{locale === "ar" ? "صورة المشكلة" : "Issue Image"}</label>
+                      <label>{"صورة المشكلة"}</label>
                       <PhotoUploadButton
-                        label={locale === "ar" ? "التقط صورة" : "Take a Photo"}
+                        label={"التقط صورة"}
                         selectedFileName={qualityForm.issueImage?.name ?? null}
                         onFileSelect={(file) => setQualityForm((p) => ({ ...p, issueImage: file }))}
                       />
@@ -1409,7 +1367,7 @@ export function WorkerSnapshotsPage({
                         style={{ background: tabColors.quality }}
                         onClick={() => void submitQualityIssue()}
                       >
-                        🔍 {locale === "ar" ? "رفع المشكلة" : "Report Issue"}
+                        🔍 {"رفع المشكلة"}
                       </button>
                     </div>
                   </div>
@@ -1419,14 +1377,14 @@ export function WorkerSnapshotsPage({
                 {activeTool === "micro" ? (
                   <div className="wt-form-grid">
                     <div className="wt-field">
-                      <label>{locale === "ar" ? "الماكينة" : "Machine"}</label>
+                      <label>{"الماكينة"}</label>
                       <input
                         value={microForm.machineLabel}
                         onChange={(e) => setMicroForm((p) => ({ ...p, machineLabel: e.target.value }))}
                       />
                     </div>
                     <div className="wt-field">
-                      <label>{locale === "ar" ? "المدة بالدقائق" : "Duration (min)"}</label>
+                      <label>{"المدة بالدقائق"}</label>
                       <input
                         type="number"
                         value={microForm.durationMinutes}
@@ -1434,7 +1392,7 @@ export function WorkerSnapshotsPage({
                       />
                     </div>
                     <div className="wt-field wt-field--full">
-                      <label>{locale === "ar" ? "سبب التوقف" : "Stop Reason"}</label>
+                      <label>{"سبب التوقف"}</label>
                       <input
                         value={microForm.reason}
                         onChange={(e) => setMicroForm((p) => ({ ...p, reason: e.target.value }))}
@@ -1447,7 +1405,7 @@ export function WorkerSnapshotsPage({
                         style={{ background: tabColors.micro }}
                         onClick={() => void submitMicroStop()}
                       >
-                        ⏱️ {locale === "ar" ? "حفظ التوقف" : "Save Micro-stop"}
+                        ⏱️ {"حفظ التوقف"}
                       </button>
                     </div>
                   </div>
@@ -1457,14 +1415,14 @@ export function WorkerSnapshotsPage({
                 {activeTool === "anomaly" ? (
                   <div className="wt-form-grid">
                     <div className="wt-field">
-                      <label>{locale === "ar" ? "الماكينة" : "Machine"}</label>
+                      <label>{"الماكينة"}</label>
                       <input
                         value={anomalyForm.machineLabel}
                         onChange={(e) => setAnomalyForm((p) => ({ ...p, machineLabel: e.target.value }))}
                       />
                     </div>
                     <div className="wt-field">
-                      <label>{locale === "ar" ? "القراءة الحالية kWh" : "Current kWh"}</label>
+                      <label>{"القراءة الحالية kWh"}</label>
                       <input
                         type="number"
                         step="0.01"
@@ -1473,7 +1431,7 @@ export function WorkerSnapshotsPage({
                       />
                     </div>
                     <div className="wt-field">
-                      <label>{locale === "ar" ? "نسبة الحد" : "Threshold Ratio"}</label>
+                      <label>{"نسبة الحد"}</label>
                       <input
                         type="number"
                         step="0.05"
@@ -1488,7 +1446,7 @@ export function WorkerSnapshotsPage({
                         style={{ background: tabColors.anomaly }}
                         onClick={() => void submitAnomaly()}
                       >
-                        ⚡ {locale === "ar" ? "فحص التنبيه" : "Check Alert"}
+                        ⚡ {"فحص التنبيه"}
                       </button>
                     </div>
                   </div>
@@ -1507,10 +1465,10 @@ export function WorkerSnapshotsPage({
                 <span className="wt-card__header-icon">🕐</span>
                 <div>
                   <h2 className="wt-card__header-title">
-                    {locale === "ar" ? "آخر القراءات" : "Latest Readings"}
+                    {"آخر القراءات"}
                   </h2>
                   <p className="wt-card__header-sub">
-                    {visibleSummary.entries} {locale === "ar" ? "سجل" : "records"}
+                    {visibleSummary.entries} {"سجل"}
                   </p>
                 </div>
               </div>
@@ -1533,7 +1491,7 @@ export function WorkerSnapshotsPage({
                       </div>
                       <div className="wt-log-card__meta">
                         <span>
-                          {locale === "ar" ? "العداد" : "Counter"}:{" "}
+                          {"العداد"}:{" "}
                           <strong>{item.machineCounter}</strong>
                         </span>
                         {item.notes ? <span>📝 {item.notes}</span> : null}
@@ -1601,7 +1559,7 @@ export function WorkerSnapshotsPage({
                 </span>
                 <div>
                   <h2 className="wt-card__header-title">
-                    {locale === "ar" ? "السجل" : "Recent Log"}
+                    {"السجل"}
                   </h2>
                   <p className="wt-card__header-sub">
                     {tabs.find((t) => t.id === activeTool)?.label}
@@ -1635,8 +1593,8 @@ export function WorkerSnapshotsPage({
                             <div className="wt-log-card__footer">
                               <span className={`wt-badge ${resolvedAt ? "wt-badge--green" : "wt-badge--red"}`}>
                                 {resolvedAt
-                                  ? locale === "ar" ? "مغلق" : "RESOLVED"
-                                  : locale === "ar" ? "مفتوح" : "OPEN"}
+                                  ? "مغلق"
+                                  : "مفتوح"}
                               </span>
                               <div className="wt-log-card__actions">
                                 {!resolvedAt && id > 0 ? (
@@ -1645,7 +1603,7 @@ export function WorkerSnapshotsPage({
                                     className="auth-button auth-button--ghost"
                                     onClick={() => void resolveStopAlert(id)}
                                   >
-                                    {locale === "ar" ? "إغلاق" : "Resolve"}
+                                    {"إغلاق"}
                                   </button>
                                 ) : null}
                                 {id > 0 ? (
@@ -1759,9 +1717,9 @@ export function WorkerSnapshotsPage({
                               </span>
                             </div>
                             <div className="wt-log-card__meta">
-                              <span>{locale === "ar" ? "الهدف" : "Target"}: <strong>{target}</strong></span>
-                              <span>{locale === "ar" ? "المنجز" : "Actual"}: <strong>{actual}</strong></span>
-                              <span>{locale === "ar" ? "الفجوة" : "Gap"}: {target - actual}</span>
+                              <span>{"الهدف"}: <strong>{target}</strong></span>
+                              <span>{"المنجز"}: <strong>{actual}</strong></span>
+                              <span>{"الفجوة"}: {target - actual}</span>
                             </div>
                             {row.note ? (
                               <div className="wt-log-card__meta">
@@ -1850,7 +1808,7 @@ export function WorkerSnapshotsPage({
                                 rel="noreferrer"
                                 style={{ textDecoration: "none" }}
                               >
-                                📷 {locale === "ar" ? "عرض" : "View"}
+                                📷 {"عرض"}
                               </a>
                             ) : (
                               <small />
@@ -1916,14 +1874,14 @@ export function WorkerSnapshotsPage({
                             <strong>{String(row.machine_label ?? "-")}</strong>
                             <span className={`wt-badge ${row.is_alert ? "wt-badge--red" : "wt-badge--green"}`}>
                               {row.is_alert
-                                ? locale === "ar" ? "⚠️ إنذار" : "⚠️ ALERT"
-                                : locale === "ar" ? "✅ طبيعي" : "✅ Normal"}
+                                ? "⚠️ إنذار"
+                                : "✅ طبيعي"}
                             </span>
                           </div>
                           <div className="wt-log-card__meta">
                             <span>
                               {Number(row.current_kwh ?? 0).toFixed(2)} kWh ·{" "}
-                              {locale === "ar" ? "النسبة" : "Ratio"}:{" "}
+                              {"النسبة"}:{" "}
                               {Number(row.threshold_ratio ?? 0).toFixed(2)}
                             </span>
                           </div>

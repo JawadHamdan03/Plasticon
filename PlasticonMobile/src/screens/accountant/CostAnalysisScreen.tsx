@@ -62,7 +62,7 @@ export function CostAnalysisScreen() {
     try {
       const res = await api.get<CostAnalysis[] | { data: CostAnalysis[] }>('/cost-analysis?limit=50');
       setCosts(Array.isArray(res) ? res : ((res as any).data ?? []));
-    } catch (e: any) { setApiError(e?.message ?? 'Failed to load'); setCosts([]); }
+    } catch (e: any) { setApiError(e?.message ?? 'فشل التحميل'); setCosts([]); }
     finally { setLoading(false); setRefreshing(false); }
   }, []);
 
@@ -82,7 +82,7 @@ export function CostAnalysisScreen() {
         try {
           await api.delete(`/cost-analysis/${c.id}`);
           setCosts((p) => p.filter((x) => x.id !== c.id));
-        } catch (e: any) { Alert.alert('Error', e.message ?? 'Failed'); }
+        } catch (e: any) { Alert.alert('خطأ', e.message ?? 'فشلت العملية'); }
       }},
     ]);
   };
@@ -111,7 +111,7 @@ export function CostAnalysisScreen() {
         setCosts((p) => [cr, ...p]);
       }
       setModal(false);
-    } catch (e: any) { Alert.alert(isAr ? 'خطأ' : 'Error', e.message ?? 'Failed'); }
+    } catch (e: any) { Alert.alert('خطأ', e.message ?? 'فشلت العملية'); }
     finally { setSaving(false); }
   };
 

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+﻿import { useCallback, useEffect, useMemo, useState } from "react";
 import { RefreshCw, Users } from "lucide-react";
 import { ModulePageShell } from "../../components/ModulePageShell";
 import { useLocale } from "../../context/LocaleContext";
@@ -121,7 +121,7 @@ export function AdminWorkerRecordsPage() {
       if (!res.ok) throw new Error(await readApiError(res));
       setOverview((await res.json()) as Overview);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to load");
+      setError(e instanceof Error ? e.message : "فشل التحميل");
     } finally {
       setLoading(false);
     }
@@ -144,11 +144,11 @@ export function AdminWorkerRecordsPage() {
 
   return (
     <ModulePageShell
-      title={isAr ? "سجلات العمال" : "Worker Records"}
-      subtitle={isAr ? "جميع السجلات المقدمة من العمال مصنفة حسب النوع" : "All records submitted by workers, grouped by category"}
+      title={"سجلات العمال"}
+      subtitle={"جميع السجلات المقدمة من العمال مصنفة حسب النوع"}
       actions={
         <button className="btn btn--ghost btn--sm" onClick={() => void loadOverview()}>
-          <RefreshCw size={14} /> {isAr ? "تحديث" : "Refresh"}
+          <RefreshCw size={14} /> {"تحديث"}
         </button>
       }
     >
@@ -158,7 +158,7 @@ export function AdminWorkerRecordsPage() {
           <div style={{ display: "flex", alignItems: "center", gap: ".4rem", background: "#3b82f614", border: "1px solid #3b82f633", borderRadius: "var(--radius-lg)", padding: ".45rem .9rem" }}>
             <Users size={14} style={{ color: "#3b82f6" }} />
             <span style={{ fontWeight: 800, color: "#3b82f6" }}>{summary.total}</span>
-            <span style={{ fontSize: ".78rem", color: "var(--text-secondary)" }}>{isAr ? "إجمالي السجلات" : "Total records"}</span>
+            <span style={{ fontSize: ".78rem", color: "var(--text-secondary)" }}>{"إجمالي السجلات"}</span>
           </div>
           {TAB_ORDER.map((key) => {
             const meta = TAB_META[key];
@@ -199,7 +199,7 @@ export function AdminWorkerRecordsPage() {
               }}
             >
               <span>{meta.icon}</span>
-              {isAr ? meta.ar : meta.en}
+              {meta.ar}
               {count > 0 && (
                 <span style={{ background: active ? meta.color : "var(--border-default)", color: active ? "#fff" : "var(--text-secondary)", borderRadius: "20px", padding: "0 6px", fontSize: ".72rem", fontWeight: 700, minWidth: "18px", textAlign: "center" }}>
                   {count}
@@ -219,7 +219,7 @@ export function AdminWorkerRecordsPage() {
           {itemsByTab[activeTab].length === 0 ? (
             <EmptyState
               icon={TAB_META[activeTab].icon}
-              message={isAr ? "لا توجد سجلات لهذه الفئة" : `No ${TAB_META[activeTab].en.toLowerCase()} records yet`}
+              message="لا توجد سجلات لهذه الفئة"
             />
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: ".6rem" }}>

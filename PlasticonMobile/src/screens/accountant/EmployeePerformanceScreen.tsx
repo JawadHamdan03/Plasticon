@@ -108,7 +108,7 @@ export function EmployeePerformanceScreen() {
         try {
           await api.delete(`/performance/${r.id}`);
           setRecords((p) => p.filter((x) => x.id !== r.id));
-        } catch (e: any) { Alert.alert('Error', e.message ?? 'Failed'); }
+        } catch (e: any) { Alert.alert('خطأ', e.message ?? 'فشلت العملية'); }
       }},
     ]);
   };
@@ -121,7 +121,7 @@ export function EmployeePerformanceScreen() {
       await load();
       Alert.alert(isAr ? 'تم' : 'Done', isAr ? 'تم حساب الأداء بنجاح' : 'Performance calculated successfully');
     } catch (e: any) {
-      Alert.alert(isAr ? 'خطأ' : 'Error', e.message ?? 'Failed to calculate');
+      Alert.alert('خطأ', e.message ?? 'فشلت العملية');
     } finally { setCalculating(false); }
   };
 
@@ -152,7 +152,7 @@ export function EmployeePerformanceScreen() {
       setRecords((p) => [cr, ...p]);
       setModal(false);
       setForm(EMPTY);
-    } catch (e: any) { Alert.alert(isAr ? 'خطأ' : 'Error', e.message ?? 'Failed'); }
+    } catch (e: any) { Alert.alert('خطأ', e.message ?? 'فشلت العملية'); }
     finally { setSaving(false); }
   };
 

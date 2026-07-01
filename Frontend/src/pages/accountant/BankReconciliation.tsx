@@ -4,7 +4,7 @@ import { Plus, Pencil, Trash2, CheckCircle, Clock, Landmark, X, Save } from "luc
 import { ModulePageShell } from "../../components/ModulePageShell";
 import { Button } from "../../components/ui/button";
 import { Card } from "../../components/ui/card";
-import { useLocale } from "../../context/LocaleContext";
+
 import { API_BASE_URL } from "../../lib/api";
 import { useAuth } from "../../context/AuthContext";
 
@@ -27,10 +27,8 @@ interface BankReconciliation {
 const emptyForm = { accountName: "", bankBalance: "", bookBalance: "", reconciled: false, notes: "" };
 
 export default function BankReconciliation() {
-  const { locale } = useLocale();
   const { user } = useAuth();
   const isAdmin = user?.role === "ADMIN";
-  const nav = (en: string, ar: string) => locale === "ar" ? ar : en;
 
   const [reconciliations, setReconciliations] = useState<BankReconciliation[]>([]);
   const [loading, setLoading] = useState(true);
@@ -73,7 +71,7 @@ export default function BankReconciliation() {
   };
 
   const handleDelete = async (id: number) => {
-    if (!(await confirmDialog(nav("Delete this reconciliation?", "حذف هذا التسوية؟"), { danger: true }))) return;
+    if (!(await confirmDialog("حذف هذا التسوية؟", { danger: true }))) return;
     await fetch(`${API_BASE_URL}/bank-reconciliations/${id}`, { method: "DELETE", headers: authHeaders(), credentials: "include" });
     void fetchReconciliations();
   };
@@ -90,16 +88,16 @@ export default function BankReconciliation() {
 
   return (
     <ModulePageShell
-      title={nav("Bank Reconciliation", "تسوية البنك")}
-      subtitle={nav("Reconcile bank accounts with book records", "تسوية الحسابات المصرفية مع سجلات الدفاتر")}
+      title={"تسوية البنك"}
+      subtitle={"تسوية الحسابات المصرفية مع سجلات الدفاتر"}
       icon={<Landmark size={22} />}
     >
       {/* KPIs */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: ".75rem", marginBottom: "1.25rem" }}>
         {[
-          { label: nav("Reconciled",        "متوفق"),                value: reconciledCount,          gradient: "linear-gradient(135deg,#10b981,#059669)" },
-          { label: nav("Pending",           "قيد المراجعة"),         value: pendingCount,              gradient: "linear-gradient(135deg,#f59e0b,#d97706)" },
-          { label: nav("Total Bank Balance","إجمالي رصيد البنك"),    value: fmtMoney(totalBankBalance), gradient: "linear-gradient(135deg,#3b82f6,#1d4ed8)" },
+          { label: "متوفق",                value: reconciledCount,          gradient: "linear-gradient(135deg,#10b981,#059669)" },
+          { label: "قيد المراجعة",         value: pendingCount,              gradient: "linear-gradient(135deg,#f59e0b,#d97706)" },
+          { label: "إجمالي رصيد البنك",    value: fmtMoney(totalBankBalance), gradient: "linear-gradient(135deg,#3b82f6,#1d4ed8)" },
         ].map((k) => (
           <div key={k.label} style={{ borderRadius: 14, padding: "1rem 1.1rem", background: k.gradient, color: "#fff", boxShadow: "0 4px 12px rgba(0,0,0,.15)" }}>
             <p style={{ margin: 0, fontSize: ".72rem", fontWeight: 600, opacity: .85, textTransform: "uppercase", letterSpacing: ".06em" }}>{k.label}</p>
@@ -113,17 +111,17 @@ export default function BankReconciliation() {
         {!isAdmin && (
           <Button size="sm" onClick={openNew}>
             <Plus size={15} className="me-1" />
-            {nav("Add Account", "إضافة حساب")}
+            {"إضافة حساب"}
           </Button>
         )}
         <select className="input text-sm h-8 min-w-[160px]" value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}>
-          <option value="">{nav("All Statuses", "جميع الحالات")}</option>
-          <option value="RECONCILED">{nav("Reconciled", "متوفق")}</option>
-          <option value="PENDING">{nav("Pending", "قيد المراجعة")}</option>
+          <option value="">{"جميع الحالات"}</option>
+          <option value="RECONCILED">{"متوفق"}</option>
+          <option value="PENDING">{"قيد المراجعة"}</option>
         </select>
         {filterStatus && (
           <button className="text-xs text-[var(--text-secondary)] underline" onClick={() => setFilterStatus("")}>
-            {nav("Clear", "مسح")}
+            {"مسح"}
           </button>
         )}
       </div>
@@ -134,34 +132,34 @@ export default function BankReconciliation() {
           <div className="flex items-center justify-between mb-5">
             <div>
               <h3 className="font-bold text-[var(--text-primary)] text-base">
-                {editingId ? nav("Edit Reconciliation", "تعديل التسوية") : nav("New Reconciliation", "تسوية جديدة")}
+                {editingId ? "تعديل التسوية" : "تسوية جديدة"}
               </h3>
-              <p className="text-xs text-[var(--text-secondary)] mt-0.5">{nav("Enter account reconciliation details", "أدخل بيانات تسوية الحساب")}</p>
+              <p className="text-xs text-[var(--text-secondary)] mt-0.5">{"أدخل بيانات تسوية الحساب"}</p>
             </div>
             <button className="text-[var(--text-secondary)] hover:text-[var(--text-primary)]" onClick={() => setShowForm(false)}><X size={18} /></button>
           </div>
 
-          <p className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wide mb-2">{nav("Account Details", "بيانات الحساب")}</p>
+          <p className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wide mb-2">{"بيانات الحساب"}</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
             <div className="sm:col-span-2">
-              <label className="label">{nav("Account Name *", "اسم الحساب *")}</label>
-              <input className="input" placeholder={nav("e.g. Main Operating Account", "مثال: الحساب التشغيلي الرئيسي")}
+              <label className="label">{"اسم الحساب *"}</label>
+              <input className="input" placeholder={"مثال: الحساب التشغيلي الرئيسي"}
                 value={form.accountName} onChange={(e) => setForm((p) => ({ ...p, accountName: e.target.value }))} />
             </div>
             <div>
-              <label className="label">{nav("Bank Balance ($) *", "رصيد البنك ($) *")}</label>
+              <label className="label">{"رصيد البنك ($) *"}</label>
               <input className="input" type="number" min="0" step="0.01" placeholder="0.00"
                 value={form.bankBalance} onChange={(e) => setForm((p) => ({ ...p, bankBalance: e.target.value }))} />
             </div>
             <div>
-              <label className="label">{nav("Book Balance ($) *", "رصيد الدفاتر ($) *")}</label>
+              <label className="label">{"رصيد الدفاتر ($) *"}</label>
               <input className="input" type="number" min="0" step="0.01" placeholder="0.00"
                 value={form.bookBalance} onChange={(e) => setForm((p) => ({ ...p, bookBalance: e.target.value }))} />
             </div>
             <div className="sm:col-span-2">
-              <label className="label">{nav("Notes", "ملاحظات")}</label>
+              <label className="label">{"ملاحظات"}</label>
               <textarea className="input resize-none" rows={2}
-                placeholder={nav("Reconciliation notes or remarks…", "ملاحظات التسوية...")}
+                placeholder={"ملاحظات التسوية..."}
                 value={form.notes} onChange={(e) => setForm((p) => ({ ...p, notes: e.target.value }))} />
             </div>
             <div className="sm:col-span-2 flex items-center gap-3 px-1">
@@ -169,7 +167,7 @@ export default function BankReconciliation() {
                 onChange={(e) => setForm((p) => ({ ...p, reconciled: e.target.checked }))}
                 className="w-4 h-4 rounded accent-[var(--accent)]" />
               <label htmlFor="reconciled-check" className="text-sm text-[var(--text-primary)] cursor-pointer">
-                {nav("Mark as Reconciled", "وضع علامة متوفق")}
+                {"وضع علامة متوفق"}
               </label>
             </div>
           </div>
@@ -177,9 +175,9 @@ export default function BankReconciliation() {
           <div className="flex gap-2 pt-2 border-t border-[var(--border-default)]">
             <Button size="sm" onClick={handleSave} disabled={saving || !form.accountName || !form.bankBalance || !form.bookBalance}>
               <Save size={14} className="me-1" />
-              {saving ? nav("Saving...", "جارٍ الحفظ...") : nav("Save Account", "حفظ الحساب")}
+              {saving ? "جارٍ الحفظ..." : "حفظ الحساب"}
             </Button>
-            <Button size="sm" variant="outline" onClick={() => setShowForm(false)}>{nav("Cancel", "إلغاء")}</Button>
+            <Button size="sm" variant="outline" onClick={() => setShowForm(false)}>{"إلغاء"}</Button>
           </div>
         </Card>
       )}
@@ -190,8 +188,8 @@ export default function BankReconciliation() {
       ) : filtered.length === 0 ? (
         <Card className="p-12 text-center text-[var(--text-secondary)]">
           <Landmark size={32} className="mx-auto mb-3 opacity-30" />
-          <p className="font-medium">{nav("No accounts found", "لا توجد حسابات")}</p>
-          <p className="text-sm mt-1">{nav("Add your first bank account to get started", "أضف أول حساب مصرفي للبدء")}</p>
+          <p className="font-medium">{"لا توجد حسابات"}</p>
+          <p className="text-sm mt-1">{"أضف أول حساب مصرفي للبدء"}</p>
         </Card>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -212,7 +210,7 @@ export default function BankReconciliation() {
                       <span style={{ background: statusColor + "20", color: statusColor, borderRadius: "20px", padding: "1px 8px", fontSize: ".68rem", fontWeight: 700 }}
                         className="inline-flex items-center gap-1">
                         <StatusIcon size={9} />
-                        {r.reconciled ? nav("Reconciled", "متوفق") : nav("Pending", "قيد المراجعة")}
+                        {r.reconciled ? "متوفق" : "قيد المراجعة"}
                       </span>
                     </div>
                   </div>
@@ -226,11 +224,11 @@ export default function BankReconciliation() {
                 <div className="p-4 flex-1 flex flex-col gap-2.5">
                   <div className="flex justify-between text-sm">
                     <div>
-                      <p className="text-xs text-[var(--text-secondary)]">{nav("Bank", "البنك")}</p>
+                      <p className="text-xs text-[var(--text-secondary)]">{"البنك"}</p>
                       <p className="font-bold text-blue-600">{fmtMoney(r.bankBalance)}</p>
                     </div>
                     <div className="text-right">
-                      <p className="text-xs text-[var(--text-secondary)]">{nav("Book", "الدفاتر")}</p>
+                      <p className="text-xs text-[var(--text-secondary)]">{"الدفاتر"}</p>
                       <p className="font-bold text-orange-600">{fmtMoney(r.bookBalance)}</p>
                     </div>
                   </div>
@@ -242,9 +240,9 @@ export default function BankReconciliation() {
                   )}
                 </div>
                 <div className="border-t border-[var(--border-default)] px-4 py-2.5 flex items-center justify-between">
-                  <span className="text-xs text-[var(--text-secondary)]">{nav("Difference", "الفرق")}</span>
+                  <span className="text-xs text-[var(--text-secondary)]">{"الفرق"}</span>
                   <span className="font-bold text-sm" style={{ color: isBalanced ? "#059669" : "#dc2626" }}>
-                    {isBalanced ? nav("✓ Balanced", "✓ متوازن") : fmtMoney(Math.abs(diff))}
+                    {isBalanced ? "✓ متوازن" : fmtMoney(Math.abs(diff))}
                   </span>
                 </div>
               </Card>

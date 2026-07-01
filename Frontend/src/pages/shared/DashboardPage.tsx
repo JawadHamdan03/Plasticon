@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+﻿import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Users,
@@ -51,7 +51,7 @@ async function fetchAuth<T>(path: string): Promise<T | null> {
 }
 
 function fmtDate(isAr: boolean) {
-  return new Date().toLocaleDateString(isAr ? "ar-EG" : "en-US", {
+  return new Date().toLocaleDateString("ar-EG", {
     weekday: "long",
     month: "long",
     day: "numeric",
@@ -75,9 +75,7 @@ function WelcomeHero({
   onRefresh: () => void;
   isAr: boolean;
 }) {
-  const greeting = isAr
-    ? `مرحباً، ${name}`
-    : `Welcome back, ${name}`;
+  const greeting = `مرحباً، ${name}`;
   const dateStr = fmtDate(isAr);
 
   return (
@@ -97,8 +95,8 @@ function WelcomeHero({
         style={{
           position: "absolute",
           top: -40,
-          right: isAr ? "auto" : -40,
-          left: isAr ? -40 : "auto",
+          right: "auto",
+          left: -40,
           width: 180,
           height: 180,
           borderRadius: "50%",
@@ -110,8 +108,8 @@ function WelcomeHero({
         style={{
           position: "absolute",
           bottom: -60,
-          right: isAr ? "auto" : 60,
-          left: isAr ? 60 : "auto",
+          right: "auto",
+          left: 60,
           width: 240,
           height: 240,
           borderRadius: "50%",
@@ -204,7 +202,7 @@ function WelcomeHero({
           }}
         >
           <RefreshCw size={14} />
-          {isAr ? "تحديث" : "Refresh"}
+          {"تحديث"}
         </button>
       </div>
     </div>
@@ -533,7 +531,7 @@ function AdminDashboard() {
   const total =
     stats?.machineStatusBreakdown.reduce((s, i) => s + i.count, 0) ?? 0;
 
-  const firstName = user?.name?.split(" ")[0] ?? (isAr ? "المدير" : "Admin");
+  const firstName = user?.name?.split(" ")[0] ?? "المدير";
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "1.75rem" }}>
@@ -541,7 +539,7 @@ function AdminDashboard() {
       <WelcomeHero
         name={firstName}
         role="ADMIN"
-        roleLabel={isAr ? "لوحة الإدارة" : "Admin Dashboard"}
+        roleLabel={"لوحة تحكم المدير"}
         gradient="linear-gradient(135deg,#1e3a5f 0%,#1d4ed8 50%,#7c3aed 100%)"
         onRefresh={() => void load()}
         isAr={isAr}
@@ -551,7 +549,7 @@ function AdminDashboard() {
       <div>
         <SectionTitle>
           <Activity size={13} />
-          {isAr ? "نظرة عامة" : "Overview"}
+          {"نظرة عامة"}
         </SectionTitle>
         <div
           style={{
@@ -562,7 +560,7 @@ function AdminDashboard() {
         >
           <KpiCard
             icon={<Users size={20} />}
-            label={isAr ? "المستخدمون النشطون" : "Active Users"}
+            label={"المستخدمون النشطون"}
             value={
               loading
                 ? "…"
@@ -575,7 +573,7 @@ function AdminDashboard() {
           />
           <KpiCard
             icon={<Cpu size={20} />}
-            label={isAr ? "الآلات تعمل" : "Machines Running"}
+            label={"الآلات التشغيلية"}
             value={
               loading
                 ? "…"
@@ -588,7 +586,7 @@ function AdminDashboard() {
           />
           <KpiCard
             icon={<Factory size={20} />}
-            label={isAr ? "إنتاج اليوم" : "Production Today"}
+            label={"إنتاج اليوم"}
             value={loading ? "…" : (analytics?.productionToday ?? 0)}
             tileGradient="linear-gradient(135deg,rgba(249,115,22,.12) 0%,rgba(249,115,22,.04) 100%)"
             iconBg="rgba(249,115,22,.15)"
@@ -597,7 +595,7 @@ function AdminDashboard() {
           />
           <KpiCard
             icon={<Package size={20} />}
-            label={isAr ? "مخزون منخفض" : "Low Stock Items"}
+            label={"مواد منخفضة المخزون"}
             value={loading ? "…" : (analytics?.lowStockItems ?? 0)}
             tileGradient={
               (analytics?.lowStockItems ?? 0) > 0
@@ -616,7 +614,7 @@ function AdminDashboard() {
           />
           <KpiCard
             icon={<Bell size={20} />}
-            label={isAr ? "إشعارات" : "Unread Notifications"}
+            label={"إشعارات غير مقروءة"}
             value={loading ? "…" : unread}
             tileGradient={
               unread > 0
@@ -680,7 +678,7 @@ function AdminDashboard() {
                 color: "var(--text-primary)",
               }}
             >
-              {isAr ? "حالة الآلات" : "Machine Status Breakdown"}
+              {"توزيع حالة الآلات"}
             </h2>
           </div>
           <div style={{ padding: "1.5rem" }}>
@@ -710,7 +708,7 @@ function AdminDashboard() {
                   style={{ margin: "0 auto .75rem", display: "block", opacity: 0.3 }}
                 />
                 <p style={{ margin: 0, fontSize: ".875rem" }}>
-                  {isAr ? "لا توجد بيانات آلات" : "No machine data"}
+                  {"لا توجد بيانات آلات"}
                 </p>
               </div>
             )}
@@ -741,7 +739,7 @@ function AdminDashboard() {
                 color: "var(--text-primary)",
               }}
             >
-              {isAr ? "الإجراءات السريعة" : "Quick Actions"}
+              {"إجراءات سريعة"}
             </h2>
           </div>
           <div
@@ -753,13 +751,13 @@ function AdminDashboard() {
             }}
           >
             {[
-              { icon: <Users size={16} />, label: isAr ? "إدارة المستخدمين" : "Manage Users", to: "/admin/users", iconBg: "rgba(59,130,246,.12)", iconColor: "#2563eb" },
-              { icon: <Factory size={16} />, label: isAr ? "الإنتاج" : "Production", to: "/production", iconBg: "rgba(249,115,22,.12)", iconColor: "#ea580c" },
-              { icon: <Boxes size={16} />, label: isAr ? "المخزون" : "Inventory", to: "/inventory", iconBg: "rgba(34,197,94,.12)", iconColor: "#16a34a" },
-              { icon: <DollarSign size={16} />, label: isAr ? "الرواتب" : "Payroll", to: "/admin/payroll", iconBg: "rgba(16,185,129,.12)", iconColor: "#059669" },
-              { icon: <BarChart3 size={16} />, label: isAr ? "التحليلات" : "Analytics", to: "/admin/dashboard-analytics", iconBg: "rgba(139,92,246,.12)", iconColor: "#7c3aed" },
-              { icon: <UserCheck size={16} />, label: isAr ? "الحضور" : "Attendance", to: "/admin/attendance", iconBg: "rgba(6,182,212,.12)", iconColor: "#0891b2" },
-              { icon: <FileText size={16} />, label: isAr ? "التقارير" : "Reports", to: "/reports", iconBg: "rgba(236,72,153,.12)", iconColor: "#db2777" },
+              { icon: <Users size={16} />, label: "إدارة المستخدمين", to: "/admin/users", iconBg: "rgba(59,130,246,.12)", iconColor: "#2563eb" },
+              { icon: <Factory size={16} />, label: "الإنتاج", to: "/production", iconBg: "rgba(249,115,22,.12)", iconColor: "#ea580c" },
+              { icon: <Boxes size={16} />, label: "المخزون", to: "/inventory", iconBg: "rgba(34,197,94,.12)", iconColor: "#16a34a" },
+              { icon: <DollarSign size={16} />, label: "الرواتب", to: "/admin/payroll", iconBg: "rgba(16,185,129,.12)", iconColor: "#059669" },
+              { icon: <BarChart3 size={16} />, label: "التحليلات", to: "/admin/dashboard-analytics", iconBg: "rgba(139,92,246,.12)", iconColor: "#7c3aed" },
+              { icon: <UserCheck size={16} />, label: "الحضور", to: "/admin/attendance", iconBg: "rgba(6,182,212,.12)", iconColor: "#0891b2" },
+              { icon: <FileText size={16} />, label: "التقارير", to: "/reports", iconBg: "rgba(236,72,153,.12)", iconColor: "#db2777" },
             ].map((a) => (
               <ActionTile key={a.to} {...a} />
             ))}
@@ -804,7 +802,7 @@ function EngineerDashboard() {
   const today = new Date().toISOString().slice(0, 10);
   const todayProd = myProd.filter((p) => p.createdAt.slice(0, 10) === today).length;
   const openAtt = attendance.find((a) => !a.checkOut);
-  const firstName = user?.name?.split(" ")[0] ?? (isAr ? "المهندس" : "Engineer");
+  const firstName = user?.name?.split(" ")[0] ?? "المهندس";
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "1.75rem" }}>
@@ -812,7 +810,7 @@ function EngineerDashboard() {
       <WelcomeHero
         name={firstName}
         role="ENGINEER"
-        roleLabel={isAr ? "لوحة المهندس" : "Engineer Dashboard"}
+        roleLabel={"لوحة تحكم المهندس"}
         gradient="linear-gradient(135deg,#064e3b 0%,#059669 50%,#0d9488 100%)"
         onRefresh={() => void load()}
         isAr={isAr}
@@ -848,17 +846,17 @@ function EngineerDashboard() {
           </div>
           <div style={{ flex: 1 }}>
             <p style={{ margin: 0, fontWeight: 700, fontSize: ".88rem", color: "#ea580c" }}>
-              {isAr ? "لم تسجل حضورك اليوم" : "You haven't checked in today"}
+              {"لم تسجل حضورك اليوم"}
             </p>
             <p style={{ margin: 0, fontSize: ".78rem", color: "var(--text-secondary)", marginTop: ".15rem" }}>
-              {isAr ? "سجّل حضورك قبل تسجيل أي بيانات." : "Check in first before logging any records."}
+              {"سجل حضورك أولاً قبل إضافة أي سجلات."}
             </p>
           </div>
           <button
             className="btn btn--primary btn--sm"
             onClick={() => navigate("/attendance")}
           >
-            {isAr ? "تسجيل الدخول" : "Check In"}
+            {"تسجيل حضور"}
           </button>
         </div>
       )}
@@ -867,7 +865,7 @@ function EngineerDashboard() {
       <div>
         <SectionTitle>
           <Activity size={13} />
-          {isAr ? "إحصائياتي" : "My Stats"}
+          {"إحصائياتي"}
         </SectionTitle>
         <div
           style={{
@@ -878,7 +876,7 @@ function EngineerDashboard() {
         >
           <KpiCard
             icon={<Factory size={20} />}
-            label={isAr ? "إنتاجي اليوم" : "My Production Today"}
+            label={"إنتاجي اليوم"}
             value={loading ? "…" : todayProd}
             tileGradient="linear-gradient(135deg,rgba(5,150,105,.12) 0%,rgba(5,150,105,.04) 100%)"
             iconBg="rgba(5,150,105,.15)"
@@ -887,9 +885,9 @@ function EngineerDashboard() {
           />
           <KpiCard
             icon={<UserCheck size={20} />}
-            label={isAr ? "الحضور" : "Attendance Status"}
+            label={"حالة الحضور"}
             value={
-              loading ? "…" : openAtt ? (isAr ? "داخل الدوام ✓" : "Checked In ✓") : (isAr ? "غير مسجل" : "Not Checked In")
+              loading ? "…" : openAtt ? "داخل الدوام ✓" : "غير مسجل"
             }
             tileGradient={
               openAtt
@@ -902,7 +900,7 @@ function EngineerDashboard() {
           />
           <KpiCard
             icon={<Bell size={20} />}
-            label={isAr ? "إشعارات" : "Unread Notifications"}
+            label={"إشعارات غير مقروءة"}
             value={loading ? "…" : unread}
             tileGradient={
               unread > 0
@@ -915,8 +913,8 @@ function EngineerDashboard() {
           />
           <KpiCard
             icon={<ClipboardList size={20} />}
-            label={isAr ? "قطع الغيار" : "Parts Inventory"}
-            value={isAr ? "شهري" : "Monthly"}
+            label={"مخزون القطع"}
+            value={"شهري"}
             tileGradient="linear-gradient(135deg,rgba(59,130,246,.12) 0%,rgba(59,130,246,.04) 100%)"
             iconBg="rgba(59,130,246,.15)"
             iconColor="#2563eb"
@@ -951,7 +949,7 @@ function EngineerDashboard() {
             }}
           >
             <h2 style={{ margin: 0, fontSize: ".95rem", fontWeight: 700, color: "var(--text-primary)" }}>
-              {isAr ? "أدوات المهندس" : "Engineer Tools"}
+              {"أدوات المهندس"}
             </h2>
           </div>
           <div
@@ -963,10 +961,10 @@ function EngineerDashboard() {
             }}
           >
             {[
-              { icon: <Factory size={18} />, label: isAr ? "سجلات الإنتاج" : "Production Records", sub: isAr ? "تسجيل إنتاج الوردية" : "Log hourly production data", to: "/production", iconBg: "rgba(59,130,246,.12)", iconColor: "#2563eb" },
-              { icon: <CheckSquare size={18} />, label: isAr ? "فحص الجودة" : "Quality Checks", sub: isAr ? "تفتيش الجودة" : "Quality inspections", to: "/quality-checks", iconBg: "rgba(34,197,94,.12)", iconColor: "#16a34a" },
-              { icon: <Wrench size={18} />, label: isAr ? "الصيانة" : "Maintenance", sub: isAr ? "الإبلاغ عن مشاكل" : "Report equipment issues", to: "/maintenance", iconBg: "rgba(249,115,22,.12)", iconColor: "#ea580c" },
-              { icon: <ClipboardList size={18} />, label: isAr ? "قطع الغيار" : "Parts Inventory", sub: isAr ? "تقرير النقص الشهري" : "Monthly parts report", to: "/engineer/inventory", iconBg: "rgba(139,92,246,.12)", iconColor: "#7c3aed" },
+              { icon: <Factory size={18} />, label: "سجلات الإنتاج", sub: "تسجيل إنتاج الوردية", to: "/production", iconBg: "rgba(59,130,246,.12)", iconColor: "#2563eb" },
+              { icon: <CheckSquare size={18} />, label: "فحص الجودة", sub: "تفتيش الجودة", to: "/quality-checks", iconBg: "rgba(34,197,94,.12)", iconColor: "#16a34a" },
+              { icon: <Wrench size={18} />, label: "الصيانة", sub: "الإبلاغ عن مشاكل", to: "/maintenance", iconBg: "rgba(249,115,22,.12)", iconColor: "#ea580c" },
+              { icon: <ClipboardList size={18} />, label: "قطع الغيار", sub: "تقرير النقص الشهري", to: "/engineer/inventory", iconBg: "rgba(139,92,246,.12)", iconColor: "#7c3aed" },
             ].map((t) => (
               <ActionTile key={t.to} {...t} />
             ))}
@@ -990,13 +988,13 @@ function EngineerDashboard() {
             }}
           >
             <h2 style={{ margin: 0, fontSize: ".95rem", fontWeight: 700, color: "var(--text-primary)" }}>
-              {isAr ? "معلوماتي" : "My Info"}
+              {"معلوماتي"}
             </h2>
           </div>
           <div style={{ padding: "1rem", display: "flex", flexDirection: "column", gap: ".5rem" }}>
-            <ActionTile icon={<UserCheck size={16} />} label={isAr ? "حضوري" : "My Attendance"} to="/attendance" iconBg="rgba(5,150,105,.12)" iconColor="#059669" />
-            <ActionTile icon={<DollarSign size={16} />} label={isAr ? "راتبي" : "My Payroll"} to="/my-payroll" iconBg="rgba(16,185,129,.12)" iconColor="#059669" />
-            <ActionTile icon={<Bell size={16} />} label={isAr ? "الإشعارات" : "Notifications"} to="/notifications" iconBg="rgba(59,130,246,.12)" iconColor="#2563eb" />
+            <ActionTile icon={<UserCheck size={16} />} label={"حضوري"} to="/attendance" iconBg="rgba(5,150,105,.12)" iconColor="#059669" />
+            <ActionTile icon={<DollarSign size={16} />} label={"راتبي"} to="/my-payroll" iconBg="rgba(16,185,129,.12)" iconColor="#059669" />
+            <ActionTile icon={<Bell size={16} />} label={"الإشعارات"} to="/notifications" iconBg="rgba(59,130,246,.12)" iconColor="#2563eb" />
           </div>
         </div>
       </div>
@@ -1041,7 +1039,7 @@ function AccountantDashboard() {
   const monthPayroll = payroll
     .filter((p) => p.month === thisMonth)
     .reduce((s, p) => s + p.totalSalary, 0);
-  const firstName = user?.name?.split(" ")[0] ?? (isAr ? "المحاسب" : "Accountant");
+  const firstName = user?.name?.split(" ")[0] ?? "المحاسب";
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "1.75rem" }}>
@@ -1049,7 +1047,7 @@ function AccountantDashboard() {
       <WelcomeHero
         name={firstName}
         role="ACCOUNTANT"
-        roleLabel={isAr ? "لوحة المحاسب" : "Accountant Dashboard"}
+        roleLabel={"لوحة تحكم المحاسب"}
         gradient="linear-gradient(135deg,#1e1b4b 0%,#4f46e5 50%,#7c3aed 100%)"
         onRefresh={() => void load()}
         isAr={isAr}
@@ -1059,7 +1057,7 @@ function AccountantDashboard() {
       <div>
         <SectionTitle>
           <Activity size={13} />
-          {isAr ? "الملخص المالي" : "Financial Summary"}
+          {"الملخص المالي"}
         </SectionTitle>
         <div
           style={{
@@ -1070,7 +1068,7 @@ function AccountantDashboard() {
         >
           <KpiCard
             icon={<DollarSign size={20} />}
-            label={isAr ? "رواتب هذا الشهر" : "Monthly Payroll"}
+            label={"الرواتب الشهرية"}
             value={loading ? "…" : `₪${monthPayroll.toLocaleString()}`}
             tileGradient="linear-gradient(135deg,rgba(79,70,229,.12) 0%,rgba(79,70,229,.04) 100%)"
             iconBg="rgba(79,70,229,.15)"
@@ -1079,7 +1077,7 @@ function AccountantDashboard() {
           />
           <KpiCard
             icon={<Activity size={20} />}
-            label={isAr ? "حركات المخزون اليوم" : "Inventory Moves Today"}
+            label={"حركات المخزون اليوم"}
             value={loading ? "…" : todayInv}
             tileGradient="linear-gradient(135deg,rgba(59,130,246,.12) 0%,rgba(59,130,246,.04) 100%)"
             iconBg="rgba(59,130,246,.15)"
@@ -1088,7 +1086,7 @@ function AccountantDashboard() {
           />
           <KpiCard
             icon={<Bell size={20} />}
-            label={isAr ? "إشعارات" : "Unread Notifications"}
+            label={"إشعارات غير مقروءة"}
             value={loading ? "…" : unread}
             tileGradient={
               unread > 0
@@ -1101,8 +1099,8 @@ function AccountantDashboard() {
           />
           <KpiCard
             icon={<ClipboardList size={20} />}
-            label={isAr ? "تسعير القطع" : "Parts Pricing"}
-            value={isAr ? "طلبات جديدة" : "New Requests"}
+            label={"تسعير القطع"}
+            value={"طلبات جديدة"}
             tileGradient="linear-gradient(135deg,rgba(249,115,22,.12) 0%,rgba(249,115,22,.04) 100%)"
             iconBg="rgba(249,115,22,.15)"
             iconColor="#ea580c"
@@ -1137,7 +1135,7 @@ function AccountantDashboard() {
             }}
           >
             <h2 style={{ margin: 0, fontSize: ".95rem", fontWeight: 700, color: "var(--text-primary)" }}>
-              {isAr ? "الوحدات المالية" : "Finance Modules"}
+              {"الوحدات المالية"}
             </h2>
           </div>
           <div
@@ -1149,12 +1147,12 @@ function AccountantDashboard() {
             }}
           >
             {[
-              { icon: <Boxes size={18} />, label: isAr ? "المخزون" : "Inventory", sub: isAr ? "متابعة المواد الخام" : "Track raw materials stock", to: "/inventory", iconBg: "rgba(59,130,246,.12)", iconColor: "#2563eb" },
-              { icon: <ShoppingCart size={18} />, label: isAr ? "المشتريات" : "Purchases", sub: isAr ? "الموردون والطلبات" : "Manage suppliers & orders", to: "/purchases", iconBg: "rgba(34,197,94,.12)", iconColor: "#16a34a" },
-              { icon: <TrendingUp size={18} />, label: isAr ? "المبيعات" : "Sales", sub: isAr ? "طلبات العملاء" : "Customer orders & invoices", to: "/sales", iconBg: "rgba(249,115,22,.12)", iconColor: "#ea580c" },
-              { icon: <FileText size={18} />, label: isAr ? "التقارير" : "Reports", sub: isAr ? "التقارير المالية" : "Financial & production reports", to: "/reports", iconBg: "rgba(139,92,246,.12)", iconColor: "#7c3aed" },
-              { icon: <DollarSign size={18} />, label: isAr ? "الرواتب" : "Payroll", sub: isAr ? "احتساب الرواتب" : "Calculate & manage salaries", to: "/admin/payroll", iconBg: "rgba(16,185,129,.12)", iconColor: "#059669" },
-              { icon: <ClipboardList size={18} />, label: isAr ? "تسعير القطع" : "Parts Pricing", sub: isAr ? "تسعير قطع المهندسين" : "Price engineer inventory", to: "/accountant/parts-pricing", iconBg: "rgba(249,115,22,.12)", iconColor: "#ea580c" },
+              { icon: <Boxes size={18} />, label: "المخزون", sub: "متابعة المواد الخام", to: "/inventory", iconBg: "rgba(59,130,246,.12)", iconColor: "#2563eb" },
+              { icon: <ShoppingCart size={18} />, label: "المشتريات", sub: "الموردون والطلبات", to: "/purchases", iconBg: "rgba(34,197,94,.12)", iconColor: "#16a34a" },
+              { icon: <TrendingUp size={18} />, label: "المبيعات", sub: "طلبات العملاء", to: "/sales", iconBg: "rgba(249,115,22,.12)", iconColor: "#ea580c" },
+              { icon: <FileText size={18} />, label: "التقارير", sub: "التقارير المالية", to: "/reports", iconBg: "rgba(139,92,246,.12)", iconColor: "#7c3aed" },
+              { icon: <DollarSign size={18} />, label: "الرواتب", sub: "احتساب الرواتب", to: "/admin/payroll", iconBg: "rgba(16,185,129,.12)", iconColor: "#059669" },
+              { icon: <ClipboardList size={18} />, label: "تسعير القطع", sub: "تسعير قطع المهندسين", to: "/accountant/parts-pricing", iconBg: "rgba(249,115,22,.12)", iconColor: "#ea580c" },
             ].map((t) => (
               <ActionTile key={t.to} {...t} />
             ))}
@@ -1178,14 +1176,14 @@ function AccountantDashboard() {
             }}
           >
             <h2 style={{ margin: 0, fontSize: ".95rem", fontWeight: 700, color: "var(--text-primary)" }}>
-              {isAr ? "صلاحيات HR" : "HR Access"}
+              {"الموارد البشرية"}
             </h2>
           </div>
           <div style={{ padding: "1rem", display: "flex", flexDirection: "column", gap: ".5rem" }}>
-            <ActionTile icon={<UserCheck size={16} />} label={isAr ? "إدارة الحضور" : "Attendance Mgmt"} to="/admin/attendance" iconBg="rgba(5,150,105,.12)" iconColor="#059669" />
-            <ActionTile icon={<DollarSign size={16} />} label={isAr ? "إدارة الرواتب" : "Payroll Mgmt"} to="/admin/payroll" iconBg="rgba(79,70,229,.12)" iconColor="#4f46e5" />
-            <ActionTile icon={<BarChart3 size={16} />} label={isAr ? "جميع التقارير" : "All Reports"} to="/reports" iconBg="rgba(139,92,246,.12)" iconColor="#7c3aed" />
-            <ActionTile icon={<Bell size={16} />} label={isAr ? "الإشعارات" : "Notifications"} to="/notifications" iconBg="rgba(59,130,246,.12)" iconColor="#2563eb" />
+            <ActionTile icon={<UserCheck size={16} />} label={"إدارة الحضور"} to="/admin/attendance" iconBg="rgba(5,150,105,.12)" iconColor="#059669" />
+            <ActionTile icon={<DollarSign size={16} />} label={"إدارة الرواتب"} to="/admin/payroll" iconBg="rgba(79,70,229,.12)" iconColor="#4f46e5" />
+            <ActionTile icon={<BarChart3 size={16} />} label={"جميع التقارير"} to="/reports" iconBg="rgba(139,92,246,.12)" iconColor="#7c3aed" />
+            <ActionTile icon={<Bell size={16} />} label={"الإشعارات"} to="/notifications" iconBg="rgba(59,130,246,.12)" iconColor="#2563eb" />
           </div>
         </div>
       </div>
@@ -1227,7 +1225,7 @@ function WorkerDashboard() {
   const today = new Date().toISOString().slice(0, 10);
   const todayProd = myProd.filter((p) => p.createdAt.slice(0, 10) === today).length;
   const openAtt = attendance.find((a) => !a.checkOut);
-  const firstName = user?.name?.split(" ")[0] ?? (isAr ? "العامل" : "Worker");
+  const firstName = user?.name?.split(" ")[0] ?? ("العامل");
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "1.75rem" }}>
@@ -1235,7 +1233,7 @@ function WorkerDashboard() {
       <WelcomeHero
         name={firstName}
         role="WORKER"
-        roleLabel={isAr ? "لوحة العامل" : "Worker Dashboard"}
+        roleLabel={"لوحة العامل"}
         gradient="linear-gradient(135deg,#7c2d12 0%,#c2410c 50%,#f97316 100%)"
         onRefresh={() => void load()}
         isAr={isAr}
@@ -1271,17 +1269,17 @@ function WorkerDashboard() {
           </div>
           <div style={{ flex: 1 }}>
             <p style={{ margin: 0, fontWeight: 700, fontSize: ".88rem", color: "#ea580c" }}>
-              {isAr ? "لم تسجل حضورك اليوم" : "You haven't checked in today"}
+              {"لم تسجل حضورك اليوم"}
             </p>
             <p style={{ margin: 0, fontSize: ".78rem", color: "var(--text-secondary)", marginTop: ".15rem" }}>
-              {isAr ? "سجّل حضورك قبل تسجيل أي بيانات." : "Check in first before logging any records."}
+              {"سجّل حضورك قبل تسجيل أي بيانات."}
             </p>
           </div>
           <button
             className="btn btn--primary btn--sm"
             onClick={() => navigate("/attendance")}
           >
-            {isAr ? "تسجيل الدخول" : "Check In"}
+            {"تسجيل الدخول"}
           </button>
         </div>
       )}
@@ -1290,7 +1288,7 @@ function WorkerDashboard() {
       <div>
         <SectionTitle>
           <Activity size={13} />
-          {isAr ? "إحصائياتي اليوم" : "Today's Stats"}
+          {"إحصائياتي اليوم"}
         </SectionTitle>
         <div
           style={{
@@ -1301,7 +1299,7 @@ function WorkerDashboard() {
         >
           <KpiCard
             icon={<Factory size={20} />}
-            label={isAr ? "إنتاجي اليوم" : "Production Today"}
+            label={"إنتاجي اليوم"}
             value={loading ? "…" : todayProd}
             tileGradient="linear-gradient(135deg,rgba(249,115,22,.12) 0%,rgba(249,115,22,.04) 100%)"
             iconBg="rgba(249,115,22,.15)"
@@ -1310,9 +1308,9 @@ function WorkerDashboard() {
           />
           <KpiCard
             icon={<UserCheck size={20} />}
-            label={isAr ? "الحضور" : "Attendance"}
+            label={"الحضور"}
             value={
-              loading ? "…" : openAtt ? (isAr ? "داخل الدوام ✓" : "Checked In ✓") : (isAr ? "غير مسجل" : "Not Checked In")
+              loading ? "…" : openAtt ? ("داخل الدوام ✓") : ("غير مسجل")
             }
             tileGradient={
               openAtt
@@ -1325,7 +1323,7 @@ function WorkerDashboard() {
           />
           <KpiCard
             icon={<Bell size={20} />}
-            label={isAr ? "إشعارات" : "Notifications"}
+            label={"إشعارات"}
             value={loading ? "…" : unread}
             tileGradient={
               unread > 0
@@ -1365,7 +1363,7 @@ function WorkerDashboard() {
             }}
           >
             <h2 style={{ margin: 0, fontSize: ".95rem", fontWeight: 700, color: "var(--text-primary)" }}>
-              {isAr ? "أدوات العامل" : "Worker Tools"}
+              {"أدوات العامل"}
             </h2>
           </div>
           <div
@@ -1377,12 +1375,12 @@ function WorkerDashboard() {
             }}
           >
             {[
-              { icon: <Factory size={18} />, label: isAr ? "سجلات الإنتاج" : "Production Records", sub: isAr ? "تسجيل إنتاج الوردية" : "Log hourly production", to: "/production", iconBg: "rgba(249,115,22,.12)", iconColor: "#ea580c" },
-              { icon: <Camera size={18} />, label: isAr ? "قراءات الآلة" : "Machine Readings", sub: isAr ? "قراءات العداد" : "Machine snapshots", to: "/worker/snapshots", iconBg: "rgba(59,130,246,.12)", iconColor: "#2563eb" },
-              { icon: <AlertTriangle size={18} />, label: isAr ? "إيقاف الآلات" : "Machine Stops", sub: isAr ? "تسجيل التوقفات" : "Log machine stops", to: "/worker/tools?tab=stops", iconBg: "rgba(239,68,68,.12)", iconColor: "#dc2626" },
-              { icon: <CheckSquare size={18} />, label: isAr ? "قائمة التحقق" : "Daily Checklist", sub: isAr ? "قائمة الفحص اليومية" : "Daily inspection list", to: "/worker/tools?tab=checklist", iconBg: "rgba(34,197,94,.12)", iconColor: "#16a34a" },
-              { icon: <Target size={18} />, label: isAr ? "الأهداف اليومية" : "Daily Targets", sub: isAr ? "تتبع الأهداف" : "Track targets", to: "/worker/tools?tab=target", iconBg: "rgba(139,92,246,.12)", iconColor: "#7c3aed" },
-              { icon: <Wrench size={18} />, label: isAr ? "هدر المواد" : "Material Waste", sub: isAr ? "تسجيل الهدر" : "Log waste", to: "/worker/tools?tab=waste", iconBg: "rgba(6,182,212,.12)", iconColor: "#0891b2" },
+              { icon: <Factory size={18} />, label: "سجلات الإنتاج", sub: "تسجيل إنتاج الوردية", to: "/production", iconBg: "rgba(249,115,22,.12)", iconColor: "#ea580c" },
+              { icon: <Camera size={18} />, label: "قراءات الآلة", sub: "قراءات العداد", to: "/worker/snapshots", iconBg: "rgba(59,130,246,.12)", iconColor: "#2563eb" },
+              { icon: <AlertTriangle size={18} />, label: "إيقاف الآلات", sub: "تسجيل التوقفات", to: "/worker/tools?tab=stops", iconBg: "rgba(239,68,68,.12)", iconColor: "#dc2626" },
+              { icon: <CheckSquare size={18} />, label: "قائمة التحقق", sub: "قائمة الفحص اليومية", to: "/worker/tools?tab=checklist", iconBg: "rgba(34,197,94,.12)", iconColor: "#16a34a" },
+              { icon: <Target size={18} />, label: "الأهداف اليومية", sub: "تتبع الأهداف", to: "/worker/tools?tab=target", iconBg: "rgba(139,92,246,.12)", iconColor: "#7c3aed" },
+              { icon: <Wrench size={18} />, label: "هدر المواد", sub: "تسجيل الهدر", to: "/worker/tools?tab=waste", iconBg: "rgba(6,182,212,.12)", iconColor: "#0891b2" },
             ].map((t) => (
               <ActionTile key={t.to} {...t} />
             ))}
@@ -1406,13 +1404,13 @@ function WorkerDashboard() {
             }}
           >
             <h2 style={{ margin: 0, fontSize: ".95rem", fontWeight: 700, color: "var(--text-primary)" }}>
-              {isAr ? "الشخصية" : "Personal"}
+              {"الشخصية"}
             </h2>
           </div>
           <div style={{ padding: "1rem", display: "flex", flexDirection: "column", gap: ".5rem" }}>
-            <ActionTile icon={<UserCheck size={16} />} label={isAr ? "حضوري" : "My Attendance"} to="/attendance" iconBg="rgba(249,115,22,.12)" iconColor="#ea580c" />
-            <ActionTile icon={<DollarSign size={16} />} label={isAr ? "راتبي" : "My Payroll"} to="/my-payroll" iconBg="rgba(16,185,129,.12)" iconColor="#059669" />
-            <ActionTile icon={<Bell size={16} />} label={isAr ? "الإشعارات" : "Notifications"} to="/notifications" iconBg="rgba(59,130,246,.12)" iconColor="#2563eb" />
+            <ActionTile icon={<UserCheck size={16} />} label={"حضوري"} to="/attendance" iconBg="rgba(249,115,22,.12)" iconColor="#ea580c" />
+            <ActionTile icon={<DollarSign size={16} />} label={"راتبي"} to="/my-payroll" iconBg="rgba(16,185,129,.12)" iconColor="#059669" />
+            <ActionTile icon={<Bell size={16} />} label={"الإشعارات"} to="/notifications" iconBg="rgba(59,130,246,.12)" iconColor="#2563eb" />
           </div>
         </div>
       </div>

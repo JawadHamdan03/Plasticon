@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+﻿import { useCallback, useEffect, useMemo, useState } from "react";
 import { Factory, LayoutDashboard, Settings2, Trash2, Users2 } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 import { useLocale } from "../../context/LocaleContext";
@@ -176,10 +176,10 @@ const buildProductionDrafts = (settings: ProductionSetting[]) => ({
 
 const formatDateTime = (value: string | undefined, locale: string) => {
   if (!value) {
-    return locale === "ar" ? "غير متوفر" : "Not available";
+    return "غير متوفر";
   }
 
-  return new Intl.DateTimeFormat(locale === "ar" ? "ar-EG" : "en-US", {
+  return new Intl.DateTimeFormat("ar-EG", {
     dateStyle: "medium",
     timeStyle: "short",
   }).format(new Date(value));
@@ -260,94 +260,48 @@ export function SettingsAdminPage() {
   }, [activeTab, searchParams]);
 
   const text = useMemo(
-    () =>
-      locale === "ar"
-        ? {
-            title: "الإعدادات",
-            loading: "جارٍ تحميل الإعدادات...",
-            overviewTitle: "ملخص الإعدادات",
-            overviewSubtitle: "راجع حالة الإعدادات قبل التعديل والحفظ.",
-            productionSubtitle:
-              "اضبط القيم الافتراضية لكل نوع منتج ويمكنك إنشاء القيم الناقصة مباشرة من هنا.",
-            systemSubtitle:
-              "راجع إعدادات التنبيهات والتقارير قبل حفظ الإعدادات العامة.",
-            configured: "مضبوط",
-            notConfigured: "غير مضبوط",
-            missingTypes: "أنواع ناقصة",
-            lastUpdated: "آخر تحديث",
-            saving: "جارٍ الحفظ...",
-            createDefault: "أنشئ أو حدّث القيمة الافتراضية لهذا النوع.",
-            systemLoaded: "آخر إعداد نظام تم تحميله، المعرف",
-            systemMissing: "لا توجد إعدادات نظام محفوظة حتى الآن.",
-            settingsSaved: "تم حفظ الإعدادات بنجاح",
-            productionSaved: "تم حفظ إعدادات الإنتاج بنجاح",
-            invalidProduction: "أدخل عددًا صحيحًا موجبًا في حقل قطع الكرتونة.",
-            invalidSystem: "تحقق من قيم النظام قبل الحفظ.",
-            noChanges: "لا توجد تغييرات للحفظ",
-            reset: "إعادة تعيين",
-            qualityGroupTitle: "الجودة والتنبيهات",
-            reportingGroupTitle: "التقارير الدورية",
-            summaryPanelTitle: "ملخص النظام",
-            summaryPanelSubtitle:
-              "تأكد أن كل القيم تعكس سياسة المصنع قبل الحفظ.",
-            productionChanged: "تم تعديل القيمة",
-            productionUnchanged: "بدون تعديل",
-            heroSubtitle:
-              "مركز إعدادات المصنع: راقب القيم، عدّل بسرعة، واحفظ بثقة.",
-            heroTips: "مؤشرات سريعة",
-            productionHealth: "جاهزية إعدادات الإنتاج",
-            systemHealth: "جاهزية إعدادات النظام",
-            presetBalanced: "تطبيق إعداد متوازن",
-            presetStrict: "تطبيق إعداد صارم",
-            presetRelaxed: "تطبيق إعداد مرن",
-            tabOverview: "نظرة عامة",
-            tabProduction: "الإنتاج",
-            tabSystem: "النظام",
-          }
-        : {
-            title: "Settings",
-            loading: "Loading settings...",
-            overviewTitle: "Settings Overview",
-            overviewSubtitle:
-              "Check the current configuration state before saving changes.",
-            productionSubtitle:
-              "Adjust the default values for each product type and create missing ones here.",
-            systemSubtitle:
-              "Review alert and report settings before saving global configuration.",
-            configured: "Configured",
-            notConfigured: "Not configured",
-            missingTypes: "Missing types",
-            lastUpdated: "Last updated",
-            saving: "Saving...",
-            createDefault: "Create or update the default value for this type.",
-            systemLoaded: "Last loaded system setting ID",
-            systemMissing: "No system settings have been saved yet.",
-            settingsSaved: "Settings saved successfully",
-            productionSaved: "Production settings saved successfully",
-            invalidProduction:
-              "Enter a positive integer for pieces per carton.",
-            invalidSystem: "Check the system fields before saving.",
-            noChanges: "No changes to save",
-            reset: "Reset",
-            qualityGroupTitle: "Quality and Alerts",
-            reportingGroupTitle: "Scheduled Reports",
-            summaryPanelTitle: "System Snapshot",
-            summaryPanelSubtitle:
-              "Make sure all values reflect your factory policy before saving.",
-            productionChanged: "Value changed",
-            productionUnchanged: "No changes",
-            heroSubtitle:
-              "Factory control center: monitor values, tune quickly, and save with confidence.",
-            heroTips: "Quick indicators",
-            productionHealth: "Production readiness",
-            systemHealth: "System readiness",
-            presetBalanced: "Apply balanced preset",
-            presetStrict: "Apply strict preset",
-            presetRelaxed: "Apply relaxed preset",
-            tabOverview: "Overview",
-            tabProduction: "Production",
-            tabSystem: "System",
-          },
+    () => ({
+      title: "الإعدادات",
+      loading: "جارٍ تحميل الإعدادات...",
+      overviewTitle: "ملخص الإعدادات",
+      overviewSubtitle: "راجع حالة الإعدادات قبل التعديل والحفظ.",
+      productionSubtitle:
+        "اضبط القيم الافتراضية لكل نوع منتج ويمكنك إنشاء القيم الناقصة مباشرة من هنا.",
+      systemSubtitle:
+        "راجع إعدادات التنبيهات والتقارير قبل حفظ الإعدادات العامة.",
+      configured: "مضبوط",
+      notConfigured: "غير مضبوط",
+      missingTypes: "أنواع ناقصة",
+      lastUpdated: "آخر تحديث",
+      saving: "جارٍ الحفظ...",
+      createDefault: "أنشئ أو حدّث القيمة الافتراضية لهذا النوع.",
+      systemLoaded: "آخر إعداد نظام تم تحميله، المعرف",
+      systemMissing: "لا توجد إعدادات نظام محفوظة حتى الآن.",
+      settingsSaved: "تم حفظ الإعدادات بنجاح",
+      productionSaved: "تم حفظ إعدادات الإنتاج بنجاح",
+      invalidProduction: "أدخل عددًا صحيحًا موجبًا في حقل قطع الكرتونة.",
+      invalidSystem: "تحقق من قيم النظام قبل الحفظ.",
+      noChanges: "لا توجد تغييرات للحفظ",
+      reset: "إعادة تعيين",
+      qualityGroupTitle: "الجودة والتنبيهات",
+      reportingGroupTitle: "التقارير الدورية",
+      summaryPanelTitle: "ملخص النظام",
+      summaryPanelSubtitle:
+        "تأكد أن كل القيم تعكس سياسة المصنع قبل الحفظ.",
+      productionChanged: "تم تعديل القيمة",
+      productionUnchanged: "بدون تعديل",
+      heroSubtitle:
+        "مركز إعدادات المصنع: راقب القيم، عدّل بسرعة، واحفظ بثقة.",
+      heroTips: "مؤشرات سريعة",
+      productionHealth: "جاهزية إعدادات الإنتاج",
+      systemHealth: "جاهزية إعدادات النظام",
+      presetBalanced: "تطبيق إعداد متوازن",
+      presetStrict: "تطبيق إعداد صارم",
+      presetRelaxed: "تطبيق إعداد مرن",
+      tabOverview: "نظرة عامة",
+      tabProduction: "الإنتاج",
+      tabSystem: "النظام",
+    }),
     [locale],
   );
 
@@ -360,7 +314,7 @@ export function SettingsAdminPage() {
     { id: "overview",   label: text.tabOverview,                           icon: <LayoutDashboard size={14} /> },
     { id: "production", label: text.tabProduction,                         icon: <Factory size={14} /> },
     { id: "system",     label: text.tabSystem,                             icon: <Settings2 size={14} /> },
-    { id: "users",      label: locale === "ar" ? "المستخدمون" : "Users",  icon: <Users2 size={14} /> },
+    { id: "users",      label: "المستخدمون",  icon: <Users2 size={14} /> },
   ];
 
   const loadData = useCallback(async () => {
@@ -765,11 +719,11 @@ export function SettingsAdminPage() {
 
   const handleSaveUser = async () => {
     if (!userForm.fullName.trim() || !userForm.email.trim()) {
-      setUserFormError(locale === "ar" ? "الاسم والبريد الإلكتروني مطلوبان" : "Name and email are required");
+      setUserFormError("الاسم والبريد الإلكتروني مطلوبان");
       return;
     }
     if (userModal === "add" && !userForm.password.trim()) {
-      setUserFormError(locale === "ar" ? "كلمة المرور مطلوبة للمستخدم الجديد" : "Password is required for new users");
+      setUserFormError("كلمة المرور مطلوبة للمستخدم الجديد");
       return;
     }
     setUserFormSaving(true);
@@ -812,7 +766,7 @@ export function SettingsAdminPage() {
       setUserModal(null);
       await loadUsers();
     } catch (err) {
-      setUserFormError(err instanceof Error ? err.message : "Failed to save");
+      setUserFormError(err instanceof Error ? err.message : "فشل الحفظ");
     } finally {
       setUserFormSaving(false);
     }
@@ -824,11 +778,11 @@ export function SettingsAdminPage() {
       if (!res.ok) throw new Error(await readApiError(res));
       setDeleteConfirmId(null);
       setStatusTone("success");
-      setStatusMessage("User deleted successfully.");
+      setStatusMessage("تم حذف المستخدم بنجاح.");
       await loadUsers();
     } catch (err) {
       setStatusTone("error");
-      setStatusMessage(err instanceof Error ? err.message : "Failed to delete");
+      setStatusMessage(err instanceof Error ? err.message : "فشل الحذف");
     }
   };
 
@@ -913,7 +867,7 @@ export function SettingsAdminPage() {
   );
 
   return (
-    <div dir={locale === "ar" ? "rtl" : "ltr"} style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
+    <div dir="rtl" style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
 
       {/* Page header */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "1rem" }}>
@@ -1166,16 +1120,16 @@ export function SettingsAdminPage() {
 
               {/* Notification rules */}
               <div style={{ background: "var(--bg-card,#fff)", border: "1px solid var(--border-default,#e5e7eb)", borderRadius: 14, padding: "1.25rem 1.5rem" }}>
-                <h4 style={{ margin: "0 0 1rem", fontSize: ".85rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: ".08em", color: "var(--orange-500,#f97316)" }}>{locale === "ar" ? "قواعد الإشعارات" : "Notification Rules"}</h4>
+                <h4 style={{ margin: "0 0 1rem", fontSize: ".85rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: ".08em", color: "var(--orange-500,#f97316)" }}>{"قواعد الإشعارات"}</h4>
                 <div className="admin-table-wrap">
                   <table className="admin-table">
-                    <thead><tr><th>{locale === "ar" ? "القاعدة" : "Rule"}</th><th>{locale === "ar" ? "مفعلة" : "Enabled"}</th><th>{locale === "ar" ? "الوصول" : "Delivery"}</th></tr></thead>
+                    <thead><tr><th>{"القاعدة"}</th><th>{"مفعلة"}</th><th>{"الوصول"}</th></tr></thead>
                     <tbody>
-                      {([["PRODUCTION_CREATED", locale === "ar" ? "عند إضافة إنتاج" : "On production create"], ["PURCHASE_CREATED", locale === "ar" ? "عند إضافة شراء" : "On purchase create"], ["SALE_CREATED", locale === "ar" ? "عند إضافة بيع" : "On sale create"], ["INVENTORY_TRANSACTION_CREATED", locale === "ar" ? "عند حركة مخزون" : "On inventory transaction"]] as Array<[NotificationRuleKey, string]>).map(([ruleKey, label]) => (
+                      {([["PRODUCTION_CREATED", "عند إضافة إنتاج"], ["PURCHASE_CREATED", "عند إضافة شراء"], ["SALE_CREATED", "عند إضافة بيع"], ["INVENTORY_TRANSACTION_CREATED", "عند حركة مخزون"]] as Array<[NotificationRuleKey, string]>).map(([ruleKey, label]) => (
                         <tr key={ruleKey}>
                           <td>{label}</td>
                           <td><input type="checkbox" checked={notificationRules.rules[ruleKey].enabled} onChange={(e) => updateNotificationRule(ruleKey, { enabled: e.target.checked })} /></td>
-                          <td><select value={notificationRules.rules[ruleKey].delivery} disabled={!notificationRules.rules[ruleKey].enabled} onChange={(e) => updateNotificationRule(ruleKey, { delivery: e.target.value as NotificationRuleDelivery })}><option value="ADMIN_ONLY">{locale === "ar" ? "الأدمن فقط" : "Admin only"}</option><option value="ADMIN_AND_SHIFT">{locale === "ar" ? "الأدمن + الشفت" : "Admin + shift"}</option></select></td>
+                          <td><select value={notificationRules.rules[ruleKey].delivery} disabled={!notificationRules.rules[ruleKey].enabled} onChange={(e) => updateNotificationRule(ruleKey, { delivery: e.target.value as NotificationRuleDelivery })}><option value="ADMIN_ONLY">{"الأدمن فقط"}</option><option value="ADMIN_AND_SHIFT">{"الأدمن + الشفت"}</option></select></td>
                         </tr>
                       ))}
                     </tbody>
@@ -1216,7 +1170,7 @@ export function SettingsAdminPage() {
             </button>
             <button type="button" onClick={resetSystemForm} style={{ padding: ".55rem 1.1rem", borderRadius: 8, border: "1px solid var(--border-default,#e5e7eb)", background: "transparent", cursor: "pointer", fontWeight: 600, fontSize: ".875rem", color: "var(--text-secondary)" }}>{text.reset}</button>
             <button type="button" onClick={() => void handleSaveNotificationRules()} disabled={savingNotificationRules || !notificationRulesChanged} style={{ padding: ".55rem 1.1rem", borderRadius: 8, border: "1px solid var(--border-default,#e5e7eb)", background: "transparent", cursor: notificationRulesChanged ? "pointer" : "not-allowed", fontWeight: 600, fontSize: ".875rem", color: notificationRulesChanged ? "var(--orange-600,#ea580c)" : "var(--text-secondary)", opacity: notificationRulesChanged ? 1 : .6 }}>
-              {savingNotificationRules ? text.saving : locale === "ar" ? "حفظ قواعد الإشعارات" : "Save notification rules"}
+              {savingNotificationRules ? text.saving : "حفظ قواعد الإشعارات"}
             </button>
           </div>
         </div>
@@ -1230,7 +1184,7 @@ export function SettingsAdminPage() {
             <div style={{ display: "flex", gap: ".75rem", flexWrap: "wrap", alignItems: "center" }}>
               <input
                 type="text"
-                placeholder={locale === "ar" ? "بحث بالاسم أو البريد..." : "Search by name or email..."}
+                placeholder={"بحث بالاسم أو البريد..."}
                 value={userSearch}
                 onChange={(e) => setUserSearch(e.target.value)}
                 className="auth-input"
@@ -1242,11 +1196,11 @@ export function SettingsAdminPage() {
                 className="auth-input"
                 style={{ width: 140, paddingLeft: "1rem" }}
               >
-                <option value="ALL">{locale === "ar" ? "جميع الأدوار" : "All Roles"}</option>
+                <option value="ALL">{"جميع الأدوار"}</option>
                 {ROLES.map((r) => <option key={r} value={r}>{r}</option>)}
               </select>
               <span style={{ fontSize: ".82rem", color: "var(--text-secondary)", fontWeight: 600 }}>
-                {filteredUsers.length} {locale === "ar" ? "مستخدم" : "users"}
+                {filteredUsers.length} {"مستخدم"}
               </span>
             </div>
             <button
@@ -1254,7 +1208,7 @@ export function SettingsAdminPage() {
               onClick={openAddUser}
               style={{ padding: ".5rem 1.25rem", borderRadius: 8, background: "var(--orange-500,#f97316)", color: "#fff", border: "none", fontWeight: 700, fontSize: ".85rem", cursor: "pointer", boxShadow: "0 4px 14px rgba(249,115,22,.3)" }}
             >
-              + {locale === "ar" ? "إضافة مستخدم" : "Add User"}
+              + {"إضافة مستخدم"}
             </button>
           </div>
 
@@ -1288,18 +1242,18 @@ export function SettingsAdminPage() {
                   <thead>
                     <tr>
                       <th>#</th>
-                      <th>{locale === "ar" ? "الاسم" : "Name"}</th>
-                      <th>{locale === "ar" ? "اسم المستخدم" : "Username"}</th>
-                      <th>{locale === "ar" ? "البريد الإلكتروني" : "Email"}</th>
-                      <th>{locale === "ar" ? "الدور" : "Role"}</th>
-                      <th>{locale === "ar" ? "الهاتف" : "Phone"}</th>
-                      <th>{locale === "ar" ? "تاريخ الإنشاء" : "Created"}</th>
-                      <th>{locale === "ar" ? "الإجراءات" : "Actions"}</th>
+                      <th>{"الاسم"}</th>
+                      <th>{"اسم المستخدم"}</th>
+                      <th>{"البريد الإلكتروني"}</th>
+                      <th>{"الدور"}</th>
+                      <th>{"الهاتف"}</th>
+                      <th>{"تاريخ الإنشاء"}</th>
+                      <th>{"الإجراءات"}</th>
                     </tr>
                   </thead>
                   <tbody>
                     {filteredUsers.length === 0 ? (
-                      <tr><td colSpan={8} style={{ textAlign: "center", padding: "2rem", color: "var(--text-secondary)" }}>{locale === "ar" ? "لا توجد نتائج" : "No users found"}</td></tr>
+                      <tr><td colSpan={8} style={{ textAlign: "center", padding: "2rem", color: "var(--text-secondary)" }}>{"لا توجد نتائج"}</td></tr>
                     ) : filteredUsers.map((u, i) => (
                       <tr key={u.id}>
                         <td style={{ color: "var(--text-secondary)", fontWeight: 600 }}>{i + 1}</td>
@@ -1323,10 +1277,10 @@ export function SettingsAdminPage() {
                         <td>
                           <div style={{ display: "flex", gap: ".4rem" }}>
                             <button type="button" onClick={() => openEditUser(u)} style={{ padding: ".3rem .75rem", borderRadius: 7, border: "1px solid var(--border-default)", background: "transparent", cursor: "pointer", fontWeight: 600, fontSize: ".78rem" }}>
-                              {locale === "ar" ? "تعديل" : "Edit"}
+                              {"تعديل"}
                             </button>
                             <button type="button" onClick={() => setDeleteConfirmId(u.id)} style={{ padding: ".3rem .75rem", borderRadius: 7, border: "1px solid rgba(239,68,68,.3)", background: "rgba(239,68,68,.06)", color: "#dc2626", cursor: "pointer", fontWeight: 600, fontSize: ".78rem" }}>
-                              {locale === "ar" ? "حذف" : "Delete"}
+                              {"حذف"}
                             </button>
                           </div>
                         </td>
@@ -1345,40 +1299,40 @@ export function SettingsAdminPage() {
         <div role="dialog" aria-modal="true" onClick={() => setUserModal(null)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: "1rem" }}>
           <div onClick={(e) => e.stopPropagation()} style={{ background: "var(--bg-card,#fff)", borderRadius: 16, padding: "1.75rem", width: "100%", maxWidth: 480, display: "flex", flexDirection: "column", gap: "1.1rem", maxHeight: "90vh", overflowY: "auto" }}>
             <h2 style={{ margin: 0, fontSize: "1.15rem", fontWeight: 800 }}>
-              {userModal === "add" ? (locale === "ar" ? "إضافة مستخدم جديد" : "Add New User") : (locale === "ar" ? "تعديل المستخدم" : "Edit User")}
+              {userModal === "add" ? ("إضافة مستخدم جديد") : ("تعديل المستخدم")}
             </h2>
 
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))", gap: ".75rem" }}>
               <label style={{ display: "flex", flexDirection: "column", gap: ".3rem", fontSize: ".82rem", fontWeight: 600 }}>
-                {locale === "ar" ? "الاسم الكامل *" : "Full Name *"}
-                <input className="auth-input" style={{ paddingLeft: "1rem" }} value={userForm.fullName} onChange={(e) => setUserForm((p) => ({ ...p, fullName: e.target.value }))} placeholder="John Doe" />
+                {"الاسم الكامل *"}
+                <input className="auth-input" style={{ paddingLeft: "1rem" }} value={userForm.fullName} onChange={(e) => setUserForm((p) => ({ ...p, fullName: e.target.value }))} placeholder="مثال: أحمد علي" />
               </label>
               <label style={{ display: "flex", flexDirection: "column", gap: ".3rem", fontSize: ".82rem", fontWeight: 600 }}>
-                {locale === "ar" ? "اسم المستخدم" : "Username"}
+                {"اسم المستخدم"}
                 <input className="auth-input" style={{ paddingLeft: "1rem" }} value={userForm.username} onChange={(e) => setUserForm((p) => ({ ...p, username: e.target.value }))} placeholder="johndoe" disabled={userModal === "edit"} />
               </label>
               <label style={{ display: "flex", flexDirection: "column", gap: ".3rem", fontSize: ".82rem", fontWeight: 600, gridColumn: "1/-1" }}>
-                {locale === "ar" ? "البريد الإلكتروني *" : "Email *"}
+                {"البريد الإلكتروني *"}
                 <input type="email" className="auth-input" style={{ paddingLeft: "1rem" }} value={userForm.email} onChange={(e) => setUserForm((p) => ({ ...p, email: e.target.value }))} placeholder="user@company.com" />
               </label>
               <label style={{ display: "flex", flexDirection: "column", gap: ".3rem", fontSize: ".82rem", fontWeight: 600 }}>
-                {locale === "ar" ? "رقم الهاتف" : "Phone"}
+                {"رقم الهاتف"}
                 <input className="auth-input" style={{ paddingLeft: "1rem" }} value={userForm.phone} onChange={(e) => setUserForm((p) => ({ ...p, phone: e.target.value }))} placeholder="+966..." />
               </label>
               <label style={{ display: "flex", flexDirection: "column", gap: ".3rem", fontSize: ".82rem", fontWeight: 600 }}>
-                {locale === "ar" ? "الدور" : "Role"}
+                {"الدور"}
                 <select className="auth-input" style={{ paddingLeft: "1rem" }} value={userForm.role} onChange={(e) => setUserForm((p) => ({ ...p, role: e.target.value }))}>
                   {ROLES.map((r) => <option key={r} value={r}>{r}</option>)}
                 </select>
               </label>
               {userModal === "add" && (
                 <label style={{ display: "flex", flexDirection: "column", gap: ".3rem", fontSize: ".82rem", fontWeight: 600 }}>
-                  {locale === "ar" ? "رقم الهوية" : "National ID"}
+                  {"رقم الهوية"}
                   <input className="auth-input" style={{ paddingLeft: "1rem" }} value={userForm.nationalId} onChange={(e) => setUserForm((p) => ({ ...p, nationalId: e.target.value }))} placeholder="1234567890" />
                 </label>
               )}
               <label style={{ display: "flex", flexDirection: "column", gap: ".3rem", fontSize: ".82rem", fontWeight: 600, gridColumn: userModal === "add" ? "2/-1" : "1/-1" }}>
-                {locale === "ar" ? (userModal === "add" ? "كلمة المرور *" : "كلمة المرور الجديدة (اختياري)") : (userModal === "add" ? "Password *" : "New Password (optional)")}
+                {userModal === "add" ? "كلمة المرور *" : "كلمة المرور الجديدة (اختياري)"}
                 <input type="password" className="auth-input" style={{ paddingLeft: "1rem" }} value={userForm.password} onChange={(e) => setUserForm((p) => ({ ...p, password: e.target.value }))} placeholder="••••••••" />
               </label>
             </div>
@@ -1391,10 +1345,10 @@ export function SettingsAdminPage() {
 
             <div style={{ display: "flex", gap: ".75rem", justifyContent: "flex-end" }}>
               <button type="button" onClick={() => setUserModal(null)} style={{ padding: ".5rem 1.25rem", borderRadius: 8, border: "1px solid var(--border-default)", background: "transparent", cursor: "pointer", fontWeight: 600 }}>
-                {locale === "ar" ? "إلغاء" : "Cancel"}
+                {"إلغاء"}
               </button>
               <button type="button" onClick={() => void handleSaveUser()} disabled={userFormSaving} style={{ padding: ".5rem 1.5rem", borderRadius: 8, background: "var(--orange-500,#f97316)", color: "#fff", border: "none", fontWeight: 700, cursor: "pointer", opacity: userFormSaving ? .7 : 1 }}>
-                {userFormSaving ? (locale === "ar" ? "جارٍ الحفظ..." : "Saving...") : (locale === "ar" ? "حفظ" : "Save")}
+                {userFormSaving ? ("جارٍ الحفظ...") : ("حفظ")}
               </button>
             </div>
           </div>
@@ -1408,18 +1362,18 @@ export function SettingsAdminPage() {
             <div style={{ textAlign: "center" }}>
               <div style={{ width: 56, height: 56, borderRadius: "50%", background: "rgba(239,68,68,.1)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto .75rem", fontSize: "1.5rem" }}>🗑️</div>
               <h3 style={{ margin: "0 0 .4rem", fontSize: "1.05rem", fontWeight: 800 }}>
-                {locale === "ar" ? "حذف المستخدم؟" : "Delete User?"}
+                {"حذف المستخدم؟"}
               </h3>
               <p style={{ margin: 0, fontSize: ".85rem", color: "var(--text-secondary)" }}>
-                {locale === "ar" ? "لا يمكن التراجع عن هذا الإجراء." : "This action cannot be undone."}
+                {"لا يمكن التراجع عن هذا الإجراء."}
               </p>
             </div>
             <div style={{ display: "flex", gap: ".75rem" }}>
               <button type="button" onClick={() => setDeleteConfirmId(null)} style={{ flex: 1, padding: ".5rem", borderRadius: 8, border: "1px solid var(--border-default)", background: "transparent", cursor: "pointer", fontWeight: 600 }}>
-                {locale === "ar" ? "إلغاء" : "Cancel"}
+                {"إلغاء"}
               </button>
               <button type="button" onClick={() => void handleDeleteUser(deleteConfirmId)} style={{ flex: 1, padding: ".5rem", borderRadius: 8, background: "#dc2626", color: "#fff", border: "none", cursor: "pointer", fontWeight: 700 }}>
-                {locale === "ar" ? "نعم، احذف" : "Yes, Delete"}
+                {"نعم، احذف"}
               </button>
             </div>
           </div>

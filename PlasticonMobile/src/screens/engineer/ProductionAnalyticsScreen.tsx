@@ -51,7 +51,7 @@ export function ProductionAnalyticsScreen() {
       const report: WeeklyReport = res?.report ?? res?.data ?? res;
       setData(report?.totals ? report : null);
     } catch (err: any) {
-      setError(err?.message ?? 'Failed to load');
+      setError(err?.message ?? 'فشل التحميل');
       setData(null);
     } finally {
       setLoading(false);

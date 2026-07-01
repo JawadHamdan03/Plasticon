@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+﻿import { useState, useEffect } from "react";
 import { ClipboardList, Factory, Clock, Zap, Users, AlertTriangle } from "lucide-react";
 import { useLocale } from "../../context/LocaleContext";
 import { API_BASE_URL } from "../../lib/api";
@@ -49,44 +49,44 @@ export function ShiftHandoverPage() {
       }
       setResult(await res.json() as HandoverResult);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed");
+      setError(err instanceof Error ? err.message : "فشل");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div dir={isAr ? "rtl" : "ltr"} style={{ padding: "1.5rem", maxWidth: 960, margin: "0 auto" }}>
+    <div dir="rtl" style={{ padding: "1.5rem", maxWidth: 960, margin: "0 auto" }}>
       <AIKeyframes />
 
       <AIPageHeader
         icon={ClipboardList}
         gradient={["#7c3aed", "#6366f1"]}
-        title={isAr ? "ملخص تسليم الشفت" : "Shift Handover Summary"}
-        subtitle={isAr ? "يولّد الذكاء الاصطناعي ملاحظة تسليم شاملة للشفت القادم بناءً على بيانات الإنتاج الحية" : "AI generates a complete handover note for the incoming shift based on live production data"}
+        title={"ملخص تسليم الشفت"}
+        subtitle={"يولّد الذكاء الاصطناعي ملاحظة تسليم شاملة للشفت القادم بناءً على بيانات الإنتاج الحية"}
         badge="GPT-4o"
       />
 
       {/* Controls */}
       <div style={{ display: "flex", alignItems: "flex-end", gap: "1rem", flexWrap: "wrap", marginBottom: "1.5rem", padding: "1.1rem 1.25rem", background: "var(--bg-surface)", border: "1px solid var(--border-default)", borderRadius: 12 }}>
-        <FormField label={isAr ? "التاريخ" : "Date"}>
+        <FormField label={"التاريخ"}>
           <input type="date" value={date} onChange={(e) => setDate(e.target.value)} style={{ ...inputCss, width: "auto", minWidth: 160 }} />
         </FormField>
 
-        <FormField label={isAr ? "الشفت (اختياري)" : "Shift (optional)"}>
+        <FormField label={"الشفت (اختياري)"}>
           <select
             value={shiftId}
             onChange={(e) => setShiftId(e.target.value)}
             style={{ ...inputCss, width: "auto", minWidth: 180, cursor: "pointer", appearance: "none" }}
           >
-            <option value="">{isAr ? "كل الشفتات" : "All shifts"}</option>
+            <option value="">{"كل الشفتات"}</option>
             {shifts.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
           </select>
         </FormField>
 
         <div style={{ display: "flex", alignItems: "flex-end" }}>
-          <AIButton gradient={["#7c3aed", "#6366f1"]} onClick={() => void generate()} loading={loading} loadingText={isAr ? "جارٍ التوليد…" : "Generating…"} icon={ClipboardList}>
-            {isAr ? "توليد ملاحظة التسليم" : "Generate Handover"}
+          <AIButton gradient={["#7c3aed", "#6366f1"]} onClick={() => void generate()} loading={loading} loadingText={"جارٍ التوليد…"} icon={ClipboardList}>
+            {"توليد ملاحظة التسليم"}
           </AIButton>
         </div>
       </div>
@@ -101,22 +101,22 @@ export function ShiftHandoverPage() {
         <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem", animation: "ai-fadein .3s" }}>
           {/* Stats */}
           <div style={{ display: "flex", gap: ".75rem", flexWrap: "wrap" }}>
-            <StatCard label={isAr ? "القطع المنتجة" : "Pieces Produced"} value={result.stats.totalPieces.toLocaleString()} color="#6366f1" icon={Factory} />
-            <StatCard label={isAr ? "وقت التوقف" : "Downtime"} value={`${result.stats.totalDowntime} min`} color={result.stats.totalDowntime > 120 ? "#dc2626" : "#d97706"} icon={Clock} />
-            <StatCard label={isAr ? "الكهرباء (kWh)" : "Electricity (kWh)"} value={result.stats.totalKwh.toFixed(1)} color="#0ea5e9" icon={Zap} />
-            <StatCard label={isAr ? "الموظفون" : "Staff Present"} value={result.stats.staffCount} color="#10b981" icon={Users} />
+            <StatCard label={"القطع المنتجة"} value={result.stats.totalPieces.toLocaleString()} color="#6366f1" icon={Factory} />
+            <StatCard label={"وقت التوقف"} value={`${result.stats.totalDowntime} min`} color={result.stats.totalDowntime > 120 ? "#dc2626" : "#d97706"} icon={Clock} />
+            <StatCard label={"الكهرباء (kWh)"} value={result.stats.totalKwh.toFixed(1)} color="#0ea5e9" icon={Zap} />
+            <StatCard label={"الموظفون"} value={result.stats.staffCount} color="#10b981" icon={Users} />
             <StatCard
-              label={isAr ? "ماكينات بمشاكل" : "Machines w/ Issues"}
+              label={"ماكينات بمشاكل"}
               value={result.stats.machinesWithIssues}
               color={result.stats.machinesWithIssues > 0 ? "#dc2626" : "#16a34a"}
               icon={AlertTriangle}
-              subtext={result.stats.machinesWithIssues === 0 ? (isAr ? "جميعها سليمة" : "All operational") : undefined}
+              subtext={result.stats.machinesWithIssues === 0 ? ("جميعها سليمة") : undefined}
             />
           </div>
 
           {/* Handover note */}
           <ReportCard
-            title={isAr ? "ملاحظة تسليم الشفت" : "Shift Handover Note"}
+            title={"ملاحظة تسليم الشفت"}
             subtitle={`${result.date} — ${result.shift}`}
             report={result.handover}
             onRegenerate={() => void generate()}
@@ -130,8 +130,8 @@ export function ShiftHandoverPage() {
         <AIEmptyState
           icon={ClipboardList}
           color="#7c3aed"
-          title={isAr ? "اختر التاريخ والشفت لتوليد التسليم" : "Select date and shift to generate handover"}
-          description={isAr ? "يجمع النظام بيانات الإنتاج، الصيانة، الحضور، والكهرباء ليولّد ملاحظة تسليم شاملة." : "The system pulls production, maintenance, attendance, and electricity data to create a complete handover note."}
+          title={"اختر التاريخ والشفت لتوليد التسليم"}
+          description={"يجمع النظام بيانات الإنتاج، الصيانة، الحضور، والكهرباء ليولّد ملاحظة تسليم شاملة."}
         />
       )}
     </div>

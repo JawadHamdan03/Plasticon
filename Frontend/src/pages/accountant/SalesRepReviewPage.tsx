@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { CheckCircle, XCircle, Clock, FileText, MapPin, Target, Users, MessageSquare } from "lucide-react";
 import { useLocale } from "../../context/LocaleContext";
 import { useAuth } from "../../context/AuthContext";
@@ -108,7 +108,7 @@ export function SalesRepReviewPage() {
       });
       if (!res.ok) throw new Error(await readApiError(res));
       setActionTone("success");
-      setActionMsg(isAr ? `تم تغيير الحالة إلى ${status}` : `Status updated to ${status}`);
+      setActionMsg(`تم تغيير الحالة إلى ${status}`);
       void load();
     } catch (err) {
       setActionTone("error");
@@ -147,18 +147,18 @@ export function SalesRepReviewPage() {
   ];
 
   return (
-    <main className="admin-shell" dir={isAr ? "rtl" : "ltr"}>
+    <main className="admin-shell" dir="rtl">
       <section className="admin-card">
 
         {/* ── Header ── */}
         <header className="admin-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "1rem" }}>
           <div>
             <p className="auth-eyebrow">Plasticon</p>
-            <h1>{isAr ? "مراجعة طلبات المندوبين" : "Sales Rep Review"}</h1>
+            <h1>{"مراجعة طلبات المندوبين"}</h1>
             <p className="admin-muted">
               {isAccountant
-                ? (isAr ? "راجع وأكّد عروض الأسعار والزيارات وأهداف المندوبين" : "Review and approve/reject sales rep quotations, visits and targets")
-                : (isAr ? "عرض عروض الأسعار والزيارات وأهداف المندوبين" : "View sales rep quotations, visits and targets")}
+                ? ("راجع وأكّد عروض الأسعار والزيارات وأهداف المندوبين")
+                : ("عرض عروض الأسعار والزيارات وأهداف المندوبين")}
             </p>
           </div>
 
@@ -174,7 +174,7 @@ export function SalesRepReviewPage() {
                 width: 28, height: 28, borderRadius: "50%",
                 background: "#f59e0b", color: "#fff", fontSize: ".85rem", fontWeight: 800,
               }}>{pendingCount}</span>
-              {isAr ? "عرض بانتظار المراجعة" : "quote(s) awaiting review"}
+              {"عرض بانتظار المراجعة"}
             </div>
           )}
         </header>
@@ -194,7 +194,7 @@ export function SalesRepReviewPage() {
                 transition: "color .15s", whiteSpace: "nowrap",
               }}>
                 {t.icon}
-                {isAr ? t.labelAr : t.labelEn}
+                {t.labelAr}
                 {"badge" in t && (t.badge ?? 0) > 0 && (
                   <span style={{ background: "#f59e0b", color: "#fff", borderRadius: "999px", fontSize: ".68rem", fontWeight: 800, padding: "2px 7px", lineHeight: 1.3 }}>
                     {t.badge}
@@ -221,7 +221,7 @@ export function SalesRepReviewPage() {
 
         {loading ? (
           <p className="admin-muted" style={{ padding: "2rem 0", textAlign: "center" }}>
-            {isAr ? "جارٍ التحميل..." : "Loading..."}
+            {"جارٍ التحميل..."}
           </p>
         ) : (
           <>
@@ -237,16 +237,16 @@ export function SalesRepReviewPage() {
                   borderRadius: "10px", marginBottom: "1.25rem",
                 }}>
                   <label style={{ display: "flex", flexDirection: "column", gap: "0.25rem", fontSize: ".82rem", fontWeight: 600 }}>
-                    {isAr ? "الحالة" : "Status"}
+                    {"الحالة"}
                     <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="admin-input" style={{ minWidth: 130 }}>
-                      <option value="ALL">{isAr ? "الكل" : "All"}</option>
+                      <option value="ALL">{"الكل"}</option>
                       {["DRAFT","SENT","ACCEPTED","REJECTED","EXPIRED"].map((s) => <option key={s} value={s}>{s}</option>)}
                     </select>
                   </label>
                   <label style={{ display: "flex", flexDirection: "column", gap: "0.25rem", fontSize: ".82rem", fontWeight: 600 }}>
-                    {isAr ? "المندوب" : "Sales Rep"}
+                    {"المندوب"}
                     <select value={repFilter} onChange={(e) => setRepFilter(e.target.value)} className="admin-input" style={{ minWidth: 160 }}>
-                      <option value="ALL">{isAr ? "الكل" : "All"}</option>
+                      <option value="ALL">{"الكل"}</option>
                       {allReps.map((r) => <option key={r.id} value={String(r.id)}>{r.fullName}</option>)}
                     </select>
                   </label>
@@ -254,7 +254,7 @@ export function SalesRepReviewPage() {
                     <button type="button" className="auth-button auth-button--ghost"
                       style={{ fontSize: ".8rem", padding: ".35rem .85rem", alignSelf: "flex-end" }}
                       onClick={() => { setStatusFilter("ALL"); setRepFilter("ALL"); }}>
-                      {isAr ? "إعادة ضبط" : "Reset"}
+                      {"إعادة ضبط"}
                     </button>
                   )}
                 </div>
@@ -262,7 +262,7 @@ export function SalesRepReviewPage() {
                 {filteredQuotations.length === 0 ? (
                   <div style={{ textAlign: "center", padding: "2.5rem 1rem" }}>
                     <FileText size={36} style={{ color: "var(--text-secondary)", opacity: 0.35, marginBottom: "0.75rem" }} />
-                    <p className="admin-muted">{isAr ? "لا توجد عروض" : "No quotations"}</p>
+                    <p className="admin-muted">{"لا توجد عروض"}</p>
                   </div>
                 ) : (
                   <div style={{ display: "flex", flexDirection: "column", gap: "0.9rem" }}>
@@ -299,10 +299,10 @@ export function SalesRepReviewPage() {
                           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: ".8rem", margin: "6px 0 10px" }}>
                             <thead>
                               <tr style={{ borderBottom: "1px solid var(--border-default)", color: "var(--text-secondary)" }}>
-                                <th style={{ textAlign: "start", padding: "4px 0", fontWeight: 600 }}>{isAr ? "المنتج" : "Product"}</th>
-                                <th style={{ textAlign: "start", padding: "4px 4px", fontWeight: 600 }}>{isAr ? "الحجم" : "Size"}</th>
-                                <th style={{ textAlign: "end",  padding: "4px 0", fontWeight: 600 }}>{isAr ? "الكمية" : "Qty"}</th>
-                                <th style={{ textAlign: "end",  padding: "4px 0", fontWeight: 600 }}>{isAr ? "السعر" : "Unit ₪"}</th>
+                                <th style={{ textAlign: "start", padding: "4px 0", fontWeight: 600 }}>{"المنتج"}</th>
+                                <th style={{ textAlign: "start", padding: "4px 4px", fontWeight: 600 }}>{"الحجم"}</th>
+                                <th style={{ textAlign: "end",  padding: "4px 0", fontWeight: 600 }}>{"الكمية"}</th>
+                                <th style={{ textAlign: "end",  padding: "4px 0", fontWeight: 600 }}>{"السعر"}</th>
                               </tr>
                             </thead>
                             <tbody>
@@ -329,14 +329,14 @@ export function SalesRepReviewPage() {
                             color: "#dc2626", fontSize: ".82rem",
                           }}>
                             <MessageSquare size={13} style={{ marginTop: 1, flexShrink: 0 }} />
-                            <span><strong>{isAr ? "سبب الرفض: " : "Rejection note: "}</strong>{q.rejectionNote}</span>
+                            <span><strong>{"سبب الرفض: "}</strong>{q.rejectionNote}</span>
                           </div>
                         )}
 
                         <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap", marginTop: "2px" }}>
                           {q.validUntil && (
                             <span className="admin-muted" style={{ fontSize: ".77rem" }}>
-                              {isAr ? "صالح حتى:" : "Valid until:"} {new Date(q.validUntil).toLocaleDateString()}
+                              {"صالح حتى:"} {new Date(q.validUntil).toLocaleDateString()}
                             </span>
                           )}
                           <span className="admin-muted" style={{ fontSize: ".77rem" }}>
@@ -356,7 +356,7 @@ export function SalesRepReviewPage() {
                                   borderRadius: 7, cursor: "pointer",
                                   background: "#10b981", color: "#fff", border: "1px solid #059669",
                                 }}>
-                                <CheckCircle size={14} /> {isAr ? "قبول" : "Accept"}
+                                <CheckCircle size={14} /> {"قبول"}
                               </button>
                             )}
                             {q.status !== "REJECTED" && (
@@ -368,7 +368,7 @@ export function SalesRepReviewPage() {
                                   borderRadius: 7, cursor: "pointer",
                                   background: "transparent", color: "#ef4444", border: "1px solid #ef444466",
                                 }}>
-                                <XCircle size={14} /> {isAr ? "رفض" : "Reject"}
+                                <XCircle size={14} /> {"رفض"}
                               </button>
                             )}
                             {q.status !== "SENT" && (
@@ -380,7 +380,7 @@ export function SalesRepReviewPage() {
                                   borderRadius: 7, cursor: "pointer",
                                   background: "transparent", color: "var(--text-secondary)", border: "1px solid var(--border-default)",
                                 }}>
-                                <Clock size={14} /> {isAr ? "إعادة للانتظار" : "Mark as Sent"}
+                                <Clock size={14} /> {"إعادة للانتظار"}
                               </button>
                             )}
                           </div>
@@ -398,19 +398,19 @@ export function SalesRepReviewPage() {
                 {visits.length === 0 ? (
                   <div style={{ textAlign: "center", padding: "2.5rem 1rem" }}>
                     <MapPin size={36} style={{ color: "var(--text-secondary)", opacity: 0.35, marginBottom: "0.75rem" }} />
-                    <p className="admin-muted">{isAr ? "لا توجد زيارات" : "No visits"}</p>
+                    <p className="admin-muted">{"لا توجد زيارات"}</p>
                   </div>
                 ) : (
                   <div style={{ overflowX: "auto", borderRadius: 10, border: "1px solid var(--border-default)" }}>
                     <table style={{ width: "100%", borderCollapse: "collapse", fontSize: ".87rem" }}>
                       <thead>
                         <tr style={{ background: "var(--bg-subtle, #f9fafb)", borderBottom: "1px solid var(--border-default)" }}>
-                          <th style={{ textAlign: "start", padding: "0.65rem 1rem", fontWeight: 700, color: "var(--text-secondary)", fontSize: ".78rem", textTransform: "uppercase" }}>{isAr ? "العميل" : "Customer"}</th>
-                          <th style={{ textAlign: "start", padding: "0.65rem 1rem", fontWeight: 700, color: "var(--text-secondary)", fontSize: ".78rem", textTransform: "uppercase" }}>{isAr ? "المندوب" : "Rep"}</th>
-                          <th style={{ textAlign: "start", padding: "0.65rem 1rem", fontWeight: 700, color: "var(--text-secondary)", fontSize: ".78rem", textTransform: "uppercase" }}>{isAr ? "تاريخ الزيارة" : "Visit Date"}</th>
-                          <th style={{ textAlign: "start", padding: "0.65rem 1rem", fontWeight: 700, color: "var(--text-secondary)", fontSize: ".78rem", textTransform: "uppercase" }}>{isAr ? "النتيجة" : "Outcome"}</th>
-                          <th style={{ textAlign: "start", padding: "0.65rem 1rem", fontWeight: 700, color: "var(--text-secondary)", fontSize: ".78rem", textTransform: "uppercase" }}>{isAr ? "الزيارة القادمة" : "Next Visit"}</th>
-                          <th style={{ textAlign: "start", padding: "0.65rem 1rem", fontWeight: 700, color: "var(--text-secondary)", fontSize: ".78rem", textTransform: "uppercase" }}>{isAr ? "ملاحظات" : "Notes"}</th>
+                          <th style={{ textAlign: "start", padding: "0.65rem 1rem", fontWeight: 700, color: "var(--text-secondary)", fontSize: ".78rem", textTransform: "uppercase" }}>{"العميل"}</th>
+                          <th style={{ textAlign: "start", padding: "0.65rem 1rem", fontWeight: 700, color: "var(--text-secondary)", fontSize: ".78rem", textTransform: "uppercase" }}>{"المندوب"}</th>
+                          <th style={{ textAlign: "start", padding: "0.65rem 1rem", fontWeight: 700, color: "var(--text-secondary)", fontSize: ".78rem", textTransform: "uppercase" }}>{"تاريخ الزيارة"}</th>
+                          <th style={{ textAlign: "start", padding: "0.65rem 1rem", fontWeight: 700, color: "var(--text-secondary)", fontSize: ".78rem", textTransform: "uppercase" }}>{"النتيجة"}</th>
+                          <th style={{ textAlign: "start", padding: "0.65rem 1rem", fontWeight: 700, color: "var(--text-secondary)", fontSize: ".78rem", textTransform: "uppercase" }}>{"الزيارة القادمة"}</th>
+                          <th style={{ textAlign: "start", padding: "0.65rem 1rem", fontWeight: 700, color: "var(--text-secondary)", fontSize: ".78rem", textTransform: "uppercase" }}>{"ملاحظات"}</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -444,7 +444,7 @@ export function SalesRepReviewPage() {
                 {targets.length === 0 ? (
                   <div style={{ textAlign: "center", padding: "2.5rem 1rem" }}>
                     <Target size={36} style={{ color: "var(--text-secondary)", opacity: 0.35, marginBottom: "0.75rem" }} />
-                    <p className="admin-muted">{isAr ? "لا توجد أهداف" : "No targets set"}</p>
+                    <p className="admin-muted">{"لا توجد أهداف"}</p>
                   </div>
                 ) : (
                   <div style={{ display: "flex", flexDirection: "column", gap: "0.8rem" }}>
@@ -462,7 +462,7 @@ export function SalesRepReviewPage() {
                             <div>
                               <strong style={{ fontSize: ".95rem" }}>{t.rep.fullName}</strong>
                               <span className="admin-muted" style={{ marginInlineStart: 8, fontSize: ".8rem" }}>
-                                {isAr ? MONTHS_AR[t.month - 1] : MONTHS_EN[t.month - 1]} {t.year}
+                                {MONTHS_AR[t.month - 1]} {t.year}
                               </span>
                               <p className="admin-muted" style={{ margin: "0.15rem 0 0", fontSize: ".8rem" }}>
                                 ₪{t.achievedAmount.toFixed(0)} / ₪{t.targetAmount.toFixed(0)}
@@ -505,15 +505,15 @@ export function SalesRepReviewPage() {
           >
             <div style={{ display: "flex", alignItems: "center", gap: ".6rem" }}>
               <XCircle size={22} color="#ef4444" />
-              <h2 style={{ margin: 0, fontSize: "1.1rem", fontWeight: 800 }}>{isAr ? "رفض عرض السعر" : "Reject Quotation"}</h2>
+              <h2 style={{ margin: 0, fontSize: "1.1rem", fontWeight: 800 }}>{"رفض عرض السعر"}</h2>
             </div>
             <p style={{ margin: 0, fontSize: ".87rem", color: "var(--text-secondary)" }}>
-              {isAr ? "يمكنك إضافة ملاحظة توضيحية للمندوب (اختياري)" : "You can add an explanatory note to the sales rep (optional)"}
+              {"يمكنك إضافة ملاحظة توضيحية للمندوب (اختياري)"}
             </p>
             <textarea
               value={rejectNote}
               onChange={(e) => setRejectNote(e.target.value)}
-              placeholder={isAr ? "سبب الرفض..." : "Reason for rejection..."}
+              placeholder={"سبب الرفض..."}
               rows={3}
               style={{
                 width: "100%", boxSizing: "border-box",
@@ -527,13 +527,13 @@ export function SalesRepReviewPage() {
               <button type="button"
                 onClick={() => setRejectingId(null)}
                 style={{ flex: 1, padding: ".55rem", borderRadius: 8, border: "1px solid var(--border-default)", background: "transparent", cursor: "pointer", fontWeight: 600, fontSize: ".88rem" }}>
-                {isAr ? "إلغاء" : "Cancel"}
+                {"إلغاء"}
               </button>
               <button type="button"
                 onClick={() => { void handleReject(); }}
                 disabled={rejectSaving}
                 style={{ flex: 1, padding: ".55rem", borderRadius: 8, background: "#ef4444", color: "#fff", border: "none", cursor: "pointer", fontWeight: 700, fontSize: ".88rem" }}>
-                {rejectSaving ? (isAr ? "جارٍ..." : "Saving...") : (isAr ? "تأكيد الرفض" : "Confirm Reject")}
+                {rejectSaving ? ("جارٍ...") : ("تأكيد الرفض")}
               </button>
             </div>
           </div>

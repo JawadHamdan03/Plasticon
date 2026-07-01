@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+﻿import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLocale } from "../../context/LocaleContext";
 import { appCopy } from "../../content/appCopy";
 import { API_BASE_URL, readApiError } from "../../lib/api";
@@ -77,7 +77,7 @@ export function AuditLogsPage() {
   }, [loadAuditLogs]);
 
   return (
-    <main className="admin-shell" dir={locale === "ar" ? "rtl" : "ltr"}>
+    <main className="admin-shell" dir="rtl">
       <section className="admin-card">
         <header className="admin-header">
           <div>
@@ -113,7 +113,7 @@ export function AuditLogsPage() {
                     <th>{copy.admin.name}</th>
                     <th>{copy.admin.auditEntity}</th>
                     <th>{copy.admin.auditAction}</th>
-                    <th>{locale === "ar" ? "الوقت" : "Time"}</th>
+                    <th>{"الوقت"}</th>
                   </tr>
                 </thead>
                 <tbody>

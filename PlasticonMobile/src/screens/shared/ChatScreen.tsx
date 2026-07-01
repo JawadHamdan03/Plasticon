@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  ActivityIndicator, FlatList, KeyboardAvoidingView,
+  ActivityIndicator, FlatList, Keyboard, KeyboardAvoidingView,
   Modal, Platform, RefreshControl, ScrollView, StyleSheet, Text, TextInput,
   TouchableOpacity, View,
 } from 'react-native';
@@ -11,6 +11,7 @@ import { api } from '../../api/client';
 import { radius, shadow, spacing, typography } from '../../theme';
 import { useAppTheme } from '../../context/ThemeContext';
 import { useLocale } from '../../context/LocaleContext';
+import { useCall, type CallType } from '../../context/CallContext';
 
 interface ChatGroup {
   id: number;
@@ -405,6 +406,58 @@ function DirectMessageModal({
   );
 }
 
+// ─── Call picker modal ────────────────────────────────────────────────────────
+
+function CallPickerModal({
+  members, callType, onSelect, onClose, colors: c, isAr,
+}: {
+  members: { id: number; fullName: string }[];
+  callType: CallType;
+  onSelect: (m: { id: number; fullName: string }) => void;
+  onClose: () => void;
+  colors: any;
+  isAr: boolean;
+}) {
+  return (
+    <Modal visible transparent animationType="slide" onRequestClose={onClose}>
+      <View style={styles.overlay}>
+        <SafeAreaView style={[styles.sheet, { backgroundColor: c.surface }]} edges={['bottom']}>
+          <View style={[styles.sheetHandle, { backgroundColor: c.border }]} />
+          <View style={styles.sheetHeader}>
+            <Text style={[styles.sheetTitle, { color: c.text }]}>
+              {callType === 'video'
+                ? (isAr ? 'مكالمة فيديو' : 'Video Call')
+                : (isAr ? 'مكالمة صوتية' : 'Voice Call')}
+            </Text>
+            <TouchableOpacity onPress={onClose}>
+              <Ionicons name="close" size={22} color={c.textMuted} />
+            </TouchableOpacity>
+          </View>
+          <Text style={[styles.fieldLabel, { color: c.textSecondary, paddingHorizontal: spacing.md }]}>
+            {isAr ? 'اختر شخصاً للاتصال به' : 'Select who to call'}
+          </Text>
+          <ScrollView contentContainerStyle={{ padding: spacing.md }}>
+            {members.map(m => (
+              <TouchableOpacity
+                key={m.id}
+                style={[styles.memberRow, { borderColor: c.border }]}
+                onPress={() => onSelect(m)}
+                activeOpacity={0.75}
+              >
+                <View style={[styles.memberAvatar, { backgroundColor: `${c.primary}20` }]}>
+                  <Text style={[styles.memberAvatarText, { color: c.primary }]}>{initials(m.fullName)}</Text>
+                </View>
+                <Text style={[styles.memberName, { color: c.text }]}>{m.fullName}</Text>
+                <Ionicons name={callType === 'video' ? 'videocam' : 'call'} size={20} color={c.primary} />
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </SafeAreaView>
+      </View>
+    </Modal>
+  );
+}
+
 // ─── Main screen ──────────────────────────────────────────────────────────────
 
 export function ChatScreen() {
@@ -428,6 +481,11 @@ export function ChatScreen() {
   const [fabOpen,         setFabOpen]         = useState(false);
   const listRef = useRef<FlatList<GroupMessage>>(null);
 
+  const { initiateCall } = useCall();
+  const [groupMembers,    setGroupMembers]    = useState<{ id: number; fullName: string }[]>([]);
+  const [showCallPicker,  setShowCallPicker]  = useState(false);
+  const [pendingCallType, setPendingCallType] = useState<CallType>('voice');
+
   const loadGroups = useCallback(async () => {
     try {
       const res = await api.get<ChatGroup[]>('/chat/groups');
@@ -444,6 +502,12 @@ export function ChatScreen() {
     setActiveGroup(group);
     setView('messages');
     setLoadingMsgs(true);
+    // Fetch member list for call picker
+    api.get<any>(`/chat/groups/${group.id}`).then(r => {
+      const members: { id: number; fullName: string }[] =
+        (r?.members ?? []).map((m: any) => ({ id: m.user?.id ?? m.userId, fullName: m.user?.fullName ?? '' })).filter((m: any) => m.id);
+      setGroupMembers(members);
+    }).catch(() => {});
     try {
       const res = await api.get<any>(`/chat/groups/${group.id}/messages?limit=50`);
       const msgs: GroupMessage[] = res?.messages ?? (Array.isArray(res) ? res : []);
@@ -459,7 +523,19 @@ export function ChatScreen() {
     setView('groups');
     setActiveGroup(null);
     setMessages([]);
+    setGroupMembers([]);
     void loadGroups();
+  };
+
+  const handleCall = (type: CallType) => {
+    const others = groupMembers.filter(m => m.id !== user?.id);
+    if (others.length === 0) return;
+    if (others.length === 1) {
+      void initiateCall(others[0].id, others[0].fullName, type);
+    } else {
+      setPendingCallType(type);
+      setShowCallPicker(true);
+    }
   };
 
   const send = async () => {
@@ -635,6 +711,12 @@ export function ChatScreen() {
             </Text>
           )}
         </View>
+        <TouchableOpacity style={styles.callBtn} onPress={() => handleCall('voice')} activeOpacity={0.7}>
+          <Ionicons name="call" size={22} color={colors.primary} />
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.callBtn} onPress={() => handleCall('video')} activeOpacity={0.7}>
+          <Ionicons name="videocam" size={22} color={colors.primary} />
+        </TouchableOpacity>
       </View>
 
       {loadingMsgs ? (
@@ -647,6 +729,7 @@ export function ChatScreen() {
           contentContainerStyle={styles.messageList}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="interactive"
           onContentSizeChange={() => listRef.current?.scrollToEnd({ animated: false })}
           ListEmptyComponent={
             <View style={styles.empty}>
@@ -706,6 +789,9 @@ export function ChatScreen() {
       )}
 
       <View style={[styles.inputBar, { backgroundColor: colors.surface, borderTopColor: colors.border }]}>
+        <TouchableOpacity style={styles.dismissBtn} onPress={() => Keyboard.dismiss()} activeOpacity={0.6}>
+          <Ionicons name="chevron-down" size={20} color={colors.textMuted} />
+        </TouchableOpacity>
         <TextInput
           style={[styles.textInput, { borderColor: colors.border, color: colors.text, backgroundColor: colors.surfaceAlt }]}
           placeholder={isAr ? 'اكتب رسالة…' : 'Type a message…'}
@@ -727,18 +813,29 @@ export function ChatScreen() {
           }
         </TouchableOpacity>
       </View>
+
+      {showCallPicker && (
+        <CallPickerModal
+          members={groupMembers.filter(m => m.id !== user?.id)}
+          callType={pendingCallType}
+          onSelect={m => { setShowCallPicker(false); void initiateCall(m.id, m.fullName, pendingCallType); }}
+          onClose={() => setShowCallPicker(false)}
+          colors={colors}
+          isAr={isAr}
+        />
+      )}
     </SafeAreaView>
   );
 
-  if (Platform.OS === 'ios') {
-    return (
-      <KeyboardAvoidingView style={styles.safe} behavior="padding">
-        {messagesContent}
-      </KeyboardAvoidingView>
-    );
-  }
-
-  return messagesContent;
+  return (
+    <KeyboardAvoidingView
+      style={styles.safe}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
+    >
+      {messagesContent}
+    </KeyboardAvoidingView>
+  );
 }
 
 const styles = StyleSheet.create({
@@ -782,7 +879,8 @@ const styles = StyleSheet.create({
   msgBodyMe:   { borderBottomRightRadius: 4 },
   msgText:     { fontSize: 15, lineHeight: 22 },
   msgTime:     { ...typography.caption, marginTop: 3, marginHorizontal: 4 },
-  inputBar:    { flexDirection: 'row', alignItems: 'flex-end', paddingHorizontal: spacing.md, paddingVertical: 10, borderTopWidth: 1, gap: spacing.sm },
+  inputBar:    { flexDirection: 'row', alignItems: 'flex-end', paddingHorizontal: spacing.sm, paddingVertical: 10, borderTopWidth: 1, gap: spacing.xs },
+  dismissBtn:  { width: 36, height: 44, alignItems: 'center', justifyContent: 'center' },
   textInput:   { flex: 1, borderWidth: 1.5, borderRadius: radius.lg, paddingHorizontal: 14, paddingVertical: 10, fontSize: 15, maxHeight: 100 },
   sendBtn:     { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
 
@@ -804,6 +902,13 @@ const styles = StyleSheet.create({
   textarea:    { minHeight: 80, textAlignVertical: 'top' },
   modalActions:{ flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.md },
   modalBtn:    { flex: 1, paddingVertical: 12, borderRadius: radius.md, alignItems: 'center', justifyContent: 'center' },
+
+  // Call
+  callBtn:         { padding: 8 },
+  memberRow:       { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingVertical: 12, borderBottomWidth: 1 },
+  memberAvatar:    { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
+  memberAvatarText:{ fontSize: 13, fontWeight: '700' },
+  memberName:      { flex: 1, fontSize: 15 },
 
   // Empty
   empty:     { alignItems: 'center', paddingVertical: spacing.xxl, gap: spacing.sm },

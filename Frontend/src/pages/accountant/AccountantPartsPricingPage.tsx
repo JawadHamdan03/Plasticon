@@ -3,11 +3,10 @@ import {
   DollarSign, Package, ChevronDown, ChevronUp,
   CheckCircle, Clock, Image, AlertCircle, X, Filter,
 } from "lucide-react";
-import { API_BASE_URL } from "../../lib/api";
+import { API_BASE_URL, pictureUrl as globalPictureUrl } from "../../lib/api";
 import { confirmDialog } from "../../lib/dialog";
 import { ModulePageShell } from "../../components/ModulePageShell";
 import { Card } from "../../components/ui/card";
-import { useLocale } from "../../context/LocaleContext";
 
 type InventoryItem = {
   id: number;
@@ -39,22 +38,19 @@ async function api<T>(method: string, path: string, body?: object): Promise<T> {
     body: body ? JSON.stringify(body) : undefined,
   });
   const json = (await res.json()) as T & { message?: string };
-  if (!res.ok) throw new Error((json as any).message ?? "Error");
+  if (!res.ok) throw new Error((json as any).message ?? "خطأ");
   return json;
 }
 
-const MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+const MONTHS = ["يناير","فبراير","مارس","أبريل","مايو","يونيو","يوليو","أغسطس","سبتمبر","أكتوبر","نوفمبر","ديسمبر"];
 
 const STATUS_META = {
-  SUBMITTED: { label: "Submitted",       color: "#d97706", bg: "#fef3c7" },
-  REVIEWED:  { label: "Reviewed",        color: "#059669", bg: "#d1fae5" },
-  DRAFT:     { label: "Draft",           color: "#6b7280", bg: "#f3f4f6" },
+  SUBMITTED: { label: "مقدم",       color: "#d97706", bg: "#fef3c7" },
+  REVIEWED:  { label: "مراجع",      color: "#059669", bg: "#d1fae5" },
+  DRAFT:     { label: "مسودة",      color: "#6b7280", bg: "#f3f4f6" },
 };
 
 export function AccountantPartsPricingPage() {
-  const { locale } = useLocale();
-  const nav = (en: string, ar: string) => locale === "ar" ? ar : en;
-
   const [inventories, setInventories] = useState<Inventory[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -72,7 +68,7 @@ export function AccountantPartsPricingPage() {
       const data = await api<Inventory[]>("GET", "/engineer-inventory/all");
       setInventories(data);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to load inventories");
+      setError(e instanceof Error ? e.message : "فشل تحميل التقارير");
     } finally {
       setLoading(false);
     }
@@ -85,14 +81,14 @@ export function AccountantPartsPricingPage() {
   const handleSetPrice = async (itemId: number) => {
     const raw = priceInputs[itemId];
     const price = Number(raw);
-    if (!raw || isNaN(price) || price < 0) { setError(nav("Please enter a valid price (0 or more)", "يرجى إدخال سعر صحيح (0 أو أكثر)")); return; }
+    if (!raw || isNaN(price) || price < 0) { setError("يرجى إدخال سعر صحيح (0 أو أكثر)"); return; }
     setSavingItem(itemId);
     try {
       await api("PATCH", `/engineer-inventory/items/${itemId}/price`, { unitPrice: price });
       setSavedItems((s) => new Set([...s, itemId]));
       await load();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to save price");
+      setError(e instanceof Error ? e.message : "فشل حفظ السعر");
     } finally {
       setSavingItem(null);
     }
@@ -101,13 +97,13 @@ export function AccountantPartsPricingPage() {
   const handleReview = async (inventoryId: number) => {
     const inv = inventories.find((i) => i.id === inventoryId);
     if (!inv) return;
-    if (!(await confirmDialog(`Mark inventory for ${MONTHS[inv.month - 1]} ${inv.year} as Reviewed?`))) return;
+    if (!(await confirmDialog(`تأشير مخزون ${MONTHS[inv.month - 1]} ${inv.year} كمراجع؟`))) return;
     setReviewingId(inventoryId);
     try {
       await api("PATCH", `/engineer-inventory/${inventoryId}/review`, {});
       await load();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to mark as reviewed");
+      setError(e instanceof Error ? e.message : "فشل التأشير كمراجع");
     } finally {
       setReviewingId(null);
     }
@@ -122,16 +118,16 @@ export function AccountantPartsPricingPage() {
 
   return (
     <ModulePageShell
-      title={nav("Parts Pricing", "تسعير القطع")}
-      subtitle={nav("Review engineer inventory reports and set unit prices", "مراجعة تقارير مخزون المهندسين وتحديد أسعار الوحدات")}
+      title={"تسعير القطع"}
+      subtitle={"مراجعة تقارير مخزون المهندسين وتحديد أسعار الوحدات"}
       icon={<DollarSign size={22} />}
     >
       {/* KPIs */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: ".75rem", marginBottom: "1.25rem" }}>
         {[
-          { label: nav("Awaiting Pricing",    "في انتظار التسعير"), value: submittedCount, gradient: "linear-gradient(135deg,#f59e0b,#d97706)" },
-          { label: nav("Reviewed",            "تمت المراجعة"),       value: reviewedCount,  gradient: "linear-gradient(135deg,#10b981,#059669)" },
-          { label: nav("Incomplete Pricing",  "تسعير غير مكتمل"),   value: pendingPricing, gradient: "linear-gradient(135deg,#ef4444,#dc2626)" },
+          { label: "في انتظار التسعير", value: submittedCount, gradient: "linear-gradient(135deg,#f59e0b,#d97706)" },
+          { label: "تمت المراجعة",       value: reviewedCount,  gradient: "linear-gradient(135deg,#10b981,#059669)" },
+          { label: "تسعير غير مكتمل",   value: pendingPricing, gradient: "linear-gradient(135deg,#ef4444,#dc2626)" },
         ].map((k) => (
           <div key={k.label} style={{ borderRadius: 14, padding: "1rem 1.1rem", background: k.gradient, color: "#fff", boxShadow: "0 4px 12px rgba(0,0,0,.15)" }}>
             <p style={{ margin: 0, fontSize: ".72rem", fontWeight: 600, opacity: .85, textTransform: "uppercase", letterSpacing: ".06em" }}>{k.label}</p>
@@ -149,7 +145,7 @@ export function AccountantPartsPricingPage() {
             onClick={() => setFilter(f)}
             className={`text-xs font-medium px-3 py-1.5 rounded-full border transition-all ${filter === f ? "bg-[var(--accent)] text-white border-[var(--accent)]" : "border-[var(--border-default)] text-[var(--text-secondary)] hover:border-[var(--accent)]"}`}
           >
-            {f === "ALL" ? nav("All", "الكل") : f === "SUBMITTED" ? nav("Awaiting Pricing", "في انتظار التسعير") : nav("Reviewed", "تمت المراجعة")}
+            {f === "ALL" ? "الكل" : f === "SUBMITTED" ? "في انتظار التسعير" : "تمت المراجعة"}
           </button>
         ))}
       </div>
@@ -170,10 +166,10 @@ export function AccountantPartsPricingPage() {
         <Card className="p-12 text-center text-[var(--text-secondary)]">
           <Package size={32} className="mx-auto mb-3 opacity-30" />
           <p className="font-medium">
-            {filter === "SUBMITTED" ? nav("No reports awaiting pricing", "لا توجد تقارير في انتظار التسعير") : nav("No reports found", "لا توجد تقارير")}
+            {filter === "SUBMITTED" ? "لا توجد تقارير في انتظار التسعير" : "لا توجد تقارير"}
           </p>
           <p className="text-sm mt-1">
-            {filter === "SUBMITTED" ? nav("Engineers haven't submitted any inventory reports yet.", "لم يقدم المهندسون أي تقارير مخزون بعد.") : nav("Try changing the filter above.", "جرب تغيير الفلتر أعلاه.")}
+            {filter === "SUBMITTED" ? "لم يقدم المهندسون أي تقارير مخزون بعد." : "جرب تغيير الفلتر أعلاه."}
           </p>
         </Card>
       ) : (
@@ -203,20 +199,20 @@ export function AccountantPartsPricingPage() {
                         </span>
                         {done && inv.status !== "REVIEWED" && (
                           <span style={{ background: "#dbeafe", color: "#1d4ed8", borderRadius: "20px", padding: "1px 8px", fontSize: ".68rem", fontWeight: 700 }}>
-                            {nav("All Priced", "مسعّر بالكامل")}
+                            {"مسعّر بالكامل"}
                           </span>
                         )}
                       </div>
                       <p className="text-xs text-[var(--text-secondary)] mt-0.5">
-                        {nav("By", "بواسطة")} {inv.engineer.fullName} · {inv.items.length} {nav("parts", "قطعة")}
-                        {inv.submittedAt ? ` · ${nav("Submitted", "قُدِّم")} ${new Date(inv.submittedAt).toLocaleDateString()}` : ""}
+                        {"بواسطة"} {inv.engineer.fullName} · {inv.items.length} {"قطعة"}
+                        {inv.submittedAt ? ` · ${"قُدِّم"} ${new Date(inv.submittedAt).toLocaleDateString()}` : ""}
                       </p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3 flex-shrink-0">
                     {total > 0 && (
                       <span className="text-sm font-bold text-green-600 hidden sm:block">
-                        {nav("Total", "الإجمالي")}: ${total.toFixed(2)}
+                        {"الإجمالي"}: ${total.toFixed(2)}
                       </span>
                     )}
                     {inv.status === "SUBMITTED" && done && (
@@ -226,7 +222,7 @@ export function AccountantPartsPricingPage() {
                         disabled={reviewingId === inv.id}
                       >
                         <CheckCircle size={12} />
-                        {reviewingId === inv.id ? nav("Reviewing…", "جارٍ المراجعة...") : nav("Mark Reviewed", "تأشير كمراجع")}
+                        {reviewingId === inv.id ? "جارٍ المراجعة..." : "تأشير كمراجع"}
                       </button>
                     )}
                     {isExpanded ? <ChevronUp size={18} className="text-[var(--text-secondary)]" /> : <ChevronDown size={18} className="text-[var(--text-secondary)]" />}
@@ -238,24 +234,24 @@ export function AccountantPartsPricingPage() {
                   <div className="border-t border-[var(--border-default)] p-4">
                     {inv.notes && (
                       <div className="mb-4 p-3 rounded-lg bg-blue-50 border border-blue-100 text-sm text-blue-800">
-                        <strong>{nav("Note:", "ملاحظة:")}</strong> {inv.notes}
+                        <strong>{"ملاحظة:"}</strong> {inv.notes}
                       </div>
                     )}
 
                     {inv.items.length === 0 ? (
-                      <p className="text-sm text-[var(--text-secondary)] text-center py-6">{nav("No parts in this inventory.", "لا توجد قطع في هذا المخزون.")}</p>
+                      <p className="text-sm text-[var(--text-secondary)] text-center py-6">{"لا توجد قطع في هذا المخزون."}</p>
                     ) : (
                       <div className="overflow-x-auto rounded-lg border border-[var(--border-default)]">
                         <table className="w-full text-sm">
                           <thead className="bg-[var(--bg-surface-2,#f8fafc)] border-b border-[var(--border-default)]">
                             <tr>
                               <th className="text-left py-2.5 px-3 text-xs font-semibold text-[var(--text-secondary)]">#</th>
-                              <th className="text-left py-2.5 px-3 text-xs font-semibold text-[var(--text-secondary)]">{nav("Part Name", "اسم القطعة")}</th>
-                              <th className="text-left py-2.5 px-3 text-xs font-semibold text-[var(--text-secondary)]">{nav("Qty", "الكمية")}</th>
-                              <th className="text-left py-2.5 px-3 text-xs font-semibold text-[var(--text-secondary)]">{nav("Photo", "صورة")}</th>
-                              <th className="text-left py-2.5 px-3 text-xs font-semibold text-[var(--text-secondary)]">{nav("Unit Price ($)", "سعر الوحدة ($)")}</th>
-                              <th className="text-left py-2.5 px-3 text-xs font-semibold text-[var(--text-secondary)]">{nav("Total", "الإجمالي")}</th>
-                              <th className="text-left py-2.5 px-3 text-xs font-semibold text-[var(--text-secondary)]">{nav("Status", "الحالة")}</th>
+                              <th className="text-left py-2.5 px-3 text-xs font-semibold text-[var(--text-secondary)]">{"اسم القطعة"}</th>
+                              <th className="text-left py-2.5 px-3 text-xs font-semibold text-[var(--text-secondary)]">{"الكمية"}</th>
+                              <th className="text-left py-2.5 px-3 text-xs font-semibold text-[var(--text-secondary)]">{"صورة"}</th>
+                              <th className="text-left py-2.5 px-3 text-xs font-semibold text-[var(--text-secondary)]">{"سعر الوحدة ($)"}</th>
+                              <th className="text-left py-2.5 px-3 text-xs font-semibold text-[var(--text-secondary)]">{"الإجمالي"}</th>
+                              <th className="text-left py-2.5 px-3 text-xs font-semibold text-[var(--text-secondary)]">{"الحالة"}</th>
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-[var(--border-default)]">
@@ -271,11 +267,11 @@ export function AccountantPartsPricingPage() {
                                 <td className="py-2.5 px-3">
                                   {item.imagePath ? (
                                     <a
-                                      href={`${API_BASE_URL.replace("/api", "")}/pictures/${item.imagePath.split("/").pop()}`}
+                                      href={globalPictureUrl(item.imagePath)}
                                       target="_blank"
                                       rel="noopener noreferrer"
                                       className="text-[var(--text-secondary)] hover:text-blue-600 p-1 inline-flex"
-                                      title={nav("View photo", "عرض الصورة")}
+                                      title={"عرض الصورة"}
                                     >
                                       <Image size={15} />
                                     </a>
@@ -301,7 +297,7 @@ export function AccountantPartsPricingPage() {
                                         onClick={() => void handleSetPrice(item.id)}
                                         disabled={savingItem === item.id}
                                       >
-                                        {savingItem === item.id ? "…" : savedItems.has(item.id) ? "✓" : nav("Set", "تعيين")}
+                                        {savingItem === item.id ? "…" : savedItems.has(item.id) ? "✓" : "تعيين"}
                                       </button>
                                     </div>
                                   ) : (
@@ -315,9 +311,9 @@ export function AccountantPartsPricingPage() {
                                 </td>
                                 <td className="py-2.5 px-3">
                                   {item.unitPrice !== null ? (
-                                    <span style={{ background: "#d1fae5", color: "#059669", borderRadius: "20px", padding: "1px 8px", fontSize: ".68rem", fontWeight: 700 }}>{nav("Priced", "مسعّر")}</span>
+                                    <span style={{ background: "#d1fae5", color: "#059669", borderRadius: "20px", padding: "1px 8px", fontSize: ".68rem", fontWeight: 700 }}>{"مسعّر"}</span>
                                   ) : (
-                                    <span style={{ background: "#f3f4f6", color: "#6b7280", borderRadius: "20px", padding: "1px 8px", fontSize: ".68rem", fontWeight: 700 }}>{nav("Pending", "معلق")}</span>
+                                    <span style={{ background: "#f3f4f6", color: "#6b7280", borderRadius: "20px", padding: "1px 8px", fontSize: ".68rem", fontWeight: 700 }}>{"معلق"}</span>
                                   )}
                                 </td>
                               </tr>
@@ -331,19 +327,18 @@ export function AccountantPartsPricingPage() {
                     {inv.status === "REVIEWED" && inv.reviewedAt && (
                       <div className="mt-4 flex items-center gap-2 p-3 rounded-lg bg-green-50 border border-green-100 text-sm text-green-700">
                         <CheckCircle size={15} />
-                        {nav("Reviewed on", "تمت المراجعة في")} {new Date(inv.reviewedAt).toLocaleDateString()} · {nav("Total value", "القيمة الإجمالية")}: <strong>${total.toFixed(2)}</strong>
+                        {"تمت المراجعة في"} {new Date(inv.reviewedAt).toLocaleDateString()} · {"القيمة الإجمالية"}: <strong>${total.toFixed(2)}</strong>
                       </div>
                     )}
                     {inv.status === "SUBMITTED" && !done && (
                       <div className="mt-4 flex items-center gap-2 p-3 rounded-lg bg-orange-50 border border-orange-100 text-sm text-orange-700">
                         <Clock size={15} />
-                        {nav(`Set prices for all ${inv.items.filter((i) => i.unitPrice === null).length} remaining part(s) to complete pricing.`,
-                          `قم بتعيين أسعار لجميع القطع المتبقية (${inv.items.filter((i) => i.unitPrice === null).length}) لإكمال التسعير.`)}
+                        {`قم بتعيين أسعار لجميع القطع المتبقية (${inv.items.filter((i) => i.unitPrice === null).length}) لإكمال التسعير.`}
                       </div>
                     )}
                     {total > 0 && (
                       <div className="mt-3 flex justify-end">
-                        <span className="text-sm font-bold text-green-600">{nav("Total", "الإجمالي")}: ${total.toFixed(2)}</span>
+                        <span className="text-sm font-bold text-green-600">{"الإجمالي"}: ${total.toFixed(2)}</span>
                       </div>
                     )}
                   </div>

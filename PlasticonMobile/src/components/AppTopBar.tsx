@@ -100,24 +100,6 @@ export function AppTopBar({ user }: Props) {
           )}
         </TouchableOpacity>
 
-        {/* Locale toggle */}
-        <View style={styles.langPill}>
-          <TouchableOpacity
-            onPress={() => setLocale('en')}
-            style={[styles.langBtn, locale === 'en' && { backgroundColor: colors.accent }]}
-            activeOpacity={0.8}
-          >
-            <Text style={[styles.langText, locale === 'en' && styles.langTextActive]}>EN</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => setLocale('ar')}
-            style={[styles.langBtn, locale === 'ar' && { backgroundColor: colors.accent }]}
-            activeOpacity={0.8}
-          >
-            <Text style={[styles.langText, locale === 'ar' && styles.langTextActive]}>ع</Text>
-          </TouchableOpacity>
-        </View>
-
         {/* User info */}
         <View style={styles.userRow}>
           <Text style={styles.userName} numberOfLines={1}>{firstName}</Text>

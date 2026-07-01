@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { TrendingUp, Users, FileText, MapPin, Target, CheckCircle } from "lucide-react";
 import { useLocale } from "../../context/LocaleContext";
@@ -36,7 +36,7 @@ export function SalesRepDashboardPage() {
   const pctColor = pct >= 75 ? "#10b981" : pct >= 40 ? "#f59e0b" : "#ef4444";
 
   return (
-    <main className="admin-shell" dir={isAr ? "rtl" : "ltr"}>
+    <main className="admin-shell" dir="rtl">
       <section className="admin-card">
 
         {/* ── Header ── */}
@@ -45,10 +45,10 @@ export function SalesRepDashboardPage() {
             <p className="auth-eyebrow">Plasticon</p>
             <h1 style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
               <TrendingUp size={24} style={{ color: "var(--accent)" }} />
-              {isAr ? "لوحة المندوب" : "Sales Rep Dashboard"}
+              {"لوحة المندوب"}
             </h1>
             <p style={{ color: "var(--text-secondary)", marginTop: "2px" }}>
-              {isAr ? "نظرة عامة على أداء مبيعاتك" : "Overview of your sales performance"}
+              {"نظرة عامة على أداء مبيعاتك"}
             </p>
           </div>
         </header>
@@ -56,7 +56,7 @@ export function SalesRepDashboardPage() {
         <div className="admin-section">
         {loading ? (
           <div style={{ padding: "3rem 0", textAlign: "center" }}>
-            <p className="admin-muted">{isAr ? "جارٍ التحميل..." : "Loading..."}</p>
+            <p className="admin-muted">{"جارٍ التحميل..."}</p>
           </div>
         ) : data ? (
           <>
@@ -98,7 +98,7 @@ export function SalesRepDashboardPage() {
                 </div>
                 <div>
                   <p className="admin-kpi-label" style={{ color: "#8b5cf6", fontWeight: 600, fontSize: ".78rem", textTransform: "uppercase", letterSpacing: ".05em" }}>
-                    {isAr ? "عملائي" : "My Customers"}
+                    {"عملائي"}
                   </p>
                   <p style={{ fontSize: "2rem", fontWeight: 700, lineHeight: 1.1, color: "#8b5cf6" }}>
                     {data.customerCount}
@@ -135,7 +135,7 @@ export function SalesRepDashboardPage() {
                 </div>
                 <div>
                   <p className="admin-kpi-label" style={{ color: "#10b981", fontWeight: 600, fontSize: ".78rem", textTransform: "uppercase", letterSpacing: ".05em" }}>
-                    {isAr ? "عروض مقبولة" : "Accepted Quotes"}
+                    {"عروض مقبولة"}
                   </p>
                   <p style={{ fontSize: "2rem", fontWeight: 700, lineHeight: 1.1, color: "#10b981" }}>
                     {data.acceptedQuotations}
@@ -172,7 +172,7 @@ export function SalesRepDashboardPage() {
                 </div>
                 <div>
                   <p className="admin-kpi-label" style={{ color: "#3b82f6", fontWeight: 600, fontSize: ".78rem", textTransform: "uppercase", letterSpacing: ".05em" }}>
-                    {isAr ? "إجمالي العروض" : "Total Quote Value"}
+                    {"إجمالي العروض"}
                   </p>
                   <p style={{ fontSize: "1.6rem", fontWeight: 700, lineHeight: 1.1, color: "#3b82f6" }}>
                     ₪{data.totalQuotationValue.toLocaleString()}
@@ -196,7 +196,7 @@ export function SalesRepDashboardPage() {
                   <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
                     <Target size={18} style={{ color: pctColor }} />
                     <span style={{ fontWeight: 600, fontSize: "1rem" }}>
-                      {isAr ? "هدف الشهر الحالي" : "This Month's Target"}
+                      {"هدف الشهر الحالي"}
                     </span>
                   </div>
                   <span
@@ -235,11 +235,11 @@ export function SalesRepDashboardPage() {
 
                 <div style={{ display: "flex", justifyContent: "space-between", fontSize: ".85rem" }}>
                   <span style={{ color: "var(--text-secondary)" }}>
-                    {isAr ? "المحقق:" : "Achieved:"}{" "}
+                    {"المحقق:"}{" "}
                     <strong style={{ color: pctColor }}>₪{data.currentTarget.achievedAmount.toLocaleString()}</strong>
                   </span>
                   <span style={{ color: "var(--text-secondary)" }}>
-                    {isAr ? "الهدف:" : "Target:"}{" "}
+                    {"الهدف:"}{" "}
                     <strong>₪{data.currentTarget.targetAmount.toLocaleString()}</strong>
                   </span>
                 </div>
@@ -249,11 +249,11 @@ export function SalesRepDashboardPage() {
             {/* ── Navigation ── */}
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "0.875rem" }}>
               {[
-                { to: "/sales-rep/customers", icon: <Users size={22} color="#8b5cf6" />, bg: "#8b5cf622", border: "#8b5cf633", label: isAr ? "عملائي" : "My Customers", sub: isAr ? "عرض قائمة العملاء" : "View assigned customers" },
-                { to: "/sales-rep/quotations", icon: <FileText size={22} color="#3b82f6" />, bg: "#3b82f622", border: "#3b82f633", label: isAr ? "عروض الأسعار" : "Quotations", sub: isAr ? "إنشاء وإدارة العروض" : "Create & manage quotes" },
-                { to: "/sales-rep/visits", icon: <MapPin size={22} color="#f59e0b" />, bg: "#f59e0b22", border: "#f59e0b33", label: isAr ? "سجل الزيارات" : "Visit Log", sub: isAr ? "تسجيل وعرض الزيارات" : "Log & view visits" },
-                { to: "/sales-rep/targets", icon: <Target size={22} color="#10b981" />, bg: "#10b98122", border: "#10b98133", label: isAr ? "أهداف المبيعات" : "Targets", sub: isAr ? "عرض أهداف الأداء" : "View performance targets" },
-                { to: "/sales", icon: <TrendingUp size={22} color="#0ea5e9" />, bg: "#0ea5e922", border: "#0ea5e933", label: isAr ? "طلبات المبيعات" : "Sales Orders", sub: isAr ? "عرض وإدارة الطلبات" : "View & manage orders" },
+                { to: "/sales-rep/customers", icon: <Users size={22} color="#8b5cf6" />, bg: "#8b5cf622", border: "#8b5cf633", label: "عملائي", sub: "عرض قائمة العملاء" },
+                { to: "/sales-rep/quotations", icon: <FileText size={22} color="#3b82f6" />, bg: "#3b82f622", border: "#3b82f633", label: "عروض الأسعار", sub: "إنشاء وإدارة العروض" },
+                { to: "/sales-rep/visits", icon: <MapPin size={22} color="#f59e0b" />, bg: "#f59e0b22", border: "#f59e0b33", label: "سجل الزيارات", sub: "تسجيل وعرض الزيارات" },
+                { to: "/sales-rep/targets", icon: <Target size={22} color="#10b981" />, bg: "#10b98122", border: "#10b98133", label: "أهداف المبيعات", sub: "عرض أهداف الأداء" },
+                { to: "/sales", icon: <TrendingUp size={22} color="#0ea5e9" />, bg: "#0ea5e922", border: "#0ea5e933", label: "طلبات المبيعات", sub: "عرض وإدارة الطلبات" },
               ].map((item) => (
                 <Link
                   key={item.to}

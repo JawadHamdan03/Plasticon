@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+﻿import { useState, useEffect } from "react";
 import { Users, Search, TrendingUp, Clock, UserCheck, Target } from "lucide-react";
 import { useLocale } from "../../context/LocaleContext";
 import { API_BASE_URL } from "../../lib/api";
@@ -65,7 +65,7 @@ export function WorkerCoachingPage() {
       }
       setResult(await res.json() as CoachingResult);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed");
+      setError(err instanceof Error ? err.message : "فشل");
     } finally {
       setLoading(false);
     }
@@ -74,14 +74,14 @@ export function WorkerCoachingPage() {
   const selectedWorker = workers.find((w) => String(w.id) === workerId);
 
   return (
-    <div dir={isAr ? "rtl" : "ltr"} style={{ padding: "1.5rem", maxWidth: 1060, margin: "0 auto" }}>
+    <div dir="rtl" style={{ padding: "1.5rem", maxWidth: 1060, margin: "0 auto" }}>
       <AIKeyframes />
 
       <AIPageHeader
         icon={Users}
         gradient={["#10b981", "#0ea5e9"]}
-        title={isAr ? "تدريب أداء العامل" : "Worker Performance Coaching"}
-        subtitle={isAr ? "يحلل الذكاء الاصطناعي حضور وإنتاجية العامل ويولّد تقرير تدريب بنّاء" : "AI analyses attendance and productivity to generate a constructive, respectful coaching report"}
+        title={"تدريب أداء العامل"}
+        subtitle={"يحلل الذكاء الاصطناعي حضور وإنتاجية العامل ويولّد تقرير تدريب بنّاء"}
         badge="GPT-4o"
       />
 
@@ -94,7 +94,7 @@ export function WorkerCoachingPage() {
           <div style={{ background: "var(--bg-surface)", border: "1px solid var(--border-default)", borderRadius: 14, overflow: "hidden", boxShadow: "0 2px 8px rgba(0,0,0,.06)" }}>
             <div style={{ padding: ".85rem 1rem", borderBottom: "1px solid var(--border-default)", background: "var(--bg-subtle)" }}>
               <p style={{ margin: 0, fontSize: ".82rem", fontWeight: 700, color: "var(--text-primary)", textTransform: "uppercase", letterSpacing: ".04em" }}>
-                {isAr ? "اختر العامل" : "Select Worker"}
+                {"اختر العامل"}
               </p>
             </div>
             <div style={{ padding: ".75rem" }}>
@@ -104,7 +104,7 @@ export function WorkerCoachingPage() {
                 <input
                   type="text" value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  placeholder={isAr ? "بحث بالاسم أو القسم…" : "Search name or department…"}
+                  placeholder={"بحث بالاسم أو القسم…"}
                   style={{ ...inputCss, paddingLeft: "2rem", fontSize: ".82rem" }}
                 />
               </div>
@@ -113,7 +113,7 @@ export function WorkerCoachingPage() {
               <div style={{ maxHeight: 300, overflowY: "auto", display: "flex", flexDirection: "column", gap: ".3rem" }}>
                 {filtered.length === 0 ? (
                   <p style={{ margin: ".5rem 0", fontSize: ".82rem", color: "var(--text-muted)", textAlign: "center" }}>
-                    {isAr ? "لا نتائج" : "No results"}
+                    {"لا نتائج"}
                   </p>
                 ) : filtered.map((w) => {
                   const color = roleColor(w.role);
@@ -142,11 +142,11 @@ export function WorkerCoachingPage() {
 
           {/* Period + generate */}
           <div style={{ background: "var(--bg-surface)", border: "1px solid var(--border-default)", borderRadius: 14, padding: "1.1rem", display: "flex", flexDirection: "column", gap: ".85rem", boxShadow: "0 2px 8px rgba(0,0,0,.06)" }}>
-            <FormField label={isAr ? "فترة التحليل" : "Analysis period"}>
+            <FormField label={"فترة التحليل"}>
               <div style={{ display: "flex", gap: ".4rem", flexWrap: "wrap" }}>
                 {[7, 14, 30, 60, 90].map((d) => (
                   <button key={d} type="button" onClick={() => setDays(d)} style={{ padding: ".4rem .75rem", borderRadius: 8, border: "1px solid", cursor: "pointer", fontSize: ".8rem", fontWeight: 600, transition: "all .12s", borderColor: days === d ? "#10b981" : "var(--border-default)", background: days === d ? "#10b98114" : "transparent", color: days === d ? "#10b981" : "var(--text-secondary)" }}>
-                    {d}{isAr ? "ي" : "d"}
+                    {d}{"ي"}
                   </button>
                 ))}
               </div>
@@ -165,8 +165,8 @@ export function WorkerCoachingPage() {
               <div style={{ padding: ".7rem .85rem", background: "#fee2e2", borderRadius: 9, color: "#dc2626", fontSize: ".82rem", border: "1px solid #fecaca" }}>⚠ {error}</div>
             )}
 
-            <AIButton gradient={["#10b981", "#0ea5e9"]} onClick={() => void generate()} disabled={!workerId} loading={loading} loadingText={isAr ? "جارٍ التحليل…" : "Generating…"} icon={TrendingUp}>
-              {isAr ? "توليد تقرير التدريب" : "Generate Coaching Report"}
+            <AIButton gradient={["#10b981", "#0ea5e9"]} onClick={() => void generate()} disabled={!workerId} loading={loading} loadingText={"جارٍ التحليل…"} icon={TrendingUp}>
+              {"توليد تقرير التدريب"}
             </AIButton>
           </div>
         </div>
@@ -176,16 +176,16 @@ export function WorkerCoachingPage() {
           <div style={{ display: "flex", flexDirection: "column", gap: "1rem", animation: "ai-fadein .3s" }}>
             {/* Stats */}
             <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: ".65rem" }}>
-              <StatCard label={isAr ? "الشفتات" : "Shifts Attended"} value={result.stats.totalShifts} color="#6366f1" icon={UserCheck} />
-              <StatCard label={isAr ? "التأخر" : "Late Arrivals"} value={result.stats.lateShifts} color={result.stats.lateShifts > 3 ? "#dc2626" : "#d97706"} icon={Clock} subtext={result.stats.totalLate > 0 ? `${result.stats.totalLate} min total` : undefined} />
-              <StatCard label={isAr ? "إجمالي القطع" : "Total Pieces"} value={result.stats.totalPieces.toLocaleString()} color="#10b981" icon={TrendingUp} />
-              <StatCard label={isAr ? "متوسط / شفت" : "Avg / Shift"} value={result.stats.avgPiecesPerShift} color="#0ea5e9" icon={Target} subtext={isAr ? "قطعة / شفت" : "pieces / shift"} />
+              <StatCard label={"الشفتات"} value={result.stats.totalShifts} color="#6366f1" icon={UserCheck} />
+              <StatCard label={"التأخر"} value={result.stats.lateShifts} color={result.stats.lateShifts > 3 ? "#dc2626" : "#d97706"} icon={Clock} subtext={result.stats.totalLate > 0 ? `${result.stats.totalLate} min total` : undefined} />
+              <StatCard label={"إجمالي القطع"} value={result.stats.totalPieces.toLocaleString()} color="#10b981" icon={TrendingUp} />
+              <StatCard label={"متوسط / شفت"} value={result.stats.avgPiecesPerShift} color="#0ea5e9" icon={Target} subtext={"قطعة / شفت"} />
             </div>
 
             {/* Coaching report */}
             <ReportCard
-              title={isAr ? "تقرير التدريب" : "Coaching Report"}
-              subtitle={`${result.worker.fullName} — ${isAr ? "آخر" : "Last"} ${result.period.days} ${isAr ? "يوم" : "days"}`}
+              title={"تقرير التدريب"}
+              subtitle={`${result.worker.fullName} — ${"آخر"} ${result.period.days} ${"يوم"}`}
               report={result.coaching}
               onRegenerate={() => void generate()}
               loading={loading}
@@ -196,8 +196,8 @@ export function WorkerCoachingPage() {
           <AIEmptyState
             icon={Users}
             color="#10b981"
-            title={isAr ? "اختر عاملاً لتوليد تقرير التدريب" : "Select a worker to generate coaching report"}
-            description={isAr ? "يحلل النظام الحضور والإنتاجية ويولّد تقريراً يساعد العامل على التطور." : "The system analyses attendance and productivity to generate an improvement-focused coaching report."}
+            title={"اختر عاملاً لتوليد تقرير التدريب"}
+            description={"يحلل النظام الحضور والإنتاجية ويولّد تقريراً يساعد العامل على التطور."}
           />
         )}
       </div>

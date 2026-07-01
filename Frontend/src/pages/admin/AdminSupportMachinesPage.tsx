@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+﻿import { useCallback, useEffect, useMemo, useState } from "react";
 import { ModulePageShell } from "../../components/ModulePageShell";
 import { TruckLoader } from "../../components/TruckLoader";
-import { API_BASE_URL, readApiError } from "../../lib/api";
+import { pictureUrl as globalPictureUrl, readApiError } from "../../lib/api";
 import { confirmDialog } from "../../lib/dialog";
 import { useLocale } from "../../context/LocaleContext";
 
@@ -55,7 +55,7 @@ async function apiFetch(path: string, options?: RequestInit) {
 const normImg = (value: string | null) => {
   if (!value) return null;
   if (value.startsWith("http")) return value;
-  return `${API_BASE_URL}/${value.replace(/^prisma\/?pictures\//, "pictures/")}`;
+  return globalPictureUrl(value);
 };
 
 export function AdminSupportMachinesPage() {
@@ -147,7 +147,7 @@ export function AdminSupportMachinesPage() {
 
   return (
     <ModulePageShell
-      title={isAr ? "قراءات الماكينات الداعمة" : "Support Machine Readings"}
+      title={"قراءات الماكينات الداعمة"}
       subtitle={
         isAr
           ? "جميع قراءات معدات الدعم من المهندسين والعمال"
@@ -159,7 +159,7 @@ export function AdminSupportMachinesPage() {
           className="auth-button auth-button--ghost"
           onClick={() => void loadReadings()}
         >
-          {isAr ? "تحديث" : "Refresh"}
+          {"تحديث"}
         </button>
       }
     >
@@ -167,22 +167,22 @@ export function AdminSupportMachinesPage() {
       <div className="wt-kpi-grid">
         <div className="wt-kpi-card wt-kpi-card--blue">
           <span className="wt-kpi-icon">📊</span>
-          <p className="wt-kpi-label">{isAr ? "إجمالي القراءات" : "Total Readings"}</p>
+          <p className="wt-kpi-label">{"إجمالي القراءات"}</p>
           <strong className="wt-kpi-value">{readings.length}</strong>
         </div>
         <div className="wt-kpi-card wt-kpi-card--green">
           <span className="wt-kpi-icon">📋</span>
-          <p className="wt-kpi-label">{isAr ? "اليوم" : "Today"}</p>
+          <p className="wt-kpi-label">{"اليوم"}</p>
           <strong className="wt-kpi-value">{todayCount}</strong>
         </div>
         <div className="wt-kpi-card wt-kpi-card--orange">
           <span className="wt-kpi-icon">⚙️</span>
-          <p className="wt-kpi-label">{isAr ? "الماكينات" : "Machines"}</p>
+          <p className="wt-kpi-label">{"الماكينات"}</p>
           <strong className="wt-kpi-value">{uniqueMachines}</strong>
         </div>
         <div className="wt-kpi-card wt-kpi-card--purple">
           <span className="wt-kpi-icon">🔧</span>
-          <p className="wt-kpi-label">{isAr ? "أنواع القراءات" : "Reading Types"}</p>
+          <p className="wt-kpi-label">{"أنواع القراءات"}</p>
           <strong className="wt-kpi-value">{uniqueTypes}</strong>
         </div>
       </div>
@@ -194,7 +194,7 @@ export function AdminSupportMachinesPage() {
             <span className="wt-card__header-icon">📌</span>
             <div>
               <h2 className="wt-card__header-title">
-                {isAr ? "آخر قراءة لكل ماكينة" : "Latest Reading per Machine"}
+                {"آخر قراءة لكل ماكينة"}
               </h2>
             </div>
           </div>
@@ -242,17 +242,17 @@ export function AdminSupportMachinesPage() {
       {/* Filters */}
       <div className="wt-filter-row" style={{ marginBottom: "1.5rem" }}>
         <div className="wt-field">
-          <label>{isAr ? "الماكينة" : "Machine"}</label>
+          <label>{"الماكينة"}</label>
           <input
             value={filterMachine}
-            placeholder={isAr ? "بحث..." : "Search..."}
+            placeholder={"بحث..."}
             onChange={(e) => setFilterMachine(e.target.value)}
           />
         </div>
         <div className="wt-field">
-          <label>{isAr ? "نوع القراءة" : "Reading Type"}</label>
+          <label>{"نوع القراءة"}</label>
           <select value={filterType} onChange={(e) => setFilterType(e.target.value)}>
-            <option value="">{isAr ? "الكل" : "All"}</option>
+            <option value="">{"الكل"}</option>
             <option value="TEMPERATURE">🌡️ Temperature</option>
             <option value="PRESSURE">💨 Pressure</option>
             <option value="RUN_HOURS">⏱️ Run Hours</option>
@@ -263,7 +263,7 @@ export function AdminSupportMachinesPage() {
           </select>
         </div>
         <div className="wt-field">
-          <label>{isAr ? "التاريخ" : "Date"}</label>
+          <label>{"التاريخ"}</label>
           <input
             type="date"
             value={filterDate}
@@ -276,7 +276,7 @@ export function AdminSupportMachinesPage() {
           style={{ alignSelf: "flex-end" }}
           onClick={() => { setFilterMachine(""); setFilterType(""); setFilterDate(""); }}
         >
-          {isAr ? "مسح" : "Clear"}
+          {"مسح"}
         </button>
       </div>
 
@@ -285,7 +285,7 @@ export function AdminSupportMachinesPage() {
       {!loading && filtered.length === 0 ? (
         <div className="wt-empty">
           <span className="wt-empty__icon">📭</span>
-          <p>{isAr ? "لا توجد قراءات" : "No readings found"}</p>
+          <p>{"لا توجد قراءات"}</p>
         </div>
       ) : null}
 
@@ -362,7 +362,7 @@ export function AdminSupportMachinesPage() {
                   disabled={deleting}
                   onClick={() => void handleDelete(item)}
                 >
-                  {isAr ? "حذف" : "Delete"}
+                  {"حذف"}
                 </button>
               </div>
             </div>

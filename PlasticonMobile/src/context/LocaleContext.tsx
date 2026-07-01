@@ -16,15 +16,11 @@ type LocaleContextValue = {
 const LocaleContext = createContext<LocaleContextValue | undefined>(undefined);
 
 export function LocaleProvider({ children }: { children: React.ReactNode }) {
-  const [locale, setLocaleState] = useState<Locale>('en');
+  const [locale, setLocaleState] = useState<Locale>('ar');
 
   useEffect(() => {
-    AsyncStorage.getItem(STORAGE_KEY).then(v => {
-      if (v === 'ar' || v === 'en') {
-        setLocaleState(v);
-        I18nManager.forceRTL(v === 'ar');
-      }
-    });
+    I18nManager.forceRTL(true);
+    AsyncStorage.setItem(STORAGE_KEY, 'ar');
   }, []);
 
   const setLocale = (l: Locale) => {

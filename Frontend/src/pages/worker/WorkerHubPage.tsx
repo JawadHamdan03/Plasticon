@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+﻿import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Calendar,
   DollarSign,
@@ -322,11 +322,11 @@ export function WorkerHubPage() {
 
   return (
     <ModulePageShell
-      title={isAr ? "مركز العمليات" : "Work Operation Hub"}
-      subtitle={isAr ? "كل سجلاتك في مكان واحد" : "All your records in one place"}
+      title={"مركز العمليات"}
+      subtitle={"كل سجلاتك في مكان واحد"}
       actions={
         <button className="btn btn--ghost btn--sm" onClick={() => void loadTab(tab)}>
-          <RefreshCw size={14} /> {isAr ? "تحديث" : "Refresh"}
+          <RefreshCw size={14} /> {"تحديث"}
         </button>
       }
     >
@@ -347,7 +347,7 @@ export function WorkerHubPage() {
         <div>
           <p style={{ margin: 0, fontWeight: 700, fontSize: "1.1rem" }}>{user?.name ?? "Worker"}</p>
           <p style={{ margin: ".15rem 0 0", opacity: .8, fontSize: ".83rem" }}>
-            {isAr ? "مركز عمليات الموظف — اعرض جميع سجلاتك الشخصية" : "Employee operation hub — view all your personal records"}
+            {"مركز عمليات الموظف — اعرض جميع سجلاتك الشخصية"}
           </p>
         </div>
       </div>
@@ -375,7 +375,7 @@ export function WorkerHubPage() {
             }}
           >
             {t.icon}
-            {isAr ? t.labelAr : t.label}
+            {t.labelAr}
           </button>
         ))}
       </div>
@@ -394,9 +394,9 @@ export function WorkerHubPage() {
               {/* Summary chips */}
               <div style={{ display: "flex", gap: ".75rem", flexWrap: "wrap", marginBottom: "1.25rem" }}>
                 {[
-                  { label: isAr ? "إجمالي السجلات" : "Total Records", value: attendance.length, color: "#3b82f6" },
-                  { label: isAr ? "أيام كاملة" : "Full Days", value: attendance.filter(r => r.checkOut).length, color: "#10b981" },
-                  { label: isAr ? "قيد التشغيل" : "Active/Missing", value: attendance.filter(r => !r.checkOut).length, color: "#f59e0b" },
+                  { label: "إجمالي السجلات", value: attendance.length, color: "#3b82f6" },
+                  { label: "أيام كاملة", value: attendance.filter(r => r.checkOut).length, color: "#10b981" },
+                  { label: "قيد التشغيل", value: attendance.filter(r => !r.checkOut).length, color: "#f59e0b" },
                 ].map((chip) => (
                   <div key={chip.label} style={{ background: chip.color + "14", border: `1px solid ${chip.color}33`, borderRadius: "var(--radius-lg)", padding: ".5rem .9rem", display: "flex", gap: ".4rem", alignItems: "center" }}>
                     <span style={{ fontWeight: 800, fontSize: "1.1rem", color: chip.color }}>{chip.value}</span>
@@ -406,7 +406,7 @@ export function WorkerHubPage() {
               </div>
 
               {attendance.length === 0 ? (
-                <EmptyState icon="📅" message={isAr ? "لا توجد سجلات حضور بعد" : "No attendance records yet"} />
+                <EmptyState icon="📅" message={"لا توجد سجلات حضور بعد"} />
               ) : (
                 <div style={{ display: "flex", flexDirection: "column", gap: ".6rem" }}>
                   {attendance.slice(0, 60).map((r) => {
@@ -429,11 +429,11 @@ export function WorkerHubPage() {
                             )}
                             {missing ? (
                               <span style={{ background: "#fef9c3", border: "1px solid #fde047", borderRadius: "4px", padding: "1px 7px", color: "#854d0e", fontSize: ".73rem", fontWeight: 700 }}>
-                                ⚠ {isAr ? "لا يوجد خروج" : "No check-out"}
+                                ⚠ {"لا يوجد خروج"}
                               </span>
                             ) : (
                               <span style={{ background: "#dcfce7", border: "1px solid #86efac", borderRadius: "4px", padding: "1px 7px", color: "#15803d", fontSize: ".73rem", fontWeight: 700 }}>
-                                ✓ {isAr ? "مكتمل" : "Complete"}
+                                ✓ {"مكتمل"}
                               </span>
                             )}
                           </div>
@@ -457,9 +457,9 @@ export function WorkerHubPage() {
               {/* Summary */}
               <div style={{ display: "flex", gap: ".75rem", flexWrap: "wrap", marginBottom: "1.25rem" }}>
                 {[
-                  { label: isAr ? "إجمالي مكتسب (مؤكد)" : "Total Earned (confirmed)", value: `${dailyPayroll.filter(r => r.isConfirmed).reduce((s, r) => s + r.totalDailyPay, 0).toFixed(2)} ₪`, color: "#10b981" },
-                  { label: isAr ? "سجلات يومية" : "Daily Records", value: dailyPayroll.length, color: "#3b82f6" },
-                  { label: isAr ? "سجلات شهرية" : "Monthly Records", value: monthlyPayroll.length, color: "#8b5cf6" },
+                  { label: "إجمالي مكتسب (مؤكد)", value: `${dailyPayroll.filter(r => r.isConfirmed).reduce((s, r) => s + r.totalDailyPay, 0).toFixed(2)} ₪`, color: "#10b981" },
+                  { label: "سجلات يومية", value: dailyPayroll.length, color: "#3b82f6" },
+                  { label: "سجلات شهرية", value: monthlyPayroll.length, color: "#8b5cf6" },
                 ].map((chip) => (
                   <div key={chip.label} style={{ background: chip.color + "14", border: `1px solid ${chip.color}33`, borderRadius: "var(--radius-lg)", padding: ".5rem .9rem", display: "flex", gap: ".4rem", alignItems: "center" }}>
                     <span style={{ fontWeight: 800, fontSize: "1.05rem", color: chip.color }}>{chip.value}</span>
@@ -473,13 +473,13 @@ export function WorkerHubPage() {
                 {(["daily", "monthly"] as const).map((v) => (
                   <button key={v} type="button" onClick={() => setPayrollView(v)}
                     style={{ padding: ".4rem .9rem", borderRadius: "var(--radius-md)", border: payrollView === v ? "2px solid #10b981" : "2px solid var(--border-default)", background: payrollView === v ? "#10b98114" : "transparent", color: payrollView === v ? "#10b981" : "var(--text-secondary)", fontWeight: payrollView === v ? 700 : 500, fontSize: ".83rem", cursor: "pointer" }}>
-                    {v === "daily" ? (isAr ? "يومي" : "Daily") : (isAr ? "شهري" : "Monthly")}
+                    {v === "daily" ? ("يومي") : ("شهري")}
                   </button>
                 ))}
               </div>
 
               {payrollView === "daily" && (
-                dailyPayroll.length === 0 ? <EmptyState icon="💰" message={isAr ? "لا توجد سجلات راتب يومي" : "No daily payroll records yet"} /> : (
+                dailyPayroll.length === 0 ? <EmptyState icon="💰" message={"لا توجد سجلات راتب يومي"} /> : (
                   <div style={{ display: "flex", flexDirection: "column", gap: ".6rem" }}>
                     {dailyPayroll.map((r) => (
                       <HubCard key={r.id}>
@@ -488,14 +488,14 @@ export function WorkerHubPage() {
                           <div style={{ display: "flex", alignItems: "center", gap: ".5rem" }}>
                             <span style={{ fontWeight: 800, fontSize: "1rem", color: "#10b981" }}>{r.totalDailyPay.toFixed(2)} ₪</span>
                             {r.isConfirmed
-                              ? <span style={{ background: "#dcfce7", border: "1px solid #86efac", borderRadius: "4px", padding: "1px 7px", color: "#15803d", fontSize: ".72rem", fontWeight: 700 }}><CheckCircle size={11} style={{ verticalAlign: "middle" }} /> {isAr ? "مؤكد" : "Confirmed"}</span>
-                              : <span style={{ background: "#fef9c3", border: "1px solid #fde047", borderRadius: "4px", padding: "1px 7px", color: "#854d0e", fontSize: ".72rem", fontWeight: 700 }}><AlertCircle size={11} style={{ verticalAlign: "middle" }} /> {isAr ? "انتظار" : "Pending"}</span>
+                              ? <span style={{ background: "#dcfce7", border: "1px solid #86efac", borderRadius: "4px", padding: "1px 7px", color: "#15803d", fontSize: ".72rem", fontWeight: 700 }}><CheckCircle size={11} style={{ verticalAlign: "middle" }} /> {"مؤكد"}</span>
+                              : <span style={{ background: "#fef9c3", border: "1px solid #fde047", borderRadius: "4px", padding: "1px 7px", color: "#854d0e", fontSize: ".72rem", fontWeight: 700 }}><AlertCircle size={11} style={{ verticalAlign: "middle" }} /> {"انتظار"}</span>
                             }
                           </div>
                         </div>
                         <div style={{ fontSize: ".81rem", color: "var(--text-secondary)", display: "flex", gap: "1.25rem", flexWrap: "wrap" }}>
                           <span><Clock size={11} style={{ verticalAlign: "middle" }} /> {r.hoursWorked.toFixed(1)}h</span>
-                          <span>{isAr ? "المعدل:" : "Rate:"} {r.dailyRate.toFixed(2)} ₪/day</span>
+                          <span>{"المعدل:"} {r.dailyRate.toFixed(2)} ₪/day</span>
                           {r.deductionAmount > 0 && <span style={{ color: "#ef4444" }}>−{r.deductionAmount.toFixed(2)} ₪ {r.deductionNotes ? `(${r.deductionNotes})` : ""}</span>}
                         </div>
                       </HubCard>
@@ -505,7 +505,7 @@ export function WorkerHubPage() {
               )}
 
               {payrollView === "monthly" && (
-                monthlyPayroll.length === 0 ? <EmptyState icon="📆" message={isAr ? "لا توجد سجلات راتب شهري" : "No monthly payroll records yet"} /> : (
+                monthlyPayroll.length === 0 ? <EmptyState icon="📆" message={"لا توجد سجلات راتب شهري"} /> : (
                   <div style={{ display: "flex", flexDirection: "column", gap: ".6rem" }}>
                     {monthlyPayroll.map((r) => (
                       <HubCard key={r.id}>
@@ -514,8 +514,8 @@ export function WorkerHubPage() {
                           <span style={{ fontWeight: 800, fontSize: "1.1rem", color: "#10b981" }}>{r.totalSalary.toLocaleString()} ₪</span>
                         </div>
                         <div style={{ fontSize: ".81rem", color: "var(--text-secondary)", display: "flex", gap: "1.25rem", flexWrap: "wrap" }}>
-                          <span>{isAr ? "الساعات:" : "Hours:"} {r.totalHours.toFixed(1)}h</span>
-                          <span>{isAr ? "أساسي:" : "Base:"} {r.baseSalary.toFixed(2)} ₪</span>
+                          <span>{"الساعات:"} {r.totalHours.toFixed(1)}h</span>
+                          <span>{"أساسي:"} {r.baseSalary.toFixed(2)} ₪</span>
                           {r.overtimeSalary > 0 && <span style={{ color: "#f59e0b" }}>+{r.overtimeSalary.toFixed(2)} OT</span>}
                         </div>
                       </HubCard>
@@ -531,9 +531,9 @@ export function WorkerHubPage() {
             <>
               <div style={{ display: "flex", gap: ".75rem", flexWrap: "wrap", marginBottom: "1.25rem" }}>
                 {[
-                  { label: isAr ? "إجمالي السجلات" : "Total Records", value: productions.length, color: "#f59e0b" },
-                  { label: isAr ? "إجمالي جيد" : "Total Good", value: productions.reduce((s, r) => s + r.goodCount, 0), color: "#10b981" },
-                  { label: isAr ? "إجمالي عيوب" : "Total Defects", value: productions.reduce((s, r) => s + r.defectCount, 0), color: "#ef4444" },
+                  { label: "إجمالي السجلات", value: productions.length, color: "#f59e0b" },
+                  { label: "إجمالي جيد", value: productions.reduce((s, r) => s + r.goodCount, 0), color: "#10b981" },
+                  { label: "إجمالي عيوب", value: productions.reduce((s, r) => s + r.defectCount, 0), color: "#ef4444" },
                 ].map((chip) => (
                   <div key={chip.label} style={{ background: chip.color + "14", border: `1px solid ${chip.color}33`, borderRadius: "var(--radius-lg)", padding: ".5rem .9rem", display: "flex", gap: ".4rem", alignItems: "center" }}>
                     <span style={{ fontWeight: 800, fontSize: "1.1rem", color: chip.color }}>{chip.value}</span>
@@ -541,7 +541,7 @@ export function WorkerHubPage() {
                   </div>
                 ))}
               </div>
-              {productions.length === 0 ? <EmptyState icon="🏭" message={isAr ? "لا توجد سجلات إنتاج" : "No production records yet"} /> : (
+              {productions.length === 0 ? <EmptyState icon="🏭" message={"لا توجد سجلات إنتاج"} /> : (
                 <div style={{ display: "flex", flexDirection: "column", gap: ".6rem" }}>
                   {productions.slice(0, 50).map((r) => (
                     <HubCard key={r.id}>
@@ -553,8 +553,8 @@ export function WorkerHubPage() {
                         <span style={{ fontSize: ".78rem", color: "var(--text-secondary)" }}>{fmtDateTime(r.createdAt)}</span>
                       </div>
                       <div style={{ fontSize: ".82rem", display: "flex", gap: "1.25rem", flexWrap: "wrap" }}>
-                        <span style={{ color: "#10b981", fontWeight: 600 }}>✓ {r.goodCount} {isAr ? "جيد" : "good"}</span>
-                        {r.defectCount > 0 && <span style={{ color: "#ef4444", fontWeight: 600 }}>✗ {r.defectCount} {isAr ? "معيب" : "defect"}</span>}
+                        <span style={{ color: "#10b981", fontWeight: 600 }}>✓ {r.goodCount} {"جيد"}</span>
+                        {r.defectCount > 0 && <span style={{ color: "#ef4444", fontWeight: 600 }}>✗ {r.defectCount} {"معيب"}</span>}
                         {r.shift && <span style={{ color: "var(--text-secondary)" }}>{r.shift.name}</span>}
                       </div>
                     </HubCard>
@@ -570,10 +570,10 @@ export function WorkerHubPage() {
               <div style={{ display: "flex", gap: ".75rem", flexWrap: "wrap", marginBottom: "1.25rem" }}>
                 <div style={{ background: "#8b5cf614", border: "1px solid #8b5cf633", borderRadius: "var(--radius-lg)", padding: ".5rem .9rem", display: "flex", gap: ".4rem", alignItems: "center" }}>
                   <span style={{ fontWeight: 800, fontSize: "1.1rem", color: "#8b5cf6" }}>{snapshots.length}</span>
-                  <span style={{ fontSize: ".8rem", color: "var(--text-secondary)" }}>{isAr ? "لقطات مسجلة" : "Snapshots recorded"}</span>
+                  <span style={{ fontSize: ".8rem", color: "var(--text-secondary)" }}>{"لقطات مسجلة"}</span>
                 </div>
               </div>
-              {snapshots.length === 0 ? <EmptyState icon="📸" message={isAr ? "لا توجد قراءات بعد" : "No readings recorded yet"} /> : (
+              {snapshots.length === 0 ? <EmptyState icon="📸" message={"لا توجد قراءات بعد"} /> : (
                 <div style={{ display: "flex", flexDirection: "column", gap: ".6rem" }}>
                   {snapshots.map((r) => (
                     <HubCard key={r.id}>
@@ -582,8 +582,8 @@ export function WorkerHubPage() {
                         <span style={{ fontSize: ".78rem", color: "var(--text-secondary)" }}>{fmtDateTime(r.createdAt)}</span>
                       </div>
                       <div style={{ fontSize: ".82rem", color: "var(--text-secondary)", display: "flex", gap: "1.5rem", flexWrap: "wrap" }}>
-                        <span>🔢 {isAr ? "العداد:" : "Counter:"} <strong style={{ color: "var(--text-primary)" }}>{r.machineCounter}</strong></span>
-                        <span>⚡ {isAr ? "كهرباء:" : "Electricity:"} <strong style={{ color: "var(--text-primary)" }}>{r.electricityKwh.toFixed(2)} kWh</strong></span>
+                        <span>🔢 {"العداد:"} <strong style={{ color: "var(--text-primary)" }}>{r.machineCounter}</strong></span>
+                        <span>⚡ {"كهرباء:"} <strong style={{ color: "var(--text-primary)" }}>{r.electricityKwh.toFixed(2)} kWh</strong></span>
                       </div>
                       {r.notes && <p style={{ margin: 0, fontSize: ".8rem", color: "var(--text-secondary)", fontStyle: "italic" }}>{r.notes}</p>}
                     </HubCard>
@@ -604,7 +604,7 @@ export function WorkerHubPage() {
                     <button key={tt} type="button" onClick={() => setToolTab(tt)}
                       style={{ display: "flex", alignItems: "center", gap: ".3rem", padding: ".35rem .8rem", borderRadius: "20px", border: toolTab === tt ? "2px solid #ef4444" : "1px solid var(--border-default)", background: toolTab === tt ? "#ef444414" : "var(--bg-surface)", color: toolTab === tt ? "#ef4444" : "var(--text-secondary)", fontWeight: toolTab === tt ? 700 : 500, fontSize: ".8rem", cursor: "pointer" }}>
                       <span>{meta.icon}</span>
-                      {isAr ? meta.ar : meta.en}
+                      {meta.ar}
                     </button>
                   );
                 })}
@@ -612,7 +612,7 @@ export function WorkerHubPage() {
 
               {/* Machine Stops */}
               {toolTab === "stops" && (
-                machineStops.length === 0 ? <EmptyState icon="🛑" message={isAr ? "لا توجد سجلات توقف" : "No machine stop records"} /> : (
+                machineStops.length === 0 ? <EmptyState icon="🛑" message={"لا توجد سجلات توقف"} /> : (
                   <div style={{ display: "flex", flexDirection: "column", gap: ".6rem" }}>
                     {machineStops.map((r) => (
                       <HubCard key={r.id}>
@@ -621,7 +621,7 @@ export function WorkerHubPage() {
                           <span style={{ fontSize: ".78rem", color: "var(--text-secondary)" }}>{fmtDateTime(r.createdAt)}</span>
                         </div>
                         <div style={{ fontSize: ".82rem", color: "var(--text-secondary)" }}>
-                          <Clock size={12} style={{ verticalAlign: "middle" }} /> {r.durationMinutes} {isAr ? "دقيقة" : "min"}
+                          <Clock size={12} style={{ verticalAlign: "middle" }} /> {r.durationMinutes} {"دقيقة"}
                           {r.notes && <span style={{ marginInlineStart: ".75rem", fontStyle: "italic" }}>{r.notes}</span>}
                         </div>
                       </HubCard>
@@ -632,16 +632,16 @@ export function WorkerHubPage() {
 
               {/* Checklist */}
               {toolTab === "checklist" && (
-                checklists.length === 0 ? <EmptyState icon="✅" message={isAr ? "لا توجد قوائم تحقق" : "No checklist records"} /> : (
+                checklists.length === 0 ? <EmptyState icon="✅" message={"لا توجد قوائم تحقق"} /> : (
                   <div style={{ display: "flex", flexDirection: "column", gap: ".6rem" }}>
                     {checklists.map((r) => (
                       <HubCard key={r.id}>
                         <div style={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: ".4rem" }}>
-                          <span style={{ fontWeight: 700, fontSize: ".9rem" }}>✅ {isAr ? "قائمة التحقق" : "Checklist"} — {fmtDate(r.shiftDate)}</span>
+                          <span style={{ fontWeight: 700, fontSize: ".9rem" }}>✅ {"قائمة التحقق"} — {fmtDate(r.shiftDate)}</span>
                           <span style={{ fontSize: ".78rem", color: "var(--text-secondary)" }}>{fmtDateTime(r.createdAt)}</span>
                         </div>
                         <div style={{ fontSize: ".82rem", color: "var(--text-secondary)" }}>
-                          {r.completedItems}/{r.totalItems} {isAr ? "بنود مكتملة" : "items completed"}
+                          {r.completedItems}/{r.totalItems} {"بنود مكتملة"}
                           {r.notes && <span style={{ marginInlineStart: ".75rem", fontStyle: "italic" }}>{r.notes}</span>}
                         </div>
                       </HubCard>
@@ -652,7 +652,7 @@ export function WorkerHubPage() {
 
               {/* Waste */}
               {toolTab === "waste" && (
-                waste.length === 0 ? <EmptyState icon="🗑️" message={isAr ? "لا توجد سجلات هدر" : "No waste records"} /> : (
+                waste.length === 0 ? <EmptyState icon="🗑️" message={"لا توجد سجلات هدر"} /> : (
                   <div style={{ display: "flex", flexDirection: "column", gap: ".6rem" }}>
                     {waste.map((r) => (
                       <HubCard key={r.id}>
@@ -661,7 +661,7 @@ export function WorkerHubPage() {
                           <span style={{ fontSize: ".78rem", color: "var(--text-secondary)" }}>{fmtDateTime(r.createdAt)}</span>
                         </div>
                         <div style={{ fontSize: ".82rem", color: "var(--text-secondary)" }}>
-                          {isAr ? "الكمية:" : "Qty:"} <strong style={{ color: "#f59e0b" }}>{r.wasteKg} kg</strong>
+                          {"الكمية:"} <strong style={{ color: "#f59e0b" }}>{r.wasteKg} kg</strong>
                           {r.reason && <span style={{ marginInlineStart: ".75rem" }}>{r.reason}</span>}
                         </div>
                       </HubCard>
@@ -672,7 +672,7 @@ export function WorkerHubPage() {
 
               {/* Kaizen */}
               {toolTab === "kaizen" && (
-                kaizen.length === 0 ? <EmptyState icon="💡" message={isAr ? "لا توجد أفكار كايزن" : "No kaizen ideas yet"} /> : (
+                kaizen.length === 0 ? <EmptyState icon="💡" message={"لا توجد أفكار كايزن"} /> : (
                   <div style={{ display: "flex", flexDirection: "column", gap: ".6rem" }}>
                     {kaizen.map((r) => (
                       <HubCard key={r.id}>
@@ -694,7 +694,7 @@ export function WorkerHubPage() {
 
               {/* Quality */}
               {toolTab === "quality" && (
-                quality.length === 0 ? <EmptyState icon="🔍" message={isAr ? "لا توجد مشاكل جودة مسجلة" : "No quality issues recorded"} /> : (
+                quality.length === 0 ? <EmptyState icon="🔍" message={"لا توجد مشاكل جودة مسجلة"} /> : (
                   <div style={{ display: "flex", flexDirection: "column", gap: ".6rem" }}>
                     {quality.map((r) => (
                       <HubCard key={r.id}>
@@ -714,7 +714,7 @@ export function WorkerHubPage() {
 
               {/* Micro stops */}
               {toolTab === "micro" && (
-                microStops.length === 0 ? <EmptyState icon="⏱️" message={isAr ? "لا توجد توقفات مايكرو" : "No micro-stop records"} /> : (
+                microStops.length === 0 ? <EmptyState icon="⏱️" message={"لا توجد توقفات مايكرو"} /> : (
                   <div style={{ display: "flex", flexDirection: "column", gap: ".6rem" }}>
                     {microStops.map((r) => (
                       <HubCard key={r.id}>
@@ -723,7 +723,7 @@ export function WorkerHubPage() {
                           <span style={{ fontSize: ".78rem", color: "var(--text-secondary)" }}>{fmtDateTime(r.createdAt)}</span>
                         </div>
                         <div style={{ fontSize: ".82rem", color: "var(--text-secondary)" }}>
-                          <Clock size={12} style={{ verticalAlign: "middle" }} /> {r.durationMinutes} {isAr ? "دقيقة" : "min"}
+                          <Clock size={12} style={{ verticalAlign: "middle" }} /> {r.durationMinutes} {"دقيقة"}
                         </div>
                       </HubCard>
                     ))}
@@ -733,7 +733,7 @@ export function WorkerHubPage() {
 
               {/* Daily Targets */}
               {toolTab === "target" && (
-                targets.length === 0 ? <EmptyState icon="🎯" message={isAr ? "لا توجد أهداف يومية" : "No daily target records"} /> : (
+                targets.length === 0 ? <EmptyState icon="🎯" message={"لا توجد أهداف يومية"} /> : (
                   <div style={{ display: "flex", flexDirection: "column", gap: ".6rem" }}>
                     {targets.map((r) => {
                       const pct = Math.round(r.achievementRatio * 100);
@@ -742,12 +742,12 @@ export function WorkerHubPage() {
                           <div style={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: ".4rem" }}>
                             <span style={{ fontWeight: 700, fontSize: ".9rem" }}>🎯 {r.target_date?.slice(0, 10)}</span>
                             <span style={{ fontSize: ".75rem", background: r.achieved ? "#dcfce7" : "#fee2e2", color: r.achieved ? "#15803d" : "#b91c1c", borderRadius: "4px", padding: "1px 7px", fontWeight: 700 }}>
-                              {r.achieved ? (isAr ? "✓ محقق" : "✓ Achieved") : (isAr ? "✗ لم يتحقق" : "✗ Not achieved")}
+                              {r.achieved ? ("✓ محقق") : ("✗ لم يتحقق")}
                             </span>
                           </div>
                           <div style={{ fontSize: ".82rem", color: "var(--text-secondary)", display: "flex", gap: "1.25rem", flexWrap: "wrap" }}>
-                            <span>{isAr ? "الهدف:" : "Target:"} <strong style={{ color: "var(--text-primary)" }}>{r.target_units}</strong></span>
-                            <span>{isAr ? "الفعلي:" : "Actual:"} <strong style={{ color: r.achieved ? "#10b981" : "#ef4444" }}>{r.actual_units}</strong></span>
+                            <span>{"الهدف:"} <strong style={{ color: "var(--text-primary)" }}>{r.target_units}</strong></span>
+                            <span>{"الفعلي:"} <strong style={{ color: r.achieved ? "#10b981" : "#ef4444" }}>{r.actual_units}</strong></span>
                             <span style={{ color: r.achieved ? "#10b981" : "#f59e0b" }}>{pct}%</span>
                           </div>
                           {r.note && <p style={{ margin: 0, fontSize: ".8rem", color: "var(--text-secondary)", fontStyle: "italic" }}>{r.note}</p>}
@@ -760,7 +760,7 @@ export function WorkerHubPage() {
 
               {/* Electricity Alerts */}
               {toolTab === "anomaly" && (
-                anomalies.length === 0 ? <EmptyState icon="⚡" message={isAr ? "لا توجد تنبيهات كهرباء" : "No electricity alerts recorded"} /> : (
+                anomalies.length === 0 ? <EmptyState icon="⚡" message={"لا توجد تنبيهات كهرباء"} /> : (
                   <div style={{ display: "flex", flexDirection: "column", gap: ".6rem" }}>
                     {anomalies.map((r) => (
                       <HubCard key={r.id} highlight={r.severity === "CRITICAL"}>
@@ -772,8 +772,8 @@ export function WorkerHubPage() {
                           </div>
                         </div>
                         <div style={{ fontSize: ".82rem", color: "var(--text-secondary)", display: "flex", gap: "1.25rem", flexWrap: "wrap" }}>
-                          <span>{isAr ? "الحالي:" : "Current:"} <strong style={{ color: "#ef4444" }}>{Number(r.current_kwh).toFixed(2)} kWh</strong></span>
-                          <span>{isAr ? "الأساس:" : "Baseline:"} <strong>{Number(r.baseline_kwh).toFixed(2)} kWh</strong></span>
+                          <span>{"الحالي:"} <strong style={{ color: "#ef4444" }}>{Number(r.current_kwh).toFixed(2)} kWh</strong></span>
+                          <span>{"الأساس:"} <strong>{Number(r.baseline_kwh).toFixed(2)} kWh</strong></span>
                         </div>
                         <p style={{ margin: 0, fontSize: ".8rem", color: "var(--text-secondary)", fontStyle: "italic" }}>{r.message}</p>
                       </HubCard>

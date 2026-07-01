@@ -9,10 +9,10 @@ type JwtPayload = {
 
 let ioInstance: Server | null = null;
 
-export const initializeSocketServer = (httpServer: HttpServer) => {
+export const initializeSocketServer = (httpServer: HttpServer, allowedOrigins: string[]) => {
     const io = new Server(httpServer, {
         cors: {
-            origin: "*",
+            origin: allowedOrigins,
             methods: ["GET", "POST"],
         },
     });
@@ -49,7 +49,7 @@ export const initializeSocketServer = (httpServer: HttpServer) => {
 
             const user = await prisma.user.findUnique({
                 where: { id: userId },
-                select: { id: true },
+                select: { id: true, fullName: true },
             });
 
             if (!user) {
@@ -57,6 +57,7 @@ export const initializeSocketServer = (httpServer: HttpServer) => {
             }
 
             socket.data.userId = user.id;
+            socket.data.fullName = user.fullName;
             return next();
         } catch (_error) {
             return next(new Error("Not authorized"));
@@ -96,6 +97,50 @@ export const initializeSocketServer = (httpServer: HttpServer) => {
 
             socket.leave(`group:${groupId}`);
             socket.emit("left:group", { groupId });
+        });
+
+        // ── Call signaling (relay model) ──────────────────────────────────────
+        socket.on("call:initiate", (data: { toUserId: number; type: "video" | "voice"; callId: string }) => {
+            if (!data?.toUserId || !data?.callId) return;
+            io.to(`user:${data.toUserId}`).emit("call:incoming", {
+                callId: data.callId, type: data.type,
+                callerName: socket.data.fullName as string, callerId: userId,
+            });
+        });
+
+        socket.on("call:accept", (data: { toUserId: number; callId: string }) => {
+            if (!data?.toUserId || !data?.callId) return;
+            io.to(`user:${data.toUserId}`).emit("call:accepted", { callId: data.callId });
+        });
+
+        socket.on("call:reject", (data: { toUserId: number; callId: string }) => {
+            if (!data?.toUserId || !data?.callId) return;
+            io.to(`user:${data.toUserId}`).emit("call:rejected", { callId: data.callId });
+        });
+
+        socket.on("call:busy", (data: { toUserId: number; callId: string }) => {
+            if (!data?.toUserId || !data?.callId) return;
+            io.to(`user:${data.toUserId}`).emit("call:busy", { callId: data.callId });
+        });
+
+        socket.on("call:offer", (data: { toUserId: number; sdp: unknown; callId: string }) => {
+            if (!data?.toUserId || !data?.callId) return;
+            io.to(`user:${data.toUserId}`).emit("call:offer", { sdp: data.sdp, callerId: userId, callId: data.callId });
+        });
+
+        socket.on("call:answer", (data: { toUserId: number; sdp: unknown; callId: string }) => {
+            if (!data?.toUserId || !data?.callId) return;
+            io.to(`user:${data.toUserId}`).emit("call:answer", { sdp: data.sdp, callId: data.callId });
+        });
+
+        socket.on("call:ice", (data: { toUserId: number; candidate: unknown; callId: string }) => {
+            if (!data?.toUserId || !data?.callId) return;
+            io.to(`user:${data.toUserId}`).emit("call:ice", { candidate: data.candidate, callId: data.callId });
+        });
+
+        socket.on("call:end", (data: { toUserId: number; callId: string }) => {
+            if (!data?.toUserId || !data?.callId) return;
+            io.to(`user:${data.toUserId}`).emit("call:ended", { callId: data.callId });
         });
     });
 

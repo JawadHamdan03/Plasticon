@@ -465,11 +465,11 @@ export function InventoryStockPage() {
           <table className="admin-table">
             <thead>
               <tr>
-                <th>{isArabic ? "المادة" : "Material"}</th>
-                <th>{isArabic ? "النوع" : "Type"}</th>
-                <th>{isArabic ? "الكمية" : "Qty"}</th>
-                <th>{isArabic ? "المرجع" : "Reference"}</th>
-                <th>{isArabic ? "التاريخ" : "Date"}</th>
+                <th>{"المادة"}</th>
+                <th>{"النوع"}</th>
+                <th>{"الكمية"}</th>
+                <th>{"المرجع"}</th>
+                <th>{"التاريخ"}</th>
               </tr>
             </thead>
             <tbody>

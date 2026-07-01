@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, type FormEvent } from "react";
+﻿import { useEffect, useState, useRef, type FormEvent } from "react";
 import {
   FileText, Clock, Plus, X, Trash2, ImageIcon, Eye,
   Search, Maximize2, Minimize2, Download, Pencil, Check,
@@ -8,7 +8,7 @@ import { Button } from "../../components/ui/button";
 import { ModulePageShell } from "../../components/ModulePageShell";
 import { useLocale } from "../../context/LocaleContext";
 import { useAuth } from "../../context/AuthContext";
-import { API_BASE_URL } from "../../lib/api";
+import { API_BASE_URL, pictureUrl as globalPictureUrl } from "../../lib/api";
 import { confirmDialog } from "../../lib/dialog";
 
 function authHeaders(): Record<string, string> {
@@ -16,9 +16,8 @@ function authHeaders(): Record<string, string> {
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
-const PICTURES_BASE = API_BASE_URL.replace("/api", "");
 function picUrl(filename: string) {
-  return `${PICTURES_BASE}/pictures/${filename}`;
+  return globalPictureUrl(filename);
 }
 
 function isImageMime(mime?: string | null, fp?: string | null): boolean {
@@ -128,7 +127,7 @@ export default function TechnicalDocumentation() {
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     setError(""); setSuccess("");
-    if (!form.title.trim()) { setError(nav("Title is required", "العنوان مطلوب")); return; }
+    if (!form.title.trim()) { setError("العنوان مطلوب"); return; }
     setSaving(true);
     try {
       const fd = new FormData();
@@ -145,7 +144,7 @@ export default function TechnicalDocumentation() {
         const err = await res.json().catch(() => ({}));
         throw new Error((err as { message?: string }).message ?? "Failed to upload");
       }
-      setSuccess(nav("Document uploaded successfully", "تم رفع الوثيقة بنجاح"));
+      setSuccess("تم رفع الوثيقة بنجاح");
       setForm(emptyForm()); setFile(null); setPhotoFiles([]);
       if (fileRef.current)   fileRef.current.value   = "";
       if (photosRef.current) photosRef.current.value = "";
@@ -181,7 +180,7 @@ export default function TechnicalDocumentation() {
         throw new Error((err as { message?: string }).message ?? "Failed to update");
       }
       setEditDoc(null);
-      setSuccess(nav("Document updated", "تم تحديث الوثيقة"));
+      setSuccess("تم تحديث الوثيقة");
       void load();
     } catch (err) {
       alert(err instanceof Error ? err.message : "Failed to update");
@@ -233,22 +232,22 @@ export default function TechnicalDocumentation() {
 
   return (
     <ModulePageShell
-      title={nav("Technical Documentation", "التوثيق التقني")}
-      subtitle={nav("Access and manage technical resources and manuals", "الوصول وإدارة الموارد التقنية والكتيبات")}
+      title={"التوثيق التقني"}
+      subtitle={"الوصول وإدارة الموارد التقنية والكتيبات"}
       icon={<FileText size={22} />}
       actions={canAdd ? (
         <Button size="sm" onClick={() => setShowForm(v => !v)}>
           {showForm ? <X size={14} /> : <Plus size={14} />}
-          {showForm ? nav("Cancel", "إلغاء") : nav("Upload Doc", "رفع وثيقة")}
+          {showForm ? "إلغاء" : "رفع وثيقة"}
         </Button>
       ) : undefined}
     >
       {/* KPIs */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: ".75rem", marginBottom: "1.25rem" }}>
         {[
-          { label: nav("Total Documents", "إجمالي الوثائق"),   value: docs.length,    gradient: "linear-gradient(135deg,#3b82f6,#1d4ed8)" },
-          { label: nav("Recently Added",  "مضاف مؤخراً"),      value: recentCount,    gradient: "linear-gradient(135deg,#10b981,#059669)" },
-          { label: nav("Total Views",     "إجمالي المشاهدات"), value: totalDownloads, gradient: "linear-gradient(135deg,#f59e0b,#d97706)" },
+          { label: "إجمالي الوثائق",   value: docs.length,    gradient: "linear-gradient(135deg,#3b82f6,#1d4ed8)" },
+          { label: "مضاف مؤخراً",      value: recentCount,    gradient: "linear-gradient(135deg,#10b981,#059669)" },
+          { label: "إجمالي المشاهدات", value: totalDownloads, gradient: "linear-gradient(135deg,#f59e0b,#d97706)" },
         ].map(k => (
           <div key={k.label} style={{ borderRadius: 14, padding: "1rem 1.1rem", background: k.gradient, color: "#fff", boxShadow: "0 4px 12px rgba(0,0,0,.15)" }}>
             <p style={{ margin: 0, fontSize: ".72rem", fontWeight: 600, opacity: .85, textTransform: "uppercase", letterSpacing: ".06em" }}>{k.label}</p>
@@ -261,13 +260,13 @@ export default function TechnicalDocumentation() {
       {canAdd && showForm && (
         <Card className="p-5 mb-5 border-2 border-(--accent)">
           <h3 style={{ margin: "0 0 1rem", fontSize: ".95rem", fontWeight: 700 }}>
-            {nav("Upload New Document", "رفع وثيقة جديدة")}
+            {"رفع وثيقة جديدة"}
           </h3>
           <div style={{ display: "flex", flexWrap: "wrap", gap: ".4rem", marginBottom: "1rem" }}>
             {[
               { icon: "📄", label: "PDF" },
               { icon: "📝", label: "Word (.doc / .docx)" },
-              { icon: "🖼️", label: nav("Image (PNG / JPG / WebP)", "صورة") },
+              { icon: "🖼️", label: "صورة" },
             ].map(t => (
               <span key={t.label} style={{ display: "inline-flex", alignItems: "center", gap: ".3rem", fontSize: ".75rem", padding: ".2rem .65rem", borderRadius: 99, background: "var(--bg-surface)", border: "1px solid var(--border-default)", color: "var(--text-secondary)", fontWeight: 600 }}>
                 {t.icon} {t.label}
@@ -278,31 +277,31 @@ export default function TechnicalDocumentation() {
           {success && <div className="auth-alert mb-3">{success}</div>}
           <form className="module-form" onSubmit={e => void submit(e)}>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))", gap: "1rem" }}>
-              <label style={{ gridColumn: "1 / -1" }}>{nav("Title", "العنوان")} *
+              <label style={{ gridColumn: "1 / -1" }}>{"العنوان"} *
                 <input type="text" className="input" value={form.title}
                   onChange={e => setForm(p => ({ ...p, title: e.target.value }))}
-                  placeholder={nav("e.g. Machine A - User Manual", "مثال: دليل الآلة أ")} required />
+                  placeholder={"مثال: دليل الآلة أ"} required />
               </label>
-              <label>{nav("Category", "الفئة")}
+              <label>{"الفئة"}
                 <select className="input" value={form.category} onChange={e => setForm(p => ({ ...p, category: e.target.value }))}>
                   {CATEGORIES.filter(c => c !== "All").map(c => <option key={c} value={c}>{c}</option>)}
                 </select>
               </label>
               <label>
-                {nav("Main File", "الملف الرئيسي")}
+                {"الملف الرئيسي"}
                 <span style={{ fontSize: ".72rem", color: "var(--text-secondary)", marginLeft: ".3rem" }}>PDF / Word / Image</span>
                 <input ref={fileRef} type="file" accept=".pdf,.doc,.docx,image/*" className="input"
                   style={{ padding: ".4rem .6rem" }} onChange={e => setFile(e.target.files?.[0] ?? null)} />
               </label>
-              <label style={{ gridColumn: "1 / -1" }}>{nav("Description", "الوصف")}
+              <label style={{ gridColumn: "1 / -1" }}>{"الوصف"}
                 <textarea rows={2} className="input" value={form.description}
                   onChange={e => setForm(p => ({ ...p, description: e.target.value }))}
-                  placeholder={nav("Brief description...", "وصف مختصر...")} />
+                  placeholder={"وصف مختصر..."} />
               </label>
               <div style={{ gridColumn: "1 / -1" }}>
                 <label style={{ display: "block", marginBottom: ".4rem", fontSize: ".85rem", fontWeight: 600 }}>
                   <ImageIcon size={13} style={{ display: "inline", marginInlineEnd: ".3rem", verticalAlign: "middle" }} />
-                  {nav("Extra Photos (up to 10)", "صور إضافية (حتى 10)")}
+                  {"صور إضافية (حتى 10)"}
                   <span style={{ fontSize: ".72rem", color: "var(--text-secondary)", marginLeft: ".3rem", fontWeight: 400 }}>PNG · JPG · WebP</span>
                 </label>
                 <input ref={photosRef} type="file" accept="image/*" multiple className="input"
@@ -324,8 +323,8 @@ export default function TechnicalDocumentation() {
               </div>
             </div>
             <div style={{ display: "flex", gap: ".625rem" }}>
-              <Button type="submit" size="sm" disabled={saving}>{saving ? nav("Uploading...", "جارٍ الرفع...") : nav("Upload", "رفع")}</Button>
-              <Button type="button" size="sm" variant="outline" onClick={() => { setShowForm(false); setError(""); }}>{nav("Cancel", "إلغاء")}</Button>
+              <Button type="submit" size="sm" disabled={saving}>{saving ? "جارٍ الرفع..." : "رفع"}</Button>
+              <Button type="button" size="sm" variant="outline" onClick={() => { setShowForm(false); setError(""); }}>{"إلغاء"}</Button>
             </div>
           </form>
         </Card>
@@ -344,7 +343,7 @@ export default function TechnicalDocumentation() {
         <div style={{ position: "relative", flex: "1 1 220px", minWidth: 180 }}>
           <Search size={14} style={{ position: "absolute", left: ".7rem", top: "50%", transform: "translateY(-50%)", color: "var(--text-secondary)", pointerEvents: "none" }} />
           <input type="search" className="input" value={search} onChange={e => setSearch(e.target.value)}
-            placeholder={nav("Search documents…", "بحث في الوثائق…")}
+            placeholder={"بحث في الوثائق…"}
             style={{ paddingLeft: "2.1rem", paddingRight: search ? "2rem" : undefined }} />
           {search && (
             <button type="button" onClick={() => setSearch("")}
@@ -364,7 +363,7 @@ export default function TechnicalDocumentation() {
 
       {q && (
         <p style={{ fontSize: ".8rem", color: "var(--text-secondary)", marginBottom: ".75rem" }}>
-          {filtered.length} {nav("result(s) for", "نتيجة لـ")} "<strong>{search}</strong>"
+          {filtered.length} {"نتيجة لـ"} "<strong>{search}</strong>"
         </p>
       )}
 
@@ -375,9 +374,9 @@ export default function TechnicalDocumentation() {
         <div className="p-10 text-center" style={{ color: "var(--text-secondary)" }}>
           <FileText size={32} style={{ margin: "0 auto 12px", opacity: .3, display: "block" }} />
           <p style={{ fontWeight: 600 }}>
-            {q ? nav("No documents match your search", "لا توجد وثائق تطابق البحث") : nav("No documents found", "لا توجد وثائق")}
+            {q ? "لا توجد وثائق تطابق البحث" : "لا توجد وثائق"}
           </p>
-          {canAdd && !q && <p style={{ fontSize: ".85rem", marginTop: ".25rem" }}>{nav("Click 'Upload Doc' to add a document", "انقر على 'رفع وثيقة' لإضافة وثيقة")}</p>}
+          {canAdd && !q && <p style={{ fontSize: ".85rem", marginTop: ".25rem" }}>{"انقر على 'رفع وثيقة' لإضافة وثيقة"}</p>}
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -386,7 +385,7 @@ export default function TechnicalDocumentation() {
             const photos      = doc.images ?? [];
             const hasFile     = !!doc.filePath;
             const fileIsImage = hasFile && isImageMime(doc.mimeType, doc.filePath);
-            const openLabel   = fileIsImage ? nav("View Image", "عرض الصورة") : nav("Open Document", "فتح الوثيقة");
+            const openLabel   = fileIsImage ? "عرض الصورة" : "فتح الوثيقة";
 
             return (
               <Card key={doc.id} className="p-0 overflow-hidden flex flex-col" style={{ border: "1px solid var(--border-default)" }}>
@@ -410,7 +409,7 @@ export default function TechnicalDocumentation() {
                     <div style={{ display: "flex", gap: ".2rem", flexShrink: 0 }}>
                       <button type="button"
                         onClick={e => { e.stopPropagation(); openEdit(doc); }}
-                        title={nav("Edit", "تعديل")}
+                        title={"تعديل"}
                         style={{ background: "none", border: "none", cursor: "pointer", color: meta.color, padding: ".2rem" }}>
                         <Pencil size={13} />
                       </button>
@@ -430,14 +429,14 @@ export default function TechnicalDocumentation() {
                     <Clock size={11} />
                     <span>{new Date(doc.createdAt).toLocaleDateString()}</span>
                     {doc.uploadedBy && <span>· {doc.uploadedBy.fullName}</span>}
-                    {hasFile && <span style={{ color: meta.color }}>· {doc.downloadCount} {nav("views", "مشاهدة")}</span>}
+                    {hasFile && <span style={{ color: meta.color }}>· {doc.downloadCount} {"مشاهدة"}</span>}
                   </div>
                   {photos.length > 0 && (
                     <div style={{ display: "flex", flexWrap: "wrap", gap: ".35rem", marginTop: ".25rem" }}>
                       {photos.map((img, i) => (
                         <button key={i} type="button"
-                          title={nav("Click to view photo", "انقر لعرض الصورة")}
-                          onClick={() => openPreview(picUrl(img), `${doc.title} — ${nav("photo", "صورة")} ${i + 1}`)}
+                          title={"انقر لعرض الصورة"}
+                          onClick={() => openPreview(picUrl(img), `${doc.title} — ${"صورة"} ${i + 1}`)}
                           style={{ position: "relative", width: 58, height: 58, borderRadius: 6, overflow: "hidden", border: "2px solid var(--border-default)", cursor: "pointer", background: "none", padding: 0, flexShrink: 0 }}
                           onMouseEnter={e => { (e.currentTarget.querySelector(".photo-overlay") as HTMLElement | null)?.style.setProperty("background", "rgba(0,0,0,.35)"); }}
                           onMouseLeave={e => { (e.currentTarget.querySelector(".photo-overlay") as HTMLElement | null)?.style.setProperty("background", "rgba(0,0,0,0)"); }}
@@ -473,28 +472,28 @@ export default function TechnicalDocumentation() {
         <>
           <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.5)", zIndex: 1099 }} onClick={() => setEditDoc(null)} />
           <div style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%,-50%)", zIndex: 1100, background: "var(--bg-card)", borderRadius: 16, padding: "1.5rem", width: "min(92vw,520px)", boxShadow: "0 20px 60px rgba(0,0,0,.2)" }}>
-            <h3 style={{ margin: "0 0 1.25rem", fontSize: "1rem", fontWeight: 700 }}>{nav("Edit Document", "تعديل الوثيقة")}</h3>
+            <h3 style={{ margin: "0 0 1.25rem", fontSize: "1rem", fontWeight: 700 }}>{"تعديل الوثيقة"}</h3>
             <form onSubmit={e => void submitEdit(e)}>
               <label style={{ display: "block", marginBottom: ".75rem" }}>
-                <span style={{ fontSize: ".83rem", fontWeight: 600, color: "var(--text-secondary)", display: "block", marginBottom: ".3rem" }}>{nav("Title", "العنوان")} *</span>
+                <span style={{ fontSize: ".83rem", fontWeight: 600, color: "var(--text-secondary)", display: "block", marginBottom: ".3rem" }}>{"العنوان"} *</span>
                 <input className="input" value={editForm.title} onChange={e => setEditForm(p => ({ ...p, title: e.target.value }))} required />
               </label>
               <label style={{ display: "block", marginBottom: ".75rem" }}>
-                <span style={{ fontSize: ".83rem", fontWeight: 600, color: "var(--text-secondary)", display: "block", marginBottom: ".3rem" }}>{nav("Category", "الفئة")}</span>
+                <span style={{ fontSize: ".83rem", fontWeight: 600, color: "var(--text-secondary)", display: "block", marginBottom: ".3rem" }}>{"الفئة"}</span>
                 <select className="input" value={editForm.category} onChange={e => setEditForm(p => ({ ...p, category: e.target.value }))}>
                   {CATEGORIES.filter(c => c !== "All").map(c => <option key={c} value={c}>{c}</option>)}
                 </select>
               </label>
               <label style={{ display: "block", marginBottom: "1rem" }}>
-                <span style={{ fontSize: ".83rem", fontWeight: 600, color: "var(--text-secondary)", display: "block", marginBottom: ".3rem" }}>{nav("Description", "الوصف")}</span>
-                <textarea rows={3} className="input" value={editForm.description} onChange={e => setEditForm(p => ({ ...p, description: e.target.value }))} placeholder={nav("Brief description...", "وصف مختصر...")} />
+                <span style={{ fontSize: ".83rem", fontWeight: 600, color: "var(--text-secondary)", display: "block", marginBottom: ".3rem" }}>{"الوصف"}</span>
+                <textarea rows={3} className="input" value={editForm.description} onChange={e => setEditForm(p => ({ ...p, description: e.target.value }))} placeholder={"وصف مختصر..."} />
               </label>
               <div style={{ display: "flex", gap: ".5rem" }}>
                 <Button type="submit" size="sm" disabled={editSaving}>
                   <Check size={13} />
-                  {editSaving ? nav("Saving…", "جارٍ الحفظ…") : nav("Save Changes", "حفظ التغييرات")}
+                  {editSaving ? "جارٍ الحفظ…" : "حفظ التغييرات"}
                 </Button>
-                <Button type="button" size="sm" variant="outline" onClick={() => setEditDoc(null)}>{nav("Cancel", "إلغاء")}</Button>
+                <Button type="button" size="sm" variant="outline" onClick={() => setEditDoc(null)}>{"إلغاء"}</Button>
               </div>
             </form>
           </div>
@@ -515,10 +514,10 @@ export default function TechnicalDocumentation() {
               <a href={docViewer.src} download onClick={e => e.stopPropagation()}
                 style={{ display: "flex", alignItems: "center", gap: ".3rem", fontSize: ".78rem", fontWeight: 600, color: "var(--text-secondary)", textDecoration: "none", padding: ".3rem .6rem", borderRadius: 6, border: "1px solid var(--border-default)", background: "var(--bg-surface)" }}>
                 <Download size={13} />
-                {nav("Download", "تحميل")}
+                {"تحميل"}
               </a>
               <button type="button" onClick={() => setDocFullscreen(f => !f)}
-                title={docFullscreen ? nav("Restore", "تصغير") : nav("Fullscreen", "تكبير")}
+                title={docFullscreen ? "تصغير" : "تكبير"}
                 style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 32, height: 32, borderRadius: 6, border: "1px solid var(--border-default)", background: "var(--bg-surface)", cursor: "pointer", color: "var(--text-secondary)" }}>
                 {docFullscreen ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
               </button>
@@ -535,9 +534,9 @@ export default function TechnicalDocumentation() {
                 <embed src={docViewer.src} type="application/pdf" style={{ width: "100%", height: "100%" }} />
                 <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "1rem", padding: "2rem", color: "var(--text-secondary)" }}>
                   <FileText size={48} style={{ opacity: .3 }} />
-                  <p style={{ fontWeight: 600 }}>{nav("PDF cannot be displayed in this browser.", "لا يمكن عرض ملف PDF في هذا المتصفح.")}</p>
+                  <p style={{ fontWeight: 600 }}>{"لا يمكن عرض ملف PDF في هذا المتصفح."}</p>
                   <a href={docViewer.src} download style={{ padding: ".5rem 1.25rem", borderRadius: 8, background: "var(--brand-primary,#f97316)", color: "#fff", fontWeight: 700, textDecoration: "none" }}>
-                    {nav("Download PDF", "تحميل PDF")}
+                    {"تحميل PDF"}
                   </a>
                 </div>
               </object>
@@ -558,7 +557,7 @@ export default function TechnicalDocumentation() {
               <button type="button" className="img-zoom-btn" onClick={zoomIn}  disabled={zoom >= 5}>+</button>
               {zoom !== 1 && <button type="button" className="img-zoom-btn img-zoom-btn--reset" onClick={() => setZoom(1)}>↺</button>}
               <div style={{ flex: 1 }} />
-              <button type="button" className="auth-button auth-button--ghost" onClick={closePreview}>✕ {nav("Close", "إغلاق")}</button>
+              <button type="button" className="auth-button auth-button--ghost" onClick={closePreview}>✕ {"إغلاق"}</button>
             </div>
             <div className="settings-image-modal__viewport" onWheel={handleWheel}>
               <img src={preview.src} alt={preview.alt}

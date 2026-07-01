@@ -12,12 +12,24 @@ if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
 }
 
+// Extension is derived from the server-validated MIME type, never from client-supplied filename
+const MIME_TO_EXT: Record<string, string> = {
+  "image/jpeg":    ".jpg",
+  "image/png":     ".png",
+  "image/gif":     ".gif",
+  "image/webp":    ".webp",
+  "application/pdf": ".pdf",
+  "application/msword": ".doc",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document": ".docx",
+};
+
 const storage = multer.diskStorage({
   destination: (_req, _file, cb) => {
     cb(null, uploadsDir);
   },
   filename: (_req, file, cb) => {
-    const uniqueName = `${Date.now()}_${Math.round(Math.random() * 1e9)}${path.extname(file.originalname)}`;
+    const ext = MIME_TO_EXT[file.mimetype] ?? ".bin";
+    const uniqueName = `${Date.now()}_${Math.round(Math.random() * 1e9)}${ext}`;
     cb(null, uniqueName);
   },
 });

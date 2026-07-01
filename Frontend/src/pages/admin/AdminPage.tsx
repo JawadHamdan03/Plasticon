@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+﻿import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { useLocale } from "../../context/LocaleContext";
@@ -459,7 +459,7 @@ export function AdminPage() {
       );
     } catch (error) {
       setUsersError(
-        error instanceof Error ? error.message : "Failed to load users",
+        error instanceof Error ? error.message : "فشل تحميل المستخدمين",
       );
     } finally {
       setUsersLoading(false);
@@ -524,7 +524,7 @@ export function AdminPage() {
       setShifts((await response.json()) as Shift[]);
     } catch (error) {
       setShiftsError(
-        error instanceof Error ? error.message : "Failed to load shifts",
+        error instanceof Error ? error.message : "فشل تحميل الشفتات",
       );
     } finally {
       setShiftsLoading(false);
@@ -542,7 +542,7 @@ export function AdminPage() {
       setMachines((await response.json()) as Machine[]);
     } catch (error) {
       setMachinesError(
-        error instanceof Error ? error.message : "Failed to load machines",
+        error instanceof Error ? error.message : "فشل تحميل الآلات",
       );
     } finally {
       setMachinesLoading(false);
@@ -563,7 +563,7 @@ export function AdminPage() {
       setAuditLogs(Array.isArray(payload) ? payload : (payload.logs ?? []));
     } catch (error) {
       setAuditLogsError(
-        error instanceof Error ? error.message : "Failed to load audit logs",
+        error instanceof Error ? error.message : "فشل تحميل سجلات التدقيق",
       );
     } finally {
       setAuditLogsLoading(false);
@@ -581,7 +581,7 @@ export function AdminPage() {
       setDashboardAnalytics((await response.json()) as DashboardAnalytics);
     } catch (error) {
       setDashboardError(
-        error instanceof Error ? error.message : "Failed to load dashboard",
+        error instanceof Error ? error.message : "فشل تحميل لوحة التحكم",
       );
     } finally {
       setDashboardLoading(false);
@@ -601,7 +601,7 @@ export function AdminPage() {
       setProductionError(
         error instanceof Error
           ? error.message
-          : "Failed to load production settings",
+          : "فشل تحميل إعدادات الإنتاج",
       );
     } finally {
       setProductionLoading(false);
@@ -634,7 +634,7 @@ export function AdminPage() {
       setSystemError(
         error instanceof Error
           ? error.message
-          : "Failed to load system settings",
+          : "فشل تحميل إعدادات النظام",
       );
     } finally {
       setSystemLoading(false);
@@ -773,7 +773,7 @@ export function AdminPage() {
       setWorkerToolsError(
         error instanceof Error
           ? error.message
-          : "Failed to load worker tools overview",
+          : "فشل تحميل نظرة أدوات العمال",
       );
     } finally {
       setWorkerToolsLoading(false);
@@ -908,7 +908,7 @@ export function AdminPage() {
   ) => {
     const piecesPerCarton = Number(value);
     if (!Number.isInteger(piecesPerCarton) || piecesPerCarton <= 0) {
-      toast.warning("Pieces per carton must be a positive integer");
+      toast.warning("عدد القطع في الكرتون يجب أن يكون عدداً صحيحاً موجباً");
       return;
     }
     try {
@@ -931,7 +931,7 @@ export function AdminPage() {
       );
       await loadSettingsOverview();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to update production setting");
+      toast.error(error instanceof Error ? error.message : "فشل تحديث إعداد الإنتاج");
     }
   };
 
@@ -961,15 +961,15 @@ export function AdminPage() {
       }
       const data = (await response.json()) as SystemSetting;
       setSystemSetting(data);
-      toast.success("System settings updated successfully");
+      toast.success("تم تحديث إعدادات النظام بنجاح");
       await loadSettingsOverview();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to update system settings");
+      toast.error(error instanceof Error ? error.message : "فشل تحديث إعدادات النظام");
     }
   };
 
   return (
-    <main className="admin-shell" dir={locale === "ar" ? "rtl" : "ltr"}>
+    <main className="admin-shell" dir="rtl">
       <section className="admin-card">
         <header className="admin-header">
           <PageHeader
@@ -1350,7 +1350,7 @@ export function AdminPage() {
                         <tr>
                           <th>{copy.admin.name}</th>
                           <th>{copy.admin.role}</th>
-                          <th>Month</th>
+                          <th>الشهر</th>
                           <th>{payrollText.totalPayout}</th>
                         </tr>
                       </thead>
@@ -1554,7 +1554,7 @@ export function AdminPage() {
                 onClick={exportWorkerToolsCsv}
                 disabled={!workerToolsOverview?.items?.length}
               >
-                {isArabic ? "تصدير CSV" : "Export CSV"}
+                {"تصدير CSV"}
               </button>
             </div>
           </div>
@@ -1564,23 +1564,23 @@ export function AdminPage() {
             aria-label="Worker tool filters"
           >
             {[
-              { value: "", label: isArabic ? "الكل" : "All" },
-              { value: "stops", label: isArabic ? "توقفات" : "Stops" },
+              { value: "", label: "الكل" },
+              { value: "stops", label: "توقفات" },
               {
                 value: "checklist",
-                label: isArabic ? "فحص" : "Checklist",
+                label: "فحص",
               },
-              { value: "waste", label: isArabic ? "مخلفات" : "Waste" },
-              { value: "target", label: isArabic ? "أهداف" : "Targets" },
+              { value: "waste", label: "مخلفات" },
+              { value: "target", label: "أهداف" },
               { value: "kaizen", label: "Kaizen" },
-              { value: "quality", label: isArabic ? "جودة" : "Quality" },
+              { value: "quality", label: "جودة" },
               {
                 value: "micro",
-                label: isArabic ? "توقفات صغيرة" : "Micro",
+                label: "توقفات صغيرة",
               },
               {
                 value: "anomaly",
-                label: isArabic ? "كهرباء" : "Anomaly",
+                label: "كهرباء",
               },
             ].map((tab) => (
               <button
@@ -1607,7 +1607,7 @@ export function AdminPage() {
           </div>
           <div className="admin-form-grid">
             <label>
-              {isArabic ? "اسم العامل" : "Worker name"}
+              {"اسم العامل"}
               <input
                 type="text"
                 value={workerToolsFilters.workerName}
@@ -1617,12 +1617,12 @@ export function AdminPage() {
                     workerName: event.target.value,
                   }))
                 }
-                placeholder={isArabic ? "ابحث بالاسم" : "Search by name"}
+                placeholder={"ابحث بالاسم"}
               />
             </label>
 
             <label>
-              {isArabic ? "من تاريخ" : "From date"}
+              {"من تاريخ"}
               <input
                 type="date"
                 value={workerToolsFilters.fromDate}
@@ -1636,7 +1636,7 @@ export function AdminPage() {
             </label>
 
             <label>
-              {isArabic ? "إلى تاريخ" : "To date"}
+              {"إلى تاريخ"}
               <input
                 type="date"
                 value={workerToolsFilters.toDate}
@@ -1658,7 +1658,7 @@ export function AdminPage() {
                 setWorkerToolsAppliedFilters(workerToolsFilters);
               }}
             >
-              {isArabic ? "تطبيق الفلاتر" : "Apply filters"}
+              {"تطبيق الفلاتر"}
             </button>
             <button
               type="button"
@@ -1679,7 +1679,7 @@ export function AdminPage() {
                 });
               }}
             >
-              {isArabic ? "مسح الفلاتر" : "Clear filters"}
+              {"مسح الفلاتر"}
             </button>
           </div>
           {workerToolsLoading ? (
@@ -1699,7 +1699,7 @@ export function AdminPage() {
               <div className="admin-kpi-grid">
                 <article className="admin-kpi-card">
                   <p className="admin-kpi-card__label">
-                    {isArabic ? "الإجمالي" : "Total"}
+                    {"الإجمالي"}
                   </p>
                   <p className="admin-kpi-card__value">
                     {workerToolsOverview.summary.total}
@@ -1707,7 +1707,7 @@ export function AdminPage() {
                 </article>
                 <article className="admin-kpi-card">
                   <p className="admin-kpi-card__label">
-                    {isArabic ? "توقفات" : "Stops"}
+                    {"توقفات"}
                   </p>
                   <p className="admin-kpi-card__value">
                     {workerToolsOverview.summary.stops}
@@ -1715,7 +1715,7 @@ export function AdminPage() {
                 </article>
                 <article className="admin-kpi-card">
                   <p className="admin-kpi-card__label">
-                    {isArabic ? "فحص" : "Checklist"}
+                    {"فحص"}
                   </p>
                   <p className="admin-kpi-card__value">
                     {workerToolsOverview.summary.checklist}
@@ -1723,7 +1723,7 @@ export function AdminPage() {
                 </article>
                 <article className="admin-kpi-card">
                   <p className="admin-kpi-card__label">
-                    {isArabic ? "مخلفات" : "Waste"}
+                    {"مخلفات"}
                   </p>
                   <p className="admin-kpi-card__value">
                     {workerToolsOverview.summary.waste}
@@ -1731,21 +1731,21 @@ export function AdminPage() {
                 </article>
                 <article className="admin-kpi-card">
                   <p className="admin-kpi-card__label">
-                    {isArabic ? "أهداف" : "Targets"}
+                    {"أهداف"}
                   </p>
                   <p className="admin-kpi-card__value">
                     {workerToolsOverview.summary.target}
                   </p>
                 </article>
                 <article className="admin-kpi-card">
-                  <p className="admin-kpi-card__label">Kaizen</p>
+                  <p className="admin-kpi-card__label">كايزن</p>
                   <p className="admin-kpi-card__value">
                     {workerToolsOverview.summary.kaizen}
                   </p>
                 </article>
                 <article className="admin-kpi-card">
                   <p className="admin-kpi-card__label">
-                    {isArabic ? "جودة" : "Quality"}
+                    {"جودة"}
                   </p>
                   <p className="admin-kpi-card__value">
                     {workerToolsOverview.summary.quality}
@@ -1753,7 +1753,7 @@ export function AdminPage() {
                 </article>
                 <article className="admin-kpi-card">
                   <p className="admin-kpi-card__label">
-                    {isArabic ? "توقفات صغيرة" : "Micro Stops"}
+                    {"توقفات صغيرة"}
                   </p>
                   <p className="admin-kpi-card__value">
                     {workerToolsOverview.summary.micro}
@@ -1761,7 +1761,7 @@ export function AdminPage() {
                 </article>
                 <article className="admin-kpi-card">
                   <p className="admin-kpi-card__label">
-                    {isArabic ? "كهرباء" : "Electricity"}
+                    {"كهرباء"}
                   </p>
                   <p className="admin-kpi-card__value">
                     {workerToolsOverview.summary.anomaly}
@@ -1770,17 +1770,17 @@ export function AdminPage() {
               </div>
 
               <h3>
-                {isArabic ? "آخر إدخالات العمال" : "Recent worker submissions"}
+                {"آخر إدخالات العمال"}
               </h3>
               <TableShell>
                 <TableBase className="admin-table">
                   <thead>
                     <tr>
                       <th>{copy.admin.id}</th>
-                      <th>{isArabic ? "النوع" : "Feature"}</th>
+                      <th>{"النوع"}</th>
                       <th>{copy.admin.name}</th>
-                      <th>{isArabic ? "العنوان" : "Title"}</th>
-                      <th>{isArabic ? "التفاصيل" : "Details"}</th>
+                      <th>{"العنوان"}</th>
+                      <th>{"التفاصيل"}</th>
                       <th>{copy.admin.calculatedAt}</th>
                     </tr>
                   </thead>

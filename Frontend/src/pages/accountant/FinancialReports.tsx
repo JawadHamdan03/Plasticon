@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { confirmDialog } from "../../lib/dialog";
 import { Plus, Pencil, Trash2, FileText, BarChart2, Calendar, X, Save, ExternalLink } from "lucide-react";
 import { ModulePageShell } from "../../components/ModulePageShell";
@@ -79,7 +79,7 @@ export default function FinancialReports() {
   };
 
   const handleDelete = async (id: number) => {
-    if (!(await confirmDialog(nav("Delete this report?", "حذف هذا التقرير؟"), { danger: true }))) return;
+    if (!(await confirmDialog("حذف هذا التقرير؟", { danger: true }))) return;
     await fetch(`${API_BASE_URL}/financial-reports/${id}`, { method: "DELETE", headers: authHeaders(), credentials: "include" });
     void fetchReports();
   };
@@ -91,16 +91,16 @@ export default function FinancialReports() {
 
   return (
     <ModulePageShell
-      title={nav("Financial Reports", "التقارير المالية")}
-      subtitle={nav("Generate and access periodic financial reports", "إنشاء والوصول إلى التقارير المالية الدورية")}
+      title={"التقارير المالية"}
+      subtitle={"إنشاء والوصول إلى التقارير المالية الدورية"}
       icon={<BarChart2 size={22} />}
     >
       {/* KPIs */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: ".75rem", marginBottom: "1.25rem" }}>
         {[
-          { label: nav("Monthly Reports",   "تقارير شهرية"),  value: monthly,   gradient: "linear-gradient(135deg,#3b82f6,#1d4ed8)" },
-          { label: nav("Quarterly Reports", "تقارير فصلية"),  value: quarterly, gradient: "linear-gradient(135deg,#8b5cf6,#7c3aed)" },
-          { label: nav("Annual Reports",    "تقارير سنوية"),  value: annual,    gradient: "linear-gradient(135deg,#10b981,#047857)" },
+          { label: "تقارير شهرية",  value: monthly,   gradient: "linear-gradient(135deg,#3b82f6,#1d4ed8)" },
+          { label: "تقارير فصلية",  value: quarterly, gradient: "linear-gradient(135deg,#8b5cf6,#7c3aed)" },
+          { label: "تقارير سنوية",  value: annual,    gradient: "linear-gradient(135deg,#10b981,#047857)" },
         ].map((k) => (
           <div key={k.label} style={{ borderRadius: 14, padding: "1rem 1.1rem", background: k.gradient, color: "#fff", boxShadow: "0 4px 12px rgba(0,0,0,.15)" }}>
             <p style={{ margin: 0, fontSize: ".72rem", fontWeight: 600, opacity: .85, textTransform: "uppercase", letterSpacing: ".06em" }}>{k.label}</p>
@@ -114,18 +114,18 @@ export default function FinancialReports() {
         {!isAdmin && (
           <Button size="sm" onClick={openNew}>
             <Plus size={15} className="me-1" />
-            {nav("Add Report", "إضافة تقرير")}
+            {"إضافة تقرير"}
           </Button>
         )}
         <select className="input text-sm h-8 min-w-[150px]" value={filterType} onChange={(e) => setFilterType(e.target.value)}>
-          <option value="">{nav("All Types", "جميع الأنواع")}</option>
-          <option value="MONTHLY">{nav("Monthly", "شهري")}</option>
-          <option value="QUARTERLY">{nav("Quarterly", "فصلي")}</option>
-          <option value="ANNUAL">{nav("Annual", "سنوي")}</option>
+          <option value="">{"جميع الأنواع"}</option>
+          <option value="MONTHLY">{"شهري"}</option>
+          <option value="QUARTERLY">{"فصلي"}</option>
+          <option value="ANNUAL">{"سنوي"}</option>
         </select>
         {filterType && (
           <button className="text-xs text-[var(--text-secondary)] underline" onClick={() => setFilterType("")}>
-            {nav("Clear", "مسح")}
+            {"مسح"}
           </button>
         )}
       </div>
@@ -136,35 +136,35 @@ export default function FinancialReports() {
           <div className="flex items-center justify-between mb-5">
             <div>
               <h3 className="font-bold text-[var(--text-primary)] text-base">
-                {editingId ? nav("Edit Report", "تعديل التقرير") : nav("New Report", "تقرير جديد")}
+                {editingId ? "تعديل التقرير" : "تقرير جديد"}
               </h3>
-              <p className="text-xs text-[var(--text-secondary)] mt-0.5">{nav("Fill in the report details", "أدخل بيانات التقرير")}</p>
+              <p className="text-xs text-[var(--text-secondary)] mt-0.5">{"أدخل بيانات التقرير"}</p>
             </div>
             <button className="text-[var(--text-secondary)] hover:text-[var(--text-primary)]" onClick={() => setShowForm(false)}><X size={18} /></button>
           </div>
 
-          <p className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wide mb-2">{nav("Report Info", "بيانات التقرير")}</p>
+          <p className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wide mb-2">{"بيانات التقرير"}</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
             <div className="sm:col-span-2">
-              <label className="label">{nav("Report Title *", "عنوان التقرير *")}</label>
-              <input className="input" placeholder={nav("e.g. Q1 2025 Financial Summary", "مثال: ملخص مالي الربع الأول 2025")}
+              <label className="label">{"عنوان التقرير *"}</label>
+              <input className="input" placeholder={"مثال: ملخص مالي الربع الأول 2025"}
                 value={form.title} onChange={(e) => setForm((p) => ({ ...p, title: e.target.value }))} />
             </div>
             <div>
-              <label className="label">{nav("Report Type *", "نوع التقرير *")}</label>
+              <label className="label">{"نوع التقرير *"}</label>
               <select className="input" value={form.reportType} onChange={(e) => setForm((p) => ({ ...p, reportType: e.target.value }))}>
-                <option value="MONTHLY">{nav("Monthly", "شهري")}</option>
-                <option value="QUARTERLY">{nav("Quarterly", "فصلي")}</option>
-                <option value="ANNUAL">{nav("Annual", "سنوي")}</option>
+                <option value="MONTHLY">{"شهري"}</option>
+                <option value="QUARTERLY">{"فصلي"}</option>
+                <option value="ANNUAL">{"سنوي"}</option>
               </select>
             </div>
             <div>
-              <label className="label">{nav("Period *", "الفترة *")}</label>
-              <input className="input" placeholder={nav("e.g. Q1 2025, Jan 2025, FY 2025", "مثال: Q1 2025 أو يناير 2025")}
+              <label className="label">{"الفترة *"}</label>
+              <input className="input" placeholder={"مثال: Q1 2025 أو يناير 2025"}
                 value={form.period} onChange={(e) => setForm((p) => ({ ...p, period: e.target.value }))} />
             </div>
             <div className="sm:col-span-2">
-              <label className="label">{nav("PDF Link (optional)", "رابط PDF (اختياري)")}</label>
+              <label className="label">{"رابط PDF (اختياري)"}</label>
               <input className="input" type="url" placeholder="https://..."
                 value={form.pdfPath} onChange={(e) => setForm((p) => ({ ...p, pdfPath: e.target.value }))} />
             </div>
@@ -173,9 +173,9 @@ export default function FinancialReports() {
           <div className="flex gap-2 pt-2 border-t border-[var(--border-default)]">
             <Button size="sm" onClick={handleSave} disabled={saving || !form.title.trim() || !form.period.trim()}>
               <Save size={14} className="me-1" />
-              {saving ? nav("Saving...", "جارٍ الحفظ...") : nav("Save Report", "حفظ التقرير")}
+              {saving ? "جارٍ الحفظ..." : "حفظ التقرير"}
             </Button>
-            <Button size="sm" variant="outline" onClick={() => setShowForm(false)}>{nav("Cancel", "إلغاء")}</Button>
+            <Button size="sm" variant="outline" onClick={() => setShowForm(false)}>{"إلغاء"}</Button>
           </div>
         </Card>
       )}
@@ -186,8 +186,8 @@ export default function FinancialReports() {
       ) : filtered.length === 0 ? (
         <Card className="p-12 text-center text-[var(--text-secondary)]">
           <FileText size={32} className="mx-auto mb-3 opacity-30" />
-          <p className="font-medium">{nav("No reports found", "لا توجد تقارير")}</p>
-          <p className="text-sm mt-1">{nav("Add your first report to get started", "أضف أول تقرير للبدء")}</p>
+          <p className="font-medium">{"لا توجد تقارير"}</p>
+          <p className="text-sm mt-1">{"أضف أول تقرير للبدء"}</p>
         </Card>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -202,7 +202,7 @@ export default function FinancialReports() {
                     <div className="min-w-0">
                       <p className="font-bold text-sm text-[var(--text-primary)] truncate">{r.title}</p>
                       <span style={{ background: meta.color + "20", color: meta.color, borderRadius: "20px", padding: "1px 8px", fontSize: ".68rem", fontWeight: 700 }}>
-                        {locale === "ar" ? meta.labelAr : meta.label}
+                        {meta.labelAr}
                       </span>
                     </div>
                   </div>
@@ -225,7 +225,7 @@ export default function FinancialReports() {
                   </div>
                   <div className="flex items-center gap-2 text-sm text-[var(--text-secondary)]">
                     <span>👤</span>
-                    <span className="truncate">{r.generatedBy?.fullName ?? nav("Unknown", "غير معروف")}</span>
+                    <span className="truncate">{r.generatedBy?.fullName ?? "غير معروف"}</span>
                   </div>
                   <div className="flex items-center gap-2 text-xs text-[var(--text-secondary)]">
                     <span>{new Date(r.createdAt).toLocaleDateString()}</span>
@@ -238,7 +238,7 @@ export default function FinancialReports() {
                       className="flex items-center justify-center gap-1.5 w-full text-xs font-semibold py-1.5 rounded-lg"
                       style={{ background: meta.bg, color: meta.color }}>
                       <ExternalLink size={11} />
-                      {nav("View PDF", "عرض PDF")}
+                      {"عرض PDF"}
                     </a>
                   </div>
                 )}

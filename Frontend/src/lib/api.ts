@@ -18,6 +18,18 @@ export async function apiFetch(
   return fetch(url, { credentials: "include", ...options });
 }
 
+/**
+ * Constructs an authenticated URL for a picture stored on the server.
+ * Appends the JWT as a query param so <img> tags and <a href> links
+ * work cross-origin without needing custom request headers.
+ */
+export function pictureUrl(filename: string | null | undefined): string {
+  if (!filename) return "";
+  const clean = filename.replace(/^(?:prisma\/?)?pictures\//, "");
+  const token = localStorage.getItem("plasticon_token") ?? "";
+  return `${API_BASE_URL}/pictures/${clean}?token=${encodeURIComponent(token)}`;
+}
+
 
 
 

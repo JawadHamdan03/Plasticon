@@ -71,7 +71,7 @@ export function ExpensesScreen() {
         try {
           await api.delete(`/expenses/${e.id}`);
           setExpenses((p) => p.filter((x) => x.id !== e.id));
-        } catch (err: any) { Alert.alert('Error', err.message ?? 'Failed'); }
+        } catch (err: any) { Alert.alert('خطأ', err.message ?? 'فشلت العملية'); }
       }},
     ]);
   };
@@ -82,7 +82,7 @@ export function ExpensesScreen() {
       const up = await api.patch<Expense>(`/expenses/${e.id}/approve`, {});
       setExpenses((p) => p.map((x) => x.id === e.id ? up : x));
     } catch (err: any) {
-      Alert.alert(isAr ? 'خطأ' : 'Error', err.message ?? 'Failed to approve');
+      Alert.alert('خطأ', err.message ?? 'فشلت العملية');
     } finally { setApproving(null); }
   };
 
@@ -98,7 +98,7 @@ export function ExpensesScreen() {
       setExpenses((p) => [cr, ...p]);
       setModal(false);
       setForm(EMPTY);
-    } catch (e: any) { Alert.alert(isAr ? 'خطأ' : 'Error', e.message ?? 'Failed'); }
+    } catch (e: any) { Alert.alert('خطأ', e.message ?? 'فشلت العملية'); }
     finally { setSaving(false); }
   };
 

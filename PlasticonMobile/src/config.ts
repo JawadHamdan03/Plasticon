@@ -7,8 +7,8 @@ const isBrowser = typeof document !== 'undefined';
 
 export const API_BASE = isBrowser
   ? 'http://localhost:8080'
-  : (process.env.EXPO_PUBLIC_API_URL ?? 'http://192.168.1.8:8080');
+  : (process.env.EXPO_PUBLIC_API_URL ?? 'http://192.168.1.27:8080');
 
 export const RAG_BASE = isBrowser
   ? 'http://localhost:3001/api'
-  : `${process.env.EXPO_PUBLIC_RAG_URL ?? 'http://192.168.1.8:3001'}/api`;
+  : `${process.env.EXPO_PUBLIC_RAG_URL ?? 'http://192.168.1.27:3001'}/api`;

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+﻿import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLocale } from "../../context/LocaleContext";
 import { appCopy } from "../../content/appCopy";
 import { API_BASE_URL, readApiError } from "../../lib/api";
@@ -12,9 +12,9 @@ const MATERIAL_LABELS: Record<Material, string> = {
   HDPE: "HDPE",
   LDPE: "LDPE",
   PET: "PET",
-  COLOR: "Color (Masterbatch)",
-  ADHESIVE: "Adhesive",
-  EMPTY_BAGS: "Empty Bags",
+  COLOR: "لون (ماستر باتش)",
+  ADHESIVE: "لاصق",
+  EMPTY_BAGS: "أكياس فارغة",
 };
 
 const MATERIAL_COLORS: Record<Material, string> = {
@@ -117,11 +117,8 @@ export function MachinesPage() {
   ];
 
   const pageText = useMemo(
-    () =>
-      isAr
-        ? { title: "الماكينات", loading: "جارٍ تحميل...", noData: "لا توجد ماكينات" }
-        : { title: "Machines", loading: "Loading machines...", noData: "No machines available" },
-    [isAr],
+    () => ({ title: "الماكينات", loading: "جارٍ تحميل...", noData: "لا توجد ماكينات" }),
+    [],
   );
 
   const loadMachines = useCallback(async () => {
@@ -167,7 +164,7 @@ export function MachinesPage() {
     const name = newForm.name.trim();
     const typeName = newForm.typeName.trim();
     if (!name || !typeName) {
-      toast.warning(isAr ? "الاسم والنوع مطلوبان" : "Name and type are required");
+      toast.warning("الاسم والنوع مطلوبان");
       return;
     }
     const mats = newForm.materials.length ? newForm.materials : defaultMaterials(typeName);
@@ -181,9 +178,9 @@ export function MachinesPage() {
       if (!response.ok) throw new Error(await readApiError(response));
       await loadMachines();
       setNewForm({ name: "", typeName: "", materials: [], status: "OPERATIONAL" });
-      toast.success(isAr ? "تمت إضافة الماكينة" : "Machine added");
+      toast.success("تمت إضافة الماكينة");
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to create machine");
+      toast.error(err instanceof Error ? err.message : "فشل إنشاء الماكينة");
     } finally {
       setCreating(false);
     }
@@ -194,7 +191,7 @@ export function MachinesPage() {
     const name = editForm.name.trim();
     const typeName = editForm.typeName.trim();
     if (!name || !typeName) {
-      toast.warning(isAr ? "الاسم والنوع مطلوبان" : "Name and type are required");
+      toast.warning("الاسم والنوع مطلوبان");
       return;
     }
     const mats = editForm.materials.length ? editForm.materials : defaultMaterials(typeName);
@@ -214,9 +211,9 @@ export function MachinesPage() {
         prev.map((m) => (m.id === updated.id ? { ...m, ...updated } : m)),
       );
       cancelEdit();
-      toast.success(isAr ? "تم تحديث الماكينة" : "Machine updated");
+      toast.success("تم تحديث الماكينة");
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to update");
+      toast.error(err instanceof Error ? err.message : "فشل التحديث");
     }
   };
 
@@ -228,9 +225,9 @@ export function MachinesPage() {
       if (!response.ok) throw new Error(await readApiError(response));
       setMachines((prev) => prev.filter((m) => m.id !== id));
       setConfirmDeleteId(null);
-      toast.success(isAr ? "تم حذف الماكينة" : "Machine deleted");
+      toast.success("تم حذف الماكينة");
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to delete machine");
+      toast.error(err instanceof Error ? err.message : "فشل حذف الماكينة");
     } finally {
       setDeletingId(null);
     }
@@ -272,7 +269,7 @@ export function MachinesPage() {
   );
 
   return (
-    <main className="admin-shell" dir={isAr ? "rtl" : "ltr"}>
+    <main className="admin-shell" dir="rtl">
       <section className="admin-card">
         <header className="admin-header">
           <div>
@@ -299,7 +296,7 @@ export function MachinesPage() {
                   {copy.admin.name}
                   <input
                     value={newForm.name}
-                    placeholder={isAr ? "مثال: ماكينة A" : "e.g. Machine A"}
+                    placeholder={"مثال: ماكينة A"}
                     onChange={(e) => setNewForm((p) => ({ ...p, name: e.target.value }))}
                   />
                 </label>
@@ -307,7 +304,7 @@ export function MachinesPage() {
                   {copy.admin.machineType}
                   <input
                     value={newForm.typeName}
-                    placeholder={isAr ? "مثال: CAPS أو PREFORM" : "e.g. CAPS or PREFORM"}
+                    placeholder={"مثال: CAPS أو PREFORM"}
                     onChange={(e) => {
                       const typeName = e.target.value;
                       setNewForm((p) => ({
@@ -324,7 +321,7 @@ export function MachinesPage() {
               {/* Material selector */}
               <div>
                 <span style={{ fontSize: ".8rem", fontWeight: 700, color: "var(--text-secondary)" }}>
-                  {isAr ? "المواد الخام المستخدمة (اختر ما ينطبق)" : "Raw Materials Used (select all that apply)"}
+                  {"المواد الخام المستخدمة (اختر ما ينطبق)"}
                 </span>
                 <MaterialCheckboxes
                   selected={newForm.materials}
@@ -332,7 +329,7 @@ export function MachinesPage() {
                 />
                 {newForm.materials.length === 0 && newForm.typeName && (
                   <p style={{ fontSize: ".72rem", color: "var(--text-secondary)", marginTop: ".3rem" }}>
-                    {isAr ? "سيتم استخدام المواد الافتراضية بناءً على نوع الماكينة" : "Default materials will be used based on machine type"}
+                    {"سيتم استخدام المواد الافتراضية بناءً على نوع الماكينة"}
                   </p>
                 )}
               </div>
@@ -363,9 +360,9 @@ export function MachinesPage() {
                     <th>{copy.admin.id}</th>
                     <th>{copy.admin.name}</th>
                     <th>{copy.admin.machineType}</th>
-                    <th>{isAr ? "المواد" : "Materials"}</th>
+                    <th>{"المواد"}</th>
                     <th>{copy.admin.machineStatus}</th>
-                    <th>{isAr ? "إجراءات" : "Actions"}</th>
+                    <th>{"إجراءات"}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -466,7 +463,7 @@ export function MachinesPage() {
                           ) : confirmDeleteId === item.id ? (
                             <div style={{ display: "flex", gap: ".375rem", alignItems: "center" }}>
                               <span style={{ fontSize: ".78rem", color: "#ef4444", fontWeight: 600 }}>
-                                {isAr ? "تأكيد الحذف؟" : "Delete?"}
+                                {"تأكيد الحذف؟"}
                               </span>
                               <button
                                 type="button"
@@ -475,10 +472,10 @@ export function MachinesPage() {
                                 disabled={deletingId === item.id}
                                 onClick={() => void deleteMachine(item.id)}
                               >
-                                {deletingId === item.id ? "..." : (isAr ? "نعم" : "Yes")}
+                                {deletingId === item.id ? "..." : ("نعم")}
                               </button>
                               <button type="button" className="btn btn--ghost btn--sm" onClick={() => setConfirmDeleteId(null)}>
-                                {isAr ? "لا" : "No"}
+                                {"لا"}
                               </button>
                             </div>
                           ) : (
@@ -492,7 +489,7 @@ export function MachinesPage() {
                                 style={{ background: "rgba(239,68,68,.1)", color: "#ef4444", border: "1px solid rgba(239,68,68,.3)" }}
                                 onClick={() => setConfirmDeleteId(item.id)}
                               >
-                                {isAr ? "حذف" : "Delete"}
+                                {"حذف"}
                               </button>
                             </div>
                           )}

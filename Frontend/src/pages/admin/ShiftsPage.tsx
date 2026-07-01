@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+﻿import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLocale } from "../../context/LocaleContext";
 import { appCopy } from "../../content/appCopy";
 import { API_BASE_URL, readApiError } from "../../lib/api";
@@ -135,12 +135,12 @@ export function ShiftsPage() {
 
       cancelEditShift();
     } catch (saveError) {
-      toast.error(saveError instanceof Error ? saveError.message : "Failed to update");
+      toast.error(saveError instanceof Error ? saveError.message : "فشل التحديث");
     }
   };
 
   return (
-    <main className="admin-shell" dir={locale === "ar" ? "rtl" : "ltr"}>
+    <main className="admin-shell" dir="rtl">
       <section className="admin-card">
         <header className="admin-header">
           <div>

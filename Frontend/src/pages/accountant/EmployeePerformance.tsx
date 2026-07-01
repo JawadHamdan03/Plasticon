@@ -1,10 +1,9 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { confirmDialog } from "../../lib/dialog";
 import { Award, Plus, Trash2, X, Save, Zap, TrendingUp, Search, ChevronDown } from "lucide-react";
 import { ModulePageShell } from "../../components/ModulePageShell";
 import { Button } from "../../components/ui/button";
 import { Card } from "../../components/ui/card";
-import { useLocale } from "../../context/LocaleContext";
 import { useAuth } from "../../context/AuthContext";
 import { API_BASE_URL } from "../../lib/api";
 
@@ -69,7 +68,7 @@ function ScoreBar({ label, value, color, weight }: { label: string; value: numbe
       <div className="flex justify-between items-center mb-1">
         <span className="text-xs font-medium text-[var(--text-secondary)]">{label}</span>
         <div className="flex items-center gap-1.5">
-          <span className="text-xs text-[var(--text-secondary)]">weight {weight}%</span>
+          <span className="text-xs text-[var(--text-secondary)]">وزن {weight}%</span>
           <span className="text-sm font-bold" style={{ color }}>{value.toFixed(0)}</span>
         </div>
       </div>
@@ -83,7 +82,7 @@ function ScoreBar({ label, value, color, weight }: { label: string; value: numbe
   );
 }
 
-function GradeBadge({ score, isAr }: { score: number; isAr: boolean }) {
+function GradeBadge({ score }: { score: number }) {
   const g = getGrade(score);
   const m = GRADE_META[g];
   return (
@@ -91,17 +90,14 @@ function GradeBadge({ score, isAr }: { score: number; isAr: boolean }) {
       background: m.bg, color: m.color, border: `1px solid ${m.border}`,
       borderRadius: "20px", padding: "2px 10px", fontSize: ".72rem", fontWeight: 700,
     }}>
-      {isAr ? m.labelAr : m.label}
+      {m.labelAr}
     </span>
   );
 }
 
 export default function EmployeePerformance() {
-  const { locale } = useLocale();
   const { user } = useAuth();
   const isAdmin = user?.role === "ADMIN";
-  const isAr = locale === "ar";
-  const nav = (en: string, ar: string) => isAr ? ar : en;
 
   const [records, setRecords] = useState<PerfRecord[]>([]);
   const [users, setUsers] = useState<UserOption[]>([]);
@@ -169,7 +165,7 @@ export default function EmployeePerformance() {
   };
 
   const handleDelete = async (id: number) => {
-    if (!(await confirmDialog(nav("Delete this performance record?", "حذف هذا السجل؟"), { danger: true }))) return;
+    if (!(await confirmDialog("حذف هذا السجل؟", { danger: true }))) return;
     try {
       await fetch(`${API_BASE_URL}/performance/${id}`, { method: "DELETE", headers: authHeaders(), credentials: "include" });
       void fetchAll();
@@ -211,17 +207,17 @@ export default function EmployeePerformance() {
 
   return (
     <ModulePageShell
-      title={nav("Employee Performance", "أداء الموظفين")}
-      subtitle={nav("Production, quality, attendance and kaizen scoring", "تقييم الإنتاج والجودة والحضور والتحسين")}
+      title="أداء الموظفين"
+      subtitle="تقييم الإنتاج والجودة والحضور والتحسين"
       icon={<Award size={22} />}
     >
       {/* KPI Row */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: ".75rem", marginBottom: "1.25rem" }}>
         {[
-          { label: nav("Total Assessments", "إجمالي التقييمات"), value: records.length,                               gradient: "linear-gradient(135deg,#3b82f6,#1d4ed8)" },
-          { label: nav("Avg Score",         "متوسط الدرجة"),      value: records.length ? avgScore.toFixed(1) : "—",  gradient: "linear-gradient(135deg,#10b981,#059669)" },
-          { label: nav("Excellent (≥90)",   "ممتاز (≥90)"),       value: excellent,                                   gradient: "linear-gradient(135deg,#f59e0b,#d97706)" },
-          { label: nav("Top Performer",     "الأفضل أداءً"),      value: topPerformer?.user.fullName.split(" ")[0] ?? "—", gradient: "linear-gradient(135deg,#8b5cf6,#7c3aed)" },
+          { label: "إجمالي التقييمات", value: records.length,                               gradient: "linear-gradient(135deg,#3b82f6,#1d4ed8)" },
+          { label: "متوسط الدرجة",      value: records.length ? avgScore.toFixed(1) : "—",  gradient: "linear-gradient(135deg,#10b981,#059669)" },
+          { label: "ممتاز (≥90)",       value: excellent,                                   gradient: "linear-gradient(135deg,#f59e0b,#d97706)" },
+          { label: "الأفضل أداءً",      value: topPerformer?.user.fullName.split(" ")[0] ?? "—", gradient: "linear-gradient(135deg,#8b5cf6,#7c3aed)" },
         ].map((k) => (
           <div key={k.label} style={{ borderRadius: 14, padding: "1rem 1.1rem", background: k.gradient, color: "#fff", boxShadow: "0 4px 12px rgba(0,0,0,.15)" }}>
             <p style={{ margin: 0, fontSize: ".72rem", fontWeight: 600, opacity: .85, textTransform: "uppercase", letterSpacing: ".06em" }}>{k.label}</p>
@@ -236,7 +232,7 @@ export default function EmployeePerformance() {
         {leaderboard.length > 0 && (
           <Card className="p-4 flex-1">
             <p className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wide mb-3 flex items-center gap-1.5">
-              <TrendingUp size={13} /> {nav("Top Performers", "أفضل الأداء")}
+              <TrendingUp size={13} /> {"أفضل الأداء"}
             </p>
             <div className="flex flex-col gap-2">
               {leaderboard.map((e, i) => (
@@ -260,12 +256,12 @@ export default function EmployeePerformance() {
 
         {/* Score weights legend */}
         <Card className="p-4 flex-1">
-          <p className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wide mb-3">{nav("Score Weights", "أوزان الدرجات")}</p>
+          <p className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wide mb-3">{"أوزان الدرجات"}</p>
           <div className="flex flex-col gap-2.5">
             {SCORE_WEIGHTS.map((w) => (
               <div key={w.key} className="flex items-center gap-2">
                 <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ background: w.color }} />
-                <span className="text-xs flex-1 text-[var(--text-secondary)]">{isAr ? w.labelAr : w.labelEn}</span>
+                <span className="text-xs flex-1 text-[var(--text-secondary)]">{w.labelAr}</span>
                 <span className="text-xs font-bold" style={{ color: w.color }}>{w.weight}%</span>
               </div>
             ))}
@@ -278,18 +274,18 @@ export default function EmployeePerformance() {
         {!isAdmin && (
           <Button size="sm" onClick={() => { setForm(emptyForm); setShowForm(true); }}>
             <Plus size={15} className="me-1" />
-            {nav("Add Assessment", "إضافة تقييم")}
+            {"إضافة تقييم"}
           </Button>
         )}
         <div className="relative">
           <Search size={14} className="absolute start-2.5 top-1/2 -translate-y-1/2 text-[var(--text-secondary)]" />
-          <input className="input ps-8 h-8 text-sm w-44" placeholder={nav("Search employee...", "بحث...")}
+          <input className="input ps-8 h-8 text-sm w-44" placeholder={"بحث..."}
             value={search} onChange={(e) => setSearch(e.target.value)} />
         </div>
         <select className="input text-sm h-8" value={filterPeriod} onChange={(e) => setFilterPeriod(e.target.value)}>
-          <option value="">{nav("All Periods", "جميع الفترات")}</option>
-          <option value="DAILY">{nav("Daily", "يومي")}</option>
-          <option value="WEEKLY">{nav("Weekly", "أسبوعي")}</option>
+          <option value="">{"جميع الفترات"}</option>
+          <option value="DAILY">{"يومي"}</option>
+          <option value="WEEKLY">{"أسبوعي"}</option>
         </select>
       </div>
 
@@ -298,17 +294,17 @@ export default function EmployeePerformance() {
         <Card className="p-5 mb-6 border-2 border-[var(--accent)]">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h3 className="font-bold text-[var(--text-primary)]">{nav("New Performance Assessment", "تقييم أداء جديد")}</h3>
-              <p className="text-xs text-[var(--text-secondary)] mt-0.5">{nav("Score is auto-weighted: Production 40%, Quality 30%, Attendance 20%, Kaizen 10%", "الأوزان: إنتاج 40%، جودة 30%، حضور 20%، كايزن 10%")}</p>
+              <h3 className="font-bold text-[var(--text-primary)]">{"تقييم أداء جديد"}</h3>
+              <p className="text-xs text-[var(--text-secondary)] mt-0.5">{"الأوزان: إنتاج 40%، جودة 30%، حضور 20%، كايزن 10%"}</p>
             </div>
             <button onClick={() => setShowForm(false)} className="text-[var(--text-secondary)]"><X size={18} /></button>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
             <div>
-              <label className="label">{nav("Employee *", "الموظف *")}</label>
+              <label className="label">{"الموظف *"}</label>
               <select className="input" value={form.userId} onChange={(e) => setForm((p) => ({ ...p, userId: e.target.value }))}>
-                <option value="">{nav("Select employee...", "اختر موظفًا...")}</option>
+                <option value="">{"اختر موظفًا..."}</option>
                 {users.map((u) => (
                   <option key={u.id} value={u.id}>
                     {ROLE_ICONS[u.role] ?? "👤"} {u.fullName} — {u.role}
@@ -317,14 +313,14 @@ export default function EmployeePerformance() {
               </select>
             </div>
             <div>
-              <label className="label">{nav("Period Type", "نوع الفترة")}</label>
+              <label className="label">{"نوع الفترة"}</label>
               <select className="input" value={form.periodType} onChange={(e) => setForm((p) => ({ ...p, periodType: e.target.value }))}>
-                <option value="DAILY">{nav("Daily", "يومي")}</option>
-                <option value="WEEKLY">{nav("Weekly", "أسبوعي")}</option>
+                <option value="DAILY">{"يومي"}</option>
+                <option value="WEEKLY">{"أسبوعي"}</option>
               </select>
             </div>
             <div>
-              <label className="label">{nav("Period Date", "تاريخ الفترة")}</label>
+              <label className="label">{"تاريخ الفترة"}</label>
               <input type="date" className="input" value={form.periodDate} onChange={(e) => setForm((p) => ({ ...p, periodDate: e.target.value }))} />
             </div>
           </div>
@@ -334,7 +330,7 @@ export default function EmployeePerformance() {
             {SCORE_WEIGHTS.map((w) => (
               <div key={w.key}>
                 <div className="flex justify-between mb-1">
-                  <label className="label mb-0">{isAr ? w.labelAr : w.labelEn} <span className="text-[var(--text-secondary)] font-normal">({w.weight}%)</span></label>
+                  <label className="label mb-0">{w.labelAr} <span className="text-[var(--text-secondary)] font-normal">({w.weight}%)</span></label>
                   <span className="text-sm font-bold" style={{ color: w.color }}>
                     {form[w.key]}/100
                   </span>
@@ -355,27 +351,27 @@ export default function EmployeePerformance() {
 
           {/* Computed total preview */}
           <div className="flex items-center gap-3 p-3 rounded-lg mb-4" style={{ background: "var(--bg-surface-2, #f8fafc)", border: "1px solid var(--border-default)" }}>
-            <span className="text-sm font-medium text-[var(--text-secondary)]">{nav("Computed Total Score:", "الدرجة الإجمالية المحسوبة:")}</span>
+            <span className="text-sm font-medium text-[var(--text-secondary)]">{"الدرجة الإجمالية المحسوبة:"}</span>
             <span className="text-xl font-bold text-[var(--text-primary)]">{computedTotal(form)}</span>
             <GradeBadge score={parseFloat(computedTotal(form))} isAr={isAr} />
           </div>
 
           <div className="mb-3">
-            <label className="label">{nav("Notes", "ملاحظات")}</label>
-            <input className="input" placeholder={nav("Optional notes about this assessment period", "ملاحظات اختيارية عن هذه الفترة")}
+            <label className="label">{"ملاحظات"}</label>
+            <input className="input" placeholder={"ملاحظات اختيارية عن هذه الفترة"}
               value={form.notes} onChange={(e) => setForm((p) => ({ ...p, notes: e.target.value }))} />
           </div>
 
           <div className="flex flex-wrap gap-2 pt-3 border-t border-[var(--border-default)]">
             <Button size="sm" onClick={handleSave} disabled={saving || !form.userId}>
               <Save size={14} className="me-1" />
-              {saving ? nav("Saving...", "جارٍ الحفظ...") : nav("Save Assessment", "حفظ التقييم")}
+              {saving ? "جارٍ الحفظ..." : "حفظ التقييم"}
             </Button>
             <Button size="sm" variant="outline" onClick={handleAutoCalc} disabled={autoCalc || !form.userId}>
               <Zap size={14} className="me-1" />
-              {autoCalc ? nav("Calculating...", "جارٍ الحساب...") : nav("Auto-Calculate from Records", "حساب تلقائي من السجلات")}
+              {autoCalc ? "جارٍ الحساب..." : "حساب تلقائي من السجلات"}
             </Button>
-            <Button size="sm" variant="outline" onClick={() => setShowForm(false)}>{nav("Cancel", "إلغاء")}</Button>
+            <Button size="sm" variant="outline" onClick={() => setShowForm(false)}>{"إلغاء"}</Button>
           </div>
         </Card>
       )}
@@ -386,7 +382,7 @@ export default function EmployeePerformance() {
       ) : filtered.length === 0 ? (
         <Card className="p-12 text-center text-[var(--text-secondary)]">
           <Award size={32} className="mx-auto mb-3 opacity-30" />
-          <p className="font-medium">{nav("No performance records", "لا توجد سجلات أداء")}</p>
+          <p className="font-medium">{"لا توجد سجلات أداء"}</p>
         </Card>
       ) : (
         <div className="flex flex-col gap-3">
@@ -439,7 +435,7 @@ export default function EmployeePerformance() {
                       {SCORE_WEIGHTS.map((w) => (
                         <ScoreBar
                           key={w.key}
-                          label={`${isAr ? w.labelAr : w.labelEn} (${w.weight}%)`}
+                          label={`${w.labelAr} (${w.weight}%)`}
                           value={r[w.key]}
                           color={w.color}
                           weight={w.weight}
@@ -452,7 +448,7 @@ export default function EmployeePerformance() {
                       </p>
                     )}
                     <p className="mt-2 text-xs text-[var(--text-secondary)]">
-                      {nav("Assessed by:", "قيّمه:")} {r.calculatedBy.fullName}
+                      {"قيّمه:"} {r.calculatedBy.fullName}
                     </p>
                   </div>
                 )}
@@ -466,16 +462,16 @@ export default function EmployeePerformance() {
       {salaries.length > 0 && (
         <div style={{ marginTop: "2rem" }}>
           <h2 style={{ fontSize: "1rem", fontWeight: 700, marginBottom: ".75rem", color: "var(--text-primary)" }}>
-            💰 {nav("Employee Salaries", "رواتب الموظفين")}
+            💰 {"رواتب الموظفين"}
           </h2>
           <div style={{ overflowX: "auto", borderRadius: "var(--radius-lg)", border: "1px solid var(--border-default)" }}>
             <table style={{ width: "100%", borderCollapse: "collapse", fontSize: ".85rem" }}>
               <thead>
                 <tr style={{ background: "var(--bg-surface)" }}>
-                  <th style={{ padding: ".6rem 1rem", textAlign: "left", fontWeight: 700, color: "var(--text-secondary)", borderBottom: "1px solid var(--border-default)" }}>{nav("Employee", "الموظف")}</th>
-                  <th style={{ padding: ".6rem 1rem", textAlign: "left", fontWeight: 700, color: "var(--text-secondary)", borderBottom: "1px solid var(--border-default)" }}>{nav("Role", "الدور")}</th>
-                  <th style={{ padding: ".6rem 1rem", textAlign: "right", fontWeight: 700, color: "var(--text-secondary)", borderBottom: "1px solid var(--border-default)" }}>{nav("Monthly Salary", "الراتب الشهري")}</th>
-                  <th style={{ padding: ".6rem 1rem", textAlign: "right", fontWeight: 700, color: "var(--text-secondary)", borderBottom: "1px solid var(--border-default)" }}>{nav("Type", "النوع")}</th>
+                  <th style={{ padding: ".6rem 1rem", textAlign: "left", fontWeight: 700, color: "var(--text-secondary)", borderBottom: "1px solid var(--border-default)" }}>{"الموظف"}</th>
+                  <th style={{ padding: ".6rem 1rem", textAlign: "left", fontWeight: 700, color: "var(--text-secondary)", borderBottom: "1px solid var(--border-default)" }}>{"الدور"}</th>
+                  <th style={{ padding: ".6rem 1rem", textAlign: "right", fontWeight: 700, color: "var(--text-secondary)", borderBottom: "1px solid var(--border-default)" }}>{"الراتب الشهري"}</th>
+                  <th style={{ padding: ".6rem 1rem", textAlign: "right", fontWeight: 700, color: "var(--text-secondary)", borderBottom: "1px solid var(--border-default)" }}>{"النوع"}</th>
                 </tr>
               </thead>
               <tbody>
@@ -490,7 +486,7 @@ export default function EmployeePerformance() {
                         background: s.individualSalary != null ? "#dbeafe" : "#f3f4f6",
                         color: s.individualSalary != null ? "#1d4ed8" : "#6b7280",
                       }}>
-                        {s.individualSalary != null ? nav("Custom", "مخصص") : nav("Default", "افتراضي")}
+                        {s.individualSalary != null ? "مخصص" : "افتراضي"}
                       </span>
                     </td>
                   </tr>

@@ -1,9 +1,8 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { Plus, Activity, Pencil, Trash2, X, Save } from "lucide-react";
 import { ModulePageShell } from "../../components/ModulePageShell";
 import { Button } from "../../components/ui/button";
 import { Card } from "../../components/ui/card";
-import { useLocale } from "../../context/LocaleContext";
 import { API_BASE_URL } from "../../lib/api";
 import { confirmDialog } from "../../lib/dialog";
 import { useAuth } from "../../context/AuthContext";
@@ -39,10 +38,8 @@ function authHeaders(): Record<string, string> {
 }
 
 export default function MachineHealthDashboard() {
-  const { locale } = useLocale();
   const { user } = useAuth();
   const isAdmin = user?.role === "ADMIN";
-  const nav = (en: string, ar: string) => locale === "ar" ? ar : en;
 
   const [records, setRecords] = useState<HealthRecord[]>([]);
   const [machines, setMachines] = useState<Machine[]>([]);
@@ -100,7 +97,7 @@ export default function MachineHealthDashboard() {
   };
 
   const handleDelete = async (id: number) => {
-    if (!(await confirmDialog(nav("Delete this record?", "حذف هذا السجل؟"), { danger: true }))) return;
+    if (!(await confirmDialog("حذف هذا السجل؟", { danger: true }))) return;
     await fetch(`${API_BASE_URL}/machine-health/${id}`, { method: "DELETE", headers: authHeaders(), credentials: "include" });
     fetchRecords();
   };
@@ -110,16 +107,16 @@ export default function MachineHealthDashboard() {
 
   return (
     <ModulePageShell
-      title={nav("Machine Health Dashboard", "لوحة صحة الآلات")}
-      subtitle={nav("View and track machine operational status", "عرض وتتبع الحالة التشغيلية للآلات")}
+      title={"لوحة صحة الآلات"}
+      subtitle={"عرض وتتبع الحالة التشغيلية للآلات"}
       icon={<Activity size={22} />}
     >
       {/* KPIs */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: ".75rem", marginBottom: "1.25rem" }}>
         {[
-          { label: nav("Total Records",  "إجمالي السجلات"), value: records.length,                          gradient: "linear-gradient(135deg,#3b82f6,#1d4ed8)" },
-          { label: nav("Avg Efficiency", "متوسط الكفاءة"),  value: `${avgEfficiency.toFixed(1)}%`,          gradient: "linear-gradient(135deg,#10b981,#059669)" },
-          { label: nav("Operational",    "تشغيلي"),          value: `${operationalCount}/${records.length}`, gradient: "linear-gradient(135deg,#f59e0b,#d97706)" },
+          { label: "إجمالي السجلات", value: records.length,                          gradient: "linear-gradient(135deg,#3b82f6,#1d4ed8)" },
+          { label: "متوسط الكفاءة",  value: `${avgEfficiency.toFixed(1)}%`,          gradient: "linear-gradient(135deg,#10b981,#059669)" },
+          { label: "تشغيلي",          value: `${operationalCount}/${records.length}`, gradient: "linear-gradient(135deg,#f59e0b,#d97706)" },
         ].map((k) => (
           <div key={k.label} style={{ borderRadius: 14, padding: "1rem 1.1rem", background: k.gradient, color: "#fff", boxShadow: "0 4px 12px rgba(0,0,0,.15)" }}>
             <p style={{ margin: 0, fontSize: ".72rem", fontWeight: 600, opacity: .85, textTransform: "uppercase", letterSpacing: ".06em" }}>{k.label}</p>
@@ -133,7 +130,7 @@ export default function MachineHealthDashboard() {
         <div className="mb-4">
           <Button size="sm" onClick={openNew}>
             <Plus size={15} className="me-1" />
-            {nav("Add Record", "إضافة سجل")}
+            {"إضافة سجل"}
           </Button>
         </div>
       )}
@@ -143,46 +140,46 @@ export default function MachineHealthDashboard() {
         <Card className="p-5 mb-6 border-2 border-[var(--accent)]">
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-bold text-[var(--text-primary)] text-base">
-              {editingId ? nav("Edit Health Record", "تعديل سجل الصحة") : nav("New Health Record", "سجل صحة جديد")}
+              {editingId ? "تعديل سجل الصحة" : "سجل صحة جديد"}
             </h3>
             <button className="text-[var(--text-secondary)] hover:text-[var(--text-primary)]" onClick={() => setShowForm(false)}><X size={18} /></button>
           </div>
-          <p className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wide mb-2">{nav("Record Details", "بيانات السجل")}</p>
+          <p className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wide mb-2">{"بيانات السجل"}</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
             {!editingId && (
               <div className="sm:col-span-2">
-                <label className="label">{nav("Machine *", "الآلة *")}</label>
+                <label className="label">{"الآلة *"}</label>
                 <select className="input" value={form.machineId} onChange={e => setForm({ ...form, machineId: e.target.value })}>
-                  <option value="">{nav("Select machine...", "اختر آلة...")}</option>
+                  <option value="">{"اختر آلة..."}</option>
                   {machines.map(m => <option key={m.id} value={m.id}>{m.name} ({m.type})</option>)}
                 </select>
               </div>
             )}
             <div>
-              <label className="label">{nav("Operational Status", "الحالة التشغيلية")}</label>
+              <label className="label">{"الحالة التشغيلية"}</label>
               <select className="input" value={form.operationalStatus} onChange={e => setForm({ ...form, operationalStatus: e.target.value })}>
-                <option value="OPERATIONAL">Operational</option>
-                <option value="MAINTENANCE">Maintenance</option>
-                <option value="DOWNTIME">Downtime</option>
+                <option value="OPERATIONAL">تشغيل</option>
+                <option value="MAINTENANCE">صيانة</option>
+                <option value="DOWNTIME">توقف</option>
               </select>
             </div>
             <div>
-              <label className="label">{nav("Downtime %", "نسبة التوقف %")}</label>
+              <label className="label">{"نسبة التوقف %"}</label>
               <input type="number" min={0} max={100} step={0.1} className="input" value={form.downtimePercentage}
                 onChange={e => setForm({ ...form, downtimePercentage: parseFloat(e.target.value) || 0 })} />
             </div>
             <div>
-              <label className="label">{nav("Maintenance Hours", "ساعات الصيانة")}</label>
+              <label className="label">{"ساعات الصيانة"}</label>
               <input type="number" min={0} step={0.5} className="input" value={form.maintenanceHours}
                 onChange={e => setForm({ ...form, maintenanceHours: parseFloat(e.target.value) || 0 })} />
             </div>
             <div>
-              <label className="label">{nav("Efficiency Rating %", "تقييم الكفاءة %")}</label>
+              <label className="label">{"تقييم الكفاءة %"}</label>
               <input type="number" min={0} max={100} step={0.1} className="input" value={form.efficiencyRating}
                 onChange={e => setForm({ ...form, efficiencyRating: parseFloat(e.target.value) || 100 })} />
             </div>
             <div className="sm:col-span-2">
-              <label className="label">{nav("Notes", "ملاحظات")}</label>
+              <label className="label">{"ملاحظات"}</label>
               <textarea className="input resize-none" rows={2} value={form.notes}
                 onChange={e => setForm({ ...form, notes: e.target.value })} />
             </div>
@@ -190,9 +187,9 @@ export default function MachineHealthDashboard() {
           <div className="flex gap-2 pt-2 border-t border-[var(--border-default)]">
             <Button size="sm" onClick={handleSave} disabled={saving}>
               <Save size={14} className="me-1" />
-              {saving ? nav("Saving...", "جارٍ الحفظ...") : nav("Save", "حفظ")}
+              {saving ? "جارٍ الحفظ..." : "حفظ"}
             </Button>
-            <Button size="sm" variant="outline" onClick={() => setShowForm(false)}>{nav("Cancel", "إلغاء")}</Button>
+            <Button size="sm" variant="outline" onClick={() => setShowForm(false)}>{"إلغاء"}</Button>
           </div>
         </Card>
       )}
@@ -205,18 +202,18 @@ export default function MachineHealthDashboard() {
           ) : records.length === 0 ? (
             <div className="p-10 text-center text-[var(--text-secondary)]">
               <Activity size={32} className="mx-auto mb-3 opacity-30" />
-              <p className="font-medium">{nav("No health records yet", "لا توجد سجلات صحة بعد")}</p>
+              <p className="font-medium">{"لا توجد سجلات صحة بعد"}</p>
             </div>
           ) : (
             <table className="data-table w-full">
               <thead>
                 <tr>
-                  <th>{nav("Machine", "الآلة")}</th>
-                  <th>{nav("Status", "الحالة")}</th>
-                  <th>{nav("Downtime %", "توقف")}</th>
-                  <th>{nav("Efficiency", "الكفاءة")}</th>
-                  <th>{nav("Date", "التاريخ")}</th>
-                  {!isAdmin && <th>{nav("Actions", "الإجراءات")}</th>}
+                  <th>{"الآلة"}</th>
+                  <th>{"الحالة"}</th>
+                  <th>{"توقف"}</th>
+                  <th>{"الكفاءة"}</th>
+                  <th>{"التاريخ"}</th>
+                  {!isAdmin && <th>{"الإجراءات"}</th>}
                 </tr>
               </thead>
               <tbody>

@@ -1,4 +1,4 @@
-import {
+﻿import {
   useCallback,
   useEffect,
   useMemo,
@@ -22,7 +22,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { useLocale } from "../../context/LocaleContext";
-import { API_BASE_URL, readApiError } from "../../lib/api";
+import { API_BASE_URL, pictureUrl as globalPictureUrl, readApiError } from "../../lib/api";
 import { confirmDialog } from "../../lib/dialog";
 import { ModulePageShell } from "../../components/ModulePageShell";
 import { Card } from "../../components/ui/card";
@@ -78,12 +78,7 @@ async function fetchWithAuth(path: string, options?: RequestInit) {
 const toPublicFileUrl = (pathOrUrl?: string | null) => {
   if (!pathOrUrl?.trim()) return "";
   if (/^https?:\/\//i.test(pathOrUrl)) return pathOrUrl;
-  if (pathOrUrl.startsWith("/pictures/")) return `${API_BASE_URL}${pathOrUrl}`;
-  const normalized = pathOrUrl
-    .replace(/^prisma[\\/]+pictures[\\/]+/i, "")
-    .replace(/^pictures[\\/]+/i, "")
-    .replace(/^\/+/, "");
-  return normalized ? `${API_BASE_URL}/pictures/${normalized}` : "";
+  return globalPictureUrl(pathOrUrl);
 };
 
 const getInvoiceUrl = (r: { invoiceUrl?: string; invoiceImage?: string; fileAttachments?: FileAttachment[] }) => {
@@ -145,7 +140,7 @@ export function SuppliersPage() {
       if (purRes.ok) setPurchases((await purRes.json()) as PurchaseRecord[]);
       else throw new Error(await readApiError(purRes));
     } catch (e) {
-      setError(e instanceof Error ? e.message : nav("Failed to load", "فشل التحميل"));
+      setError(e instanceof Error ? e.message : "فشل التحميل");
     } finally {
       setLoading(false);
     }
@@ -235,7 +230,7 @@ export function SuppliersPage() {
     e.preventDefault();
     if (!canEdit) return;
     if (!editingId && !invoiceFile) {
-      setError(nav("Invoice image is required to create a purchase.", "صورة الفاتورة مطلوبة لإضافة الشراء."));
+      setError("صورة الفاتورة مطلوبة لإضافة الشراء.");
       return;
     }
     setSaving(true);
@@ -256,11 +251,11 @@ export function SuppliersPage() {
         body,
       });
       if (!res.ok) throw new Error(await readApiError(res));
-      setSuccess(editingId ? nav("Purchase updated", "تم تعديل الشراء") : nav("Purchase created", "تمت إضافة الشراء"));
+      setSuccess(editingId ? "تم تعديل الشراء" : "تمت إضافة الشراء");
       await loadAll();
       resetForm();
     } catch (e) {
-      setError(e instanceof Error ? e.message : nav("Failed to save", "فشل الحفظ"));
+      setError(e instanceof Error ? e.message : "فشل الحفظ");
     } finally {
       setSaving(false);
     }
@@ -269,15 +264,15 @@ export function SuppliersPage() {
   /* ── Delete ── */
   const handleDelete = async (id: number) => {
     if (!canEdit) return;
-    if (!(await confirmDialog(nav("Delete this purchase?", "حذف عملية الشراء؟"), { danger: true }))) return;
+    if (!(await confirmDialog("حذف عملية الشراء؟", { danger: true }))) return;
     try {
       const res = await fetchWithAuth(`/purchases/${id}`, { method: "DELETE" });
       if (!res.ok) throw new Error(await readApiError(res));
       setPurchases((prev) => prev.filter((p) => p.id !== id));
-      setSuccess(nav("Purchase deleted", "تم حذف الشراء"));
+      setSuccess("تم حذف الشراء");
       if (editingId === id) resetForm();
     } catch (e) {
-      setError(e instanceof Error ? e.message : nav("Failed to delete", "فشل الحذف"));
+      setError(e instanceof Error ? e.message : "فشل الحذف");
     }
   };
 
@@ -291,20 +286,17 @@ export function SuppliersPage() {
   /* ─── Render ─────────────────────────────────────────────── */
   return (
     <ModulePageShell
-      title={nav("Purchases", "المشتريات")}
-      subtitle={nav(
-        "Track supplier receipts, materials, quantities and costs.",
-        "تتبع فواتير الموردين والمواد والكميات والتكاليف.",
-      )}
+      title={"المشتريات"}
+      subtitle="تتبع فواتير الموردين والمواد والكميات والتكاليف."
       actions={
         <div style={{ display: "flex", gap: ".6rem", alignItems: "center" }}>
           <button type="button" className="auth-button auth-button--ghost" onClick={() => void loadAll()}>
-            {nav("Refresh", "تحديث")}
+            {"تحديث"}
           </button>
           {canEdit && (
             <button type="button" className="auth-button" onClick={() => { setShowForm((v) => !v); setEditingId(null); setForm(emptyForm()); }}>
               <Plus size={15} />
-              {nav("New Purchase", "شراء جديد")}
+              {"شراء جديد"}
             </button>
           )}
         </div>
@@ -321,9 +313,9 @@ export function SuppliersPage() {
       {/* ── KPI Cards ── */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: "1rem", marginBottom: "1.5rem" }}>
         {[
-          { label: nav("Suppliers", "الموردون"), value: totals.suppliers, icon: <Building2 size={20} />, gradient: "linear-gradient(135deg,#3b82f6,#1d4ed8)" },
-          { label: nav("Total Purchases", "عمليات الشراء"), value: totals.purchases, icon: <ShoppingCart size={20} />, gradient: "linear-gradient(135deg,#f97316,#ea580c)" },
-          { label: nav("Total Spent", "إجمالي الإنفاق"), value: `${fmtMoney(totals.amount)}`, icon: <TrendingUp size={20} />, gradient: "linear-gradient(135deg,#10b981,#059669)" },
+          { label: "الموردون", value: totals.suppliers, icon: <Building2 size={20} />, gradient: "linear-gradient(135deg,#3b82f6,#1d4ed8)" },
+          { label: "عمليات الشراء", value: totals.purchases, icon: <ShoppingCart size={20} />, gradient: "linear-gradient(135deg,#f97316,#ea580c)" },
+          { label: "إجمالي الإنفاق", value: `${fmtMoney(totals.amount)}`, icon: <TrendingUp size={20} />, gradient: "linear-gradient(135deg,#10b981,#059669)" },
         ].map((k) => (
           <Card key={k.label} style={{ background: k.gradient, color: "#fff", border: "none", padding: "1.25rem 1.5rem", boxShadow: "0 4px 14px rgba(0,0,0,.15)" }}>
             <div style={{ display: "flex", justifyContent: "space-between", marginBottom: ".5rem" }}>
@@ -341,7 +333,7 @@ export function SuppliersPage() {
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1.25rem" }}>
             <h3 style={{ margin: 0, fontSize: "1rem", fontWeight: 700, color: "var(--text-primary)", display: "flex", alignItems: "center", gap: ".5rem" }}>
               {editingId ? <Pencil size={18} style={{ color: "var(--brand-primary)" }} /> : <Plus size={18} style={{ color: "var(--brand-primary)" }} />}
-              {editingId ? nav("Edit Purchase", "تعديل الشراء") : nav("New Purchase", "شراء جديد")}
+              {editingId ? "تعديل الشراء" : "شراء جديد"}
             </h3>
             <button type="button" onClick={resetForm} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-secondary)", padding: ".25rem" }}>
               <X size={18} />
@@ -353,14 +345,14 @@ export function SuppliersPage() {
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "1rem" }}>
               <label style={{ display: "flex", flexDirection: "column", gap: ".3rem" }}>
                 <span style={{ fontSize: ".82rem", fontWeight: 600, color: "var(--text-secondary)" }}>
-                  {nav("Supplier *", "المورد *")}
+                  {"المورد *"}
                 </span>
                 <input
                   list="suppliers-datalist"
                   className="module-form__input"
                   value={form.supplierName}
                   onChange={(e) => setForm((p) => ({ ...p, supplierName: e.target.value }))}
-                  placeholder={nav("Type or select supplier…", "اكتب أو اختر المورد…")}
+                  placeholder={"اكتب أو اختر المورد…"}
                   required
                 />
                 <datalist id="suppliers-datalist">
@@ -370,7 +362,7 @@ export function SuppliersPage() {
 
               <label style={{ display: "flex", flexDirection: "column", gap: ".3rem" }}>
                 <span style={{ fontSize: ".82rem", fontWeight: 600, color: "var(--text-secondary)" }}>
-                  {nav("Received Date", "تاريخ الاستلام")}
+                  {"تاريخ الاستلام"}
                 </span>
                 <input
                   type="date"
@@ -386,23 +378,23 @@ export function SuppliersPage() {
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: ".5rem" }}>
                 <span style={{ fontSize: ".9rem", fontWeight: 700, color: "var(--text-primary)" }}>
                   <Package size={15} style={{ display: "inline", marginRight: ".3rem" }} />
-                  {nav("Items", "الأصناف")}
+                  {"الأصناف"}
                 </span>
                 <button
                   type="button"
                   onClick={() => setForm((p) => ({ ...p, items: [...p.items, emptyItem()] }))}
                   style={{ background: "none", border: "1px dashed var(--border-default)", borderRadius: "var(--radius-md)", padding: ".3rem .75rem", fontSize: ".8rem", color: "var(--text-secondary)", cursor: "pointer" }}
                 >
-                  + {nav("Add Item", "إضافة صنف")}
+                  + {"إضافة صنف"}
                 </button>
               </div>
 
               {/* Header row */}
               <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr auto auto", gap: ".5rem", padding: "0 .25rem", fontSize: ".73rem", fontWeight: 600, color: "var(--text-muted)", marginBottom: ".25rem" }}>
-                <span>{nav("Material", "المادة")}</span>
-                <span>{nav("Qty", "الكمية")}</span>
-                <span>{nav("Unit Price", "سعر الوحدة")}</span>
-                <span>{nav("Total", "الإجمالي")}</span>
+                <span>{"المادة"}</span>
+                <span>{"الكمية"}</span>
+                <span>{"سعر الوحدة"}</span>
+                <span>{"الإجمالي"}</span>
                 <span />
               </div>
 
@@ -418,7 +410,7 @@ export function SuppliersPage() {
                         required
                         style={{ width: "100%", padding: ".4rem .5rem", border: "1px solid var(--border-default)", borderRadius: "var(--radius-md)", background: "var(--bg-card)", fontSize: ".85rem", color: "var(--text-primary)" }}
                       >
-                        <option value="">{nav("Select…", "اختر…")}</option>
+                        <option value="">{"اختر…"}</option>
                         {materials.map((m) => (
                           <option key={m.id} value={m.id}>{m.name} ({m.unit})</option>
                         ))}
@@ -455,7 +447,7 @@ export function SuppliersPage() {
               {/* Auto-total */}
               {formTotal > 0 && (
                 <div style={{ display: "flex", justifyContent: "flex-end", padding: ".5rem .6rem", fontSize: ".9rem", fontWeight: 700, color: "#15803d" }}>
-                  {nav("Total:", "الإجمالي:")} {fmtMoney(formTotal)}
+                  {"الإجمالي:"} {fmtMoney(formTotal)}
                 </div>
               )}
             </div>
@@ -464,7 +456,7 @@ export function SuppliersPage() {
             <label style={{ display: "flex", flexDirection: "column", gap: ".3rem" }}>
               <span style={{ fontSize: ".82rem", fontWeight: 600, color: "var(--text-secondary)" }}>
                 <FileText size={14} style={{ display: "inline", marginRight: ".25rem" }} />
-                {nav("Invoice (PDF / Image)", "الفاتورة (PDF / صورة)")}
+                {"الفاتورة (PDF / صورة)"}
                 {!editingId && <span style={{ color: "#ef4444", marginLeft: ".25rem" }}>*</span>}
               </span>
               <input
@@ -475,7 +467,7 @@ export function SuppliersPage() {
               />
               {!editingId && !invoiceFile && (
                 <span style={{ fontSize: ".75rem", color: "#ef4444" }}>
-                  {nav("Required for new purchases", "مطلوب للشراء الجديد")}
+                  {"مطلوب للشراء الجديد"}
                 </span>
               )}
               {invoiceFile && (
@@ -488,10 +480,10 @@ export function SuppliersPage() {
             {/* Buttons */}
             <div style={{ display: "flex", gap: ".75rem", flexWrap: "wrap", paddingTop: ".25rem" }}>
               <button type="submit" className="auth-button" disabled={saving}>
-                {saving ? nav("Saving…", "جاري الحفظ…") : editingId ? nav("Save Changes", "حفظ التعديل") : nav("Create Purchase", "إضافة الشراء")}
+                {saving ? "جاري الحفظ…" : editingId ? "حفظ التعديل" : "إضافة الشراء"}
               </button>
               <button type="button" className="auth-button auth-button--ghost" onClick={resetForm}>
-                {nav("Cancel", "إلغاء")}
+                {"إلغاء"}
               </button>
             </div>
           </form>
@@ -506,7 +498,7 @@ export function SuppliersPage() {
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder={nav("Search suppliers, materials, invoices…", "ابحث في الموردين والمواد والفواتير…")}
+            placeholder={"ابحث في الموردين والمواد والفواتير…"}
             style={{ flex: 1, border: "none", outline: "none", background: "transparent", fontSize: ".9rem", color: "var(--text-primary)" }}
           />
           {query && (
@@ -528,11 +520,11 @@ export function SuppliersPage() {
       {!loading && filteredLedgers.length === 0 ? (
         <Card style={{ padding: "3rem", textAlign: "center" }}>
           <ShoppingCart size={48} style={{ color: "var(--text-muted)", margin: "0 auto 1rem" }} />
-          <p style={{ margin: 0, fontWeight: 600, color: "var(--text-secondary)" }}>{nav("No purchases yet", "لا توجد مشتريات بعد")}</p>
+          <p style={{ margin: 0, fontWeight: 600, color: "var(--text-secondary)" }}>{"لا توجد مشتريات بعد"}</p>
           {canEdit && (
             <button type="button" className="auth-button" style={{ marginTop: "1rem" }} onClick={() => setShowForm(true)}>
               <Plus size={15} />
-              {nav("Add First Purchase", "أضف أول شراء")}
+              {"أضف أول شراء"}
             </button>
           )}
         </Card>
@@ -567,16 +559,16 @@ export function SuppliersPage() {
                   {/* Stats */}
                   <div style={{ display: "flex", gap: "1.5rem", alignItems: "center" }}>
                     <div style={{ textAlign: "right" }}>
-                      <p style={{ margin: 0, fontSize: ".7rem", color: "var(--text-muted)", fontWeight: 600, textTransform: "uppercase" }}>{nav("Purchases", "عمليات")}</p>
+                      <p style={{ margin: 0, fontSize: ".7rem", color: "var(--text-muted)", fontWeight: 600, textTransform: "uppercase" }}>{"عمليات"}</p>
                       <p style={{ margin: 0, fontSize: "1.1rem", fontWeight: 800, color: "var(--text-primary)" }}>{ledger.purchasesCount}</p>
                     </div>
                     <div style={{ textAlign: "right" }}>
-                      <p style={{ margin: 0, fontSize: ".7rem", color: "var(--text-muted)", fontWeight: 600, textTransform: "uppercase" }}>{nav("Total Spent", "الإجمالي")}</p>
+                      <p style={{ margin: 0, fontSize: ".7rem", color: "var(--text-muted)", fontWeight: 600, textTransform: "uppercase" }}>{"الإجمالي"}</p>
                       <p style={{ margin: 0, fontSize: "1.1rem", fontWeight: 800, color: "#15803d" }}>{fmtMoney(ledger.totalSpent)}</p>
                     </div>
                     {ledger.lastPurchaseDate && (
                       <div style={{ textAlign: "right" }}>
-                        <p style={{ margin: 0, fontSize: ".7rem", color: "var(--text-muted)", fontWeight: 600, textTransform: "uppercase" }}>{nav("Last", "آخر")}</p>
+                        <p style={{ margin: 0, fontSize: ".7rem", color: "var(--text-muted)", fontWeight: 600, textTransform: "uppercase" }}>{"آخر"}</p>
                         <p style={{ margin: 0, fontSize: ".8rem", fontWeight: 600, color: "var(--text-secondary)" }}>{fmtDate(ledger.lastPurchaseDate)}</p>
                       </div>
                     )}
@@ -592,11 +584,11 @@ export function SuppliersPage() {
                     <table className="admin-table" style={{ width: "100%" }}>
                       <thead>
                         <tr>
-                          <th>{nav("Date", "التاريخ")}</th>
-                          <th>{nav("Items", "الأصناف")}</th>
-                          <th>{nav("Total", "الإجمالي")}</th>
-                          <th>{nav("Invoice", "الفاتورة")}</th>
-                          {canEdit && <th style={{ width: 80 }}>{nav("Actions", "إجراءات")}</th>}
+                          <th>{"التاريخ"}</th>
+                          <th>{"الأصناف"}</th>
+                          <th>{"الإجمالي"}</th>
+                          <th>{"الفاتورة"}</th>
+                          {canEdit && <th style={{ width: 80 }}>{"إجراءات"}</th>}
                         </tr>
                       </thead>
                       <tbody>
@@ -630,7 +622,7 @@ export function SuppliersPage() {
                                   <a href={invUrl} target="_blank" rel="noreferrer"
                                     style={{ display: "inline-flex", alignItems: "center", gap: ".3rem", fontSize: ".8rem", color: "var(--brand-primary)", fontWeight: 600, textDecoration: "none" }}>
                                     <ExternalLink size={13} />
-                                    {nav("View", "عرض")}
+                                    {"عرض"}
                                   </a>
                                 ) : (
                                   <span style={{ fontSize: ".8rem", color: "var(--text-muted)" }}>—</span>
@@ -640,12 +632,12 @@ export function SuppliersPage() {
                                 <td>
                                   <div style={{ display: "flex", gap: ".35rem" }}>
                                     <button type="button" onClick={() => openEdit(p)}
-                                      title={nav("Edit", "تعديل")}
+                                      title={"تعديل"}
                                       style={{ padding: ".35rem", border: "1px solid var(--border-default)", borderRadius: "var(--radius-md)", background: "var(--bg-card)", cursor: "pointer", color: "var(--text-secondary)", display: "flex", alignItems: "center" }}>
                                       <Pencil size={13} />
                                     </button>
                                     <button type="button" onClick={() => void handleDelete(p.id)}
-                                      title={nav("Delete", "حذف")}
+                                      title={"حذف"}
                                       style={{ padding: ".35rem", border: "1px solid rgba(239,68,68,.25)", borderRadius: "var(--radius-md)", background: "rgba(239,68,68,.06)", cursor: "pointer", color: "#ef4444", display: "flex", alignItems: "center" }}>
                                       <Trash2 size={13} />
                                     </button>
@@ -658,7 +650,7 @@ export function SuppliersPage() {
                       </tbody>
                       <tfoot>
                         <tr style={{ background: "var(--bg-surface)", borderTop: "2px solid var(--border-default)" }}>
-                          <td colSpan={2} style={{ fontWeight: 700, fontSize: ".85rem", padding: ".6rem 1rem" }}>{nav("Supplier Total", "إجمالي المورد")}</td>
+                          <td colSpan={2} style={{ fontWeight: 700, fontSize: ".85rem", padding: ".6rem 1rem" }}>{"إجمالي المورد"}</td>
                           <td style={{ fontWeight: 800, color: "#15803d" }}>{fmtMoney(ledger.totalSpent)}</td>
                           <td colSpan={canEdit ? 2 : 1} />
                         </tr>

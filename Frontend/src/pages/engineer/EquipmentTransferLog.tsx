@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from "react";
+﻿import { useEffect, useState, type FormEvent } from "react";
 import { History, Plus, X } from "lucide-react";
 import { ModulePageShell } from "../../components/ModulePageShell";
 import { Card } from "../../components/ui/card";
@@ -72,8 +72,8 @@ export default function EquipmentTransferLog() {
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     setError(""); setSuccess("");
-    if (!form.machineId) { setError(nav("Select a machine", "اختر آلة")); return; }
-    if (!form.partsUsed.trim()) { setError(nav("Parts used is required", "القطع المستخدمة مطلوبة")); return; }
+    if (!form.machineId) { setError("اختر آلة"); return; }
+    if (!form.partsUsed.trim()) { setError("القطع المستخدمة مطلوبة"); return; }
     setSaving(true);
     try {
       const body: Record<string, unknown> = {
@@ -90,12 +90,12 @@ export default function EquipmentTransferLog() {
         body: JSON.stringify(body),
       });
       if (!res.ok) throw new Error(await readApiError(res));
-      setSuccess(nav("Transfer/service record saved", "تم حفظ سجل النقل/الخدمة"));
+      setSuccess("تم حفظ سجل النقل/الخدمة");
       setForm(emptyForm());
       setShowForm(false);
       void load();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to save");
+      setError(err instanceof Error ? err.message : "فشل الحفظ");
     } finally { setSaving(false); }
   };
 
@@ -104,22 +104,22 @@ export default function EquipmentTransferLog() {
 
   return (
     <ModulePageShell
-      title={nav("Equipment Transfer Log", "سجل نقل المعدات")}
-      subtitle={nav("Log and track equipment service and transfer events", "تسجيل وتتبع أحداث خدمة ونقل المعدات")}
+      title={"سجل نقل المعدات"}
+      subtitle={"تسجيل وتتبع أحداث خدمة ونقل المعدات"}
       icon={<History size={22} />}
       actions={(isEngineer || isAdmin) ? (
         <Button size="sm" onClick={() => setShowForm(v => !v)}>
           {showForm ? <X size={14} /> : <Plus size={14} />}
-          {showForm ? nav("Cancel", "إلغاء") : nav("Log Event", "تسجيل حدث")}
+          {showForm ? "إلغاء" : "تسجيل حدث"}
         </Button>
       ) : undefined}
     >
       {/* KPIs */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: ".75rem", marginBottom: "1.25rem" }}>
         {[
-          { label: nav("Total Records",     "إجمالي السجلات"),  value: transfers.length, gradient: "linear-gradient(135deg,#3b82f6,#1d4ed8)" },
-          { label: nav("Machines Involved", "الآلات المعنية"),  value: uniqueMachines,   gradient: "linear-gradient(135deg,#8b5cf6,#7c3aed)" },
-          { label: nav("Parts Replaced",    "قطع مستبدلة"),      value: withPartsCount,  gradient: "linear-gradient(135deg,#f59e0b,#d97706)" },
+          { label: "إجمالي السجلات",  value: transfers.length, gradient: "linear-gradient(135deg,#3b82f6,#1d4ed8)" },
+          { label: "الآلات المعنية",  value: uniqueMachines,   gradient: "linear-gradient(135deg,#8b5cf6,#7c3aed)" },
+          { label: "قطع مستبدلة",      value: withPartsCount,  gradient: "linear-gradient(135deg,#f59e0b,#d97706)" },
         ].map(k => (
           <div key={k.label} style={{ borderRadius: 14, padding: "1rem 1.1rem", background: k.gradient, color: "#fff", boxShadow: "0 4px 12px rgba(0,0,0,.15)" }}>
             <p style={{ margin: 0, fontSize: ".72rem", fontWeight: 600, opacity: .85, textTransform: "uppercase", letterSpacing: ".06em" }}>{k.label}</p>
@@ -131,41 +131,41 @@ export default function EquipmentTransferLog() {
       {/* Add form */}
       {(isEngineer || isAdmin) && showForm && (
         <Card className="p-5 mb-5 border-2 border-(--accent)">
-          <h3 style={{ margin: "0 0 1rem", fontSize: ".95rem", fontWeight: 700 }}>{nav("New Service / Transfer Record", "سجل خدمة / نقل جديد")}</h3>
+          <h3 style={{ margin: "0 0 1rem", fontSize: ".95rem", fontWeight: 700 }}>{"سجل خدمة / نقل جديد"}</h3>
           {error && <div className="auth-alert auth-alert--error mb-3">{error}</div>}
           {success && <div className="auth-alert mb-3">{success}</div>}
           <form className="module-form" onSubmit={e => void submit(e)}>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))", gap: "1rem" }}>
-              <label>{nav("Machine", "الآلة")} *
+              <label>{"الآلة"} *
                 <select className="input" value={form.machineId} onChange={e => setForm(p => ({ ...p, machineId: e.target.value }))} required>
-                  <option value="">{nav("Select machine...", "اختر الآلة...")}</option>
+                  <option value="">{"اختر الآلة..."}</option>
                   {machines.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
                 </select>
               </label>
-              <label>{nav("Shift (optional)", "الشفت (اختياري)")}
+              <label>{"الشفت (اختياري)"}
                 <select className="input" value={form.shiftId} onChange={e => setForm(p => ({ ...p, shiftId: e.target.value }))}>
-                  <option value="">{nav("Use my assigned shift", "استخدام شفتي المعين")}</option>
+                  <option value="">{"استخدام شفتي المعين"}</option>
                   {shifts.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
                 </select>
               </label>
-              <label style={{ gridColumn: "1 / -1" }}>{nav("Parts Used", "القطع المستخدمة")} *
-                <input type="text" className="input" value={form.partsUsed} onChange={e => setForm(p => ({ ...p, partsUsed: e.target.value }))} placeholder={nav("e.g. belt, pump, manifold...", "مثال: بكرة، مضخة...")} required />
+              <label style={{ gridColumn: "1 / -1" }}>{"القطع المستخدمة"} *
+                <input type="text" className="input" value={form.partsUsed} onChange={e => setForm(p => ({ ...p, partsUsed: e.target.value }))} placeholder={"مثال: بكرة، مضخة..."} required />
               </label>
-              <label>{nav("Downtime (min)", "وقت التوقف (د)")}
+              <label>{"وقت التوقف (د)"}
                 <input type="number" min={0} className="input" value={form.downtimeMinutes} onChange={e => setForm(p => ({ ...p, downtimeMinutes: e.target.value }))} placeholder="0" />
               </label>
-              <label>{nav("Downtime Reason", "سبب التوقف")}
+              <label>{"سبب التوقف"}
                 <select className="input" value={form.downtimeReason} onChange={e => setForm(p => ({ ...p, downtimeReason: e.target.value }))}>
                   {DOWNTIME_REASONS.map(r => <option key={r} value={r}>{r.replace(/_/g, " ")}</option>)}
                 </select>
               </label>
             </div>
-            <label>{nav("Report Details", "تفاصيل التقرير")}
-              <textarea rows={3} className="input" value={form.reportText} onChange={e => setForm(p => ({ ...p, reportText: e.target.value }))} placeholder={nav("Additional details about the work done...", "تفاصيل إضافية عن العمل المنجز...")} />
+            <label>{"تفاصيل التقرير"}
+              <textarea rows={3} className="input" value={form.reportText} onChange={e => setForm(p => ({ ...p, reportText: e.target.value }))} placeholder={"تفاصيل إضافية عن العمل المنجز..."} />
             </label>
             <div style={{ display: "flex", gap: ".625rem" }}>
-              <Button type="submit" size="sm" disabled={saving}>{saving ? nav("Saving...", "جارٍ الحفظ...") : nav("Save Record", "حفظ السجل")}</Button>
-              <Button type="button" size="sm" variant="outline" onClick={() => { setShowForm(false); setError(""); }}>{nav("Cancel", "إلغاء")}</Button>
+              <Button type="submit" size="sm" disabled={saving}>{saving ? "جارٍ الحفظ..." : "حفظ السجل"}</Button>
+              <Button type="button" size="sm" variant="outline" onClick={() => { setShowForm(false); setError(""); }}>{"إلغاء"}</Button>
             </div>
           </form>
         </Card>
@@ -179,19 +179,19 @@ export default function EquipmentTransferLog() {
           ) : transfers.length === 0 ? (
             <div className="p-10 text-center" style={{ color: "var(--text-secondary)" }}>
               <History size={32} style={{ margin: "0 auto 12px", opacity: .3, display: "block" }} />
-              <p style={{ fontWeight: 600 }}>{nav("No transfer records yet", "لا توجد سجلات نقل بعد")}</p>
-              {(isEngineer || isAdmin) && <p style={{ fontSize: ".85rem", marginTop: ".25rem" }}>{nav("Click 'Log Event' to add a service record", "انقر على 'تسجيل حدث' لإضافة سجل خدمة")}</p>}
+              <p style={{ fontWeight: 600 }}>{"لا توجد سجلات نقل بعد"}</p>
+              {(isEngineer || isAdmin) && <p style={{ fontSize: ".85rem", marginTop: ".25rem" }}>{"انقر على 'تسجيل حدث' لإضافة سجل خدمة"}</p>}
             </div>
           ) : (
             <table className="data-table w-full">
               <thead>
                 <tr>
-                  <th>{nav("Machine", "الآلة")}</th>
-                  <th>{nav("Parts Used", "القطع المستخدمة")}</th>
-                  <th>{nav("Reason", "السبب")}</th>
-                  <th>{nav("Downtime", "وقت التوقف")}</th>
-                  <th>{nav("Engineer", "المهندس")}</th>
-                  <th>{nav("Date", "التاريخ")}</th>
+                  <th>{"الآلة"}</th>
+                  <th>{"القطع المستخدمة"}</th>
+                  <th>{"السبب"}</th>
+                  <th>{"وقت التوقف"}</th>
+                  <th>{"المهندس"}</th>
+                  <th>{"التاريخ"}</th>
                 </tr>
               </thead>
               <tbody>

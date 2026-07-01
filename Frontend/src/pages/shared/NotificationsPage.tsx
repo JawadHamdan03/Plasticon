@@ -1,6 +1,5 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { useAuth } from "../../context/AuthContext";
-import { useLocale } from "../../context/LocaleContext";
 import { API_BASE_URL, readApiError } from "../../lib/api";
 import {
   Bell,
@@ -59,7 +58,6 @@ function fmtDate(d: string) {
 
 export function NotificationsPage() {
   const { user } = useAuth();
-  const { locale } = useLocale();
   const isAdmin = user?.role === "ADMIN";
 
   const [items, setItems] = useState<NotificationItem[]>([]);
@@ -142,11 +140,7 @@ export function NotificationsPage() {
         }),
       });
       if (!res.ok) throw new Error(await readApiError(res));
-      setSuccess(
-        locale === "ar"
-          ? "تم إرسال الإشعار بنجاح"
-          : "Notification sent successfully",
-      );
+      setSuccess("تم إرسال الإشعار بنجاح");
       setForm({
         type: "SYSTEM_MESSAGE",
         targetType: "USER",
@@ -167,25 +161,22 @@ export function NotificationsPage() {
   const displayed = filterUnread ? items.filter((n) => !n.isRead) : items;
 
   const t = {
-    title: locale === "ar" ? "الإشعارات" : "Notifications",
-    subtitle:
-      locale === "ar"
-        ? "كل إشعاراتك في مكان واحد"
-        : "All your notifications in one place",
-    inbox: locale === "ar" ? "صندوق الوارد" : "Inbox",
-    send: locale === "ar" ? "إرسال إشعار" : "Send Notification",
-    markAll: locale === "ar" ? "تعليم الكل كمقروء" : "Mark all read",
-    all: locale === "ar" ? "الكل" : "All",
-    unread: locale === "ar" ? "غير مقروء" : "Unread",
-    empty: locale === "ar" ? "لا توجد إشعارات" : "No notifications",
-    read: locale === "ar" ? "تعليم كمقروء" : "Mark read",
-    type: locale === "ar" ? "النوع" : "Type",
-    target: locale === "ar" ? "المستهدف" : "Target",
-    titleL: locale === "ar" ? "العنوان" : "Title",
-    msg: locale === "ar" ? "الرسالة" : "Message",
-    userId: locale === "ar" ? "معرّف المستخدم" : "User ID",
-    shiftId: locale === "ar" ? "معرّف الوردية" : "Shift ID",
-    submit: locale === "ar" ? "إرسال" : "Send",
+    title: "الإشعارات",
+    subtitle: "كل إشعاراتك في مكان واحد",
+    inbox: "صندوق الوارد",
+    send: "إرسال إشعار",
+    markAll: "تعليم الكل كمقروء",
+    all: "الكل",
+    unread: "غير مقروء",
+    empty: "لا توجد إشعارات",
+    read: "تعليم كمقروء",
+    type: "النوع",
+    target: "المستهدف",
+    titleL: "العنوان",
+    msg: "الرسالة",
+    userId: "معرّف المستخدم",
+    shiftId: "معرّف الوردية",
+    submit: "إرسال",
   };
 
   return (
@@ -211,7 +202,7 @@ export function NotificationsPage() {
               color: "var(--text-secondary)",
             }}
           >
-            {locale === "ar" ? "بلاستيكون" : "Plasticon"}
+            {"بلاستيكون"}
           </p>
           <h1
             style={{
@@ -281,7 +272,7 @@ export function NotificationsPage() {
       >
         <Bell size={16} style={{ color: "var(--brand-primary)" }} />
         <span style={{ fontSize: ".875rem", color: "var(--text-secondary)" }}>
-          {locale === "ar" ? "إجمالي" : "Total"}:
+          {"إجمالي"}:
         </span>
         <strong style={{ fontSize: ".875rem", color: "var(--text-primary)" }}>
           {items.length}
@@ -293,7 +284,7 @@ export function NotificationsPage() {
             marginLeft: ".5rem",
           }}
         >
-          {locale === "ar" ? "غير مقروء" : "Unread"}:
+          {"غير مقروء"}:
         </span>
         <strong
           style={{
@@ -538,18 +529,10 @@ export function NotificationsPage() {
                       }))
                     }
                   >
-                    <option value="USER">
-                      {locale === "ar" ? "مستخدم محدد" : "Specific User"}
-                    </option>
-                    <option value="SHIFT">
-                      {locale === "ar" ? "وردية" : "Shift"}
-                    </option>
-                    <option value="ROLE">
-                      {locale === "ar" ? "دور محدد" : "By Role"}
-                    </option>
-                    <option value="ALL">
-                      {locale === "ar" ? "الجميع" : "Everyone"}
-                    </option>
+                    <option value="USER">{"مستخدم محدد"}</option>
+                    <option value="SHIFT">{"وردية"}</option>
+                    <option value="ROLE">{"دور محدد"}</option>
+                    <option value="ALL">{"الجميع"}</option>
                   </select>
                 </label>
                 <label>
@@ -584,11 +567,7 @@ export function NotificationsPage() {
                       setForm((p) => ({ ...p, title: e.target.value }))
                     }
                     required
-                    placeholder={
-                      locale === "ar"
-                        ? "عنوان الإشعار..."
-                        : "Notification title..."
-                    }
+                    placeholder={"عنوان الإشعار..."}
                   />
                 </label>
                 <label>
@@ -600,11 +579,7 @@ export function NotificationsPage() {
                       setForm((p) => ({ ...p, message: e.target.value }))
                     }
                     required
-                    placeholder={
-                      locale === "ar"
-                        ? "محتوى الإشعار..."
-                        : "Notification message..."
-                    }
+                    placeholder={"محتوى الإشعار..."}
                   />
                 </label>
                 {form.targetType === "USER" && (
@@ -637,15 +612,15 @@ export function NotificationsPage() {
                 )}
                 {form.targetType === "ROLE" && (
                   <label>
-                    {locale === "ar" ? "الدور" : "Role"}
+                    {"الدور"}
                     <select
                       value={form.role}
                       onChange={(e) => setForm((p) => ({ ...p, role: e.target.value }))}
                     >
-                      <option value="SALES_REP">{locale === "ar" ? "مندوب المبيعات" : "Sales Rep"}</option>
-                      <option value="WORKER">{locale === "ar" ? "عامل" : "Worker"}</option>
-                      <option value="ENGINEER">{locale === "ar" ? "مهندس" : "Engineer"}</option>
-                      <option value="ACCOUNTANT">{locale === "ar" ? "محاسب" : "Accountant"}</option>
+                      <option value="SALES_REP">{"مندوب المبيعات"}</option>
+                      <option value="WORKER">{"عامل"}</option>
+                      <option value="ENGINEER">{"مهندس"}</option>
+                      <option value="ACCOUNTANT">{"محاسب"}</option>
                     </select>
                   </label>
                 )}

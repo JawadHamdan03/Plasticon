@@ -1,8 +1,7 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { BarChart3 } from "lucide-react";
 import { ModulePageShell } from "../../components/ModulePageShell";
 import { Card } from "../../components/ui/card";
-import { useLocale } from "../../context/LocaleContext";
 import { API_BASE_URL } from "../../lib/api";
 
 function authHeaders(): Record<string, string> {
@@ -51,16 +50,16 @@ export default function ProductionAnalytics() {
   const uniqueMachines = new Set(data.map((r) => r.machine?.id).filter(Boolean)).size;
 
   const kpis = [
-    { label: nav("Total Pieces",   "إجمالي القطع"),    value: totalPieces.toLocaleString(),           gradient: "linear-gradient(135deg,#3b82f6,#1d4ed8)" },
-    { label: nav("Total Cartons",  "إجمالي الكراتين"),  value: totalCartons.toLocaleString(),           gradient: "linear-gradient(135deg,#10b981,#059669)" },
-    { label: nav("Total Downtime", "إجمالي التوقف"),   value: `${(totalDowntime / 60).toFixed(1)}h`,  gradient: "linear-gradient(135deg,#f59e0b,#d97706)" },
-    { label: nav("Machines Active","الآلات النشطة"),    value: String(uniqueMachines),                  gradient: "linear-gradient(135deg,#8b5cf6,#7c3aed)" },
+    { label: "إجمالي القطع",    value: totalPieces.toLocaleString(),           gradient: "linear-gradient(135deg,#3b82f6,#1d4ed8)" },
+    { label: "إجمالي الكراتين",  value: totalCartons.toLocaleString(),           gradient: "linear-gradient(135deg,#10b981,#059669)" },
+    { label: "إجمالي التوقف",   value: `${(totalDowntime / 60).toFixed(1)}h`,  gradient: "linear-gradient(135deg,#f59e0b,#d97706)" },
+    { label: "الآلات النشطة",    value: String(uniqueMachines),                  gradient: "linear-gradient(135deg,#8b5cf6,#7c3aed)" },
   ];
 
   return (
     <ModulePageShell
-      title={nav("Production Analytics", "تحليلات الإنتاج")}
-      subtitle={nav("Production records and output trends", "سجلات الإنتاج واتجاهات المخرجات")}
+      title={"تحليلات الإنتاج"}
+      subtitle={"سجلات الإنتاج واتجاهات المخرجات"}
       icon={<BarChart3 size={22} />}
     >
       {/* KPIs */}
@@ -80,20 +79,20 @@ export default function ProductionAnalytics() {
           ) : data.length === 0 ? (
             <div className="p-10 text-center text-[var(--text-secondary)]">
               <BarChart3 size={32} className="mx-auto mb-3 opacity-30" />
-              <p className="font-medium">{nav("No production records found", "لا توجد سجلات إنتاج")}</p>
+              <p className="font-medium">{"لا توجد سجلات إنتاج"}</p>
             </div>
           ) : (
             <table className="data-table w-full">
               <thead>
                 <tr>
-                  <th>{nav("Worker", "العامل")}</th>
-                  <th>{nav("Machine", "الآلة")}</th>
-                  <th>{nav("Shift", "الشفت")}</th>
-                  <th>{nav("Pieces", "القطع")}</th>
-                  <th>{nav("Cartons", "الكراتين")}</th>
-                  <th>{nav("Downtime", "التوقف")}</th>
-                  <th>{nav("Reason", "السبب")}</th>
-                  <th>{nav("Date", "التاريخ")}</th>
+                  <th>{"العامل"}</th>
+                  <th>{"الآلة"}</th>
+                  <th>{"الشفت"}</th>
+                  <th>{"القطع"}</th>
+                  <th>{"الكراتين"}</th>
+                  <th>{"التوقف"}</th>
+                  <th>{"السبب"}</th>
+                  <th>{"التاريخ"}</th>
                 </tr>
               </thead>
               <tbody>

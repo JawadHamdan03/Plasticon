@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from "react";
+﻿import { useEffect, useState, type FormEvent } from "react";
 import { Zap, Plus, X } from "lucide-react";
 import { ModulePageShell } from "../../components/ModulePageShell";
 import { Card } from "../../components/ui/card";
@@ -33,11 +33,11 @@ interface HealthRecord {
 }
 
 const STATUS_META: Record<string, { color: string; bg: string; label: string }> = {
-  OPERATIONAL:        { color: "#059669", bg: "#d1fae5", label: "Operational" },
-  MAINTENANCE:        { color: "#d97706", bg: "#fef3c7", label: "Under Maintenance" },
-  BROKEN:             { color: "#dc2626", bg: "#fee2e2", label: "Broken" },
-  OFFLINE:            { color: "#6b7280", bg: "#f3f4f6", label: "Offline" },
-  UNDER_MAINTENANCE:  { color: "#d97706", bg: "#fef3c7", label: "Under Maintenance" },
+  OPERATIONAL:        { color: "#059669", bg: "#d1fae5", label: "تشغيل" },
+  MAINTENANCE:        { color: "#d97706", bg: "#fef3c7", label: "تحت الصيانة" },
+  BROKEN:             { color: "#dc2626", bg: "#fee2e2", label: "معطل" },
+  OFFLINE:            { color: "#6b7280", bg: "#f3f4f6", label: "غير متصل" },
+  UNDER_MAINTENANCE:  { color: "#d97706", bg: "#fef3c7", label: "تحت الصيانة" },
 };
 const OP_STATUSES = ["OPERATIONAL", "MAINTENANCE", "BROKEN", "OFFLINE"];
 
@@ -77,7 +77,7 @@ export default function EquipmentLifecycleTracking() {
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     setError(""); setSuccess("");
-    if (!form.machineId) { setError(nav("Select a machine", "اختر آلة")); return; }
+    if (!form.machineId) { setError("اختر آلة"); return; }
     setSaving(true);
     try {
       const res = await apiFetch("/machine-health", {
@@ -93,12 +93,12 @@ export default function EquipmentLifecycleTracking() {
         }),
       });
       if (!res.ok) throw new Error(await readApiError(res));
-      setSuccess(nav("Lifecycle record saved", "تم حفظ سجل دورة الحياة"));
+      setSuccess("تم حفظ سجل دورة الحياة");
       setForm(emptyForm());
       setShowForm(false);
       void load();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to save");
+      setError(err instanceof Error ? err.message : "فشل الحفظ");
     } finally { setSaving(false); }
   };
 
@@ -108,22 +108,22 @@ export default function EquipmentLifecycleTracking() {
 
   return (
     <ModulePageShell
-      title={nav("Equipment Lifecycle", "دورة حياة المعدات")}
-      subtitle={nav("Monitor and log equipment lifecycle events", "مراقبة وتسجيل أحداث دورة حياة المعدات")}
+      title={"دورة حياة المعدات"}
+      subtitle={"مراقبة وتسجيل أحداث دورة حياة المعدات"}
       icon={<Zap size={22} />}
       actions={canAdd ? (
         <Button size="sm" onClick={() => setShowForm(v => !v)}>
           {showForm ? <X size={14} /> : <Plus size={14} />}
-          {showForm ? nav("Cancel", "إلغاء") : nav("Add Record", "إضافة سجل")}
+          {showForm ? "إلغاء" : "إضافة سجل"}
         </Button>
       ) : undefined}
     >
       {/* KPIs */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: ".75rem", marginBottom: "1.25rem" }}>
         {[
-          { label: nav("Operational",     "تشغيلي"),               value: operationalCount,  gradient: "linear-gradient(135deg,#10b981,#059669)" },
-          { label: nav("In Maintenance",  "في الصيانة"),            value: maintenanceCount,  gradient: "linear-gradient(135deg,#f59e0b,#d97706)" },
-          { label: nav("Broken/Offline",  "معطل / غير متصل"),      value: brokenCount,       gradient: "linear-gradient(135deg,#ef4444,#dc2626)" },
+          { label: "تشغيلي",               value: operationalCount,  gradient: "linear-gradient(135deg,#10b981,#059669)" },
+          { label: "في الصيانة",            value: maintenanceCount,  gradient: "linear-gradient(135deg,#f59e0b,#d97706)" },
+          { label: "معطل / غير متصل",      value: brokenCount,       gradient: "linear-gradient(135deg,#ef4444,#dc2626)" },
         ].map(k => (
           <div key={k.label} style={{ borderRadius: 14, padding: "1rem 1.1rem", background: k.gradient, color: "#fff", boxShadow: "0 4px 12px rgba(0,0,0,.15)" }}>
             <p style={{ margin: 0, fontSize: ".72rem", fontWeight: 600, opacity: .85, textTransform: "uppercase", letterSpacing: ".06em" }}>{k.label}</p>
@@ -135,38 +135,38 @@ export default function EquipmentLifecycleTracking() {
       {/* Add form */}
       {canAdd && showForm && (
         <Card className="p-5 mb-5 border-2 border-(--accent)">
-          <h3 style={{ margin: "0 0 1rem", fontSize: ".95rem", fontWeight: 700 }}>{nav("New Lifecycle Record", "سجل دورة حياة جديد")}</h3>
+          <h3 style={{ margin: "0 0 1rem", fontSize: ".95rem", fontWeight: 700 }}>{"سجل دورة حياة جديد"}</h3>
           {error && <div className="auth-alert auth-alert--error mb-3">{error}</div>}
           {success && <div className="auth-alert mb-3">{success}</div>}
           <form className="module-form" onSubmit={e => void submit(e)}>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "1rem" }}>
-              <label>{nav("Machine", "الآلة")} *
+              <label>{"الآلة"} *
                 <select className="input" value={form.machineId} onChange={e => setForm(p => ({ ...p, machineId: e.target.value }))} required>
-                  <option value="">{nav("Select machine...", "اختر الآلة...")}</option>
+                  <option value="">{"اختر الآلة..."}</option>
                   {machines.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
                 </select>
               </label>
-              <label>{nav("Operational Status", "الحالة التشغيلية")} *
+              <label>{"الحالة التشغيلية"} *
                 <select className="input" value={form.operationalStatus} onChange={e => setForm(p => ({ ...p, operationalStatus: e.target.value }))}>
                   {OP_STATUSES.map(s => <option key={s} value={s}>{STATUS_META[s]?.label ?? s}</option>)}
                 </select>
               </label>
-              <label>{nav("Efficiency Rating (%)", "تقييم الكفاءة (%)")}
+              <label>{"تقييم الكفاءة (%)"}
                 <input type="number" min={0} max={100} className="input" value={form.efficiencyRating} onChange={e => setForm(p => ({ ...p, efficiencyRating: e.target.value }))} />
               </label>
-              <label>{nav("Maintenance Hours", "ساعات الصيانة")} *
+              <label>{"ساعات الصيانة"} *
                 <input type="number" min={0} className="input" value={form.maintenanceHours} onChange={e => setForm(p => ({ ...p, maintenanceHours: e.target.value }))} required />
               </label>
-              <label>{nav("Downtime (%)", "نسبة التوقف (%)")} *
+              <label>{"نسبة التوقف (%)"} *
                 <input type="number" min={0} max={100} className="input" value={form.downtimePercentage} onChange={e => setForm(p => ({ ...p, downtimePercentage: e.target.value }))} required />
               </label>
             </div>
-            <label>{nav("Notes", "ملاحظات")}
-              <textarea rows={2} className="input" value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} placeholder={nav("Optional notes...", "ملاحظات اختيارية...")} />
+            <label>{"ملاحظات"}
+              <textarea rows={2} className="input" value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} placeholder={"ملاحظات اختيارية..."} />
             </label>
             <div style={{ display: "flex", gap: ".625rem" }}>
-              <Button type="submit" size="sm" disabled={saving}>{saving ? nav("Saving...", "جارٍ الحفظ...") : nav("Save Record", "حفظ السجل")}</Button>
-              <Button type="button" size="sm" variant="outline" onClick={() => { setShowForm(false); setError(""); }}>{nav("Cancel", "إلغاء")}</Button>
+              <Button type="submit" size="sm" disabled={saving}>{saving ? "جارٍ الحفظ..." : "حفظ السجل"}</Button>
+              <Button type="button" size="sm" variant="outline" onClick={() => { setShowForm(false); setError(""); }}>{"إلغاء"}</Button>
             </div>
           </form>
         </Card>
@@ -180,20 +180,20 @@ export default function EquipmentLifecycleTracking() {
           ) : records.length === 0 ? (
             <div className="p-10 text-center" style={{ color: "var(--text-secondary)" }}>
               <Zap size={32} style={{ margin: "0 auto 12px", opacity: .3, display: "block" }} />
-              <p style={{ fontWeight: 600 }}>{nav("No lifecycle records yet", "لا توجد سجلات دورة حياة بعد")}</p>
-              {canAdd && <p style={{ fontSize: ".85rem", marginTop: ".25rem" }}>{nav("Click 'Add Record' to log a lifecycle event", "انقر على 'إضافة سجل' لتسجيل حدث دورة حياة")}</p>}
+              <p style={{ fontWeight: 600 }}>{"لا توجد سجلات دورة حياة بعد"}</p>
+              {canAdd && <p style={{ fontSize: ".85rem", marginTop: ".25rem" }}>{"انقر على 'إضافة سجل' لتسجيل حدث دورة حياة"}</p>}
             </div>
           ) : (
             <table className="data-table w-full">
               <thead>
                 <tr>
-                  <th>{nav("Machine", "الآلة")}</th>
-                  <th>{nav("Status", "الحالة")}</th>
-                  <th>{nav("Efficiency", "الكفاءة")}</th>
-                  <th>{nav("Maint. Hours", "ساعات الصيانة")}</th>
-                  <th>{nav("Downtime", "التوقف")}</th>
-                  <th>{nav("Recorded By", "سُجِّل بواسطة")}</th>
-                  <th>{nav("Date", "التاريخ")}</th>
+                  <th>{"الآلة"}</th>
+                  <th>{"الحالة"}</th>
+                  <th>{"الكفاءة"}</th>
+                  <th>{"ساعات الصيانة"}</th>
+                  <th>{"التوقف"}</th>
+                  <th>{"سُجِّل بواسطة"}</th>
+                  <th>{"التاريخ"}</th>
                 </tr>
               </thead>
               <tbody>

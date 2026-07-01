@@ -1,9 +1,8 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { DollarSign, TrendingUp, TrendingDown, Target, RefreshCw, BarChart3, Settings, X, Save } from "lucide-react";
 import { ModulePageShell } from "../../components/ModulePageShell";
 import { Card } from "../../components/ui/card";
 import { Button } from "../../components/ui/button";
-import { useLocale } from "../../context/LocaleContext";
 import { useAuth } from "../../context/AuthContext";
 import { API_BASE_URL } from "../../lib/api";
 
@@ -48,10 +47,8 @@ function ProgressBar({ value, color }: { value: number; color: string }) {
 }
 
 export default function FinancialDashboard() {
-  const { locale } = useLocale();
   const { user } = useAuth();
   const isAdmin = user?.role === "ADMIN";
-  const nav = (en: string, ar: string) => locale === "ar" ? ar : en;
 
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -79,10 +76,10 @@ export default function FinancialDashboard() {
           profitMarginTarget: d.targets?.profitMarginTarget ?? 0,
         });
       } else {
-        setFetchError(nav("Failed to load financial data", "فشل تحميل البيانات المالية"));
+        setFetchError("فشل تحميل البيانات المالية");
       }
     } catch {
-      setFetchError(nav("Network error — please check your connection", "خطأ في الاتصال، يرجى التحقق من الشبكة"));
+      setFetchError("خطأ في الاتصال، يرجى التحقق من الشبكة");
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -104,15 +101,15 @@ export default function FinancialDashboard() {
         body: JSON.stringify(settings),
       });
       if (res.ok) {
-        setSettingsMsg(nav("Settings saved successfully", "تم حفظ الإعدادات بنجاح"));
+        setSettingsMsg("تم حفظ الإعدادات بنجاح");
         fetchDashboard(true);
         setTimeout(() => setSettingsMsg(""), 3000);
       } else {
         const err = await res.json().catch(() => ({}));
-        setSettingsMsg(err.message || nav("Failed to save", "فشل الحفظ"));
+        setSettingsMsg(err.message || "فشل الحفظ");
       }
     } catch {
-      setSettingsMsg(nav("Network error", "خطأ في الاتصال"));
+      setSettingsMsg("خطأ في الاتصال");
     } finally {
       setSavingSettings(false);
     }
@@ -123,8 +120,8 @@ export default function FinancialDashboard() {
 
   return (
     <ModulePageShell
-      title={nav("Financial Dashboard", "لوحة القيادة المالية")}
-      subtitle={nav("Overview of financial metrics and performance", "نظرة عامة على المقاييس المالية والأداء")}
+      title={"لوحة القيادة المالية"}
+      subtitle={"نظرة عامة على المقاييس المالية والأداء"}
       icon={<BarChart3 size={22} />}
     >
       {/* Error banner */}
@@ -140,12 +137,12 @@ export default function FinancialDashboard() {
         {!isAdmin && (
           <Button size="sm" variant="outline" onClick={() => { setShowSettings(!showSettings); setSettingsMsg(""); }}>
             <Settings size={14} className="me-1" />
-            {nav("Set Targets", "تعيين الأهداف")}
+            {"تعيين الأهداف"}
           </Button>
         )}
         <Button size="sm" variant="outline" onClick={() => fetchDashboard(true)} disabled={refreshing}>
           <RefreshCw size={14} className={`me-1 ${refreshing ? "animate-spin" : ""}`} />
-          {nav("Refresh", "تحديث")}
+          {"تحديث"}
         </Button>
       </div>
 
@@ -154,8 +151,8 @@ export default function FinancialDashboard() {
         <Card className="p-5 mb-6 border-2 border-[var(--accent)]">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h3 className="font-bold text-[var(--text-primary)] text-base">{nav("Financial Targets", "الأهداف المالية")}</h3>
-              <p className="text-xs text-[var(--text-secondary)] mt-0.5">{nav("Set revenue, expense, and profit goals", "حدد أهداف الإيرادات والمصروفات والربح")}</p>
+              <h3 className="font-bold text-[var(--text-primary)] text-base">{"الأهداف المالية"}</h3>
+              <p className="text-xs text-[var(--text-secondary)] mt-0.5">{"حدد أهداف الإيرادات والمصروفات والربح"}</p>
             </div>
             <button className="text-[var(--text-secondary)] hover:text-[var(--text-primary)]" onClick={() => setShowSettings(false)}>
               <X size={18} />
@@ -166,21 +163,21 @@ export default function FinancialDashboard() {
               {settingsMsg}
             </p>
           )}
-          <p className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wide mb-2">{nav("Target Values", "قيم الأهداف")}</p>
+          <p className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wide mb-2">{"قيم الأهداف"}</p>
           <form onSubmit={saveSettings}>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
               <div>
-                <label className="label">{nav("Revenue Target (₪)", "هدف الإيرادات ($)")}</label>
+                <label className="label">{"هدف الإيرادات ($)"}</label>
                 <input type="number" min={0} step={0.01} className="input" value={settings.revenueTarget}
                   onChange={(e) => setSettings({ ...settings, revenueTarget: parseFloat(e.target.value) || 0 })} />
               </div>
               <div>
-                <label className="label">{nav("Expense Limit (₪)", "حد المصروفات ($)")}</label>
+                <label className="label">{"حد المصروفات ($)"}</label>
                 <input type="number" min={0} step={0.01} className="input" value={settings.expenseLimit}
                   onChange={(e) => setSettings({ ...settings, expenseLimit: parseFloat(e.target.value) || 0 })} />
               </div>
               <div>
-                <label className="label">{nav("Profit Margin Target (%)", "هدف هامش الربح (%)")}</label>
+                <label className="label">{"هدف هامش الربح (%)"}</label>
                 <input type="number" min={0} max={100} step={0.1} className="input" value={settings.profitMarginTarget}
                   onChange={(e) => setSettings({ ...settings, profitMarginTarget: parseFloat(e.target.value) || 0 })} />
               </div>
@@ -188,10 +185,10 @@ export default function FinancialDashboard() {
             <div className="flex gap-2 pt-2 border-t border-[var(--border-default)]">
               <Button size="sm" type="submit" disabled={savingSettings}>
                 <Save size={14} className="me-1" />
-                {savingSettings ? nav("Saving...", "جارٍ الحفظ...") : nav("Save Targets", "حفظ الأهداف")}
+                {savingSettings ? "جارٍ الحفظ..." : "حفظ الأهداف"}
               </Button>
               <Button size="sm" type="button" variant="outline" onClick={() => setShowSettings(false)}>
-                {nav("Cancel", "إلغاء")}
+                {"إلغاء"}
               </Button>
             </div>
           </form>
@@ -209,10 +206,10 @@ export default function FinancialDashboard() {
         <>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: ".75rem", marginBottom: "1.25rem" }}>
             {[
-              { label: nav("Total Revenue",  "إجمالي الإيرادات"),  value: fmtMoney(data.revenue),      gradient: "linear-gradient(135deg,#3b82f6,#1d4ed8)" },
-              { label: nav("Total Expenses", "إجمالي المصروفات"), value: fmtMoney(data.expenses),     gradient: "linear-gradient(135deg,#f59e0b,#d97706)" },
-              { label: nav("Net Profit",     "صافي الربح"),        value: fmtMoney(data.profit),       gradient: data.profit >= 0 ? "linear-gradient(135deg,#10b981,#059669)" : "linear-gradient(135deg,#f87171,#dc2626)" },
-              { label: nav("Cash Balance",   "رصيد النقد"),        value: fmtMoney(data.cashBalance),  gradient: data.cashBalance >= 0 ? "linear-gradient(135deg,#8b5cf6,#7c3aed)" : "linear-gradient(135deg,#f87171,#dc2626)" },
+              { label: "إجمالي الإيرادات",  value: fmtMoney(data.revenue),      gradient: "linear-gradient(135deg,#3b82f6,#1d4ed8)" },
+              { label: "إجمالي المصروفات", value: fmtMoney(data.expenses),     gradient: "linear-gradient(135deg,#f59e0b,#d97706)" },
+              { label: "صافي الربح",        value: fmtMoney(data.profit),       gradient: data.profit >= 0 ? "linear-gradient(135deg,#10b981,#059669)" : "linear-gradient(135deg,#f87171,#dc2626)" },
+              { label: "رصيد النقد",        value: fmtMoney(data.cashBalance),  gradient: data.cashBalance >= 0 ? "linear-gradient(135deg,#8b5cf6,#7c3aed)" : "linear-gradient(135deg,#f87171,#dc2626)" },
             ].map((k) => (
               <div key={k.label} style={{ borderRadius: 14, padding: "1rem 1.1rem", background: k.gradient, color: "#fff", boxShadow: "0 4px 12px rgba(0,0,0,.15)" }}>
                 <p style={{ margin: 0, fontSize: ".72rem", fontWeight: 600, opacity: .85, textTransform: "uppercase", letterSpacing: ".06em" }}>{k.label}</p>
@@ -223,15 +220,15 @@ export default function FinancialDashboard() {
 
           {/* Factory Cost Breakdown */}
           <div className="mb-6">
-            <h3 className="text-sm font-bold text-(--text-primary) mb-3">{nav("Factory Cost Breakdown — Net Profit Formula", "تفصيل تكاليف المصنع — معادلة صافي الربح")}</h3>
+            <h3 className="text-sm font-bold text-(--text-primary) mb-3">{"تفصيل تكاليف المصنع — معادلة صافي الربح"}</h3>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: ".65rem" }}>
               {[
-                { label: nav("Sales Revenue", "إيرادات المبيعات"),  value: fmtMoney(data.salesRevenue ?? 0),     gradient: "linear-gradient(135deg,#3b82f6,#1d4ed8)" },
-                { label: nav("Raw Materials", "المواد الخام"),       value: fmtMoney(data.rawMaterialCost ?? 0),  gradient: "linear-gradient(135deg,#f59e0b,#d97706)" },
-                { label: nav("Electricity",   "الكهرباء"),           value: fmtMoney(data.electricityCost ?? 0),  gradient: "linear-gradient(135deg,#8b5cf6,#7c3aed)" },
-                { label: nav("Salaries",      "الرواتب"),            value: fmtMoney(data.salaryCost ?? 0),       gradient: "linear-gradient(135deg,#06b6d4,#0891b2)" },
-                { label: nav("Other Expenses","مصروفات أخرى"),       value: fmtMoney(data.approvedExpenses ?? 0), gradient: "linear-gradient(135deg,#94a3b8,#64748b)" },
-                { label: nav("Net Profit",    "صافي الربح"),         value: fmtMoney(data.netProfit ?? 0),        gradient: (data.netProfit ?? 0) >= 0 ? "linear-gradient(135deg,#10b981,#059669)" : "linear-gradient(135deg,#f87171,#dc2626)" },
+                { label: "إيرادات المبيعات",  value: fmtMoney(data.salesRevenue ?? 0),     gradient: "linear-gradient(135deg,#3b82f6,#1d4ed8)" },
+                { label: "المواد الخام",       value: fmtMoney(data.rawMaterialCost ?? 0),  gradient: "linear-gradient(135deg,#f59e0b,#d97706)" },
+                { label: "الكهرباء",           value: fmtMoney(data.electricityCost ?? 0),  gradient: "linear-gradient(135deg,#8b5cf6,#7c3aed)" },
+                { label: "الرواتب",            value: fmtMoney(data.salaryCost ?? 0),       gradient: "linear-gradient(135deg,#06b6d4,#0891b2)" },
+                { label: "مصروفات أخرى",       value: fmtMoney(data.approvedExpenses ?? 0), gradient: "linear-gradient(135deg,#94a3b8,#64748b)" },
+                { label: "صافي الربح",         value: fmtMoney(data.netProfit ?? 0),        gradient: (data.netProfit ?? 0) >= 0 ? "linear-gradient(135deg,#10b981,#059669)" : "linear-gradient(135deg,#f87171,#dc2626)" },
               ].map((k) => (
                 <div key={k.label} style={{ borderRadius: 12, padding: ".8rem 1rem", background: k.gradient, color: "#fff", boxShadow: "0 3px 10px rgba(0,0,0,.12)" }}>
                   <p style={{ margin: 0, fontSize: ".68rem", fontWeight: 600, opacity: .85, textTransform: "uppercase", letterSpacing: ".05em" }}>{k.label}</p>
@@ -240,8 +237,8 @@ export default function FinancialDashboard() {
               ))}
             </div>
             <p className="text-xs text-(--text-secondary) mt-2">
-              {nav("Net Profit = Sales − (Raw Materials + Electricity + Salaries + Other Expenses)", "صافي الربح = المبيعات − (المواد الخام + الكهرباء + الرواتب + المصروفات الأخرى)")}
-              {" · "}{nav("Margin", "الهامش")}: <strong style={{ color: (data.netProfit ?? 0) >= 0 ? "#059669" : "#dc2626" }}>{(data.netProfitMargin ?? 0).toFixed(1)}%</strong>
+              {"صافي الربح = المبيعات − (المواد الخام + الكهرباء + الرواتب + المصروفات الأخرى)"}
+              {" · "}{"الهامش"}: <strong style={{ color: (data.netProfit ?? 0) >= 0 ? "#059669" : "#dc2626" }}>{(data.netProfitMargin ?? 0).toFixed(1)}%</strong>
             </p>
           </div>
 
@@ -254,17 +251,17 @@ export default function FinancialDashboard() {
                   <DollarSign size={18} style={{ color: "#1d4ed8" }} />
                 </div>
                 <div>
-                  <p className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wide">{nav("Revenue", "الإيرادات")}</p>
+                  <p className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wide">{"الإيرادات"}</p>
                   <p className="text-2xl font-bold" style={{ color: "#1d4ed8" }}>{fmtMoney(data.revenue)}</p>
                 </div>
               </div>
               <p className="text-xs text-[var(--text-secondary)] mb-2">
-                {nav("Paid", "مدفوع")}: <span className="font-semibold" style={{ color: "#1d4ed8" }}>{fmtMoney(data.paidRevenue)}</span>
+                {"مدفوع"}: <span className="font-semibold" style={{ color: "#1d4ed8" }}>{fmtMoney(data.paidRevenue)}</span>
               </p>
               {data.targets.revenueTarget > 0 && (
                 <div className="space-y-1">
                   <div className="flex justify-between text-xs text-[var(--text-secondary)]">
-                    <span>{nav("Target", "الهدف")}: {fmtMoney(data.targets.revenueTarget)}</span>
+                    <span>{"الهدف"}: {fmtMoney(data.targets.revenueTarget)}</span>
                     <span className="font-semibold" style={{ color: "#1d4ed8" }}>{pct(data.revenue, data.targets.revenueTarget).toFixed(0)}%</span>
                   </div>
                   <ProgressBar value={pct(data.revenue, data.targets.revenueTarget)} color="#1d4ed8" />
@@ -279,17 +276,17 @@ export default function FinancialDashboard() {
                   <TrendingDown size={18} style={{ color: "#d97706" }} />
                 </div>
                 <div>
-                  <p className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wide">{nav("Expenses", "المصروفات")}</p>
+                  <p className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wide">{"المصروفات"}</p>
                   <p className="text-2xl font-bold" style={{ color: "#d97706" }}>{fmtMoney(data.expenses)}</p>
                 </div>
               </div>
               <p className="text-xs text-[var(--text-secondary)] mb-2">
-                {nav("Approved", "معتمد")}: <span className="font-semibold" style={{ color: "#d97706" }}>{fmtMoney(data.approvedExpenses)}</span>
+                {"معتمد"}: <span className="font-semibold" style={{ color: "#d97706" }}>{fmtMoney(data.approvedExpenses)}</span>
               </p>
               {data.targets.expenseLimit > 0 && (
                 <div className="space-y-1">
                   <div className="flex justify-between text-xs text-[var(--text-secondary)]">
-                    <span>{nav("Limit", "الحد")}: {fmtMoney(data.targets.expenseLimit)}</span>
+                    <span>{"الحد"}: {fmtMoney(data.targets.expenseLimit)}</span>
                     <span className="font-semibold" style={{ color: "#d97706" }}>{pct(data.expenses, data.targets.expenseLimit).toFixed(0)}%</span>
                   </div>
                   <ProgressBar value={pct(data.expenses, data.targets.expenseLimit)} color="#d97706" />
@@ -304,17 +301,17 @@ export default function FinancialDashboard() {
                   <TrendingUp size={18} style={{ color: data.profit >= 0 ? "#059669" : "#dc2626" }} />
                 </div>
                 <div>
-                  <p className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wide">{nav("Net Profit", "صافي الربح")}</p>
+                  <p className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wide">{"صافي الربح"}</p>
                   <p className="text-2xl font-bold" style={{ color: data.profit >= 0 ? "#059669" : "#dc2626" }}>{fmtMoney(data.profit)}</p>
                 </div>
               </div>
               <p className="text-xs text-[var(--text-secondary)] mb-2">
-                {nav("Margin", "الهامش")}: <span className="font-semibold" style={{ color: "#059669" }}>{data.profitMargin.toFixed(2)}%</span>
+                {"الهامش"}: <span className="font-semibold" style={{ color: "#059669" }}>{data.profitMargin.toFixed(2)}%</span>
               </p>
               {data.targets.profitMarginTarget > 0 && (
                 <div className="space-y-1">
                   <div className="flex justify-between text-xs text-[var(--text-secondary)]">
-                    <span>{nav("Target Margin", "هامش الهدف")}: {data.targets.profitMarginTarget.toFixed(1)}%</span>
+                    <span>{"هامش الهدف"}: {data.targets.profitMarginTarget.toFixed(1)}%</span>
                     <span className="font-semibold" style={{ color: "#059669" }}>{pct(data.profitMargin, data.targets.profitMarginTarget).toFixed(0)}%</span>
                   </div>
                   <ProgressBar value={pct(data.profitMargin, data.targets.profitMarginTarget)} color="#059669" />
@@ -329,13 +326,13 @@ export default function FinancialDashboard() {
                   <Target size={18} style={{ color: data.cashBalance >= 0 ? "#7c3aed" : "#dc2626" }} />
                 </div>
                 <div>
-                  <p className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wide">{nav("Cash Balance", "رصيد النقد")}</p>
+                  <p className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wide">{"رصيد النقد"}</p>
                   <p className="text-2xl font-bold" style={{ color: data.cashBalance >= 0 ? "#7c3aed" : "#dc2626" }}>{fmtMoney(data.cashBalance)}</p>
                 </div>
               </div>
               <span className="inline-block text-xs px-2.5 py-1 rounded-full font-semibold"
                 style={{ background: data.cashBalance >= 0 ? "#d1fae5" : "#fee2e2", color: data.cashBalance >= 0 ? "#059669" : "#dc2626" }}>
-                {data.cashBalance >= 0 ? nav("Positive", "موجب") : nav("Negative", "سالب")}
+                {data.cashBalance >= 0 ? "موجب" : "سالب"}
               </span>
             </Card>
           </div>
@@ -343,18 +340,18 @@ export default function FinancialDashboard() {
           {/* Summary Table */}
           <Card className="overflow-hidden">
             <div className="px-5 py-4 border-b border-[var(--border-default)]">
-              <h3 className="font-semibold text-[var(--text-primary)]">{nav("Financial Summary", "الملخص المالي")}</h3>
+              <h3 className="font-semibold text-[var(--text-primary)]">{"الملخص المالي"}</h3>
             </div>
             <table className="data-table w-full">
               <tbody>
                 {[
-                  { label: nav("Total Revenue", "إجمالي الإيرادات"), value: fmtMoney(data.revenue), color: "#1d4ed8" },
-                  { label: nav("Paid Revenue", "الإيرادات المدفوعة"), value: fmtMoney(data.paidRevenue), color: "#1d4ed8" },
-                  { label: nav("Total Expenses", "إجمالي المصروفات"), value: fmtMoney(data.expenses), color: "#d97706" },
-                  { label: nav("Approved Expenses", "المصروفات المعتمدة"), value: fmtMoney(data.approvedExpenses), color: "#d97706" },
-                  { label: nav("Net Profit", "صافي الربح"), value: fmtMoney(data.profit), color: data.profit >= 0 ? "#059669" : "#dc2626" },
-                  { label: nav("Profit Margin", "هامش الربح"), value: `${data.profitMargin.toFixed(2)}%`, color: "#059669" },
-                  { label: nav("Cash Balance", "رصيد النقد"), value: fmtMoney(data.cashBalance), color: data.cashBalance >= 0 ? "#7c3aed" : "#dc2626" },
+                  { label: "إجمالي الإيرادات", value: fmtMoney(data.revenue), color: "#1d4ed8" },
+                  { label: "الإيرادات المدفوعة", value: fmtMoney(data.paidRevenue), color: "#1d4ed8" },
+                  { label: "إجمالي المصروفات", value: fmtMoney(data.expenses), color: "#d97706" },
+                  { label: "المصروفات المعتمدة", value: fmtMoney(data.approvedExpenses), color: "#d97706" },
+                  { label: "صافي الربح", value: fmtMoney(data.profit), color: data.profit >= 0 ? "#059669" : "#dc2626" },
+                  { label: "هامش الربح", value: `${data.profitMargin.toFixed(2)}%`, color: "#059669" },
+                  { label: "رصيد النقد", value: fmtMoney(data.cashBalance), color: data.cashBalance >= 0 ? "#7c3aed" : "#dc2626" },
                 ].map((row) => (
                   <tr key={row.label}>
                     <td className="text-[var(--text-secondary)]">{row.label}</td>
@@ -368,7 +365,7 @@ export default function FinancialDashboard() {
       ) : (
         <Card className="p-12 text-center text-[var(--text-secondary)]">
           <BarChart3 size={36} className="mx-auto mb-3 opacity-30" />
-          <p className="font-medium">{nav("No financial data available yet", "لا توجد بيانات مالية متاحة بعد")}</p>
+          <p className="font-medium">{"لا توجد بيانات مالية متاحة بعد"}</p>
         </Card>
       )}
     </ModulePageShell>

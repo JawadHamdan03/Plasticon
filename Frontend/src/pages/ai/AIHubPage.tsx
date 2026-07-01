@@ -1,4 +1,4 @@
-import { useNavigate } from "react-router-dom";
+﻿import { useNavigate } from "react-router-dom";
 import {
   Bot, Sparkles, AlertTriangle, Wrench, ClipboardList, Users,
   ArrowRight, Zap, Lock,
@@ -84,7 +84,7 @@ export function AIHubPage() {
   const role = (user?.role ?? "WORKER").toUpperCase();
 
   return (
-    <div dir={isAr ? "rtl" : "ltr"} style={{ padding: "1.5rem", maxWidth: 1060, margin: "0 auto" }}>
+    <div dir="rtl" style={{ padding: "1.5rem", maxWidth: 1060, margin: "0 auto" }}>
       <AIKeyframes />
 
       {/* Hero */}
@@ -93,7 +93,7 @@ export function AIHubPage() {
           <Zap size={30} color="#fff" />
         </div>
         <h1 style={{ margin: "0 0 .6rem", fontSize: "1.6rem", fontWeight: 800, color: "var(--text-primary)" }}>
-          {isAr ? "أدوات الذكاء الاصطناعي" : "AI Tools"}
+          {"أدوات الذكاء الاصطناعي"}
         </h1>
         <p style={{ margin: "0 auto", maxWidth: 520, fontSize: ".92rem", color: "var(--text-muted)", lineHeight: 1.6 }}>
           {isAr
@@ -136,7 +136,7 @@ export function AIHubPage() {
                   )}
                   {!hasAccess && (
                     <span style={{ display: "flex", alignItems: "center", gap: ".25rem", padding: ".18rem .55rem", borderRadius: 999, fontSize: ".65rem", fontWeight: 700, background: "var(--bg-subtle)", color: "var(--text-muted)" }}>
-                      <Lock size={9} /> {isAr ? "محدود" : "Restricted"}
+                      <Lock size={9} /> {"محدود"}
                     </span>
                   )}
                 </div>
@@ -145,10 +145,10 @@ export function AIHubPage() {
               {/* Text */}
               <div>
                 <p style={{ margin: "0 0 .4rem", fontSize: ".95rem", fontWeight: 700, color: "var(--text-primary)" }}>
-                  {isAr ? tool.titleAr : tool.titleEn}
+                  {tool.titleAr}
                 </p>
                 <p style={{ margin: 0, fontSize: ".82rem", color: "var(--text-muted)", lineHeight: 1.55 }}>
-                  {isAr ? tool.descAr : tool.descEn}
+                  {tool.descAr}
                 </p>
               </div>
 
@@ -161,7 +161,7 @@ export function AIHubPage() {
                 </div>
                 {hasAccess && (
                   <span style={{ display: "flex", alignItems: "center", gap: ".25rem", fontSize: ".8rem", fontWeight: 600, color: from }}>
-                    {isAr ? "فتح" : "Open"} <ArrowRight size={13} />
+                    {"فتح"} <ArrowRight size={13} />
                   </span>
                 )}
               </div>
@@ -172,7 +172,7 @@ export function AIHubPage() {
 
       {/* Footer note */}
       <p style={{ textAlign: "center", marginTop: "2rem", fontSize: ".78rem", color: "var(--text-muted)" }}>
-        {isAr ? "جميع الأدوات مدعومة بـ GPT-4o من OpenAI وتعمل على بيانات مصنعك الحية." : "All tools are powered by GPT-4o from OpenAI and work on your live factory data."}
+        {"جميع الأدوات مدعومة بـ GPT-4o من OpenAI وتعمل على بيانات مصنعك الحية."}
       </p>
     </div>
   );

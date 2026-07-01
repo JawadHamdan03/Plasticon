@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { Users, Phone, Mail, MapPin, Search, FileText, Calendar, Plus, X } from "lucide-react";
 import { useLocale } from "../../context/LocaleContext";
 import { useAuth } from "../../context/AuthContext";
@@ -76,7 +76,7 @@ export function MyCustomersPage() {
 
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.name.trim()) { setMsg(isAr ? "الاسم مطلوب" : "Name is required"); return; }
+    if (!form.name.trim()) { setMsg("الاسم مطلوب"); return; }
     setSaving(true);
     setMsg("");
     try {
@@ -93,7 +93,7 @@ export function MyCustomersPage() {
         }),
       });
       if (!res.ok) throw new Error(await readApiError(res));
-      setMsg(isAr ? "تم إضافة العميل" : "Customer added");
+      setMsg("تم إضافة العميل");
       setForm(BLANK);
       setShowAdd(false);
       load();
@@ -112,7 +112,7 @@ export function MyCustomersPage() {
   );
 
   return (
-    <main className="admin-shell" dir={isAr ? "rtl" : "ltr"}>
+    <main className="admin-shell" dir="rtl">
       <section className="admin-card">
 
         {/* ── Header ── */}
@@ -122,10 +122,10 @@ export function MyCustomersPage() {
               <p className="auth-eyebrow">Plasticon</p>
               <h1 style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
                 <Users size={24} style={{ color: "#8b5cf6" }} />
-                {isAr ? (isAdmin ? "كل العملاء" : "عملائي") : (isAdmin ? "All Customers" : "My Customers")}
+                {(isAdmin ? "كل العملاء" : "عملائي")}
               </h1>
               <p style={{ color: "var(--text-secondary)", marginTop: "2px" }}>
-                {isAr ? (isAdmin ? "جميع عملاء المندوبين" : "العملاء المخصصون لك") : (isAdmin ? "All sales rep customers" : "Customers assigned to you")}
+                {(isAdmin ? "جميع عملاء المندوبين" : "العملاء المخصصون لك")}
               </p>
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap" }}>
@@ -137,7 +137,7 @@ export function MyCustomersPage() {
                   style={{ display: "inline-flex", alignItems: "center", gap: "0.35rem", fontSize: ".875rem" }}
                 >
                   <Plus size={15} />
-                  {isAr ? "إضافة عميل" : "Add Customer"}
+                  {"إضافة عميل"}
                 </button>
               )}
               {!loading && (
@@ -156,7 +156,7 @@ export function MyCustomersPage() {
                   }}
                 >
                   <Users size={14} />
-                  {customers.length} {isAr ? "عميل" : "customers"}
+                  {customers.length} {"عميل"}
                 </div>
               )}
             </div>
@@ -170,7 +170,7 @@ export function MyCustomersPage() {
             size={16}
             style={{
               position: "absolute",
-              [isAr ? "right" : "left"]: "0.75rem",
+              ["right"]: "0.75rem",
               top: "50%",
               transform: "translateY(-50%)",
               color: "var(--text-secondary)",
@@ -179,14 +179,14 @@ export function MyCustomersPage() {
           />
           <input
             type="search"
-            placeholder={isAr ? "ابحث بالاسم أو الهاتف أو البريد..." : "Search by name, phone or email..."}
+            placeholder={"ابحث بالاسم أو الهاتف أو البريد..."}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="admin-input"
             style={{
               width: "100%",
-              paddingLeft: isAr ? "0.75rem" : "2.25rem",
-              paddingRight: isAr ? "2.25rem" : "0.75rem",
+              paddingLeft: "0.75rem",
+              paddingRight: "2.25rem",
             }}
           />
         </div>
@@ -194,7 +194,7 @@ export function MyCustomersPage() {
         {/* ── Content ── */}
         {loading ? (
           <div style={{ padding: "3rem 0", textAlign: "center" }}>
-            <p className="admin-muted">{isAr ? "جارٍ التحميل..." : "Loading..."}</p>
+            <p className="admin-muted">{"جارٍ التحميل..."}</p>
           </div>
         ) : filtered.length === 0 ? (
           <div
@@ -222,8 +222,8 @@ export function MyCustomersPage() {
             </div>
             <p className="admin-muted" style={{ fontSize: "1rem" }}>
               {search
-                ? (isAr ? "لا توجد نتائج للبحث" : "No customers match your search")
-                : (isAr ? "لا يوجد عملاء بعد" : "No customers yet")}
+                ? ("لا توجد نتائج للبحث")
+                : ("لا يوجد عملاء بعد")}
             </p>
           </div>
         ) : (
@@ -397,7 +397,7 @@ export function MyCustomersPage() {
           >
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
               <h3 style={{ margin: 0, fontSize: "1rem", fontWeight: 800 }}>
-                {isAr ? "إضافة عميل جديد" : "Add New Customer"}
+                {"إضافة عميل جديد"}
               </h3>
               <button type="button" onClick={() => setShowAdd(false)}
                 style={{ width: 32, height: 32, border: "none", background: "var(--bg-subtle)", borderRadius: 8, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -407,19 +407,19 @@ export function MyCustomersPage() {
 
             <form onSubmit={(e) => { void handleAdd(e); }} style={{ display: "flex", flexDirection: "column", gap: "0.85rem" }}>
               <label style={{ display: "flex", flexDirection: "column", gap: ".3rem", fontSize: ".85rem", fontWeight: 600 }}>
-                {isAr ? "الاسم *" : "Name *"}
+                {"الاسم *"}
                 <input
                   required
                   value={form.name}
                   onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-                  placeholder={isAr ? "اسم العميل..." : "Customer name..."}
+                  placeholder={"اسم العميل..."}
                   className="admin-input"
                 />
               </label>
 
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: ".75rem" }}>
                 <label style={{ display: "flex", flexDirection: "column", gap: ".3rem", fontSize: ".85rem", fontWeight: 600 }}>
-                  {isAr ? "الهاتف" : "Phone"}
+                  {"الهاتف"}
                   <input
                     type="tel"
                     value={form.phone}
@@ -429,7 +429,7 @@ export function MyCustomersPage() {
                   />
                 </label>
                 <label style={{ display: "flex", flexDirection: "column", gap: ".3rem", fontSize: ".85rem", fontWeight: 600 }}>
-                  {isAr ? "البريد الإلكتروني" : "Email"}
+                  {"البريد الإلكتروني"}
                   <input
                     type="email"
                     value={form.email}
@@ -441,19 +441,19 @@ export function MyCustomersPage() {
               </div>
 
               <label style={{ display: "flex", flexDirection: "column", gap: ".3rem", fontSize: ".85rem", fontWeight: 600 }}>
-                {isAr ? "العنوان" : "Address"}
+                {"العنوان"}
                 <input
                   value={form.address}
                   onChange={(e) => setForm((f) => ({ ...f, address: e.target.value }))}
-                  placeholder={isAr ? "المدينة، الشارع..." : "City, Street..."}
+                  placeholder={"المدينة، الشارع..."}
                   className="admin-input"
                 />
               </label>
 
               <label style={{ display: "flex", flexDirection: "column", gap: ".3rem", fontSize: ".85rem", fontWeight: 600 }}>
-                {isAr ? "تعيين لمندوب (اختياري)" : "Assign to Rep (optional)"}
+                {"تعيين لمندوب (اختياري)"}
                 <select value={form.repId} onChange={(e) => setForm((f) => ({ ...f, repId: e.target.value }))} className="admin-input">
-                  <option value="">{isAr ? "بدون مندوب..." : "No rep assigned..."}</option>
+                  <option value="">{"بدون مندوب..."}</option>
                   {salesReps.map((r) => (
                     <option key={r.id} value={r.id}>{r.fullName}</option>
                   ))}
@@ -469,12 +469,12 @@ export function MyCustomersPage() {
               <div style={{ display: "flex", gap: ".75rem", justifyContent: "flex-end" }}>
                 <button type="button" onClick={() => setShowAdd(false)}
                   style={{ padding: ".5rem 1.25rem", borderRadius: 8, border: "1px solid var(--border-default)", background: "transparent", cursor: "pointer", fontWeight: 600 }}>
-                  {isAr ? "إلغاء" : "Cancel"}
+                  {"إلغاء"}
                 </button>
                 <button type="submit" disabled={saving}
                   style={{ display: "inline-flex", alignItems: "center", gap: ".4rem", padding: ".5rem 1.5rem", borderRadius: 8, background: "#8b5cf6", color: "#fff", border: "none", fontWeight: 700, cursor: "pointer", opacity: saving ? .6 : 1 }}>
                   <Plus size={15} />
-                  {saving ? (isAr ? "جارٍ الحفظ..." : "Saving...") : (isAr ? "إضافة" : "Add Customer")}
+                  {saving ? ("جارٍ الحفظ...") : ("إضافة")}
                 </button>
               </div>
             </form>

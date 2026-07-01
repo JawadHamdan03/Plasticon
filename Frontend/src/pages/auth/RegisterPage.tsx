@@ -25,24 +25,24 @@ type FieldErrors = Partial<Record<keyof Fields, string>>;
 
 function validateAll(f: Fields, isAdmin: boolean): FieldErrors {
   const e: FieldErrors = {};
-  if (!f.fullName.trim()) e.fullName = "Full name is required";
+  if (!f.fullName.trim()) e.fullName = "الاسم الكامل مطلوب";
   if (!/^[A-Za-z0-9_]{3,30}$/.test(f.username.trim()))
-    e.username = "3-30 characters, letters, numbers and underscore only";
+    e.username = "3-30 حرفًا، أحرف وأرقام وشرطة سفلية فقط";
   if (!/^\d{9}$/.test(f.nationalId.trim()))
-    e.nationalId = "National ID must be exactly 9 digits";
+    e.nationalId = "الرقم الوطني يجب أن يكون 9 أرقام بالضبط";
   if (!f.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(f.email))
-    e.email = "Enter a valid email address";
+    e.email = "أدخل بريد إلكتروني صحيح";
   if (f.phone.trim() && !/^\d{10}$/.test(f.phone.trim()))
-    e.phone = "Phone must be exactly 10 digits";
+    e.phone = "رقم الهاتف يجب أن يكون 10 أرقام بالضبط";
   if (
     f.shiftId.trim() &&
     (!/^\d+$/.test(f.shiftId.trim()) || Number(f.shiftId) < 1)
   )
-    e.shiftId = "Shift ID must be a positive number";
+    e.shiftId = "رقم الشفت يجب أن يكون رقمًا موجبًا";
   if (f.password.length < 8)
-    e.password = "Password must be at least 8 characters";
+    e.password = "كلمة المرور يجب أن تكون 8 أحرف على الأقل";
   if (f.confirmPassword !== f.password)
-    e.confirmPassword = "Passwords do not match";
+    e.confirmPassword = "كلمتا المرور غير متطابقتين";
   return e;
 }
 
@@ -107,7 +107,7 @@ export function RegisterPage() {
     const errs = validateAll(fields, isAdmin);
     if (Object.keys(errs).length > 0) return;
     if (!isAdmin) {
-      setServerError("Only administrators can create new accounts.");
+      setServerError("فقط المدراء يمكنهم إنشاء حسابات جديدة.");
       return;
     }
 
@@ -129,7 +129,7 @@ export function RegisterPage() {
       navigate("/login");
     } catch (err) {
       setServerError(
-        err instanceof Error ? err.message : "Registration failed. Please try again.",
+        err instanceof Error ? err.message : "فشل التسجيل. يرجى المحاولة مرة أخرى.",
       );
     } finally {
       setSubmitting(false);
@@ -153,10 +153,10 @@ export function RegisterPage() {
             <Shield size={36} color="#fff" />
           </div>
           <h2 style={{ fontSize: "1.75rem", fontWeight: 800, margin: "0 0 .5rem" }}>
-            Register Account
+            تسجيل حساب
           </h2>
           <p style={{ opacity: 0.75, fontSize: ".9rem", margin: 0, maxWidth: 240 }}>
-            Admin-only action. Fill in all required fields below.
+            إجراء للمدير فقط. املأ جميع الحقول المطلوبة أدناه.
           </p>
 
           <div
@@ -169,13 +169,13 @@ export function RegisterPage() {
             }}
           >
             <p style={{ margin: "0 0 .75rem", fontWeight: 700, fontSize: ".88rem" }}>
-              Account Roles
+              أدوار الحساب
             </p>
             {[
-              { role: "WORKER", desc: "Factory floor access" },
-              { role: "ENGINEER", desc: "Quality & maintenance" },
-              { role: "ACCOUNTANT", desc: "Finance & reports" },
-              { role: "ADMIN", desc: "Full system access" },
+              { role: "WORKER", desc: "وصول لأرضية المصنع" },
+              { role: "ENGINEER", desc: "الجودة والصيانة" },
+              { role: "ACCOUNTANT", desc: "المالية والتقارير" },
+              { role: "ADMIN", desc: "وصول كامل للنظام" },
             ].map((r) => (
               <div
                 key={r.role}
@@ -218,24 +218,24 @@ export function RegisterPage() {
           </div>
 
           <div className="auth-card__heading">
-            <h1 style={{ fontSize: "1.5rem" }}>Create Account</h1>
-            <p>Fill in the details to register a new user</p>
+            <h1 style={{ fontSize: "1.5rem" }}>إنشاء حساب</h1>
+            <p>املأ البيانات لتسجيل مستخدم جديد</p>
           </div>
 
           {!isAdmin && (
             <div className="auth-alert auth-alert--error" style={{ marginBottom: "1.25rem" }}>
-              Only administrators can create new accounts. Please contact your admin.
+              فقط المدراء يمكنهم إنشاء حسابات جديدة. يرجى التواصل مع المدير.
             </div>
           )}
 
           <form className="auth-form" onSubmit={handleSubmit} noValidate>
             <div className="grid-cols-2">
-              <InputRow id="reg-name" label="Full Name *" icon={<User size={15} />} error={displayErrors.fullName}>
+              <InputRow id="reg-name" label="الاسم الكامل *" icon={<User size={15} />} error={displayErrors.fullName}>
                 <input
                   id="reg-name"
                   type="text"
                   className={`auth-input${displayErrors.fullName ? " auth-input--error" : ""}`}
-                  placeholder="Ahmad Al-Hassan"
+                  placeholder="أحمد الحسن"
                   value={fields.fullName}
                   onChange={set("fullName")}
                   onBlur={blur("fullName")}
@@ -243,7 +243,7 @@ export function RegisterPage() {
                 />
               </InputRow>
 
-              <InputRow id="reg-username" label="Username *" icon={<Hash size={15} />} error={displayErrors.username}>
+              <InputRow id="reg-username" label="اسم المستخدم *" icon={<Hash size={15} />} error={displayErrors.username}>
                 <input
                   id="reg-username"
                   type="text"
@@ -256,7 +256,7 @@ export function RegisterPage() {
                 />
               </InputRow>
 
-              <InputRow id="reg-national" label="National ID *" icon={<IdCard size={15} />} error={displayErrors.nationalId}>
+              <InputRow id="reg-national" label="الرقم الوطني *" icon={<IdCard size={15} />} error={displayErrors.nationalId}>
                 <input
                   id="reg-national"
                   type="text"
@@ -270,12 +270,12 @@ export function RegisterPage() {
                 />
               </InputRow>
 
-              <InputRow id="reg-email" label="Email *" icon={<Mail size={15} />} error={displayErrors.email}>
+              <InputRow id="reg-email" label="البريد الإلكتروني *" icon={<Mail size={15} />} error={displayErrors.email}>
                 <input
                   id="reg-email"
                   type="email"
                   className={`auth-input${displayErrors.email ? " auth-input--error" : ""}`}
-                  placeholder="user@company.com"
+                  placeholder="بريدك@الشركة.com"
                   value={fields.email}
                   onChange={set("email")}
                   onBlur={blur("email")}
@@ -283,7 +283,7 @@ export function RegisterPage() {
                 />
               </InputRow>
 
-              <InputRow id="reg-phone" label="Phone" icon={<Phone size={15} />} error={displayErrors.phone}>
+              <InputRow id="reg-phone" label="رقم الهاتف" icon={<Phone size={15} />} error={displayErrors.phone}>
                 <input
                   id="reg-phone"
                   type="text"
@@ -297,7 +297,7 @@ export function RegisterPage() {
                 />
               </InputRow>
 
-              <InputRow id="reg-shift" label="Shift ID" icon={<Hash size={15} />} error={displayErrors.shiftId}>
+              <InputRow id="reg-shift" label="رقم الشفت" icon={<Hash size={15} />} error={displayErrors.shiftId}>
                 <input
                   id="reg-shift"
                   type="text"
@@ -313,7 +313,7 @@ export function RegisterPage() {
 
             {/* Role select */}
             <div className="form-group">
-              <label className="auth-label" htmlFor="reg-role">Role *</label>
+              <label className="auth-label" htmlFor="reg-role">الدور *</label>
               {isAdmin ? (
                 <select
                   id="reg-role"
@@ -340,14 +340,14 @@ export function RegisterPage() {
             {/* Passwords */}
             <div className="grid-cols-2">
               <div className="form-group">
-                <label className="auth-label" htmlFor="reg-pass">Password *</label>
+                <label className="auth-label" htmlFor="reg-pass">كلمة المرور *</label>
                 <div className="auth-input-wrapper">
                   <Lock size={15} className="auth-input-icon" />
                   <input
                     id="reg-pass"
                     type={showPass ? "text" : "password"}
                     className={`auth-input${displayErrors.password ? " auth-input--error" : ""}`}
-                    placeholder="Min 8 characters"
+                    placeholder="8 أحرف على الأقل"
                     value={fields.password}
                     onChange={set("password")}
                     onBlur={blur("password")}
@@ -365,14 +365,14 @@ export function RegisterPage() {
               </div>
 
               <div className="form-group">
-                <label className="auth-label" htmlFor="reg-confirm">Confirm Password *</label>
+                <label className="auth-label" htmlFor="reg-confirm">تأكيد كلمة المرور *</label>
                 <div className="auth-input-wrapper">
                   <Lock size={15} className="auth-input-icon" />
                   <input
                     id="reg-confirm"
                     type={showConfirm ? "text" : "password"}
                     className={`auth-input${displayErrors.confirmPassword ? " auth-input--error" : ""}`}
-                    placeholder="Repeat password"
+                    placeholder="أعد كتابة كلمة المرور"
                     value={fields.confirmPassword}
                     onChange={set("confirmPassword")}
                     onBlur={blur("confirmPassword")}
@@ -394,7 +394,7 @@ export function RegisterPage() {
 
             {/* Profile photo */}
             <div className="form-group">
-              <label className="auth-label">Profile Photo (optional)</label>
+              <label className="auth-label">صورة الملف الشخصي (اختياري)</label>
               <label
                 style={{
                   display: "flex", alignItems: "center", gap: ".625rem",
@@ -409,7 +409,7 @@ export function RegisterPage() {
               >
                 <Camera size={18} style={{ color: "var(--text-secondary)" }} />
                 <span style={{ fontSize: ".84rem", color: "var(--text-secondary)" }}>
-                  {profileImage ? profileImage.name : "Click to upload photo"}
+                  {profileImage ? profileImage.name : "اضغط لرفع صورة"}
                 </span>
                 <input
                   type="file"
@@ -433,18 +433,18 @@ export function RegisterPage() {
               {submitting ? (
                 <span style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: ".5rem" }}>
                   <span className="spinner" style={{ width: 16, height: 16 }} />
-                  Creating account...
+                  جاري إنشاء الحساب...
                 </span>
               ) : (
                 <span style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: ".5rem" }}>
-                  Create Account <ArrowRight size={16} />
+                  إنشاء الحساب <ArrowRight size={16} />
                 </span>
               )}
             </button>
           </form>
 
           <p className="auth-footer-link">
-            Already have an account? <Link to="/login">Sign in</Link>
+            لديك حساب بالفعل؟ <Link to="/login">تسجيل الدخول</Link>
           </p>
         </div>
       </div>

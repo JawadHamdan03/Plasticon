@@ -1,8 +1,8 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+﻿import { useCallback, useEffect, useMemo, useState } from "react";
 import { ModulePageShell } from "../../components/ModulePageShell";
 import { TruckLoader } from "../../components/TruckLoader";
 import { PhotoUploadButton } from "../../components/PhotoUploadButton";
-import { API_BASE_URL, readApiError } from "../../lib/api";
+import { pictureUrl as globalPictureUrl, readApiError } from "../../lib/api";
 import { confirmDialog } from "../../lib/dialog";
 import { useLocale } from "../../context/LocaleContext";
 
@@ -80,7 +80,7 @@ async function apiFetch(path: string, options?: RequestInit) {
 const normImg = (value: string | null) => {
   if (!value) return null;
   if (value.startsWith("http")) return value;
-  return `${API_BASE_URL}/${value.replace(/^prisma\/?pictures\//, "pictures/")}`;
+  return globalPictureUrl(value);
 };
 
 const getTypeMeta = (type: string) =>
@@ -125,17 +125,17 @@ export function SupportMachineReadingsPage() {
 
     if (!machineName) {
       setMessageTone("error");
-      setMessage(isAr ? "اسم الماكينة مطلوب" : "Machine name is required");
+      setMessage("اسم الماكينة مطلوب");
       return;
     }
     if (!Number.isFinite(value)) {
       setMessageTone("error");
-      setMessage(isAr ? "القيمة يجب أن تكون رقماً" : "Value must be a number");
+      setMessage("القيمة يجب أن تكون رقماً");
       return;
     }
     if (!unit) {
       setMessageTone("error");
-      setMessage(isAr ? "الوحدة مطلوبة" : "Unit is required");
+      setMessage("الوحدة مطلوبة");
       return;
     }
 
@@ -159,7 +159,7 @@ export function SupportMachineReadingsPage() {
 
       setDraft(defaultDraft);
       setMessageTone("success");
-      setMessage(isAr ? "تم الحفظ بنجاح" : "Saved successfully");
+      setMessage("تم الحفظ بنجاح");
       await loadHistory();
     } catch (err) {
       setMessageTone("error");
@@ -174,7 +174,7 @@ export function SupportMachineReadingsPage() {
       isAr
         ? `حذف قراءة ${item.machineName}؟`
         : `Delete reading for ${item.machineName}?`,
-      { danger: true, confirmText: isAr ? "حذف" : "Delete" },
+      { danger: true, confirmText: "حذف" },
     );
     if (!confirmed) return;
 
@@ -185,7 +185,7 @@ export function SupportMachineReadingsPage() {
       });
       if (!res.ok) throw new Error(await readApiError(res));
       setMessageTone("success");
-      setMessage(isAr ? "تم الحذف" : "Deleted");
+      setMessage("تم الحذف");
       await loadHistory();
     } catch (err) {
       setMessageTone("error");
@@ -212,7 +212,7 @@ export function SupportMachineReadingsPage() {
 
   return (
     <ModulePageShell
-      title={isAr ? "قراءات الماكينات الداعمة" : "Support Machine Readings"}
+      title={"قراءات الماكينات الداعمة"}
       subtitle={
         isAr
           ? "سجّل قراءات الحرارة والضغط وساعات التشغيل للمعدات الداعمة"
@@ -224,7 +224,7 @@ export function SupportMachineReadingsPage() {
           className="auth-button auth-button--ghost"
           onClick={() => void loadHistory()}
         >
-          {isAr ? "تحديث" : "Refresh"}
+          {"تحديث"}
         </button>
       }
     >
@@ -232,17 +232,17 @@ export function SupportMachineReadingsPage() {
       <div className="wt-kpi-grid">
         <div className="wt-kpi-card wt-kpi-card--blue">
           <span className="wt-kpi-icon">📋</span>
-          <p className="wt-kpi-label">{isAr ? "قراءات اليوم" : "Today's Readings"}</p>
+          <p className="wt-kpi-label">{"قراءات اليوم"}</p>
           <strong className="wt-kpi-value">{todayCount}</strong>
         </div>
         <div className="wt-kpi-card wt-kpi-card--green">
           <span className="wt-kpi-icon">⚙️</span>
-          <p className="wt-kpi-label">{isAr ? "الماكينات" : "Machines"}</p>
+          <p className="wt-kpi-label">{"الماكينات"}</p>
           <strong className="wt-kpi-value">{uniqueMachines}</strong>
         </div>
         <div className="wt-kpi-card wt-kpi-card--orange">
           <span className="wt-kpi-icon">📊</span>
-          <p className="wt-kpi-label">{isAr ? "إجمالي القراءات" : "Total Readings"}</p>
+          <p className="wt-kpi-label">{"إجمالي القراءات"}</p>
           <strong className="wt-kpi-value">{history.length}</strong>
         </div>
       </div>
@@ -265,7 +265,7 @@ export function SupportMachineReadingsPage() {
               <span className="wt-card__header-icon">⚙️</span>
               <div>
                 <h2 className="wt-card__header-title">
-                  {isAr ? "تسجيل قراءة جديدة" : "Log New Reading"}
+                  {"تسجيل قراءة جديدة"}
                 </h2>
                 <p className="wt-card__header-sub">
                   {isAr
@@ -278,11 +278,11 @@ export function SupportMachineReadingsPage() {
               <div className="wt-form-grid">
                 {/* Machine name */}
                 <div className="wt-field wt-field--full">
-                  <label>{isAr ? "اسم الماكينة" : "Machine Name"}</label>
+                  <label>{"اسم الماكينة"}</label>
                   <input
                     list="smr-machine-list"
                     value={draft.machineName}
-                    placeholder={isAr ? "مثال: Chiller-01" : "e.g. Chiller-01"}
+                    placeholder={"مثال: Chiller-01"}
                     onChange={(e) =>
                       setDraft((p) => ({ ...p, machineName: e.target.value }))
                     }
@@ -296,14 +296,14 @@ export function SupportMachineReadingsPage() {
 
                 {/* Reading type */}
                 <div className="wt-field wt-field--full">
-                  <label>{isAr ? "نوع القراءة" : "Reading Type"}</label>
+                  <label>{"نوع القراءة"}</label>
                   <select
                     value={draft.readingType}
                     onChange={(e) => handleTypeChange(e.target.value)}
                   >
                     {READING_TYPES.map((t) => (
                       <option key={t.value} value={t.value}>
-                        {t.icon} {isAr ? t.labelAr : t.labelEn}
+                        {t.icon} {t.labelAr}
                       </option>
                     ))}
                   </select>
@@ -311,7 +311,7 @@ export function SupportMachineReadingsPage() {
 
                 {/* Value */}
                 <div className="wt-field">
-                  <label>{isAr ? "القيمة" : "Value"}</label>
+                  <label>{"القيمة"}</label>
                   <input
                     type="number"
                     step="0.01"
@@ -325,10 +325,10 @@ export function SupportMachineReadingsPage() {
 
                 {/* Unit */}
                 <div className="wt-field">
-                  <label>{isAr ? "الوحدة" : "Unit"}</label>
+                  <label>{"الوحدة"}</label>
                   <input
                     value={draft.unit}
-                    placeholder={isAr ? "مثال: °C, bar, hrs" : "e.g. °C, bar, hrs"}
+                    placeholder={"مثال: °C, bar, hrs"}
                     onChange={(e) =>
                       setDraft((p) => ({ ...p, unit: e.target.value }))
                     }
@@ -337,23 +337,23 @@ export function SupportMachineReadingsPage() {
 
                 {/* Shift */}
                 <div className="wt-field">
-                  <label>{isAr ? "الشفت" : "Shift"}</label>
+                  <label>{"الشفت"}</label>
                   <select
                     value={draft.shift}
                     onChange={(e) =>
                       setDraft((p) => ({ ...p, shift: e.target.value }))
                     }
                   >
-                    <option value="">{isAr ? "— اختياري —" : "— Optional —"}</option>
-                    <option value="MORNING">{isAr ? "صباحي" : "Morning"}</option>
-                    <option value="AFTERNOON">{isAr ? "مسائي" : "Afternoon"}</option>
-                    <option value="NIGHT">{isAr ? "ليلي" : "Night"}</option>
+                    <option value="">{"— اختياري —"}</option>
+                    <option value="MORNING">{"صباحي"}</option>
+                    <option value="AFTERNOON">{"مسائي"}</option>
+                    <option value="NIGHT">{"ليلي"}</option>
                   </select>
                 </div>
 
                 {/* Notes */}
                 <div className="wt-field">
-                  <label>{isAr ? "ملاحظات" : "Notes"}</label>
+                  <label>{"ملاحظات"}</label>
                   <input
                     value={draft.notes}
                     onChange={(e) =>
@@ -364,9 +364,9 @@ export function SupportMachineReadingsPage() {
 
                 {/* Photo */}
                 <div className="wt-field wt-field--full">
-                  <label>{isAr ? "صورة العداد / المقياس" : "Meter / Gauge Photo"}</label>
+                  <label>{"صورة العداد / المقياس"}</label>
                   <PhotoUploadButton
-                    label={isAr ? "التقط صورة" : "Take a Photo"}
+                    label={"التقط صورة"}
                     selectedFileName={draft.image?.name ?? null}
                     onFileSelect={(file) =>
                       setDraft((p) => ({ ...p, image: file }))
@@ -381,7 +381,7 @@ export function SupportMachineReadingsPage() {
                   className="auth-button auth-button--ghost"
                   onClick={() => setDraft(defaultDraft)}
                 >
-                  {isAr ? "مسح" : "Clear"}
+                  {"مسح"}
                 </button>
                 <button
                   type="button"
@@ -390,8 +390,8 @@ export function SupportMachineReadingsPage() {
                   onClick={() => void handleSubmit()}
                 >
                   {saving
-                    ? isAr ? "جارٍ الحفظ..." : "Saving..."
-                    : isAr ? "حفظ القراءة" : "Save Reading"}
+                    ? "جارٍ الحفظ..."
+                    : "حفظ القراءة"}
                 </button>
               </div>
             </div>
@@ -405,10 +405,10 @@ export function SupportMachineReadingsPage() {
               <span className="wt-card__header-icon">🕐</span>
               <div>
                 <h2 className="wt-card__header-title">
-                  {isAr ? "آخر القراءات" : "Recent Readings"}
+                  {"آخر القراءات"}
                 </h2>
                 <p className="wt-card__header-sub">
-                  {history.length} {isAr ? "سجل" : "records"}
+                  {history.length} {"سجل"}
                 </p>
               </div>
             </div>
@@ -417,7 +417,7 @@ export function SupportMachineReadingsPage() {
               {!loading && history.length === 0 ? (
                 <div className="wt-empty">
                   <span className="wt-empty__icon">📭</span>
-                  <p>{isAr ? "لا توجد قراءات بعد" : "No readings yet"}</p>
+                  <p>{"لا توجد قراءات بعد"}</p>
                 </div>
               ) : null}
               <div className="wt-log-cards">
@@ -435,7 +435,7 @@ export function SupportMachineReadingsPage() {
                             border: `1px solid ${meta.color}35`,
                           }}
                         >
-                          {meta.icon} {isAr ? meta.labelAr : meta.labelEn}
+                          {meta.icon} {meta.labelAr}
                         </span>
                       </div>
 
@@ -478,7 +478,7 @@ export function SupportMachineReadingsPage() {
                           disabled={saving}
                           onClick={() => void handleDelete(item)}
                         >
-                          {isAr ? "حذف" : "Delete"}
+                          {"حذف"}
                         </button>
                       </div>
                     </div>

@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
+﻿import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { useLocale } from "../../context/LocaleContext";
-import { API_BASE_URL, readApiError } from "../../lib/api";
+import { API_BASE_URL, pictureUrl as globalPictureUrl, readApiError } from "../../lib/api";
 import { ModulePageShell } from "../../components/ModulePageShell";
 import { TruckLoader } from "../../components/TruckLoader";
 
@@ -321,7 +321,7 @@ export function ProductionPage() {
         const calcTotal = f.boxes.reduce((s, b) =>
           s + (parseInt(b.cavities) || 0) * (parseInt(b.cycles) || 0) * (parseInt(b.numberOfBoxes) || 0), 0);
         if (calcTotal <= 0) {
-          patchForm(machine.id, { saving: false, error: isAr ? "أدخل القيم في الحاسبة (كافيتي × دورات × صناديق)" : "Enter values in the calculator (cavities × cycles × boxes)" });
+          patchForm(machine.id, { saving: false, error: "أدخل القيم في الحاسبة (كافيتي × دورات × صناديق)" });
           return;
         }
         body.boxes = f.boxes.map((b) => ({
@@ -333,7 +333,7 @@ export function ProductionPage() {
         // Caps / other: simple carton count
         const n = parseInt(f.cartonsCount);
         if (!n || n <= 0) {
-          patchForm(machine.id, { saving: false, error: isAr ? "أدخل عدد الكراتين" : "Enter cartons count" });
+          patchForm(machine.id, { saving: false, error: "أدخل عدد الكراتين" });
           return;
         }
         body.cartonsCount = n;
@@ -368,7 +368,7 @@ export function ProductionPage() {
         });
       }
       if (!res.ok) throw new Error(await readApiError(res));
-      patchForm(machine.id, { ...emptyForm(machine.type), success: isAr ? "تم الحفظ ✓" : "Saved ✓" });
+      patchForm(machine.id, { ...emptyForm(machine.type), success: "تم الحفظ ✓" });
       void loadAll();
     } catch (err) {
       patchForm(machine.id, { saving: false, error: err instanceof Error ? err.message : "Failed to save" });
@@ -397,7 +397,7 @@ export function ProductionPage() {
     <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
       {groups.length === 0 ? (
         <div style={{ padding: "2.5rem", textAlign: "center", color: "var(--text-secondary)", background: "var(--bg-card)", border: "1px solid var(--border-default)", borderRadius: "var(--radius-xl)" }}>
-          {isAr ? "لا توجد بيانات إنتاج" : "No production data"}
+          {"لا توجد بيانات إنتاج"}
         </div>
       ) : groups.map((day) => (
         <div key={day.date} style={{ background: "var(--bg-card)", border: "1px solid var(--border-default)", borderRadius: "var(--radius-xl)", overflow: "hidden" }}>
@@ -409,13 +409,13 @@ export function ProductionPage() {
             </div>
             <div style={{ display: "flex", gap: "1rem", alignItems: "center" }}>
               <span style={{ fontSize: ".78rem", fontWeight: 600, color: "var(--text-secondary)" }}>
-                🧢 {fmt(day.capsCartons)} {isAr ? "كرتون" : "caps"}
+                🧢 {fmt(day.capsCartons)} {"كرتون"}
                 &nbsp;·&nbsp;
-                🏭 {fmt(day.preformCartons)} {isAr ? "صندوق" : "preform"}
+                🏭 {fmt(day.preformCartons)} {"صندوق"}
               </span>
               <div style={{ display: "flex", alignItems: "center", gap: ".5rem", padding: ".3rem .875rem", borderRadius: 999, background: "rgba(59,130,246,.1)", border: "1px solid rgba(59,130,246,.25)" }}>
                 <span style={{ fontSize: ".82rem", fontWeight: 700, color: "#1d4ed8" }}>
-                  {fmt(day.totalPieces)} {isAr ? "قطعة" : "pcs"}
+                  {fmt(day.totalPieces)} {"قطعة"}
                 </span>
               </div>
             </div>
@@ -441,7 +441,7 @@ export function ProductionPage() {
                   <div style={{ display: "flex", gap: ".75rem", fontSize: ".8rem", fontWeight: 700, color: "var(--text-primary)", whiteSpace: "nowrap" }}>
                     <span>🧢 {fmt(sh.capsCartons)}</span>
                     <span>🏭 {fmt(sh.preformCartons)}</span>
-                    <span style={{ color, minWidth: 90, textAlign: "end" }}>{fmt(sh.totalPieces)} {isAr ? "قطعة" : "pcs"}</span>
+                    <span style={{ color, minWidth: 90, textAlign: "end" }}>{fmt(sh.totalPieces)} {"قطعة"}</span>
                   </div>
                 </div>
               );
@@ -450,10 +450,10 @@ export function ProductionPage() {
           {/* Day total row */}
           <div style={{ padding: ".5rem 1.25rem .75rem", display: "flex", justifyContent: "flex-end", gap: "1.25rem", borderTop: "1px solid var(--border-default)", background: "var(--bg-surface)" }}>
             <span style={{ fontSize: ".82rem", fontWeight: 700, color: "var(--text-secondary)" }}>
-              {isAr ? "إجمالي اليوم:" : "Day Total:"}&nbsp;
-              <span style={{ color: "#1d4ed8" }}>{fmt(day.totalCartons)} {isAr ? "كرتون" : "cartons"}</span>
+              {"إجمالي اليوم:"}&nbsp;
+              <span style={{ color: "#1d4ed8" }}>{fmt(day.totalCartons)} {"كرتون"}</span>
               &nbsp;·&nbsp;
-              <span style={{ color: "#059669" }}>{fmt(day.totalPieces)} {isAr ? "قطعة" : "pcs"}</span>
+              <span style={{ color: "#059669" }}>{fmt(day.totalPieces)} {"قطعة"}</span>
             </span>
           </div>
         </div>
@@ -463,11 +463,11 @@ export function ProductionPage() {
 
   return (
     <ModulePageShell
-      title={isAr ? "الإنتاج" : "Production"}
-      subtitle={isAr ? "تسجيل إنتاج البريفورم والكابس" : "Record Preform & CAPS piece production"}
+      title={"الإنتاج"}
+      subtitle={"تسجيل إنتاج البريفورم والكابس"}
       actions={
         <button type="button" className="auth-button auth-button--ghost" onClick={() => void loadAll()}>
-          {isAr ? "تحديث" : "Refresh"}
+          {"تحديث"}
         </button>
       }
     >
@@ -491,7 +491,7 @@ export function ProductionPage() {
             {currentShift ? (
               <>
                 <span style={{ fontSize: ".75rem", fontWeight: 600, color: "#10b981", textTransform: "uppercase", letterSpacing: ".04em" }}>
-                  {isAr ? "الشفت الحالي" : "Current Shift"}
+                  {"الشفت الحالي"}
                 </span>
                 <div style={{ fontWeight: 800, fontSize: "1.05rem", color: "var(--text-primary)", marginTop: ".1rem" }}>
                   {currentShift.name}
@@ -505,10 +505,10 @@ export function ProductionPage() {
             ) : (
               <>
                 <span style={{ fontSize: ".75rem", fontWeight: 600, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: ".04em" }}>
-                  {isAr ? "حالة الشفت" : "Shift Status"}
+                  {"حالة الشفت"}
                 </span>
                 <div style={{ fontWeight: 700, fontSize: "1rem", color: "var(--text-secondary)", marginTop: ".1rem" }}>
-                  {isAr ? "لا يوجد شفت نشط حالياً" : "No active shift right now"}
+                  {"لا يوجد شفت نشط حالياً"}
                 </div>
               </>
             )}
@@ -533,7 +533,7 @@ export function ProductionPage() {
           <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: ".75rem" }}>
             <a href="/electricity"
               style={{ display: "inline-flex", alignItems: "center", gap: ".4rem", padding: ".45rem 1rem", borderRadius: 8, border: "1px solid rgba(249,115,22,.35)", background: "rgba(249,115,22,.07)", color: "#ea580c", fontWeight: 700, fontSize: ".82rem", textDecoration: "none" }}>
-              ⚡ {isAr ? "تسجيل قراءة الكهرباء" : "Record Electricity Reading"}
+              ⚡ {"تسجيل قراءة الكهرباء"}
             </a>
           </div>
 
@@ -541,10 +541,10 @@ export function ProductionPage() {
             <div style={{ padding: "2.5rem", textAlign: "center", background: "var(--bg-card)", border: "1px dashed var(--border-default)", borderRadius: "var(--radius-xl)" }}>
               <div style={{ fontSize: "2.5rem", marginBottom: ".5rem" }}>🏭</div>
               <p style={{ color: "var(--text-secondary)", fontWeight: 600, marginBottom: ".25rem" }}>
-                {isAr ? "لا توجد ماكينات متاحة" : "No machines available"}
+                {"لا توجد ماكينات متاحة"}
               </p>
               <p style={{ color: "var(--text-secondary)", fontSize: ".82rem" }}>
-                {isAr ? "اطلب من المدير إضافة ماكينات، أو سجّل المواد في صفحة الاستهلاك" : "Ask your admin to add machines, or record materials on the Consumption page"}
+                {"اطلب من المدير إضافة ماكينات، أو سجّل المواد في صفحة الاستهلاك"}
               </p>
             </div>
           ) : (
@@ -586,7 +586,7 @@ export function ProductionPage() {
                           <span style={{ width: 7, height: 7, borderRadius: "50%", background: currentShift ? "#10b981" : "var(--text-secondary)", flexShrink: 0 }} />
                           {currentShift
                             ? `${currentShift.name}${currentShift.startTime && currentShift.endTime ? ` (${formatShiftTime(currentShift.startTime)} – ${formatShiftTime(currentShift.endTime)})` : ""}`
-                            : (isAr ? "لا يوجد شفت" : "No shift")}
+                            : ("لا يوجد شفت")}
                         </span>
                       </div>
 
@@ -615,11 +615,11 @@ export function ProductionPage() {
                           <div style={{ background: "var(--bg-surface)", border: `1px solid ${accent}22`, borderRadius: "var(--radius-lg)", padding: ".875rem" }}>
                             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: ".75rem" }}>
                               <span style={{ fontSize: ".82rem", fontWeight: 700, color: "var(--text-primary)" }}>
-                                {isAr ? "كافيتي × دورات × صناديق" : "Cavities × Cycles × Boxes"}
+                                {"كافيتي × دورات × صناديق"}
                               </span>
                               {calcTotal > 0 && (
                                 <span style={{ fontSize: "1rem", fontWeight: 800, color: accent }}>
-                                  = {fmt(calcTotal)} {isAr ? "قطعة" : "pcs"}
+                                  = {fmt(calcTotal)} {"قطعة"}
                                 </span>
                               )}
                             </div>
@@ -627,10 +627,10 @@ export function ProductionPage() {
                             <div style={{ overflowX: "auto", marginInline: "-.1rem" }}>
                             {/* column headers */}
                             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr auto", gap: ".4rem", fontSize: ".72rem", fontWeight: 700, color: "var(--text-secondary)", marginBottom: ".35rem", padding: "0 .1rem", minWidth: "360px" }}>
-                              <span>{isAr ? "كافيتي" : "Cavities"}</span>
-                              <span>{isAr ? "دورات" : "Cycles"}</span>
-                              <span>{isAr ? "صناديق" : "Boxes"}</span>
-                              <span>{isAr ? "إجمالي" : "Total pcs"}</span>
+                              <span>{"كافيتي"}</span>
+                              <span>{"دورات"}</span>
+                              <span>{"صناديق"}</span>
+                              <span>{"إجمالي"}</span>
                               <span />
                             </div>
 
@@ -661,13 +661,13 @@ export function ProductionPage() {
 
                             <button type="button" onClick={() => patchForm(machine.id, { boxes: [...f.boxes, defaultBox(machine.type)] })}
                               style={{ marginTop: ".25rem", background: "none", border: "1px dashed var(--border-default)", borderRadius: "var(--radius-md)", padding: ".3rem .65rem", fontSize: ".78rem", color: "var(--text-secondary)", cursor: "pointer" }}>
-                              + {isAr ? "إضافة صف" : "Add row"}
+                              + {"إضافة صف"}
                             </button>
 
                             {calcTotal > 0 && (
                               <div style={{ marginTop: ".75rem", padding: ".6rem .875rem", background: `${accent}14`, border: `1px solid ${accent}33`, borderRadius: "var(--radius-md)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                                <span style={{ fontSize: ".82rem", fontWeight: 600, color: "var(--text-secondary)" }}>{isAr ? "الإجمالي الكلي" : "Grand Total"}</span>
-                                <span style={{ fontSize: "1.15rem", fontWeight: 900, color: accent }}>{fmt(calcTotal)} {isAr ? "قطعة" : "pcs"}</span>
+                                <span style={{ fontSize: ".82rem", fontWeight: 600, color: "var(--text-secondary)" }}>{"الإجمالي الكلي"}</span>
+                                <span style={{ fontSize: "1.15rem", fontWeight: 900, color: accent }}>{fmt(calcTotal)} {"قطعة"}</span>
                               </div>
                             )}
                           </div>
@@ -677,13 +677,13 @@ export function ProductionPage() {
                         {isCaps && (
                           <div style={{ display: "flex", flexDirection: "column", gap: ".625rem" }}>
                             <label style={{ display: "flex", flexDirection: "column", gap: ".4rem", fontWeight: 700, fontSize: ".9rem", color: "var(--text-primary)" }}>
-                              {isAr ? "عدد الكراتين المنتجة" : "Cartons Produced"}
+                              {"عدد الكراتين المنتجة"}
                               <input
                                 type="number"
                                 min={1}
                                 value={f.cartonsCount}
                                 onChange={(e) => patchForm(machine.id, { cartonsCount: e.target.value })}
-                                placeholder={isAr ? "مثال: 50" : "e.g. 50"}
+                                placeholder={"مثال: 50"}
                                 style={{
                                   padding: ".65rem .85rem",
                                   border: `2px solid ${accent}`,
@@ -699,10 +699,10 @@ export function ProductionPage() {
                             {f.cartonsCount && parseInt(f.cartonsCount) > 0 && (
                               <div style={{ padding: ".65rem .875rem", background: `${accent}14`, border: `1px solid ${accent}33`, borderRadius: "var(--radius-md)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                                 <span style={{ fontSize: ".82rem", color: "var(--text-secondary)", fontWeight: 600 }}>
-                                  {parseInt(f.cartonsCount).toLocaleString()} {isAr ? "كرتون × 6,000" : "cartons × 6,000"}
+                                  {parseInt(f.cartonsCount).toLocaleString()} {"كرتون × 6,000"}
                                 </span>
                                 <span style={{ fontSize: "1.15rem", fontWeight: 900, color: accent }}>
-                                  = {fmt(parseInt(f.cartonsCount) * 6000)} {isAr ? "قطعة" : "pcs"}
+                                  = {fmt(parseInt(f.cartonsCount) * 6000)} {"قطعة"}
                                 </span>
                               </div>
                             )}
@@ -712,11 +712,11 @@ export function ProductionPage() {
                         {/* ── Unknown machine type: simple carton input ── */}
                         {!isPreform && !isCaps && (
                           <label style={{ display: "flex", flexDirection: "column", gap: ".4rem", fontWeight: 700, fontSize: ".9rem", color: "var(--text-primary)" }}>
-                            {isAr ? "عدد الكراتين / الصناديق" : "Cartons / Boxes"}
+                            {"عدد الكراتين / الصناديق"}
                             <input
                               type="number" min={1} value={f.cartonsCount}
                               onChange={(e) => patchForm(machine.id, { cartonsCount: e.target.value })}
-                              placeholder={isAr ? "مثال: 50" : "e.g. 50"}
+                              placeholder={"مثال: 50"}
                               style={{ padding: ".6rem .75rem", border: `2px solid ${accent}`, borderRadius: "var(--radius-lg)", background: "var(--bg-card)", fontSize: "1.1rem", fontWeight: 700, width: "100%" }}
                             />
                           </label>
@@ -729,9 +729,9 @@ export function ProductionPage() {
                             HDPE:       { label: "HDPE",              color: "#3b82f6" },
                             LDPE:       { label: "LDPE",              color: "#06b6d4" },
                             PET:        { label: "PET",               color: "#10b981" },
-                            COLOR:      { label: isAr ? "لون" : "Color",     color: "#f97316" },
-                            ADHESIVE:   { label: isAr ? "لاصق" : "Adhesive", color: "#8b5cf6" },
-                            EMPTY_BAGS: { label: isAr ? "أكياس فارغة" : "Empty Bags", color: "#64748b" },
+                            COLOR:      { label: "لون",     color: "#f97316" },
+                            ADHESIVE:   { label: "لاصق", color: "#8b5cf6" },
+                            EMPTY_BAGS: { label: "أكياس فارغة", color: "#64748b" },
                           };
                           const bagMats = ["HDPE", "LDPE", "PET"];
                           const kgMats  = ["COLOR", "ADHESIVE"];
@@ -749,7 +749,7 @@ export function ProductionPage() {
                             <div style={{ background: "var(--bg-surface)", border: "1px solid var(--border-default)", borderRadius: "var(--radius-lg)", padding: ".875rem", display: "flex", flexDirection: "column", gap: ".65rem" }}>
                               <div style={{ fontSize: ".8rem", fontWeight: 700, color: "var(--text-secondary)", display: "flex", alignItems: "center", gap: ".4rem" }}>
                                 <span>📦</span>
-                                {isAr ? "المواد المستخدمة في هذا الشفت (اختياري)" : "Materials Used This Shift (optional)"}
+                                {"المواد المستخدمة في هذا الشفت (اختياري)"}
                               </div>
                               {mats.map((mat) => {
                                 const cfg = matConfig[mat];
@@ -762,13 +762,13 @@ export function ProductionPage() {
                                   return (
                                     <div key={mat} style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(100px, 1fr))", gap: ".5rem", alignItems: "end" }}>
                                       <label style={{ display: "flex", flexDirection: "column", gap: ".25rem", fontSize: ".78rem", fontWeight: 600, color: cfg.color }}>
-                                        {cfg.label} — {isAr ? "أكياس" : "Bags"}
+                                        {cfg.label} — {"أكياس"}
                                         <input type="number" min={0} step="0.5" value={String(f[bf.bags])} placeholder="0"
                                           onChange={(e) => patchForm(machine.id, { [bf.bags]: e.target.value } as Partial<MachineForm>)}
                                           style={{ padding: ".35rem .5rem", border: `1px solid ${cfg.color}44`, borderRadius: "var(--radius-md)", background: "var(--bg-card)", fontSize: ".85rem" }} />
                                       </label>
                                       <label style={{ display: "flex", flexDirection: "column", gap: ".25rem", fontSize: ".78rem", fontWeight: 600, color: "var(--text-secondary)" }}>
-                                        {isAr ? "كغ/كيس" : "kg/bag"}
+                                        {"كغ/كيس"}
                                         <input type="number" min={0} step="0.1" value={String(f[bf.kpb])} placeholder={bf.defaultKpb || "—"}
                                           onChange={(e) => patchForm(machine.id, { [bf.kpb]: e.target.value } as Partial<MachineForm>)}
                                           style={{ padding: ".35rem .5rem", border: "1px solid var(--border-default)", borderRadius: "var(--radius-md)", background: "var(--bg-card)", fontSize: ".85rem" }} />
@@ -809,14 +809,14 @@ export function ProductionPage() {
                         })()}
 
                         {/* ── Notes ── */}
-                        <label>{isAr ? "ملاحظات" : "Notes"}
+                        <label>{"ملاحظات"}
                           <textarea rows={2} value={f.notes} onChange={(e) => patchForm(machine.id, { notes: e.target.value })}
-                            placeholder={isAr ? "ملاحظات اختيارية..." : "Optional notes..."} />
+                            placeholder={"ملاحظات اختيارية..."} />
                         </label>
 
                         {/* ── Photo upload ── */}
                         <label style={{ display: "flex", flexDirection: "column", gap: ".25rem", fontSize: ".82rem", fontWeight: 600, color: "var(--text-secondary)" }}>
-                          {isAr ? "صورة الإنتاج (اختياري)" : "Production Photo (optional)"}
+                          {"صورة الإنتاج (اختياري)"}
                           <input
                             type="file"
                             accept="image/*"
@@ -828,8 +828,8 @@ export function ProductionPage() {
 
                         <button type="submit" className="auth-button" disabled={f.saving} style={{ width: "100%" }}>
                           {f.saving
-                            ? (isAr ? "جاري الحفظ..." : "Saving...")
-                            : (isAr ? `حفظ إنتاج ${machine.name}` : `Save ${machine.name} Production`)}
+                            ? ("جاري الحفظ...")
+                            : (`حفظ إنتاج ${machine.name}`)}
                         </button>
                       </form>
                     </div>
@@ -847,19 +847,19 @@ export function ProductionPage() {
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "1rem", marginBottom: "1.5rem" }}>
             <div style={{ background: "linear-gradient(135deg,#3b82f6,#1d4ed8)", borderRadius: "var(--radius-xl)", padding: "1.1rem 1.25rem", color: "#fff" }}>
               <span style={{ fontSize: "1.2rem" }}>🏭</span>
-              <p style={{ margin: ".3rem 0 0", fontSize: ".75rem", opacity: .85 }}>{isAr ? "سجلات البريفورم" : "Preform Records"}</p>
+              <p style={{ margin: ".3rem 0 0", fontSize: ".75rem", opacity: .85 }}>{"سجلات البريفورم"}</p>
               <p style={{ margin: ".2rem 0 0", fontSize: "1.6rem", fontWeight: 800 }}>{myPreforms.length}</p>
-              <p style={{ margin: 0, fontSize: ".75rem", opacity: .8 }}>{fmt(myPreforms.reduce((s, r) => s + (r.totalPieces ?? 0), 0))} {isAr ? "قطعة" : "pcs"}</p>
+              <p style={{ margin: 0, fontSize: ".75rem", opacity: .8 }}>{fmt(myPreforms.reduce((s, r) => s + (r.totalPieces ?? 0), 0))} {"قطعة"}</p>
             </div>
             <div style={{ background: "linear-gradient(135deg,#f97316,#ea580c)", borderRadius: "var(--radius-xl)", padding: "1.1rem 1.25rem", color: "#fff" }}>
               <span style={{ fontSize: "1.2rem" }}>🧢</span>
-              <p style={{ margin: ".3rem 0 0", fontSize: ".75rem", opacity: .85 }}>{isAr ? "سجلات الكابس" : "Caps Records"}</p>
+              <p style={{ margin: ".3rem 0 0", fontSize: ".75rem", opacity: .85 }}>{"سجلات الكابس"}</p>
               <p style={{ margin: ".2rem 0 0", fontSize: "1.6rem", fontWeight: 800 }}>{myCaps.length}</p>
-              <p style={{ margin: 0, fontSize: ".75rem", opacity: .8 }}>{fmt(myCaps.reduce((s, r) => s + (r.totalPieces ?? 0), 0))} {isAr ? "قطعة" : "pcs"}</p>
+              <p style={{ margin: 0, fontSize: ".75rem", opacity: .8 }}>{fmt(myCaps.reduce((s, r) => s + (r.totalPieces ?? 0), 0))} {"قطعة"}</p>
             </div>
           </div>
           <div className="module-panel" style={{ marginBottom: "1.5rem" }}>
-            <h2 style={{ marginBottom: ".75rem" }}>{isAr ? "آخر سجلاتي" : "My Recent Records"}</h2>
+            <h2 style={{ marginBottom: ".75rem" }}>{"آخر سجلاتي"}</h2>
             <div className="module-list">
               {myRecords.slice(0, 8).map((r) => (
                 <div className="module-row" key={r.id}>
@@ -869,8 +869,8 @@ export function ProductionPage() {
                       {isPreformMachine(r.machine?.type) ? "PREFORM" : "CAPS"}
                     </span>
                   </strong>
-                  <span>{r.machine?.name ?? "—"} • {isAr ? "الشفت" : "Shift"}: {r.shift?.name ?? "—"}</span>
-                  <small>{r.cartonsCount ?? 0} {isAr ? "كرتون" : "cartons"} • {fmt(r.totalPieces ?? 0)} {isAr ? "قطعة" : "pcs"}</small>
+                  <span>{r.machine?.name ?? "—"} • {"الشفت"}: {r.shift?.name ?? "—"}</span>
+                  <small>{r.cartonsCount ?? 0} {"كرتون"} • {fmt(r.totalPieces ?? 0)} {"قطعة"}</small>
                 </div>
               ))}
             </div>
@@ -883,18 +883,18 @@ export function ProductionPage() {
         <>
           <div style={{ display: "flex", gap: "1rem", alignItems: "flex-end", flexWrap: "wrap", padding: "1rem 1.25rem", background: "var(--bg-surface)", border: "1px solid var(--border-default)", borderRadius: "var(--radius-xl)", marginBottom: "1.25rem" }}>
             <label style={{ display: "flex", flexDirection: "column", gap: ".3rem", fontSize: ".82rem", fontWeight: 600, color: "var(--text-secondary)" }}>
-              {isAr ? "من تاريخ" : "From Date"}
+              {"من تاريخ"}
               <input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} style={{ padding: ".4rem .75rem", border: "1px solid var(--border-default)", borderRadius: "var(--radius-md)", background: "var(--bg-card)", fontSize: ".875rem" }} />
             </label>
             <label style={{ display: "flex", flexDirection: "column", gap: ".3rem", fontSize: ".82rem", fontWeight: 600, color: "var(--text-secondary)" }}>
-              {isAr ? "إلى تاريخ" : "To Date"}
+              {"إلى تاريخ"}
               <input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} style={{ padding: ".4rem .75rem", border: "1px solid var(--border-default)", borderRadius: "var(--radius-md)", background: "var(--bg-card)", fontSize: ".875rem" }} />
             </label>
-            <button type="button" className="auth-button auth-button--ghost" onClick={() => { setFromDate(""); setToDate(""); }}>{isAr ? "مسح" : "Clear"}</button>
+            <button type="button" className="auth-button auth-button--ghost" onClick={() => { setFromDate(""); setToDate(""); }}>{"مسح"}</button>
           </div>
 
           <div style={{ display: "flex", gap: ".5rem", flexWrap: "wrap", marginBottom: "1.25rem" }}>
-            {([ ["overview", isAr ? "نظرة عامة" : "Overview"], ["daily", isAr ? "يومي" : "Daily"], ["shifts", isAr ? "الشفتات" : "Shifts"], ["records", isAr ? "السجلات" : "Records"], ["workers", isAr ? "العمال" : "Workers"], ["electricity", isAr ? "إدارة الكهرباء" : "Electricity"] ] as const).map(([key, label]) => (
+            {([ ["overview", "نظرة عامة"], ["daily", "يومي"], ["shifts", "الشفتات"], ["records", "السجلات"], ["workers", "العمال"], ["electricity", "إدارة الكهرباء"] ] as const).map(([key, label]) => (
               <button key={key} type="button" onClick={() => setAdminTab(key)}
                 style={{ padding: ".45rem 1rem", borderRadius: 8, border: "1px solid var(--border-default)", background: adminTab === key ? "var(--orange-500,#f97316)" : "var(--bg-surface)", color: adminTab === key ? "#fff" : "var(--text-secondary)", fontWeight: 600, fontSize: ".83rem", cursor: "pointer" }}>
                 {label}
@@ -906,11 +906,11 @@ export function ProductionPage() {
             <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: "1rem" }}>
                 {[
-                  { label: isAr ? "إجمالي السجلات" : "Total Records", value: adminOverview.totals.totalRecords, gradient: "linear-gradient(135deg,#3b82f6,#1d4ed8)", icon: "📋" },
-                  { label: isAr ? "إجمالي الكراتين" : "Total Cartons", value: fmt(adminOverview.totals.totalCartons), gradient: "linear-gradient(135deg,#10b981,#059669)", icon: "📦" },
-                  { label: isAr ? "إجمالي القطع" : "Total Pieces", value: fmt(adminOverview.totals.totalPieces), gradient: "linear-gradient(135deg,#f97316,#ea580c)", icon: "🔢" },
-                  { label: isAr ? "كراتين الكابس" : "Caps Cartons", value: fmt(dailyData.reduce((s, d) => s + d.capsCartons, 0)), gradient: "linear-gradient(135deg,#06b6d4,#0284c7)", icon: "🧢" },
-                  { label: isAr ? "صناديق البريفورم" : "Preform Boxes", value: fmt(dailyData.reduce((s, d) => s + d.preformCartons, 0)), gradient: "linear-gradient(135deg,#8b5cf6,#7c3aed)", icon: "🏭" },
+                  { label: "إجمالي السجلات", value: adminOverview.totals.totalRecords, gradient: "linear-gradient(135deg,#3b82f6,#1d4ed8)", icon: "📋" },
+                  { label: "إجمالي الكراتين", value: fmt(adminOverview.totals.totalCartons), gradient: "linear-gradient(135deg,#10b981,#059669)", icon: "📦" },
+                  { label: "إجمالي القطع", value: fmt(adminOverview.totals.totalPieces), gradient: "linear-gradient(135deg,#f97316,#ea580c)", icon: "🔢" },
+                  { label: "كراتين الكابس", value: fmt(dailyData.reduce((s, d) => s + d.capsCartons, 0)), gradient: "linear-gradient(135deg,#06b6d4,#0284c7)", icon: "🧢" },
+                  { label: "صناديق البريفورم", value: fmt(dailyData.reduce((s, d) => s + d.preformCartons, 0)), gradient: "linear-gradient(135deg,#8b5cf6,#7c3aed)", icon: "🏭" },
                 ].map((kpi) => (
                   <div key={kpi.label} style={{ background: kpi.gradient, borderRadius: "var(--radius-xl)", padding: "1.1rem 1.25rem", color: "#fff", display: "flex", flexDirection: "column", gap: ".35rem", boxShadow: "0 4px 14px rgba(0,0,0,.12)" }}>
                     <span style={{ fontSize: "1.3rem" }}>{kpi.icon}</span>
@@ -921,10 +921,10 @@ export function ProductionPage() {
               </div>
               {(adminOverview.byShift ?? []).length > 0 && (
                 <div style={{ background: "var(--bg-card)", border: "1px solid var(--border-default)", borderRadius: "var(--radius-xl)", overflow: "hidden" }}>
-                  <div style={{ padding: ".875rem 1.25rem", borderBottom: "1px solid var(--border-default)", background: "var(--bg-surface)", fontWeight: 700, fontSize: ".9rem" }}>{isAr ? "ملخص حسب الشفت" : "Summary by Shift"}</div>
+                  <div style={{ padding: ".875rem 1.25rem", borderBottom: "1px solid var(--border-default)", background: "var(--bg-surface)", fontWeight: 700, fontSize: ".9rem" }}>{"ملخص حسب الشفت"}</div>
                   <div style={{ overflowX: "auto" }}>
                     <table className="admin-table">
-                      <thead><tr><th>{isAr ? "الشفت" : "Shift"}</th><th>{isAr ? "السجلات" : "Records"}</th><th>{isAr ? "الكراتين" : "Cartons"}</th><th>{isAr ? "القطع" : "Pieces"}</th></tr></thead>
+                      <thead><tr><th>{"الشفت"}</th><th>{"السجلات"}</th><th>{"الكراتين"}</th><th>{"القطع"}</th></tr></thead>
                       <tbody>
                         {(adminOverview.byShift ?? []).map((row) => (
                           <tr key={row.shiftId ?? "none"}>
@@ -946,13 +946,13 @@ export function ProductionPage() {
             <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: ".5rem" }}>
                 <span style={{ fontWeight: 700, fontSize: ".9rem", color: "var(--text-primary)" }}>
-                  {isAr ? "التقرير اليومي حسب الشفت" : "Daily Production by Shift"}
+                  {"التقرير اليومي حسب الشفت"}
                 </span>
                 <div style={{ display: "flex", gap: ".35rem" }}>
                   {(["summary", "records"] as const).map((m) => (
                     <button key={m} type="button" onClick={() => setProdViewMode(m)}
                       style={{ padding: ".35rem .875rem", borderRadius: 999, border: "1px solid var(--border-default)", background: prodViewMode === m ? "var(--brand-primary,#3b82f6)" : "var(--bg-surface)", color: prodViewMode === m ? "#fff" : "var(--text-secondary)", fontWeight: 600, fontSize: ".8rem", cursor: "pointer" }}>
-                      {m === "summary" ? (isAr ? "ملخص يومي" : "Daily Summary") : (isAr ? "كل السجلات" : "All Records")}
+                      {m === "summary" ? ("ملخص يومي") : ("كل السجلات")}
                     </button>
                   ))}
                 </div>
@@ -961,16 +961,16 @@ export function ProductionPage() {
                 <ProdSummaryView groups={dayGroups} />
               ) : (
                 <div style={{ background: "var(--bg-card)", border: "1px solid var(--border-default)", borderRadius: "var(--radius-xl)", overflow: "hidden" }}>
-                  {dailyData.length === 0 ? <div style={{ padding: "2rem", textAlign: "center", color: "var(--text-secondary)" }}>{isAr ? "لا توجد بيانات" : "No data"}</div> : (
+                  {dailyData.length === 0 ? <div style={{ padding: "2rem", textAlign: "center", color: "var(--text-secondary)" }}>{"لا توجد بيانات"}</div> : (
                     <div style={{ overflowX: "auto" }}>
                       <table className="admin-table">
-                        <thead><tr>{[isAr ? "التاريخ" : "Date", isAr ? "كراتين الكابس" : "Caps Cartons", isAr ? "صناديق البريفورم" : "Preform Boxes", isAr ? "إجمالي الكراتين" : "Total Cartons", isAr ? "إجمالي القطع" : "Total Pcs"].map((h) => <th key={h}>{h}</th>)}</tr></thead>
+                        <thead><tr>{["التاريخ", "كراتين الكابس", "صناديق البريفورم", "إجمالي الكراتين", "إجمالي القطع"].map((h) => <th key={h}>{h}</th>)}</tr></thead>
                         <tbody>
                           {dailyData.map((row) => <tr key={row.date}><td style={{ fontWeight: 700 }}>{row.date}</td><td>{fmt(row.capsCartons)}</td><td>{fmt(row.preformCartons)}</td><td>{fmt(row.totalCartons)}</td><td style={{ fontWeight: 700 }}>{fmt(row.totalPieces)}</td></tr>)}
                         </tbody>
                         <tfoot>
                           <tr style={{ background: "var(--bg-surface)", fontWeight: 700 }}>
-                            <td>{isAr ? "الإجمالي" : "Total"}</td>
+                            <td>{"الإجمالي"}</td>
                             <td>{fmt(dailyData.reduce((s, r) => s + r.capsCartons, 0))}</td>
                             <td>{fmt(dailyData.reduce((s, r) => s + r.preformCartons, 0))}</td>
                             <td>{fmt(dailyData.reduce((s, r) => s + r.totalCartons, 0))}</td>
@@ -987,11 +987,11 @@ export function ProductionPage() {
 
           {adminTab === "shifts" && (
             <div style={{ background: "var(--bg-card)", border: "1px solid var(--border-default)", borderRadius: "var(--radius-xl)", overflow: "hidden" }}>
-              <div style={{ padding: ".875rem 1.25rem", borderBottom: "1px solid var(--border-default)", background: "var(--bg-surface)", fontWeight: 700, fontSize: ".9rem" }}>{isAr ? "إنتاج الشفتات يومياً" : "Shift Production Breakdown"}</div>
-              {shiftData.length === 0 ? <div style={{ padding: "2rem", textAlign: "center", color: "var(--text-secondary)" }}>{isAr ? "لا توجد بيانات" : "No data"}</div> : (
+              <div style={{ padding: ".875rem 1.25rem", borderBottom: "1px solid var(--border-default)", background: "var(--bg-surface)", fontWeight: 700, fontSize: ".9rem" }}>{"إنتاج الشفتات يومياً"}</div>
+              {shiftData.length === 0 ? <div style={{ padding: "2rem", textAlign: "center", color: "var(--text-secondary)" }}>{"لا توجد بيانات"}</div> : (
                 <div style={{ overflowX: "auto" }}>
                   <table className="admin-table">
-                    <thead><tr>{[isAr ? "التاريخ" : "Date", isAr ? "الشفت" : "Shift", isAr ? "كراتين الكابس" : "Caps", isAr ? "صناديق البريفورم" : "Preform", isAr ? "القطع" : "Pcs"].map((h) => <th key={h}>{h}</th>)}</tr></thead>
+                    <thead><tr>{["التاريخ", "الشفت", "كراتين الكابس", "صناديق البريفورم", "القطع"].map((h) => <th key={h}>{h}</th>)}</tr></thead>
                     <tbody>{shiftData.map((row) => <tr key={`${row.date}-${row.shiftId}`}><td style={{ fontWeight: 600 }}>{row.date}</td><td>{row.shiftName}</td><td>{fmt(row.capsCartons)}</td><td>{fmt(row.preformCartons)}</td><td style={{ fontWeight: 700 }}>{fmt(row.totalPieces)}</td></tr>)}</tbody>
                   </table>
                 </div>
@@ -1007,23 +1007,23 @@ export function ProductionPage() {
             return (
               <div style={{ background: "var(--bg-card)", border: "1px solid var(--border-default)", borderRadius: "var(--radius-xl)", overflow: "hidden" }}>
                 <div style={{ padding: ".875rem 1.25rem", borderBottom: "1px solid var(--border-default)", background: "var(--bg-surface)", display: "flex", alignItems: "center", gap: "1rem", flexWrap: "wrap" }}>
-                  <span style={{ fontWeight: 700, fontSize: ".9rem" }}>{isAr ? `السجلات (${filteredRecs.length})` : `Records (${filteredRecs.length})`}</span>
+                  <span style={{ fontWeight: 700, fontSize: ".9rem" }}>{`السجلات (${filteredRecs.length})`}</span>
                   <label style={{ display: "flex", alignItems: "center", gap: ".5rem", fontSize: ".82rem", fontWeight: 600, color: "var(--text-secondary)" }}>
-                    {isAr ? "الآلة:" : "Machine:"}
+                    {"الآلة:"}
                     <select
                       value={filterMachineId}
                       onChange={(e) => setFilterMachineId(e.target.value)}
                       style={{ padding: ".3rem .6rem", borderRadius: "var(--radius-md)", border: "1px solid var(--border-default)", background: "var(--bg-input)", fontSize: ".82rem" }}
                     >
-                      <option value="">{isAr ? "الكل" : "All"}</option>
+                      <option value="">{"الكل"}</option>
                       {machines.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
                     </select>
                   </label>
                 </div>
-                {filteredRecs.length === 0 ? <div style={{ padding: "2rem", textAlign: "center", color: "var(--text-secondary)" }}>{isAr ? "لا توجد سجلات" : "No records"}</div> : (
+                {filteredRecs.length === 0 ? <div style={{ padding: "2rem", textAlign: "center", color: "var(--text-secondary)" }}>{"لا توجد سجلات"}</div> : (
                   <div style={{ overflowX: "auto" }}>
                     <table className="admin-table">
-                      <thead><tr>{[isAr ? "التاريخ" : "Date", isAr ? "العامل" : "Worker", isAr ? "الآلة" : "Machine", isAr ? "الشفت" : "Shift", isAr ? "كراتين" : "Cartons", isAr ? "القطع" : "Pieces", isAr ? "صورة" : "Photo"].map((h) => <th key={h}>{h}</th>)}</tr></thead>
+                      <thead><tr>{["التاريخ", "العامل", "الآلة", "الشفت", "كراتين", "القطع", "صورة"].map((h) => <th key={h}>{h}</th>)}</tr></thead>
                       <tbody>
                         {filteredRecs.slice(0, 50).map((r) => (
                           <tr key={r.id}>
@@ -1035,8 +1035,8 @@ export function ProductionPage() {
                             <td style={{ fontWeight: 700 }}>{fmt(r.totalPieces ?? 0)}</td>
                             <td>
                               {r.documentPath ? (
-                                <a href={`${API_BASE_URL.replace("/api", "")}/pictures/${r.documentPath}`} target="_blank" rel="noreferrer">
-                                  <img src={`${API_BASE_URL.replace("/api", "")}/pictures/${r.documentPath}`} alt="doc" style={{ width: 36, height: 36, objectFit: "cover", borderRadius: 4, border: "1px solid var(--border-default)" }} />
+                                <a href={globalPictureUrl(r.documentPath)} target="_blank" rel="noreferrer">
+                                  <img src={globalPictureUrl(r.documentPath)} alt="doc" style={{ width: 36, height: 36, objectFit: "cover", borderRadius: 4, border: "1px solid var(--border-default)" }} />
                                 </a>
                               ) : "—"}
                             </td>
@@ -1052,11 +1052,11 @@ export function ProductionPage() {
 
           {adminTab === "workers" && (
             <div style={{ background: "var(--bg-card)", border: "1px solid var(--border-default)", borderRadius: "var(--radius-xl)", overflow: "hidden" }}>
-              <div style={{ padding: ".875rem 1.25rem", borderBottom: "1px solid var(--border-default)", background: "var(--bg-surface)", fontWeight: 700, fontSize: ".9rem" }}>{isAr ? "الإنتاج حسب العامل" : "Production by Worker"}</div>
-              {(adminOverview?.byUser ?? []).length === 0 ? <div style={{ padding: "2rem", textAlign: "center", color: "var(--text-secondary)" }}>{isAr ? "لا توجد بيانات" : "No data"}</div> : (
+              <div style={{ padding: ".875rem 1.25rem", borderBottom: "1px solid var(--border-default)", background: "var(--bg-surface)", fontWeight: 700, fontSize: ".9rem" }}>{"الإنتاج حسب العامل"}</div>
+              {(adminOverview?.byUser ?? []).length === 0 ? <div style={{ padding: "2rem", textAlign: "center", color: "var(--text-secondary)" }}>{"لا توجد بيانات"}</div> : (
                 <div style={{ overflowX: "auto" }}>
                   <table className="admin-table">
-                    <thead><tr><th>#</th><th>{isAr ? "الاسم" : "Name"}</th><th>{isAr ? "السجلات" : "Records"}</th><th>{isAr ? "الكراتين" : "Cartons"}</th><th>{isAr ? "القطع" : "Pieces"}</th></tr></thead>
+                    <thead><tr><th>#</th><th>{"الاسم"}</th><th>{"السجلات"}</th><th>{"الكراتين"}</th><th>{"القطع"}</th></tr></thead>
                     <tbody>
                       {(adminOverview?.byUser ?? []).map((w, i) => (
                         <tr key={w.userId}>
@@ -1082,7 +1082,7 @@ export function ProductionPage() {
                   <div style={{ display: "flex", alignItems: "center", gap: ".5rem", marginBottom: ".5rem" }}>
                     <span style={{ fontSize: "1.3rem" }}>⚡</span>
                     <h3 style={{ margin: 0, fontSize: "1rem", fontWeight: 700, color: "var(--text-primary)" }}>
-                      {isAr ? "إدارة الكهرباء" : "Electricity Management"}
+                      {"إدارة الكهرباء"}
                     </h3>
                   </div>
                   <p style={{ margin: 0, fontSize: ".85rem", color: "var(--text-secondary)" }}>
@@ -1092,7 +1092,7 @@ export function ProductionPage() {
                   </p>
                   {elKwhPrice && (
                     <div style={{ marginTop: ".75rem", display: "inline-flex", alignItems: "center", gap: ".5rem", padding: ".35rem .875rem", borderRadius: 99, background: "rgba(249,115,22,.1)", border: "1px solid rgba(249,115,22,.3)", color: "#ea580c", fontWeight: 700, fontSize: ".85rem" }}>
-                      ⚡ {isAr ? "السعر الحالي:" : "Current Price:"} {elKwhPrice.price.toFixed(4)} ILS/kWh
+                      ⚡ {"السعر الحالي:"} {elKwhPrice.price.toFixed(4)} ILS/kWh
                     </div>
                   )}
                 </div>
@@ -1100,7 +1100,7 @@ export function ProductionPage() {
                 {/* kWh Price editor */}
                 <div style={{ background: "var(--bg-card)", border: "1px solid var(--border-default)", borderRadius: "var(--radius-xl)", padding: "1.25rem", minWidth: 220 }}>
                   <div style={{ fontWeight: 700, fontSize: ".9rem", color: "var(--text-primary)", marginBottom: ".75rem" }}>
-                    {isAr ? "سعر الكيلوواط" : "kWh Price"}
+                    {"سعر الكيلوواط"}
                   </div>
                   <div style={{ display: "flex", gap: ".5rem", alignItems: "center" }}>
                     <input
@@ -1128,7 +1128,7 @@ export function ProductionPage() {
                       disabled={elPriceSaving}
                       style={{ padding: ".45rem .875rem", borderRadius: 8, border: "none", background: "#f97316", color: "#fff", fontWeight: 700, fontSize: ".85rem", cursor: "pointer", opacity: elPriceSaving ? 0.6 : 1 }}
                     >
-                      {elPriceSaving ? "..." : (isAr ? "حفظ" : "Save")}
+                      {elPriceSaving ? "..." : ("حفظ")}
                     </button>
                   </div>
                 </div>
@@ -1137,30 +1137,30 @@ export function ProductionPage() {
               {/* Consumption report filter */}
               <div style={{ display: "flex", gap: ".75rem", alignItems: "flex-end", flexWrap: "wrap", padding: "1rem 1.25rem", background: "var(--bg-surface)", border: "1px solid var(--border-default)", borderRadius: "var(--radius-xl)" }}>
                 <label style={{ display: "flex", flexDirection: "column", gap: ".3rem", fontSize: ".82rem", fontWeight: 600, color: "var(--text-secondary)" }}>
-                  {isAr ? "من تاريخ" : "From date"}
+                  {"من تاريخ"}
                   <input type="date" value={elFromDate} onChange={(e) => setElFromDate(e.target.value)}
                     style={{ padding: ".4rem .75rem", border: "1px solid var(--border-default)", borderRadius: 8, background: "var(--bg-card)", fontSize: ".875rem" }} />
                 </label>
                 <label style={{ display: "flex", flexDirection: "column", gap: ".3rem", fontSize: ".82rem", fontWeight: 600, color: "var(--text-secondary)" }}>
-                  {isAr ? "إلى تاريخ" : "To date"}
+                  {"إلى تاريخ"}
                   <input type="date" value={elToDate} onChange={(e) => setElToDate(e.target.value)}
                     style={{ padding: ".4rem .75rem", border: "1px solid var(--border-default)", borderRadius: 8, background: "var(--bg-card)", fontSize: ".875rem" }} />
                 </label>
                 <label style={{ display: "flex", flexDirection: "column", gap: ".3rem", fontSize: ".82rem", fontWeight: 600, color: "var(--text-secondary)" }}>
-                  {isAr ? "الشفت" : "Shift"}
+                  {"الشفت"}
                   <select value={elShiftId} onChange={(e) => setElShiftId(e.target.value)}
                     style={{ padding: ".4rem .75rem", border: "1px solid var(--border-default)", borderRadius: 8, background: "var(--bg-card)", fontSize: ".875rem" }}>
-                    <option value="">{isAr ? "الكل" : "All"}</option>
+                    <option value="">{"الكل"}</option>
                     {shifts.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
                   </select>
                 </label>
                 <button type="button" className="auth-button" style={{ padding: ".45rem 1rem", fontSize: ".85rem" }}
                   onClick={() => void loadElectricity()}>
-                  {isAr ? "تطبيق" : "Apply"}
+                  {"تطبيق"}
                 </button>
                 <button type="button" className="auth-button auth-button--ghost" style={{ padding: ".45rem 1rem", fontSize: ".85rem" }}
                   onClick={() => { setElFromDate(""); setElToDate(""); setElShiftId(""); }}>
-                  {isAr ? "مسح" : "Clear"}
+                  {"مسح"}
                 </button>
               </div>
 
@@ -1168,11 +1168,11 @@ export function ProductionPage() {
               <div style={{ background: "var(--bg-card)", border: "1px solid var(--border-default)", borderRadius: "var(--radius-xl)", overflow: "hidden" }}>
                 <div style={{ padding: ".875rem 1.25rem", borderBottom: "1px solid var(--border-default)", background: "var(--bg-surface)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                   <span style={{ fontWeight: 700, fontSize: ".9rem" }}>
-                    {isAr ? `تقرير الاستهلاك (${elReadings.length})` : `Consumption Report (${elReadings.length})`}
+                    {`تقرير الاستهلاك (${elReadings.length})`}
                   </span>
                   {elReadings.length > 0 && (
                     <span style={{ fontSize: ".82rem", fontWeight: 700, color: "#ea580c" }}>
-                      {isAr ? "الإجمالي:" : "Total:"} {elReadings.reduce((s, r) => s + r.consumption, 0).toFixed(2)} kWh
+                      {"الإجمالي:"} {elReadings.reduce((s, r) => s + r.consumption, 0).toFixed(2)} kWh
                       {" · "}
                       {elReadings.reduce((s, r) => s + r.shiftCost, 0).toFixed(2)} ILS
                     </span>
@@ -1180,24 +1180,24 @@ export function ProductionPage() {
                 </div>
                 {elLoading ? (
                   <div style={{ padding: "2rem", textAlign: "center", color: "var(--text-secondary)" }}>
-                    {isAr ? "جاري التحميل..." : "Loading..."}
+                    {"جاري التحميل..."}
                   </div>
                 ) : elReadings.length === 0 ? (
                   <div style={{ padding: "2rem", textAlign: "center", color: "var(--text-secondary)" }}>
-                    {isAr ? "لا توجد بيانات" : "No readings found"}
+                    {"لا توجد بيانات"}
                   </div>
                 ) : (
                   <div style={{ overflowX: "auto" }}>
                     <table className="admin-table">
                       <thead>
                         <tr>
-                          <th>{isAr ? "التاريخ" : "Date"}</th>
-                          <th>{isAr ? "الشفت" : "Shift"}</th>
-                          <th>{isAr ? "البداية" : "Start"}</th>
-                          <th>{isAr ? "النهاية" : "End"}</th>
-                          <th>{isAr ? "الاستهلاك" : "kWh"}</th>
-                          <th>{isAr ? "التكلفة" : "Cost (ILS)"}</th>
-                          <th>{isAr ? "بواسطة" : "By"}</th>
+                          <th>{"التاريخ"}</th>
+                          <th>{"الشفت"}</th>
+                          <th>{"البداية"}</th>
+                          <th>{"النهاية"}</th>
+                          <th>{"الاستهلاك"}</th>
+                          <th>{"التكلفة"}</th>
+                          <th>{"بواسطة"}</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -1229,11 +1229,11 @@ export function ProductionPage() {
           {adminOverview && (
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: "1rem" }}>
               {[
-                { label: isAr ? "إجمالي السجلات" : "Total Records", value: adminOverview.totals.totalRecords, gradient: "linear-gradient(135deg,#3b82f6,#1d4ed8)", icon: "📋" },
-                { label: isAr ? "إجمالي الكراتين" : "Total Cartons", value: fmt(adminOverview.totals.totalCartons), gradient: "linear-gradient(135deg,#10b981,#059669)", icon: "📦" },
-                { label: isAr ? "إجمالي القطع" : "Total Pieces", value: fmt(adminOverview.totals.totalPieces), gradient: "linear-gradient(135deg,#f97316,#ea580c)", icon: "🔢" },
-                { label: isAr ? "كراتين الكابس" : "Caps Cartons", value: fmt(dailyData.reduce((s, d) => s + d.capsCartons, 0)), gradient: "linear-gradient(135deg,#06b6d4,#0284c7)", icon: "🧢" },
-                { label: isAr ? "صناديق البريفورم" : "Preform Boxes", value: fmt(dailyData.reduce((s, d) => s + d.preformCartons, 0)), gradient: "linear-gradient(135deg,#8b5cf6,#7c3aed)", icon: "🏭" },
+                { label: "إجمالي السجلات", value: adminOverview.totals.totalRecords, gradient: "linear-gradient(135deg,#3b82f6,#1d4ed8)", icon: "📋" },
+                { label: "إجمالي الكراتين", value: fmt(adminOverview.totals.totalCartons), gradient: "linear-gradient(135deg,#10b981,#059669)", icon: "📦" },
+                { label: "إجمالي القطع", value: fmt(adminOverview.totals.totalPieces), gradient: "linear-gradient(135deg,#f97316,#ea580c)", icon: "🔢" },
+                { label: "كراتين الكابس", value: fmt(dailyData.reduce((s, d) => s + d.capsCartons, 0)), gradient: "linear-gradient(135deg,#06b6d4,#0284c7)", icon: "🧢" },
+                { label: "صناديق البريفورم", value: fmt(dailyData.reduce((s, d) => s + d.preformCartons, 0)), gradient: "linear-gradient(135deg,#8b5cf6,#7c3aed)", icon: "🏭" },
               ].map((kpi) => (
                 <div key={kpi.label} style={{ background: kpi.gradient, borderRadius: "var(--radius-xl)", padding: "1.1rem 1.25rem", color: "#fff", display: "flex", flexDirection: "column", gap: ".35rem", boxShadow: "0 4px 14px rgba(0,0,0,.12)" }}>
                   <span style={{ fontSize: "1.3rem" }}>{kpi.icon}</span>
@@ -1247,13 +1247,13 @@ export function ProductionPage() {
           {/* View toggle */}
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: ".5rem" }}>
             <span style={{ fontWeight: 700, fontSize: ".9rem", color: "var(--text-primary)" }}>
-              {isAr ? "الإنتاج حسب اليوم والشفت" : "Production by Day & Shift"}
+              {"الإنتاج حسب اليوم والشفت"}
             </span>
             <div style={{ display: "flex", gap: ".35rem" }}>
               {(["summary", "records"] as const).map((m) => (
                 <button key={m} type="button" onClick={() => setProdViewMode(m)}
                   style={{ padding: ".35rem .875rem", borderRadius: 999, border: "1px solid var(--border-default)", background: prodViewMode === m ? "var(--brand-primary,#3b82f6)" : "var(--bg-surface)", color: prodViewMode === m ? "#fff" : "var(--text-secondary)", fontWeight: 600, fontSize: ".8rem", cursor: "pointer" }}>
-                  {m === "summary" ? (isAr ? "ملخص يومي" : "Daily Summary") : (isAr ? "كل السجلات" : "All Records")}
+                  {m === "summary" ? ("ملخص يومي") : ("كل السجلات")}
                 </button>
               ))}
             </div>
@@ -1264,11 +1264,11 @@ export function ProductionPage() {
           ) : (
             <div style={{ background: "var(--bg-card)", border: "1px solid var(--border-default)", borderRadius: "var(--radius-xl)", overflow: "hidden" }}>
               <div style={{ padding: ".875rem 1.25rem", borderBottom: "1px solid var(--border-default)", background: "var(--bg-surface)", fontWeight: 700, fontSize: ".9rem" }}>
-                {isAr ? `سجلات الإنتاج (${allRecords.length})` : `Production Records (${allRecords.length})`}
+                {`سجلات الإنتاج (${allRecords.length})`}
               </div>
               <div style={{ overflowX: "auto" }}>
                 <table className="admin-table">
-                  <thead><tr>{[isAr ? "التاريخ" : "Date", isAr ? "العامل" : "Worker", isAr ? "الآلة" : "Machine", isAr ? "الشفت" : "Shift", isAr ? "كراتين" : "Cartons", isAr ? "القطع" : "Pieces"].map((h) => <th key={h}>{h}</th>)}</tr></thead>
+                  <thead><tr>{["التاريخ", "العامل", "الآلة", "الشفت", "كراتين", "القطع"].map((h) => <th key={h}>{h}</th>)}</tr></thead>
                   <tbody>
                     {allRecords.slice(0, 50).map((r, i) => (
                       <tr key={r.id} style={{ background: i % 2 === 0 ? "transparent" : "var(--bg-surface)" }}>
@@ -1283,7 +1283,7 @@ export function ProductionPage() {
                   </tbody>
                   <tfoot>
                     <tr style={{ background: "var(--bg-surface)", fontWeight: 700 }}>
-                      <td colSpan={4}>{isAr ? "الإجمالي" : "Total"}</td>
+                      <td colSpan={4}>{"الإجمالي"}</td>
                       <td>{allRecords.reduce((s, r) => s + (r.cartonsCount ?? 0), 0)}</td>
                       <td style={{ color: "#1d4ed8" }}>{fmt(allRecords.reduce((s, r) => s + (r.totalPieces ?? 0), 0))}</td>
                     </tr>
@@ -1298,10 +1298,10 @@ export function ProductionPage() {
       {/* ── ENGINEER: read-only table ─────────── */}
       {(!isAdmin && !isAccountant && canSeeAll) && (
         <div style={{ background: "var(--bg-card)", border: "1px solid var(--border-default)", borderRadius: "var(--radius-xl)", overflow: "hidden", marginTop: "1.5rem" }}>
-          <div style={{ padding: ".875rem 1.25rem", borderBottom: "1px solid var(--border-default)", background: "var(--bg-surface)", fontWeight: 700, fontSize: ".9rem" }}>{isAr ? `سجلات الإنتاج (${allRecords.length})` : `Production Records (${allRecords.length})`}</div>
+          <div style={{ padding: ".875rem 1.25rem", borderBottom: "1px solid var(--border-default)", background: "var(--bg-surface)", fontWeight: 700, fontSize: ".9rem" }}>{`سجلات الإنتاج (${allRecords.length})`}</div>
           <div style={{ overflowX: "auto" }}>
             <table className="admin-table">
-              <thead><tr>{[isAr ? "التاريخ" : "Date", isAr ? "العامل" : "Worker", isAr ? "الآلة" : "Machine", isAr ? "الشفت" : "Shift", isAr ? "كراتين" : "Cartons", isAr ? "القطع" : "Pieces"].map((h) => <th key={h}>{h}</th>)}</tr></thead>
+              <thead><tr>{["التاريخ", "العامل", "الآلة", "الشفت", "كراتين", "القطع"].map((h) => <th key={h}>{h}</th>)}</tr></thead>
               <tbody>
                 {allRecords.slice(0, 50).map((r, i) => (
                   <tr key={r.id} style={{ background: i % 2 === 0 ? "transparent" : "var(--bg-surface)" }}>

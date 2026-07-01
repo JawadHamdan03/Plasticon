@@ -2,7 +2,7 @@
 set -e
 
 echo "Starting Metro bundler (clearing cache)..."
-npx expo start --web --host lan --reset-cache &
+npx expo start --reset-cache --offline &
 METRO_PID=$!
 
 # Wait until Metro is ready

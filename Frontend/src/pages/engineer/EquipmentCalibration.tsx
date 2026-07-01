@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from "react";
+﻿import { useEffect, useState, type FormEvent } from "react";
 import { CheckCircle, Clock, AlertTriangle, Plus, X } from "lucide-react";
 import { ModulePageShell } from "../../components/ModulePageShell";
 import { Card } from "../../components/ui/card";
@@ -34,9 +34,9 @@ interface HealthRecord {
 
 // Calibration status derived from efficiency
 function calStatus(eff: number) {
-  if (eff >= 90) return { label: "Valid", color: "#059669", bg: "#d1fae5", Icon: CheckCircle };
-  if (eff >= 75) return { label: "Due Soon", color: "#d97706", bg: "#fef3c7", Icon: Clock };
-  return { label: "Expired", color: "#dc2626", bg: "#fee2e2", Icon: AlertTriangle };
+  if (eff >= 90) return { label: "صالح", color: "#059669", bg: "#d1fae5", Icon: CheckCircle };
+  if (eff >= 75) return { label: "قريب الانتهاء", color: "#d97706", bg: "#fef3c7", Icon: Clock };
+  return { label: "منتهي", color: "#dc2626", bg: "#fee2e2", Icon: AlertTriangle };
 }
 
 function nextDue(date: string) {
@@ -46,10 +46,10 @@ function nextDue(date: string) {
 }
 
 const OP_STATUSES = [
-  { value: "OPERATIONAL", label: "Fully Calibrated" },
-  { value: "MAINTENANCE", label: "Calibration Needed" },
-  { value: "BROKEN",      label: "Failed Calibration" },
-  { value: "OFFLINE",     label: "Out of Service" },
+  { value: "OPERATIONAL", label: "معايرة مكتملة" },
+  { value: "MAINTENANCE", label: "تحتاج معايرة" },
+  { value: "BROKEN",      label: "فشلت المعايرة" },
+  { value: "OFFLINE",     label: "خارج الخدمة" },
 ];
 
 const emptyForm = () => ({ machineId: "", operationalStatus: "OPERATIONAL", efficiencyRating: "100", maintenanceHours: "0", downtimePercentage: "0", notes: "" });
@@ -85,7 +85,7 @@ export default function EquipmentCalibration() {
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     setError(""); setSuccess("");
-    if (!form.machineId) { setError(nav("Select a machine", "اختر آلة")); return; }
+    if (!form.machineId) { setError("اختر آلة"); return; }
     setSaving(true);
     try {
       const res = await apiFetch("/machine-health", {
@@ -100,37 +100,37 @@ export default function EquipmentCalibration() {
         }),
       });
       if (!res.ok) throw new Error(await readApiError(res));
-      setSuccess(nav("Calibration record saved", "تم حفظ سجل المعايرة"));
+      setSuccess("تم حفظ سجل المعايرة");
       setForm(emptyForm());
       setShowForm(false);
       void load();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to save");
+      setError(err instanceof Error ? err.message : "فشل الحفظ");
     } finally { setSaving(false); }
   };
 
-  const validCount   = records.filter(r => calStatus(r.efficiencyRating).label === "Valid").length;
-  const dueCount     = records.filter(r => calStatus(r.efficiencyRating).label === "Due Soon").length;
-  const expiredCount = records.filter(r => calStatus(r.efficiencyRating).label === "Expired").length;
+  const validCount   = records.filter(r => r.efficiencyRating >= 90).length;
+  const dueCount     = records.filter(r => r.efficiencyRating >= 75 && r.efficiencyRating < 90).length;
+  const expiredCount = records.filter(r => r.efficiencyRating < 75).length;
 
   return (
     <ModulePageShell
-      title={nav("Equipment Calibration", "معايرة المعدات")}
-      subtitle={nav("Log and track equipment calibration records", "تسجيل وتتبع سجلات معايرة المعدات")}
+      title={"معايرة المعدات"}
+      subtitle={"تسجيل وتتبع سجلات معايرة المعدات"}
       icon={<CheckCircle size={22} />}
       actions={canAdd ? (
         <Button size="sm" onClick={() => setShowForm(v => !v)}>
           {showForm ? <X size={14} /> : <Plus size={14} />}
-          {showForm ? nav("Cancel", "إلغاء") : nav("Log Calibration", "تسجيل معايرة")}
+          {showForm ? "إلغاء" : "تسجيل معايرة"}
         </Button>
       ) : undefined}
     >
       {/* KPIs */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
         {[
-          { label: nav("Valid", "صحيح"), value: validCount, icon: "✅", color: "#059669", bg: "#d1fae5" },
-          { label: nav("Due Soon", "قيد الانتظار"), value: dueCount, icon: "⏳", color: "#d97706", bg: "#fef3c7" },
-          { label: nav("Expired", "منتهي الصلاحية"), value: expiredCount, icon: "❌", color: "#dc2626", bg: "#fee2e2" },
+          { label: "صحيح", value: validCount, icon: "✅", color: "#059669", bg: "#d1fae5" },
+          { label: "قيد الانتظار", value: dueCount, icon: "⏳", color: "#d97706", bg: "#fef3c7" },
+          { label: "منتهي الصلاحية", value: expiredCount, icon: "❌", color: "#dc2626", bg: "#fee2e2" },
         ].map(k => (
           <Card key={k.label} className="p-4 flex items-center gap-3">
             <div style={{ width: 40, height: 40, borderRadius: 10, background: k.bg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.2rem", flexShrink: 0 }}>{k.icon}</div>
@@ -145,38 +145,38 @@ export default function EquipmentCalibration() {
       {/* Add form */}
       {canAdd && showForm && (
         <Card className="p-5 mb-5 border-2 border-(--accent)">
-          <h3 style={{ margin: "0 0 1rem", fontSize: ".95rem", fontWeight: 700 }}>{nav("New Calibration Record", "سجل معايرة جديد")}</h3>
+          <h3 style={{ margin: "0 0 1rem", fontSize: ".95rem", fontWeight: 700 }}>{"سجل معايرة جديد"}</h3>
           {error && <div className="auth-alert auth-alert--error mb-3">{error}</div>}
           {success && <div className="auth-alert mb-3">{success}</div>}
           <form className="module-form" onSubmit={e => void submit(e)}>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "1rem" }}>
-              <label>{nav("Machine", "الآلة")} *
+              <label>{"الآلة"} *
                 <select className="input" value={form.machineId} onChange={e => setForm(p => ({ ...p, machineId: e.target.value }))} required>
-                  <option value="">{nav("Select machine...", "اختر الآلة...")}</option>
+                  <option value="">{"اختر الآلة..."}</option>
                   {machines.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
                 </select>
               </label>
-              <label>{nav("Calibration Result", "نتيجة المعايرة")}
+              <label>{"نتيجة المعايرة"}
                 <select className="input" value={form.operationalStatus} onChange={e => setForm(p => ({ ...p, operationalStatus: e.target.value }))}>
                   {OP_STATUSES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
                 </select>
               </label>
-              <label>{nav("Calibration Score (%)", "نتيجة المعايرة (%)")}
+              <label>{"نتيجة المعايرة (%)"}
                 <input type="number" min={0} max={100} className="input" value={form.efficiencyRating} onChange={e => setForm(p => ({ ...p, efficiencyRating: e.target.value }))} />
               </label>
-              <label>{nav("Hours Spent", "الساعات المستغرقة")} *
+              <label>{"الساعات المستغرقة"} *
                 <input type="number" min={0} step="0.5" className="input" value={form.maintenanceHours} onChange={e => setForm(p => ({ ...p, maintenanceHours: e.target.value }))} required />
               </label>
-              <label>{nav("Downtime (%)", "نسبة التوقف (%)")} *
+              <label>{"نسبة التوقف (%)"} *
                 <input type="number" min={0} max={100} className="input" value={form.downtimePercentage} onChange={e => setForm(p => ({ ...p, downtimePercentage: e.target.value }))} required />
               </label>
             </div>
-            <label>{nav("Notes", "ملاحظات")}
-              <textarea rows={2} className="input" value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} placeholder={nav("Calibration notes...", "ملاحظات المعايرة...")} />
+            <label>{"ملاحظات"}
+              <textarea rows={2} className="input" value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} placeholder={"ملاحظات المعايرة..."} />
             </label>
             <div style={{ display: "flex", gap: ".625rem" }}>
-              <Button type="submit" size="sm" disabled={saving}>{saving ? nav("Saving...", "جارٍ الحفظ...") : nav("Save", "حفظ")}</Button>
-              <Button type="button" size="sm" variant="outline" onClick={() => { setShowForm(false); setError(""); }}>{nav("Cancel", "إلغاء")}</Button>
+              <Button type="submit" size="sm" disabled={saving}>{saving ? "جارٍ الحفظ..." : "حفظ"}</Button>
+              <Button type="button" size="sm" variant="outline" onClick={() => { setShowForm(false); setError(""); }}>{"إلغاء"}</Button>
             </div>
           </form>
         </Card>
@@ -190,19 +190,19 @@ export default function EquipmentCalibration() {
           ) : records.length === 0 ? (
             <div className="p-10 text-center" style={{ color: "var(--text-secondary)" }}>
               <CheckCircle size={32} style={{ margin: "0 auto 12px", opacity: .3, display: "block" }} />
-              <p style={{ fontWeight: 600 }}>{nav("No calibration records yet", "لا توجد سجلات معايرة بعد")}</p>
-              {canAdd && <p style={{ fontSize: ".85rem", marginTop: ".25rem" }}>{nav("Click 'Log Calibration' to add a record", "انقر على 'تسجيل معايرة' لإضافة سجل")}</p>}
+              <p style={{ fontWeight: 600 }}>{"لا توجد سجلات معايرة بعد"}</p>
+              {canAdd && <p style={{ fontSize: ".85rem", marginTop: ".25rem" }}>{"انقر على 'تسجيل معايرة' لإضافة سجل"}</p>}
             </div>
           ) : (
             <table className="data-table w-full">
               <thead>
                 <tr>
-                  <th>{nav("Machine", "الآلة")}</th>
-                  <th>{nav("Calibrated On", "تاريخ المعايرة")}</th>
-                  <th>{nav("Next Due", "الموعد التالي")}</th>
-                  <th>{nav("Score", "النتيجة")}</th>
-                  <th>{nav("Status", "الحالة")}</th>
-                  <th>{nav("By", "بواسطة")}</th>
+                  <th>{"الآلة"}</th>
+                  <th>{"تاريخ المعايرة"}</th>
+                  <th>{"الموعد التالي"}</th>
+                  <th>{"النتيجة"}</th>
+                  <th>{"الحالة"}</th>
+                  <th>{"بواسطة"}</th>
                 </tr>
               </thead>
               <tbody>

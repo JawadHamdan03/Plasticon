@@ -106,7 +106,7 @@ export function InvoicesScreen() {
         try {
           await api.delete(`/invoices/${inv.id}`);
           setInvoices((p) => p.filter((x) => x.id !== inv.id));
-        } catch (e: any) { Alert.alert('Error', e.message ?? 'Failed'); }
+        } catch (e: any) { Alert.alert('خطأ', e.message ?? 'فشلت العملية'); }
       }},
     ]);
   };
@@ -115,7 +115,7 @@ export function InvoicesScreen() {
     try {
       const up = await api.patch<Invoice>(`/invoices/${inv.id}/confirm`, {});
       setInvoices((p) => p.map((x) => x.id === inv.id ? up : x));
-    } catch (e: any) { Alert.alert(isAr ? 'خطأ' : 'Error', e.message ?? 'Failed'); }
+    } catch (e: any) { Alert.alert('خطأ', e.message ?? 'فشلت العملية'); }
   };
 
   const openCreate = () => {
@@ -152,7 +152,7 @@ export function InvoicesScreen() {
       const cr = await api.post<Invoice>('/invoices', body);
       setInvoices((p) => [cr, ...p]);
       setCreateModal(false);
-    } catch (e: any) { Alert.alert(isAr ? 'خطأ' : 'Error', e.message ?? 'Failed'); }
+    } catch (e: any) { Alert.alert('خطأ', e.message ?? 'فشلت العملية'); }
     finally { setSaving(false); }
   };
 
@@ -188,7 +188,7 @@ export function InvoicesScreen() {
       const up = await api.put<Invoice>(`/invoices/${editing.id}`, body);
       setInvoices((p) => p.map((x) => x.id === editing.id ? up : x));
       setEditModal(false);
-    } catch (e: any) { Alert.alert(isAr ? 'خطأ' : 'Error', e.message ?? 'Failed'); }
+    } catch (e: any) { Alert.alert('خطأ', e.message ?? 'فشلت العملية'); }
     finally { setEditSaving(false); }
   };
 
@@ -200,7 +200,7 @@ export function InvoicesScreen() {
       const up = await api.patch<Invoice>(`/invoices/${payTarget.id}/payment`, { paymentStatus: payStatus });
       setInvoices((p) => p.map((x) => x.id === payTarget.id ? up : x));
       setPayModal(false);
-    } catch (e: any) { Alert.alert(isAr ? 'خطأ' : 'Error', e.message ?? 'Failed'); }
+    } catch (e: any) { Alert.alert('خطأ', e.message ?? 'فشلت العملية'); }
     finally { setPayLoading(false); }
   };
 

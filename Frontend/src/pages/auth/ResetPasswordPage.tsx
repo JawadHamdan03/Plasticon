@@ -1,4 +1,4 @@
-import { useMemo, useState, type FormEvent } from "react";
+﻿import { useMemo, useState, type FormEvent } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   Lock,
@@ -97,7 +97,7 @@ export function ResetPasswordPage({ locale }: ResetPasswordPageProps) {
       setTimeout(() => navigate(isSetup ? "/login?welcome=1" : "/login"), 1500);
     } catch (error) {
       setErrorMessage(
-        error instanceof Error ? error.message : "Reset failed",
+        error instanceof Error ? error.message : "فشل إعادة التعيين",
       );
     } finally {
       setIsSubmitting(false);
@@ -105,7 +105,7 @@ export function ResetPasswordPage({ locale }: ResetPasswordPageProps) {
   };
 
   return (
-    <section className="auth-card" dir={isAr ? "rtl" : "ltr"}>
+    <section className="auth-card" dir="rtl">
       {/* Icon + heading */}
       <div className="auth-card__heading">
         <div
@@ -158,10 +158,10 @@ export function ResetPasswordPage({ locale }: ResetPasswordPageProps) {
           </div>
           <div>
             <p style={{ margin: "0 0 .3rem", fontWeight: 700, fontSize: "1rem" }}>
-              {isAr ? "تم تغيير كلمة المرور!" : "Password changed!"}
+              {"تم تغيير كلمة المرور!"}
             </p>
             <p style={{ margin: 0, color: "var(--text-secondary)", fontSize: ".875rem" }}>
-              {isAr ? "جارٍ تحويلك لصفحة الدخول…" : "Redirecting to sign in…"}
+              {"جارٍ تحويلك لصفحة الدخول…"}
             </p>
           </div>
         </div>
@@ -212,7 +212,7 @@ export function ResetPasswordPage({ locale }: ResetPasswordPageProps) {
                   ))}
                 </div>
                 <p style={{ margin: 0, fontSize: ".75rem", color: strengthColors[strength], fontWeight: 600 }}>
-                  {isAr ? strengthLabels[strength].ar : strengthLabels[strength].en}
+                  {strengthLabels[strength].ar}
                 </p>
               </div>
             )}
@@ -247,7 +247,7 @@ export function ResetPasswordPage({ locale }: ResetPasswordPageProps) {
             {confirmPassword.length > 0 && passwordsMatch && (
               <span style={{ display: "flex", alignItems: "center", gap: ".3rem", fontSize: ".75rem", color: "#16a34a", marginTop: ".3rem", fontWeight: 600 }}>
                 <CheckCircle size={13} />
-                {isAr ? "كلمتا المرور متطابقتان" : "Passwords match"}
+                {"كلمتا المرور متطابقتان"}
               </span>
             )}
             {confirmPassword.length > 0 && !passwordsMatch && (

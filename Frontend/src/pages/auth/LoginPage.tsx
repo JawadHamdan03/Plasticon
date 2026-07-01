@@ -32,7 +32,7 @@ export function LoginPage() {
       else localStorage.removeItem("plasticon_remember_me");
       navigate(isWelcome ? "/profile" : "/dashboard");
     } catch (err) {
-      setServerError(err instanceof Error ? err.message : "Invalid email or password");
+      setServerError(err instanceof Error ? err.message : "البريد الإلكتروني أو كلمة المرور غير صحيحة");
     }
   };
 
@@ -68,15 +68,15 @@ export function LoginPage() {
           {/* Heading */}
           <div className="auth-card__heading">
             <h1 style={{ margin: "0 0 .4rem", fontSize: "1.8rem", fontWeight: 800 }}>
-              {isWelcome ? "Account Ready!" : "Welcome back"}
+              {isWelcome ? "الحساب جاهز!" : "مرحباً بعودتك"}
             </h1>
             <p style={{ margin: 0, color: "var(--text-secondary)" }}>
-              {isWelcome ? "Sign in with your new password to complete your profile." : "Sign in to your account to continue"}
+              {isWelcome ? "سجّل الدخول بكلمة المرور الجديدة لإكمال ملفك الشخصي." : "سجّل الدخول إلى حسابك للمتابعة"}
             </p>
           </div>
           {isWelcome && (
             <div style={{ padding: ".7rem 1rem", borderRadius: 8, background: "rgba(34,197,94,.08)", border: "1px solid rgba(34,197,94,.2)", color: "#16a34a", fontWeight: 600, fontSize: ".84rem", display: "flex", alignItems: "center", gap: ".5rem" }}>
-              ✓ Password set successfully — sign in to finish your setup.
+              ✓ تم تعيين كلمة المرور بنجاح — سجّل الدخول لإكمال الإعداد.
             </div>
           )}
 
@@ -84,14 +84,14 @@ export function LoginPage() {
           <form className="auth-form" onSubmit={handleSubmit(onSubmit)} noValidate>
             {/* Email */}
             <div className="form-group">
-              <label className="auth-label" htmlFor="login-email">Email address</label>
+              <label className="auth-label" htmlFor="login-email">البريد الإلكتروني</label>
               <div className="auth-input-wrapper">
                 <Mail size={16} className="auth-input-icon" />
                 <input
                   id="login-email"
                   type="email"
                   className={`auth-input${errors.email ? " auth-input--error" : ""}`}
-                  placeholder="you@company.com"
+                  placeholder="بريدك@الشركة.com"
                   autoComplete="email"
                   {...register("email")}
                 />
@@ -105,14 +105,14 @@ export function LoginPage() {
 
             {/* Password */}
             <div className="form-group">
-              <label className="auth-label" htmlFor="login-password">Password</label>
+              <label className="auth-label" htmlFor="login-password">كلمة المرور</label>
               <div className="auth-input-wrapper">
                 <Lock size={16} className="auth-input-icon" />
                 <input
                   id="login-password"
                   type={showPass ? "text" : "password"}
                   className={`auth-input${errors.password ? " auth-input--error" : ""}`}
-                  placeholder="Enter your password"
+                  placeholder="أدخل كلمة المرور"
                   autoComplete="current-password"
                   {...register("password")}
                 />
@@ -120,7 +120,7 @@ export function LoginPage() {
                   type="button"
                   className="auth-input-icon--right"
                   onClick={() => setShowPass((v) => !v)}
-                  aria-label={showPass ? "Hide password" : "Show password"}
+                  aria-label={showPass ? "إخفاء كلمة المرور" : "إظهار كلمة المرور"}
                 >
                   {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
@@ -136,13 +136,13 @@ export function LoginPage() {
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
               <label className="auth-checkbox-row">
                 <input type="checkbox" {...register("rememberMe")} />
-                Remember me
+                تذكرني
               </label>
               <Link
                 to="/forgot-password"
                 style={{ fontSize: ".82rem", color: "var(--orange-600)", fontWeight: 600, textDecoration: "none" }}
               >
-                Forgot password?
+                نسيت كلمة المرور؟
               </Link>
             </div>
 
@@ -158,20 +158,20 @@ export function LoginPage() {
               {isSubmitting ? (
                 <span style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: ".5rem" }}>
                   <span className="spinner" style={{ width: 16, height: 16, borderTopColor: "#fff" }} />
-                  Signing in...
+                  جاري تسجيل الدخول...
                 </span>
               ) : (
                 <span style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: ".5rem" }}>
-                  Sign In <ArrowRight size={16} />
+                  تسجيل الدخول <ArrowRight size={16} />
                 </span>
               )}
             </button>
           </form>
 
           <p className="auth-footer-link" style={{ color: "var(--text-secondary)" }}>
-            Don't have an account?{" "}
+            ليس لديك حساب؟{" "}
             <Link to="/request-access" style={{ color: "var(--orange-600)", fontWeight: 600, textDecoration: "none" }}>
-              Request access
+              طلب الوصول
             </Link>
           </p>
         </div>

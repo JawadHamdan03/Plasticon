@@ -8,7 +8,7 @@
 import { useAuth } from "../../context/AuthContext";
 import { useLocale } from "../../context/LocaleContext";
 import { appCopy } from "../../content/appCopy";
-import { API_BASE_URL, readApiError } from "../../lib/api";
+import { API_BASE_URL, pictureUrl as globalPictureUrl, readApiError } from "../../lib/api";
 import { confirmDialog } from "../../lib/dialog";
 import { ModulePageShell } from "../../components/ModulePageShell";
 import { Badge } from "../../components/ui/badge";
@@ -124,17 +124,7 @@ const toPublicFileUrl = (pathOrUrl?: string) => {
   if (!pathOrUrl || !pathOrUrl.trim()) return "";
   if (/^https?:\/\//i.test(pathOrUrl)) return pathOrUrl;
 
-  if (pathOrUrl.startsWith("/pictures/")) {
-    return `${API_BASE_URL}${pathOrUrl}`;
-  }
-
-  const normalized = pathOrUrl
-    .replace(/^prisma[\\/]+pictures[\\/]+/i, "")
-    .replace(/^pictures[\\/]+/i, "")
-    .replace(/^\/+/, "");
-
-  if (!normalized) return "";
-  return `${API_BASE_URL}/pictures/${normalized}`;
+  return globalPictureUrl(pathOrUrl);
 };
 
 const getRecordInvoiceUrl = (record: {
@@ -179,71 +169,71 @@ export function InventoryPage() {
 
   const purchaseText = useMemo(
     () => ({
-      title: isArabic ? "المشتريات" : "Purchases",
+      title: "المشتريات",
       subtitle: isArabic
         ? "إدارة المشتريات مع رفع فاتورة PDF/صورة والتعديل والحذف"
         : "Manage purchases with PDF/image invoice upload, edit, and delete",
-      supplier: isArabic ? "المورد" : "Supplier",
-      suppliers: isArabic ? "الموردون" : "Suppliers",
-      selectSupplier: isArabic ? "اختر المورد" : "Select supplier",
-      date: isArabic ? "التاريخ" : "Date",
-      total: isArabic ? "الإجمالي" : "Total amount",
-      items: isArabic ? "الأصناف" : "Items",
-      addItem: isArabic ? "إضافة صنف" : "Add item",
-      removeItem: isArabic ? "حذف الصنف" : "Remove item",
-      create: isArabic ? "إضافة شراء" : "Create purchase",
-      update: isArabic ? "حفظ التعديل" : "Save changes",
-      cancel: isArabic ? "إلغاء التعديل" : "Cancel edit",
-      invoice: isArabic ? "الفاتورة (PDF/صورة)" : "Invoice (PDF/Image)",
-      list: isArabic ? "سجل المشتريات" : "Purchases list",
-      noData: isArabic ? "لا توجد مشتريات" : "No purchases yet",
-      edit: isArabic ? "تعديل" : "Edit",
-      delete: isArabic ? "حذف" : "Delete",
+      supplier: "المورد",
+      suppliers: "الموردون",
+      selectSupplier: "اختر المورد",
+      date: "التاريخ",
+      total: "الإجمالي",
+      items: "الأصناف",
+      addItem: "إضافة صنف",
+      removeItem: "حذف الصنف",
+      create: "إضافة شراء",
+      update: "حفظ التعديل",
+      cancel: "إلغاء التعديل",
+      invoice: "الفاتورة (PDF/صورة)",
+      list: "سجل المشتريات",
+      noData: "لا توجد مشتريات",
+      edit: "تعديل",
+      delete: "حذف",
       confirmDelete: isArabic
         ? "هل أنت متأكد من حذف عملية الشراء؟"
         : "Are you sure you want to delete this purchase?",
-      invoiceLink: isArabic ? "عرض الفاتورة" : "View invoice",
-      material: isArabic ? "المادة" : "Material",
-      quantity: isArabic ? "الكمية" : "Quantity",
-      unitPrice: isArabic ? "سعر الوحدة" : "Unit price",
-      actions: isArabic ? "إجراءات" : "Actions",
-      fileSelected: isArabic ? "الملف المحدد" : "Selected file",
+      invoiceLink: "عرض الفاتورة",
+      material: "المادة",
+      quantity: "الكمية",
+      unitPrice: "سعر الوحدة",
+      actions: "إجراءات",
+      fileSelected: "الملف المحدد",
     }),
     [isArabic],
   );
 
   const saleText = useMemo(
     () => ({
-      title: isArabic ? "المبيعات" : "Sales",
+      title: "المبيعات",
       subtitle: isArabic
         ? "إدارة المبيعات مع رفع فاتورة PDF/صورة والتعديل والحذف"
         : "Manage sales with PDF/image invoice upload, edit, and delete",
-      customer: isArabic ? "العميل" : "Customer",
-      customers: isArabic ? "العملاء" : "Customers",
-      selectCustomer: isArabic ? "اختر العميل" : "Select customer",
-      date: isArabic ? "التاريخ" : "Date",
-      total: isArabic ? "الإجمالي" : "Total amount",
-      items: isArabic ? "الأصناف" : "Items",
-      addItem: isArabic ? "إضافة صنف" : "Add item",
-      removeItem: isArabic ? "حذف الصنف" : "Remove item",
-      create: isArabic ? "إضافة بيع" : "Create sale",
-      update: isArabic ? "حفظ التعديل" : "Save changes",
-      cancel: isArabic ? "إلغاء التعديل" : "Cancel edit",
-      invoice: isArabic ? "الفاتورة (PDF/صورة)" : "Invoice (PDF/Image)",
-      list: isArabic ? "سجل المبيعات" : "Sales list",
-      noData: isArabic ? "لا توجد مبيعات" : "No sales yet",
-      edit: isArabic ? "تعديل" : "Edit",
-      delete: isArabic ? "حذف" : "Delete",
+      customer: "العميل",
+      customers: "العملاء",
+      selectCustomer: "اختر العميل",
+      date: "التاريخ",
+      total: "الإجمالي",
+      items: "الأصناف",
+      addItem: "إضافة صنف",
+      removeItem: "حذف الصنف",
+      create: "إضافة بيع",
+      update: "حفظ التعديل",
+      cancel: "إلغاء التعديل",
+      invoice: "الفاتورة (PDF/صورة)",
+      list: "سجل المبيعات",
+      noData: "لا توجد مبيعات",
+      edit: "تعديل",
+      delete: "حذف",
       confirmDelete: isArabic
         ? "هل أنت متأكد من حذف عملية البيع؟"
         : "Are you sure you want to delete this sale?",
-      invoiceLink: isArabic ? "عرض الفاتورة" : "View invoice",
-      machineType: isArabic ? "نوع الماكينة" : "Machine type",
-      size: isArabic ? "المقاس" : "Size",
-      quantity: isArabic ? "الكمية" : "Quantity",
-      unitPrice: isArabic ? "سعر الوحدة" : "Unit price",
-      actions: isArabic ? "إجراءات" : "Actions",
-      fileSelected: isArabic ? "الملف المحدد" : "Selected file",
+      invoiceLink: "عرض الفاتورة",
+      machineType: "نوع الماكينة",
+      size: "المقاس",
+      quantity: "الكمية",
+      unitPrice: "سعر الوحدة",
+      actions: "إجراءات",
+      fileSelected: "الملف المحدد",
     }),
     [isArabic],
   );
@@ -603,7 +593,7 @@ export function InventoryPage() {
       });
       if (!response.ok) throw new Error(await readApiError(response));
       await Promise.all([loadPurchases(), loadMaterials(), loadTransactions()]);
-      setSuccessMessage(isArabic ? "تم حذف الشراء" : "Purchase deleted");
+      setSuccessMessage("تم حذف الشراء");
       if (editingPurchaseId === id) resetPurchaseForm();
     } catch (error) {
       setErrorMessage(
@@ -622,7 +612,7 @@ export function InventoryPage() {
       });
       if (!response.ok) throw new Error(await readApiError(response));
       await loadSales();
-      setSuccessMessage(isArabic ? "تم حذف البيع" : "Sale deleted");
+      setSuccessMessage("تم حذف البيع");
       if (editingSaleId === id) resetSaleForm();
     } catch (error) {
       setErrorMessage(
@@ -849,10 +839,10 @@ export function InventoryPage() {
           <TableBase className="admin-table">
             <thead>
               <tr>
-                <th className="px-3 py-2 text-left">Material</th>
-                <th className="px-3 py-2 text-left">Type</th>
-                <th className="px-3 py-2 text-left">Qty</th>
-                <th className="px-3 py-2 text-left">Reference</th>
+                <th className="px-3 py-2 text-left">المادة</th>
+                <th className="px-3 py-2 text-left">النوع</th>
+                <th className="px-3 py-2 text-left">الكمية</th>
+                <th className="px-3 py-2 text-left">المرجع</th>
               </tr>
             </thead>
             <tbody>

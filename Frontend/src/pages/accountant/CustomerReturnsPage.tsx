@@ -1,18 +1,18 @@
-import { useEffect, useRef, useState } from "react";
+﻿import { useEffect, useRef, useState } from "react";
 import { confirmDialog } from "../../lib/dialog";
 import { Plus, Trash2, RotateCcw, Search, AlertCircle, X, Save, Edit3, Paperclip, ExternalLink } from "lucide-react";
 import { ModulePageShell } from "../../components/ModulePageShell";
 import { Button } from "../../components/ui/button";
 import { Card } from "../../components/ui/card";
 import { useLocale } from "../../context/LocaleContext";
-import { API_BASE_URL } from "../../lib/api";
+import { API_BASE_URL, pictureUrl as globalPictureUrl } from "../../lib/api";
 import { useAuth } from "../../context/AuthContext";
 
 async function apiFetch(path: string, init?: RequestInit) {
   return fetch(`${API_BASE_URL}${path}`, { ...init, credentials: "include" });
 }
 function pdfUrl(filename: string) {
-  return `${API_BASE_URL}/pictures/${filename.replace(/^(?:prisma\/?)?pictures\//, "")}`;
+  return globalPictureUrl(filename);
 }
 
 const PRODUCT_TYPES = ["CAPS", "PREFORM", "OTHER"] as const;
@@ -127,12 +127,12 @@ export default function CustomerReturnsPage() {
       if (createFile) fd.append("invoicePdf", createFile);
 
       const res = await apiFetch("/customer-returns", { method: "POST", body: fd });
-      if (!res.ok) { const j = await res.json() as { message?: string }; throw new Error(j.message ?? "Failed"); }
+      if (!res.ok) { const j = await res.json() as { message?: string }; throw new Error(j.message ?? "فشل"); }
       setShowCreate(false);
       setForm(emptyForm());
       setCreateFile(null);
       void fetchReturns();
-    } catch (e) { setSaveErr(e instanceof Error ? e.message : "Failed"); }
+    } catch (e) { setSaveErr(e instanceof Error ? e.message : "فشل"); }
     finally { setSaving(false); }
   }
 
@@ -165,11 +165,11 @@ export default function CustomerReturnsPage() {
       if (editFile) fd.append("invoicePdf", editFile);
 
       const res = await apiFetch(`/customer-returns/${editTarget.id}`, { method: "PUT", body: fd });
-      if (!res.ok) { const j = await res.json() as { message?: string }; throw new Error(j.message ?? "Failed"); }
+      if (!res.ok) { const j = await res.json() as { message?: string }; throw new Error(j.message ?? "فشل"); }
       setEditTarget(null);
       setEditFile(null);
       void fetchReturns();
-    } catch (e) { setEditErr(e instanceof Error ? e.message : "Failed"); }
+    } catch (e) { setEditErr(e instanceof Error ? e.message : "فشل"); }
     finally { setEditSaving(false); }
   }
 
@@ -210,7 +210,7 @@ export default function CustomerReturnsPage() {
         {t("Product Type *", "نوع المنتج *")}
         <select style={inputCls} value={f.productType} onChange={e => setF({ productType: e.target.value as ProductType })}>
           {PRODUCT_TYPES.map(pt => (
-            <option key={pt} value={pt}>{locale === "ar" ? PT_META[pt].ar : PT_META[pt].en}</option>
+            <option key={pt} value={pt}>{PT_META[pt].ar}</option>
           ))}
         </select>
       </label>
@@ -281,7 +281,7 @@ export default function CustomerReturnsPage() {
         <div style={{ display: "flex", gap: ".3rem" }}>
           {(["ALL", ...PRODUCT_TYPES] as const).map(pt => {
             const active = filterType === pt;
-            const lbl = pt === "ALL" ? t("All", "الكل") : locale === "ar" ? PT_META[pt].ar : PT_META[pt].en;
+            const lbl = pt === "ALL" ? t("All", "الكل") : PT_META[pt].ar;
             return (
               <button key={pt} type="button" onClick={() => setFilterType(pt)}
                 style={{ padding: ".3rem .75rem", borderRadius: "var(--radius-lg)", border: active ? `1.5px solid ${pt === "ALL" ? "#6366f1" : PT_META[pt].color}` : "1px solid var(--border-default)", background: active ? (pt === "ALL" ? "rgba(99,102,241,.08)" : PT_META[pt].bg) : "var(--bg-surface)", color: active ? (pt === "ALL" ? "#6366f1" : PT_META[pt].color) : "var(--text-secondary)", fontWeight: active ? 700 : 500, fontSize: ".8rem", cursor: "pointer" }}>
@@ -321,7 +321,7 @@ export default function CustomerReturnsPage() {
                   t("PDF", "PDF"),
                   "",
                 ].map((h, i) => (
-                  <th key={i} style={{ padding: ".55rem .75rem", textAlign: locale === "ar" ? "right" : "left", fontWeight: 700, color: "var(--text-secondary)", fontSize: ".76rem", textTransform: "uppercase", whiteSpace: "nowrap" }}>{h}</th>
+                  <th key={i} style={{ padding: ".55rem .75rem", textAlign: "right", fontWeight: 700, color: "var(--text-secondary)", fontSize: ".76rem", textTransform: "uppercase", whiteSpace: "nowrap" }}>{h}</th>
                 ))}
               </tr>
             </thead>
@@ -333,7 +333,7 @@ export default function CustomerReturnsPage() {
                     <td style={{ padding: ".5rem .75rem", fontWeight: 600 }}>{r.customerName}</td>
                     <td style={{ padding: ".5rem .75rem" }}>
                       <span style={{ padding: ".2rem .55rem", borderRadius: 999, fontSize: ".72rem", fontWeight: 700, background: meta.bg, color: meta.color }}>
-                        {locale === "ar" ? meta.ar : meta.en}
+                        {meta.ar}
                       </span>
                     </td>
                     <td style={{ padding: ".5rem .75rem", fontWeight: 700, color: meta.color }}>{r.quantity.toLocaleString()}</td>

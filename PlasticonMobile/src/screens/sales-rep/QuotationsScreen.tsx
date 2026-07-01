@@ -84,7 +84,7 @@ export function QuotationsScreen() {
       resetForm();
       void load();
     } catch (e: any) {
-      Alert.alert(isAr ? 'خطأ' : 'Error', e?.message ?? 'Error');
+      Alert.alert('خطأ', e?.message ?? 'خطأ');
     } finally {
       setSaving(false);
     }
@@ -97,23 +97,12 @@ export function QuotationsScreen() {
         { text: isAr ? 'إلغاء' : 'Cancel', style: 'cancel' },
         { text: isAr ? 'تأكيد' : 'Confirm', onPress: async () => {
           try { await api.patch(`/sales-rep/quotations/${id}/status`, { status }); void load(); }
-          catch { Alert.alert('Error'); }
+          catch { Alert.alert('خطأ'); }
         }},
       ],
     );
   };
 
-  const deleteQ = (id: number) => {
-    Alert.alert(
-      isAr ? 'حذف' : 'Delete', isAr ? 'هل أنت متأكد؟' : 'Are you sure?',
-      [
-        { text: isAr ? 'إلغاء' : 'Cancel', style: 'cancel' },
-        { text: isAr ? 'حذف' : 'Delete', style: 'destructive', onPress: async () => {
-          try { await api.delete(`/sales-rep/quotations/${id}`); void load(); } catch { Alert.alert('Error'); }
-        }},
-      ],
-    );
-  };
 
   const renderItem = ({ item }: { item: Quotation }) => (
     <View style={[styles.card, { backgroundColor: colors.surface, borderLeftColor: STATUS_COLOR[item.status] }]}>
@@ -132,11 +121,6 @@ export function QuotationsScreen() {
             <Text style={[styles.actionText, { color: STATUS_COLOR[s] }]}>→ {s}</Text>
           </TouchableOpacity>
         ))}
-        {isSalesRep && (
-          <TouchableOpacity style={[styles.actionBtn, { borderColor: '#ef4444' }]} onPress={() => deleteQ(item.id)}>
-            <Ionicons name="trash-outline" size={13} color="#ef4444" />
-          </TouchableOpacity>
-        )}
       </View>
     </View>
   );

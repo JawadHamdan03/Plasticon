@@ -68,25 +68,25 @@ async function api<T>(
 }
 
 const MONTHS = [
-  "January",
-  "February",
-  "March",
-  "April",
-  "May",
-  "June",
-  "July",
-  "August",
-  "September",
-  "October",
-  "November",
-  "December",
+  "يناير",
+  "فبراير",
+  "مارس",
+  "أبريل",
+  "مايو",
+  "يونيو",
+  "يوليو",
+  "أغسطس",
+  "سبتمبر",
+  "أكتوبر",
+  "نوفمبر",
+  "ديسمبر",
 ];
 
 function statusBadge(status: Inventory["status"]) {
   const map: Record<Inventory["status"], { label: string; bg: string; color: string }> = {
-    DRAFT: { label: "Draft", bg: "rgba(107,114,128,.12)", color: "#6b7280" },
-    SUBMITTED: { label: "Submitted", bg: "rgba(249,115,22,.12)", color: "#ea580c" },
-    REVIEWED: { label: "Reviewed", bg: "rgba(34,197,94,.12)", color: "#16a34a" },
+    DRAFT: { label: "مسودة", bg: "rgba(107,114,128,.12)", color: "#6b7280" },
+    SUBMITTED: { label: "مقدم", bg: "rgba(249,115,22,.12)", color: "#ea580c" },
+    REVIEWED: { label: "مراجع", bg: "rgba(34,197,94,.12)", color: "#16a34a" },
   };
   const { label, bg, color } = map[status];
   return (
@@ -133,7 +133,7 @@ export function EngineerInventoryPage() {
       const data = await api<Inventory[]>("GET", "/engineer-inventory/mine");
       setInventories(data);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to load inventories");
+      setError(e instanceof Error ? e.message : "فشل تحميل التقارير");
     } finally {
       setLoading(false);
     }
@@ -157,7 +157,7 @@ export function EngineerInventoryPage() {
       setNewNotes("");
       await load();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Error creating report");
+      setError(e instanceof Error ? e.message : "خطأ في إنشاء التقرير");
     } finally {
       setCreating(false);
     }
@@ -168,11 +168,11 @@ export function EngineerInventoryPage() {
     setAddItemError("");
     const qty = Number(newPart && newQty);
     if (!newPart.trim()) {
-      setAddItemError("Part name is required");
+      setAddItemError("اسم القطعة مطلوب");
       return;
     }
     if (!newQty || Number(newQty) < 1) {
-      setAddItemError("Quantity must be at least 1");
+      setAddItemError("الكمية يجب أن تكون 1 على الأقل");
       return;
     }
 
@@ -190,7 +190,7 @@ export function EngineerInventoryPage() {
       setAddingItemToId(null);
       await load();
     } catch (e) {
-      setAddItemError(e instanceof Error ? e.message : "Error adding item");
+      setAddItemError(e instanceof Error ? e.message : "خطأ في إضافة القطعة");
     } finally {
       setAddingItem(false);
     }
@@ -198,13 +198,13 @@ export function EngineerInventoryPage() {
 
   /* Delete item */
   const handleDeleteItem = async (itemId: number) => {
-    if (!(await confirmDialog("Delete this part?", { danger: true }))) return;
+    if (!(await confirmDialog("حذف هذه القطعة؟", { danger: true }))) return;
     setDeleting(itemId);
     try {
       await api("DELETE", `/engineer-inventory/items/${itemId}`);
       await load();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Error deleting item");
+      setError(e instanceof Error ? e.message : "خطأ في حذف القطعة");
     } finally {
       setDeleting(null);
     }
@@ -214,17 +214,17 @@ export function EngineerInventoryPage() {
   const handleSubmit = async (inventoryId: number) => {
     const inv = inventories.find((i) => i.id === inventoryId);
     if (!inv || inv.items.length === 0) {
-      setError("Add at least one part before submitting");
+      setError("أضف قطعة واحدة على الأقل قبل التقديم");
       return;
     }
-    if (!(await confirmDialog(`Submit this inventory for ${MONTHS[inv.month - 1]} ${inv.year}? This cannot be undone.`)))
+    if (!(await confirmDialog(`تقديم مخزون ${MONTHS[inv.month - 1]} ${inv.year}؟ لا يمكن التراجع عن هذا.`)))
       return;
     setSubmitting(inventoryId);
     try {
       await api("PATCH", `/engineer-inventory/${inventoryId}/submit`, {});
       await load();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Error submitting");
+      setError(e instanceof Error ? e.message : "خطأ في التقديم");
     } finally {
       setSubmitting(null);
     }
@@ -239,8 +239,8 @@ export function EngineerInventoryPage() {
 
   return (
     <ModulePageShell
-      title="Parts Inventory"
-      subtitle="Submit monthly shortage reports — admin & accountant will be notified"
+      title="مخزون القطع"
+      subtitle="تقديم تقارير النقص الشهرية — سيتم إخطار الإدارة والمحاسبة"
       actions={
         !isAdmin ? (
           <button
@@ -248,7 +248,7 @@ export function EngineerInventoryPage() {
             style={{ display: "flex", alignItems: "center", gap: ".4rem" }}
             onClick={() => setShowNewForm((v) => !v)}
           >
-            <Plus size={16} /> New Report
+            <Plus size={16} /> تقرير جديد
           </button>
         ) : undefined
       }
@@ -267,11 +267,11 @@ export function EngineerInventoryPage() {
       {!loading && inventories.length > 0 && (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))", gap: "1rem", marginBottom: "1.5rem" }}>
           {[
-            { label: "Total Reports", value: inventories.length, gradient: "bg-linear-to-br from-blue-500 to-blue-700" },
-            { label: "Total Parts", value: totalParts, gradient: "bg-linear-to-br from-purple-500 to-purple-700" },
-            { label: "Drafts", value: drafts, gradient: "bg-linear-to-br from-gray-400 to-gray-600" },
-            { label: "Submitted", value: submitted, gradient: "bg-linear-to-br from-orange-500 to-orange-700" },
-            { label: "Reviewed", value: reviewed, gradient: "bg-linear-to-br from-green-500 to-emerald-700" },
+            { label: "إجمالي التقارير", value: inventories.length, gradient: "bg-linear-to-br from-blue-500 to-blue-700" },
+            { label: "إجمالي القطع", value: totalParts, gradient: "bg-linear-to-br from-purple-500 to-purple-700" },
+            { label: "مسودات", value: drafts, gradient: "bg-linear-to-br from-gray-400 to-gray-600" },
+            { label: "مقدم", value: submitted, gradient: "bg-linear-to-br from-orange-500 to-orange-700" },
+            { label: "مراجع", value: reviewed, gradient: "bg-linear-to-br from-green-500 to-emerald-700" },
           ].map((kpi) => (
             <Card key={kpi.label} className={`${kpi.gradient} p-4 text-white`}>
               <p style={{ margin: "0 0 .4rem", fontSize: ".78rem", fontWeight: 600, opacity: .85 }}>{kpi.label}</p>
@@ -285,7 +285,7 @@ export function EngineerInventoryPage() {
       {!isAdmin && showNewForm && (
         <Card className="p-5 mb-5">
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.25rem" }}>
-            <h2 style={{ margin: 0, fontSize: "1rem", fontWeight: 700 }}>New Inventory Report</h2>
+            <h2 style={{ margin: 0, fontSize: "1rem", fontWeight: 700 }}>تقرير مخزون جديد</h2>
             <button type="button" className="auth-button auth-button--ghost" style={{ padding: ".3rem .5rem" }} onClick={() => setShowNewForm(false)}>
               <X size={16} />
             </button>
@@ -293,7 +293,7 @@ export function EngineerInventoryPage() {
           <form onSubmit={handleCreate} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))", gap: "1rem" }}>
               <label style={{ display: "flex", flexDirection: "column", gap: ".3rem", fontSize: ".85rem", fontWeight: 600 }}>
-                Month *
+                الشهر *
                 <select
                   style={{ padding: ".45rem .65rem", borderRadius: "var(--radius-md)", border: "1px solid var(--border-default)", background: "var(--bg-input)", color: "var(--text-primary)", fontSize: ".875rem" }}
                   value={newMonth}
@@ -304,7 +304,7 @@ export function EngineerInventoryPage() {
                 </select>
               </label>
               <label style={{ display: "flex", flexDirection: "column", gap: ".3rem", fontSize: ".85rem", fontWeight: 600 }}>
-                Year *
+                السنة *
                 <select
                   style={{ padding: ".45rem .65rem", borderRadius: "var(--radius-md)", border: "1px solid var(--border-default)", background: "var(--bg-input)", color: "var(--text-primary)", fontSize: ".875rem" }}
                   value={newYear}
@@ -316,18 +316,18 @@ export function EngineerInventoryPage() {
               </label>
             </div>
             <label style={{ display: "flex", flexDirection: "column", gap: ".3rem", fontSize: ".85rem", fontWeight: 600 }}>
-              Notes (optional)
+              ملاحظات (اختياري)
               <textarea
                 rows={2}
-                placeholder="Any additional notes about this inventory period…"
+                placeholder="أي ملاحظات إضافية حول هذه الفترة..."
                 value={newNotes}
                 onChange={(e) => setNewNotes(e.target.value)}
                 style={{ padding: ".45rem .65rem", borderRadius: "var(--radius-md)", border: "1px solid var(--border-default)", background: "var(--bg-input)", color: "var(--text-primary)", fontSize: ".875rem", resize: "vertical" }}
               />
             </label>
             <div style={{ display: "flex", gap: ".75rem" }}>
-              <button type="submit" className="auth-button" disabled={creating}>{creating ? "Creating…" : "Create Report"}</button>
-              <button type="button" className="auth-button auth-button--ghost" onClick={() => setShowNewForm(false)}>Cancel</button>
+              <button type="submit" className="auth-button" disabled={creating}>{creating ? "جارٍ الإنشاء..." : "إنشاء التقرير"}</button>
+              <button type="button" className="auth-button auth-button--ghost" onClick={() => setShowNewForm(false)}>إلغاء</button>
             </div>
           </form>
         </Card>
@@ -337,16 +337,16 @@ export function EngineerInventoryPage() {
       {loading ? (
         <Card className="p-8" style={{ textAlign: "center" }}>
           <div style={{ margin: "0 auto 1rem", width: 36, height: 36, borderRadius: "50%", border: "3px solid var(--border-default)", borderTopColor: "var(--orange-500)", animation: "spin 1s linear infinite" }} />
-          <p style={{ color: "var(--text-secondary)" }}>Loading your inventory reports…</p>
+          <p style={{ color: "var(--text-secondary)" }}>جارٍ تحميل التقارير...</p>
         </Card>
       ) : inventories.length === 0 ? (
         <Card className="p-10" style={{ textAlign: "center" }}>
           <Package size={40} style={{ color: "var(--text-muted, #9ca3af)", margin: "0 auto 1rem" }} />
-          <h3 style={{ margin: "0 0 .5rem", fontWeight: 700 }}>No inventory reports yet</h3>
-          <p style={{ color: "var(--text-secondary)", marginBottom: "1.25rem" }}>Create your first monthly parts shortage report.</p>
+          <h3 style={{ margin: "0 0 .5rem", fontWeight: 700 }}>لا توجد تقارير مخزون بعد</h3>
+          <p style={{ color: "var(--text-secondary)", marginBottom: "1.25rem" }}>أنشئ أول تقرير شهري لنقص القطع.</p>
           {!isAdmin && (
             <button className="auth-button" style={{ display: "inline-flex", alignItems: "center", gap: ".4rem" }} onClick={() => setShowNewForm(true)}>
-              <Plus size={15} /> Create Report
+              <Plus size={15} /> إنشاء التقرير
             </button>
           )}
         </Card>
@@ -372,7 +372,7 @@ export function EngineerInventoryPage() {
                         {MONTHS[inv.month - 1]} {inv.year}
                       </p>
                       <p style={{ margin: 0, fontSize: ".75rem", color: "var(--text-secondary)" }}>
-                        {inv.items.length} parts listed{inv.notes ? ` · ${inv.notes}` : ""}
+                        {inv.items.length} قطعة مدرجة{inv.notes ? ` · ${inv.notes}` : ""}
                       </p>
                     </div>
                     {statusBadge(inv.status)}
@@ -386,7 +386,7 @@ export function EngineerInventoryPage() {
                         disabled={submitting === inv.id}
                       >
                         <Send size={13} />
-                        {submitting === inv.id ? "Submitting…" : "Submit"}
+                        {submitting === inv.id ? "جارٍ التقديم..." : "تقديم"}
                       </button>
                     )}
                     {isExpanded ? <ChevronUp size={18} style={{ color: "var(--text-secondary)" }} /> : <ChevronDown size={18} style={{ color: "var(--text-secondary)" }} />}
@@ -399,7 +399,7 @@ export function EngineerInventoryPage() {
                     {inv.submittedAt && (
                       <div style={{ display: "flex", alignItems: "center", gap: ".5rem", marginBottom: "1rem", fontSize: ".8rem", color: "var(--text-secondary)" }}>
                         <CheckCircle size={14} style={{ color: "#16a34a" }} />
-                        Submitted on {new Date(inv.submittedAt).toLocaleDateString()}
+                        تم التقديم بتاريخ {new Date(inv.submittedAt).toLocaleDateString()}
                       </div>
                     )}
 
@@ -410,12 +410,12 @@ export function EngineerInventoryPage() {
                           <thead>
                             <tr>
                               <th>#</th>
-                              <th>Part Name</th>
-                              <th>Qty Needed</th>
-                              <th>Photo</th>
-                              <th>Unit Price</th>
-                              <th>Priced By</th>
-                              {canEdit && <th>Action</th>}
+                              <th>اسم القطعة</th>
+                              <th>الكمية المطلوبة</th>
+                              <th>صورة</th>
+                              <th>سعر الوحدة</th>
+                              <th>بواسطة</th>
+                              {canEdit && <th>إجراء</th>}
                             </tr>
                           </thead>
                           <tbody>
@@ -430,7 +430,7 @@ export function EngineerInventoryPage() {
                                 </td>
                                 <td>
                                   {item.imagePath ? (
-                                    <a href={`${API_BASE_URL.replace("/api", "")}/${item.imagePath}`} target="_blank" rel="noopener noreferrer" className="auth-button auth-button--ghost" style={{ padding: ".3rem .5rem" }} title="View photo">
+                                    <a href={`${API_BASE_URL.replace("/api", "")}/${item.imagePath}`} target="_blank" rel="noopener noreferrer" className="auth-button auth-button--ghost" style={{ padding: ".3rem .5rem" }} title="عرض الصورة">
                                       <Image size={15} />
                                     </a>
                                   ) : <span style={{ color: "var(--text-muted)" }}>—</span>}
@@ -439,7 +439,7 @@ export function EngineerInventoryPage() {
                                   {item.unitPrice !== null ? (
                                     <span style={{ fontWeight: 700, color: "#16a34a" }}>${item.unitPrice.toFixed(2)}</span>
                                   ) : (
-                                    <span style={{ padding: ".2rem .6rem", borderRadius: 999, fontSize: ".75rem", fontWeight: 600, background: "rgba(107,114,128,.1)", color: "#6b7280" }}>Pending</span>
+                                    <span style={{ padding: ".2rem .6rem", borderRadius: 999, fontSize: ".75rem", fontWeight: 600, background: "rgba(107,114,128,.1)", color: "#6b7280" }}>معلق</span>
                                   )}
                                 </td>
                                 <td style={{ fontSize: ".78rem", color: "var(--text-secondary)" }}>{item.pricedBy?.fullName ?? "—"}</td>
@@ -464,7 +464,7 @@ export function EngineerInventoryPage() {
                     ) : (
                       <div style={{ padding: "1.5rem", textAlign: "center", marginBottom: "1rem", borderRadius: "var(--radius-lg)", background: "var(--bg-subtle)", border: "1px dashed var(--border-default)" }}>
                         <Package size={24} style={{ color: "var(--text-muted)", margin: "0 auto .5rem" }} />
-                        <p style={{ margin: 0, color: "var(--text-secondary)", fontSize: ".875rem" }}>No parts added yet. Add parts below.</p>
+                        <p style={{ margin: 0, color: "var(--text-secondary)", fontSize: ".875rem" }}>لا توجد قطع مضافة بعد. أضف قطعاً أدناه.</p>
                       </div>
                     )}
 
@@ -473,21 +473,21 @@ export function EngineerInventoryPage() {
                       <>
                         {addingItemToId === inv.id ? (
                           <div style={{ padding: "1rem", borderRadius: "var(--radius-lg)", border: "1.5px dashed #93c5fd", background: "#eff6ff" }}>
-                            <p style={{ margin: "0 0 .75rem", fontWeight: 700, fontSize: ".88rem", color: "#1d4ed8" }}>Add New Part</p>
+                            <p style={{ margin: "0 0 .75rem", fontWeight: 700, fontSize: ".88rem", color: "#1d4ed8" }}>إضافة قطعة جديدة</p>
                             {addItemError && <div className="auth-alert auth-alert--error" style={{ marginBottom: ".75rem", padding: ".5rem .75rem", fontSize: ".8rem" }}>{addItemError}</div>}
                             <div style={{ display: "grid", gridTemplateColumns: "1fr 120px", gap: ".75rem", marginBottom: ".75rem" }}>
                               <label style={{ display: "flex", flexDirection: "column", gap: ".3rem", fontSize: ".82rem", fontWeight: 600 }}>
-                                Part Name *
+                                اسم القطعة *
                                 <input
                                   type="text"
-                                  placeholder="e.g. Conveyor Belt"
+                                  placeholder="مثال: حزام ناقل"
                                   value={newPart}
                                   onChange={(e) => setNewPart(e.target.value)}
                                   style={{ padding: ".4rem .6rem", borderRadius: "var(--radius-md)", border: `1px solid ${!newPart.trim() && addItemError ? "#ef4444" : "var(--border-default)"}`, background: "white", fontSize: ".875rem" }}
                                 />
                               </label>
                               <label style={{ display: "flex", flexDirection: "column", gap: ".3rem", fontSize: ".82rem", fontWeight: 600 }}>
-                                Qty *
+                                الكمية *
                                 <input
                                   type="number"
                                   min={1}
@@ -500,21 +500,21 @@ export function EngineerInventoryPage() {
                             </div>
                             <label style={{ display: "flex", alignItems: "center", gap: ".5rem", padding: ".45rem .65rem", border: "1.5px dashed var(--border-default)", borderRadius: "var(--radius-md)", cursor: "pointer", fontSize: ".82rem", color: "var(--text-secondary)", marginBottom: ".75rem" }}>
                               <Image size={15} />
-                              {newImage ? newImage.name : "Upload part photo (optional)"}
+                              {newImage ? newImage.name : "رفع صورة القطعة (اختياري)"}
                               <input type="file" accept="image/*" style={{ display: "none" }} onChange={(e) => setNewImage(e.target.files?.[0] ?? null)} />
                             </label>
                             <div style={{ display: "flex", gap: ".625rem" }}>
                               <button type="button" className="auth-button" style={{ display: "flex", alignItems: "center", gap: ".3rem", fontSize: ".82rem" }} onClick={() => void handleAddItem(inv.id)} disabled={addingItem}>
-                                <Plus size={14} /> {addingItem ? "Adding…" : "Add Part"}
+                                <Plus size={14} /> {addingItem ? "جارٍ الإضافة..." : "إضافة قطعة"}
                               </button>
                               <button type="button" className="auth-button auth-button--ghost" style={{ fontSize: ".82rem" }} onClick={() => { setAddingItemToId(null); setAddItemError(""); setNewPart(""); setNewQty(""); setNewImage(null); }}>
-                                Cancel
+                                إلغاء
                               </button>
                             </div>
                           </div>
                         ) : (
                           <button type="button" className="auth-button auth-button--ghost" style={{ display: "flex", alignItems: "center", gap: ".3rem", fontSize: ".82rem" }} onClick={() => { setAddingItemToId(inv.id); setAddItemError(""); }}>
-                            <Plus size={14} /> Add Part
+                            <Plus size={14} /> إضافة قطعة
                           </button>
                         )}
                       </>
@@ -523,7 +523,7 @@ export function EngineerInventoryPage() {
                     {inv.status === "REVIEWED" && (
                       <div style={{ marginTop: "1rem", padding: ".75rem", borderRadius: "var(--radius-md)", background: "#f0fdf4", border: "1px solid #bbf7d0", display: "flex", alignItems: "center", gap: ".625rem", fontSize: ".82rem", color: "#16a34a" }}>
                         <CheckCircle size={16} />
-                        This inventory has been reviewed by the admin/accountant.
+                        تمت مراجعة هذا المخزون من قبل الإدارة/المحاسبة.
                       </div>
                     )}
                   </div>

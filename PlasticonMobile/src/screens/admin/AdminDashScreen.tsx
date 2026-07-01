@@ -83,6 +83,7 @@ export function AdminDashScreen() {
   useEffect(() => { void load(); }, [load]);
 
   const shortcuts = [
+    { icon: 'bar-chart',     label: isAr ? 'التحليلات' : 'Analytics',  color: '#FF6B35',      screen: 'Analytics' },
     { icon: 'people',        label: isAr ? 'المستخدمون' : 'Users',    color: colors.primary, screen: 'Users' },
     { icon: 'hardware-chip', label: isAr ? 'الآلات' : 'Machines',     color: colors.info,    screen: 'Machines' },
     { icon: 'shield',        label: isAr ? 'سجلات التدقيق' : 'Audit', color: colors.warning, screen: 'AuditLogs' },

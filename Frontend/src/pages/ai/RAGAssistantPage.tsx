@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+﻿import { useCallback, useEffect, useRef, useState } from "react";
 import type { FormEvent, KeyboardEvent, ChangeEvent } from "react";
 import { Bot, Send, Upload, BarChart2, RefreshCw, X, FileText, ChevronDown, Trash2 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
@@ -175,7 +175,7 @@ export function RAGAssistantPage() {
       const msg = err instanceof Error ? err.message : "Unknown error";
       setMessages((prev) => [...prev, {
         id: uid(), from: "ai",
-        text: isAr ? `عذراً، حدث خطأ: ${msg}` : `Sorry, an error occurred: ${msg}`,
+        text: `عذراً، حدث خطأ: ${msg}`,
         ts: new Date().toISOString(),
       }]);
     } finally {
@@ -243,7 +243,7 @@ export function RAGAssistantPage() {
 
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
-    <div dir={isAr ? "rtl" : "ltr"} style={{ height: "calc(100vh - 64px)", display: "flex", flexDirection: "column", background: "var(--bg-default)" }}>
+    <div dir="rtl" style={{ height: "calc(100vh - 64px)", display: "flex", flexDirection: "column", background: "var(--bg-default)" }}>
 
       {/* ── Page header ── */}
       <div style={{ padding: "1rem 1.5rem .75rem", borderBottom: "1px solid var(--border-default)", background: "var(--bg-surface)", display: "flex", alignItems: "center", gap: "1rem", flexShrink: 0 }}>
@@ -253,15 +253,15 @@ export function RAGAssistantPage() {
           </div>
           <div>
             <h1 style={{ margin: 0, fontSize: "1.05rem", fontWeight: 700, color: "var(--text-primary)" }}>
-              {isAr ? "مساعد المصنع الذكي" : "AI Factory Assistant"}
+              {"مساعد المصنع الذكي"}
             </h1>
             <p style={{ margin: 0, fontSize: ".75rem", color: "var(--text-muted)" }}>
-              {isAr ? "مدعوم بـ GPT-4o + قاعدة المعرفة" : "Powered by GPT-4o + Knowledge Base"}
+              {"مدعوم بـ GPT-4o + قاعدة المعرفة"}
             </p>
           </div>
         </div>
         <span style={{
-          marginLeft: isAr ? 0 : "auto", marginRight: isAr ? "auto" : 0,
+          marginLeft: 0, marginRight: "auto",
           padding: ".2rem .7rem", borderRadius: 999,
           background: roleBadgeColor(role) + "22", color: roleBadgeColor(role),
           fontSize: ".73rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: ".04em",
@@ -274,9 +274,9 @@ export function RAGAssistantPage() {
       <div style={{ display: "flex", borderBottom: "1px solid var(--border-default)", background: "var(--bg-surface)", flexShrink: 0 }}>
         {(["chat", ...(["engineer","admin","supervisor"].includes(role) ? ["material"] : []), ...(canSummary ? ["summary"] : [])] as Tab[]).map((t) => {
           const labels: Record<Tab, [string, string]> = {
-            chat:     [isAr ? "المحادثة" : "Chat",            ""],
-            material: [isAr ? "تحليل المواد" : "Analyze Material", ""],
-            summary:  [isAr ? "ملخص الإنتاج" : "Production Summary", ""],
+            chat:     ["المحادثة",            ""],
+            material: ["تحليل المواد", ""],
+            summary:  ["ملخص الإنتاج", ""],
           };
           const icons: Record<Tab, React.ReactNode> = {
             chat:     <Bot size={15} />,
@@ -375,7 +375,7 @@ export function RAGAssistantPage() {
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
               disabled={thinking}
-              placeholder={isAr ? "اكتب سؤالك… (Enter للإرسال)" : "Ask anything… (Enter to send)"}
+              placeholder={"اكتب سؤالك… (Enter للإرسال)"}
               style={{
                 flex: 1, resize: "none", border: "1px solid var(--border-default)", borderRadius: 12,
                 padding: ".65rem 1rem", fontSize: ".9rem", background: "var(--bg-default)",
@@ -391,11 +391,11 @@ export function RAGAssistantPage() {
             </div>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
               <span style={{ fontSize: ".7rem", color: "var(--text-muted)" }}>
-                {isAr ? "Enter للإرسال · Shift+Enter لسطر جديد" : "Enter to send · Shift+Enter for new line"}
+                {"Enter للإرسال · Shift+Enter لسطر جديد"}
               </span>
               {messages.length > 1 && (
                 <button type="button" onClick={() => setMessages([messages[0]])} style={{ display: "flex", alignItems: "center", gap: ".3rem", fontSize: ".72rem", color: "var(--text-muted)", background: "none", border: "none", cursor: "pointer", padding: ".2rem .4rem", borderRadius: 5 }}>
-                  <Trash2 size={11} /> {isAr ? "مسح المحادثة" : "Clear chat"}
+                  <Trash2 size={11} /> {"مسح المحادثة"}
                 </button>
               )}
             </div>
@@ -408,7 +408,7 @@ export function RAGAssistantPage() {
         <div style={{ flex: 1, overflowY: "auto", padding: "1.5rem", display: "flex", flexDirection: "column", gap: "1.25rem" }}>
           <div style={{ maxWidth: 680 }}>
             <h2 style={{ margin: "0 0 .4rem", fontSize: "1rem", fontWeight: 700, color: "var(--text-primary)" }}>
-              {isAr ? "تحليل بيانات المواد الخام" : "Raw Material Datasheet Analysis"}
+              {"تحليل بيانات المواد الخام"}
             </h2>
             <p style={{ margin: "0 0 1rem", fontSize: ".85rem", color: "var(--text-muted)" }}>
               {isAr
@@ -431,7 +431,7 @@ export function RAGAssistantPage() {
                 }} />
               <Upload size={28} color={matFile ? "#6366f1" : "var(--text-muted)"} />
               <span style={{ fontSize: ".9rem", color: matFile ? "var(--text-primary)" : "var(--text-muted)", fontWeight: matFile ? 600 : 400 }}>
-                {matFile ? matFile.name : (isAr ? "انقر لاختيار ملف PDF" : "Click to choose a PDF file")}
+                {matFile ? matFile.name : ("انقر لاختيار ملف PDF")}
               </span>
               {matFile && (
                 <span style={{ fontSize: ".75rem", color: "var(--text-muted)" }}>
@@ -445,8 +445,8 @@ export function RAGAssistantPage() {
                 <button type="button" onClick={() => void analyzeMaterial()} disabled={matLoading}
                   style={{ flex: 1, padding: ".65rem", border: "none", borderRadius: 8, cursor: matLoading ? "default" : "pointer", background: "linear-gradient(135deg,#6366f1,#8b5cf6)", color: "#fff", fontWeight: 600, fontSize: ".88rem", display: "flex", alignItems: "center", justifyContent: "center", gap: ".4rem" }}>
                   {matLoading
-                    ? <><RefreshCw size={15} style={{ animation: "spin 1s linear infinite" }} /> {isAr ? "جارٍ التحليل…" : "Analyzing…"}</>
-                    : <><FileText size={15} /> {isAr ? "تحليل المادة" : "Analyze Material"}</>}
+                    ? <><RefreshCw size={15} style={{ animation: "spin 1s linear infinite" }} /> {"جارٍ التحليل…"}</>
+                    : <><FileText size={15} /> {"تحليل المادة"}</>}
                 </button>
                 <button type="button" onClick={() => { setMatFile(null); setMatResult(null); setMatError(""); }}
                   style={{ padding: ".65rem .9rem", border: "1px solid var(--border-default)", borderRadius: 8, background: "transparent", cursor: "pointer", color: "var(--text-secondary)" }}>
@@ -465,35 +465,35 @@ export function RAGAssistantPage() {
             {matResult && (
               <div style={{ marginTop: "1.25rem", display: "flex", flexDirection: "column", gap: ".75rem" }}>
                 <h3 style={{ margin: 0, fontSize: ".95rem", fontWeight: 700, color: "var(--text-primary)" }}>
-                  {matResult.materialName ?? (isAr ? "مادة غير محددة" : "Unknown Material")}
+                  {matResult.materialName ?? ("مادة غير محددة")}
                 </h3>
 
                 {[
-                  { label: isAr ? "المورد" : "Supplier", value: matResult.supplier },
-                  { label: isAr ? "الاستخدام الموصى به" : "Recommended Usage", value: matResult.recommendedUsage },
-                  { label: isAr ? "متطلبات التخزين" : "Storage Requirements", value: matResult.storageRequirements },
-                  { label: isAr ? "مدة الصلاحية" : "Shelf Life", value: matResult.shelfLife },
+                  { label: "المورد", value: matResult.supplier },
+                  { label: "الاستخدام الموصى به", value: matResult.recommendedUsage },
+                  { label: "متطلبات التخزين", value: matResult.storageRequirements },
+                  { label: "مدة الصلاحية", value: matResult.shelfLife },
                 ].map(({ label, value }) => value && (
                   <InfoRow key={label} label={label} value={value} />
                 ))}
 
                 {matResult.safetyNotes.length > 0 && (
                   <InfoList
-                    label={isAr ? "ملاحظات السلامة" : "Safety Notes"}
+                    label={"ملاحظات السلامة"}
                     items={matResult.safetyNotes}
                     color="#dc2626"
                   />
                 )}
                 {matResult.compatibilityWarnings.length > 0 && (
                   <InfoList
-                    label={isAr ? "تحذيرات التوافق" : "Compatibility Warnings"}
+                    label={"تحذيرات التوافق"}
                     items={matResult.compatibilityWarnings}
                     color="#d97706"
                   />
                 )}
                 {matResult.certifications.length > 0 && (
                   <InfoList
-                    label={isAr ? "الشهادات" : "Certifications"}
+                    label={"الشهادات"}
                     items={matResult.certifications}
                     color="#059669"
                   />
@@ -515,7 +515,7 @@ export function RAGAssistantPage() {
         <div style={{ flex: 1, overflowY: "auto", padding: "1.5rem", display: "flex", flexDirection: "column", gap: "1.25rem" }}>
           <div style={{ maxWidth: 720 }}>
             <h2 style={{ margin: "0 0 .4rem", fontSize: "1rem", fontWeight: 700, color: "var(--text-primary)" }}>
-              {isAr ? "ملخص الإنتاج" : "Production Summary"}
+              {"ملخص الإنتاج"}
             </h2>
             <p style={{ margin: "0 0 1rem", fontSize: ".85rem", color: "var(--text-muted)" }}>
               {isAr
@@ -527,7 +527,7 @@ export function RAGAssistantPage() {
             <div style={{ display: "flex", gap: ".75rem", flexWrap: "wrap", marginBottom: "1rem" }}>
               <div style={{ display: "flex", flexDirection: "column", gap: ".3rem" }}>
                 <label style={{ fontSize: ".78rem", fontWeight: 600, color: "var(--text-secondary)" }}>
-                  {isAr ? "التاريخ" : "Date"}
+                  {"التاريخ"}
                 </label>
                 <input type="date" value={sumDate} onChange={(e) => setSumDate(e.target.value)}
                   style={{ padding: ".55rem .8rem", border: "1px solid var(--border-default)", borderRadius: 8, background: "var(--bg-surface)", color: "var(--text-primary)", fontSize: ".88rem" }} />
@@ -535,15 +535,15 @@ export function RAGAssistantPage() {
 
               <div style={{ display: "flex", flexDirection: "column", gap: ".3rem" }}>
                 <label style={{ fontSize: ".78rem", fontWeight: 600, color: "var(--text-secondary)" }}>
-                  {isAr ? "الشفت (اختياري)" : "Shift (optional)"}
+                  {"الشفت (اختياري)"}
                 </label>
                 <div style={{ position: "relative" }}>
                   <select value={sumShift} onChange={(e) => setSumShift(e.target.value)}
                     style={{ padding: ".55rem 2rem .55rem .8rem", border: "1px solid var(--border-default)", borderRadius: 8, background: "var(--bg-surface)", color: "var(--text-primary)", fontSize: ".88rem", appearance: "none", cursor: "pointer" }}>
-                    <option value="">{isAr ? "كل الشفتات" : "All shifts"}</option>
-                    <option value="morning">{isAr ? "صباحي" : "Morning"}</option>
-                    <option value="evening">{isAr ? "مسائي" : "Evening"}</option>
-                    <option value="night">{isAr ? "ليلي" : "Night"}</option>
+                    <option value="">{"كل الشفتات"}</option>
+                    <option value="morning">{"صباحي"}</option>
+                    <option value="evening">{"مسائي"}</option>
+                    <option value="night">{"ليلي"}</option>
                   </select>
                   <ChevronDown size={14} style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", pointerEvents: "none", color: "var(--text-muted)" }} />
                 </div>
@@ -552,8 +552,8 @@ export function RAGAssistantPage() {
               <button type="button" onClick={() => void fetchSummary()} disabled={sumLoading}
                 style={{ alignSelf: "flex-end", padding: ".57rem 1.2rem", border: "none", borderRadius: 8, cursor: sumLoading ? "default" : "pointer", background: "linear-gradient(135deg,#6366f1,#8b5cf6)", color: "#fff", fontWeight: 600, fontSize: ".88rem", display: "flex", alignItems: "center", gap: ".4rem" }}>
                 {sumLoading
-                  ? <><RefreshCw size={14} style={{ animation: "spin 1s linear infinite" }} /> {isAr ? "جارٍ…" : "Loading…"}</>
-                  : <><BarChart2 size={14} /> {isAr ? "توليد التقرير" : "Generate Report"}</>}
+                  ? <><RefreshCw size={14} style={{ animation: "spin 1s linear infinite" }} /> {"جارٍ…"}</>
+                  : <><BarChart2 size={14} /> {"توليد التقرير"}</>}
               </button>
             </div>
 
@@ -567,7 +567,7 @@ export function RAGAssistantPage() {
               <div style={{ background: "var(--bg-surface)", border: "1px solid var(--border-default)", borderRadius: 12, padding: "1.25rem", display: "flex", flexDirection: "column", gap: ".5rem" }}>
                 {sumResult.fromCache && (
                   <span style={{ fontSize: ".72rem", color: "var(--text-muted)", alignSelf: "flex-end" }}>
-                    {isAr ? "من الذاكرة المؤقتة" : "From cache"}
+                    {"من الذاكرة المؤقتة"}
                   </span>
                 )}
                 <RenderText text={sumResult.summary} />
@@ -648,18 +648,18 @@ function QuickPrompts({ role, isAr, onSelect }: { role: string; isAr: boolean; o
   return (
     <div style={{ padding: ".75rem 1.5rem", borderBottom: "1px solid var(--border-default)", background: "var(--bg-subtle)", flexShrink: 0 }}>
       <p style={{ margin: "0 0 .5rem", fontSize: ".72rem", fontWeight: 600, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: ".05em" }}>
-        {isAr ? "اقتراحات سريعة" : "Quick prompts"}
+        {"اقتراحات سريعة"}
       </p>
       <div style={{ display: "flex", gap: ".45rem", flexWrap: "wrap" }}>
         {prompts.map((p, i) => (
           <button
             key={i} type="button"
-            onClick={() => onSelect(isAr ? p.ar : p.en)}
+            onClick={() => onSelect(p.ar)}
             style={{ padding: ".38rem .85rem", border: "1px solid var(--border-default)", borderRadius: 999, background: "var(--bg-surface)", color: "var(--text-secondary)", fontSize: ".8rem", cursor: "pointer", whiteSpace: "nowrap", transition: "all .14s" }}
             onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.borderColor = "#6366f1"; (e.currentTarget as HTMLButtonElement).style.color = "#6366f1"; (e.currentTarget as HTMLButtonElement).style.background = "#6366f108"; }}
             onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.borderColor = "var(--border-default)"; (e.currentTarget as HTMLButtonElement).style.color = "var(--text-secondary)"; (e.currentTarget as HTMLButtonElement).style.background = "var(--bg-surface)"; }}
           >
-            {isAr ? p.ar : p.en}
+            {p.ar}
           </button>
         ))}
       </div>

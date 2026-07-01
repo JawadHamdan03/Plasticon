@@ -63,7 +63,7 @@ export function TaxComplianceScreen() {
     try {
       const res = await api.get<TaxFiling[] | { data: TaxFiling[] }>('/tax-filings');
       setFilings(Array.isArray(res) ? res : ((res as any).data ?? []));
-    } catch (e: any) { setApiError(e?.message ?? 'Failed to load'); setFilings([]); }
+    } catch (e: any) { setApiError(e?.message ?? 'فشل التحميل'); setFilings([]); }
     finally { setLoading(false); setRefreshing(false); }
   }, []);
 
@@ -85,7 +85,7 @@ export function TaxComplianceScreen() {
           try {
             await api.delete(`/tax-filings/${f.id}`);
             setFilings((p) => p.filter((x) => x.id !== f.id));
-          } catch (e: any) { Alert.alert('Error', e.message ?? 'Failed'); }
+          } catch (e: any) { Alert.alert('خطأ', e.message ?? 'فشلت العملية'); }
         }},
       ],
     );
@@ -109,7 +109,7 @@ export function TaxComplianceScreen() {
         setFilings((p) => [cr, ...p]);
       }
       setModal(false);
-    } catch (e: any) { Alert.alert(isAr ? 'خطأ' : 'Error', e.message ?? 'Failed'); }
+    } catch (e: any) { Alert.alert('خطأ', e.message ?? 'فشلت العملية'); }
     finally { setSaving(false); }
   };
 

@@ -4,7 +4,6 @@ import { Plus, Pencil, Trash2, CheckCircle, Clock, AlertTriangle, Truck, X, Save
 import { ModulePageShell } from "../../components/ModulePageShell";
 import { Button } from "../../components/ui/button";
 import { Card } from "../../components/ui/card";
-import { useLocale } from "../../context/LocaleContext";
 import { API_BASE_URL } from "../../lib/api";
 import { useAuth } from "../../context/AuthContext";
 
@@ -33,10 +32,8 @@ const STATUS_META: Record<string, { label: string; labelAr: string; color: strin
 const emptyForm = { supplierName: "", amount: "", dueDate: "", paymentStatus: "PENDING", notes: "" };
 
 export default function SupplierPayables() {
-  const { locale } = useLocale();
   const { user } = useAuth();
   const isAdmin = user?.role === "ADMIN";
-  const nav = (en: string, ar: string) => locale === "ar" ? ar : en;
 
   const [payables, setPayables] = useState<SupplierPayable[]>([]);
   const [loading, setLoading] = useState(true);
@@ -91,7 +88,7 @@ export default function SupplierPayables() {
   };
 
   const handleDelete = async (id: number) => {
-    if (!(await confirmDialog(nav("Delete this payable?", "حذف هذه الدفعة؟"), { danger: true }))) return;
+    if (!(await confirmDialog("حذف هذه الدفعة؟", { danger: true }))) return;
     await fetch(`${API_BASE_URL}/supplier-payables/${id}`, { method: "DELETE", headers: authHeaders(), credentials: "include" });
     void fetchPayables();
   };
@@ -105,17 +102,17 @@ export default function SupplierPayables() {
 
   return (
     <ModulePageShell
-      title={nav("Supplier Payables", "مستحقات الموردين")}
-      subtitle={nav("Track and manage payments owed to suppliers", "تتبع وإدارة المدفوعات المستحقة للموردين")}
+      title={"مستحقات الموردين"}
+      subtitle={"تتبع وإدارة المدفوعات المستحقة للموردين"}
       icon={<Truck size={22} />}
     >
       {/* KPIs */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: ".75rem", marginBottom: "1.25rem" }}>
         {[
-          { label: nav("Total Payables", "إجمالي المستحقات"), value: fmtMoney(totalAmount),   gradient: "linear-gradient(135deg,#3b82f6,#1d4ed8)" },
-          { label: nav("Pending",        "معلق"),              value: fmtMoney(pendingAmount), gradient: "linear-gradient(135deg,#f59e0b,#d97706)" },
-          { label: nav("Paid Count",     "المدفوع"),           value: paidCount,               gradient: "linear-gradient(135deg,#10b981,#059669)" },
-          { label: nav("Overdue",        "متأخر"),             value: fmtMoney(overdueAmount), gradient: "linear-gradient(135deg,#ef4444,#dc2626)" },
+          { label: "إجمالي المستحقات", value: fmtMoney(totalAmount),   gradient: "linear-gradient(135deg,#3b82f6,#1d4ed8)" },
+          { label: "معلق",              value: fmtMoney(pendingAmount), gradient: "linear-gradient(135deg,#f59e0b,#d97706)" },
+          { label: "المدفوع",           value: paidCount,               gradient: "linear-gradient(135deg,#10b981,#059669)" },
+          { label: "متأخر",             value: fmtMoney(overdueAmount), gradient: "linear-gradient(135deg,#ef4444,#dc2626)" },
         ].map((k) => (
           <div key={k.label} style={{ borderRadius: 14, padding: "1rem 1.1rem", background: k.gradient, color: "#fff", boxShadow: "0 4px 12px rgba(0,0,0,.15)" }}>
             <p style={{ margin: 0, fontSize: ".72rem", fontWeight: 600, opacity: .85, textTransform: "uppercase", letterSpacing: ".06em" }}>{k.label}</p>
@@ -129,18 +126,18 @@ export default function SupplierPayables() {
         {!isAdmin && (
           <Button size="sm" onClick={openNew}>
             <Plus size={15} className="me-1" />
-            {nav("Add Payable", "إضافة دفعة")}
+            {"إضافة دفعة"}
           </Button>
         )}
         <select className="input text-sm h-8 min-w-[140px]" value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}>
-          <option value="">{nav("All Statuses", "جميع الحالات")}</option>
-          <option value="PENDING">{nav("Pending", "معلق")}</option>
-          <option value="PAID">{nav("Paid", "مدفوع")}</option>
-          <option value="OVERDUE">{nav("Overdue", "متأخر")}</option>
+          <option value="">{"جميع الحالات"}</option>
+          <option value="PENDING">{"معلق"}</option>
+          <option value="PAID">{"مدفوع"}</option>
+          <option value="OVERDUE">{"متأخر"}</option>
         </select>
         {filterStatus && (
           <button className="text-xs text-[var(--text-secondary)] underline" onClick={() => setFilterStatus("")}>
-            {nav("Clear", "مسح")}
+            {"مسح"}
           </button>
         )}
       </div>
@@ -151,42 +148,42 @@ export default function SupplierPayables() {
           <div className="flex items-center justify-between mb-5">
             <div>
               <h3 className="font-bold text-[var(--text-primary)] text-base">
-                {editingId ? nav("Edit Payable", "تعديل الدفعة") : nav("New Payable", "دفعة جديدة")}
+                {editingId ? "تعديل الدفعة" : "دفعة جديدة"}
               </h3>
-              <p className="text-xs text-[var(--text-secondary)] mt-0.5">{nav("Enter payment details", "أدخل بيانات الدفعة")}</p>
+              <p className="text-xs text-[var(--text-secondary)] mt-0.5">{"أدخل بيانات الدفعة"}</p>
             </div>
             <button className="text-[var(--text-secondary)] hover:text-[var(--text-primary)]" onClick={() => setShowForm(false)}><X size={18} /></button>
           </div>
 
-          <p className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wide mb-2">{nav("Payment Info", "بيانات الدفعة")}</p>
+          <p className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wide mb-2">{"بيانات الدفعة"}</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
             <div>
-              <label className="label">{nav("Supplier Name", "اسم المورد")}</label>
-              <input className="input" placeholder={nav("e.g. Plastisource Ltd.", "مثال: بلاستي سورس")}
+              <label className="label">{"اسم المورد"}</label>
+              <input className="input" placeholder={"مثال: بلاستي سورس"}
                 value={form.supplierName} onChange={(e) => setForm((p) => ({ ...p, supplierName: e.target.value }))} />
             </div>
             <div>
-              <label className="label">{nav("Amount ($) *", "المبلغ ($) *")}</label>
+              <label className="label">{"المبلغ ($) *"}</label>
               <input className="input" type="number" min="0" step="0.01" placeholder="0.00"
                 value={form.amount} onChange={(e) => setForm((p) => ({ ...p, amount: e.target.value }))} />
             </div>
             <div>
-              <label className="label">{nav("Due Date *", "تاريخ الاستحقاق *")}</label>
+              <label className="label">{"تاريخ الاستحقاق *"}</label>
               <input className="input" type="date"
                 value={form.dueDate} onChange={(e) => setForm((p) => ({ ...p, dueDate: e.target.value }))} />
             </div>
             <div>
-              <label className="label">{nav("Status", "الحالة")}</label>
+              <label className="label">{"الحالة"}</label>
               <select className="input" value={form.paymentStatus} onChange={(e) => setForm((p) => ({ ...p, paymentStatus: e.target.value }))}>
-                <option value="PENDING">{nav("Pending", "معلق")}</option>
-                <option value="PAID">{nav("Paid", "مدفوع")}</option>
-                <option value="OVERDUE">{nav("Overdue", "متأخر")}</option>
+                <option value="PENDING">{"معلق"}</option>
+                <option value="PAID">{"مدفوع"}</option>
+                <option value="OVERDUE">{"متأخر"}</option>
               </select>
             </div>
             <div className="sm:col-span-2">
-              <label className="label">{nav("Notes", "ملاحظات")}</label>
+              <label className="label">{"ملاحظات"}</label>
               <textarea className="input resize-none" rows={2}
-                placeholder={nav("Payment terms, reference number, etc.", "شروط الدفع، رقم المرجع...")}
+                placeholder={"شروط الدفع، رقم المرجع..."}
                 value={form.notes} onChange={(e) => setForm((p) => ({ ...p, notes: e.target.value }))} />
             </div>
           </div>
@@ -194,9 +191,9 @@ export default function SupplierPayables() {
           <div className="flex gap-2 pt-2 border-t border-[var(--border-default)]">
             <Button size="sm" onClick={handleSave} disabled={saving || !form.amount || !form.dueDate}>
               <Save size={14} className="me-1" />
-              {saving ? nav("Saving...", "جارٍ الحفظ...") : nav("Save Payable", "حفظ الدفعة")}
+              {saving ? "جارٍ الحفظ..." : "حفظ الدفعة"}
             </Button>
-            <Button size="sm" variant="outline" onClick={() => setShowForm(false)}>{nav("Cancel", "إلغاء")}</Button>
+            <Button size="sm" variant="outline" onClick={() => setShowForm(false)}>{"إلغاء"}</Button>
           </div>
         </Card>
       )}
@@ -207,8 +204,8 @@ export default function SupplierPayables() {
       ) : filtered.length === 0 ? (
         <Card className="p-12 text-center text-[var(--text-secondary)]">
           <Truck size={32} className="mx-auto mb-3 opacity-30" />
-          <p className="font-medium">{nav("No payables found", "لا توجد مستحقات")}</p>
-          <p className="text-sm mt-1">{nav("Add your first payable to get started", "أضف أول دفعة للبدء")}</p>
+          <p className="font-medium">{"لا توجد مستحقات"}</p>
+          <p className="text-sm mt-1">{"أضف أول دفعة للبدء"}</p>
         </Card>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -223,12 +220,12 @@ export default function SupplierPayables() {
                     <span style={{ fontSize: "1.3rem" }}>🏦</span>
                     <div className="min-w-0">
                       <p className="font-bold text-sm text-[var(--text-primary)] truncate">
-                        {p.supplier?.name ?? nav("Supplier", "مورد")} #{p.supplierId}
+                        {p.supplier?.name ?? "مورد"} #{p.supplierId}
                       </p>
                       <span style={{ background: meta.color + "20", color: meta.color, borderRadius: "20px", padding: "1px 8px", fontSize: ".68rem", fontWeight: 700 }}
                         className="inline-flex items-center gap-1">
                         <StatusIcon size={9} />
-                        {locale === "ar" ? meta.labelAr : meta.label}
+                        {meta.labelAr}
                       </span>
                     </div>
                   </div>
@@ -245,7 +242,7 @@ export default function SupplierPayables() {
                     <p className="text-xs text-[var(--text-secondary)] truncate">📧 {p.supplier.email}</p>
                   )}
                   <p className="text-sm text-[var(--text-secondary)]">
-                    📅 {nav("Due", "الاستحقاق")}: <span className={p.paymentStatus === "OVERDUE" ? "text-red-600 font-semibold" : ""}>{new Date(p.dueDate).toLocaleDateString()}</span>
+                    📅 {"الاستحقاق"}: <span className={p.paymentStatus === "OVERDUE" ? "text-red-600 font-semibold" : ""}>{new Date(p.dueDate).toLocaleDateString()}</span>
                   </p>
                   {p.notes && (
                     <p className="text-xs text-[var(--text-secondary)] bg-[var(--bg-surface-2,#f8fafc)] rounded px-2.5 py-1.5 italic">{p.notes}</p>

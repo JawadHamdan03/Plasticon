@@ -4,7 +4,6 @@ import { Plus, CheckCircle, Clock, Trash2, Receipt, Search, X, Save } from "luci
 import { ModulePageShell } from "../../components/ModulePageShell";
 import { Button } from "../../components/ui/button";
 import { Card } from "../../components/ui/card";
-import { useLocale } from "../../context/LocaleContext";
 import { API_BASE_URL } from "../../lib/api";
 import { useAuth } from "../../context/AuthContext";
 
@@ -42,10 +41,8 @@ const getCatMeta = (v: string) => EXPENSE_CATEGORIES.find((c) => c.value === v) 
 const emptyForm = { category: "RAW_MATERIALS", amount: "", description: "" };
 
 export default function ExpenseTracking() {
-  const { locale } = useLocale();
   const { user } = useAuth();
   const isAdmin = user?.role === "ADMIN";
-  const nav = (en: string, ar: string) => locale === "ar" ? ar : en;
 
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [loading, setLoading] = useState(true);
@@ -88,7 +85,7 @@ export default function ExpenseTracking() {
   };
 
   const handleDelete = async (id: number) => {
-    if (!(await confirmDialog(nav("Delete this expense?", "حذف هذا المصروف؟"), { danger: true }))) return;
+    if (!(await confirmDialog("حذف هذا المصروف؟", { danger: true }))) return;
     await fetch(`${API_BASE_URL}/expenses/${id}`, { method: "DELETE", headers: authHeaders(), credentials: "include" });
     void fetchExpenses();
   };
@@ -105,16 +102,16 @@ export default function ExpenseTracking() {
 
   return (
     <ModulePageShell
-      title={nav("Expense Tracking", "تتبع المصروفات")}
-      subtitle={nav("Record and monitor factory business expenses", "تسجيل ومراقبة مصروفات المصنع")}
+      title={{"تتبع المصروفات"}}
+      subtitle={{"تسجيل ومراقبة مصروفات المصنع"}}
       icon={<Receipt size={22} />}
     >
       {/* KPIs */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: ".75rem", marginBottom: "1.25rem" }}>
         {[
-          { label: nav("Total Expenses",   "إجمالي المصروفات"), value: fmtMoney(totalExpenses),  gradient: "linear-gradient(135deg,#3b82f6,#1d4ed8)" },
-          { label: nav("Approved",         "معتمد"),             value: fmtMoney(approvedAmount), gradient: "linear-gradient(135deg,#10b981,#059669)" },
-          { label: nav("Pending Approval", "قيد الاعتماد"),      value: fmtMoney(pendingAmount),  gradient: "linear-gradient(135deg,#f59e0b,#d97706)" },
+          { label: "إجمالي المصروفات", value: fmtMoney(totalExpenses),  gradient: "linear-gradient(135deg,#3b82f6,#1d4ed8)" },
+          { label: "معتمد",             value: fmtMoney(approvedAmount), gradient: "linear-gradient(135deg,#10b981,#059669)" },
+          { label: "قيد الاعتماد",      value: fmtMoney(pendingAmount),  gradient: "linear-gradient(135deg,#f59e0b,#d97706)" },
         ].map((k) => (
           <div key={k.label} style={{ borderRadius: 14, padding: "1rem 1.1rem", background: k.gradient, color: "#fff", boxShadow: "0 4px 12px rgba(0,0,0,.15)" }}>
             <p style={{ margin: 0, fontSize: ".72rem", fontWeight: 600, opacity: .85, textTransform: "uppercase", letterSpacing: ".06em" }}>{k.label}</p>
@@ -128,23 +125,23 @@ export default function ExpenseTracking() {
         {!isAdmin && (
           <Button size="sm" onClick={() => setShowForm(true)}>
             <Plus size={15} className="me-1" />
-            {nav("Add Expense", "إضافة مصروف")}
+            {"إضافة مصروف"}
           </Button>
         )}
         <div className="relative">
           <Search size={14} className="absolute start-2.5 top-1/2 -translate-y-1/2 text-[var(--text-secondary)]" />
-          <input className="input ps-8 h-8 text-sm w-44" placeholder={nav("Search...", "بحث...")}
+          <input className="input ps-8 h-8 text-sm w-44" placeholder={{"بحث..."}}
             value={search} onChange={(e) => setSearch(e.target.value)} />
         </div>
         <select className="input text-sm h-8 min-w-[160px]" value={filterCat} onChange={(e) => setFilterCat(e.target.value)}>
-          <option value="">{nav("All Categories", "جميع الفئات")}</option>
+          <option value="">{"جميع الفئات"}</option>
           {EXPENSE_CATEGORIES.map((c) => (
-            <option key={c.value} value={c.value}>{locale === "ar" ? c.labelAr : c.label}</option>
+            <option key={c.value} value={c.value}>{c.labelAr}</option>
           ))}
         </select>
         {(filterCat || search) && (
           <button className="text-xs text-[var(--text-secondary)] underline" onClick={() => { setFilterCat(""); setSearch(""); }}>
-            {nav("Clear", "مسح")}
+            {"مسح"}
           </button>
         )}
       </div>
@@ -154,31 +151,31 @@ export default function ExpenseTracking() {
         <Card className="p-5 mb-6 border-2 border-[var(--accent)]">
           <div className="flex items-center justify-between mb-5">
             <div>
-              <h3 className="font-bold text-[var(--text-primary)] text-base">{nav("New Expense", "مصروف جديد")}</h3>
-              <p className="text-xs text-[var(--text-secondary)] mt-0.5">{nav("Record a business expense for approval", "سجّل مصروفاً للاعتماد")}</p>
+              <h3 className="font-bold text-[var(--text-primary)] text-base">{"مصروف جديد"}</h3>
+              <p className="text-xs text-[var(--text-secondary)] mt-0.5">{"سجّل مصروفاً للاعتماد"}</p>
             </div>
             <button className="text-[var(--text-secondary)] hover:text-[var(--text-primary)]" onClick={() => setShowForm(false)}><X size={18} /></button>
           </div>
 
-          <p className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wide mb-2">{nav("Expense Details", "بيانات المصروف")}</p>
+          <p className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wide mb-2">{"بيانات المصروف"}</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
             <div>
-              <label className="label">{nav("Category *", "الفئة *")}</label>
+              <label className="label">{"الفئة *"}</label>
               <select className="input" value={form.category} onChange={(e) => setForm((p) => ({ ...p, category: e.target.value }))}>
                 {EXPENSE_CATEGORIES.map((c) => (
-                  <option key={c.value} value={c.value}>{c.icon} {locale === "ar" ? c.labelAr : c.label}</option>
+                  <option key={c.value} value={c.value}>{c.icon} {c.labelAr}</option>
                 ))}
               </select>
             </div>
             <div>
-              <label className="label">{nav("Amount ($) *", "المبلغ ($) *")}</label>
+              <label className="label">{"المبلغ ($) *"}</label>
               <input className="input" type="number" min="0" step="0.01" placeholder="0.00"
                 value={form.amount} onChange={(e) => setForm((p) => ({ ...p, amount: e.target.value }))} />
             </div>
             <div className="sm:col-span-2">
-              <label className="label">{nav("Description / Notes", "الوصف / الملاحظات")}</label>
+              <label className="label">{"الوصف / الملاحظات"}</label>
               <textarea className="input resize-none" rows={2}
-                placeholder={nav("e.g. HDPE pellets purchase from supplier, maintenance labor cost…", "مثال: شراء حبيبات HDPE، تكلفة عمالة صيانة...")}
+                placeholder={"مثال: شراء حبيبات HDPE، تكلفة عمالة صيانة..."}
                 value={form.description} onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))} />
             </div>
           </div>
@@ -186,9 +183,9 @@ export default function ExpenseTracking() {
           <div className="flex gap-2 pt-2 border-t border-[var(--border-default)]">
             <Button size="sm" onClick={handleSubmit} disabled={saving || !form.amount}>
               <Save size={14} className="me-1" />
-              {saving ? nav("Saving...", "جارٍ الحفظ...") : nav("Submit Expense", "تقديم المصروف")}
+              {saving ? "جارٍ الحفظ..." : "تقديم المصروف"}
             </Button>
-            <Button size="sm" variant="outline" onClick={() => setShowForm(false)}>{nav("Cancel", "إلغاء")}</Button>
+            <Button size="sm" variant="outline" onClick={() => setShowForm(false)}>{"إلغاء"}</Button>
           </div>
         </Card>
       )}
@@ -199,8 +196,8 @@ export default function ExpenseTracking() {
       ) : filtered.length === 0 ? (
         <Card className="p-12 text-center text-[var(--text-secondary)]">
           <Receipt size={32} className="mx-auto mb-3 opacity-30" />
-          <p className="font-medium">{nav("No expenses found", "لا توجد مصروفات")}</p>
-          <p className="text-sm mt-1">{nav("Add your first expense to get started", "أضف أول مصروف للبدء")}</p>
+          <p className="font-medium">{"لا توجد مصروفات"}</p>
+          <p className="text-sm mt-1">{"أضف أول مصروف للبدء"}</p>
         </Card>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -215,10 +212,10 @@ export default function ExpenseTracking() {
                     <span style={{ fontSize: "1.3rem" }}>{meta.icon}</span>
                     <div className="min-w-0">
                       <p className="font-bold text-sm text-[var(--text-primary)] truncate">
-                        {locale === "ar" ? meta.labelAr : meta.label}
+                        {meta.labelAr}
                       </p>
                       <span style={{ background: meta.color + "20", color: meta.color, borderRadius: "20px", padding: "1px 8px", fontSize: ".68rem", fontWeight: 700 }}>
-                        {approved ? nav("Approved", "معتمد") : nav("Pending", "قيد الاعتماد")}
+                        {approved ? "معتمد" : "قيد الاعتماد"}
                       </span>
                     </div>
                   </div>
@@ -251,7 +248,7 @@ export default function ExpenseTracking() {
                       className="w-full text-xs font-semibold py-1.5 rounded-lg"
                       style={{ background: "#d1fae5", color: "#059669" }}>
                       <CheckCircle size={11} className="inline me-1" />
-                      {nav("Approve Expense", "اعتماد المصروف")}
+                      {"اعتماد المصروف"}
                     </button>
                   </div>
                 )}

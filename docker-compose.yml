@@ -82,7 +82,8 @@ services:
     env_file:
       - ./PlasticonMobile/.env.docker
     environment:
-      - REACT_NATIVE_PACKAGER_HOSTNAME=192.168.1.8
+      - REACT_NATIVE_PACKAGER_HOSTNAME=192.168.1.27
+      - EXPO_NO_TELEMETRY=1
 
 
 # ── Persistent volumes ──────────────────────────────────────────────────────

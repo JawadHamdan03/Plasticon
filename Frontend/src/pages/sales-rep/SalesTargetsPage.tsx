@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { Target, CheckCircle, TrendingUp } from "lucide-react";
 import { useLocale } from "../../context/LocaleContext";
 import { useAuth } from "../../context/AuthContext";
@@ -74,7 +74,7 @@ export function SalesTargetsPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!targetAmount) { setMsg(isAr ? "أدخل المبلغ المستهدف" : "Enter target amount"); return; }
+    if (!targetAmount) { setMsg("أدخل المبلغ المستهدف"); return; }
     setSaving(true);
     setMsg("");
     try {
@@ -91,7 +91,7 @@ export function SalesTargetsPage() {
         }),
       });
       if (!res.ok) throw new Error(await readApiError(res));
-      setMsg(isAr ? "تم الحفظ" : "Saved");
+      setMsg("تم الحفظ");
       setTargetAmount(""); setNotes(""); setRepId("");
       load();
     } catch (err) {
@@ -112,7 +112,7 @@ export function SalesTargetsPage() {
   };
 
   return (
-    <main className="admin-shell" dir={isAr ? "rtl" : "ltr"}>
+    <main className="admin-shell" dir="rtl">
       <section className="admin-card">
 
         {/* ── Header ── */}
@@ -123,9 +123,9 @@ export function SalesTargetsPage() {
               <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 36, height: 36, borderRadius: 10, background: "var(--accent)", color: "#fff" }}>
                 <Target size={18} />
               </span>
-              {isAr ? "أهداف المبيعات" : "Sales Targets"}
+              {"أهداف المبيعات"}
             </h1>
-            <p className="admin-muted">{isAr ? "تتبع الأهداف الشهرية والإنجاز الفعلي" : "Track monthly targets and actual achievement"}</p>
+            <p className="admin-muted">{"تتبع الأهداف الشهرية والإنجاز الفعلي"}</p>
           </div>
         </header>
 
@@ -133,18 +133,18 @@ export function SalesTargetsPage() {
         {isSalesRep && (
           <section className="admin-section">
             <h2 className="admin-section__title" style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
-              <TrendingUp size={15} /> {isAr ? "تعيين هدف" : "Set Target"}
+              <TrendingUp size={15} /> {"تعيين هدف"}
             </h2>
             <form onSubmit={(e) => { void handleSubmit(e); }}>
 
               {/* Row 1: Rep + Month + Year */}
               <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr", gap: "0.75rem", marginBottom: "0.75rem" }}>
                 <label style={{ display: "flex", flexDirection: "column", gap: "0.3rem", fontSize: ".85rem", fontWeight: 600 }}>
-                  {isAr ? "المندوب" : "Sales Rep"}
+                  {"المندوب"}
                   {repsError ? (
                     <input
                       type="number"
-                      placeholder={isAr ? "معرف المندوب..." : "Rep ID..."}
+                      placeholder={"معرف المندوب..."}
                       value={repId}
                       min={1}
                       onChange={(e) => setRepId(e.target.value)}
@@ -152,7 +152,7 @@ export function SalesTargetsPage() {
                     />
                   ) : (
                     <select value={repId} onChange={(e) => setRepId(e.target.value)} className="admin-input">
-                      <option value="">{isAr ? "اختر مندوباً..." : "Select rep..."}</option>
+                      <option value="">{"اختر مندوباً..."}</option>
                       {salesReps.map((r) => (
                         <option key={r.id} value={r.id}>{r.fullName}</option>
                       ))}
@@ -160,15 +160,15 @@ export function SalesTargetsPage() {
                   )}
                 </label>
                 <label style={{ display: "flex", flexDirection: "column", gap: "0.3rem", fontSize: ".85rem", fontWeight: 600 }}>
-                  {isAr ? "الشهر" : "Month"}
+                  {"الشهر"}
                   <select value={month} onChange={(e) => setMonth(e.target.value)} className="admin-input">
                     {Array.from({ length: 12 }, (_, i) => (
-                      <option key={i + 1} value={i + 1}>{isAr ? MONTHS_AR[i] : MONTHS_EN[i]}</option>
+                      <option key={i + 1} value={i + 1}>{MONTHS_AR[i]}</option>
                     ))}
                   </select>
                 </label>
                 <label style={{ display: "flex", flexDirection: "column", gap: "0.3rem", fontSize: ".85rem", fontWeight: 600 }}>
-                  {isAr ? "السنة" : "Year"}
+                  {"السنة"}
                   <input
                     type="number"
                     value={year}
@@ -183,7 +183,7 @@ export function SalesTargetsPage() {
               {/* Row 2: Target Amount + Notes */}
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1.5fr", gap: "0.75rem", marginBottom: "0.75rem" }}>
                 <label style={{ display: "flex", flexDirection: "column", gap: "0.3rem", fontSize: ".85rem", fontWeight: 600 }}>
-                  {isAr ? "المبلغ المستهدف (₪)" : "Target Amount (₪)"}
+                  {"المبلغ المستهدف (₪)"}
                   <input
                     type="number"
                     value={targetAmount}
@@ -195,9 +195,9 @@ export function SalesTargetsPage() {
                   />
                 </label>
                 <label style={{ display: "flex", flexDirection: "column", gap: "0.3rem", fontSize: ".85rem", fontWeight: 600 }}>
-                  {isAr ? "ملاحظات" : "Notes"}
+                  {"ملاحظات"}
                   <input
-                    placeholder={isAr ? "ملاحظات اختيارية..." : "Optional notes..."}
+                    placeholder={"ملاحظات اختيارية..."}
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
                     className="admin-input"
@@ -208,10 +208,10 @@ export function SalesTargetsPage() {
               <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
                 <button type="submit" className="auth-button" disabled={saving} style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
                   <Target size={14} />
-                  {saving ? (isAr ? "جارٍ الحفظ..." : "Saving...") : (isAr ? "حفظ الهدف" : "Save Target")}
+                  {saving ? ("جارٍ الحفظ...") : ("حفظ الهدف")}
                 </button>
                 {msg && (
-                  <p className="admin-muted" style={{ margin: 0, color: msg === (isAr ? "تم الحفظ" : "Saved") ? "var(--success)" : "var(--danger)" }}>
+                  <p className="admin-muted" style={{ margin: 0, color: msg === ("تم الحفظ") ? "var(--success)" : "var(--danger)" }}>
                     {msg}
                   </p>
                 )}
@@ -222,14 +222,14 @@ export function SalesTargetsPage() {
 
         {/* ── Targets List ── */}
         <section className="admin-section">
-          <h2 className="admin-section__title">{isAr ? "قائمة الأهداف" : "Targets List"}</h2>
+          <h2 className="admin-section__title">{"قائمة الأهداف"}</h2>
 
           {loading ? (
-            <p className="admin-muted">{isAr ? "جارٍ التحميل..." : "Loading..."}</p>
+            <p className="admin-muted">{"جارٍ التحميل..."}</p>
           ) : targets.length === 0 ? (
             <div style={{ textAlign: "center", padding: "2.5rem 1rem" }}>
               <Target size={36} style={{ color: "var(--text-secondary)", opacity: 0.35, marginBottom: "0.75rem" }} />
-              <p className="admin-muted">{isAr ? "لا توجد أهداف محددة" : "No targets set yet"}</p>
+              <p className="admin-muted">{"لا توجد أهداف محددة"}</p>
             </div>
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: "0.85rem" }}>
@@ -266,7 +266,7 @@ export function SalesTargetsPage() {
                       <div>
                         <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap" }}>
                           <strong style={{ fontSize: "1rem" }}>
-                            {isAr ? MONTHS_AR[t.month - 1] : MONTHS_EN[t.month - 1]} {t.year}
+                            {MONTHS_AR[t.month - 1]} {t.year}
                           </strong>
                           {t.rep && (
                             <span style={{
@@ -292,7 +292,7 @@ export function SalesTargetsPage() {
                               borderRadius: 20,
                               padding: "2px 8px",
                             }}>
-                              <CheckCircle size={11} /> {isAr ? "مكتمل" : "Achieved"}
+                              <CheckCircle size={11} /> {"مكتمل"}
                             </span>
                           )}
                         </div>
@@ -342,7 +342,7 @@ export function SalesTargetsPage() {
                         borderTop: "1px solid var(--border-default)",
                       }}>
                         <span style={{ fontSize: ".78rem", color: "var(--text-secondary)", fontWeight: 600, whiteSpace: "nowrap" }}>
-                          {isAr ? "تحديث الإنجاز:" : "Update achieved:"}
+                          {"تحديث الإنجاز:"}
                         </span>
                         <input
                           type="number"
@@ -362,7 +362,7 @@ export function SalesTargetsPage() {
                             void updateAchieved(t.id, Number(el.value));
                           }}
                         >
-                          {isAr ? "تحديث" : "Update"}
+                          {"تحديث"}
                         </button>
                       </div>
                     )}

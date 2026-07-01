@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+﻿import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   AlertCircle,
   CalendarDays,
@@ -51,19 +51,17 @@ type ViewTab = "monthly" | "settings";
 type DayStatus = "present" | "late" | "open" | "absent" | "weekend" | "future" | "friday_ot";
 
 // ── Constants ─────────────────────────────────────────────────────────────────
-const MONTH_EN = ["January","February","March","April","May","June","July","August","September","October","November","December"];
-const MONTH_AR = ["يناير","فبراير","مارس","أبريل","مايو","يونيو","يوليو","أغسطس","سبتمبر","أكتوبر","نوفمبر","ديسمبر"];
-const DAY_EN = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
-const DAY_AR = ["الأحد","الاثنين","الثلاثاء","الأربعاء","الخميس","الجمعة","السبت"];
+const MONTH_NAMES = ["يناير","فبراير","مارس","أبريل","مايو","يونيو","يوليو","أغسطس","سبتمبر","أكتوبر","نوفمبر","ديسمبر"];
+const DAY_NAMES = ["الأحد","الاثنين","الثلاثاء","الأربعاء","الخميس","الجمعة","السبت"];
 
-const STATUS_CFG: Record<DayStatus, { bg: string; text: string; border: string; en: string; ar: string }> = {
-  present:    { bg: "var(--green-50)",  text: "var(--green-700)", border: "var(--green-100)",   en: "Present",  ar: "حاضر"        },
-  late:       { bg: "var(--yellow-50)", text: "#a16207",           border: "var(--yellow-100)",  en: "Late",     ar: "متأخر"       },
-  open:       { bg: "var(--blue-50)",   text: "var(--blue-700)",   border: "var(--blue-100)",    en: "Open",     ar: "مفتوح"       },
-  absent:     { bg: "var(--red-50)",    text: "var(--red-700)",    border: "var(--red-100)",     en: "Absent",   ar: "غائب"        },
-  weekend:    { bg: "var(--gray-50)",   text: "var(--gray-500)",   border: "var(--gray-200)",    en: "Off",      ar: "إجازة"       },
-  future:     { bg: "transparent",      text: "var(--gray-400)",   border: "transparent",        en: "—",        ar: "—"           },
-  friday_ot:  { bg: "#fff7ed",          text: "#c2410c",           border: "#fed7aa",            en: "Fri OT",   ar: "إضافي جمعة" },
+const STATUS_CFG: Record<DayStatus, { bg: string; text: string; border: string; label: string }> = {
+  present:    { bg: "var(--green-50)",  text: "var(--green-700)", border: "var(--green-100)",   label: "حاضر"        },
+  late:       { bg: "var(--yellow-50)", text: "#a16207",           border: "var(--yellow-100)",  label: "متأخر"       },
+  open:       { bg: "var(--blue-50)",   text: "var(--blue-700)",   border: "var(--blue-100)",    label: "مفتوح"       },
+  absent:     { bg: "var(--red-50)",    text: "var(--red-700)",    border: "var(--red-100)",     label: "غائب"        },
+  weekend:    { bg: "var(--gray-50)",   text: "var(--gray-500)",   border: "var(--gray-200)",    label: "إجازة"       },
+  future:     { bg: "transparent",      text: "var(--gray-400)",   border: "transparent",        label: "—"           },
+  friday_ot:  { bg: "#fff7ed",          text: "#c2410c",           border: "#fed7aa",            label: "إضافي جمعة" },
 };
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -126,7 +124,7 @@ function KpiCard({ label, value, icon, gradient }: {
 }
 
 // ── Status Badge ──────────────────────────────────────────────────────────────
-function StatusBadge({ status, isAr }: { status: DayStatus; isAr: boolean }) {
+function StatusBadge({ status }: { status: DayStatus }) {
   const c = STATUS_CFG[status];
   return (
     <span style={{
@@ -134,7 +132,7 @@ function StatusBadge({ status, isAr }: { status: DayStatus; isAr: boolean }) {
       borderRadius: 99, fontSize: ".71rem", fontWeight: 700,
       background: c.bg, color: c.text, border: `1px solid ${c.border}`, whiteSpace: "nowrap",
     }}>
-      {isAr ? c.ar : c.en}
+      {c.label}
     </span>
   );
 }
@@ -142,9 +140,7 @@ function StatusBadge({ status, isAr }: { status: DayStatus; isAr: boolean }) {
 // ── Component ─────────────────────────────────────────────────────────────────
 export function AttendanceAdminPage() {
   const { user } = useAuth();
-  const { locale } = useLocale();
-  const isAr = locale === "ar";
-  const nav = (en: string, ar: string) => isAr ? ar : en;
+  /* locale removed — UI is Arabic-only */
 
   const today = useMemo(() => new Date(), []);
 
@@ -258,8 +254,8 @@ export function AttendanceAdminPage() {
       });
       if (!res.ok) throw new Error(await readApiError(res));
       cancelEdit(); await loadRecords(true);
-      toast.success(nav("Record updated", "تم التحديث"));
-    } catch (e) { toast.error(e instanceof Error ? e.message : "Failed"); }
+      toast.success("تم التحديث");
+    } catch (e) { toast.error(e instanceof Error ? e.message : "فشل"); }
   };
 
   // ── Add handlers ─────────────────────────────────────────────────────────
@@ -281,24 +277,24 @@ export function AttendanceAdminPage() {
       });
       if (!res.ok) throw new Error(await readApiError(res));
       cancelAdd(); await loadRecords(true);
-      toast.success(nav("Attendance added", "تم تسجيل الحضور"));
-    } catch (e) { toast.error(e instanceof Error ? e.message : "Failed"); }
+      toast.success("تم تسجيل الحضور");
+    } catch (e) { toast.error(e instanceof Error ? e.message : "فشل"); }
     finally { setAddLoading(false); }
   };
 
   // ── Delete ───────────────────────────────────────────────────────────────
   const deleteRecord = async (id: number) => {
     const ok = await confirmDialog(
-      nav("Delete this attendance record?", "هل أنت متأكد من حذف سجل الحضور؟"),
-      { danger: true, confirmText: nav("Delete", "حذف") },
+      "هل أنت متأكد من حذف سجل الحضور؟",
+      { danger: true, confirmText: "حذف" },
     );
     if (!ok) return;
     try {
       const res = await apiFetch(`/attendance/${id}`, { method: "DELETE" });
       if (!res.ok) throw new Error(await readApiError(res));
       await loadRecords(true);
-      toast.success(nav("Deleted", "تم الحذف"));
-    } catch (e) { toast.error(e instanceof Error ? e.message : "Failed"); }
+      toast.success("تم الحذف");
+    } catch (e) { toast.error(e instanceof Error ? e.message : "فشل"); }
   };
 
   // ── Settings save ────────────────────────────────────────────────────────
@@ -309,14 +305,14 @@ export function AttendanceAdminPage() {
       if (!res.ok) throw new Error(await readApiError(res));
       const d = (await res.json()) as AttendanceSetting;
       setSettings(d); setSettingsForm(d);
-      toast.success(nav("Settings saved", "تم حفظ الإعدادات"));
-    } catch (e) { toast.error(e instanceof Error ? e.message : "Failed"); }
+      toast.success("تم حفظ الإعدادات");
+    } catch (e) { toast.error(e instanceof Error ? e.message : "فشل"); }
     finally { setSettingsSaving(false); }
   };
 
   const years      = useMemo(() => Array.from({ length: 5 }, (_, i) => today.getFullYear() - 2 + i), [today]);
-  const monthNames = isAr ? MONTH_AR : MONTH_EN;
-  const dayNames   = isAr ? DAY_AR   : DAY_EN;
+  const monthNames = MONTH_NAMES;
+  const dayNames   = DAY_NAMES;
   const selectedUser = useMemo(() => users.find((u) => u.id === selectedUserId), [users, selectedUserId]);
 
   // ── Inline input helper ───────────────────────────────────────────────────
@@ -328,13 +324,13 @@ export function AttendanceAdminPage() {
 
   return (
     <ModulePageShell
-      title={nav("Attendance & Absence", "الحضور والغياب")}
-      subtitle={nav("Monthly attendance calendar per employee — view, edit and manage records", "تقويم الحضور الشهري لكل موظف — عرض وتعديل وإدارة السجلات")}
+      title={"الحضور والغياب"}
+      subtitle={"تقويم الحضور الشهري لكل موظف — عرض وتعديل وإدارة السجلات"}
       icon={<UserCheck size={22} className="text-(--orange-500)" />}
       actions={
         <Button size="sm" variant="outline" onClick={() => void loadRecords(true)} disabled={refreshing}>
           <RefreshCw size={14} className={refreshing ? "animate-spin" : ""} />
-          {nav("Refresh", "تحديث")}
+          {"تحديث"}
         </Button>
       }
     >
@@ -357,7 +353,7 @@ export function AttendanceAdminPage() {
               }}
             >
               {tab === "monthly" ? <CalendarDays size={15} /> : <Settings size={15} />}
-              {tab === "monthly" ? nav("Monthly View", "العرض الشهري") : nav("Settings", "الإعدادات")}
+              {tab === "monthly" ? "العرض الشهري" : "الإعدادات"}
             </button>
           );
         })}
@@ -372,7 +368,7 @@ export function AttendanceAdminPage() {
             <div className="flex flex-wrap gap-4 items-end">
               <div style={{ flex: "1 1 200px" }}>
                 <label className="block text-xs font-semibold mb-1.5" style={{ color: "var(--text-secondary)" }}>
-                  <Users size={12} className="inline me-1" />{nav("Employee", "الموظف")}
+                  <Users size={12} className="inline me-1" />{"الموظف"}
                 </label>
                 <select
                   value={selectedUserId}
@@ -380,7 +376,7 @@ export function AttendanceAdminPage() {
                   className="w-full rounded-lg border px-3 py-2 text-sm"
                   style={{ borderColor: "var(--border-input)", background: "var(--bg-input)", color: "var(--text-primary)" }}
                 >
-                  <option value="">{nav("— Select employee —", "— اختر موظفاً —")}</option>
+                  <option value="">{"— اختر موظفاً —"}</option>
                   {users.map((u) => (
                     <option key={u.id} value={u.id}>{u.fullName || u.username} · {u.role}</option>
                   ))}
@@ -389,7 +385,7 @@ export function AttendanceAdminPage() {
 
               <div>
                 <label className="block text-xs font-semibold mb-1.5" style={{ color: "var(--text-secondary)" }}>
-                  <CalendarDays size={12} className="inline me-1" />{nav("Month", "الشهر")}
+                  <CalendarDays size={12} className="inline me-1" />{"الشهر"}
                 </label>
                 <select
                   value={selectedMonth}
@@ -403,7 +399,7 @@ export function AttendanceAdminPage() {
 
               <div>
                 <label className="block text-xs font-semibold mb-1.5" style={{ color: "var(--text-secondary)" }}>
-                  {nav("Year", "السنة")}
+                  {"السنة"}
                 </label>
                 <select
                   value={selectedYear}
@@ -428,10 +424,10 @@ export function AttendanceAdminPage() {
           {/* KPI cards */}
           {selectedUserId && (
             <div style={{ display: "grid", gap: 12, gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))" }}>
-              <KpiCard label={nav("Present Days", "أيام الحضور")}   value={stats.present}          icon={<CheckCircle size={20} />} gradient="linear-gradient(135deg,#10b981,#059669)" />
-              <KpiCard label={nav("Absent Days", "أيام الغياب")}    value={stats.absent}           icon={<XCircle size={20} />}     gradient="linear-gradient(135deg,#ef4444,#dc2626)" />
-              <KpiCard label={nav("Late Days", "أيام التأخير")}     value={stats.late}             icon={<AlertCircle size={20} />} gradient="linear-gradient(135deg,#f59e0b,#d97706)" />
-              <KpiCard label={nav("Total Overtime", "إجمالي الإضافي")} value={fmtDur(stats.totalOT)} icon={<Clock3 size={20} />}      gradient="linear-gradient(135deg,#8b5cf6,#7c3aed)" />
+              <KpiCard label={"أيام الحضور"}   value={stats.present}          icon={<CheckCircle size={20} />} gradient="linear-gradient(135deg,#10b981,#059669)" />
+              <KpiCard label={"أيام الغياب"}    value={stats.absent}           icon={<XCircle size={20} />}     gradient="linear-gradient(135deg,#ef4444,#dc2626)" />
+              <KpiCard label={"أيام التأخير"}     value={stats.late}             icon={<AlertCircle size={20} />} gradient="linear-gradient(135deg,#f59e0b,#d97706)" />
+              <KpiCard label={"إجمالي الإضافي"} value={fmtDur(stats.totalOT)} icon={<Clock3 size={20} />}      gradient="linear-gradient(135deg,#8b5cf6,#7c3aed)" />
             </div>
           )}
 
@@ -440,24 +436,24 @@ export function AttendanceAdminPage() {
             {loading ? (
               <div className="flex flex-col items-center justify-center py-20 gap-3" style={{ color: "var(--text-secondary)" }}>
                 <RefreshCw size={26} className="animate-spin opacity-30" />
-                <p className="text-sm">{nav("Loading records…", "جارٍ التحميل…")}</p>
+                <p className="text-sm">{"جارٍ التحميل…"}</p>
               </div>
             ) : !selectedUserId ? (
               <div className="flex flex-col items-center justify-center py-20 gap-3" style={{ color: "var(--text-secondary)" }}>
                 <Users size={38} className="opacity-20" />
-                <p className="text-sm font-medium">{nav("Select an employee to view their monthly calendar", "اختر موظفاً لعرض تقويمه الشهري")}</p>
+                <p className="text-sm font-medium">{"اختر موظفاً لعرض تقويمه الشهري"}</p>
               </div>
             ) : (
               <div style={{ overflowX: "auto" }}>
                 <table style={{ width: "100%", borderCollapse: "collapse", fontSize: ".81rem" }}>
                   <thead>
                     <tr style={{ background: "var(--gray-50)", borderBottom: "2px solid var(--border-default)" }}>
-                      {["#", nav("Day","اليوم"), nav("Date","التاريخ"), nav("Status","الحالة"),
-                        nav("Check-in","الدخول"), nav("Check-out","الخروج"),
-                        nav("Duration","المدة"), nav("Late","تأخير"), nav("OT","إضافي"),
-                        nav("Notes","ملاحظات"), nav("Actions","إجراءات"),
+                      {["#", "اليوم", "التاريخ", "الحالة",
+                        "الدخول", "الخروج",
+                        "المدة", "تأخير", "إضافي",
+                        "ملاحظات", "إجراءات",
                       ].map((h, i) => (
-                        <th key={i} style={{ padding: "9px 10px", textAlign: isAr ? "right" : "left", fontWeight: 700, fontSize: ".71rem", textTransform: "uppercase", letterSpacing: ".05em", color: "var(--text-secondary)", whiteSpace: "nowrap" }}>
+                        <th key={i} style={{ padding: "9px 10px", textAlign: "right", fontWeight: 700, fontSize: ".71rem", textTransform: "uppercase", letterSpacing: ".05em", color: "var(--text-secondary)", whiteSpace: "nowrap" }}>
                           {h}
                         </th>
                       ))}
@@ -554,9 +550,9 @@ export function AttendanceAdminPage() {
                           {/* Notes */}
                           <td style={{ padding:"7px 6px", maxWidth:140 }}>
                             {isEdit ? (
-                              <input value={editForm.notes} onChange={(e) => setEditForm(p => ({ ...p, notes: e.target.value }))} placeholder={nav("Note…","ملاحظة…")} style={{ ...iStyle, width:120 }} />
+                              <input value={editForm.notes} onChange={(e) => setEditForm(p => ({ ...p, notes: e.target.value }))} placeholder={"ملاحظة…"} style={{ ...iStyle, width:120 }} />
                             ) : isAdd ? (
-                              <input value={addForm.notes} onChange={(e) => setAddForm(p => ({ ...p, notes: e.target.value }))} placeholder={nav("Note…","ملاحظة…")} style={{ ...iStyle, width:120 }} />
+                              <input value={addForm.notes} onChange={(e) => setAddForm(p => ({ ...p, notes: e.target.value }))} placeholder={"ملاحظة…"} style={{ ...iStyle, width:120 }} />
                             ) : rec?.notes ? (
                               <span style={{ color:"var(--text-secondary)", fontSize:".78rem", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", display:"block", maxWidth:130 }} title={rec.notes}>{rec.notes}</span>
                             ) : <span style={{ color:"var(--gray-400)" }}>—</span>}
@@ -568,7 +564,7 @@ export function AttendanceAdminPage() {
                               {isEdit ? (
                                 <>
                                   <Button size="sm" onClick={() => void saveEdit(rec!.id)} style={{ padding:"4px 10px", minHeight:"unset", fontSize:".73rem" }}>
-                                    <Save size={11} />{nav("Save","حفظ")}
+                                    <Save size={11} />{"حفظ"}
                                   </Button>
                                   <Button size="sm" variant="ghost" onClick={cancelEdit} style={{ padding:"4px 8px", minHeight:"unset" }}>
                                     <X size={12} />
@@ -578,7 +574,7 @@ export function AttendanceAdminPage() {
                                 <>
                                   <Button size="sm" onClick={() => void submitAdd()} disabled={addLoading}
                                     style={{ padding:"4px 10px", minHeight:"unset", fontSize:".73rem", background:"#16a34a", borderColor:"#16a34a" }}>
-                                    <Save size={11} />{addLoading ? "…" : nav("Confirm","تأكيد")}
+                                    <Save size={11} />{addLoading ? "…" : "تأكيد"}
                                   </Button>
                                   <Button size="sm" variant="ghost" onClick={cancelAdd} style={{ padding:"4px 8px", minHeight:"unset" }}>
                                     <X size={12} />
@@ -588,7 +584,7 @@ export function AttendanceAdminPage() {
                                 <>
                                   <button type="button" onClick={() => startEdit(rec)}
                                     style={{ display:"inline-flex",alignItems:"center",gap:4,padding:"4px 9px",borderRadius:7,border:"1px solid var(--border-default)",background:"var(--bg-card)",color:"var(--text-secondary)",fontSize:".73rem",fontWeight:600,cursor:"pointer" }}>
-                                    <Edit2 size={11} />{nav("Edit","تعديل")}
+                                    <Edit2 size={11} />{"تعديل"}
                                   </button>
                                   <button type="button" onClick={() => void deleteRecord(rec.id)}
                                     style={{ display:"inline-flex",alignItems:"center",padding:"4px 7px",borderRadius:7,border:"1px solid var(--red-100)",background:"var(--red-50)",color:"var(--red-700)",cursor:"pointer" }}>
@@ -598,7 +594,7 @@ export function AttendanceAdminPage() {
                               ) : isPast ? (
                                 <button type="button" onClick={() => startAdd(day)}
                                   style={{ display:"inline-flex",alignItems:"center",gap:4,padding:"4px 9px",borderRadius:7,border:"1px solid var(--green-100)",background:"var(--green-50)",color:"var(--green-700)",fontSize:".73rem",fontWeight:600,cursor:"pointer" }}>
-                                  <Fingerprint size={11} />{nav("Add","بصمة")}
+                                  <Fingerprint size={11} />{"بصمة"}
                                 </button>
                               ) : null}
                             </div>
@@ -624,13 +620,10 @@ export function AttendanceAdminPage() {
               </div>
               <div>
                 <h3 className="font-bold text-base" style={{ color: "var(--text-primary)" }}>
-                  {nav("Attendance Grace Periods", "فترات السماح للحضور")}
+                  {"فترات السماح للحضور"}
                 </h3>
                 <p className="text-xs mt-0.5" style={{ color: "var(--text-secondary)" }}>
-                  {nav(
-                    "Arrivals within the late grace window are not marked late. Departures within the OT grace window are not counted as overtime.",
-                    "الحضور ضمن نافذة السماح لا يُحسب تأخيراً. المغادرة ضمن نافذة الإضافي لا تُحسب عملاً إضافياً.",
-                  )}
+                  {"الحضور ضمن نافذة السماح لا يُحسب تأخيراً. المغادرة ضمن نافذة الإضافي لا تُحسب عملاً إضافياً."}
                 </p>
               </div>
             </div>
@@ -640,9 +633,9 @@ export function AttendanceAdminPage() {
               <div className="rounded-xl p-4" style={{ background: "var(--yellow-50)", border: "1px solid var(--yellow-100)" }}>
                 <div className="flex items-center gap-2 mb-3">
                   <AlertCircle size={15} style={{ color: "#a16207" }} />
-                  <span className="text-sm font-semibold" style={{ color: "#a16207" }}>{nav("Late Grace Period", "فترة السماح للتأخير")}</span>
+                  <span className="text-sm font-semibold" style={{ color: "#a16207" }}>{"فترة السماح للتأخير"}</span>
                   <span className="ms-auto text-xs font-medium px-2 py-0.5 rounded-full" style={{ background: "#fef9c3", color: "#a16207" }}>
-                    {nav("Saved", "محفوظ")}: {settings.lateGraceMinutes}m
+                    {"محفوظ"}: {settings.lateGraceMinutes}m
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
@@ -650,7 +643,7 @@ export function AttendanceAdminPage() {
                     onChange={(e) => setSettingsForm(p => ({ ...p, lateGraceMinutes: Math.max(0, Number(e.target.value)) }))}
                     style={{ width:100, padding:"7px 10px", borderRadius:8, border:"1.5px solid #fde68a", background:"#fff", color:"var(--text-primary)", fontSize:".9rem", fontWeight:700 }}
                   />
-                  <span className="text-sm" style={{ color: "var(--text-secondary)" }}>{nav("minutes", "دقيقة")}</span>
+                  <span className="text-sm" style={{ color: "var(--text-secondary)" }}>{"دقيقة"}</span>
                 </div>
               </div>
 
@@ -658,9 +651,9 @@ export function AttendanceAdminPage() {
               <div className="rounded-xl p-4" style={{ background: "rgba(139,92,246,.05)", border: "1px solid rgba(139,92,246,.18)" }}>
                 <div className="flex items-center gap-2 mb-3">
                   <Clock3 size={15} style={{ color: "#7c3aed" }} />
-                  <span className="text-sm font-semibold" style={{ color: "#7c3aed" }}>{nav("Overtime Grace Period", "فترة السماح للعمل الإضافي")}</span>
+                  <span className="text-sm font-semibold" style={{ color: "#7c3aed" }}>{"فترة السماح للعمل الإضافي"}</span>
                   <span className="ms-auto text-xs font-medium px-2 py-0.5 rounded-full" style={{ background: "rgba(139,92,246,.12)", color: "#7c3aed" }}>
-                    {nav("Saved", "محفوظ")}: {settings.overtimeGraceMinutes}m
+                    {"محفوظ"}: {settings.overtimeGraceMinutes}m
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
@@ -668,17 +661,17 @@ export function AttendanceAdminPage() {
                     onChange={(e) => setSettingsForm(p => ({ ...p, overtimeGraceMinutes: Math.max(0, Number(e.target.value)) }))}
                     style={{ width:100, padding:"7px 10px", borderRadius:8, border:"1.5px solid rgba(139,92,246,.3)", background:"#fff", color:"var(--text-primary)", fontSize:".9rem", fontWeight:700 }}
                   />
-                  <span className="text-sm" style={{ color: "var(--text-secondary)" }}>{nav("minutes", "دقيقة")}</span>
+                  <span className="text-sm" style={{ color: "var(--text-secondary)" }}>{"دقيقة"}</span>
                 </div>
               </div>
 
               <div className="flex items-center gap-3 pt-1">
                 <Button onClick={() => void saveSettings()} disabled={settingsSaving}>
                   <Save size={14} />
-                  {settingsSaving ? nav("Saving…", "جارٍ الحفظ…") : nav("Save Settings", "حفظ الإعدادات")}
+                  {settingsSaving ? "جارٍ الحفظ…" : "حفظ الإعدادات"}
                 </Button>
                 <p className="text-xs" style={{ color: "var(--text-secondary)" }}>
-                  {nav("Changes apply to future check-ins only", "التغييرات تسري على الحضور الجديد فقط")}
+                  {"التغييرات تسري على الحضور الجديد فقط"}
                 </p>
               </div>
             </div>

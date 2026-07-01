@@ -424,7 +424,7 @@ export function AppScaffold({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, signOut } = useAuth();
-  const { locale, setLocale } = useLocale();
+  const { locale } = useLocale();
   const { theme, setTheme } = useTheme();
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -699,20 +699,6 @@ export function AppScaffold({ children }: { children: ReactNode }) {
           <div className="app-topbar__actions">
             {/* Date & time */}
             <DateTimeBadge />
-
-            {/* Locale switch */}
-            <div className="locale-switch-topbar">
-              <button
-                type="button"
-                className={`locale-switch-topbar__btn${locale === "en" ? " locale-switch-topbar__btn--active" : ""}`}
-                onClick={() => setLocale("en")}
-              >EN</button>
-              <button
-                type="button"
-                className={`locale-switch-topbar__btn${locale === "ar" ? " locale-switch-topbar__btn--active" : ""}`}
-                onClick={() => setLocale("ar")}
-              >ع</button>
-            </div>
 
             {/* Dark mode toggle */}
             <button

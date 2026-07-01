@@ -77,13 +77,19 @@ export const updateUser = async (
     return { status: 404, message: "user with this id were not found" };
   }
 
-  // Get changed fields
-  const changes = getChangedFields(user, { ...user, ...updateData });
+  // Explicit allowlist — prevents mass assignment of role, password, nationalId, deletedAt, etc.
+  const ALLOWED_UPDATE_FIELDS = ["fullName", "phone", "shiftId", "isActive", "username"] as const;
+  const safeData: Record<string, unknown> = {};
+  for (const key of ALLOWED_UPDATE_FIELDS) {
+    if (key in updateData) safeData[key] = updateData[key];
+  }
+
+  const changes = getChangedFields(user, { ...user, ...safeData });
 
   // Update user
   const updatedUser = await prisma.user.update({
     where: { id: id },
-    data: updateData,
+    data: safeData,
   });
 
   // Log the update

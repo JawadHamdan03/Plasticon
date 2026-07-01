@@ -5,7 +5,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { useLocale } from "../../context/LocaleContext";
-import { API_BASE_URL, readApiError } from "../../lib/api";
+import { API_BASE_URL, pictureUrl as globalPictureUrl, readApiError } from "../../lib/api";
 import { confirmDialog } from "../../lib/dialog";
 import { ModulePageShell } from "../../components/ModulePageShell";
 import { Card } from "../../components/ui/card";
@@ -525,8 +525,8 @@ export function ElectricityPage() {
                     <td style={{ fontSize: ".8rem", color: "var(--text-secondary)", maxWidth: 140, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.notes ?? "—"}</td>
                     <td>
                       {r.imagePath ? (
-                        <a href={`${API_BASE_URL.replace("/api", "")}/pictures/${r.imagePath}`} target="_blank" rel="noreferrer">
-                          <img src={`${API_BASE_URL.replace("/api", "")}/pictures/${r.imagePath}`} alt="meter" style={{ width: 40, height: 40, objectFit: "cover", borderRadius: 4, border: "1px solid var(--border-default)" }} />
+                        <a href={globalPictureUrl(r.imagePath)} target="_blank" rel="noreferrer">
+                          <img src={globalPictureUrl(r.imagePath)} alt="meter" style={{ width: 40, height: 40, objectFit: "cover", borderRadius: 4, border: "1px solid var(--border-default)" }} />
                         </a>
                       ) : "—"}
                     </td>

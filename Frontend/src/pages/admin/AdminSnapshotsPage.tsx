@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+﻿import { useCallback, useEffect, useMemo, useState } from "react";
 import { Download } from "lucide-react";
 import { useLocale } from "../../context/LocaleContext";
-import { API_BASE_URL, readApiError } from "../../lib/api";
+import { API_BASE_URL, pictureUrl as globalPictureUrl, readApiError } from "../../lib/api";
 import { createUserSocket } from "../../lib/socket";
 
 type OpsSnapshot = {
@@ -143,16 +143,15 @@ export function AdminSnapshotsPage() {
       return value;
     }
 
-    const filename = value.replace(/^(?:prisma\/?)?pictures\//, "");
-    return `${API_BASE_URL}/pictures/${filename}`;
+    return globalPictureUrl(value);
   };
 
   const formatDateTime = (value: string | undefined) => {
     if (!value) {
-      return locale === "ar" ? "غير متوفر" : "Not available";
+      return "غير متوفر";
     }
 
-    return new Intl.DateTimeFormat(locale === "ar" ? "ar-EG" : "en-US", {
+    return new Intl.DateTimeFormat("ar-EG", {
       dateStyle: "medium",
       timeStyle: "short",
     }).format(new Date(value));
@@ -279,7 +278,7 @@ export function AdminSnapshotsPage() {
   };
 
   return (
-    <main className="admin-shell" dir={locale === "ar" ? "rtl" : "ltr"}>
+    <main className="admin-shell" dir="rtl">
       <section className="admin-card">
         <header className="admin-header">
           <div>

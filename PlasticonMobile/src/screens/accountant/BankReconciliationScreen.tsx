@@ -50,7 +50,7 @@ export function BankReconciliationScreen() {
     try {
       const res = await api.get<BankReconciliation[] | { data: BankReconciliation[] }>('/bank-reconciliations?limit=50');
       setRecords(Array.isArray(res) ? res : ((res as any).data ?? []));
-    } catch (e: any) { setApiError(e?.message ?? 'Failed to load'); setRecords([]); }
+    } catch (e: any) { setApiError(e?.message ?? 'فشل التحميل'); setRecords([]); }
     finally { setLoading(false); setRefreshing(false); }
   }, []);
 
@@ -70,7 +70,7 @@ export function BankReconciliationScreen() {
         try {
           await api.delete(`/bank-reconciliations/${r.id}`);
           setRecords((p) => p.filter((x) => x.id !== r.id));
-        } catch (e: any) { Alert.alert('Error', e.message ?? 'Failed'); }
+        } catch (e: any) { Alert.alert('خطأ', e.message ?? 'فشلت العملية'); }
       }},
     ]);
   };
@@ -102,7 +102,7 @@ export function BankReconciliationScreen() {
         setRecords((p) => [cr, ...p]);
       }
       setModal(false);
-    } catch (e: any) { Alert.alert(isAr ? 'خطأ' : 'Error', e.message ?? 'Failed'); }
+    } catch (e: any) { Alert.alert('خطأ', e.message ?? 'فشلت العملية'); }
     finally { setSaving(false); }
   };
 

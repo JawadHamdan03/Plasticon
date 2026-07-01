@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { confirmDialog } from "../../lib/dialog";
 import {
   Truck, Plus, Pencil, Trash2, X, Save, Star,
@@ -147,7 +147,7 @@ export default function SupplierManagement() {
   };
 
   const handleDelete = async (id: number) => {
-    if (!(await confirmDialog(nav("Delete this supplier?", "حذف هذا المورد؟"), { danger: true }))) return;
+    if (!(await confirmDialog("حذف هذا المورد؟", { danger: true }))) return;
     try {
       await fetch(`${API_BASE_URL}/suppliers/${id}`, {
         method: "DELETE", headers: authHeaders(), credentials: "include",
@@ -185,17 +185,17 @@ export default function SupplierManagement() {
 
   return (
     <ModulePageShell
-      title={nav("Supplier Management", "إدارة الموردين")}
-      subtitle={nav("Raw materials, spare parts and service providers", "الموردون: مواد خام، قطع غيار، خدمات")}
+      title={"إدارة الموردين"}
+      subtitle={"الموردون: مواد خام، قطع غيار، خدمات"}
       icon={<Truck size={22} />}
     >
       {/* KPI Cards */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: ".75rem", marginBottom: "1.25rem" }}>
         {[
-          { label: nav("Total Suppliers",        "إجمالي الموردين"), value: suppliers.length,                    gradient: "linear-gradient(135deg,#3b82f6,#1d4ed8)" },
-          { label: nav("Raw Material Suppliers", "موردو المواد"),     value: rawMatSuppliers,                     gradient: "linear-gradient(135deg,#10b981,#059669)" },
-          { label: nav("Avg Rating",             "متوسط التقييم"),   value: avgRating,                           gradient: "linear-gradient(135deg,#f59e0b,#d97706)" },
-          { label: nav("Avg Lead Time",          "متوسط التوريد"),   value: avgLead != null ? `${avgLead}d` : "—", gradient: "linear-gradient(135deg,#8b5cf6,#7c3aed)" },
+          { label: "إجمالي الموردين", value: suppliers.length,                    gradient: "linear-gradient(135deg,#3b82f6,#1d4ed8)" },
+          { label: "موردو المواد",     value: rawMatSuppliers,                     gradient: "linear-gradient(135deg,#10b981,#059669)" },
+          { label: "متوسط التقييم",   value: avgRating,                           gradient: "linear-gradient(135deg,#f59e0b,#d97706)" },
+          { label: "متوسط التوريد",   value: avgLead != null ? `${avgLead}d` : "—", gradient: "linear-gradient(135deg,#8b5cf6,#7c3aed)" },
         ].map((k) => (
           <div key={k.label} style={{ borderRadius: 14, padding: "1rem 1.1rem", background: k.gradient, color: "#fff", boxShadow: "0 4px 12px rgba(0,0,0,.15)" }}>
             <p style={{ margin: 0, fontSize: ".72rem", fontWeight: 600, opacity: .85, textTransform: "uppercase", letterSpacing: ".06em" }}>{k.label}</p>
@@ -209,25 +209,25 @@ export default function SupplierManagement() {
         {!isReadOnly && (
           <Button size="sm" onClick={openNew}>
             <Plus size={15} className="me-1" />
-            {nav("Add Supplier", "إضافة مورد")}
+            {"إضافة مورد"}
           </Button>
         )}
         <div className="relative">
           <Search size={14} className="absolute start-2.5 top-1/2 -translate-y-1/2 text-[var(--text-secondary)]" />
           <input
             className="input ps-8 h-8 text-sm w-48"
-            placeholder={nav("Search...", "بحث...")}
+            placeholder={"بحث..."}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
         <select className="input text-sm h-8 min-w-[160px]" value={filterCat} onChange={(e) => setFilterCat(e.target.value)}>
-          <option value="">{nav("All Categories", "جميع الفئات")}</option>
+          <option value="">{"جميع الفئات"}</option>
           {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
         </select>
         {(filterCat || search) && (
           <button className="text-xs text-[var(--text-secondary)] underline" onClick={() => { setFilterCat(""); setSearch(""); }}>
-            {nav("Clear filters", "مسح الفلتر")}
+            {"مسح الفلتر"}
           </button>
         )}
       </div>
@@ -238,9 +238,9 @@ export default function SupplierManagement() {
           <div className="flex items-center justify-between mb-5">
             <div>
               <h3 className="font-bold text-[var(--text-primary)] text-base">
-                {editingId ? nav("Edit Supplier", "تعديل المورد") : nav("New Supplier", "إضافة مورد جديد")}
+                {editingId ? "تعديل المورد" : "إضافة مورد جديد"}
               </h3>
-              <p className="text-xs text-[var(--text-secondary)] mt-0.5">{nav("Fill in the supplier details below", "أدخل بيانات المورد أدناه")}</p>
+              <p className="text-xs text-[var(--text-secondary)] mt-0.5">{"أدخل بيانات المورد أدناه"}</p>
             </div>
             <button className="text-[var(--text-secondary)] hover:text-[var(--text-primary)]" onClick={() => setShowForm(false)}>
               <X size={18} />
@@ -248,57 +248,57 @@ export default function SupplierManagement() {
           </div>
 
           {/* Section: Identity */}
-          <p className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wide mb-2">{nav("Identity", "بيانات المورد")}</p>
+          <p className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wide mb-2">{"بيانات المورد"}</p>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
             <div className="sm:col-span-2">
-              <label className="label">{nav("Company Name *", "اسم الشركة *")}</label>
-              <input className="input" placeholder={nav("e.g. Plastisource Ltd.", "مثال: شركة بلاستي سورس")} value={form.name}
+              <label className="label">{"اسم الشركة *"}</label>
+              <input className="input" placeholder={"مثال: شركة بلاستي سورس"} value={form.name}
                 onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))} />
             </div>
             <div>
-              <label className="label">{nav("Category *", "الفئة *")}</label>
+              <label className="label">{"الفئة *"}</label>
               <select className="input" value={form.category} onChange={(e) => setForm((p) => ({ ...p, category: e.target.value }))}>
-                <option value="">{nav("Select category...", "اختر الفئة...")}</option>
+                <option value="">{"اختر الفئة..."}</option>
                 {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
               </select>
             </div>
             <div>
-              <label className="label">{nav("Contact Person", "مسؤول التواصل")}</label>
-              <input className="input" placeholder={nav("Full name", "الاسم الكامل")} value={form.contactPerson}
+              <label className="label">{"مسؤول التواصل"}</label>
+              <input className="input" placeholder={"الاسم الكامل"} value={form.contactPerson}
                 onChange={(e) => setForm((p) => ({ ...p, contactPerson: e.target.value }))} />
             </div>
             <div>
-              <label className="label">{nav("Phone", "الهاتف")}</label>
+              <label className="label">{"الهاتف"}</label>
               <input className="input" type="tel" placeholder="+972 5X-XXX-XXXX" value={form.phone}
                 onChange={(e) => setForm((p) => ({ ...p, phone: e.target.value }))} />
             </div>
             <div>
-              <label className="label">{nav("Email", "البريد الإلكتروني")}</label>
+              <label className="label">{"البريد الإلكتروني"}</label>
               <input className="input" type="email" placeholder="supplier@company.com" value={form.email}
                 onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))} />
             </div>
           </div>
 
           {/* Section: Logistics */}
-          <p className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wide mb-2 mt-1">{nav("Logistics & Terms", "الخدمات والشروط")}</p>
+          <p className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wide mb-2 mt-1">{"الخدمات والشروط"}</p>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
             <div className="sm:col-span-2">
-              <label className="label">{nav("Address / Region", "العنوان / المنطقة")}</label>
-              <input className="input" placeholder={nav("e.g. Ramallah, West Bank", "مثال: رام الله، الضفة الغربية")} value={form.address}
+              <label className="label">{"العنوان / المنطقة"}</label>
+              <input className="input" placeholder={"مثال: رام الله، الضفة الغربية"} value={form.address}
                 onChange={(e) => setForm((p) => ({ ...p, address: e.target.value }))} />
             </div>
             <div>
-              <label className="label">{nav("Lead Time (days)", "وقت التوريد (أيام)")}</label>
+              <label className="label">{"وقت التوريد (أيام)"}</label>
               <input className="input" type="number" min="0" placeholder="e.g. 7" value={form.leadTimeDays}
                 onChange={(e) => setForm((p) => ({ ...p, leadTimeDays: e.target.value }))} />
             </div>
             <div>
-              <label className="label">{nav("Website", "الموقع الإلكتروني")}</label>
+              <label className="label">{"الموقع الإلكتروني"}</label>
               <input className="input" placeholder="https://..." value={form.website}
                 onChange={(e) => setForm((p) => ({ ...p, website: e.target.value }))} />
             </div>
             <div>
-              <label className="label">{nav("Rating (1–5)", "التقييم (1–5)")}</label>
+              <label className="label">{"التقييم (1–5)"}</label>
               <div className="flex items-center gap-3 mt-1">
                 <StarRating value={parseInt(form.rating) || 0} onChange={(v) => setForm((p) => ({ ...p, rating: String(v) }))} />
                 {form.rating && <span className="text-sm font-bold text-yellow-500">{form.rating}/5</span>}
@@ -308,18 +308,18 @@ export default function SupplierManagement() {
 
           {/* Notes */}
           <div className="mb-4">
-            <label className="label">{nav("Notes / Special Terms", "ملاحظات / شروط خاصة")}</label>
+            <label className="label">{"ملاحظات / شروط خاصة"}</label>
             <textarea className="input resize-none" rows={2}
-              placeholder={nav("Payment terms, minimum order, preferred delivery day, etc.", "شروط الدفع، الحد الأدنى للطلب، يوم التسليم المفضل...")}
+              placeholder={"شروط الدفع، الحد الأدنى للطلب، يوم التسليم المفضل..."}
               value={form.notes} onChange={(e) => setForm((p) => ({ ...p, notes: e.target.value }))} />
           </div>
 
           <div className="flex gap-2 pt-2 border-t border-[var(--border-default)]">
             <Button size="sm" onClick={handleSave} disabled={saving || !form.name.trim()}>
               <Save size={14} className="me-1" />
-              {saving ? nav("Saving...", "جارٍ الحفظ...") : nav("Save Supplier", "حفظ المورد")}
+              {saving ? "جارٍ الحفظ..." : "حفظ المورد"}
             </Button>
-            <Button size="sm" variant="outline" onClick={() => setShowForm(false)}>{nav("Cancel", "إلغاء")}</Button>
+            <Button size="sm" variant="outline" onClick={() => setShowForm(false)}>{"إلغاء"}</Button>
           </div>
         </Card>
       )}
@@ -330,8 +330,8 @@ export default function SupplierManagement() {
       ) : filtered.length === 0 ? (
         <Card className="p-12 text-center text-[var(--text-secondary)]">
           <Truck size={32} className="mx-auto mb-3 opacity-30" />
-          <p className="font-medium">{nav("No suppliers found", "لا يوجد موردون")}</p>
-          <p className="text-sm mt-1">{nav("Add your first supplier to get started", "أضف أول مورد للبدء")}</p>
+          <p className="font-medium">{"لا يوجد موردون"}</p>
+          <p className="text-sm mt-1">{"أضف أول مورد للبدء"}</p>
         </Card>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -350,7 +350,7 @@ export default function SupplierManagement() {
                         background: meta.color + "20", color: meta.color,
                         borderRadius: "20px", padding: "1px 8px", fontSize: ".68rem", fontWeight: 700,
                       }}>
-                        {s.category ?? nav("Uncategorized", "غير مصنف")}
+                        {s.category ?? "غير مصنف"}
                       </span>
                     </div>
                   </div>
@@ -419,7 +419,7 @@ export default function SupplierManagement() {
                         <span className="text-xs text-[var(--text-secondary)] ms-0.5">{s.rating}</span>
                       </div>
                     ) : (
-                      <span className="text-xs text-[var(--text-secondary)]">{nav("Not rated", "غير مقيّم")}</span>
+                      <span className="text-xs text-[var(--text-secondary)]">{"غير مقيّم"}</span>
                     )}
                   </div>
                   <div className="flex items-center gap-3 text-xs text-[var(--text-secondary)]">

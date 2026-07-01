@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
+﻿import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import {
   CheckCircle,
   Clock,
@@ -96,9 +96,9 @@ const ROLE_COLORS: Record<string, string> = {
 };
 
 const LEAVE_BADGE: Record<string, { label: string; color: string; bg: string }> = {
-  SICK:   { label: "Sick",   color: "#b91c1c", bg: "#fee2e2" },
-  ANNUAL: { label: "Annual", color: "#1d4ed8", bg: "#dbeafe" },
-  UNPAID: { label: "Unpaid", color: "#92400e", bg: "#fef3c7" },
+  SICK:   { label: "مرضية",   color: "#b91c1c", bg: "#fee2e2" },
+  ANNUAL: { label: "سنوية", color: "#1d4ed8", bg: "#dbeafe" },
+  UNPAID: { label: "بدون أجر", color: "#92400e", bg: "#fef3c7" },
 };
 
 function KpiCard({ label, value, gradient, icon }: { label: string; value: string | number; gradient: string; icon: ReactNode }) {
@@ -173,7 +173,7 @@ export function PayrollAdminPage() {
       const res = await api(`/payroll/daily?date=${dateFilter}`);
       if (!res.ok) throw new Error(await readApiError(res));
       setDaily((await res.json()) as DailyRecord[]);
-    } catch (e) { setDailyError(e instanceof Error ? e.message : "Failed"); }
+    } catch (e) { setDailyError(e instanceof Error ? e.message : "فشل"); }
     finally { setDailyLoading(false); }
   }, [dateFilter]);
 
@@ -189,7 +189,7 @@ export function PayrollAdminPage() {
       if (!lr.ok) throw new Error(await readApiError(lr));
       setOverview(await or.json());
       setMonthlyRecords(await lr.json());
-    } catch (e) { setMonthlyError(e instanceof Error ? e.message : "Failed"); }
+    } catch (e) { setMonthlyError(e instanceof Error ? e.message : "فشل"); }
     finally { setMonthlyLoading(false); }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [monthFilter]);
@@ -204,14 +204,14 @@ export function PayrollAdminPage() {
         body: JSON.stringify({ month: monthFilter }),
       });
       const data = await res.json() as { calculated?: number; message?: string };
-      if (!res.ok) { toast.error(data.message ?? "Error"); return; }
+      if (!res.ok) { toast.error(data.message ?? "خطأ"); return; }
       toast.success(
         data.calculated === 0
-          ? (isAr ? "لا سجلات جديدة" : "No new records")
-          : (isAr ? `تم احتساب ${data.calculated} راتب` : `Calculated ${data.calculated} payroll(s)`)
+          ? ("لا سجلات جديدة")
+          : (`تم احتساب ${data.calculated} راتب`)
       );
       void loadMonthly();
-    } catch (e) { toast.error(e instanceof Error ? e.message : "Failed"); }
+    } catch (e) { toast.error(e instanceof Error ? e.message : "فشل"); }
     finally { setCalculatingMonthly(false); }
   };
 
@@ -230,7 +230,7 @@ export function PayrollAdminPage() {
       const res = await api("/payroll/admin/deduction-rules");
       if (!res.ok) throw new Error(await readApiError(res));
       setDeductionRules((await res.json()) as DeductionRule[]);
-    } catch (e) { toast.error(e instanceof Error ? e.message : "Failed"); }
+    } catch (e) { toast.error(e instanceof Error ? e.message : "فشل"); }
     finally { setDeductionLoading(false); }
   }, []);
 
@@ -244,7 +244,7 @@ export function PayrollAdminPage() {
       });
       if (!res.ok) { toast.error(await readApiError(res)); return; }
       setDeductionRules((prev) => prev.map((r) => r.type === type ? { ...r, isActive } : r));
-    } catch (e) { toast.error(e instanceof Error ? e.message : "Failed"); }
+    } catch (e) { toast.error(e instanceof Error ? e.message : "فشل"); }
     finally { setSavingRule(null); }
   };
 
@@ -264,8 +264,8 @@ export function PayrollAdminPage() {
       const updated = (await res.json()) as DeductionRule;
       setDeductionRules((prev) => prev.map((r) => r.type === editRule.type ? updated : r));
       setEditRule(null);
-      toast.success("Rule updated");
-    } catch (e) { toast.error(e instanceof Error ? e.message : "Failed"); }
+      toast.success("تم تحديث القاعدة");
+    } catch (e) { toast.error(e instanceof Error ? e.message : "فشل"); }
     finally { setSavingRule(null); }
   };
 
@@ -275,7 +275,7 @@ export function PayrollAdminPage() {
       const res = await api("/payroll/admin/user-salaries");
       if (!res.ok) throw new Error(await readApiError(res));
       setUserSalaries((await res.json()) as UserSalary[]);
-    } catch (e) { toast.error(e instanceof Error ? e.message : "Failed"); }
+    } catch (e) { toast.error(e instanceof Error ? e.message : "فشل"); }
     finally { setUserSalariesLoading(false); }
   }, []);
 
@@ -298,7 +298,7 @@ export function PayrollAdminPage() {
       const res = await api(`/payroll/daily/${id}/confirm`, { method: "POST" });
       if (!res.ok) { toast.error(await readApiError(res)); return; }
       setDaily((prev) => prev.map((r) => r.id === id ? { ...r, isConfirmed: true, confirmedAt: new Date().toISOString() } : r));
-    } catch (e) { toast.error(e instanceof Error ? e.message : "Failed"); }
+    } catch (e) { toast.error(e instanceof Error ? e.message : "فشل"); }
     finally { setConfirmingId(null); }
   };
 
@@ -313,13 +313,13 @@ export function PayrollAdminPage() {
       if (!res.ok) { toast.error(await readApiError(res)); return; }
       setDaily((prev) => prev.map((r) => r.attendance?.id === attendanceId ? { ...r, leaveType } : r));
       setMarkLeaveFor(null);
-      toast.success(leaveType ? `Marked as ${leaveType}` : "Leave cleared");
-    } catch (e) { toast.error(e instanceof Error ? e.message : "Failed"); }
+      toast.success(leaveType ? `Marked as ${leaveType}` : "تم إلغاء الإجازة");
+    } catch (e) { toast.error(e instanceof Error ? e.message : "فشل"); }
     finally { setMarkingLeave(false); }
   };
 
   const calculateAllForDate = async () => {
-    if (!dateFilter) { setCalcMsg(isAr ? "اختر تاريخاً أولاً" : "Select a date first"); return; }
+    if (!dateFilter) { setCalcMsg("اختر تاريخاً أولاً"); return; }
     setCalculating(true); setCalcMsg("");
     try {
       const res = await api("/payroll/daily/calculate-date", {
@@ -331,11 +331,11 @@ export function PayrollAdminPage() {
       if (!res.ok) { setCalcMsg(data.message ?? "Error"); return; }
       setCalcMsg(
         data.calculated === 0
-          ? (isAr ? "لا توجد سجلات جديدة" : "No new records to process")
-          : (isAr ? `تم حساب ${data.calculated} راتب` : `Calculated ${data.calculated} payroll record(s)`)
+          ? ("لا توجد سجلات جديدة")
+          : (`تم حساب ${data.calculated} راتب`)
       );
       void loadDaily();
-    } catch (e) { setCalcMsg(e instanceof Error ? e.message : "Failed"); }
+    } catch (e) { setCalcMsg(e instanceof Error ? e.message : "فشل"); }
     finally { setCalculating(false); }
   };
 
@@ -350,7 +350,7 @@ export function PayrollAdminPage() {
       });
       if (!res.ok) { toast.error(await readApiError(res)); return; }
       await loadConfigs(); setEditConfig(null);
-    } catch (e) { toast.error(e instanceof Error ? e.message : "Failed"); }
+    } catch (e) { toast.error(e instanceof Error ? e.message : "فشل"); }
     finally { setSavingConfig(false); }
   };
 
@@ -365,20 +365,20 @@ export function PayrollAdminPage() {
       });
       if (!res.ok) { toast.error(await readApiError(res)); return; }
       setMonthlyRecords((prev) => prev.map((r) => r.id === editMonthly.id ? { ...r, totalSalary: Number(editMonthly.value) } : r));
-      setEditMonthly(null); toast.success("Payroll updated");
-    } catch (e) { toast.error(e instanceof Error ? e.message : "Failed"); }
+      setEditMonthly(null); toast.success("تم تحديث الراتب");
+    } catch (e) { toast.error(e instanceof Error ? e.message : "فشل"); }
     finally { setSavingMonthly(false); }
   };
 
   const deleteMonthlyPayroll = async (id: number) => {
-    if (!confirm("Delete this payroll record? This cannot be undone.")) return;
+    if (!confirm("حذف سجل الراتب؟ لا يمكن التراجع.")) return;
     setDeletingId(id);
     try {
       const res = await api(`/payroll/${id}`, { method: "DELETE" });
       if (!res.ok) { toast.error(await readApiError(res)); return; }
       setMonthlyRecords((prev) => prev.filter((r) => r.id !== id));
-      toast.success("Payroll deleted");
-    } catch (e) { toast.error(e instanceof Error ? e.message : "Failed"); }
+      toast.success("تم حذف الراتب");
+    } catch (e) { toast.error(e instanceof Error ? e.message : "فشل"); }
     finally { setDeletingId(null); }
   };
 
@@ -393,8 +393,8 @@ export function PayrollAdminPage() {
         body: JSON.stringify({ monthlySalary }),
       });
       if (!res.ok) { toast.error(await readApiError(res)); return; }
-      await loadUserSalaries(); setEditUserSalary(null); toast.success("Salary updated");
-    } catch (e) { toast.error(e instanceof Error ? e.message : "Failed"); }
+      await loadUserSalaries(); setEditUserSalary(null); toast.success("تم تحديث الراتب");
+    } catch (e) { toast.error(e instanceof Error ? e.message : "فشل"); }
     finally { setSavingUserSalary(false); }
   };
 
@@ -403,16 +403,16 @@ export function PayrollAdminPage() {
   const dailyTotal = useMemo(() => daily.reduce((s, r) => s + r.totalDailyPay, 0), [daily]);
 
   const tabs = [
-    { key: "daily",    label: isAr ? "الرواتب اليومية"  : "Daily Payroll" },
-    { key: "monthly",  label: isAr ? "الملخص الشهري"    : "Monthly Summary" },
-    { key: "salaries", label: isAr ? "رواتب الموظفين"   : "User Salaries" },
-    { key: "config",   label: isAr ? "إعداد الرواتب"    : "Salary Config" },
+    { key: "daily",    label: "الرواتب اليومية" },
+    { key: "monthly",  label: "الملخص الشهري" },
+    { key: "salaries", label: "رواتب الموظفين" },
+    { key: "config",   label: "إعداد الرواتب" },
   ] as const;
 
   return (
     <ModulePageShell
-      title={isAr ? "إدارة الرواتب" : "Payroll Management"}
-      subtitle={isAr ? "تأكيد الرواتب اليومية وعرض التقارير الشهرية." : "Confirm daily payrolls and view monthly reports."}
+      title={"إدارة الرواتب"}
+      subtitle={"تأكيد الرواتب اليومية وعرض التقارير الشهرية."}
       actions={
         <button className="btn btn--ghost btn--sm" onClick={() => {
           if (tab === "daily") void loadDaily();
@@ -420,7 +420,7 @@ export function PayrollAdminPage() {
           if (tab === "config") { void loadConfigs(); void loadDeductionRules(); }
           if (tab === "salaries") void loadUserSalaries();
         }}>
-          <RefreshCw size={14} />{isAr ? "تحديث" : "Refresh"}
+          <RefreshCw size={14} />{"تحديث"}
         </button>
       }
     >
@@ -440,24 +440,24 @@ export function PayrollAdminPage() {
       {tab === "daily" && (
         <>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "1rem", marginBottom: "1.5rem" }}>
-            <KpiCard label={isAr ? "قيد الانتظار" : "Pending"}    value={pendingCount}                     gradient="linear-gradient(135deg,#f97316,#ea580c)" icon={<AlertCircle size={20} />} />
-            <KpiCard label={isAr ? "مؤكد" : "Confirmed"}           value={confirmedCount}                   gradient="linear-gradient(135deg,#10b981,#059669)" icon={<CheckCircle size={20} />} />
-            <KpiCard label={isAr ? "إجمالي اليوم" : "Day Total"}   value={`${dailyTotal.toFixed(2)} ₪`}  gradient="linear-gradient(135deg,#3b82f6,#1d4ed8)" icon={<DollarSign size={20} />} />
-            <KpiCard label={isAr ? "الموظفون" : "Employees"}       value={daily.length}                     gradient="linear-gradient(135deg,#8b5cf6,#7c3aed)" icon={<Users size={20} />} />
+            <KpiCard label={"قيد الانتظار"}    value={pendingCount}                     gradient="linear-gradient(135deg,#f97316,#ea580c)" icon={<AlertCircle size={20} />} />
+            <KpiCard label={"مؤكد"}           value={confirmedCount}                   gradient="linear-gradient(135deg,#10b981,#059669)" icon={<CheckCircle size={20} />} />
+            <KpiCard label={"إجمالي اليوم"}   value={`${dailyTotal.toFixed(2)} ₪`}  gradient="linear-gradient(135deg,#3b82f6,#1d4ed8)" icon={<DollarSign size={20} />} />
+            <KpiCard label={"الموظفون"}       value={daily.length}                     gradient="linear-gradient(135deg,#8b5cf6,#7c3aed)" icon={<Users size={20} />} />
           </div>
 
           {/* Filter row */}
           <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap", marginBottom: "1.25rem", alignItems: "flex-end", background: "var(--bg-surface)", border: "1px solid var(--border-default)", borderRadius: "var(--radius-xl)", padding: "1rem 1.25rem" }}>
             <div className="field" style={{ flex: "0 0 auto" }}>
-              <label className="field__label">{isAr ? "تاريخ" : "Date"}</label>
+              <label className="field__label">{"تاريخ"}</label>
               <input type="date" className="field__control" value={dateFilter} onChange={(e) => setDateFilter(e.target.value)} style={{ width: "min(180px, 100%)" }} />
             </div>
-            <button className="btn btn--primary btn--sm" onClick={() => void loadDaily()}>{isAr ? "بحث" : "Search"}</button>
+            <button className="btn btn--primary btn--sm" onClick={() => void loadDaily()}>{"بحث"}</button>
             <div style={{ flex: 1 }} />
             <div style={{ display: "flex", flexDirection: "column", gap: ".35rem", alignItems: "flex-end" }}>
-              <label className="field__label" style={{ alignSelf: "flex-start" }}>{isAr ? "حساب رواتب اليوم المحدد" : "Calculate payrolls for selected date"}</label>
+              <label className="field__label" style={{ alignSelf: "flex-start" }}>{"حساب رواتب اليوم المحدد"}</label>
               <button className="btn btn--outline btn--sm" onClick={() => void calculateAllForDate()} disabled={calculating} style={{ display: "flex", alignItems: "center", gap: ".4rem" }}>
-                <RefreshCw size={13} />{calculating ? "..." : isAr ? "احسب الكل" : "Calculate All"}
+                <RefreshCw size={13} />{calculating ? "..." : "احسب الكل"}
               </button>
               {calcMsg && (
                 <p style={{ margin: 0, fontSize: ".78rem", color: calcMsg.includes("0") || calcMsg.toLowerCase().includes("error") ? "var(--orange-500)" : "var(--green-600)" }}>{calcMsg}</p>
@@ -472,15 +472,15 @@ export function PayrollAdminPage() {
               <table className="admin-table">
                 <thead>
                   <tr>
-                    <th>{isAr ? "الموظف" : "Employee"}</th>
-                    <th>{isAr ? "الدور" : "Role"}</th>
-                    <th>{isAr ? "الدخول" : "Check-in"}</th>
-                    <th>{isAr ? "الخروج" : "Check-out"}</th>
-                    <th>{isAr ? "الساعات" : "Hours"}</th>
-                    <th>{isAr ? "الراتب اليومي" : "Daily Pay"}</th>
-                    <th>{isAr ? "الإجازة" : "Leave"}</th>
-                    <th>{isAr ? "الحالة" : "Status"}</th>
-                    <th>{isAr ? "إجراء" : "Action"}</th>
+                    <th>{"الموظف"}</th>
+                    <th>{"الدور"}</th>
+                    <th>{"الدخول"}</th>
+                    <th>{"الخروج"}</th>
+                    <th>{"الساعات"}</th>
+                    <th>{"الراتب اليومي"}</th>
+                    <th>{"الإجازة"}</th>
+                    <th>{"الحالة"}</th>
+                    <th>{"إجراء"}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -490,7 +490,7 @@ export function PayrollAdminPage() {
                     <tr>
                       <td colSpan={9} style={{ textAlign: "center", padding: "2rem", color: "var(--text-secondary)" }}>
                         <Clock size={28} style={{ display: "block", margin: "0 auto .5rem", opacity: 0.4 }} />
-                        {isAr ? "لا توجد سجلات لهذا اليوم" : "No records for this date"}
+                        {"لا توجد سجلات لهذا اليوم"}
                       </td>
                     </tr>
                   ) : (
@@ -526,7 +526,7 @@ export function PayrollAdminPage() {
                                     style={{ fontSize: ".72rem", padding: "2px 7px", display: "flex", alignItems: "center", gap: ".2rem" }}
                                     onClick={() => setMarkLeaveFor(isMarkingThis ? null : { attendanceId: r.attendance!.id, current: r.leaveType })}
                                   >
-                                    {isAr ? "إجازة" : "Mark"} <ChevronDown size={11} />
+                                    {"إجازة"} <ChevronDown size={11} />
                                   </button>
                                   {isMarkingThis && (
                                     <div style={{ position: "absolute", top: "calc(100% + 4px)", left: 0, background: "var(--bg-surface)", border: "1px solid var(--border-default)", borderRadius: "var(--radius-md)", boxShadow: "0 4px 12px rgba(0,0,0,.12)", zIndex: 50, minWidth: "120px", overflow: "hidden" }}>
@@ -540,7 +540,7 @@ export function PayrollAdminPage() {
                                         <button disabled={markingLeave}
                                           style={{ display: "block", width: "100%", textAlign: "left", padding: ".45rem .75rem", fontSize: ".82rem", background: "transparent", cursor: "pointer", border: "none", borderTop: "1px solid var(--border-default)", color: "var(--text-secondary)" }}
                                           onClick={() => void markLeave(r.attendance!.id, null)}
-                                        >Clear</button>
+                                        >مسح</button>
                                       )}
                                     </div>
                                   )}
@@ -550,13 +550,13 @@ export function PayrollAdminPage() {
                           </td>
                           <td>
                             {r.isConfirmed
-                              ? <span className="badge badge--success"><CheckCircle size={12} /> {isAr ? "مؤكد" : "Confirmed"}</span>
-                              : <span className="badge badge--warning"><AlertCircle size={12} /> {isAr ? "انتظار" : "Pending"}</span>
+                              ? <span className="badge badge--success"><CheckCircle size={12} /> {"مؤكد"}</span>
+                              : <span className="badge badge--warning"><AlertCircle size={12} /> {"انتظار"}</span>
                             }
                           </td>
                           <td>
                             {!r.isConfirmed
-                              ? <button className="btn btn--primary btn--sm" onClick={() => void confirmRecord(r.id)} disabled={confirmingId === r.id}><CheckCircle size={13} />{confirmingId === r.id ? "..." : isAr ? "تأكيد" : "Confirm"}</button>
+                              ? <button className="btn btn--primary btn--sm" onClick={() => void confirmRecord(r.id)} disabled={confirmingId === r.id}><CheckCircle size={13} />{confirmingId === r.id ? "..." : "تأكيد"}</button>
                               : <span style={{ fontSize: ".75rem", color: "var(--text-secondary)" }}>{r.confirmedBy?.fullName ?? "—"}</span>
                             }
                           </td>
@@ -579,31 +579,31 @@ export function PayrollAdminPage() {
           {/* Month filter bar */}
           <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap", marginBottom: "1.5rem", alignItems: "flex-end", background: "var(--bg-surface)", border: "1px solid var(--border-default)", borderRadius: "var(--radius-xl)", padding: "1rem 1.25rem" }}>
             <div className="field" style={{ flex: "0 0 auto" }}>
-              <label className="field__label">{isAr ? "الشهر" : "Month"}</label>
+              <label className="field__label">{"الشهر"}</label>
               <input type="month" className="field__control" value={monthFilter} onChange={(e) => setMonthFilter(e.target.value)} style={{ width: "min(180px, 100%)" }} />
             </div>
-            <button className="btn btn--primary btn--sm" onClick={() => void loadMonthly()}>{isAr ? "بحث" : "Search"}</button>
+            <button className="btn btn--primary btn--sm" onClick={() => void loadMonthly()}>{"بحث"}</button>
             <div style={{ flex: 1 }} />
             <div style={{ display: "flex", flexDirection: "column", gap: ".35rem", alignItems: "flex-end" }}>
-              <label className="field__label" style={{ alignSelf: "flex-start" }}>{isAr ? "احتساب رواتب الشهر المحدد" : "Calculate monthly payrolls for selected month"}</label>
+              <label className="field__label" style={{ alignSelf: "flex-start" }}>{"احتساب رواتب الشهر المحدد"}</label>
               <button className="btn btn--outline btn--sm" onClick={() => void calculateMonthlyPayroll()} disabled={calculatingMonthly} style={{ display: "flex", alignItems: "center", gap: ".4rem" }}>
-                <RefreshCw size={13} />{calculatingMonthly ? "..." : isAr ? "احسب الشهر" : "Calculate Month"}
+                <RefreshCw size={13} />{calculatingMonthly ? "..." : "احسب الشهر"}
               </button>
             </div>
           </div>
 
           {/* KPI cards */}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "1rem", marginBottom: "1.5rem" }}>
-            <KpiCard label={isAr ? "سجلات الرواتب" : "Payroll Records"} value={overview?.totals.payrollCount ?? "—"}                                      gradient="linear-gradient(135deg,#3b82f6,#1d4ed8)" icon={<Users size={20} />} />
-            <KpiCard label={isAr ? "إجمالي الصرف" : "Total Payout"}      value={`${(overview?.totals.totalPayout ?? 0).toLocaleString()} ₪`}              gradient="linear-gradient(135deg,#10b981,#059669)" icon={<DollarSign size={20} />} />
-            <KpiCard label={isAr ? "الراتب الأساسي" : "Base Salary"}     value={`${(overview?.totals.totalBaseSalary ?? 0).toLocaleString()} ₪`}          gradient="linear-gradient(135deg,#8b5cf6,#7c3aed)" icon={<Clock size={20} />} />
-            <KpiCard label={isAr ? "الوقت الإضافي" : "Overtime"}         value={`${(overview?.totals.totalOvertimeSalary ?? 0).toLocaleString()} ₪`}      gradient="linear-gradient(135deg,#f97316,#ea580c)" icon={<Settings size={20} />} />
+            <KpiCard label={"سجلات الرواتب"} value={overview?.totals.payrollCount ?? "—"}                                      gradient="linear-gradient(135deg,#3b82f6,#1d4ed8)" icon={<Users size={20} />} />
+            <KpiCard label={"إجمالي الصرف"}      value={`${(overview?.totals.totalPayout ?? 0).toLocaleString()} ₪`}              gradient="linear-gradient(135deg,#10b981,#059669)" icon={<DollarSign size={20} />} />
+            <KpiCard label={"الراتب الأساسي"}     value={`${(overview?.totals.totalBaseSalary ?? 0).toLocaleString()} ₪`}          gradient="linear-gradient(135deg,#8b5cf6,#7c3aed)" icon={<Clock size={20} />} />
+            <KpiCard label={"الوقت الإضافي"}         value={`${(overview?.totals.totalOvertimeSalary ?? 0).toLocaleString()} ₪`}      gradient="linear-gradient(135deg,#f97316,#ea580c)" icon={<Settings size={20} />} />
           </div>
 
           <div className="payroll-monthly-grid">
             {/* By Role breakdown */}
             <div className="module-panel">
-              <h3 style={{ margin: "0 0 1rem", fontSize: ".88rem", fontWeight: 700, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: ".06em" }}>{isAr ? "حسب الدور" : "By Role"}</h3>
+              <h3 style={{ margin: "0 0 1rem", fontSize: ".88rem", fontWeight: 700, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: ".06em" }}>{"حسب الدور"}</h3>
               {monthlyLoading ? <div className="spinner" style={{ margin: "1rem auto" }} /> : (
                 <div style={{ display: "flex", flexDirection: "column", gap: ".5rem" }}>
                   {(overview?.byRole ?? []).map((r) => {
@@ -621,13 +621,13 @@ export function PayrollAdminPage() {
                           <span style={{ fontSize: ".72rem", color: "var(--text-secondary)", minWidth: 32 }}>{pct.toFixed(0)}%</span>
                         </div>
                         <p style={{ margin: ".25rem 0 0", fontSize: ".73rem", color: "var(--text-secondary)" }}>
-                          {r.payrollCount} {isAr ? "موظف" : "employees"}
+                          {r.payrollCount} {"موظف"}
                         </p>
                       </div>
                     );
                   })}
                   {(overview?.byRole ?? []).length === 0 && !monthlyLoading && (
-                    <p style={{ color: "var(--text-secondary)", fontSize: ".85rem" }}>{isAr ? "لا بيانات" : "No data"}</p>
+                    <p style={{ color: "var(--text-secondary)", fontSize: ".85rem" }}>{"لا بيانات"}</p>
                   )}
                 </div>
               )}
@@ -640,14 +640,14 @@ export function PayrollAdminPage() {
                   <table className="admin-table">
                     <thead>
                       <tr>
-                        <th>{isAr ? "الموظف" : "Employee"}</th>
-                        <th>{isAr ? "الدور" : "Role"}</th>
-                        <th>{isAr ? "الشهر" : "Month"}</th>
-                        <th>{isAr ? "الساعات" : "Hours"}</th>
-                        <th>{isAr ? "الأساسي" : "Base"}</th>
-                        <th>{isAr ? "الوقت الإضافي" : "Overtime"}</th>
-                        <th>{isAr ? "الإجمالي" : "Total"}</th>
-                        {isAdmin && <th>{isAr ? "إجراء" : "Action"}</th>}
+                        <th>{"الموظف"}</th>
+                        <th>{"الدور"}</th>
+                        <th>{"الشهر"}</th>
+                        <th>{"الساعات"}</th>
+                        <th>{"الأساسي"}</th>
+                        <th>{"الوقت الإضافي"}</th>
+                        <th>{"الإجمالي"}</th>
+                        {isAdmin && <th>{"إجراء"}</th>}
                       </tr>
                     </thead>
                     <tbody>
@@ -671,7 +671,7 @@ export function PayrollAdminPage() {
                               <div style={{ display: "flex", alignItems: "center", gap: ".4rem" }}>
                                 <input className="field__control" type="number" value={editMonthly.value} onChange={(e) => setEditMonthly({ ...editMonthly, value: e.target.value })} style={{ width: "110px", fontSize: ".85rem" }} autoFocus />
                                 <span style={{ fontSize: ".8rem", color: "var(--text-secondary)" }}>₪</span>
-                                <button className="btn btn--primary btn--sm" onClick={() => void saveMonthlyPayroll()} disabled={savingMonthly}>{savingMonthly ? "..." : isAr ? "حفظ" : "Save"}</button>
+                                <button className="btn btn--primary btn--sm" onClick={() => void saveMonthlyPayroll()} disabled={savingMonthly}>{savingMonthly ? "..." : "حفظ"}</button>
                                 <button className="btn btn--ghost btn--sm" onClick={() => setEditMonthly(null)}><X size={13} /></button>
                               </div>
                             ) : `${r.totalSalary.toLocaleString()} ₪`}
@@ -693,7 +693,7 @@ export function PayrollAdminPage() {
                       {monthlyRecords.length === 0 && (
                         <tr><td colSpan={isAdmin ? 8 : 7} style={{ textAlign: "center", padding: "2rem", color: "var(--text-secondary)" }}>
                           <DollarSign size={28} style={{ display: "block", margin: "0 auto .5rem", opacity: .3 }} />
-                          {isAr ? "لا توجد سجلات لهذا الشهر" : "No records for this month"}
+                          {"لا توجد سجلات لهذا الشهر"}
                         </td></tr>
                       )}
                     </tbody>
@@ -713,9 +713,9 @@ export function PayrollAdminPage() {
               <Users size={20} />
             </div>
             <div>
-              <h3 style={{ margin: 0, fontSize: "1rem", fontWeight: 700 }}>{isAr ? "رواتب الموظفين" : "Employee Salaries"}</h3>
+              <h3 style={{ margin: 0, fontSize: "1rem", fontWeight: 700 }}>{"رواتب الموظفين"}</h3>
               <p style={{ margin: ".25rem 0 0", fontSize: ".82rem", color: "var(--text-secondary)" }}>
-                {isAr ? "اضبط الراتب الشهري لكل موظف. اترك فارغاً لاستخدام راتب الدور الافتراضي." : "Set a monthly salary for each employee. Leave blank to use the role-default salary."}
+                {"اضبط الراتب الشهري لكل موظف. اترك فارغاً لاستخدام راتب الدور الافتراضي."}
               </p>
             </div>
           </div>
@@ -726,11 +726,11 @@ export function PayrollAdminPage() {
                 <table className="admin-table">
                   <thead>
                     <tr>
-                      <th>{isAr ? "الموظف" : "Employee"}</th>
-                      <th>{isAr ? "الدور" : "Role"}</th>
-                      <th>{isAr ? "الراتب الشهري" : "Monthly Salary"}</th>
-                      <th>{isAr ? "اليومي" : "Daily Rate"}</th>
-                      <th>{isAr ? "المصدر" : "Source"}</th>
+                      <th>{"الموظف"}</th>
+                      <th>{"الدور"}</th>
+                      <th>{"الراتب الشهري"}</th>
+                      <th>{"اليومي"}</th>
+                      <th>{"المصدر"}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -759,16 +759,16 @@ export function PayrollAdminPage() {
                                 />
                                 <span style={{ fontSize: ".8rem", color: "var(--text-secondary)" }}>₪/mo</span>
                                 <button className="btn btn--primary btn--sm" onClick={() => void saveUserSalary()} disabled={isSaving}>
-                                  {isSaving ? "..." : isAr ? "حفظ" : "Save"}
+                                  {isSaving ? "..." : "حفظ"}
                                 </button>
                                 {isCustom && (
                                   <button
                                     className="btn btn--ghost btn--sm"
                                     style={{ color: "var(--text-secondary)", fontSize: ".75rem" }}
-                                    title={isAr ? "إعادة تعيين إلى راتب الدور" : "Reset to role default"}
+                                    title={"إعادة تعيين إلى راتب الدور"}
                                     onClick={() => { setEditUserSalary({ ...editUserSalary, value: "" }); }}
                                   >
-                                    {isAr ? "إعادة تعيين" : "Reset"}
+                                    {"إعادة تعيين"}
                                   </button>
                                 )}
                                 <button className="btn btn--ghost btn--sm" onClick={() => setEditUserSalary(null)}><X size={13} /></button>
@@ -782,7 +782,7 @@ export function PayrollAdminPage() {
                                   <button
                                     className="btn btn--ghost btn--sm"
                                     style={{ padding: "3px 8px", opacity: .7 }}
-                                    title={isAr ? "تعديل الراتب" : "Edit salary"}
+                                    title={"تعديل الراتب"}
                                     onClick={() => setEditUserSalary({ userId: u.id, value: String(u.effectiveSalary) })}
                                   >
                                     <Edit2 size={13} />
@@ -798,13 +798,13 @@ export function PayrollAdminPage() {
                             {isCustom ? (
                               <div style={{ display: "flex", alignItems: "center", gap: ".4rem" }}>
                                 <span style={{ fontSize: ".75rem", background: "#dbeafe", color: "#1d4ed8", border: "1px solid #bfdbfe", borderRadius: "4px", padding: "1px 7px", fontWeight: 700 }}>
-                                  {isAr ? "مخصص" : "Custom"}
+                                  {"مخصص"}
                                 </span>
                                 {isAdmin && !isEditing && (
                                   <button
                                     className="btn btn--ghost btn--sm"
                                     style={{ padding: "2px 6px", fontSize: ".72rem", color: "var(--text-secondary)" }}
-                                    title={isAr ? "إعادة تعيين إلى راتب الدور" : "Reset to role default"}
+                                    title={"إعادة تعيين إلى راتب الدور"}
                                     onClick={() => {
                                       setEditUserSalary({ userId: u.id, value: "" });
                                       void (async () => {
@@ -817,19 +817,19 @@ export function PayrollAdminPage() {
                                           });
                                           if (!res.ok) { toast.error(await readApiError(res)); return; }
                                           await loadUserSalaries();
-                                          toast.success(isAr ? "تمت إعادة التعيين" : "Reset to role default");
-                                        } catch (e) { toast.error(e instanceof Error ? e.message : "Failed"); }
+                                          toast.success("تمت إعادة التعيين");
+                                        } catch (e) { toast.error(e instanceof Error ? e.message : "فشل"); }
                                         finally { setSavingUserSalary(false); setEditUserSalary(null); }
                                       })();
                                     }}
                                   >
-                                    ↩ {isAr ? "إعادة تعيين" : "Reset"}
+                                    ↩ {"إعادة تعيين"}
                                   </button>
                                 )}
                               </div>
                             ) : (
                               <span style={{ fontSize: ".75rem", color: "var(--text-secondary)" }}>
-                                {isAr ? "راتب الدور" : "Role default"} ({u.roleDefaultSalary.toLocaleString()} ₪)
+                                {"راتب الدور"} ({u.roleDefaultSalary.toLocaleString()} ₪)
                               </span>
                             )}
                           </td>
@@ -837,7 +837,7 @@ export function PayrollAdminPage() {
                       );
                     })}
                     {userSalaries.length === 0 && (
-                      <tr><td colSpan={5} style={{ textAlign: "center", padding: "2rem", color: "var(--text-secondary)" }}>{isAr ? "لا يوجد موظفون" : "No employees found"}</td></tr>
+                      <tr><td colSpan={5} style={{ textAlign: "center", padding: "2rem", color: "var(--text-secondary)" }}>{"لا يوجد موظفون"}</td></tr>
                     )}
                   </tbody>
                 </table>
@@ -855,9 +855,9 @@ export function PayrollAdminPage() {
               <Settings size={20} />
             </div>
             <div>
-              <h3 style={{ margin: 0, fontSize: "1rem", fontWeight: 700 }}>{isAr ? "إعداد الرواتب الشهرية" : "Monthly Salary Configuration"}</h3>
+              <h3 style={{ margin: 0, fontSize: "1rem", fontWeight: 700 }}>{"إعداد الرواتب الشهرية"}</h3>
               <p style={{ margin: ".25rem 0 0", fontSize: ".82rem", color: "var(--text-secondary)" }}>
-                {isAr ? "اضبط الراتب الشهري لكل دور. يُحسب اليومي = الشهري ÷ 30" : "Set the base monthly salary per role. Daily rate = monthly ÷ 30."}
+                {"اضبط الراتب الشهري لكل دور. يُحسب اليومي = الشهري ÷ 30"}
               </p>
             </div>
           </div>
@@ -871,19 +871,19 @@ export function PayrollAdminPage() {
                     <>
                       <input className="field__control" type="number" value={editConfig.value} onChange={(e) => setEditConfig({ ...editConfig, value: e.target.value })} style={{ width: "120px", fontSize: ".9rem" }} autoFocus />
                       <span style={{ fontSize: ".8rem", color: "var(--text-secondary)" }}>₪/mo</span>
-                      <button className="btn btn--primary btn--sm" onClick={() => void saveConfig()} disabled={savingConfig}>{savingConfig ? "..." : isAr ? "حفظ" : "Save"}</button>
-                      <button className="btn btn--ghost btn--sm" onClick={() => setEditConfig(null)}>{isAr ? "إلغاء" : "Cancel"}</button>
+                      <button className="btn btn--primary btn--sm" onClick={() => void saveConfig()} disabled={savingConfig}>{savingConfig ? "..." : "حفظ"}</button>
+                      <button className="btn btn--ghost btn--sm" onClick={() => setEditConfig(null)}>{"إلغاء"}</button>
                     </>
                   ) : (
                     <>
                       <span style={{ flex: 1, fontWeight: 600, fontSize: ".95rem" }}>{c.monthlySalary.toLocaleString()} ₪/mo</span>
                       <span style={{ fontSize: ".78rem", color: "var(--text-secondary)" }}>≈ {(c.monthlySalary / 30).toFixed(1)} ₪/day</span>
-                      {isAdmin && <button className="btn btn--ghost btn--sm" onClick={() => setEditConfig({ role: c.role, value: String(c.monthlySalary) })}>{isAr ? "تعديل" : "Edit"}</button>}
+                      {isAdmin && <button className="btn btn--ghost btn--sm" onClick={() => setEditConfig({ role: c.role, value: String(c.monthlySalary) })}>{"تعديل"}</button>}
                     </>
                   )}
                 </div>
               ))}
-              {configs.length === 0 && <p style={{ color: "var(--text-secondary)", fontSize: ".85rem" }}>{isAr ? "لا توجد إعدادات" : "No configs found"}</p>}
+              {configs.length === 0 && <p style={{ color: "var(--text-secondary)", fontSize: ".85rem" }}>{"لا توجد إعدادات"}</p>}
             </div>
           )}
 
@@ -893,9 +893,9 @@ export function PayrollAdminPage() {
               <AlertCircle size={18} />
             </div>
             <div>
-              <h3 style={{ margin: 0, fontSize: ".95rem", fontWeight: 700 }}>{isAr ? "قواعد الخصم التلقائي" : "Automated Deduction Rules"}</h3>
+              <h3 style={{ margin: 0, fontSize: ".95rem", fontWeight: 700 }}>{"قواعد الخصم التلقائي"}</h3>
               <p style={{ margin: 0, fontSize: ".8rem", color: "var(--text-secondary)" }}>
-                {isAr ? "تُطبَّق تلقائياً عند حساب الرواتب اليومية" : "Applied automatically when calculating daily payroll"}
+                {"تُطبَّق تلقائياً عند حساب الرواتب اليومية"}
               </p>
             </div>
           </div>
@@ -946,7 +946,7 @@ export function PayrollAdminPage() {
                         <span style={{ fontSize: "1.4rem", lineHeight: 1, marginTop: "2px" }}>{meta.icon}</span>
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={{ display: "flex", alignItems: "center", gap: ".75rem", flexWrap: "wrap", marginBottom: ".35rem" }}>
-                            <span style={{ fontWeight: 700, fontSize: ".92rem" }}>{isAr ? meta.titleAr : meta.title}</span>
+                            <span style={{ fontWeight: 700, fontSize: ".92rem" }}>{meta.titleAr}</span>
                             {/* Toggle switch */}
                             <button
                               disabled={isSaving || !isAdmin}
@@ -961,48 +961,48 @@ export function PayrollAdminPage() {
                               <span style={{ position: "absolute", top: "3px", left: rule.isActive ? "21px" : "3px", width: "16px", height: "16px", background: "#fff", borderRadius: "50%", transition: "left .2s" }} />
                             </button>
                             <span style={{ fontSize: ".78rem", fontWeight: 600, color: rule.isActive ? "var(--blue-600)" : "var(--text-secondary)" }}>
-                              {rule.isActive ? (isAr ? "مُفعَّل" : "Active") : (isAr ? "معطَّل" : "Inactive")}
+                              {rule.isActive ? ("مُفعَّل") : ("معطَّل")}
                             </span>
                           </div>
-                          <p style={{ margin: "0 0 .5rem", fontSize: ".8rem", color: "var(--text-secondary)" }}>{isAr ? meta.descAr : meta.desc}</p>
+                          <p style={{ margin: "0 0 .5rem", fontSize: ".8rem", color: "var(--text-secondary)" }}>{meta.descAr}</p>
 
                           {isEditing ? (
                             <div style={{ display: "flex", flexWrap: "wrap", gap: ".5rem", alignItems: "center", marginTop: ".35rem" }}>
                               {meta.showThreshold && (
                                 <div style={{ display: "flex", alignItems: "center", gap: ".35rem" }}>
-                                  <span style={{ fontSize: ".8rem", color: "var(--text-secondary)" }}>{isAr ? "الحد (دقيقة):" : "Threshold (min):"}</span>
+                                  <span style={{ fontSize: ".8rem", color: "var(--text-secondary)" }}>{"الحد (دقيقة):"}</span>
                                   <input className="field__control" type="number" min="0" value={editRule.thresholdMinutes} onChange={(e) => setEditRule({ ...editRule, thresholdMinutes: e.target.value })} style={{ width: "70px", fontSize: ".85rem" }} />
                                 </div>
                               )}
                               {type !== "EARLY_CHECKOUT" && type !== "UNEXCUSED_ABSENCE" && (
                                 <div style={{ display: "flex", alignItems: "center", gap: ".35rem" }}>
-                                  <span style={{ fontSize: ".8rem", color: "var(--text-secondary)" }}>{isAr ? meta.valueLabelAr : meta.valueLabel}:</span>
+                                  <span style={{ fontSize: ".8rem", color: "var(--text-secondary)" }}>{meta.valueLabelAr}:</span>
                                   <input className="field__control" type="number" min="0" placeholder={meta.valueHint} value={editRule.deductionValue} onChange={(e) => setEditRule({ ...editRule, deductionValue: e.target.value })} style={{ width: "80px", fontSize: ".85rem" }} />
                                 </div>
                               )}
-                              <button className="btn btn--primary btn--sm" onClick={() => void saveRuleParams()} disabled={isSaving}>{isSaving ? "..." : isAr ? "حفظ" : "Save"}</button>
+                              <button className="btn btn--primary btn--sm" onClick={() => void saveRuleParams()} disabled={isSaving}>{isSaving ? "..." : "حفظ"}</button>
                               <button className="btn btn--ghost btn--sm" onClick={() => setEditRule(null)}><X size={13} /></button>
                             </div>
                           ) : (
                             <div style={{ display: "flex", alignItems: "center", gap: ".75rem", flexWrap: "wrap" }}>
                               {meta.showThreshold && (
                                 <span style={{ fontSize: ".8rem", background: "var(--bg-surface)", border: "1px solid var(--border-default)", borderRadius: "6px", padding: "2px 8px" }}>
-                                  {isAr ? "الحد:" : "Threshold:"} <strong>{rule.thresholdMinutes} min</strong>
+                                  {"الحد:"} <strong>{rule.thresholdMinutes} min</strong>
                                 </span>
                               )}
                               {type === "LATE_ARRIVAL" && (
                                 <span style={{ fontSize: ".8rem", background: "var(--bg-surface)", border: "1px solid var(--border-default)", borderRadius: "6px", padding: "2px 8px" }}>
-                                  {isAr ? "الخصم:" : "Deduct:"} <strong>{rule.deductionValue} ₪/hr</strong>
+                                  {"الخصم:"} <strong>{rule.deductionValue} ₪/hr</strong>
                                 </span>
                               )}
                               {type === "SICK_LEAVE" && (
                                 <span style={{ fontSize: ".8rem", background: "var(--bg-surface)", border: "1px solid var(--border-default)", borderRadius: "6px", padding: "2px 8px" }}>
-                                  {isAr ? "معدل الأجر:" : "Pay rate:"} <strong>{rule.deductionValue}%</strong>
+                                  {"معدل الأجر:"} <strong>{rule.deductionValue}%</strong>
                                 </span>
                               )}
                               {isAdmin && (
                                 <button className="btn btn--ghost btn--sm" onClick={() => setEditRule({ type, thresholdMinutes: String(rule.thresholdMinutes), deductionValue: String(rule.deductionValue) })}>
-                                  <Edit2 size={12} /> {isAr ? "تعديل" : "Edit"}
+                                  <Edit2 size={12} /> {"تعديل"}
                                 </button>
                               )}
                             </div>

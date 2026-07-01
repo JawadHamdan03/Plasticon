@@ -1,6 +1,6 @@
 ﻿import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLocale } from "../../context/LocaleContext";
-import { API_BASE_URL, readApiError } from "../../lib/api";
+import { API_BASE_URL, pictureUrl as globalPictureUrl, readApiError } from "../../lib/api";
 import { ModulePageShell } from "../../components/ModulePageShell";
 import { Badge } from "../../components/ui/badge";
 import { Button } from "../../components/ui/button";
@@ -80,25 +80,16 @@ const toPublicFileUrl = (pathOrUrl?: string | null) => {
     return pathOrUrl;
   }
 
-  if (pathOrUrl.startsWith("/pictures/")) {
-    return `${API_BASE_URL}${pathOrUrl}`;
-  }
-
-  const normalized = pathOrUrl
-    .replace(/^prisma[\\/]+pictures[\\/]+/i, "")
-    .replace(/^pictures[\\/]+/i, "")
-    .replace(/^\/+/, "");
-
-  return normalized ? `${API_BASE_URL}/pictures/${normalized}` : "";
+  return globalPictureUrl(pathOrUrl);
 };
 
 const formatMoney = (locale: string, value: number) =>
-  new Intl.NumberFormat(locale === "ar" ? "ar-EG" : "en-US", {
+  new Intl.NumberFormat("ar-EG", {
     maximumFractionDigits: 2,
   }).format(value);
 
 const formatDate = (locale: string, value: string) =>
-  new Intl.DateTimeFormat(locale === "ar" ? "ar-EG" : "en-US", {
+  new Intl.DateTimeFormat("ar-EG", {
     year: "numeric",
     month: "short",
     day: "numeric",
@@ -213,7 +204,7 @@ export function CustomersPage() {
 
   return (
     <ModulePageShell
-      title={isArabic ? "الزبائن والمديونيات" : "Customers & Debts"}
+      title={"الزبائن والمديونيات"}
       subtitle={
         isArabic
           ? "هذه الصفحة تجمع مديونية كل زبون من سجلات المبيعات التي أضافها المحاسب، مع تفاصيل الأصناف وتاريخ البيع وصورة الفاتورة."
@@ -221,22 +212,22 @@ export function CustomersPage() {
       }
       actions={
         <Button variant="outline" onClick={() => void loadSales()}>
-          {isArabic ? "تحديث" : "Refresh"}
+          {"تحديث"}
         </Button>
       }
     >
       <div className="module-summary-bar flex flex-wrap items-center gap-2 rounded-2xl border border-[#EEEEEE] bg-[#FFFFFF] p-3">
-        <Badge tone="soft">{isArabic ? "الزبائن" : "Customers"}</Badge>
+        <Badge tone="soft">{"الزبائن"}</Badge>
         <Badge>{totals.customers}</Badge>
-        <Badge tone="soft">{isArabic ? "إجمالي الدين" : "Total debt"}</Badge>
+        <Badge tone="soft">{"إجمالي الدين"}</Badge>
         <Badge>{formatMoney(locale, totals.debt)}</Badge>
-        <Badge tone="soft">{isArabic ? "سجلات البيع" : "Sales records"}</Badge>
+        <Badge tone="soft">{"سجلات البيع"}</Badge>
         <Badge>{totals.sales}</Badge>
       </div>
 
       <Card className="module-panel p-5">
         <PageHeader
-          title={isArabic ? "ابحث عن زبون" : "Search customers"}
+          title={"ابحث عن زبون"}
           subtitle={
             isArabic
               ? "ابحث بالاسم أو الهاتف أو تفاصيل الفاتورة"
@@ -257,7 +248,7 @@ export function CustomersPage() {
       </Card>
 
       {loading ? (
-        <p>{isArabic ? "جاري تحميل الزبائن..." : "Loading customers..."}</p>
+        <p>{"جاري تحميل الزبائن..."}</p>
       ) : null}
       {errorMessage ? (
         <div className="auth-alert auth-alert--error">{errorMessage}</div>
@@ -266,7 +257,7 @@ export function CustomersPage() {
       {!loading && filteredLedgers.length === 0 ? (
         <EmptyState
           title={
-            isArabic ? "لا يوجد زبائن لديهم مديونية" : "No customer debts found"
+            "لا يوجد زبائن لديهم مديونية"
           }
           description={
             isArabic
@@ -282,7 +273,7 @@ export function CustomersPage() {
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
                 <p className="text-xs font-bold uppercase tracking-[0.14em] text-[#5F6659]">
-                  {isArabic ? "الزبون" : "Customer"}
+                  {"الزبون"}
                 </p>
                 <h2 className="mt-2 text-2xl font-black text-[#000000]">
                   {ledger.name}
@@ -295,14 +286,14 @@ export function CustomersPage() {
               </div>
               <div className="flex flex-wrap gap-2">
                 <Badge tone="accent">
-                  {isArabic ? "مديون" : "Debt"}:{" "}
+                  {"مديون"}:{" "}
                   {formatMoney(locale, ledger.totalDebt)}
                 </Badge>
                 <Badge tone="soft">
-                  {isArabic ? "المبيعات" : "Sales"}: {ledger.salesCount}
+                  {"المبيعات"}: {ledger.salesCount}
                 </Badge>
                 <Badge tone="soft">
-                  {isArabic ? "آخر بيع" : "Last sale"}:{" "}
+                  {"آخر بيع"}:{" "}
                   {ledger.lastSaleDate
                     ? formatDate(locale, ledger.lastSaleDate)
                     : "-"}
@@ -314,10 +305,10 @@ export function CustomersPage() {
               <TableBase className="admin-table">
                 <thead>
                   <tr>
-                    <th>{isArabic ? "التاريخ" : "Date"}</th>
-                    <th>{isArabic ? "المنتجات" : "Items"}</th>
-                    <th>{isArabic ? "الإجمالي" : "Amount"}</th>
-                    <th>{isArabic ? "الفاتورة" : "Invoice"}</th>
+                    <th>{"التاريخ"}</th>
+                    <th>{"المنتجات"}</th>
+                    <th>{"الإجمالي"}</th>
+                    <th>{"الفاتورة"}</th>
                   </tr>
                 </thead>
                 <tbody>

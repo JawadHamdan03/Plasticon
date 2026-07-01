@@ -17,19 +17,30 @@
       "bundleIdentifier": "com.plasticon.mobile",
       "entitlements": {
         "aps-environment": "production"
+      },
+      "infoPlist": {
+        "NSCameraUsageDescription": "Allow Plasticon to access your camera for video calls",
+        "NSMicrophoneUsageDescription": "Allow Plasticon to access your microphone for calls"
       }
     },
     "android": {
       "package": "com.plasticon.mobile",
-      "softwareKeyboardLayoutMode": "pan",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#0D1321"
-      }
+      },
+      "permissions": [
+        "CAMERA",
+        "RECORD_AUDIO",
+        "MODIFY_AUDIO_SETTINGS",
+        "ACCESS_NETWORK_STATE",
+        "CHANGE_NETWORK_STATE",
+        "INTERNET"
+      ]
     },
     "extra": {
       "eas": {
-        "projectId": ""
+        "projectId": "6a5d4fa0-b0dc-43c7-aaa0-94b9bfd07137"
       }
     },
     "plugins": [

@@ -1,9 +1,8 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { DollarSign, Wrench, Plus, X, Save } from "lucide-react";
 import { ModulePageShell } from "../../components/ModulePageShell";
 import { Button } from "../../components/ui/button";
 import { Card } from "../../components/ui/card";
-import { useLocale } from "../../context/LocaleContext";
 import { useAuth } from "../../context/AuthContext";
 import { API_BASE_URL } from "../../lib/api";
 
@@ -84,7 +83,7 @@ export default function MaintenanceCosts() {
   const totalCostCalc = laborTotal + parseFloat(form.sparesTotal || "0");
 
   const handleSave = async () => {
-    if (!form.maintenanceId) { setError(nav("Select a maintenance record", "اختر سجل صيانة")); return; }
+    if (!form.maintenanceId) { setError("اختر سجل صيانة"); return; }
     setError("");
     setSaving(true);
     try {
@@ -117,22 +116,22 @@ export default function MaintenanceCosts() {
 
   return (
     <ModulePageShell
-      title={nav("Maintenance Costs", "تكاليف الصيانة")}
-      subtitle={nav("Spare parts and labor costs per maintenance job", "تكاليف قطع الغيار والعمالة لكل مهمة صيانة")}
+      title={"تكاليف الصيانة"}
+      subtitle={"تكاليف قطع الغيار والعمالة لكل مهمة صيانة"}
       icon={<DollarSign size={22} />}
       actions={isAccountant ? (
         <Button size="sm" onClick={() => setShowForm(v => !v)}>
           {showForm ? <X size={14} /> : <Plus size={14} />}
-          {showForm ? nav("Cancel", "إلغاء") : nav("Add Cost", "إضافة تكلفة")}
+          {showForm ? "إلغاء" : "إضافة تكلفة"}
         </Button>
       ) : undefined}
     >
       {/* KPIs */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: ".75rem", marginBottom: "1.25rem" }}>
         {[
-          { label: nav("Total Jobs Costed", "المهام المسعّرة"),    value: records.length,                                                                        gradient: "linear-gradient(135deg,#3b82f6,#1d4ed8)" },
-          { label: nav("Total Spares Cost", "تكلفة قطع الغيار"),   value: `₪${totalSpares.toLocaleString(undefined,{maximumFractionDigits:2})}`,                  gradient: "linear-gradient(135deg,#f59e0b,#d97706)" },
-          { label: nav("Total Cost",        "التكلفة الإجمالية"),  value: `₪${totalCost.toLocaleString(undefined,{maximumFractionDigits:2})}`,                     gradient: "linear-gradient(135deg,#10b981,#059669)" },
+          { label: "المهام المسعّرة",    value: records.length,                                                                        gradient: "linear-gradient(135deg,#3b82f6,#1d4ed8)" },
+          { label: "تكلفة قطع الغيار",   value: `₪${totalSpares.toLocaleString(undefined,{maximumFractionDigits:2})}`,                  gradient: "linear-gradient(135deg,#f59e0b,#d97706)" },
+          { label: "التكلفة الإجمالية",  value: `₪${totalCost.toLocaleString(undefined,{maximumFractionDigits:2})}`,                     gradient: "linear-gradient(135deg,#10b981,#059669)" },
         ].map(k => (
           <div key={k.label} style={{ borderRadius: 14, padding: "1rem 1.1rem", background: k.gradient, color: "#fff", boxShadow: "0 4px 12px rgba(0,0,0,.15)" }}>
             <p style={{ margin: 0, fontSize: ".72rem", fontWeight: 600, opacity: .85, textTransform: "uppercase", letterSpacing: ".06em" }}>{k.label}</p>
@@ -144,47 +143,47 @@ export default function MaintenanceCosts() {
       {/* Add cost form — accountant only */}
       {isAccountant && showForm && (
         <Card className="p-5 mb-5 border-2 border-(--accent)">
-          <h3 style={{ margin: "0 0 1rem", fontSize: ".95rem", fontWeight: 700 }}>{nav("Add Cost Record", "إضافة سجل تكلفة")}</h3>
+          <h3 style={{ margin: "0 0 1rem", fontSize: ".95rem", fontWeight: 700 }}>{"إضافة سجل تكلفة"}</h3>
           {error && <div className="auth-alert auth-alert--error mb-3">{error}</div>}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
             <div className="sm:col-span-2">
-              <label className="label">{nav("Maintenance Job (with parts used) *", "مهمة الصيانة (بقطع مستخدمة) *")}</label>
+              <label className="label">{"مهمة الصيانة (بقطع مستخدمة) *"}</label>
               <select className="input" value={form.maintenanceId} onChange={e => setForm(p => ({ ...p, maintenanceId: e.target.value }))}>
-                <option value="">{nav("Select maintenance record...", "اختر سجل الصيانة...")}</option>
+                <option value="">{"اختر سجل الصيانة..."}</option>
                 {maintenances.map(m => (
                   <option key={m.id} value={m.id} disabled={costByMaintenanceId.has(m.id)}>
-                    {m.machine?.name ?? `#${m.id}`} — {m.partsUsed} {costByMaintenanceId.has(m.id) ? `(${nav("priced","مسعّر")})` : ""}
+                    {m.machine?.name ?? `#${m.id}`} — {m.partsUsed} {costByMaintenanceId.has(m.id) ? `(${"مسعّر"})` : ""}
                   </option>
                 ))}
               </select>
             </div>
             <div>
-              <label className="label">{nav("Labor Hours", "ساعات العمل")}</label>
+              <label className="label">{"ساعات العمل"}</label>
               <input type="number" min={0} step="0.5" className="input" value={form.laborHours} onChange={e => setForm(p => ({ ...p, laborHours: e.target.value }))} />
             </div>
             <div>
-              <label className="label">{nav("Labor Cost/hr (₪)", "تكلفة العمل/ساعة ($)")}</label>
+              <label className="label">{"تكلفة العمل/ساعة ($)"}</label>
               <input type="number" min={0} step="0.01" className="input" value={form.laborCostPerHour} onChange={e => setForm(p => ({ ...p, laborCostPerHour: e.target.value }))} />
             </div>
             <div>
-              <label className="label">{nav("Spare Parts Cost (₪)", "تكلفة قطع الغيار ($)")}</label>
+              <label className="label">{"تكلفة قطع الغيار ($)"}</label>
               <input type="number" min={0} step="0.01" className="input" value={form.sparesTotal} onChange={e => setForm(p => ({ ...p, sparesTotal: e.target.value }))} />
             </div>
             <div>
-              <label className="label">{nav("Total Cost (auto)", "التكلفة الإجمالية (تلقائي)")}</label>
+              <label className="label">{"التكلفة الإجمالية (تلقائي)"}</label>
               <input type="number" className="input" value={totalCostCalc.toFixed(2)} readOnly style={{ background: "var(--bg-subtle)", cursor: "not-allowed" }} />
             </div>
             <div className="sm:col-span-2">
-              <label className="label">{nav("Notes", "ملاحظات")}</label>
+              <label className="label">{"ملاحظات"}</label>
               <textarea className="input" rows={2} value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} />
             </div>
           </div>
           <div style={{ display: "flex", gap: ".625rem" }}>
             <Button size="sm" onClick={() => void handleSave()} disabled={saving}>
               <Save size={14} />
-              {saving ? nav("Saving...", "جارٍ الحفظ...") : nav("Save", "حفظ")}
+              {saving ? "جارٍ الحفظ..." : "حفظ"}
             </Button>
-            <Button size="sm" variant="outline" onClick={() => { setShowForm(false); setError(""); }}>{nav("Cancel", "إلغاء")}</Button>
+            <Button size="sm" variant="outline" onClick={() => { setShowForm(false); setError(""); }}>{"إلغاء"}</Button>
           </div>
         </Card>
       )}
@@ -193,19 +192,19 @@ export default function MaintenanceCosts() {
       {(isAccountant || isAdmin) && maintenances.length > 0 && (
         <div className="mb-6">
           <h3 style={{ margin: "0 0 .75rem", fontSize: ".9rem", fontWeight: 700, color: "var(--text-primary)" }}>
-            {nav("Maintenance Jobs — Parts Used", "مهام الصيانة — قطع مستخدمة")}
+            {"مهام الصيانة — قطع مستخدمة"}
           </h3>
           <Card className="overflow-hidden">
             <div className="overflow-x-auto">
               <table className="data-table w-full">
                 <thead>
                   <tr>
-                    <th>{nav("Machine", "الآلة")}</th>
-                    <th>{nav("Parts Used", "القطع المستخدمة")}</th>
-                    <th>{nav("Reason", "السبب")}</th>
-                    <th>{nav("Engineer", "المهندس")}</th>
-                    <th>{nav("Date", "التاريخ")}</th>
-                    <th>{nav("Cost Status", "حالة التسعير")}</th>
+                    <th>{"الآلة"}</th>
+                    <th>{"القطع المستخدمة"}</th>
+                    <th>{"السبب"}</th>
+                    <th>{"المهندس"}</th>
+                    <th>{"التاريخ"}</th>
+                    <th>{"حالة التسعير"}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -225,7 +224,7 @@ export default function MaintenanceCosts() {
                             </span>
                           ) : (
                             <span style={{ padding: ".2rem .6rem", borderRadius: 999, fontSize: ".75rem", fontWeight: 700, background: "#fef3c7", color: "#d97706" }}>
-                              {nav("Pending Price", "بانتظار التسعير")}
+                              {"بانتظار التسعير"}
                             </span>
                           )}
                         </td>
@@ -241,7 +240,7 @@ export default function MaintenanceCosts() {
 
       {/* Costed records */}
       <h3 style={{ margin: "0 0 .75rem", fontSize: ".9rem", fontWeight: 700, color: "var(--text-primary)" }}>
-        {nav("Priced Cost Records", "سجلات التكلفة المسعّرة")}
+        {"سجلات التكلفة المسعّرة"}
       </h3>
       <Card className="overflow-hidden">
         <div className="overflow-x-auto">
@@ -250,21 +249,21 @@ export default function MaintenanceCosts() {
           ) : records.length === 0 ? (
             <div className="p-10 text-center" style={{ color: "var(--text-secondary)" }}>
               <Wrench size={32} style={{ margin: "0 auto 12px", opacity: .3, display: "block" }} />
-              <p style={{ fontWeight: 600 }}>{nav("No cost records yet", "لا توجد سجلات تكلفة بعد")}</p>
-              {isAccountant && <p style={{ fontSize: ".85rem", marginTop: ".25rem" }}>{nav("Click 'Add Cost' to price a maintenance job", "انقر على 'إضافة تكلفة' لتسعير مهمة صيانة")}</p>}
+              <p style={{ fontWeight: 600 }}>{"لا توجد سجلات تكلفة بعد"}</p>
+              {isAccountant && <p style={{ fontSize: ".85rem", marginTop: ".25rem" }}>{"انقر على 'إضافة تكلفة' لتسعير مهمة صيانة"}</p>}
             </div>
           ) : (
             <table className="data-table w-full">
               <thead>
                 <tr>
-                  <th>{nav("Machine", "الآلة")}</th>
-                  <th>{nav("Parts", "القطع")}</th>
-                  <th>{nav("Labor hrs", "ساعات عمل")}</th>
-                  <th>{nav("Labor ₪", "تكلفة عمالة")}</th>
-                  <th>{nav("Spares ₪", "قطع غيار")}</th>
-                  <th>{nav("Total ₪", "الإجمالي")}</th>
-                  <th>{nav("Priced By", "سعّره")}</th>
-                  <th>{nav("Date", "التاريخ")}</th>
+                  <th>{"الآلة"}</th>
+                  <th>{"القطع"}</th>
+                  <th>{"ساعات عمل"}</th>
+                  <th>{"تكلفة عمالة"}</th>
+                  <th>{"قطع غيار"}</th>
+                  <th>{"الإجمالي"}</th>
+                  <th>{"سعّره"}</th>
+                  <th>{"التاريخ"}</th>
                 </tr>
               </thead>
               <tbody>
@@ -284,7 +283,7 @@ export default function MaintenanceCosts() {
               {records.length > 0 && (
                 <tfoot>
                   <tr style={{ fontWeight: 700, background: "var(--bg-subtle)" }}>
-                    <td colSpan={4}>{nav("Totals", "المجاميع")}</td>
+                    <td colSpan={4}>{"المجاميع"}</td>
                     <td>₪{totalSpares.toFixed(2)}</td>
                     <td style={{ color: "#059669" }}>₪{totalCost.toFixed(2)}</td>
                     <td colSpan={2} />

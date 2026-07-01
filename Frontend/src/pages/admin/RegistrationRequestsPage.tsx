@@ -46,7 +46,7 @@ function shiftBadge(shiftName: string) {
   const color = shiftColor[letter] ?? "#64748b";
   return (
     <span style={{ display: "inline-flex", alignItems: "center", gap: ".25rem", padding: ".2rem .65rem", borderRadius: 999, fontSize: ".72rem", fontWeight: 700, background: `${color}18`, color, border: `1px solid ${color}30` }}>
-      Shift {shiftName}
+      وردية {shiftName}
     </span>
   );
 }
@@ -74,7 +74,7 @@ export function RegistrationRequestsPage() {
       setRequests((await res.json()) as RegistrationRequest[]);
     } catch (err) {
       setActionTone("error");
-      setActionMsg(err instanceof Error ? err.message : "Failed to load");
+      setActionMsg(err instanceof Error ? err.message : "فشل التحميل");
     } finally {
       setLoading(false);
     }
@@ -115,12 +115,12 @@ export function RegistrationRequestsPage() {
       const data = (await res.json()) as { message: string; setPasswordUrl?: string };
       setApproveModal(null);
       setActionTone("success");
-      setActionMsg(`✓ Approved! Account created for ${approveModal.fullName}.`);
+      setActionMsg(`تمت الموافقة! تم إنشاء حساب ${approveModal.fullName}.`);
       if (data.setPasswordUrl) setSetPasswordUrl(data.setPasswordUrl);
       await load();
     } catch (err) {
       setActionTone("error");
-      setActionMsg(err instanceof Error ? err.message : "Failed to approve");
+      setActionMsg(err instanceof Error ? err.message : "فشل الموافقة");
     } finally {
       setSaving(false);
     }
@@ -136,11 +136,11 @@ export function RegistrationRequestsPage() {
       });
       if (!res.ok) throw new Error(await readApiError(res));
       setActionTone("success");
-      setActionMsg("Request rejected.");
+      setActionMsg("تم رفض الطلب.");
       await load();
     } catch (err) {
       setActionTone("error");
-      setActionMsg(err instanceof Error ? err.message : "Failed to reject");
+      setActionMsg(err instanceof Error ? err.message : "فشل الرفض");
     }
   };
 
@@ -163,8 +163,8 @@ export function RegistrationRequestsPage() {
 
   return (
     <ModulePageShell
-      title="Registration Requests"
-      subtitle="Review and approve new user access requests"
+      title="طلبات التسجيل"
+      subtitle="مراجعة والموافقة على طلبات الوصول الجديدة"
       actions={
         <button type="button" className="auth-button auth-button--ghost" onClick={() => void load()}>
           <RefreshCw size={14} style={{ marginRight: ".35rem" }} /> Refresh
@@ -217,22 +217,22 @@ export function RegistrationRequestsPage() {
         ) : requests.length === 0 ? (
           <div style={{ padding: "3rem", textAlign: "center", color: "var(--text-secondary)" }}>
             <UserPlus size={40} style={{ opacity: .3, marginBottom: ".75rem" }} />
-            <p style={{ margin: 0, fontWeight: 600 }}>No requests found</p>
+            <p style={{ margin: 0, fontWeight: 600 }}>لا توجد طلبات</p>
           </div>
         ) : (
           <div style={{ overflowX: "auto" }}>
             <table className="admin-table">
               <thead>
                 <tr>
-                  <th>Name</th>
-                  <th>Email</th>
-                  <th>Phone</th>
-                  <th>Message</th>
-                  <th>Status</th>
-                  <th>Role Assigned</th>
-                  <th>Submitted</th>
-                  <th>Reviewed By</th>
-                  <th>Actions</th>
+                  <th>الاسم</th>
+                  <th>البريد الإلكتروني</th>
+                  <th>الهاتف</th>
+                  <th>الرسالة</th>
+                  <th>الحالة</th>
+                  <th>الدور المعيَّن</th>
+                  <th>تاريخ الإرسال</th>
+                  <th>المراجع</th>
+                  <th>إجراءات</th>
                 </tr>
               </thead>
               <tbody>
@@ -256,10 +256,10 @@ export function RegistrationRequestsPage() {
                       {r.status === "PENDING" ? (
                         <div style={{ display: "flex", gap: ".4rem" }}>
                           <button type="button" onClick={() => openApproveModal(r)} style={{ padding: ".3rem .75rem", borderRadius: 7, border: "1px solid rgba(34,197,94,.3)", background: "rgba(34,197,94,.08)", color: "#16a34a", cursor: "pointer", fontWeight: 700, fontSize: ".78rem" }}>
-                            ✓ Approve
+                            ✓ قبول
                           </button>
                           <button type="button" onClick={() => void handleReject(r.id)} style={{ padding: ".3rem .75rem", borderRadius: 7, border: "1px solid rgba(239,68,68,.3)", background: "rgba(239,68,68,.06)", color: "#dc2626", cursor: "pointer", fontWeight: 600, fontSize: ".78rem" }}>
-                            ✕ Reject
+                            ✕ رفض
                           </button>
                         </div>
                       ) : (
@@ -289,14 +289,14 @@ export function RegistrationRequestsPage() {
                 <CheckCircle size={22} color="#16a34a" />
               </div>
               <div>
-                <h3 style={{ margin: 0, fontSize: "1rem", fontWeight: 800 }}>Approve Request</h3>
+                <h3 style={{ margin: 0, fontSize: "1rem", fontWeight: 800 }}>قبول الطلب</h3>
                 <p style={{ margin: 0, fontSize: ".82rem", color: "var(--text-secondary)" }}>{approveModal.fullName} · {approveModal.email}</p>
               </div>
             </div>
 
             {/* Role selector */}
             <div>
-              <p style={{ margin: "0 0 .6rem", fontSize: ".83rem", fontWeight: 700 }}>Select Role</p>
+              <p style={{ margin: "0 0 .6rem", fontSize: ".83rem", fontWeight: 700 }}>اختر الدور</p>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(120px,1fr))", gap: ".5rem" }}>
                 {ROLES.map((role) => (
                   <button key={role} type="button"
@@ -312,10 +312,10 @@ export function RegistrationRequestsPage() {
             {needsShift && (
               <div>
                 <p style={{ margin: "0 0 .5rem", fontSize: ".83rem", fontWeight: 700 }}>
-                  Assign Shift <span style={{ color: "var(--text-muted)", fontWeight: 400 }}>(required for {selectedRole})</span>
+                  تعيين الشفت <span style={{ color: "var(--text-muted)", fontWeight: 400 }}>(مطلوب لـ {selectedRole})</span>
                 </p>
                 {shifts.length === 0 ? (
-                  <p style={{ fontSize: ".8rem", color: "var(--text-secondary)" }}>No shifts configured. Go to Shifts page to create shifts first.</p>
+                  <p style={{ fontSize: ".8rem", color: "var(--text-secondary)" }}>لا توجد شفتات. اذهب إلى صفحة الشفتات لإنشاء شفتات أولاً.</p>
                 ) : (
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(100px, 1fr))", gap: ".5rem" }}>
                     {shifts.map((s) => {
@@ -327,7 +327,7 @@ export function RegistrationRequestsPage() {
                           onClick={() => setSelectedShiftId(String(s.id))}
                           style={{ padding: ".7rem .5rem", borderRadius: 10, border: isSelected ? `2px solid ${color}` : "2px solid var(--border-default)", background: isSelected ? `${color}15` : "var(--bg-surface)", color: isSelected ? color : "var(--text-primary)", fontWeight: 700, fontSize: ".85rem", cursor: "pointer", transition: "all .15s", display: "flex", flexDirection: "column", alignItems: "center", gap: ".2rem" }}>
                           <span style={{ fontSize: "1.3rem", fontWeight: 900 }}>{letter}</span>
-                          <span style={{ fontSize: ".7rem", fontWeight: 600, opacity: .8 }}>Shift {s.name}</span>
+                          <span style={{ fontSize: ".7rem", fontWeight: 600, opacity: .8 }}>شفت {s.name}</span>
                         </button>
                       );
                     })}
@@ -339,24 +339,24 @@ export function RegistrationRequestsPage() {
             {/* Review note */}
             <div>
               <label style={{ display: "flex", flexDirection: "column", gap: ".3rem", fontSize: ".82rem", fontWeight: 600 }}>
-                Review Note (optional)
+                ملاحظة المراجعة (اختياري)
                 <textarea className="auth-input" style={{ paddingLeft: "1rem", resize: "vertical" }} rows={2}
                   value={reviewNote} onChange={(e) => setReviewNote(e.target.value)}
-                  placeholder="e.g. Assigned to morning shift" />
+                  placeholder="مثال: تم تعيينه في شفت الصباح" />
               </label>
             </div>
 
             <div style={{ padding: ".75rem 1rem", borderRadius: 8, background: "rgba(249,115,22,.06)", border: "1px solid rgba(249,115,22,.15)", fontSize: ".8rem", color: "var(--text-secondary)", lineHeight: 1.6 }}>
-              ✉️ An email will be sent to <strong>{approveModal.email}</strong> with a link to set their password.
+              ✉️ سيتم إرسال بريد إلكتروني إلى <strong>{approveModal.email}</strong> برابط لتعيين كلمة المرور.
             </div>
 
             <div style={{ display: "flex", gap: ".75rem", justifyContent: "flex-end" }}>
               <button type="button" onClick={() => setApproveModal(null)} style={{ padding: ".5rem 1.25rem", borderRadius: 8, border: "1px solid var(--border-default)", background: "transparent", cursor: "pointer", fontWeight: 600 }}>
-                Cancel
+                إلغاء
               </button>
               <button type="button" onClick={() => void handleApprove()} disabled={saving || (needsShift && shifts.length > 0 && !selectedShiftId)}
                 style={{ padding: ".5rem 1.5rem", borderRadius: 8, background: "rgba(34,197,94,1)", color: "#fff", border: "none", fontWeight: 700, cursor: "pointer", opacity: (saving || (needsShift && shifts.length > 0 && !selectedShiftId)) ? .5 : 1 }}>
-                {saving ? "Approving…" : "Approve & Create Account"}
+                {saving ? "جارٍ القبول..." : "قبول وإنشاء الحساب"}
               </button>
             </div>
           </div>

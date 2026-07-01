@@ -49,8 +49,10 @@ export const createCustomerHandler = async (req: AuthenticatedRequest, res: Resp
 
 export const assignCustomer = async (req: AuthenticatedRequest, res: Response) => {
   const customerId = Number(req.params.id);
-  const repId      = Number(req.body.repId ?? req.user!.id);
-  const result     = await assignCustomerToRep(customerId, repId);
+  // SALES_REP can only assign to themselves; ADMIN may specify any repId
+  const isAdmin = req.user!.role === "ADMIN";
+  const repId   = isAdmin ? Number(req.body.repId ?? req.user!.id) : req.user!.id;
+  const result  = await assignCustomerToRep(customerId, repId);
   if (result.message) { res.status(result.status).json({ message: result.message }); return; }
   res.status(result.status).json(result.data);
 };
@@ -135,6 +137,7 @@ export const getTargets = async (req: AuthenticatedRequest, res: Response) => {
 export const patchTargetAchieved = async (req: AuthenticatedRequest, res: Response) => {
   const result = await updateTargetAchieved(
     Number(req.params.id), Number(req.body.achievedAmount),
+    req.user!.id, req.user!.role === "ADMIN",
   );
   if (result.message) { res.status(result.status).json({ message: result.message }); return; }
   res.status(result.status).json(result.data);

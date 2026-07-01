@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { confirmDialog } from "../../lib/dialog";
 import { Plus, Pencil, Trash2, CheckCircle, Clock, Archive, GitBranch, X, Save } from "lucide-react";
 import { ModulePageShell } from "../../components/ModulePageShell";
@@ -78,7 +78,7 @@ export default function ApprovalWorkflows() {
   };
 
   const handleDelete = async (id: number) => {
-    if (!(await confirmDialog(nav("Delete this workflow?", "حذف سير العمل هذا؟"), { danger: true }))) return;
+    if (!(await confirmDialog("حذف سير العمل هذا؟", { danger: true }))) return;
     await fetch(`${API_BASE_URL}/approval-workflows/${id}`, { method: "DELETE", headers: authHeaders(), credentials: "include" });
     void fetchWorkflows();
   };
@@ -90,16 +90,16 @@ export default function ApprovalWorkflows() {
 
   return (
     <ModulePageShell
-      title={nav("Approval Workflows", "سير عمل الموافقة")}
-      subtitle={nav("Configure and manage financial approval processes", "تكوين وإدارة عمليات الموافقة المالية")}
+      title={"سير عمل الموافقة"}
+      subtitle={"تكوين وإدارة عمليات الموافقة المالية"}
       icon={<GitBranch size={22} />}
     >
       {/* KPIs */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: ".75rem", marginBottom: "1.25rem" }}>
         {[
-          { label: nav("Active",   "نشط"),    value: activeCount,   gradient: "linear-gradient(135deg,#10b981,#059669)" },
-          { label: nav("Draft",    "مسودة"),   value: draftCount,    gradient: "linear-gradient(135deg,#3b82f6,#1d4ed8)" },
-          { label: nav("Archived", "مؤرشف"),  value: archivedCount, gradient: "linear-gradient(135deg,#64748b,#475569)" },
+          { label: "نشط",    value: activeCount,   gradient: "linear-gradient(135deg,#10b981,#059669)" },
+          { label: "مسودة",   value: draftCount,    gradient: "linear-gradient(135deg,#3b82f6,#1d4ed8)" },
+          { label: "مؤرشف",  value: archivedCount, gradient: "linear-gradient(135deg,#64748b,#475569)" },
         ].map((k) => (
           <div key={k.label} style={{ borderRadius: 14, padding: "1rem 1.1rem", background: k.gradient, color: "#fff", boxShadow: "0 4px 12px rgba(0,0,0,.15)" }}>
             <p style={{ margin: 0, fontSize: ".72rem", fontWeight: 600, opacity: .85, textTransform: "uppercase", letterSpacing: ".06em" }}>{k.label}</p>
@@ -113,18 +113,18 @@ export default function ApprovalWorkflows() {
         {!isAdmin && (
           <Button size="sm" onClick={openNew}>
             <Plus size={15} className="me-1" />
-            {nav("Add Workflow", "إضافة سير عمل")}
+            {"إضافة سير عمل"}
           </Button>
         )}
         <select className="input text-sm h-8 min-w-[160px]" value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}>
-          <option value="">{nav("All Statuses", "جميع الحالات")}</option>
-          <option value="ACTIVE">{nav("Active", "نشط")}</option>
-          <option value="DRAFT">{nav("Draft", "مسودة")}</option>
-          <option value="ARCHIVED">{nav("Archived", "مؤرشف")}</option>
+          <option value="">{"جميع الحالات"}</option>
+          <option value="ACTIVE">{"نشط"}</option>
+          <option value="DRAFT">{"مسودة"}</option>
+          <option value="ARCHIVED">{"مؤرشف"}</option>
         </select>
         {filterStatus && (
           <button className="text-xs text-[var(--text-secondary)] underline" onClick={() => setFilterStatus("")}>
-            {nav("Clear", "مسح")}
+            {"مسح"}
           </button>
         )}
       </div>
@@ -135,35 +135,35 @@ export default function ApprovalWorkflows() {
           <div className="flex items-center justify-between mb-5">
             <div>
               <h3 className="font-bold text-[var(--text-primary)] text-base">
-                {editingId ? nav("Edit Workflow", "تعديل سير العمل") : nav("New Workflow", "سير عمل جديد")}
+                {editingId ? "تعديل سير العمل" : "سير عمل جديد"}
               </h3>
-              <p className="text-xs text-[var(--text-secondary)] mt-0.5">{nav("Define an approval process for financial operations", "حدد عملية موافقة للعمليات المالية")}</p>
+              <p className="text-xs text-[var(--text-secondary)] mt-0.5">{"حدد عملية موافقة للعمليات المالية"}</p>
             </div>
             <button className="text-[var(--text-secondary)] hover:text-[var(--text-primary)]" onClick={() => setShowForm(false)}><X size={18} /></button>
           </div>
 
-          <p className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wide mb-2">{nav("Workflow Details", "بيانات سير العمل")}</p>
+          <p className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wide mb-2">{"بيانات سير العمل"}</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
             <div className="sm:col-span-2">
-              <label className="label">{nav("Workflow Name *", "اسم سير العمل *")}</label>
-              <input className="input" placeholder={nav("e.g. Purchase Order Approval", "مثال: موافقة طلبات الشراء")}
+              <label className="label">{"اسم سير العمل *"}</label>
+              <input className="input" placeholder={"مثال: موافقة طلبات الشراء"}
                 value={form.workflowName} onChange={(e) => setForm((p) => ({ ...p, workflowName: e.target.value }))} />
             </div>
             <div>
-              <label className="label">{nav("Status", "الحالة")}</label>
+              <label className="label">{"الحالة"}</label>
               <select className="input" value={form.status} onChange={(e) => setForm((p) => ({ ...p, status: e.target.value }))}>
-                <option value="ACTIVE">{nav("Active", "نشط")}</option>
-                <option value="DRAFT">{nav("Draft", "مسودة")}</option>
-                <option value="ARCHIVED">{nav("Archived", "مؤرشف")}</option>
+                <option value="ACTIVE">{"نشط"}</option>
+                <option value="DRAFT">{"مسودة"}</option>
+                <option value="ARCHIVED">{"مؤرشف"}</option>
               </select>
             </div>
             <div>
-              <label className="label">{nav("Approvers Required", "الموافقون المطلوبون")}</label>
+              <label className="label">{"الموافقون المطلوبون"}</label>
               <input className="input" type="number" min="0" placeholder="0"
                 value={form.approverCount} onChange={(e) => setForm((p) => ({ ...p, approverCount: e.target.value }))} />
             </div>
             <div>
-              <label className="label">{nav("Items Count", "عدد العناصر")}</label>
+              <label className="label">{"عدد العناصر"}</label>
               <input className="input" type="number" min="0" placeholder="0"
                 value={form.itemsCount} onChange={(e) => setForm((p) => ({ ...p, itemsCount: e.target.value }))} />
             </div>
@@ -172,9 +172,9 @@ export default function ApprovalWorkflows() {
           <div className="flex gap-2 pt-2 border-t border-[var(--border-default)]">
             <Button size="sm" onClick={handleSave} disabled={saving || !form.workflowName.trim()}>
               <Save size={14} className="me-1" />
-              {saving ? nav("Saving...", "جارٍ الحفظ...") : nav("Save Workflow", "حفظ سير العمل")}
+              {saving ? "جارٍ الحفظ..." : "حفظ سير العمل"}
             </Button>
-            <Button size="sm" variant="outline" onClick={() => setShowForm(false)}>{nav("Cancel", "إلغاء")}</Button>
+            <Button size="sm" variant="outline" onClick={() => setShowForm(false)}>{"إلغاء"}</Button>
           </div>
         </Card>
       )}
@@ -185,8 +185,8 @@ export default function ApprovalWorkflows() {
       ) : filtered.length === 0 ? (
         <Card className="p-12 text-center text-[var(--text-secondary)]">
           <GitBranch size={32} className="mx-auto mb-3 opacity-30" />
-          <p className="font-medium">{nav("No workflows found", "لا توجد سير عمل")}</p>
-          <p className="text-sm mt-1">{nav("Add your first approval workflow to get started", "أضف أول سير عمل موافقة للبدء")}</p>
+          <p className="font-medium">{"لا توجد سير عمل"}</p>
+          <p className="text-sm mt-1">{"أضف أول سير عمل موافقة للبدء"}</p>
         </Card>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -204,7 +204,7 @@ export default function ApprovalWorkflows() {
                       <span style={{ background: meta.color + "20", color: meta.color, borderRadius: "20px", padding: "1px 8px", fontSize: ".68rem", fontWeight: 700 }}
                         className="inline-flex items-center gap-1">
                         <StatusIcon size={9} />
-                        {locale === "ar" ? meta.labelAr : meta.label}
+                        {meta.labelAr}
                       </span>
                     </div>
                   </div>
@@ -218,11 +218,11 @@ export default function ApprovalWorkflows() {
                 <div className="p-4 flex-1 flex flex-col gap-2.5">
                   <div className="grid grid-cols-2 gap-3">
                     <div className="bg-[var(--bg-surface-2,#f8fafc)] rounded-lg p-3 text-center">
-                      <p className="text-xs text-[var(--text-secondary)] mb-1">{nav("Items", "العناصر")}</p>
+                      <p className="text-xs text-[var(--text-secondary)] mb-1">{"العناصر"}</p>
                       <p className="text-xl font-bold text-[var(--text-primary)]">{w.itemsCount}</p>
                     </div>
                     <div className="bg-[var(--bg-surface-2,#f8fafc)] rounded-lg p-3 text-center">
-                      <p className="text-xs text-[var(--text-secondary)] mb-1">{nav("Approvers", "الموافقون")}</p>
+                      <p className="text-xs text-[var(--text-secondary)] mb-1">{"الموافقون"}</p>
                       <p className="text-xl font-bold text-[var(--text-primary)]">{w.approverCount}</p>
                     </div>
                   </div>

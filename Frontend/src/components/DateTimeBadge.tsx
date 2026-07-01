@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+﻿import { useEffect, useMemo, useState } from "react";
 import { useLocale } from "../context/LocaleContext";
 
 export function DateTimeBadge() {
@@ -11,7 +11,7 @@ export function DateTimeBadge() {
   }, []);
 
   const isAr = locale === "ar";
-  const loc  = isAr ? "ar-EG" : "en-US";
+  const loc  = "ar-EG";
 
   const dateStr = useMemo(
     () => new Intl.DateTimeFormat(loc, { weekday: "short", month: "short", day: "numeric", year: "numeric" }).format(now),

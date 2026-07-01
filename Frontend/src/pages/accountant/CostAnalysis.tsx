@@ -4,7 +4,6 @@ import { Plus, Pencil, Trash2, PieChart, X, Save } from "lucide-react";
 import { ModulePageShell } from "../../components/ModulePageShell";
 import { Button } from "../../components/ui/button";
 import { Card } from "../../components/ui/card";
-import { useLocale } from "../../context/LocaleContext";
 import { API_BASE_URL } from "../../lib/api";
 import { useAuth } from "../../context/AuthContext";
 
@@ -38,10 +37,8 @@ const BAR_COLORS = ["#1d4ed8","#7c3aed","#d97706","#059669","#0891b2","#dc2626",
 const emptyForm = { category: "Raw Materials", cost: "", period: "", notes: "" };
 
 export default function CostAnalysis() {
-  const { locale } = useLocale();
   const { user } = useAuth();
   const isAdmin = user?.role === "ADMIN";
-  const nav = (en: string, ar: string) => locale === "ar" ? ar : en;
 
   const [analyses, setAnalyses] = useState<CostAnalysis[]>([]);
   const [loading, setLoading] = useState(true);
@@ -87,7 +84,7 @@ export default function CostAnalysis() {
   };
 
   const handleDelete = async (id: number) => {
-    if (!(await confirmDialog(nav("Delete this analysis?", "حذف هذا التحليل؟"), { danger: true }))) return;
+    if (!(await confirmDialog("حذف هذا التحليل؟", { danger: true }))) return;
     await fetch(`${API_BASE_URL}/cost-analysis/${id}`, { method: "DELETE", headers: authHeaders(), credentials: "include" });
     void fetchAnalyses();
   };
@@ -101,30 +98,30 @@ export default function CostAnalysis() {
 
   return (
     <ModulePageShell
-      title={nav("Cost Analysis", "تحليل التكاليف")}
-      subtitle={nav("Analyze cost distribution across factory categories", "تحليل توزيع التكاليف عبر فئات المصنع")}
+      title={"تحليل التكاليف"}
+      subtitle={"تحليل توزيع التكاليف عبر فئات المصنع"}
       icon={<PieChart size={22} />}
     >
       {/* KPIs */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: ".75rem", marginBottom: "1.25rem" }}>
         <div style={{ borderRadius: 14, padding: "1rem 1.1rem", background: "linear-gradient(135deg,#3b82f6,#1d4ed8)", color: "#fff", boxShadow: "0 4px 12px rgba(0,0,0,.15)" }}>
-          <p style={{ margin: 0, fontSize: ".72rem", fontWeight: 600, opacity: .85, textTransform: "uppercase", letterSpacing: ".06em" }}>{nav("Total Cost", "التكلفة الإجمالية")}</p>
+          <p style={{ margin: 0, fontSize: ".72rem", fontWeight: 600, opacity: .85, textTransform: "uppercase", letterSpacing: ".06em" }}>{"التكلفة الإجمالية"}</p>
           <p style={{ margin: ".25rem 0 0", fontSize: "1.4rem", fontWeight: 900, lineHeight: 1.1 }}>{fmtMoney(totalCost)}</p>
         </div>
         <div style={{ borderRadius: 14, padding: "1rem 1.1rem", background: "linear-gradient(135deg,#8b5cf6,#7c3aed)", color: "#fff", boxShadow: "0 4px 12px rgba(0,0,0,.15)" }}>
-          <p style={{ margin: 0, fontSize: ".72rem", fontWeight: 600, opacity: .85, textTransform: "uppercase", letterSpacing: ".06em" }}>{nav("Categories", "الفئات")}</p>
+          <p style={{ margin: 0, fontSize: ".72rem", fontWeight: 600, opacity: .85, textTransform: "uppercase", letterSpacing: ".06em" }}>{"الفئات"}</p>
           <p style={{ margin: ".25rem 0 0", fontSize: "1.7rem", fontWeight: 900, lineHeight: 1.1 }}>{analyses.length}</p>
         </div>
         <div style={{ borderRadius: 14, padding: "1rem 1.1rem", background: "linear-gradient(135deg,#f59e0b,#d97706)", color: "#fff", boxShadow: "0 4px 12px rgba(0,0,0,.15)" }}>
-          <p style={{ margin: 0, fontSize: ".72rem", fontWeight: 600, opacity: .85, textTransform: "uppercase", letterSpacing: ".06em" }}>{nav("Top Category", "أعلى فئة")}</p>
-          <p style={{ margin: ".25rem 0 0", fontSize: "1rem", fontWeight: 900, lineHeight: 1.2 }}>{topCategory ? (locale === "ar" ? getCatMeta(topCategory.category).labelAr : topCategory.category) : "—"}</p>
+          <p style={{ margin: 0, fontSize: ".72rem", fontWeight: 600, opacity: .85, textTransform: "uppercase", letterSpacing: ".06em" }}>{"أعلى فئة"}</p>
+          <p style={{ margin: ".25rem 0 0", fontSize: "1rem", fontWeight: 900, lineHeight: 1.2 }}>{topCategory ? getCatMeta(topCategory.category).labelAr : "—"}</p>
         </div>
       </div>
 
       {/* Distribution Chart */}
       {analyses.length > 0 && (
         <Card className="p-5 mb-6">
-          <p className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wide mb-4">{nav("Cost Distribution", "توزيع التكاليف")}</p>
+          <p className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wide mb-4">{"توزيع التكاليف"}</p>
           <div className="space-y-3">
             {[...analyses].sort((a, b) => b.cost - a.cost).map((a, idx) => {
               const pct = totalCost > 0 ? (a.cost / totalCost) * 100 : 0;
@@ -132,7 +129,7 @@ export default function CostAnalysis() {
               return (
                 <div key={a.id}>
                   <div className="flex justify-between text-xs text-[var(--text-secondary)] mb-1">
-                    <span className="font-medium flex items-center gap-1">{meta.icon} {locale === "ar" ? meta.labelAr : a.category}</span>
+                    <span className="font-medium flex items-center gap-1">{meta.icon} {meta.labelAr}</span>
                     <span>{fmtMoney(a.cost)} ({pct.toFixed(1)}%)</span>
                   </div>
                   <div className="w-full bg-gray-100 rounded-full h-2.5">
@@ -150,22 +147,22 @@ export default function CostAnalysis() {
         {!isAdmin && (
           <Button size="sm" onClick={openNew}>
             <Plus size={15} className="me-1" />
-            {nav("Add Entry", "إضافة إدخال")}
+            {"إضافة إدخال"}
           </Button>
         )}
         {periods.length > 0 && (
           <select className="input text-sm h-8 min-w-[160px]" value={filterPeriod} onChange={(e) => setFilterPeriod(e.target.value)}>
-            <option value="">{nav("All Periods", "جميع الفترات")}</option>
+            <option value="">{"جميع الفترات"}</option>
             {periods.map((p) => (
               <option key={p} value={p}>
-                {new Date(p + "-01").toLocaleDateString(locale === "ar" ? "ar-SA" : "en-US", { month: "long", year: "numeric" })}
+                {new Date(p + "-01").toLocaleDateString("ar-SA", { month: "long", year: "numeric" })}
               </option>
             ))}
           </select>
         )}
         {filterPeriod && (
           <button className="text-xs text-[var(--text-secondary)] underline" onClick={() => setFilterPeriod("")}>
-            {nav("Clear", "مسح")}
+            {"مسح"}
           </button>
         )}
       </div>
@@ -176,36 +173,36 @@ export default function CostAnalysis() {
           <div className="flex items-center justify-between mb-5">
             <div>
               <h3 className="font-bold text-[var(--text-primary)] text-base">
-                {editingId ? nav("Edit Cost Entry", "تعديل إدخال التكلفة") : nav("New Cost Entry", "إدخال تكلفة جديد")}
+                {editingId ? "تعديل إدخال التكلفة" : "إدخال تكلفة جديد"}
               </h3>
-              <p className="text-xs text-[var(--text-secondary)] mt-0.5">{nav("Enter cost details for a factory category", "أدخل بيانات التكلفة لفئة مصنع")}</p>
+              <p className="text-xs text-[var(--text-secondary)] mt-0.5">{"أدخل بيانات التكلفة لفئة مصنع"}</p>
             </div>
             <button className="text-[var(--text-secondary)] hover:text-[var(--text-primary)]" onClick={() => setShowForm(false)}><X size={18} /></button>
           </div>
 
-          <p className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wide mb-2">{nav("Cost Details", "بيانات التكلفة")}</p>
+          <p className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wide mb-2">{"بيانات التكلفة"}</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
             <div>
-              <label className="label">{nav("Category *", "الفئة *")}</label>
+              <label className="label">{"الفئة *"}</label>
               <select className="input" value={form.category} onChange={(e) => setForm((p) => ({ ...p, category: e.target.value }))}>
                 {COST_CATEGORIES.map((c) => (
-                  <option key={c.value} value={c.value}>{c.icon} {locale === "ar" ? c.labelAr : c.label}</option>
+                  <option key={c.value} value={c.value}>{c.icon} {c.labelAr}</option>
                 ))}
               </select>
             </div>
             <div>
-              <label className="label">{nav("Cost ($) *", "التكلفة ($) *")}</label>
+              <label className="label">{"التكلفة ($) *"}</label>
               <input className="input" type="number" min="0" step="0.01" placeholder="0.00"
                 value={form.cost} onChange={(e) => setForm((p) => ({ ...p, cost: e.target.value }))} />
             </div>
             <div>
-              <label className="label">{nav("Period", "الفترة")}</label>
+              <label className="label">{"الفترة"}</label>
               <input className="input" type="month"
                 value={form.period} onChange={(e) => setForm((p) => ({ ...p, period: e.target.value }))} />
             </div>
             <div>
-              <label className="label">{nav("Notes", "ملاحظات")}</label>
-              <input className="input" placeholder={nav("Optional notes…", "ملاحظات اختيارية...")}
+              <label className="label">{"ملاحظات"}</label>
+              <input className="input" placeholder={"ملاحظات اختيارية..."}
                 value={form.notes} onChange={(e) => setForm((p) => ({ ...p, notes: e.target.value }))} />
             </div>
           </div>
@@ -213,9 +210,9 @@ export default function CostAnalysis() {
           <div className="flex gap-2 pt-2 border-t border-[var(--border-default)]">
             <Button size="sm" onClick={handleSave} disabled={saving || !form.cost}>
               <Save size={14} className="me-1" />
-              {saving ? nav("Saving...", "جارٍ الحفظ...") : nav("Save Entry", "حفظ الإدخال")}
+              {saving ? "جارٍ الحفظ..." : "حفظ الإدخال"}
             </Button>
-            <Button size="sm" variant="outline" onClick={() => setShowForm(false)}>{nav("Cancel", "إلغاء")}</Button>
+            <Button size="sm" variant="outline" onClick={() => setShowForm(false)}>{"إلغاء"}</Button>
           </div>
         </Card>
       )}
@@ -226,8 +223,8 @@ export default function CostAnalysis() {
       ) : filtered.length === 0 ? (
         <Card className="p-12 text-center text-[var(--text-secondary)]">
           <PieChart size={32} className="mx-auto mb-3 opacity-30" />
-          <p className="font-medium">{nav("No cost entries found", "لا توجد إدخالات تكاليف")}</p>
-          <p className="text-sm mt-1">{nav("Add your first cost entry to get started", "أضف أول إدخال تكلفة للبدء")}</p>
+          <p className="font-medium">{"لا توجد إدخالات تكاليف"}</p>
+          <p className="text-sm mt-1">{"أضف أول إدخال تكلفة للبدء"}</p>
         </Card>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -242,11 +239,11 @@ export default function CostAnalysis() {
                     <span style={{ fontSize: "1.3rem" }}>{meta.icon}</span>
                     <div className="min-w-0">
                       <p className="font-bold text-sm text-[var(--text-primary)] truncate">
-                        {locale === "ar" ? meta.labelAr : a.category}
+                        {meta.labelAr}
                       </p>
                       {a.period && (
                         <p className="text-xs text-[var(--text-secondary)]">
-                          {new Date(a.period + "-01").toLocaleDateString(locale === "ar" ? "ar-SA" : "en-US", { month: "long", year: "numeric" })}
+                          {new Date(a.period + "-01").toLocaleDateString("ar-SA", { month: "long", year: "numeric" })}
                         </p>
                       )}
                     </div>
@@ -262,7 +259,7 @@ export default function CostAnalysis() {
                   <p className="text-2xl font-bold" style={{ color: meta.color }}>{fmtMoney(a.cost)}</p>
                   <div>
                     <div className="flex justify-between text-xs text-[var(--text-secondary)] mb-1">
-                      <span>{nav("Share of Total", "الحصة من الإجمالي")}</span>
+                      <span>{"الحصة من الإجمالي"}</span>
                       <span>{sharePct.toFixed(1)}%</span>
                     </div>
                     <div className="w-full bg-gray-100 rounded-full h-2">

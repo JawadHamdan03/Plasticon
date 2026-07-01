@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
   TrendingUp, Users, FileText, MapPin, Target,
@@ -205,13 +205,13 @@ export function SalesRepPage() {
 
   /* ── Role label for hero badge ── */
   const roleBadge = isAdmin
-    ? (isAr ? "مدير" : "Admin")
+    ? ("مدير")
     : isAccountant
-      ? (isAr ? "محاسب" : "Accountant")
-      : (isAr ? "مندوب مبيعات" : "Sales Rep");
+      ? ("محاسب")
+      : ("مندوب مبيعات");
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 0 }} dir={isAr ? "rtl" : "ltr"}>
+    <div style={{ display: "flex", flexDirection: "column", gap: 0 }} dir="rtl">
 
       {/* ══════════════════════════════════════════════════════ */}
       {/* HERO HEADER                                           */}
@@ -233,8 +233,8 @@ export function SalesRepPage() {
         }}
       >
         {/* Decorative circles */}
-        <div style={{ position: "absolute", top: "-40px", right: isAr ? "auto" : "-40px", left: isAr ? "-40px" : "auto", width: 200, height: 200, borderRadius: "50%", background: "rgba(255,255,255,.06)", pointerEvents: "none" }} />
-        <div style={{ position: "absolute", bottom: "-60px", left: isAr ? "auto" : "20%", right: isAr ? "20%" : "auto", width: 260, height: 260, borderRadius: "50%", background: "rgba(255,255,255,.04)", pointerEvents: "none" }} />
+        <div style={{ position: "absolute", top: "-40px", right: "auto", left: "-40px", width: 200, height: 200, borderRadius: "50%", background: "rgba(255,255,255,.06)", pointerEvents: "none" }} />
+        <div style={{ position: "absolute", bottom: "-60px", left: "auto", right: "20%", width: 260, height: 260, borderRadius: "50%", background: "rgba(255,255,255,.04)", pointerEvents: "none" }} />
 
         <div style={{ position: "relative", display: "flex", alignItems: "flex-start", justifyContent: "space-between", flexWrap: "wrap", gap: "1.5rem" }}>
 
@@ -254,7 +254,7 @@ export function SalesRepPage() {
               </div>
               <div>
                 <p style={{ margin: 0, fontSize: "1.4rem", fontWeight: 800, lineHeight: 1.2 }}>
-                  {isAr ? `مرحباً، ${user?.name ?? ""}` : `Hello, ${user?.name ?? ""}`}
+                  {`مرحباً، ${user?.name ?? ""}`}
                 </p>
                 <span
                   style={{
@@ -280,8 +280,8 @@ export function SalesRepPage() {
                   <span style={{ display: "flex", alignItems: "center", gap: "0.3rem" }}>
                     <Target size={12} />
                     {isAdmin
-                      ? (isAr ? "إجمالي أهداف الشهر" : "Total Monthly Targets")
-                      : (isAr ? "هدف الشهر" : "Monthly Target")}
+                      ? ("إجمالي أهداف الشهر")
+                      : ("هدف الشهر")}
                   </span>
                   <span style={{ fontWeight: 700, color: heroPctColor }}>{heroPct}%</span>
                 </div>
@@ -309,7 +309,7 @@ export function SalesRepPage() {
                 {loading ? "–" : (dashData?.customerCount ?? "–")}
               </p>
               <p style={{ margin: "0.25rem 0 0", fontSize: ".7rem", color: "rgba(255,255,255,.7)", textTransform: "uppercase", letterSpacing: ".04em" }}>
-                {isAr ? "عملاء" : "Customers"}
+                {"عملاء"}
               </p>
             </div>
             <div style={{ background: "rgba(255,255,255,.12)", border: "1px solid rgba(255,255,255,.2)", borderRadius: 12, padding: "0.75rem 1rem", minWidth: 90, textAlign: "center" }}>
@@ -317,7 +317,7 @@ export function SalesRepPage() {
                 {loading ? "–" : (dashData?.acceptedQuotations ?? "–")}
               </p>
               <p style={{ margin: "0.25rem 0 0", fontSize: ".7rem", color: "rgba(255,255,255,.7)", textTransform: "uppercase", letterSpacing: ".04em" }}>
-                {isAr ? "مقبولة" : "Accepted"}
+                {"مقبولة"}
               </p>
             </div>
             <div style={{ background: "rgba(255,255,255,.12)", border: "1px solid rgba(255,255,255,.2)", borderRadius: 12, padding: "0.75rem 1rem", minWidth: 110, textAlign: "center" }}>
@@ -325,7 +325,7 @@ export function SalesRepPage() {
                 {loading ? "–" : `₪${Math.round(dashData?.totalQuotationValue ?? 0).toLocaleString()}`}
               </p>
               <p style={{ margin: "0.25rem 0 0", fontSize: ".7rem", color: "rgba(255,255,255,.7)", textTransform: "uppercase", letterSpacing: ".04em" }}>
-                {isAr ? "إجمالي العروض" : "Quote Value"}
+                {"إجمالي العروض"}
               </p>
             </div>
           </div>
@@ -375,7 +375,7 @@ export function SalesRepPage() {
               }}
             >
               {t.icon}
-              {isAr ? t.labelAr : t.labelEn}
+              {t.labelAr}
             </button>
           );
         })}
@@ -490,20 +490,20 @@ function OverviewTab({
           <div style={{ padding: "0.875rem 1rem", borderBottom: "1px solid var(--border-default)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <span style={{ display: "flex", alignItems: "center", gap: "0.4rem", fontWeight: 600, fontSize: ".9rem" }}>
               <FileText size={15} style={{ color: "#0d9488" }} />
-              {isAr ? "آخر العروض" : "Recent Quotations"}
+              {"آخر العروض"}
             </span>
             <button
               type="button"
               onClick={() => setTab("quotations")}
               style={{ background: "none", border: "none", color: "#0d9488", fontSize: ".8rem", cursor: "pointer", fontWeight: 600 }}
             >
-              {isAr ? "عرض الكل ←" : "View all →"}
+              {"عرض الكل ←"}
             </button>
           </div>
           <div>
             {!dashData || dashData.recentQuotations.length === 0 ? (
               <p style={{ padding: "1.25rem", textAlign: "center", color: "var(--text-secondary)", fontSize: ".85rem" }}>
-                {isAr ? "لا توجد عروض بعد" : "No quotations yet"}
+                {"لا توجد عروض بعد"}
               </p>
             ) : (
               dashData.recentQuotations.map((q) => {
@@ -531,20 +531,20 @@ function OverviewTab({
           <div style={{ padding: "0.875rem 1rem", borderBottom: "1px solid var(--border-default)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <span style={{ display: "flex", alignItems: "center", gap: "0.4rem", fontWeight: 600, fontSize: ".9rem" }}>
               <MapPin size={15} style={{ color: "#f59e0b" }} />
-              {isAr ? "آخر الزيارات" : "Recent Visits"}
+              {"آخر الزيارات"}
             </span>
             <button
               type="button"
               onClick={() => setTab("visits")}
               style={{ background: "none", border: "none", color: "#0d9488", fontSize: ".8rem", cursor: "pointer", fontWeight: 600 }}
             >
-              {isAr ? "عرض الكل ←" : "View all →"}
+              {"عرض الكل ←"}
             </button>
           </div>
           <div>
             {!dashData || dashData.recentVisits.length === 0 ? (
               <p style={{ padding: "1.25rem", textAlign: "center", color: "var(--text-secondary)", fontSize: ".85rem" }}>
-                {isAr ? "لا توجد زيارات بعد" : "No visits yet"}
+                {"لا توجد زيارات بعد"}
               </p>
             ) : (
               dashData.recentVisits.map((v) => (
@@ -570,7 +570,7 @@ function OverviewTab({
       {!isAccountant && (
         <div style={{ borderTop: "1px solid var(--border-default)", paddingTop: "1.25rem" }}>
           <p style={{ fontSize: ".75rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: ".06em", color: "var(--text-secondary)", marginBottom: "0.75rem" }}>
-            {isAr ? "إجراءات سريعة" : "Quick Actions"}
+            {"إجراءات سريعة"}
           </p>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: "0.75rem" }}>
             {[
@@ -600,7 +600,7 @@ function OverviewTab({
                 onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = a.color + "12"; (e.currentTarget as HTMLButtonElement).style.transform = "translateY(0)"; }}
               >
                 {a.icon}
-                {isAr ? a.labelAr : a.labelEn}
+                {a.labelAr}
               </button>
             ))}
           </div>
@@ -611,7 +611,7 @@ function OverviewTab({
       {isAccountant && (
         <div style={{ borderTop: "1px solid var(--border-default)", paddingTop: "1.25rem" }}>
           <p style={{ fontSize: ".75rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: ".06em", color: "var(--text-secondary)", marginBottom: "0.75rem" }}>
-            {isAr ? "موافقة العروض" : "Quotation Approval"}
+            {"موافقة العروض"}
           </p>
           <button
             type="button"
@@ -625,7 +625,7 @@ function OverviewTab({
             }}
           >
             <CheckCircle size={16} />
-            {isAr ? "عرض العروض للموافقة" : "View Quotations to Approve"}
+            {"عرض العروض للموافقة"}
           </button>
         </div>
       )}
@@ -658,7 +658,7 @@ function CustomersTab({
   );
 
   const handleAssign = async (customerId: number) => {
-    if (!assignRepId) { setAssignMsg(isAr ? "اختر مندوباً" : "Select a rep"); return; }
+    if (!assignRepId) { setAssignMsg("اختر مندوباً"); return; }
     setAssigning(true); setAssignMsg("");
     try {
       const res = await fetch(`${API_BASE_URL}/sales-rep/customers/${customerId}/assign`, {
@@ -668,7 +668,7 @@ function CustomersTab({
         body: JSON.stringify({ repId: Number(assignRepId) }),
       });
       if (!res.ok) throw new Error(await readApiError(res));
-      setAssignMsg(isAr ? "تم التعيين بنجاح" : "Assigned successfully");
+      setAssignMsg("تم التعيين بنجاح");
       setAssigningId(null);
       setAssignRepId("");
       await onRefresh();
@@ -685,13 +685,13 @@ function CustomersTab({
     <div style={{ padding: "1.5rem" }}>
       {/* Search */}
       <div style={{ position: "relative", marginBottom: "1.25rem" }}>
-        <Search size={15} style={{ position: "absolute", top: "50%", [isAr ? "right" : "left"]: "0.875rem", transform: "translateY(-50%)", color: "var(--text-secondary)", pointerEvents: "none" }} />
+        <Search size={15} style={{ position: "absolute", top: "50%", ["right"]: "0.875rem", transform: "translateY(-50%)", color: "var(--text-secondary)", pointerEvents: "none" }} />
         <input
           className="admin-input"
-          placeholder={isAr ? "بحث عن عميل..." : "Search customers..."}
+          placeholder={"بحث عن عميل..."}
           value={q}
           onChange={(e) => setQ(e.target.value)}
-          style={{ paddingLeft: isAr ? "0.875rem" : "2.5rem", paddingRight: isAr ? "2.5rem" : "0.875rem", width: "100%" }}
+          style={{ paddingLeft: "0.875rem", paddingRight: "2.5rem", width: "100%" }}
         />
       </div>
 
@@ -702,7 +702,7 @@ function CustomersTab({
       )}
 
       {filtered.length === 0 ? (
-        <EmptyState icon={<Users size={36} />} title={isAr ? "لا يوجد عملاء" : "No customers found"} />
+        <EmptyState icon={<Users size={36} />} title={"لا يوجد عملاء"} />
       ) : (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "1rem" }}>
           {filtered.map((c) => {
@@ -785,7 +785,7 @@ function CustomersTab({
                         }}
                       >
                         <UserCheck size={13} />
-                        {isAr ? "تعيين لمندوب" : "Assign to Rep"}
+                        {"تعيين لمندوب"}
                       </button>
                     ) : (
                       <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
@@ -795,7 +795,7 @@ function CustomersTab({
                           className="admin-input"
                           style={{ flex: 1, fontSize: ".8rem" }}
                         >
-                          <option value="">{isAr ? "اختر مندوباً..." : "Select rep..."}</option>
+                          <option value="">{"اختر مندوباً..."}</option>
                           {salesReps.map((r) => <option key={r.id} value={r.id}>{r.fullName}</option>)}
                         </select>
                         <button
@@ -804,7 +804,7 @@ function CustomersTab({
                           disabled={assigning}
                           style={{ padding: "0.35rem 0.7rem", background: "#3b82f6", color: "#fff", border: "none", borderRadius: 7, fontSize: ".78rem", fontWeight: 600, cursor: "pointer" }}
                         >
-                          {assigning ? "..." : (isAr ? "حفظ" : "Save")}
+                          {assigning ? "..." : ("حفظ")}
                         </button>
                         <button
                           type="button"
@@ -867,7 +867,7 @@ function QuotationsTab({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!customerId) { setMsg(isAr ? "اختر عميلاً" : "Select a customer"); return; }
+    if (!customerId) { setMsg("اختر عميلاً"); return; }
     setSaving(true); setMsg("");
     try {
       const res = await fetch(`${API_BASE_URL}/sales-rep/quotations`, {
@@ -877,7 +877,7 @@ function QuotationsTab({
         body: JSON.stringify({ customerId: Number(customerId), notes, validUntil: validUntil || undefined, items }),
       });
       if (!res.ok) throw new Error(await readApiError(res));
-      setMsg(isAr ? "تم إنشاء العرض بنجاح" : "Quotation created successfully");
+      setMsg("تم إنشاء العرض بنجاح");
       setCustomerId(""); setNotes(""); setValidUntil("");
       setItems([{ productType: "CAPS", size: "", quantity: 1, pricePerUnit: 0 }]);
       setShowForm(false);
@@ -900,7 +900,7 @@ function QuotationsTab({
   };
 
   const deleteQ = async (id: number) => {
-    if (!confirm(isAr ? "هل أنت متأكد من حذف هذا العرض؟" : "Delete this quotation?")) return;
+    if (!confirm("هل أنت متأكد من حذف هذا العرض؟")) return;
     await fetch(`${API_BASE_URL}/sales-rep/quotations/${id}`, {
       method: "DELETE", headers: authHeader(), credentials: "include",
     });
@@ -914,12 +914,12 @@ function QuotationsTab({
       {/* Header */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1.25rem" }}>
         <h3 style={{ margin: 0, fontSize: "1rem", fontWeight: 700 }}>
-          {isAr ? "عروض الأسعار" : "Quotations"} ({quotations.length})
+          {"عروض الأسعار"} ({quotations.length})
         </h3>
         <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
           {isAccountant && (
             <span style={{ fontSize: ".78rem", padding: "3px 10px", borderRadius: 999, background: "#10b98122", color: "#10b981", border: "1px solid #10b98133", fontWeight: 600 }}>
-              {isAr ? "صلاحية الموافقة / الرفض" : "Approve / Reject Only"}
+              {"صلاحية الموافقة / الرفض"}
             </span>
           )}
           {canCreate && (
@@ -936,7 +936,7 @@ function QuotationsTab({
               }}
             >
               <Plus size={15} />
-              {showForm ? (isAr ? "إلغاء" : "Cancel") : (isAr ? "عرض جديد" : "New Quotation")}
+              {showForm ? ("إلغاء") : ("عرض جديد")}
             </button>
           )}
         </div>
@@ -948,33 +948,33 @@ function QuotationsTab({
           <div style={{ padding: "0.875rem 1.25rem", borderBottom: "1px solid #0d948822", display: "flex", alignItems: "center", gap: "0.5rem", background: "#0d948811" }}>
             <FileText size={16} style={{ color: "#0d9488" }} />
             <span style={{ fontWeight: 700, fontSize: ".95rem", color: "#0d9488" }}>
-              {isAr ? "إنشاء عرض أسعار جديد" : "Create New Quotation"}
+              {"إنشاء عرض أسعار جديد"}
             </span>
           </div>
           <form onSubmit={(e) => { void handleSubmit(e); }} style={{ padding: "1.25rem", display: "flex", flexDirection: "column", gap: "1.25rem" }}>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
               <label style={{ display: "flex", flexDirection: "column", gap: "0.35rem", fontSize: ".875rem", fontWeight: 500 }}>
-                {isAr ? "العميل *" : "Customer *"}
+                {"العميل *"}
                 <select value={customerId} onChange={(e) => setCustomerId(e.target.value)} className="admin-input">
-                  <option value="">{isAr ? "اختر عميلاً..." : "Select customer..."}</option>
+                  <option value="">{"اختر عميلاً..."}</option>
                   {customers.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
                 </select>
               </label>
               <label style={{ display: "flex", flexDirection: "column", gap: "0.35rem", fontSize: ".875rem", fontWeight: 500 }}>
-                {isAr ? "صالح حتى" : "Valid Until"}
+                {"صالح حتى"}
                 <input type="date" value={validUntil} onChange={(e) => setValidUntil(e.target.value)} className="admin-input" />
               </label>
             </div>
 
             <div>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.75rem" }}>
-                <span style={{ fontWeight: 600, fontSize: ".9rem" }}>{isAr ? "البنود" : "Items"}</span>
+                <span style={{ fontWeight: 600, fontSize: ".9rem" }}>{"البنود"}</span>
                 <button type="button" onClick={addItem} style={{ display: "inline-flex", alignItems: "center", gap: "0.3rem", padding: "0.3rem 0.7rem", background: "none", border: "1px solid var(--border-default)", borderRadius: 7, fontSize: ".8rem", cursor: "pointer", color: "var(--text-secondary)", fontWeight: 600 }}>
-                  <Plus size={13} /> {isAr ? "إضافة بند" : "Add Item"}
+                  <Plus size={13} /> {"إضافة بند"}
                 </button>
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr 80px 110px 36px", gap: 6, marginBottom: 4 }}>
-                {[isAr ? "نوع المنتج" : "Product", isAr ? "الحجم" : "Size", isAr ? "الكمية" : "Qty", isAr ? "السعر" : "Price/unit", ""].map((h, i) => (
+                {["نوع المنتج", "الحجم", "الكمية", "السعر", ""].map((h, i) => (
                   <span key={i} style={{ fontSize: ".7rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: ".04em", color: "var(--text-secondary)" }}>{h}</span>
                 ))}
               </div>
@@ -985,9 +985,9 @@ function QuotationsTab({
                     <option value="PREFORMS">PREFORMS</option>
                     <option value="PIPES">PIPES</option>
                   </select>
-                  <input placeholder={isAr ? "الحجم" : "Size"} value={item.size} onChange={(e) => updateItem(idx, "size", e.target.value)} className="admin-input" style={{ fontSize: ".875rem" }} />
-                  <input type="number" placeholder={isAr ? "الكمية" : "Qty"} value={item.quantity} min={0} onChange={(e) => updateItem(idx, "quantity", Number(e.target.value))} className="admin-input" style={{ fontSize: ".875rem" }} />
-                  <input type="number" placeholder={isAr ? "السعر" : "Price"} value={item.pricePerUnit} min={0} step="0.01" onChange={(e) => updateItem(idx, "pricePerUnit", Number(e.target.value))} className="admin-input" style={{ fontSize: ".875rem" }} />
+                  <input placeholder={"الحجم"} value={item.size} onChange={(e) => updateItem(idx, "size", e.target.value)} className="admin-input" style={{ fontSize: ".875rem" }} />
+                  <input type="number" placeholder={"الكمية"} value={item.quantity} min={0} onChange={(e) => updateItem(idx, "quantity", Number(e.target.value))} className="admin-input" style={{ fontSize: ".875rem" }} />
+                  <input type="number" placeholder={"السعر"} value={item.pricePerUnit} min={0} step="0.01" onChange={(e) => updateItem(idx, "pricePerUnit", Number(e.target.value))} className="admin-input" style={{ fontSize: ".875rem" }} />
                   <button
                     type="button" onClick={() => removeItem(idx)} disabled={items.length === 1}
                     style={{ width: 32, height: 32, display: "flex", alignItems: "center", justifyContent: "center", background: "none", border: "1px solid var(--border-default)", borderRadius: 8, cursor: items.length === 1 ? "not-allowed" : "pointer", color: items.length === 1 ? "var(--text-secondary)" : "#ef4444" }}
@@ -997,19 +997,19 @@ function QuotationsTab({
                 </div>
               ))}
               <div style={{ marginTop: "0.75rem", padding: "0.75rem 1rem", background: "#0d948811", border: "1px solid #0d948833", borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                <span style={{ fontSize: ".875rem", fontWeight: 600, color: "var(--text-secondary)" }}>{isAr ? "الإجمالي" : "Running Total"}</span>
+                <span style={{ fontSize: ".875rem", fontWeight: 600, color: "var(--text-secondary)" }}>{"الإجمالي"}</span>
                 <span style={{ fontSize: "1.4rem", fontWeight: 800, color: "#0d9488" }}>₪{total.toFixed(2)}</span>
               </div>
             </div>
 
             <label style={{ display: "flex", flexDirection: "column", gap: "0.35rem", fontSize: ".875rem", fontWeight: 500 }}>
-              {isAr ? "ملاحظات" : "Notes"}
-              <textarea placeholder={isAr ? "ملاحظات اختيارية..." : "Optional notes..."} value={notes} onChange={(e) => setNotes(e.target.value)} className="admin-input" rows={3} style={{ resize: "vertical" }} />
+              {"ملاحظات"}
+              <textarea placeholder={"ملاحظات اختيارية..."} value={notes} onChange={(e) => setNotes(e.target.value)} className="admin-input" rows={3} style={{ resize: "vertical" }} />
             </label>
 
             <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", flexWrap: "wrap" }}>
               <button type="submit" className="auth-button" disabled={saving} style={{ background: "#0d9488", display: "inline-flex", alignItems: "center", gap: "0.4rem" }}>
-                {saving ? <><Spinner />{isAr ? "جارٍ الحفظ..." : "Saving..."}</> : <><Plus size={15} />{isAr ? "إنشاء العرض" : "Create Quotation"}</>}
+                {saving ? <><Spinner />{"جارٍ الحفظ..."}</> : <><Plus size={15} />{"إنشاء العرض"}</>}
               </button>
               {msg && <FeedbackBadge msg={msg} isAr={isAr} />}
             </div>
@@ -1019,7 +1019,7 @@ function QuotationsTab({
 
       {/* Quotations list */}
       {quotations.length === 0 ? (
-        <EmptyState icon={<FileText size={36} />} title={isAr ? "لا توجد عروض بعد" : "No quotations yet"} />
+        <EmptyState icon={<FileText size={36} />} title={"لا توجد عروض بعد"} />
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
           {quotations.map((q) => {
@@ -1047,8 +1047,8 @@ function QuotationsTab({
                       <p style={{ margin: 0, fontWeight: 700, fontSize: ".95rem" }}>{q.customer.name}</p>
                       <p style={{ margin: "1px 0 0", fontSize: ".77rem", color: "var(--text-secondary)" }}>
                         {new Date(q.createdAt).toLocaleDateString()}
-                        {q.validUntil && ` · ${isAr ? "صالح حتى" : "valid until"} ${new Date(q.validUntil).toLocaleDateString()}`}
-                        {q.createdBy && ` · ${isAr ? "بواسطة" : "by"} ${q.createdBy.fullName}`}
+                        {q.validUntil && ` · ${"صالح حتى"} ${new Date(q.validUntil).toLocaleDateString()}`}
+                        {q.createdBy && ` · ${"بواسطة"} ${q.createdBy.fullName}`}
                       </p>
                     </div>
                   </div>
@@ -1070,7 +1070,7 @@ function QuotationsTab({
                 {canApprove && approvalTargets.length > 0 && (
                   <div style={{ padding: "0.625rem 1.25rem", borderTop: "1px solid var(--border-default)", display: "flex", gap: "0.5rem", flexWrap: "wrap", alignItems: "center" }}>
                     <span style={{ fontSize: ".72rem", fontWeight: 600, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: ".04em" }}>
-                      {isAccountant ? (isAr ? "موافقة على:" : "Approve as:") : (isAr ? "تغيير إلى:" : "Move to:")}
+                      {isAccountant ? ("موافقة على:") : ("تغيير إلى:")}
                     </span>
                     {approvalTargets.map((s) => {
                       const bc = STATUS_COLORS[s] ?? "#6b7280";
@@ -1086,7 +1086,7 @@ function QuotationsTab({
                       <button type="button" onClick={() => void deleteQ(q.id)}
                         style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: ".75rem", fontWeight: 600, padding: "3px 10px", borderRadius: 8, border: "1px solid #ef444444", background: "#ef444411", color: "#ef4444", cursor: "pointer", marginInlineStart: "auto" }}
                       >
-                        <Trash2 size={11} /> {isAr ? "حذف" : "Delete"}
+                        <Trash2 size={11} /> {"حذف"}
                       </button>
                     )}
                   </div>
@@ -1098,7 +1098,7 @@ function QuotationsTab({
                     <button type="button" onClick={() => void deleteQ(q.id)}
                       style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: ".75rem", fontWeight: 600, padding: "3px 10px", borderRadius: 8, border: "1px solid #ef444444", background: "#ef444411", color: "#ef4444", cursor: "pointer" }}
                     >
-                      <Trash2 size={11} /> {isAr ? "حذف" : "Delete"}
+                      <Trash2 size={11} /> {"حذف"}
                     </button>
                   </div>
                 )}
@@ -1139,7 +1139,7 @@ function VisitsTab({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!customerId || !visitDate) { setMsg(isAr ? "اختر العميل والتاريخ" : "Select customer and date"); return; }
+    if (!customerId || !visitDate) { setMsg("اختر العميل والتاريخ"); return; }
     setSaving(true); setMsg("");
     try {
       const res = await fetch(`${API_BASE_URL}/sales-rep/visits`, {
@@ -1155,7 +1155,7 @@ function VisitsTab({
         }),
       });
       if (!res.ok) throw new Error(await readApiError(res));
-      setMsg(isAr ? "تم تسجيل الزيارة بنجاح" : "Visit logged successfully");
+      setMsg("تم تسجيل الزيارة بنجاح");
       setCustomerId(""); setVisitDate(""); setOutcome(""); setNotes(""); setNextVisitAt("");
       setShowForm(false);
       await onRefresh();
@@ -1167,7 +1167,7 @@ function VisitsTab({
   };
 
   const deleteVisit = async (id: number) => {
-    if (!confirm(isAr ? "هل أنت متأكد من حذف هذه الزيارة؟" : "Delete this visit?")) return;
+    if (!confirm("هل أنت متأكد من حذف هذه الزيارة؟")) return;
     await fetch(`${API_BASE_URL}/sales-rep/visits/${id}`, {
       method: "DELETE", headers: authHeader(), credentials: "include",
     });
@@ -1180,7 +1180,7 @@ function VisitsTab({
     <div style={{ padding: "1.5rem" }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1.25rem" }}>
         <h3 style={{ margin: 0, fontSize: "1rem", fontWeight: 700 }}>
-          {isAr ? "سجل الزيارات" : "Visit Log"} ({visits.length})
+          {"سجل الزيارات"} ({visits.length})
         </h3>
         {canCreate && (
           <button
@@ -1196,7 +1196,7 @@ function VisitsTab({
             }}
           >
             <Plus size={15} />
-            {showForm ? (isAr ? "إلغاء" : "Cancel") : (isAr ? "تسجيل زيارة" : "Log Visit")}
+            {showForm ? ("إلغاء") : ("تسجيل زيارة")}
           </button>
         )}
       </div>
@@ -1206,40 +1206,40 @@ function VisitsTab({
           <div style={{ padding: "0.875rem 1.25rem", borderBottom: "1px solid #f59e0b22", display: "flex", alignItems: "center", gap: "0.5rem", background: "#f59e0b11" }}>
             <MapPin size={16} style={{ color: "#f59e0b" }} />
             <span style={{ fontWeight: 700, fontSize: ".95rem", color: "#f59e0b" }}>
-              {isAr ? "تسجيل زيارة جديدة" : "Log New Visit"}
+              {"تسجيل زيارة جديدة"}
             </span>
           </div>
           <form onSubmit={(e) => { void handleSubmit(e); }} style={{ padding: "1.25rem", display: "flex", flexDirection: "column", gap: "1rem" }}>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
               <label style={{ display: "flex", flexDirection: "column", gap: "0.35rem", fontSize: ".875rem", fontWeight: 500 }}>
-                {isAr ? "العميل *" : "Customer *"}
+                {"العميل *"}
                 <select value={customerId} onChange={(e) => setCustomerId(e.target.value)} className="admin-input">
-                  <option value="">{isAr ? "اختر عميلاً..." : "Select customer..."}</option>
+                  <option value="">{"اختر عميلاً..."}</option>
                   {customers.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
                 </select>
               </label>
               <label style={{ display: "flex", flexDirection: "column", gap: "0.35rem", fontSize: ".875rem", fontWeight: 500 }}>
-                {isAr ? "تاريخ الزيارة *" : "Visit Date *"}
+                {"تاريخ الزيارة *"}
                 <input type="date" value={visitDate} onChange={(e) => setVisitDate(e.target.value)} className="admin-input" />
               </label>
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
               <label style={{ display: "flex", flexDirection: "column", gap: "0.35rem", fontSize: ".875rem", fontWeight: 500 }}>
-                {isAr ? "النتيجة" : "Outcome"}
-                <input placeholder={isAr ? "نتيجة الزيارة..." : "Visit outcome..."} value={outcome} onChange={(e) => setOutcome(e.target.value)} className="admin-input" />
+                {"النتيجة"}
+                <input placeholder={"نتيجة الزيارة..."} value={outcome} onChange={(e) => setOutcome(e.target.value)} className="admin-input" />
               </label>
               <label style={{ display: "flex", flexDirection: "column", gap: "0.35rem", fontSize: ".875rem", fontWeight: 500 }}>
-                {isAr ? "موعد الزيارة القادمة" : "Next Visit Date"}
+                {"موعد الزيارة القادمة"}
                 <input type="date" value={nextVisitAt} onChange={(e) => setNextVisitAt(e.target.value)} className="admin-input" />
               </label>
             </div>
             <label style={{ display: "flex", flexDirection: "column", gap: "0.35rem", fontSize: ".875rem", fontWeight: 500 }}>
-              {isAr ? "ملاحظات" : "Notes"}
-              <textarea placeholder={isAr ? "ملاحظات اختيارية..." : "Optional notes..."} value={notes} onChange={(e) => setNotes(e.target.value)} className="admin-input" rows={3} style={{ resize: "vertical" }} />
+              {"ملاحظات"}
+              <textarea placeholder={"ملاحظات اختيارية..."} value={notes} onChange={(e) => setNotes(e.target.value)} className="admin-input" rows={3} style={{ resize: "vertical" }} />
             </label>
             <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", flexWrap: "wrap" }}>
               <button type="submit" className="auth-button" disabled={saving} style={{ background: "#f59e0b", display: "inline-flex", alignItems: "center", gap: "0.4rem" }}>
-                {saving ? <><Spinner />{isAr ? "جارٍ الحفظ..." : "Saving..."}</> : <><MapPin size={15} />{isAr ? "تسجيل الزيارة" : "Log Visit"}</>}
+                {saving ? <><Spinner />{"جارٍ الحفظ..."}</> : <><MapPin size={15} />{"تسجيل الزيارة"}</>}
               </button>
               {msg && <FeedbackBadge msg={msg} isAr={isAr} />}
             </div>
@@ -1248,7 +1248,7 @@ function VisitsTab({
       )}
 
       {visits.length === 0 ? (
-        <EmptyState icon={<MapPin size={36} />} title={isAr ? "لا توجد زيارات بعد" : "No visits yet"} />
+        <EmptyState icon={<MapPin size={36} />} title={"لا توجد زيارات بعد"} />
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
           {visits.map((v) => (
@@ -1267,7 +1267,7 @@ function VisitsTab({
                       {v.nextVisitAt && (
                         <span style={{ marginLeft: "0.5rem", display: "flex", alignItems: "center", gap: "0.25rem" }}>
                           <Clock size={11} style={{ color: "#0d9488" }} />
-                          <span style={{ color: "#0d9488" }}>{isAr ? "القادمة:" : "Next:"} {new Date(v.nextVisitAt).toLocaleDateString()}</span>
+                          <span style={{ color: "#0d9488" }}>{"القادمة:"} {new Date(v.nextVisitAt).toLocaleDateString()}</span>
                         </span>
                       )}
                       {v.loggedBy && (
@@ -1332,7 +1332,7 @@ function TargetsTab({
 
   const handleSetTarget = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!repId || !targetAmount) { setMsg(isAr ? "اختر المندوب والمبلغ" : "Select rep and amount"); return; }
+    if (!repId || !targetAmount) { setMsg("اختر المندوب والمبلغ"); return; }
     setSaving(true); setMsg("");
     try {
       const res = await fetch(`${API_BASE_URL}/sales-rep/targets`, {
@@ -1342,7 +1342,7 @@ function TargetsTab({
         body: JSON.stringify({ repId: Number(repId), month: Number(month), year: Number(year), targetAmount: Number(targetAmount), notes: targetNotes || undefined }),
       });
       if (!res.ok) throw new Error(await readApiError(res));
-      setMsg(isAr ? "تم تعيين الهدف بنجاح" : "Target set successfully");
+      setMsg("تم تعيين الهدف بنجاح");
       setRepId(""); setTargetAmount(""); setTargetNotes("");
       setShowForm(false);
       await onRefresh();
@@ -1359,9 +1359,9 @@ function TargetsTab({
     <div style={{ padding: "1.5rem" }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1.25rem" }}>
         <h3 style={{ margin: 0, fontSize: "1rem", fontWeight: 700 }}>
-          {isAr ? "أهداف المبيعات" : "Sales Targets"}
+          {"أهداف المبيعات"}
           <span style={{ marginInlineStart: "0.5rem", fontSize: ".8rem", fontWeight: 500, color: "var(--text-secondary)" }}>
-            ({targets.length} {isAr ? "هدف" : "targets"})
+            ({targets.length} {"هدف"})
           </span>
         </h3>
         {isAdmin && (
@@ -1378,7 +1378,7 @@ function TargetsTab({
             }}
           >
             <Settings2 size={15} />
-            {showForm ? (isAr ? "إلغاء" : "Cancel") : (isAr ? "تعيين هدف" : "Set Target")}
+            {showForm ? ("إلغاء") : ("تعيين هدف")}
           </button>
         )}
       </div>
@@ -1389,44 +1389,44 @@ function TargetsTab({
           <div style={{ padding: "0.875rem 1.25rem", borderBottom: "1px solid #10b98122", display: "flex", alignItems: "center", gap: "0.5rem", background: "#10b98111" }}>
             <Target size={16} style={{ color: "#10b981" }} />
             <span style={{ fontWeight: 700, fontSize: ".95rem", color: "#10b981" }}>
-              {isAr ? "تعيين هدف مبيعات جديد" : "Set New Sales Target"}
+              {"تعيين هدف مبيعات جديد"}
             </span>
           </div>
           <form onSubmit={(e) => { void handleSetTarget(e); }} style={{ padding: "1.25rem", display: "flex", flexDirection: "column", gap: "1rem" }}>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "1rem" }}>
               <label style={{ display: "flex", flexDirection: "column", gap: "0.35rem", fontSize: ".875rem", fontWeight: 500 }}>
-                {isAr ? "المندوب *" : "Sales Rep *"}
+                {"المندوب *"}
                 <select value={repId} onChange={(e) => setRepId(e.target.value)} className="admin-input">
-                  <option value="">{isAr ? "اختر مندوباً..." : "Select rep..."}</option>
+                  <option value="">{"اختر مندوباً..."}</option>
                   {salesReps.map((r) => <option key={r.id} value={r.id}>{r.fullName}</option>)}
                 </select>
               </label>
               <label style={{ display: "flex", flexDirection: "column", gap: "0.35rem", fontSize: ".875rem", fontWeight: 500 }}>
-                {isAr ? "الشهر" : "Month"}
+                {"الشهر"}
                 <select value={month} onChange={(e) => setMonth(e.target.value)} className="admin-input">
                   {MONTH_NAMES_EN.map((m, i) => (
-                    <option key={i + 1} value={i + 1}>{isAr ? MONTH_NAMES_AR[i] : m}</option>
+                    <option key={i + 1} value={i + 1}>{MONTH_NAMES_AR[i]}</option>
                   ))}
                 </select>
               </label>
               <label style={{ display: "flex", flexDirection: "column", gap: "0.35rem", fontSize: ".875rem", fontWeight: 500 }}>
-                {isAr ? "السنة" : "Year"}
+                {"السنة"}
                 <input type="number" value={year} onChange={(e) => setYear(e.target.value)} className="admin-input" min={2024} max={2030} />
               </label>
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: "1rem" }}>
               <label style={{ display: "flex", flexDirection: "column", gap: "0.35rem", fontSize: ".875rem", fontWeight: 500 }}>
-                {isAr ? "مبلغ الهدف (₪) *" : "Target Amount (₪) *"}
+                {"مبلغ الهدف (₪) *"}
                 <input type="number" value={targetAmount} onChange={(e) => setTargetAmount(e.target.value)} className="admin-input" min={0} placeholder="0" />
               </label>
               <label style={{ display: "flex", flexDirection: "column", gap: "0.35rem", fontSize: ".875rem", fontWeight: 500 }}>
-                {isAr ? "ملاحظات" : "Notes"}
-                <input value={targetNotes} onChange={(e) => setTargetNotes(e.target.value)} className="admin-input" placeholder={isAr ? "ملاحظات اختيارية..." : "Optional notes..."} />
+                {"ملاحظات"}
+                <input value={targetNotes} onChange={(e) => setTargetNotes(e.target.value)} className="admin-input" placeholder={"ملاحظات اختيارية..."} />
               </label>
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
               <button type="submit" className="auth-button" disabled={saving} style={{ background: "#10b981", display: "inline-flex", alignItems: "center", gap: "0.4rem" }}>
-                {saving ? <><Spinner />{isAr ? "جارٍ الحفظ..." : "Saving..."}</> : <><Target size={15} />{isAr ? "تعيين الهدف" : "Set Target"}</>}
+                {saving ? <><Spinner />{"جارٍ الحفظ..."}</> : <><Target size={15} />{"تعيين الهدف"}</>}
               </button>
               {msg && <FeedbackBadge msg={msg} isAr={isAr} />}
             </div>
@@ -1435,13 +1435,13 @@ function TargetsTab({
       )}
 
       {targets.length === 0 ? (
-        <EmptyState icon={<Target size={36} />} title={isAr ? "لا توجد أهداف بعد" : "No targets assigned yet"} />
+        <EmptyState icon={<Target size={36} />} title={"لا توجد أهداف بعد"} />
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: "0.875rem" }}>
           {targets.map((t) => {
             const pct = t.targetAmount > 0 ? Math.min(100, Math.round((t.achievedAmount / t.targetAmount) * 100)) : 0;
             const pctColor = pct >= 75 ? "#10b981" : pct >= 40 ? "#f59e0b" : "#ef4444";
-            const monthName = isAr ? MONTH_NAMES_AR[t.month - 1] : MONTH_NAMES_EN[t.month - 1];
+            const monthName = MONTH_NAMES_AR[t.month - 1];
 
             return (
               <div
@@ -1484,11 +1484,11 @@ function TargetsTab({
 
                 <div style={{ display: "flex", justifyContent: "space-between", fontSize: ".82rem" }}>
                   <span style={{ color: "var(--text-secondary)" }}>
-                    {isAr ? "المحقق:" : "Achieved:"}{" "}
+                    {"المحقق:"}{" "}
                     <strong style={{ color: pctColor }}>₪{t.achievedAmount.toLocaleString()}</strong>
                   </span>
                   <span style={{ color: "var(--text-secondary)" }}>
-                    {isAr ? "الهدف:" : "Target:"}{" "}
+                    {"الهدف:"}{" "}
                     <strong>₪{t.targetAmount.toLocaleString()}</strong>
                   </span>
                 </div>
@@ -1515,7 +1515,7 @@ function TabLoader({ isAr }: { isAr: boolean }) {
     <div style={{ padding: "3rem", textAlign: "center" }}>
       <div className="spinner" style={{ margin: "0 auto 0.75rem", width: 28, height: 28, borderWidth: 3 }} />
       <p style={{ color: "var(--text-secondary)", fontSize: ".85rem" }}>
-        {isAr ? "جارٍ التحميل..." : "Loading..."}
+        {"جارٍ التحميل..."}
       </p>
     </div>
   );

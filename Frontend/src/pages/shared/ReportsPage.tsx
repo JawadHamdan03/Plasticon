@@ -566,7 +566,7 @@ function PeriodFilterBar({
         onClick={onLoad}
         style={{ alignSelf: "flex-end" }}
       >
-        {loading ? (isAr ? "جارٍ..." : "Loading…") : copy.load}
+        {loading ? ("جارٍ...") : copy.load}
       </button>
 
       {extra}
@@ -583,25 +583,25 @@ export function ReportsPage() {
   const isAr = locale === "ar";
 
   const t = {
-    date: isAr ? "التاريخ" : "Date",
-    machine: isAr ? "الماكينة" : "Machine",
-    shift: isAr ? "الشفت" : "Shift",
-    user: isAr ? "المستخدم" : "User",
-    records: isAr ? "السجلات" : "Records",
-    cartons: isAr ? "الكرتونات" : "Cartons",
-    pieces: isAr ? "القطع" : "Pieces",
-    total: isAr ? "الإجمالي" : "Total",
-    material: isAr ? "المادة" : "Material",
-    type: isAr ? "النوع" : "Type",
-    qty: isAr ? "الكمية" : "Qty",
-    reference: isAr ? "المرجع" : "Reference",
-    checkIn: isAr ? "الدخول" : "Check In",
-    checkOut: isAr ? "الخروج" : "Check Out",
-    late: isAr ? "التأخير" : "Late",
-    overtime: isAr ? "الإضافي" : "OT",
-    month: isAr ? "الشهر" : "Month",
-    hours: isAr ? "الساعات" : "Hours",
-    overtimeHours: isAr ? "ساعات الإضافي" : "OT Hours",
+    date: "التاريخ",
+    machine: "الماكينة",
+    shift: "الشفت",
+    user: "المستخدم",
+    records: "السجلات",
+    cartons: "الكرتونات",
+    pieces: "القطع",
+    total: "الإجمالي",
+    material: "المادة",
+    type: "النوع",
+    qty: "الكمية",
+    reference: "المرجع",
+    checkIn: "الدخول",
+    checkOut: "الخروج",
+    late: "التأخير",
+    overtime: "الإضافي",
+    month: "الشهر",
+    hours: "الساعات",
+    overtimeHours: "ساعات الإضافي",
     period: copy.reports.period,
     generatedAt: copy.reports.generatedAt,
   };
@@ -964,7 +964,7 @@ export function ReportsPage() {
   }, [payrollActivity, payrollScopeMode, payrollScopeUser]);
 
   const payrollScopeLabel = useMemo(() => {
-    if (payrollScopeMode === "ALL") return isAr ? "الكل" : "All";
+    if (payrollScopeMode === "ALL") return "الكل";
     const selected = payrollUsers.find((u) => u.username === payrollScopeUser);
     return selected?.name ?? payrollScopeUser;
   }, [isAr, payrollScopeMode, payrollScopeUser, payrollUsers]);
@@ -1179,7 +1179,7 @@ export function ReportsPage() {
             aria-hidden="true"
             style={{ marginRight: 4 }}
           />
-          {isAr ? "Excel تنزيل" : "Download Excel"}
+          {"Excel تنزيل"}
         </button>
       </div>
     );
@@ -1326,7 +1326,7 @@ export function ReportsPage() {
             }}
           >
             <tab.icon size={14} />
-            {isAr ? tab.labelAr : tab.labelEn}
+            {tab.labelAr}
           </button>
         ))}
       </div>
@@ -1339,9 +1339,9 @@ export function ReportsPage() {
           <SectionHeader
             icon={Truck}
             color="#3b82f6"
-            title={isAr ? "تقارير الموردين" : "Supplier Reports"}
+            title={"تقارير الموردين"}
             subtitle={
-              isAr ? "ملخص المشتريات حسب المورد" : "Purchase summary by supplier"
+              "ملخص المشتريات حسب المورد"
             }
             actions={
               <DownloadButtons
@@ -1352,23 +1352,23 @@ export function ReportsPage() {
                   }
                   const rangeText =
                     supplierFromDate || supplierToDate
-                      ? `${supplierFromDate || "-"} ${isAr ? "إلى" : "to"} ${supplierToDate || "-"}`
+                      ? `${supplierFromDate || "-"} ${"إلى"} ${supplierToDate || "-"}`
                       : isAr
                       ? "كل الفترات"
                       : "All dates";
                   exportPdfTable(
-                    isAr ? "تقرير الموردين" : "Supplier Report",
+                    "تقرير الموردين",
                     [
                       `${t.period}: ${rangeText}`,
-                      `${isAr ? "عدد الموردين" : "Suppliers"}: ${supplierReportRows.length}`,
-                      `${isAr ? "عدد عمليات الشراء" : "Purchases"}: ${filteredPurchases.length}`,
-                      `${isAr ? "إجمالي الشراء" : "Total spent"}: ₪${supplierReportRows.reduce((s, r) => s + r.totalAmount, 0).toLocaleString()}`,
+                      `${"عدد الموردين"}: ${supplierReportRows.length}`,
+                      `${"عدد عمليات الشراء"}: ${filteredPurchases.length}`,
+                      `${"إجمالي الشراء"}: ₪${supplierReportRows.reduce((s, r) => s + r.totalAmount, 0).toLocaleString()}`,
                     ],
                     [
-                      isAr ? "المورد" : "Supplier",
-                      isAr ? "العمليات" : "Purchases",
-                      isAr ? "الإجمالي" : "Total",
-                      isAr ? "آخر استلام" : "Last Purchase",
+                      "المورد",
+                      "العمليات",
+                      "الإجمالي",
+                      "آخر استلام",
                     ],
                     supplierReportRows.map((r) => [
                       r.supplierName,
@@ -1386,10 +1386,10 @@ export function ReportsPage() {
                   }
                   exportExcelTable(
                     [
-                      isAr ? "المورد" : "Supplier",
-                      isAr ? "العمليات" : "Purchases",
-                      isAr ? "الإجمالي" : "Total",
-                      isAr ? "آخر استلام" : "Last Purchase",
+                      "المورد",
+                      "العمليات",
+                      "الإجمالي",
+                      "آخر استلام",
                     ],
                     supplierReportRows.map((r) => [
                       r.supplierName,
@@ -1424,7 +1424,7 @@ export function ReportsPage() {
                 fontWeight: 600,
               }}
             >
-              {isAr ? "من تاريخ" : "From date"}
+              {"من تاريخ"}
               <input
                 type="date"
                 style={{
@@ -1448,7 +1448,7 @@ export function ReportsPage() {
                 fontWeight: 600,
               }}
             >
-              {isAr ? "إلى تاريخ" : "To date"}
+              {"إلى تاريخ"}
               <input
                 type="date"
                 style={{
@@ -1472,24 +1472,24 @@ export function ReportsPage() {
                 setSupplierToDate("");
               }}
             >
-              {isAr ? "إعادة تعيين" : "Reset"}
+              {"إعادة تعيين"}
             </button>
           </div>
 
           {/* KPI cards */}
           <KpiGrid>
             <KpiCard
-              label={isAr ? "عدد الموردين" : "Suppliers"}
+              label={"عدد الموردين"}
               value={supplierReportRows.length}
               gradient="linear-gradient(135deg,#3b82f6,#1d4ed8)"
             />
             <KpiCard
-              label={isAr ? "عدد عمليات الشراء" : "Purchase Operations"}
+              label={"عدد عمليات الشراء"}
               value={filteredPurchases.length}
               gradient="linear-gradient(135deg,#60a5fa,#3b82f6)"
             />
             <KpiCard
-              label={isAr ? "إجمالي الشراء" : "Total Spent"}
+              label={"إجمالي الشراء"}
               value={`₪${supplierReportRows.reduce((s, r) => s + r.totalAmount, 0).toLocaleString()}`}
               gradient="linear-gradient(135deg,#2563eb,#1e40af)"
             />
@@ -1497,7 +1497,7 @@ export function ReportsPage() {
 
           {loadingCommerce && (
             <p style={{ padding: "1rem 1.25rem", color: "var(--text-muted)" }}>
-              {isAr ? "جارٍ التحميل..." : "Loading..."}
+              {"جارٍ التحميل..."}
             </p>
           )}
 
@@ -1505,10 +1505,10 @@ export function ReportsPage() {
             <TableBase className="admin-table">
               <thead>
                 <tr>
-                  <th>{isAr ? "المورد" : "Supplier"}</th>
-                  <th>{isAr ? "العمليات" : "Purchases"}</th>
-                  <th>{isAr ? "الإجمالي" : "Total"}</th>
-                  <th>{isAr ? "آخر استلام" : "Last Purchase"}</th>
+                  <th>{"المورد"}</th>
+                  <th>{"العمليات"}</th>
+                  <th>{"الإجمالي"}</th>
+                  <th>{"آخر استلام"}</th>
                 </tr>
               </thead>
               <tbody>
@@ -1530,7 +1530,7 @@ export function ReportsPage() {
                       colSpan={4}
                       style={{ textAlign: "center", color: "var(--text-secondary)", padding: "1.5rem" }}
                     >
-                      {isAr ? "لا توجد بيانات" : "No data"}
+                      {"لا توجد بيانات"}
                     </td>
                   </tr>
                 )}
@@ -1548,8 +1548,8 @@ export function ReportsPage() {
           <SectionHeader
             icon={Users}
             color="#10b981"
-            title={isAr ? "تقارير الزباين" : "Customer Reports"}
-            subtitle={isAr ? "ملخص المبيعات حسب الزبون" : "Sales summary by customer"}
+            title={"تقارير الزباين"}
+            subtitle={"ملخص المبيعات حسب الزبون"}
             actions={
               <DownloadButtons
                 onPdf={() => {
@@ -1559,23 +1559,23 @@ export function ReportsPage() {
                   }
                   const rangeText =
                     customerFromDate || customerToDate
-                      ? `${customerFromDate || "-"} ${isAr ? "إلى" : "to"} ${customerToDate || "-"}`
+                      ? `${customerFromDate || "-"} ${"إلى"} ${customerToDate || "-"}`
                       : isAr
                       ? "كل الفترات"
                       : "All dates";
                   exportPdfTable(
-                    isAr ? "تقرير الزباين" : "Customer Report",
+                    "تقرير الزباين",
                     [
                       `${t.period}: ${rangeText}`,
-                      `${isAr ? "عدد الزباين" : "Customers"}: ${customerReportRows.length}`,
-                      `${isAr ? "عدد عمليات البيع" : "Sales"}: ${filteredSales.length}`,
-                      `${isAr ? "إجمالي المبيعات" : "Total sales"}: ₪${customerReportRows.reduce((s, r) => s + r.totalAmount, 0).toLocaleString()}`,
+                      `${"عدد الزباين"}: ${customerReportRows.length}`,
+                      `${"عدد عمليات البيع"}: ${filteredSales.length}`,
+                      `${"إجمالي المبيعات"}: ₪${customerReportRows.reduce((s, r) => s + r.totalAmount, 0).toLocaleString()}`,
                     ],
                     [
-                      isAr ? "الزبون" : "Customer",
-                      isAr ? "العمليات" : "Sales",
-                      isAr ? "الإجمالي" : "Total",
-                      isAr ? "آخر بيع" : "Last Sale",
+                      "الزبون",
+                      "العمليات",
+                      "الإجمالي",
+                      "آخر بيع",
                     ],
                     customerReportRows.map((r) => [
                       r.customerName,
@@ -1593,10 +1593,10 @@ export function ReportsPage() {
                   }
                   exportExcelTable(
                     [
-                      isAr ? "الزبون" : "Customer",
-                      isAr ? "العمليات" : "Sales",
-                      isAr ? "الإجمالي" : "Total",
-                      isAr ? "آخر بيع" : "Last Sale",
+                      "الزبون",
+                      "العمليات",
+                      "الإجمالي",
+                      "آخر بيع",
                     ],
                     customerReportRows.map((r) => [
                       r.customerName,
@@ -1631,7 +1631,7 @@ export function ReportsPage() {
                 fontWeight: 600,
               }}
             >
-              {isAr ? "من تاريخ" : "From date"}
+              {"من تاريخ"}
               <input
                 type="date"
                 style={{
@@ -1655,7 +1655,7 @@ export function ReportsPage() {
                 fontWeight: 600,
               }}
             >
-              {isAr ? "إلى تاريخ" : "To date"}
+              {"إلى تاريخ"}
               <input
                 type="date"
                 style={{
@@ -1679,24 +1679,24 @@ export function ReportsPage() {
                 setCustomerToDate("");
               }}
             >
-              {isAr ? "إعادة تعيين" : "Reset"}
+              {"إعادة تعيين"}
             </button>
           </div>
 
           {/* KPI cards */}
           <KpiGrid>
             <KpiCard
-              label={isAr ? "عدد الزباين" : "Customers"}
+              label={"عدد الزباين"}
               value={customerReportRows.length}
               gradient="linear-gradient(135deg,#10b981,#059669)"
             />
             <KpiCard
-              label={isAr ? "عدد عمليات البيع" : "Sale Operations"}
+              label={"عدد عمليات البيع"}
               value={filteredSales.length}
               gradient="linear-gradient(135deg,#34d399,#10b981)"
             />
             <KpiCard
-              label={isAr ? "إجمالي المبيعات" : "Total Sales"}
+              label={"إجمالي المبيعات"}
               value={`₪${customerReportRows.reduce((s, r) => s + r.totalAmount, 0).toLocaleString()}`}
               gradient="linear-gradient(135deg,#059669,#047857)"
             />
@@ -1706,10 +1706,10 @@ export function ReportsPage() {
             <TableBase className="admin-table">
               <thead>
                 <tr>
-                  <th>{isAr ? "الزبون" : "Customer"}</th>
-                  <th>{isAr ? "العمليات" : "Sales"}</th>
-                  <th>{isAr ? "الإجمالي" : "Total"}</th>
-                  <th>{isAr ? "آخر بيع" : "Last Sale"}</th>
+                  <th>{"الزبون"}</th>
+                  <th>{"العمليات"}</th>
+                  <th>{"الإجمالي"}</th>
+                  <th>{"آخر بيع"}</th>
                 </tr>
               </thead>
               <tbody>
@@ -1729,7 +1729,7 @@ export function ReportsPage() {
                       colSpan={4}
                       style={{ textAlign: "center", color: "var(--text-secondary)", padding: "1.5rem" }}
                     >
-                      {isAr ? "لا توجد بيانات" : "No data"}
+                      {"لا توجد بيانات"}
                     </td>
                   </tr>
                 )}
@@ -1763,11 +1763,11 @@ export function ReportsPage() {
                   exportPdfTable(
                     copy.reports.dailyProduction,
                     [
-                      `${t.period}: ${productionActivity.rangeStart.slice(0, 10)} ${isAr ? "إلى" : "to"} ${productionActivity.rangeEnd.slice(0, 10)} (${productionActivity.period})`,
+                      `${t.period}: ${productionActivity.rangeStart.slice(0, 10)} ${"إلى"} ${productionActivity.rangeEnd.slice(0, 10)} (${productionActivity.period})`,
                       `${t.records}: ${productionActivity.totals.recordsCount}`,
                       `${t.cartons}: ${productionActivity.totals.totalCartons}`,
                       `${t.pieces}: ${productionActivity.totals.totalPieces}`,
-                      `${isAr ? "دقائق التوقف" : "Downtime minutes"}: ${productionActivity.totals.totalDowntimeMinutes}`,
+                      `${"دقائق التوقف"}: ${productionActivity.totals.totalDowntimeMinutes}`,
                     ],
                     [t.date, t.machine, t.shift, t.user, t.cartons, t.pieces],
                     productionActivity.records.map((r) => [
@@ -1838,7 +1838,7 @@ export function ReportsPage() {
                 gradient="linear-gradient(135deg,#7c3aed,#6d28d9)"
               />
               <KpiCard
-                label={isAr ? "دقائق التوقف" : "Downtime (min)"}
+                label={"دقائق التوقف"}
                 value={productionActivity.totals.totalDowntimeMinutes}
                 gradient="linear-gradient(135deg,#6d28d9,#5b21b6)"
               />
@@ -1906,10 +1906,10 @@ export function ReportsPage() {
                   exportPdfTable(
                     copy.reports.inventoryActivity,
                     [
-                      `${t.period}: ${inventoryActivity.rangeStart.slice(0, 10)} ${isAr ? "إلى" : "to"} ${inventoryActivity.rangeEnd.slice(0, 10)} (${inventoryActivity.period})`,
+                      `${t.period}: ${inventoryActivity.rangeStart.slice(0, 10)} ${"إلى"} ${inventoryActivity.rangeEnd.slice(0, 10)} (${inventoryActivity.period})`,
                       `${t.records}: ${inventoryActivity.totals.recordsCount}`,
-                      `${isAr ? "الوارد" : "IN"}: ${inventoryActivity.totals.inCount} (${inventoryActivity.totals.totalInQuantity})`,
-                      `${isAr ? "الصادر" : "OUT"}: ${inventoryActivity.totals.outCount} (${inventoryActivity.totals.totalOutQuantity})`,
+                      `${"الوارد"}: ${inventoryActivity.totals.inCount} (${inventoryActivity.totals.totalInQuantity})`,
+                      `${"الصادر"}: ${inventoryActivity.totals.outCount} (${inventoryActivity.totals.totalOutQuantity})`,
                     ],
                     [t.date, t.material, t.type, t.qty, t.reference],
                     inventoryActivity.records.map((r) => [
@@ -1968,12 +1968,12 @@ export function ReportsPage() {
                 gradient="linear-gradient(135deg,#f97316,#ea580c)"
               />
               <KpiCard
-                label={isAr ? "الوارد" : "IN"}
+                label={"الوارد"}
                 value={`${inventoryActivity.totals.inCount} (${inventoryActivity.totals.totalInQuantity.toLocaleString()})`}
                 gradient="linear-gradient(135deg,#fb923c,#f97316)"
               />
               <KpiCard
-                label={isAr ? "الصادر" : "OUT"}
+                label={"الصادر"}
                 value={`${inventoryActivity.totals.outCount} (${inventoryActivity.totals.totalOutQuantity.toLocaleString()})`}
                 gradient="linear-gradient(135deg,#ea580c,#c2410c)"
               />
@@ -2088,7 +2088,7 @@ export function ReportsPage() {
             color="#06b6d4"
             title={copy.reports.attendanceActivity}
             subtitle={
-              isAr ? "سجلات الحضور والغياب" : "Attendance and absence records"
+              "سجلات الحضور والغياب"
             }
             actions={
               <DownloadButtons
@@ -2100,11 +2100,11 @@ export function ReportsPage() {
                   exportPdfTable(
                     copy.reports.attendanceActivity,
                     [
-                      `${t.period}: ${attendanceActivity.rangeStart.slice(0, 10)} ${isAr ? "إلى" : "to"} ${attendanceActivity.rangeEnd.slice(0, 10)} (${attendanceActivity.period})`,
+                      `${t.period}: ${attendanceActivity.rangeStart.slice(0, 10)} ${"إلى"} ${attendanceActivity.rangeEnd.slice(0, 10)} (${attendanceActivity.period})`,
                       `${t.records}: ${attendanceActivity.totals.recordsCount}`,
-                      `${isAr ? "الغياب" : "Absent"}: ${attendanceActivity.totals.absentCount}`,
-                      `${isAr ? "دقائق التأخير" : "Late minutes"}: ${attendanceActivity.totals.totalLateMinutes}`,
-                      `${isAr ? "دقائق الإضافي" : "OT minutes"}: ${attendanceActivity.totals.totalOvertimeMinutes}`,
+                      `${"الغياب"}: ${attendanceActivity.totals.absentCount}`,
+                      `${"دقائق التأخير"}: ${attendanceActivity.totals.totalLateMinutes}`,
+                      `${"دقائق الإضافي"}: ${attendanceActivity.totals.totalOvertimeMinutes}`,
                     ],
                     [t.user, t.shift, t.checkIn, t.checkOut, t.late, t.overtime],
                     attendanceActivity.records.map((r) => [
@@ -2165,17 +2165,17 @@ export function ReportsPage() {
                 gradient="linear-gradient(135deg,#06b6d4,#0891b2)"
               />
               <KpiCard
-                label={isAr ? "الغياب" : "Absent"}
+                label={"الغياب"}
                 value={attendanceActivity.totals.absentCount}
                 gradient="linear-gradient(135deg,#22d3ee,#06b6d4)"
               />
               <KpiCard
-                label={isAr ? "دقائق التأخير" : "Late (min)"}
+                label={"دقائق التأخير"}
                 value={attendanceActivity.totals.totalLateMinutes.toLocaleString()}
                 gradient="linear-gradient(135deg,#0891b2,#0e7490)"
               />
               <KpiCard
-                label={isAr ? "دقائق الإضافي" : "OT (min)"}
+                label={"دقائق الإضافي"}
                 value={attendanceActivity.totals.totalOvertimeMinutes.toLocaleString()}
                 gradient="linear-gradient(135deg,#0e7490,#155e75)"
               />
@@ -2225,18 +2225,18 @@ export function ReportsPage() {
           {attendancePerUser.length > 0 && (
             <div style={{ padding: "0 1.25rem 1.25rem" }}>
               <p style={{ fontSize: ".78rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: ".05em", color: "var(--text-secondary)", marginBottom: ".5rem", marginTop: "1rem" }}>
-                {isAr ? "ملخص الحضور لكل موظف" : "Per-Employee Attendance Summary"}
+                {"ملخص الحضور لكل موظف"}
               </p>
               <TableShell className="mt-0">
                 <TableBase className="admin-table">
                   <thead>
                     <tr>
-                      <th>{isAr ? "الموظف" : "Employee"}</th>
-                      <th>{isAr ? "الدور" : "Role"}</th>
-                      <th>{isAr ? "أيام الحضور" : "Present Days"}</th>
-                      <th>{isAr ? "أيام جمعة (إضافي)" : "Friday OT Days"}</th>
-                      <th>{isAr ? "دقائق التأخير" : "Late (min)"}</th>
-                      <th>{isAr ? "دقائق الإضافي" : "OT (min)"}</th>
+                      <th>{"الموظف"}</th>
+                      <th>{"الدور"}</th>
+                      <th>{"أيام الحضور"}</th>
+                      <th>{"أيام جمعة (إضافي)"}</th>
+                      <th>{"دقائق التأخير"}</th>
+                      <th>{"دقائق الإضافي"}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -2267,7 +2267,7 @@ export function ReportsPage() {
             icon={DollarSign}
             color="#ec4899"
             title={copy.reports.payrollActivity}
-            subtitle={isAr ? "كشف الرواتب حسب الفترة" : "Payroll records by period"}
+            subtitle={"كشف الرواتب حسب الفترة"}
             actions={
               <DownloadButtons
                 onPdf={() => {
@@ -2278,13 +2278,13 @@ export function ReportsPage() {
                   exportPdfTable(
                     copy.reports.payrollActivity,
                     [
-                      `${t.period}: ${payrollActivity.rangeStart.slice(0, 10)} ${isAr ? "إلى" : "to"} ${payrollActivity.rangeEnd.slice(0, 10)} (${payrollActivity.period})`,
-                      `${isAr ? "نطاق التقرير" : "Report scope"}: ${payrollScopeLabel}`,
-                      `${isAr ? "عدد الأشخاص" : "People"}: ${filteredPayrollTotals.peopleCount}`,
+                      `${t.period}: ${payrollActivity.rangeStart.slice(0, 10)} ${"إلى"} ${payrollActivity.rangeEnd.slice(0, 10)} (${payrollActivity.period})`,
+                      `${"نطاق التقرير"}: ${payrollScopeLabel}`,
+                      `${"عدد الأشخاص"}: ${filteredPayrollTotals.peopleCount}`,
                       `${t.records}: ${filteredPayrollTotals.recordsCount}`,
-                      `${isAr ? "الراتب الأساسي" : "Base salary"}: ₪${filteredPayrollTotals.totalBaseSalary.toLocaleString()}`,
-                      `${isAr ? "بدل الإضافي" : "OT salary"}: ₪${filteredPayrollTotals.totalOvertimeSalary.toLocaleString()}`,
-                      `${isAr ? "إجمالي المدفوع" : "Total payout"}: ₪${filteredPayrollTotals.totalPayout.toLocaleString()}`,
+                      `${"الراتب الأساسي"}: ₪${filteredPayrollTotals.totalBaseSalary.toLocaleString()}`,
+                      `${"بدل الإضافي"}: ₪${filteredPayrollTotals.totalOvertimeSalary.toLocaleString()}`,
+                      `${"إجمالي المدفوع"}: ₪${filteredPayrollTotals.totalPayout.toLocaleString()}`,
                     ],
                     [t.user, t.month, t.hours, t.overtimeHours, t.total],
                     filteredPayrollRows.map((r) => [
@@ -2344,7 +2344,7 @@ export function ReportsPage() {
                     fontWeight: 600,
                   }}
                 >
-                  {isAr ? "نطاق التقرير" : "Report scope"}
+                  {"نطاق التقرير"}
                   <select
                     style={{
                       padding: ".35rem .6rem",
@@ -2359,9 +2359,9 @@ export function ReportsPage() {
                       setPayrollScopeMode(e.target.value as "ALL" | "PERSON")
                     }
                   >
-                    <option value="ALL">{isAr ? "الكل" : "All"}</option>
+                    <option value="ALL">{"الكل"}</option>
                     <option value="PERSON">
-                      {isAr ? "شخص معيّن" : "Specific person"}
+                      {"شخص معيّن"}
                     </option>
                   </select>
                 </label>
@@ -2375,7 +2375,7 @@ export function ReportsPage() {
                       fontWeight: 600,
                     }}
                   >
-                    {isAr ? "الموظف" : "Employee"}
+                    {"الموظف"}
                     <select
                       style={{
                         padding: ".35rem .6rem",
@@ -2403,12 +2403,12 @@ export function ReportsPage() {
           {payrollActivity && (
             <KpiGrid>
               <KpiCard
-                label={isAr ? "نطاق التقرير" : "Scope"}
+                label={"نطاق التقرير"}
                 value={payrollScopeLabel}
                 gradient="linear-gradient(135deg,#ec4899,#db2777)"
               />
               <KpiCard
-                label={isAr ? "عدد الأشخاص" : "People"}
+                label={"عدد الأشخاص"}
                 value={filteredPayrollTotals.peopleCount}
                 gradient="linear-gradient(135deg,#f472b6,#ec4899)"
               />
@@ -2418,7 +2418,7 @@ export function ReportsPage() {
                 gradient="linear-gradient(135deg,#db2777,#be185d)"
               />
               <KpiCard
-                label={isAr ? "إجمالي المدفوع" : "Total Payout"}
+                label={"إجمالي المدفوع"}
                 value={`₪${filteredPayrollTotals.totalPayout.toLocaleString()}`}
                 gradient="linear-gradient(135deg,#be185d,#9d174d)"
               />
@@ -2462,19 +2462,19 @@ export function ReportsPage() {
           {payrollPerUser.length > 0 && (
             <div style={{ padding: "0 1.25rem 1.25rem" }}>
               <p style={{ fontSize: ".78rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: ".05em", color: "var(--text-secondary)", marginBottom: ".5rem", marginTop: "1rem" }}>
-                {isAr ? "ملخص الراتب لكل موظف" : "Per-Employee Payroll Summary"}
+                {"ملخص الراتب لكل موظف"}
               </p>
               <TableShell className="mt-0">
                 <TableBase className="admin-table">
                   <thead>
                     <tr>
-                      <th>{isAr ? "الموظف" : "Employee"}</th>
-                      <th>{isAr ? "الدور" : "Role"}</th>
-                      <th>{isAr ? "ساعات العمل" : "Work Hours"}</th>
-                      <th>{isAr ? "ساعات إضافية" : "OT Hours"}</th>
-                      <th>{isAr ? "الراتب الأساسي" : "Base Salary"}</th>
-                      <th>{isAr ? "بدل الإضافي" : "OT Pay"}</th>
-                      <th>{isAr ? "الإجمالي" : "Total"}</th>
+                      <th>{"الموظف"}</th>
+                      <th>{"الدور"}</th>
+                      <th>{"ساعات العمل"}</th>
+                      <th>{"ساعات إضافية"}</th>
+                      <th>{"الراتب الأساسي"}</th>
+                      <th>{"بدل الإضافي"}</th>
+                      <th>{"الإجمالي"}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -2505,7 +2505,7 @@ export function ReportsPage() {
           <SectionHeader
             icon={Zap}
             color="#d97706"
-            title={isAr ? "تقرير استهلاك الكهرباء" : "Electricity Consumption Report"}
+            title={"تقرير استهلاك الكهرباء"}
             subtitle={
               isAr
                 ? "استهلاك الكهرباء بالشفت والتكلفة"
@@ -2533,7 +2533,7 @@ export function ReportsPage() {
                 fontWeight: 600,
               }}
             >
-              {isAr ? "من تاريخ" : "From date"}
+              {"من تاريخ"}
               <input
                 type="date"
                 style={{
@@ -2557,7 +2557,7 @@ export function ReportsPage() {
                 fontWeight: 600,
               }}
             >
-              {isAr ? "إلى تاريخ" : "To date"}
+              {"إلى تاريخ"}
               <input
                 type="date"
                 style={{
@@ -2581,7 +2581,7 @@ export function ReportsPage() {
                 fontWeight: 600,
               }}
             >
-              {isAr ? "الشهر" : "Month"}
+              {"الشهر"}
               <input
                 type="month"
                 style={{
@@ -2613,7 +2613,7 @@ export function ReportsPage() {
                 disabled={loadingElectricity}
                 onClick={() => void loadElectricityReport()}
               >
-                {loadingElectricity ? (isAr ? "جارٍ..." : "Loading…") : (isAr ? "تحميل" : "Load")}
+                {loadingElectricity ? ("جارٍ...") : ("تحميل")}
               </button>
               <button
                 type="button"
@@ -2626,7 +2626,7 @@ export function ReportsPage() {
                   setElectricityReport(null);
                 }}
               >
-                {isAr ? "مسح" : "Clear"}
+                {"مسح"}
               </button>
             </div>
           </div>
@@ -2634,22 +2634,22 @@ export function ReportsPage() {
           {electricityReport && (
             <KpiGrid>
               <KpiCard
-                label={isAr ? "إجمالي الاستهلاك" : "Total Consumption"}
+                label={"إجمالي الاستهلاك"}
                 value={`${electricityReport.summary.totalConsumption.toFixed(2)} kWh`}
                 gradient="linear-gradient(135deg,#d97706,#b45309)"
               />
               <KpiCard
-                label={isAr ? "إجمالي التكلفة" : "Total Cost"}
+                label={"إجمالي التكلفة"}
                 value={`₪${electricityReport.summary.totalCost.toFixed(2)}`}
                 gradient="linear-gradient(135deg,#fbbf24,#d97706)"
               />
               <KpiCard
-                label={isAr ? "عدد القراءات" : "Total Readings"}
+                label={"عدد القراءات"}
                 value={electricityReport.summary.totalReadings}
                 gradient="linear-gradient(135deg,#b45309,#92400e)"
               />
               <KpiCard
-                label={isAr ? "سعر kWh الحالي" : "Current kWh Price"}
+                label={"سعر kWh الحالي"}
                 value={`₪${electricityReport.currentKwhPrice.toFixed(3)}`}
                 gradient="linear-gradient(135deg,#92400e,#78350f)"
               />
@@ -2658,7 +2658,7 @@ export function ReportsPage() {
 
           {loadingElectricity && (
             <p style={{ padding: "1rem 1.25rem", color: "var(--text-muted)" }}>
-              {isAr ? "جاري التحميل…" : "Loading…"}
+              {"جاري التحميل…"}
             </p>
           )}
 
@@ -2670,7 +2670,7 @@ export function ReportsPage() {
                 padding: "2rem",
               }}
             >
-              {isAr ? "لا توجد بيانات" : "No data in selected range"}
+              {"لا توجد بيانات"}
             </p>
           )}
 
@@ -2679,15 +2679,15 @@ export function ReportsPage() {
               <TableBase className="admin-table">
                 <thead>
                   <tr>
-                    <th>{isAr ? "التاريخ" : "Date"}</th>
-                    <th>{isAr ? "الشفت" : "Shift"}</th>
-                    <th>{isAr ? "بداية (kWh)" : "Start (kWh)"}</th>
-                    <th>{isAr ? "نهاية (kWh)" : "End (kWh)"}</th>
-                    <th>{isAr ? "الاستهلاك (kWh)" : "Consumption (kWh)"}</th>
-                    <th>{isAr ? "سعر kWh" : "kWh Price"}</th>
-                    <th>{isAr ? "تكلفة الشفت" : "Shift Cost"}</th>
-                    <th>{isAr ? "تهيئة" : "Reset"}</th>
-                    <th>{isAr ? "ملاحظات" : "Notes"}</th>
+                    <th>{"التاريخ"}</th>
+                    <th>{"الشفت"}</th>
+                    <th>{"بداية (kWh)"}</th>
+                    <th>{"نهاية (kWh)"}</th>
+                    <th>{"الاستهلاك (kWh)"}</th>
+                    <th>{"سعر kWh"}</th>
+                    <th>{"تكلفة الشفت"}</th>
+                    <th>{"تهيئة"}</th>
+                    <th>{"ملاحظات"}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -2705,7 +2705,7 @@ export function ReportsPage() {
                               }}
                             >
                               {new Date(day.date).toLocaleDateString(
-                                isAr ? "ar-SA" : "en-GB"
+                                "ar-SA"
                               )}
                             </td>
                           )}
@@ -2754,7 +2754,7 @@ export function ReportsPage() {
                                   fontWeight: 700,
                                 }}
                               >
-                                {isAr ? "تهيئة" : "Reset"}
+                                {"تهيئة"}
                               </span>
                             ) : (
                               "—"
@@ -2785,7 +2785,7 @@ export function ReportsPage() {
                             fontSize: ".85rem",
                           }}
                         >
-                          {isAr ? "إجمالي اليوم" : "Day Total"}
+                          {"إجمالي اليوم"}
                         </td>
                         <td></td>
                         <td style={{ color: "var(--brand-primary)" }}>
@@ -2814,7 +2814,7 @@ export function ReportsPage() {
           <SectionHeader
             icon={Receipt}
             color="#ef4444"
-            title={isAr ? "تقرير المصروفات" : "Expenses Report"}
+            title={"تقرير المصروفات"}
             subtitle={
               isAr
                 ? "ملخص المصروفات حسب الفئة والحالة"
@@ -2828,19 +2828,19 @@ export function ReportsPage() {
                     return;
                   }
                   exportPdfTable(
-                    isAr ? "تقرير المصروفات" : "Expenses Report",
+                    "تقرير المصروفات",
                     [
-                      `${isAr ? "الإجمالي" : "Total"}: ₪${expenseTotals.total.toLocaleString()}`,
-                      `${isAr ? "معتمد" : "Approved"}: ₪${expenseTotals.approved.toLocaleString()}`,
-                      `${isAr ? "معلق" : "Pending"}: ₪${expenseTotals.pending.toLocaleString()}`,
+                      `${"الإجمالي"}: ₪${expenseTotals.total.toLocaleString()}`,
+                      `${"معتمد"}: ₪${expenseTotals.approved.toLocaleString()}`,
+                      `${"معلق"}: ₪${expenseTotals.pending.toLocaleString()}`,
                     ],
                     [
-                      isAr ? "التاريخ" : "Date",
-                      isAr ? "الفئة" : "Category",
-                      isAr ? "الوصف" : "Description",
-                      isAr ? "المبلغ" : "Amount",
-                      isAr ? "الحالة" : "Status",
-                      isAr ? "مقدم الطلب" : "Submitted By",
+                      "التاريخ",
+                      "الفئة",
+                      "الوصف",
+                      "المبلغ",
+                      "الحالة",
+                      "مقدم الطلب",
                     ],
                     filteredExpenses.map((e) => [
                       e.submittedAt.slice(0, 10),
@@ -2860,12 +2860,12 @@ export function ReportsPage() {
                   }
                   exportExcelTable(
                     [
-                      isAr ? "التاريخ" : "Date",
-                      isAr ? "الفئة" : "Category",
-                      isAr ? "الوصف" : "Description",
-                      isAr ? "المبلغ" : "Amount",
-                      isAr ? "الحالة" : "Status",
-                      isAr ? "مقدم الطلب" : "Submitted By",
+                      "التاريخ",
+                      "الفئة",
+                      "الوصف",
+                      "المبلغ",
+                      "الحالة",
+                      "مقدم الطلب",
                     ],
                     filteredExpenses.map((e) => [
                       e.submittedAt.slice(0, 10),
@@ -2902,7 +2902,7 @@ export function ReportsPage() {
                 fontWeight: 600,
               }}
             >
-              {isAr ? "من تاريخ" : "From date"}
+              {"من تاريخ"}
               <input
                 type="date"
                 style={{
@@ -2926,7 +2926,7 @@ export function ReportsPage() {
                 fontWeight: 600,
               }}
             >
-              {isAr ? "إلى تاريخ" : "To date"}
+              {"إلى تاريخ"}
               <input
                 type="date"
                 style={{
@@ -2950,7 +2950,7 @@ export function ReportsPage() {
                 setExpenseToDate("");
               }}
             >
-              {isAr ? "إعادة تعيين" : "Reset"}
+              {"إعادة تعيين"}
             </button>
             <button
               type="button"
@@ -2960,29 +2960,29 @@ export function ReportsPage() {
               onClick={() => void loadExpenses()}
             >
               <RefreshCw size={13} style={{ marginRight: 4 }} />
-              {loadingExpenses ? (isAr ? "جارٍ..." : "Loading…") : (isAr ? "تحديث" : "Refresh")}
+              {loadingExpenses ? ("جارٍ...") : ("تحديث")}
             </button>
           </div>
 
           {/* KPI cards */}
           <KpiGrid>
             <KpiCard
-              label={isAr ? "عدد المصروفات" : "Total Expenses"}
+              label={"عدد المصروفات"}
               value={expenseTotals.count}
               gradient="linear-gradient(135deg,#ef4444,#dc2626)"
             />
             <KpiCard
-              label={isAr ? "الإجمالي" : "Total Amount"}
+              label={"الإجمالي"}
               value={`₪${expenseTotals.total.toLocaleString()}`}
               gradient="linear-gradient(135deg,#f87171,#ef4444)"
             />
             <KpiCard
-              label={isAr ? "المعتمد" : "Approved"}
+              label={"المعتمد"}
               value={`₪${expenseTotals.approved.toLocaleString()}`}
               gradient="linear-gradient(135deg,#16a34a,#15803d)"
             />
             <KpiCard
-              label={isAr ? "المعلق" : "Pending"}
+              label={"المعلق"}
               value={`₪${expenseTotals.pending.toLocaleString()}`}
               gradient="linear-gradient(135deg,#d97706,#b45309)"
             />
@@ -2990,7 +2990,7 @@ export function ReportsPage() {
 
           {loadingExpenses && (
             <p style={{ padding: "1rem 1.25rem", color: "var(--text-muted)" }}>
-              {isAr ? "جارٍ التحميل..." : "Loading..."}
+              {"جارٍ التحميل..."}
             </p>
           )}
 
@@ -2998,12 +2998,12 @@ export function ReportsPage() {
             <TableBase className="admin-table">
               <thead>
                 <tr>
-                  <th>{isAr ? "التاريخ" : "Date"}</th>
-                  <th>{isAr ? "الفئة" : "Category"}</th>
-                  <th>{isAr ? "الوصف" : "Description"}</th>
-                  <th>{isAr ? "المبلغ" : "Amount"}</th>
-                  <th>{isAr ? "الحالة" : "Status"}</th>
-                  <th>{isAr ? "مقدم الطلب" : "Submitted By"}</th>
+                  <th>{"التاريخ"}</th>
+                  <th>{"الفئة"}</th>
+                  <th>{"الوصف"}</th>
+                  <th>{"المبلغ"}</th>
+                  <th>{"الحالة"}</th>
+                  <th>{"مقدم الطلب"}</th>
                 </tr>
               </thead>
               <tbody>
@@ -3052,7 +3052,7 @@ export function ReportsPage() {
                         padding: "1.5rem",
                       }}
                     >
-                      {isAr ? "لا توجد مصروفات" : "No expenses found"}
+                      {"لا توجد مصروفات"}
                     </td>
                   </tr>
                 )}
@@ -3070,16 +3070,16 @@ export function ReportsPage() {
           <SectionHeader
             icon={Wrench}
             color="#0891b2"
-            title={isAr ? "تقرير تكاليف الصيانة" : "Maintenance Cost Report"}
-            subtitle={isAr ? "سجلات تكاليف الصيانة لكل آلة ومهندس" : "Maintenance cost records by machine and engineer"}
+            title={"تقرير تكاليف الصيانة"}
+            subtitle={"سجلات تكاليف الصيانة لكل آلة ومهندس"}
             actions={
               <DownloadButtons
                 onPdf={() => {
                   if (!filteredMaintenance.length) { toast.info(copy.reports.pdfNoData); return; }
                   exportPdfTable(
-                    isAr ? "تقرير الصيانة" : "Maintenance Report",
-                    [`${isAr ? "السجلات" : "Records"}: ${maintenanceTotals.records}`, `${isAr ? "إجمالي التكلفة" : "Total cost"}: ₪${maintenanceTotals.totalCost.toLocaleString()}`],
-                    [isAr ? "الآلة" : "Machine", isAr ? "المهندس" : "Engineer", isAr ? "ساعات العمل" : "Labor Hrs", isAr ? "قطع الغيار" : "Spares", isAr ? "الإجمالي" : "Total", isAr ? "التاريخ" : "Date"],
+                    "تقرير الصيانة",
+                    [`${"السجلات"}: ${maintenanceTotals.records}`, `${"إجمالي التكلفة"}: ₪${maintenanceTotals.totalCost.toLocaleString()}`],
+                    ["الآلة", "المهندس", "ساعات العمل", "قطع الغيار", "الإجمالي", "التاريخ"],
                     filteredMaintenance.map((r) => [r.maintenance.machine.name, r.maintenance.engineer.fullName, r.laborHours.toFixed(1), `₪${r.sparesTotal.toLocaleString()}`, `₪${r.totalCost.toLocaleString()}`, r.createdAt.slice(0, 10)]),
                     `maintenance-report-${new Date().toISOString().slice(0, 10)}.pdf`
                   );
@@ -3087,7 +3087,7 @@ export function ReportsPage() {
                 onExcel={() => {
                   if (!filteredMaintenance.length) { toast.info(copy.reports.pdfNoData); return; }
                   exportExcelTable(
-                    [isAr ? "الآلة" : "Machine", isAr ? "المهندس" : "Engineer", isAr ? "ساعات العمل" : "Labor Hrs", isAr ? "قطع الغيار" : "Spares", isAr ? "الإجمالي" : "Total", isAr ? "التاريخ" : "Date"],
+                    ["الآلة", "المهندس", "ساعات العمل", "قطع الغيار", "الإجمالي", "التاريخ"],
                     filteredMaintenance.map((r) => [r.maintenance.machine.name, r.maintenance.engineer.fullName, r.laborHours.toFixed(1), `₪${r.sparesTotal.toLocaleString()}`, `₪${r.totalCost.toLocaleString()}`, r.createdAt.slice(0, 10)]),
                     `maintenance-report-${new Date().toISOString().slice(0, 10)}.xlsx`
                   );
@@ -3099,23 +3099,23 @@ export function ReportsPage() {
           {/* Date filters */}
           <div style={{ display: "flex", flexWrap: "wrap", gap: ".75rem", alignItems: "flex-end", padding: "1rem 1.25rem", borderBottom: "1px solid var(--border-default)" }}>
             <label style={{ display: "flex", flexDirection: "column", gap: ".2rem", fontSize: ".8rem", fontWeight: 600 }}>
-              {isAr ? "من تاريخ" : "From date"}
+              {"من تاريخ"}
               <input type="date" value={maintenanceFromDate} onChange={(e) => setMaintenanceFromDate(e.target.value)} style={{ padding: ".35rem .6rem", borderRadius: 6, border: "1px solid var(--border-default)", fontSize: ".85rem", background: "var(--bg-card)", color: "var(--text-primary)" }} />
             </label>
             <label style={{ display: "flex", flexDirection: "column", gap: ".2rem", fontSize: ".8rem", fontWeight: 600 }}>
-              {isAr ? "إلى تاريخ" : "To date"}
+              {"إلى تاريخ"}
               <input type="date" value={maintenanceToDate} onChange={(e) => setMaintenanceToDate(e.target.value)} style={{ padding: ".35rem .6rem", borderRadius: 6, border: "1px solid var(--border-default)", fontSize: ".85rem", background: "var(--bg-card)", color: "var(--text-primary)" }} />
             </label>
             <button type="button" onClick={() => void loadMaintenanceCosts()} style={{ padding: ".4rem 1rem", borderRadius: 7, background: "var(--orange-500,#f97316)", color: "#fff", border: "none", fontWeight: 700, fontSize: ".82rem", cursor: "pointer" }}>
-              <RefreshCw size={13} style={{ display: "inline", marginInlineEnd: 4 }} />{isAr ? "تحديث" : "Refresh"}
+              <RefreshCw size={13} style={{ display: "inline", marginInlineEnd: 4 }} />{"تحديث"}
             </button>
           </div>
 
           <KpiGrid>
-            <KpiCard label={isAr ? "السجلات" : "Records"}           value={maintenanceTotals.records}                                      gradient="linear-gradient(135deg,#0891b2,#0e7490)" />
-            <KpiCard label={isAr ? "إجمالي التكلفة" : "Total Cost"}  value={`₪${maintenanceTotals.totalCost.toLocaleString()}`}             gradient="linear-gradient(135deg,#0e7490,#155e75)" />
-            <KpiCard label={isAr ? "ساعات العمل" : "Labor Hours"}    value={maintenanceTotals.totalLaborHours.toFixed(1)}                   gradient="linear-gradient(135deg,#155e75,#164e63)" />
-            <KpiCard label={isAr ? "تكلفة قطع الغيار" : "Spares"}   value={`₪${maintenanceTotals.totalSpares.toLocaleString()}`}           gradient="linear-gradient(135deg,#06b6d4,#0891b2)" />
+            <KpiCard label={"السجلات"}           value={maintenanceTotals.records}                                      gradient="linear-gradient(135deg,#0891b2,#0e7490)" />
+            <KpiCard label={"إجمالي التكلفة"}  value={`₪${maintenanceTotals.totalCost.toLocaleString()}`}             gradient="linear-gradient(135deg,#0e7490,#155e75)" />
+            <KpiCard label={"ساعات العمل"}    value={maintenanceTotals.totalLaborHours.toFixed(1)}                   gradient="linear-gradient(135deg,#155e75,#164e63)" />
+            <KpiCard label={"تكلفة قطع الغيار"}   value={`₪${maintenanceTotals.totalSpares.toLocaleString()}`}           gradient="linear-gradient(135deg,#06b6d4,#0891b2)" />
           </KpiGrid>
 
           {filteredMaintenance.length > 0 && (
@@ -3123,15 +3123,15 @@ export function ReportsPage() {
               <TableBase className="admin-table">
                 <thead>
                   <tr>
-                    <th>{isAr ? "الآلة" : "Machine"}</th>
-                    <th>{isAr ? "النوع" : "Type"}</th>
-                    <th>{isAr ? "المهندس" : "Engineer"}</th>
-                    <th>{isAr ? "ساعات العمل" : "Labor Hrs"}</th>
-                    <th>{isAr ? "تكلفة العمل" : "Labor Cost"}</th>
-                    <th>{isAr ? "قطع الغيار" : "Spares"}</th>
-                    <th>{isAr ? "الإجمالي" : "Total"}</th>
-                    <th>{isAr ? "ملاحظات" : "Notes"}</th>
-                    <th>{isAr ? "التاريخ" : "Date"}</th>
+                    <th>{"الآلة"}</th>
+                    <th>{"النوع"}</th>
+                    <th>{"المهندس"}</th>
+                    <th>{"ساعات العمل"}</th>
+                    <th>{"تكلفة العمل"}</th>
+                    <th>{"قطع الغيار"}</th>
+                    <th>{"الإجمالي"}</th>
+                    <th>{"ملاحظات"}</th>
+                    <th>{"التاريخ"}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -3163,16 +3163,16 @@ export function ReportsPage() {
           <SectionHeader
             icon={ShieldCheck}
             color="#16a34a"
-            title={isAr ? "تقرير فحص الجودة" : "Quality Checks Report"}
-            subtitle={isAr ? "سجلات فحص الجودة حسب الآلة والمهندس والخطورة" : "Quality check records by machine, engineer and severity"}
+            title={"تقرير فحص الجودة"}
+            subtitle={"سجلات فحص الجودة حسب الآلة والمهندس والخطورة"}
             actions={
               <DownloadButtons
                 onPdf={() => {
                   if (!filteredQuality.length) { toast.info(copy.reports.pdfNoData); return; }
                   exportPdfTable(
-                    isAr ? "تقرير الجودة" : "Quality Report",
-                    [`${isAr ? "السجلات" : "Records"}: ${qualityTotals.total}`, `${isAr ? "حرجة" : "Critical"}: ${qualityTotals.critical}`, `${isAr ? "عالية" : "High"}: ${qualityTotals.high}`],
-                    [isAr ? "الآلة" : "Machine", isAr ? "المهندس" : "Engineer", isAr ? "نوع المشكلة" : "Issue Type", isAr ? "الخطورة" : "Severity", isAr ? "التاريخ" : "Date"],
+                    "تقرير الجودة",
+                    [`${"السجلات"}: ${qualityTotals.total}`, `${"حرجة"}: ${qualityTotals.critical}`, `${"عالية"}: ${qualityTotals.high}`],
+                    ["الآلة", "المهندس", "نوع المشكلة", "الخطورة", "التاريخ"],
                     filteredQuality.map((r) => [r.machine.name, r.engineer.fullName, r.issueType, r.severity, r.createdAt.slice(0, 10)]),
                     `quality-report-${new Date().toISOString().slice(0, 10)}.pdf`
                   );
@@ -3180,7 +3180,7 @@ export function ReportsPage() {
                 onExcel={() => {
                   if (!filteredQuality.length) { toast.info(copy.reports.pdfNoData); return; }
                   exportExcelTable(
-                    [isAr ? "الآلة" : "Machine", isAr ? "المهندس" : "Engineer", isAr ? "نوع المشكلة" : "Issue Type", isAr ? "الخطورة" : "Severity", isAr ? "التاريخ" : "Date"],
+                    ["الآلة", "المهندس", "نوع المشكلة", "الخطورة", "التاريخ"],
                     filteredQuality.map((r) => [r.machine.name, r.engineer.fullName, r.issueType, r.severity, r.createdAt.slice(0, 10)]),
                     `quality-report-${new Date().toISOString().slice(0, 10)}.xlsx`
                   );
@@ -3192,22 +3192,22 @@ export function ReportsPage() {
           {/* Severity filter */}
           <div style={{ display: "flex", flexWrap: "wrap", gap: ".75rem", alignItems: "flex-end", padding: "1rem 1.25rem", borderBottom: "1px solid var(--border-default)" }}>
             <label style={{ display: "flex", flexDirection: "column", gap: ".2rem", fontSize: ".8rem", fontWeight: 600 }}>
-              {isAr ? "تصفية الخطورة" : "Severity filter"}
+              {"تصفية الخطورة"}
               <select value={qualitySeverityFilter} onChange={(e) => setQualitySeverityFilter(e.target.value)} style={{ padding: ".35rem .6rem", borderRadius: 6, border: "1px solid var(--border-default)", fontSize: ".85rem", background: "var(--bg-card)", color: "var(--text-primary)" }}>
-                <option value="ALL">{isAr ? "الكل" : "All"}</option>
+                <option value="ALL">{"الكل"}</option>
                 {["CRITICAL", "HIGH", "MEDIUM", "LOW"].map((v) => <option key={v} value={v}>{v}</option>)}
               </select>
             </label>
             <button type="button" onClick={() => void loadQualityChecks()} style={{ padding: ".4rem 1rem", borderRadius: 7, background: "var(--orange-500,#f97316)", color: "#fff", border: "none", fontWeight: 700, fontSize: ".82rem", cursor: "pointer" }}>
-              <RefreshCw size={13} style={{ display: "inline", marginInlineEnd: 4 }} />{isAr ? "تحديث" : "Refresh"}
+              <RefreshCw size={13} style={{ display: "inline", marginInlineEnd: 4 }} />{"تحديث"}
             </button>
           </div>
 
           <KpiGrid>
-            <KpiCard label={isAr ? "إجمالي الفحوصات" : "Total Checks"}  value={qualityTotals.total}    gradient="linear-gradient(135deg,#16a34a,#15803d)" />
-            <KpiCard label={isAr ? "حرجة" : "Critical"}                 value={qualityTotals.critical}  gradient="linear-gradient(135deg,#dc2626,#b91c1c)" />
-            <KpiCard label={isAr ? "عالية" : "High"}                    value={qualityTotals.high}      gradient="linear-gradient(135deg,#d97706,#b45309)" />
-            <KpiCard label={isAr ? "تم الحل" : "Resolved"}              value={qualityTotals.resolved}  gradient="linear-gradient(135deg,#0891b2,#0e7490)" />
+            <KpiCard label={"إجمالي الفحوصات"}  value={qualityTotals.total}    gradient="linear-gradient(135deg,#16a34a,#15803d)" />
+            <KpiCard label={"حرجة"}                 value={qualityTotals.critical}  gradient="linear-gradient(135deg,#dc2626,#b91c1c)" />
+            <KpiCard label={"عالية"}                    value={qualityTotals.high}      gradient="linear-gradient(135deg,#d97706,#b45309)" />
+            <KpiCard label={"تم الحل"}              value={qualityTotals.resolved}  gradient="linear-gradient(135deg,#0891b2,#0e7490)" />
           </KpiGrid>
 
           {filteredQuality.length > 0 && (
@@ -3215,14 +3215,14 @@ export function ReportsPage() {
               <TableBase className="admin-table">
                 <thead>
                   <tr>
-                    <th>{isAr ? "الآلة" : "Machine"}</th>
-                    <th>{isAr ? "النوع" : "Type"}</th>
-                    <th>{isAr ? "المهندس" : "Engineer"}</th>
-                    <th>{isAr ? "نوع المشكلة" : "Issue Type"}</th>
-                    <th>{isAr ? "الخطورة" : "Severity"}</th>
-                    <th>{isAr ? "الوصف" : "Description"}</th>
-                    <th>{isAr ? "تاريخ الحل" : "Resolved"}</th>
-                    <th>{isAr ? "التاريخ" : "Date"}</th>
+                    <th>{"الآلة"}</th>
+                    <th>{"النوع"}</th>
+                    <th>{"المهندس"}</th>
+                    <th>{"نوع المشكلة"}</th>
+                    <th>{"الخطورة"}</th>
+                    <th>{"الوصف"}</th>
+                    <th>{"تاريخ الحل"}</th>
+                    <th>{"التاريخ"}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -3256,16 +3256,16 @@ export function ReportsPage() {
           <SectionHeader
             icon={Boxes}
             color="#7c3aed"
-            title={isAr ? "تقرير طلبات قطع الغيار" : "Spare Parts Requests Report"}
-            subtitle={isAr ? "طلبات قطع الغيار حسب المهندس والآلة والحالة" : "Spare part requests by engineer, machine and status"}
+            title={"تقرير طلبات قطع الغيار"}
+            subtitle={"طلبات قطع الغيار حسب المهندس والآلة والحالة"}
             actions={
               <DownloadButtons
                 onPdf={() => {
                   if (!filteredSpareParts.length) { toast.info(copy.reports.pdfNoData); return; }
                   exportPdfTable(
-                    isAr ? "تقرير قطع الغيار" : "Spare Parts Report",
-                    [`${isAr ? "الطلبات" : "Requests"}: ${sparePartsTotals.total}`, `${isAr ? "المعلّقة" : "Pending"}: ${sparePartsTotals.pending}`, `${isAr ? "المستلمة" : "Received"}: ${sparePartsTotals.received}`],
-                    [isAr ? "القطعة" : "Part", isAr ? "الآلة" : "Machine", isAr ? "المهندس" : "Engineer", isAr ? "الكمية" : "Qty", isAr ? "سعر الوحدة" : "Unit Price", isAr ? "الحالة" : "Status", isAr ? "التاريخ" : "Date"],
+                    "تقرير قطع الغيار",
+                    [`${"الطلبات"}: ${sparePartsTotals.total}`, `${"المعلّقة"}: ${sparePartsTotals.pending}`, `${"المستلمة"}: ${sparePartsTotals.received}`],
+                    ["القطعة", "الآلة", "المهندس", "الكمية", "سعر الوحدة", "الحالة", "التاريخ"],
                     filteredSpareParts.map((r) => [r.partName, r.machine?.name ?? "—", r.engineer.fullName, String(r.quantity), r.unitPrice != null ? `₪${r.unitPrice}` : "—", r.status, r.createdAt.slice(0, 10)]),
                     `spare-parts-report-${new Date().toISOString().slice(0, 10)}.pdf`
                   );
@@ -3273,7 +3273,7 @@ export function ReportsPage() {
                 onExcel={() => {
                   if (!filteredSpareParts.length) { toast.info(copy.reports.pdfNoData); return; }
                   exportExcelTable(
-                    [isAr ? "القطعة" : "Part", isAr ? "الآلة" : "Machine", isAr ? "المهندس" : "Engineer", isAr ? "الكمية" : "Qty", isAr ? "سعر الوحدة" : "Unit Price", isAr ? "الحالة" : "Status", isAr ? "التاريخ" : "Date"],
+                    ["القطعة", "الآلة", "المهندس", "الكمية", "سعر الوحدة", "الحالة", "التاريخ"],
                     filteredSpareParts.map((r) => [r.partName, r.machine?.name ?? "—", r.engineer.fullName, String(r.quantity), r.unitPrice != null ? `₪${r.unitPrice}` : "—", r.status, r.createdAt.slice(0, 10)]),
                     `spare-parts-report-${new Date().toISOString().slice(0, 10)}.xlsx`
                   );
@@ -3285,23 +3285,23 @@ export function ReportsPage() {
           {/* Status filter */}
           <div style={{ display: "flex", flexWrap: "wrap", gap: ".75rem", alignItems: "flex-end", padding: "1rem 1.25rem", borderBottom: "1px solid var(--border-default)" }}>
             <label style={{ display: "flex", flexDirection: "column", gap: ".2rem", fontSize: ".8rem", fontWeight: 600 }}>
-              {isAr ? "تصفية الحالة" : "Status filter"}
+              {"تصفية الحالة"}
               <select value={sparePartsStatusFilter} onChange={(e) => setSparePartsStatusFilter(e.target.value)} style={{ padding: ".35rem .6rem", borderRadius: 6, border: "1px solid var(--border-default)", fontSize: ".85rem", background: "var(--bg-card)", color: "var(--text-primary)" }}>
-                <option value="ALL">{isAr ? "الكل" : "All"}</option>
-                <option value="PENDING">{isAr ? "معلّق" : "Pending"}</option>
-                <option value="RECEIVED">{isAr ? "مستلم" : "Received"}</option>
+                <option value="ALL">{"الكل"}</option>
+                <option value="PENDING">{"معلّق"}</option>
+                <option value="RECEIVED">{"مستلم"}</option>
               </select>
             </label>
             <button type="button" onClick={() => void loadSparePartRequests()} style={{ padding: ".4rem 1rem", borderRadius: 7, background: "var(--orange-500,#f97316)", color: "#fff", border: "none", fontWeight: 700, fontSize: ".82rem", cursor: "pointer" }}>
-              <RefreshCw size={13} style={{ display: "inline", marginInlineEnd: 4 }} />{isAr ? "تحديث" : "Refresh"}
+              <RefreshCw size={13} style={{ display: "inline", marginInlineEnd: 4 }} />{"تحديث"}
             </button>
           </div>
 
           <KpiGrid>
-            <KpiCard label={isAr ? "إجمالي الطلبات" : "Total Requests"} value={sparePartsTotals.total}                                  gradient="linear-gradient(135deg,#7c3aed,#6d28d9)" />
-            <KpiCard label={isAr ? "معلّقة" : "Pending"}                value={sparePartsTotals.pending}                                 gradient="linear-gradient(135deg,#d97706,#b45309)" />
-            <KpiCard label={isAr ? "مستلمة" : "Received"}               value={sparePartsTotals.received}                                gradient="linear-gradient(135deg,#16a34a,#15803d)" />
-            <KpiCard label={isAr ? "التكلفة الإجمالية" : "Total Cost"}  value={`₪${sparePartsTotals.totalCost.toLocaleString()}`}        gradient="linear-gradient(135deg,#6d28d9,#5b21b6)" />
+            <KpiCard label={"إجمالي الطلبات"} value={sparePartsTotals.total}                                  gradient="linear-gradient(135deg,#7c3aed,#6d28d9)" />
+            <KpiCard label={"معلّقة"}                value={sparePartsTotals.pending}                                 gradient="linear-gradient(135deg,#d97706,#b45309)" />
+            <KpiCard label={"مستلمة"}               value={sparePartsTotals.received}                                gradient="linear-gradient(135deg,#16a34a,#15803d)" />
+            <KpiCard label={"التكلفة الإجمالية"}  value={`₪${sparePartsTotals.totalCost.toLocaleString()}`}        gradient="linear-gradient(135deg,#6d28d9,#5b21b6)" />
           </KpiGrid>
 
           {filteredSpareParts.length > 0 && (
@@ -3309,15 +3309,15 @@ export function ReportsPage() {
               <TableBase className="admin-table">
                 <thead>
                   <tr>
-                    <th>{isAr ? "القطعة" : "Part"}</th>
-                    <th>{isAr ? "الآلة" : "Machine"}</th>
-                    <th>{isAr ? "المهندس" : "Engineer"}</th>
-                    <th>{isAr ? "الكمية" : "Qty"}</th>
-                    <th>{isAr ? "سعر الوحدة" : "Unit Price"}</th>
-                    <th>{isAr ? "الإجمالي" : "Total"}</th>
-                    <th>{isAr ? "الحالة" : "Status"}</th>
-                    <th>{isAr ? "سعّره" : "Priced by"}</th>
-                    <th>{isAr ? "التاريخ" : "Date"}</th>
+                    <th>{"القطعة"}</th>
+                    <th>{"الآلة"}</th>
+                    <th>{"المهندس"}</th>
+                    <th>{"الكمية"}</th>
+                    <th>{"سعر الوحدة"}</th>
+                    <th>{"الإجمالي"}</th>
+                    <th>{"الحالة"}</th>
+                    <th>{"سعّره"}</th>
+                    <th>{"التاريخ"}</th>
                   </tr>
                 </thead>
                 <tbody>

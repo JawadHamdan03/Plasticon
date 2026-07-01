@@ -4,7 +4,6 @@ import { Plus, Pencil, Trash2, FileText, CheckCircle, Clock, AlertTriangle, X, S
 import { ModulePageShell } from "../../components/ModulePageShell";
 import { Button } from "../../components/ui/button";
 import { Card } from "../../components/ui/card";
-import { useLocale } from "../../context/LocaleContext";
 import { API_BASE_URL } from "../../lib/api";
 import { useAuth } from "../../context/AuthContext";
 
@@ -39,11 +38,9 @@ const STATUS_META: Record<string, { label: string; labelAr: string; color: strin
 const emptyForm = { filingType: "VAT", dueDate: "", amount: "", status: "PENDING" };
 
 export default function TaxCompliance() {
-  const { locale } = useLocale();
   const { user } = useAuth();
   const isAdmin = user?.role === "ADMIN";
   const canEdit = user?.role === "ACCOUNTANT" || isAdmin;
-  const nav = (en: string, ar: string) => locale === "ar" ? ar : en;
 
   const [filings, setFilings] = useState<TaxFiling[]>([]);
   const [loading, setLoading] = useState(true);
@@ -86,7 +83,7 @@ export default function TaxCompliance() {
   };
 
   const handleDelete = async (id: number) => {
-    if (!(await confirmDialog(nav("Delete this filing?", "حذف هذا الإقرار؟"), { danger: true }))) return;
+    if (!(await confirmDialog("حذف هذا الإقرار؟", { danger: true }))) return;
     await fetch(`${API_BASE_URL}/tax-filings/${id}`, { method: "DELETE", headers: authHeaders(), credentials: "include" });
     void fetchFilings();
   };
@@ -102,17 +99,17 @@ export default function TaxCompliance() {
 
   return (
     <ModulePageShell
-      title={nav("Tax Compliance", "الامتثال الضريبي")}
-      subtitle={nav("Manage tax filings and compliance requirements", "إدارة الإقرارات الضريبية ومتطلبات الامتثال")}
+      title={"الامتثال الضريبي"}
+      subtitle={"إدارة الإقرارات الضريبية ومتطلبات الامتثال"}
       icon={<FileText size={22} />}
     >
       {/* KPIs */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
         {[
-          { label: nav("Total Obligations", "إجمالي الالتزامات"), value: fmtMoney(totalAmount), icon: "💰", color: "#d97706", bg: "#fef3c7" },
-          { label: nav("Completed", "مكتمل"), value: completed, icon: "✅", color: "#059669", bg: "#d1fae5" },
-          { label: nav("Pending", "معلق"), value: pending, icon: "⏳", color: "#3b82f6", bg: "#dbeafe" },
-          { label: nav("Overdue", "متأخر"), value: overdue, icon: "🚨", color: "#dc2626", bg: "#fee2e2" },
+          { label: "إجمالي الالتزامات", value: fmtMoney(totalAmount), icon: "💰", color: "#d97706", bg: "#fef3c7" },
+          { label: "مكتمل", value: completed, icon: "✅", color: "#059669", bg: "#d1fae5" },
+          { label: "معلق", value: pending, icon: "⏳", color: "#3b82f6", bg: "#dbeafe" },
+          { label: "متأخر", value: overdue, icon: "🚨", color: "#dc2626", bg: "#fee2e2" },
         ].map((k) => (
           <Card key={k.label} className="p-4 flex items-center gap-3">
             <div style={{ width: 40, height: 40, borderRadius: 10, background: k.bg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.2rem", flexShrink: 0 }}>
@@ -131,18 +128,18 @@ export default function TaxCompliance() {
         {canEdit && (
           <Button size="sm" onClick={openNew}>
             <Plus size={15} className="me-1" />
-            {nav("Add Filing", "إضافة إقرار")}
+            {"إضافة إقرار"}
           </Button>
         )}
         <select className="input text-sm h-8 min-w-[140px]" value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}>
-          <option value="">{nav("All Statuses", "جميع الحالات")}</option>
-          <option value="PENDING">{nav("Pending", "معلق")}</option>
-          <option value="COMPLETED">{nav("Completed", "مكتمل")}</option>
-          <option value="OVERDUE">{nav("Overdue", "متأخر")}</option>
+          <option value="">{"جميع الحالات"}</option>
+          <option value="PENDING">{"معلق"}</option>
+          <option value="COMPLETED">{"مكتمل"}</option>
+          <option value="OVERDUE">{"متأخر"}</option>
         </select>
         {filterStatus && (
           <button className="text-xs text-[var(--text-secondary)] underline" onClick={() => setFilterStatus("")}>
-            {nav("Clear", "مسح")}
+            {"مسح"}
           </button>
         )}
       </div>
@@ -153,38 +150,38 @@ export default function TaxCompliance() {
           <div className="flex items-center justify-between mb-5">
             <div>
               <h3 className="font-bold text-[var(--text-primary)] text-base">
-                {editingId ? nav("Edit Filing", "تعديل الإقرار") : nav("New Tax Filing", "إقرار ضريبي جديد")}
+                {editingId ? "تعديل الإقرار" : "إقرار ضريبي جديد"}
               </h3>
-              <p className="text-xs text-[var(--text-secondary)] mt-0.5">{nav("Enter tax filing details", "أدخل بيانات الإقرار الضريبي")}</p>
+              <p className="text-xs text-[var(--text-secondary)] mt-0.5">{"أدخل بيانات الإقرار الضريبي"}</p>
             </div>
             <button className="text-[var(--text-secondary)] hover:text-[var(--text-primary)]" onClick={() => setShowForm(false)}><X size={18} /></button>
           </div>
 
-          <p className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wide mb-2">{nav("Filing Details", "بيانات الإقرار")}</p>
+          <p className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wide mb-2">{"بيانات الإقرار"}</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
             <div>
-              <label className="label">{nav("Filing Type *", "نوع الإقرار *")}</label>
+              <label className="label">{"نوع الإقرار *"}</label>
               <select className="input" value={form.filingType} onChange={(e) => setForm((p) => ({ ...p, filingType: e.target.value }))}>
                 {TAX_TYPES.map((t) => (
-                  <option key={t.value} value={t.value}>{t.icon} {locale === "ar" ? t.labelAr : t.label}</option>
+                  <option key={t.value} value={t.value}>{t.icon} {t.labelAr}</option>
                 ))}
               </select>
             </div>
             <div>
-              <label className="label">{nav("Status", "الحالة")}</label>
+              <label className="label">{"الحالة"}</label>
               <select className="input" value={form.status} onChange={(e) => setForm((p) => ({ ...p, status: e.target.value }))}>
-                <option value="PENDING">{nav("Pending", "معلق")}</option>
-                <option value="COMPLETED">{nav("Completed", "مكتمل")}</option>
-                <option value="OVERDUE">{nav("Overdue", "متأخر")}</option>
+                <option value="PENDING">{"معلق"}</option>
+                <option value="COMPLETED">{"مكتمل"}</option>
+                <option value="OVERDUE">{"متأخر"}</option>
               </select>
             </div>
             <div>
-              <label className="label">{nav("Amount ($) *", "المبلغ ($) *")}</label>
+              <label className="label">{"المبلغ ($) *"}</label>
               <input className="input" type="number" min="0" step="0.01" placeholder="0.00"
                 value={form.amount} onChange={(e) => setForm((p) => ({ ...p, amount: e.target.value }))} />
             </div>
             <div>
-              <label className="label">{nav("Due Date *", "تاريخ الاستحقاق *")}</label>
+              <label className="label">{"تاريخ الاستحقاق *"}</label>
               <input className="input" type="date"
                 value={form.dueDate} onChange={(e) => setForm((p) => ({ ...p, dueDate: e.target.value }))} />
             </div>
@@ -193,9 +190,9 @@ export default function TaxCompliance() {
           <div className="flex gap-2 pt-2 border-t border-[var(--border-default)]">
             <Button size="sm" onClick={handleSave} disabled={saving || !form.amount || !form.dueDate}>
               <Save size={14} className="me-1" />
-              {saving ? nav("Saving...", "جارٍ الحفظ...") : nav("Save Filing", "حفظ الإقرار")}
+              {saving ? "جارٍ الحفظ..." : "حفظ الإقرار"}
             </Button>
-            <Button size="sm" variant="outline" onClick={() => setShowForm(false)}>{nav("Cancel", "إلغاء")}</Button>
+            <Button size="sm" variant="outline" onClick={() => setShowForm(false)}>{"إلغاء"}</Button>
           </div>
         </Card>
       )}
@@ -206,8 +203,8 @@ export default function TaxCompliance() {
       ) : filtered.length === 0 ? (
         <Card className="p-12 text-center text-[var(--text-secondary)]">
           <FileText size={32} className="mx-auto mb-3 opacity-30" />
-          <p className="font-medium">{nav("No filings found", "لا توجد إقرارات")}</p>
-          <p className="text-sm mt-1">{nav("Add your first tax filing", "أضف أول إقرار ضريبي")}</p>
+          <p className="font-medium">{"لا توجد إقرارات"}</p>
+          <p className="text-sm mt-1">{"أضف أول إقرار ضريبي"}</p>
         </Card>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -223,12 +220,12 @@ export default function TaxCompliance() {
                     <span style={{ fontSize: "1.3rem" }}>{taxMeta.icon}</span>
                     <div className="min-w-0">
                       <p className="font-bold text-sm text-[var(--text-primary)] truncate">
-                        {locale === "ar" ? taxMeta.labelAr : taxMeta.label}
+                        {taxMeta.labelAr}
                       </p>
                       <span style={{ background: statusMeta.color + "20", color: statusMeta.color, borderRadius: "20px", padding: "1px 8px", fontSize: ".68rem", fontWeight: 700 }}
                         className="inline-flex items-center gap-1">
                         <StatusIcon size={9} />
-                        {locale === "ar" ? statusMeta.labelAr : statusMeta.label}
+                        {statusMeta.labelAr}
                       </span>
                     </div>
                   </div>
@@ -242,7 +239,7 @@ export default function TaxCompliance() {
                 <div className="p-4 flex-1 flex flex-col gap-2.5">
                   <p className="text-2xl font-bold" style={{ color: statusMeta.color }}>{fmtMoney(f.amount)}</p>
                   <p className="text-sm text-[var(--text-secondary)]">
-                    📅 {nav("Due", "الاستحقاق")}: <span className={f.status === "OVERDUE" ? "text-red-600 font-semibold" : ""}>{new Date(f.dueDate).toLocaleDateString()}</span>
+                    📅 {"الاستحقاق"}: <span className={f.status === "OVERDUE" ? "text-red-600 font-semibold" : ""}>{new Date(f.dueDate).toLocaleDateString()}</span>
                   </p>
                   {f.filedBy && (
                     <p className="text-xs text-[var(--text-secondary)]">👤 {f.filedBy.fullName}</p>

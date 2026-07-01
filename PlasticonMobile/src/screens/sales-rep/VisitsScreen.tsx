@@ -82,18 +82,6 @@ export function VisitsScreen() {
     }
   };
 
-  const deleteVisit = (id: number) => {
-    Alert.alert(
-      isAr ? 'حذف' : 'Delete',
-      isAr ? 'هل تريد حذف الزيارة؟' : 'Delete this visit?',
-      [
-        { text: isAr ? 'إلغاء' : 'Cancel', style: 'cancel' },
-        { text: isAr ? 'حذف' : 'Delete', style: 'destructive', onPress: async () => {
-          try { await api.delete(`/sales-rep/visits/${id}`); void load(); } catch { Alert.alert('Error'); }
-        }},
-      ],
-    );
-  };
 
   const renderItem = ({ item }: { item: Visit }) => (
     <View style={[styles.card, { backgroundColor: colors.surface, borderLeftColor: colors.accent }]}>
@@ -105,11 +93,6 @@ export function VisitsScreen() {
             <Text style={[styles.infoText, { color: colors.textSecondary }]}>{new Date(item.visitDate).toLocaleDateString()}</Text>
           </View>
         </View>
-        {isSalesRep && (
-          <TouchableOpacity style={styles.deleteBtn} onPress={() => deleteVisit(item.id)}>
-            <Ionicons name="trash-outline" size={16} color="#ef4444" />
-          </TouchableOpacity>
-        )}
       </View>
       {item.outcome ? (
         <View style={[styles.outcomeBadge, { backgroundColor: colors.accent + '22' }]}>

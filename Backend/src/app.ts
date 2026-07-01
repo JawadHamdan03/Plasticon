@@ -5,7 +5,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import cors, { type CorsOptions } from "cors";
 import helmet from "helmet";
-import rateLimit from "express-rate-limit";
+import jwt from "jsonwebtoken";
 import cookieParser from "cookie-parser";
 import { initializeSocketServer } from "./config/socket";
 import authRoutes from "./routes/authRoutes";
@@ -102,25 +102,39 @@ app.use(cookieParser());
 app.use(express.json({ limit: "2mb" }));
 app.use(express.urlencoded({ extended: true, limit: "2mb" }));
 
-// Serve static files — allow cross-origin loading and iframe embedding (frontend on different port)
+// Lightweight JWT check for uploaded file access — accepts cookie, Bearer header, or ?token= query param
+const verifyPictureAccess = (req: express.Request, res: express.Response, next: express.NextFunction) => {
+  const token =
+    req.cookies?.authToken ??
+    (typeof req.headers.authorization === "string" && req.headers.authorization.startsWith("Bearer ")
+      ? req.headers.authorization.slice(7)
+      : undefined) ??
+    (typeof req.query.token === "string" ? req.query.token : undefined);
+
+  if (!token) { res.status(401).json({ message: "Unauthorized" }); return; }
+
+  try {
+    jwt.verify(token, process.env.JWT_SECRET as string, { algorithms: ["HS256"] });
+    next();
+  } catch {
+    res.status(401).json({ message: "Unauthorized" });
+  }
+};
+
+// Serve static files — authenticated; cross-origin allowed for img/iframe embedding (frontend on different port)
 app.use(
   "/pictures",
+  verifyPictureAccess,
   (_req, res, next) => {
     res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
+    res.setHeader("X-Content-Type-Options", "nosniff");
     res.removeHeader("X-Frame-Options"); // allow <iframe> embedding from frontend origin
     next();
   },
   express.static(path.resolve(__dirname, "..", "prisma", "pictures")),
 );
 
-const authRateLimit = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 5,
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: { message: "Too many requests, please try again later." },
-});
-app.use("/auth", authRateLimit, authRoutes);
+app.use("/auth", authRoutes);
 app.use("/registration-requests", registrationRequestRoutes);
 app.use("/profile", profileRoutes);
 app.use("/users", userRoutes);
@@ -176,7 +190,7 @@ app.use((err: Error & { status?: number; code?: string }, _req: express.Request,
   res.status(status).json({ message: err.message ?? "Internal server error" });
 });
 
-initializeSocketServer(server);
+initializeSocketServer(server, allowedOrigins);
 
 async function initializeRawSqlTables(): Promise<void> {
   try {

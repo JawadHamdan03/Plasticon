@@ -284,7 +284,7 @@ export function SettingsAdminScreen() {
       setStatusMsg(isAr ? 'تم حفظ إعدادات الإنتاج' : 'Production settings saved');
     } catch (e: any) {
       setStatusOk(false);
-      setStatusMsg(e?.message ?? 'Error');
+      setStatusMsg(e?.message ?? 'خطأ');
     } finally {
       setSavingProd(null);
     }
@@ -310,7 +310,7 @@ export function SettingsAdminScreen() {
       setStatusMsg(isAr ? 'تم حفظ إعدادات النظام' : 'System settings saved');
     } catch (e: any) {
       setStatusOk(false);
-      setStatusMsg(e?.message ?? 'Error');
+      setStatusMsg(e?.message ?? 'خطأ');
     } finally {
       setSavingSystem(false);
     }
@@ -327,7 +327,7 @@ export function SettingsAdminScreen() {
       setStatusMsg(isAr ? 'تم حفظ قواعد الإشعارات' : 'Notification rules saved');
     } catch (e: any) {
       setStatusOk(false);
-      setStatusMsg(e?.message ?? 'Error');
+      setStatusMsg(e?.message ?? 'خطأ');
     } finally {
       setSavingNotif(false);
     }
@@ -384,7 +384,7 @@ export function SettingsAdminScreen() {
       setUserModal(null);
       await loadUsers();
     } catch (e: any) {
-      setUserFormErr(e?.message ?? 'Failed to save');
+      setUserFormErr(e?.message ?? 'فشل الحفظ');
     } finally {
       setUserFormSaving(false);
     }
@@ -396,7 +396,7 @@ export function SettingsAdminScreen() {
       setDeleteId(null);
       await loadUsers();
     } catch (e: any) {
-      Alert.alert(isAr ? 'خطأ' : 'Error', e?.message ?? 'Failed to delete');
+      Alert.alert('خطأ', e?.message ?? 'فشل الحذف');
     }
   };
 

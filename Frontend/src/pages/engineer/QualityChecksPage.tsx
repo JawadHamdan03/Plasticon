@@ -1,6 +1,5 @@
-import { useEffect, useState, type FormEvent } from "react";
+﻿import { useEffect, useState, type FormEvent } from "react";
 import { useAuth } from "../../context/AuthContext";
-import { useLocale } from "../../context/LocaleContext";
 import { API_BASE_URL, readApiError } from "../../lib/api";
 import { ModulePageShell } from "../../components/ModulePageShell";
 import { Plus, CheckSquare } from "lucide-react";
@@ -59,8 +58,6 @@ function fmtDate(d: string) {
 
 export function QualityChecksPage() {
   const { user } = useAuth();
-  const { locale } = useLocale();
-  const isAr = locale === "ar";
   const role = String(user?.role ?? "WORKER").toUpperCase();
   const canViewAll = ["ADMIN", "ACCOUNTANT"].includes(role);
   const canCreate = !["ADMIN", "ACCOUNTANT"].includes(role);
@@ -113,7 +110,7 @@ export function QualityChecksPage() {
         }),
       });
       if (!res.ok) throw new Error(await readApiError(res));
-      setSuccess(isAr ? "تم حفظ فحص الجودة بنجاح ✓" : "Quality check saved ✓");
+      setSuccess("تم حفظ فحص الجودة بنجاح ✓");
       setForm({ machineId: "", issueType: "OTHER", severity: "MEDIUM", description: "" });
       setShowForm(false);
       void load();
@@ -134,10 +131,10 @@ export function QualityChecksPage() {
   });
 
   const kpis = [
-    { label: isAr ? "إجمالي الفحوصات" : "Total Checks", value: records.length,  gradient: "linear-gradient(135deg,#3b82f6,#1d4ed8)", icon: "✅" },
-    { label: isAr ? "مشاكل مفتوحة"   : "Open Issues",   value: openCount,        gradient: "linear-gradient(135deg,#f59e0b,#d97706)", icon: "⚠️" },
-    { label: isAr ? "حرجة"            : "Critical",      value: criticalCount,    gradient: "linear-gradient(135deg,#ef4444,#dc2626)", icon: "🚨" },
-    { label: isAr ? "تم الحل"         : "Resolved",      value: resolvedCount,    gradient: "linear-gradient(135deg,#10b981,#059669)", icon: "🎯" },
+    { label: "إجمالي الفحوصات", value: records.length,  gradient: "linear-gradient(135deg,#3b82f6,#1d4ed8)", icon: "✅" },
+    { label: "مشاكل مفتوحة",   value: openCount,        gradient: "linear-gradient(135deg,#f59e0b,#d97706)", icon: "⚠️" },
+    { label: "حرجة",      value: criticalCount,    gradient: "linear-gradient(135deg,#ef4444,#dc2626)", icon: "🚨" },
+    { label: "تم الحل",      value: resolvedCount,    gradient: "linear-gradient(135deg,#10b981,#059669)", icon: "🎯" },
   ];
 
   const sel = (active: boolean) => ({
@@ -150,7 +147,7 @@ export function QualityChecksPage() {
 
   return (
     <ModulePageShell
-      title={isAr ? "فحص الجودة" : "Quality Checks"}
+      title={"فحص الجودة"}
       subtitle={isAr
         ? "تسجيل ومتابعة مشاكل الجودة في خط الإنتاج"
         : "Log and track quality issues on the production line"}
@@ -158,12 +155,12 @@ export function QualityChecksPage() {
       actions={
         <div style={{ display: "flex", gap: ".5rem" }}>
           <button type="button" className="auth-button auth-button--ghost" onClick={() => void load()}>
-            {isAr ? "تحديث" : "Refresh"}
+            {"تحديث"}
           </button>
           {canCreate && (
             <button type="button" className="auth-button" onClick={() => setShowForm(v => !v)}>
               <Plus size={15} />
-              {showForm ? (isAr ? "إلغاء" : "Cancel") : (isAr ? "فحص جديد" : "New Check")}
+              {showForm ? ("إلغاء") : ("فحص جديد")}
             </button>
           )}
         </div>
@@ -189,46 +186,46 @@ export function QualityChecksPage() {
         <div style={{ background: "var(--bg-card)", border: "2px solid var(--brand-primary,#3b82f6)", borderRadius: "var(--radius-xl)", padding: "1.25rem", marginBottom: "1.5rem" }}>
           <h3 style={{ margin: "0 0 1.1rem", fontSize: "1rem", fontWeight: 700, color: "var(--text-primary)", display: "flex", alignItems: "center", gap: ".5rem" }}>
             <CheckSquare size={17} style={{ color: "var(--brand-primary)" }} />
-            {isAr ? "تسجيل فحص جودة جديد" : "Log New Quality Check"}
+            {"تسجيل فحص جودة جديد"}
           </h3>
           <form onSubmit={e => void submit(e)} style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))", gap: "1rem" }}>
 
               <label style={{ display: "flex", flexDirection: "column", gap: ".35rem", fontWeight: 600, fontSize: ".875rem", color: "var(--text-primary)" }}>
-                {isAr ? "الآلة *" : "Machine *"}
+                {"الآلة *"}
                 <select required value={form.machineId}
                   onChange={e => setForm(p => ({ ...p, machineId: e.target.value }))}
                   style={{ padding: ".55rem .75rem", border: "1px solid var(--border-default)", borderRadius: "var(--radius-md)", background: "var(--bg-input)", fontSize: ".875rem" }}>
-                  <option value="">{isAr ? "اختر الآلة..." : "Select machine..."}</option>
+                  <option value="">{"اختر الآلة..."}</option>
                   {machines.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
                 </select>
               </label>
 
               <label style={{ display: "flex", flexDirection: "column", gap: ".35rem", fontWeight: 600, fontSize: ".875rem", color: "var(--text-primary)" }}>
-                {isAr ? "نوع المشكلة" : "Issue Type"}
+                {"نوع المشكلة"}
                 <select value={form.issueType}
                   onChange={e => setForm(p => ({ ...p, issueType: e.target.value }))}
                   style={{ padding: ".55rem .75rem", border: "1px solid var(--border-default)", borderRadius: "var(--radius-md)", background: "var(--bg-input)", fontSize: ".875rem" }}>
                   {ISSUE_TYPES.map(t => (
-                    <option key={t} value={t}>{isAr ? ISSUE_LABELS[t]?.ar : ISSUE_LABELS[t]?.en}</option>
+                    <option key={t} value={t}>{ISSUE_LABELS[t]?.ar}</option>
                   ))}
                 </select>
               </label>
 
               <label style={{ display: "flex", flexDirection: "column", gap: ".35rem", fontWeight: 600, fontSize: ".875rem", color: "var(--text-primary)" }}>
-                {isAr ? "مستوى الخطورة" : "Severity Level"}
+                {"مستوى الخطورة"}
                 <select value={form.severity}
                   onChange={e => setForm(p => ({ ...p, severity: e.target.value as Severity }))}
                   style={{ padding: ".55rem .75rem", border: `2px solid ${SEV_META[form.severity].color}`, borderRadius: "var(--radius-md)", background: SEV_META[form.severity].bg, fontSize: ".875rem", fontWeight: 700, color: SEV_META[form.severity].color }}>
                   {SEVERITIES.map(s => (
-                    <option key={s} value={s}>{isAr ? SEV_META[s].ar : SEV_META[s].en}</option>
+                    <option key={s} value={s}>{SEV_META[s].ar}</option>
                   ))}
                 </select>
               </label>
             </div>
 
             <label style={{ display: "flex", flexDirection: "column", gap: ".35rem", fontWeight: 600, fontSize: ".875rem", color: "var(--text-primary)" }}>
-              {isAr ? "وصف المشكلة والإجراءات" : "Issue Description & Actions Taken"}
+              {"وصف المشكلة والإجراءات"}
               <textarea rows={3} value={form.description}
                 onChange={e => setForm(p => ({ ...p, description: e.target.value }))}
                 placeholder={isAr
@@ -239,10 +236,10 @@ export function QualityChecksPage() {
 
             <div style={{ display: "flex", gap: ".625rem" }}>
               <button type="submit" className="auth-button" disabled={submitting} style={{ flex: 1 }}>
-                {submitting ? (isAr ? "جارٍ الحفظ..." : "Saving...") : (isAr ? "حفظ الفحص" : "Save Check")}
+                {submitting ? ("جارٍ الحفظ...") : ("حفظ الفحص")}
               </button>
               <button type="button" className="auth-button auth-button--ghost" onClick={() => setShowForm(false)}>
-                {isAr ? "إلغاء" : "Cancel"}
+                {"إلغاء"}
               </button>
             </div>
           </form>
@@ -252,17 +249,17 @@ export function QualityChecksPage() {
       {/* Filter bar */}
       <div style={{ display: "flex", gap: ".4rem", flexWrap: "wrap", marginBottom: "1.1rem", alignItems: "center" }}>
         <span style={{ fontSize: ".78rem", fontWeight: 700, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: ".05em" }}>
-          {isAr ? "عرض:" : "Show:"}
+          {"عرض:"}
         </span>
-        <button type="button" style={sel(filterStatus === "all")}     onClick={() => setFilterStatus("all")}>     {isAr ? "الكل" : "All"} ({records.length})</button>
-        <button type="button" style={sel(filterStatus === "open")}    onClick={() => setFilterStatus("open")}>    {isAr ? "مفتوح" : "Open"} ({openCount})</button>
-        <button type="button" style={sel(filterStatus === "resolved")} onClick={() => setFilterStatus("resolved")}>{isAr ? "محلول" : "Resolved"} ({resolvedCount})</button>
+        <button type="button" style={sel(filterStatus === "all")}     onClick={() => setFilterStatus("all")}>     {"الكل"} ({records.length})</button>
+        <button type="button" style={sel(filterStatus === "open")}    onClick={() => setFilterStatus("open")}>    {"مفتوح"} ({openCount})</button>
+        <button type="button" style={sel(filterStatus === "resolved")} onClick={() => setFilterStatus("resolved")}>{"محلول"} ({resolvedCount})</button>
         <div style={{ width: 1, height: 20, background: "var(--border-default)", margin: "0 .2rem" }} />
         {SEVERITIES.map(s => (
           <button key={s} type="button"
             onClick={() => setFilterSev(filterSev === s ? "" : s)}
             style={{ padding: ".3rem .75rem", borderRadius: 999, border: `1px solid ${SEV_META[s].color}60`, background: filterSev === s ? SEV_META[s].bg : "transparent", color: filterSev === s ? SEV_META[s].color : "var(--text-secondary)", fontWeight: 700, fontSize: ".76rem", cursor: "pointer" }}>
-            {isAr ? SEV_META[s].ar : SEV_META[s].en}
+            {SEV_META[s].ar}
           </button>
         ))}
       </div>
@@ -276,11 +273,11 @@ export function QualityChecksPage() {
         <div style={{ padding: "3rem", textAlign: "center", background: "var(--bg-card)", border: "1px dashed var(--border-default)", borderRadius: "var(--radius-xl)" }}>
           <CheckSquare size={36} style={{ color: "var(--gray-300)", margin: "0 auto .75rem", display: "block" }} />
           <p style={{ margin: 0, fontWeight: 600, color: "var(--text-secondary)", fontSize: ".9rem" }}>
-            {isAr ? "لا توجد فحوصات" : "No quality checks"}
+            {"لا توجد فحوصات"}
           </p>
           {canCreate && filterStatus === "all" && !filterSev && (
             <p style={{ margin: ".4rem 0 0", fontSize: ".82rem", color: "var(--text-secondary)" }}>
-              {isAr ? "انقر على 'فحص جديد' للبدء" : "Click 'New Check' to log the first one"}
+              {"انقر على 'فحص جديد' للبدء"}
             </p>
           )}
         </div>
@@ -302,15 +299,15 @@ export function QualityChecksPage() {
                           🔧 {r.machine?.name}
                         </span>
                         <span style={{ fontSize: ".72rem", padding: ".2rem .6rem", borderRadius: 999, background: sev.bg, color: sev.color, fontWeight: 700 }}>
-                          {isAr ? sev.ar : sev.en}
+                          {sev.ar}
                         </span>
                         <span style={{ fontSize: ".72rem", padding: ".2rem .6rem", borderRadius: 999, background: resolved ? "#d1fae5" : "#fef3c7", color: resolved ? "#059669" : "#d97706", fontWeight: 700 }}>
-                          {resolved ? (isAr ? "✓ تم الحل" : "✓ Resolved") : (isAr ? "● مفتوح" : "● Open")}
+                          {resolved ? ("✓ تم الحل") : ("● مفتوح")}
                         </span>
                       </div>
                       <div style={{ display: "flex", gap: ".875rem", flexWrap: "wrap" }}>
                         <span style={{ fontSize: ".78rem", color: "var(--text-secondary)" }}>
-                          📋 {isAr ? ISSUE_LABELS[r.issueType]?.ar : ISSUE_LABELS[r.issueType]?.en}
+                          📋 {ISSUE_LABELS[r.issueType]?.ar}
                         </span>
                         {r.engineer && (
                           <span style={{ fontSize: ".78rem", color: "var(--text-secondary)" }}>

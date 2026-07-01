@@ -1,6 +1,5 @@
-import { useEffect, useState, type FormEvent } from "react";
+﻿import { useEffect, useState, type FormEvent } from "react";
 import { useAuth } from "../../context/AuthContext";
-import { useLocale } from "../../context/LocaleContext";
 import { API_BASE_URL, readApiError } from "../../lib/api";
 import { ModulePageShell } from "../../components/ModulePageShell";
 import { Card } from "../../components/ui/card";
@@ -67,8 +66,6 @@ const emptyForm = { machineId: "", partsUsed: "", downtimeMinutes: "", downtimeR
 
 export function MaintenancePage() {
   const { user }   = useAuth();
-  const { locale } = useLocale();
-  const nav = (en: string, ar: string) => locale === "ar" ? ar : en;
 
   const role      = String(user?.role ?? "WORKER").toUpperCase();
   const canCreate = ["ENGINEER", "WORKER"].includes(role);
@@ -128,7 +125,7 @@ export function MaintenancePage() {
         }),
       });
       if (!res.ok) throw new Error(await readApiError(res));
-      setSuccess(nav("Maintenance report created successfully", "تم إنشاء تقرير الصيانة بنجاح"));
+      setSuccess("تم إنشاء تقرير الصيانة بنجاح");
       setForm(emptyForm);
       setShowForm(false);
       void load();
@@ -147,19 +144,19 @@ export function MaintenancePage() {
 
   return (
     <ModulePageShell
-      title={nav("Maintenance", "الصيانة")}
-      subtitle={nav("Maintenance reports & equipment downtime tracking", "تقارير الصيانة وتتبع توقف المعدات")}
+      title={"الصيانة"}
+      subtitle={"تقارير الصيانة وتتبع توقف المعدات"}
       icon={<Wrench size={22} />}
       actions={
         <div style={{ display: "flex", gap: ".5rem" }}>
           <button type="button" onClick={() => void load()}
             style={{ display: "flex", alignItems: "center", gap: ".35rem", padding: ".45rem .9rem", borderRadius: 8, border: "1px solid var(--border-default)", background: "var(--bg-surface)", color: "var(--text-secondary)", cursor: "pointer", fontSize: ".83rem", fontWeight: 600 }}>
-            <RefreshCw size={14} /> {nav("Refresh", "تحديث")}
+            <RefreshCw size={14} /> {"تحديث"}
           </button>
           {canCreate && (
             <button type="button" onClick={() => setShowForm(v => !v)}
               style={{ display: "flex", alignItems: "center", gap: ".35rem", padding: ".45rem .9rem", borderRadius: 8, border: "none", background: "var(--brand-primary,#f97316)", color: "#fff", cursor: "pointer", fontSize: ".83rem", fontWeight: 700 }}>
-              <Plus size={15} /> {nav("New Report", "تقرير جديد")}
+              <Plus size={15} /> {"تقرير جديد"}
             </button>
           )}
         </div>
@@ -168,10 +165,10 @@ export function MaintenancePage() {
       {/* KPI cards */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: ".75rem", marginBottom: "1.25rem" }}>
         {[
-          { label: nav("Total Reports",    "إجمالي التقارير"),   value: total,                         gradient: "linear-gradient(135deg,#3b82f6,#1d4ed8)" },
-          { label: nav("Critical Stops",   "توقفات حرجة"),        value: urgentCount,                   gradient: "linear-gradient(135deg,#ef4444,#dc2626)" },
-          { label: nav("Total Downtime",   "وقت التوقف (دقيقة)"), value: `${totalDowntime} min`,        gradient: "linear-gradient(135deg,#f59e0b,#d97706)" },
-          { label: nav("Machines Affected","آلات متأثرة"),        value: uniqueMachines,                gradient: "linear-gradient(135deg,#8b5cf6,#7c3aed)" },
+          { label: "إجمالي التقارير",   value: total,                         gradient: "linear-gradient(135deg,#3b82f6,#1d4ed8)" },
+          { label: "توقفات حرجة",        value: urgentCount,                   gradient: "linear-gradient(135deg,#ef4444,#dc2626)" },
+          { label: "وقت التوقف (دقيقة)", value: `${totalDowntime} min`,        gradient: "linear-gradient(135deg,#f59e0b,#d97706)" },
+          { label: "آلات متأثرة",        value: uniqueMachines,                gradient: "linear-gradient(135deg,#8b5cf6,#7c3aed)" },
         ].map(k => (
           <div key={k.label} style={{ borderRadius: 14, padding: "1rem 1.1rem", background: k.gradient, color: "#fff", boxShadow: "0 4px 12px rgba(0,0,0,.15)" }}>
             <p style={{ margin: 0, fontSize: ".72rem", fontWeight: 600, opacity: .85, textTransform: "uppercase", letterSpacing: ".06em" }}>{k.label}</p>
@@ -196,55 +193,55 @@ export function MaintenancePage() {
       {canCreate && showForm && (
         <Card style={{ padding: "1.25rem", marginBottom: "1.25rem", border: "2px solid var(--brand-primary,#f97316)" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1rem" }}>
-            <h3 style={{ margin: 0, fontSize: ".95rem", fontWeight: 700, color: "var(--text-primary)" }}>{nav("New Maintenance Report", "تقرير صيانة جديد")}</h3>
+            <h3 style={{ margin: 0, fontSize: ".95rem", fontWeight: 700, color: "var(--text-primary)" }}>{"تقرير صيانة جديد"}</h3>
             <button type="button" onClick={() => setShowForm(false)} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-secondary)", display: "flex" }}><X size={18} /></button>
           </div>
           <form onSubmit={(e) => void submit(e)}>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: ".875rem", marginBottom: ".875rem" }}>
               <label style={{ display: "flex", flexDirection: "column", gap: ".3rem", fontSize: ".83rem", fontWeight: 600 }}>
-                {nav("Machine *", "الآلة *")}
+                {"الآلة *"}
                 <select className="input" value={form.machineId} onChange={e => setForm(p => ({ ...p, machineId: e.target.value }))} required>
-                  <option value="">{nav("Select machine...", "اختر الآلة...")}</option>
+                  <option value="">{"اختر الآلة..."}</option>
                   {machines.map(m => <option key={m.id} value={m.id}>{m.name}{m.type ? ` (${m.type})` : ""}</option>)}
                 </select>
               </label>
 
               <label style={{ display: "flex", flexDirection: "column", gap: ".3rem", fontSize: ".83rem", fontWeight: 600 }}>
-                {nav("Downtime Reason", "سبب التوقف")}
+                {"سبب التوقف"}
                 <select className="input" value={form.downtimeReason} onChange={e => setForm(p => ({ ...p, downtimeReason: e.target.value }))}>
-                  {DOWNTIME_REASONS.map(r => <option key={r.value} value={r.value}>{locale === "ar" ? r.ar : r.en}</option>)}
+                  {DOWNTIME_REASONS.map(r => <option key={r.value} value={r.value}>{r.ar}</option>)}
                 </select>
               </label>
 
               <label style={{ display: "flex", flexDirection: "column", gap: ".3rem", fontSize: ".83rem", fontWeight: 600 }}>
-                {nav("Downtime (minutes)", "وقت التوقف (دقيقة)")}
+                {"وقت التوقف (دقيقة)"}
                 <input className="input" type="number" min={0} value={form.downtimeMinutes} placeholder="0"
                   onChange={e => setForm(p => ({ ...p, downtimeMinutes: e.target.value }))} />
               </label>
 
               <label style={{ display: "flex", flexDirection: "column", gap: ".3rem", fontSize: ".83rem", fontWeight: 600 }}>
-                {nav("Parts Used *", "القطع المستخدمة *")}
+                {"القطع المستخدمة *"}
                 <input className="input" type="text" value={form.partsUsed} required
-                  placeholder={nav("e.g. belt, pump, manifold...", "مثال: بكرة، مضخة، مشعب...")}
+                  placeholder={"مثال: بكرة، مضخة، مشعب..."}
                   onChange={e => setForm(p => ({ ...p, partsUsed: e.target.value }))} />
               </label>
             </div>
 
             <label style={{ display: "flex", flexDirection: "column", gap: ".3rem", fontSize: ".83rem", fontWeight: 600, marginBottom: ".875rem" }}>
-              {nav("Report Details", "تفاصيل التقرير")}
+              {"تفاصيل التقرير"}
               <textarea className="input" rows={3} value={form.reportText}
-                placeholder={nav("Additional details about the maintenance work...", "تفاصيل إضافية عن أعمال الصيانة...")}
+                placeholder={"تفاصيل إضافية عن أعمال الصيانة..."}
                 onChange={e => setForm(p => ({ ...p, reportText: e.target.value }))} />
             </label>
 
             <div style={{ display: "flex", gap: ".5rem", justifyContent: "flex-end", paddingTop: ".75rem", borderTop: "1px solid var(--border-default)" }}>
               <button type="button" onClick={() => setShowForm(false)}
                 style={{ padding: ".5rem 1rem", borderRadius: 8, border: "1px solid var(--border-default)", background: "var(--bg-surface)", color: "var(--text-secondary)", cursor: "pointer", fontSize: ".85rem", fontWeight: 600 }}>
-                {nav("Cancel", "إلغاء")}
+                {"إلغاء"}
               </button>
               <button type="submit"
                 style={{ padding: ".5rem 1.25rem", borderRadius: 8, border: "none", background: "var(--brand-primary,#f97316)", color: "#fff", cursor: "pointer", fontSize: ".85rem", fontWeight: 700 }}>
-                {nav("Save Report", "حفظ التقرير")}
+                {"حفظ التقرير"}
               </button>
             </div>
           </form>
@@ -254,10 +251,10 @@ export function MaintenancePage() {
       {/* Severity filter */}
       <div style={{ display: "flex", gap: ".4rem", flexWrap: "wrap", marginBottom: "1rem" }}>
         {([
-          ["all",  nav("All", "الكل"),         records.length],
-          ["low",  nav("Minor", "طفيف"),        records.filter(r => severityKey(r.downtimeMinutes) === "low").length],
-          ["mid",  nav("Moderate", "متوسط"),    records.filter(r => severityKey(r.downtimeMinutes) === "mid").length],
-          ["high", nav("Severe ≥90min", "حرج"), records.filter(r => severityKey(r.downtimeMinutes) === "high").length],
+          ["all",  "الكل",         records.length],
+          ["low",  "طفيف",        records.filter(r => severityKey(r.downtimeMinutes) === "low").length],
+          ["mid",  "متوسط",    records.filter(r => severityKey(r.downtimeMinutes) === "mid").length],
+          ["high", "حرج", records.filter(r => severityKey(r.downtimeMinutes) === "high").length],
         ] as const).map(([key, label, count]) => (
           <button key={key} type="button" onClick={() => setSevFilter(key)}
             style={{
@@ -280,7 +277,7 @@ export function MaintenancePage() {
         <Card style={{ padding: "3rem", textAlign: "center" }}>
           <Wrench size={36} style={{ color: "var(--text-secondary)", margin: "0 auto .75rem", display: "block", opacity: .3 }} />
           <p style={{ margin: 0, color: "var(--text-secondary)", fontWeight: 600 }}>
-            {nav("No maintenance reports yet", "لا توجد تقارير صيانة بعد")}
+            {"لا توجد تقارير صيانة بعد"}
           </p>
         </Card>
       ) : (
@@ -305,7 +302,7 @@ export function MaintenancePage() {
                         {r.machine?.name ?? `Machine #${r.id}`}
                       </span>
                       <span style={{ fontSize: ".7rem", padding: "2px 8px", borderRadius: 999, background: sev.color + "18", color: sev.color, fontWeight: 700 }}>
-                        {locale === "ar" ? sev.labelAr : sev.label}
+                        {sev.labelAr}
                       </span>
                       {r.shift?.name && (
                         <span style={{ fontSize: ".7rem", padding: "2px 8px", borderRadius: 999, background: "var(--bg-surface)", border: "1px solid var(--border-default)", color: "var(--text-secondary)", fontWeight: 600 }}>
@@ -315,7 +312,7 @@ export function MaintenancePage() {
                     </div>
 
                     <p style={{ margin: 0, fontSize: ".82rem", color: "var(--text-secondary)" }}>
-                      <strong>{nav("Parts:", "القطع:")}</strong> {r.partsUsed}
+                      <strong>{"القطع:"}</strong> {r.partsUsed}
                     </p>
 
                     <div style={{ display: "flex", alignItems: "center", gap: ".75rem", marginTop: ".35rem", flexWrap: "wrap" }}>
@@ -326,12 +323,12 @@ export function MaintenancePage() {
                       )}
                       {reason && (
                         <span style={{ fontSize: ".72rem", color: "var(--text-secondary)", padding: "2px 8px", borderRadius: 999, background: "var(--bg-surface)", border: "1px solid var(--border-default)" }}>
-                          {locale === "ar" ? reason.ar : reason.en}
+                          {reason.ar}
                         </span>
                       )}
                       {r.engineer && (
                         <span style={{ fontSize: ".72rem", color: "var(--text-secondary)" }}>
-                          {nav("by", "بواسطة")} {r.engineer.fullName}
+                          {"بواسطة"} {r.engineer.fullName}
                         </span>
                       )}
                       <span style={{ fontSize: ".72rem", color: "var(--text-secondary)", marginLeft: "auto" }}>

@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { MapPin, Plus, Trash2, Clock, CheckCircle } from "lucide-react";
+﻿import { useEffect, useState } from "react";
+import { MapPin, Plus, Clock, CheckCircle } from "lucide-react";
 import { useLocale } from "../../context/LocaleContext";
 import { useAuth } from "../../context/AuthContext";
 import { API_BASE_URL, readApiError } from "../../lib/api";
@@ -76,7 +76,7 @@ export function CustomerVisitsPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!customerId) { setMsg(isAr ? "اختر عميلاً" : "Select a customer"); return; }
+    if (!customerId) { setMsg("اختر عميلاً"); return; }
     setSaving(true);
     setMsg("");
     try {
@@ -93,7 +93,7 @@ export function CustomerVisitsPage() {
         }),
       });
       if (!res.ok) throw new Error(await readApiError(res));
-      setMsg(isAr ? "تم تسجيل الزيارة" : "Visit logged");
+      setMsg("تم تسجيل الزيارة");
       setCustomerId(""); setOutcome(""); setNotes(""); setNextVisitAt("");
       setVisitDate(new Date().toISOString().slice(0, 10));
       void load();
@@ -104,16 +104,9 @@ export function CustomerVisitsPage() {
     }
   };
 
-  const deleteVisit = async (id: number) => {
-    if (!confirm(isAr ? "حذف الزيارة؟" : "Delete visit?")) return;
-    await fetch(`${API_BASE_URL}/sales-rep/visits/${id}`, {
-      method: "DELETE", headers: authHeader(), credentials: "include",
-    });
-    void load();
-  };
 
   return (
-    <main className="admin-shell" dir={isAr ? "rtl" : "ltr"}>
+    <main className="admin-shell" dir="rtl">
       <section className="admin-card">
 
         {/* ── Header ── */}
@@ -124,30 +117,30 @@ export function CustomerVisitsPage() {
               <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: 36, height: 36, borderRadius: 10, background: "var(--accent)", color: "#fff" }}>
                 <MapPin size={18} />
               </span>
-              {isAr ? "سجل الزيارات" : "Customer Visits"}
+              {"سجل الزيارات"}
             </h1>
-            <p className="admin-muted">{isAr ? "سجّل زياراتك للعملاء وتابع المتابعات" : "Log customer visits and track follow-ups"}</p>
+            <p className="admin-muted">{"سجّل زياراتك للعملاء وتابع المتابعات"}</p>
           </div>
         </header>
 
         {/* ── New Visit Form (SALES_REP only) ── */}
         {isSalesRep && <section className="admin-section">
           <h2 className="admin-section__title" style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
-            <Plus size={15} /> {isAr ? "زيارة جديدة" : "New Visit"}
+            <Plus size={15} /> {"زيارة جديدة"}
           </h2>
 
           <form onSubmit={(e) => { void handleSubmit(e); }}>
             {/* Row 1: Customer + Visit Date */}
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem", marginBottom: "0.75rem" }}>
               <label style={{ display: "flex", flexDirection: "column", gap: "0.3rem", fontSize: ".85rem", fontWeight: 600 }}>
-                {isAr ? "العميل" : "Customer"}
+                {"العميل"}
                 <select value={customerId} onChange={(e) => setCustomerId(e.target.value)} className="admin-input">
-                  <option value="">{isAr ? "اختر عميلاً..." : "Select customer..."}</option>
+                  <option value="">{"اختر عميلاً..."}</option>
                   {customers.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
                 </select>
               </label>
               <label style={{ display: "flex", flexDirection: "column", gap: "0.3rem", fontSize: ".85rem", fontWeight: 600 }}>
-                {isAr ? "تاريخ الزيارة" : "Visit Date"}
+                {"تاريخ الزيارة"}
                 <input type="date" value={visitDate} onChange={(e) => setVisitDate(e.target.value)} className="admin-input" />
               </label>
             </div>
@@ -155,16 +148,16 @@ export function CustomerVisitsPage() {
             {/* Row 2: Outcome + Next Visit */}
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem", marginBottom: "0.75rem" }}>
               <label style={{ display: "flex", flexDirection: "column", gap: "0.3rem", fontSize: ".85rem", fontWeight: 600 }}>
-                {isAr ? "النتيجة" : "Outcome"}
+                {"النتيجة"}
                 <input
-                  placeholder={isAr ? "تم الاتفاق، قيد النظر..." : "Agreed, Pending..."}
+                  placeholder={"تم الاتفاق، قيد النظر..."}
                   value={outcome}
                   onChange={(e) => setOutcome(e.target.value)}
                   className="admin-input"
                 />
               </label>
               <label style={{ display: "flex", flexDirection: "column", gap: "0.3rem", fontSize: ".85rem", fontWeight: 600 }}>
-                {isAr ? "الزيارة القادمة" : "Next Visit"}
+                {"الزيارة القادمة"}
                 <input type="date" value={nextVisitAt} onChange={(e) => setNextVisitAt(e.target.value)} className="admin-input" />
               </label>
             </div>
@@ -172,9 +165,9 @@ export function CustomerVisitsPage() {
             {/* Row 3: Notes full width */}
             <div style={{ marginBottom: "0.75rem" }}>
               <label style={{ display: "flex", flexDirection: "column", gap: "0.3rem", fontSize: ".85rem", fontWeight: 600 }}>
-                {isAr ? "ملاحظات" : "Notes"}
+                {"ملاحظات"}
                 <textarea
-                  placeholder={isAr ? "أضف ملاحظات حول الزيارة..." : "Add notes about this visit..."}
+                  placeholder={"أضف ملاحظات حول الزيارة..."}
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   className="admin-input"
@@ -187,7 +180,7 @@ export function CustomerVisitsPage() {
             <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
               <button type="submit" className="auth-button" disabled={saving} style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
                 <Plus size={15} />
-                {saving ? (isAr ? "جارٍ الحفظ..." : "Saving...") : (isAr ? "تسجيل الزيارة" : "Log Visit")}
+                {saving ? ("جارٍ الحفظ...") : ("تسجيل الزيارة")}
               </button>
               {msg && (
                 <p className="admin-muted" style={{ margin: 0, color: msg.includes("Error") || msg.includes("اختر") ? "var(--danger)" : "var(--success)" }}>
@@ -200,14 +193,14 @@ export function CustomerVisitsPage() {
 
         {/* ── Visit History Timeline ── */}
         <section className="admin-section">
-          <h2 className="admin-section__title">{isAr ? "الزيارات السابقة" : "Visit History"}</h2>
+          <h2 className="admin-section__title">{"الزيارات السابقة"}</h2>
 
           {loading ? (
-            <p className="admin-muted">{isAr ? "جارٍ التحميل..." : "Loading..."}</p>
+            <p className="admin-muted">{"جارٍ التحميل..."}</p>
           ) : visits.length === 0 ? (
             <div style={{ textAlign: "center", padding: "2.5rem 1rem" }}>
               <MapPin size={36} style={{ color: "var(--text-secondary)", opacity: 0.35, marginBottom: "0.75rem" }} />
-              <p className="admin-muted">{isAr ? "لا توجد زيارات مسجّلة بعد" : "No visits logged yet"}</p>
+              <p className="admin-muted">{"لا توجد زيارات مسجّلة بعد"}</p>
             </div>
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: "0.1rem", paddingInlineStart: "1rem" }}>
@@ -279,35 +272,10 @@ export function CustomerVisitsPage() {
                       {v.nextVisitAt ? (
                         <span style={{ display: "flex", alignItems: "center", gap: "0.3rem", fontSize: ".78rem", color: "var(--text-secondary)" }}>
                           <Clock size={12} />
-                          {isAr ? "الزيارة القادمة:" : "Next:"} {new Date(v.nextVisitAt).toLocaleDateString()}
+                          {"الزيارة القادمة:"} {new Date(v.nextVisitAt).toLocaleDateString()}
                         </span>
                       ) : (
                         <span />
-                      )}
-                      {isSalesRep && (
-                        <button
-                          type="button"
-                          onClick={() => { void deleteVisit(v.id); }}
-                          title={isAr ? "حذف" : "Delete"}
-                          style={{
-                            background: "none",
-                            border: "1px solid transparent",
-                            borderRadius: 6,
-                            cursor: "pointer",
-                            color: "var(--danger)",
-                            padding: "4px 7px",
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "0.25rem",
-                            fontSize: ".75rem",
-                            transition: "background .15s",
-                          }}
-                          onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(239,68,68,.08)"; (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(239,68,68,.2)"; }}
-                          onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "none"; (e.currentTarget as HTMLButtonElement).style.borderColor = "transparent"; }}
-                        >
-                          <Trash2 size={13} />
-                          {isAr ? "حذف" : "Delete"}
-                        </button>
                       )}
                     </div>
                   </div>

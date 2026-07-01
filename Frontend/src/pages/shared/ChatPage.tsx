@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+﻿import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { FormEvent, KeyboardEvent } from "react";
 import {
   Send, Search, Plus, Users, X, ChevronRight,
@@ -106,11 +106,11 @@ function fmtDateSep(iso: string, locale: string) {
   const d = new Date(iso);
   const now = new Date();
   if (d.toDateString() === now.toDateString())
-    return locale === "ar" ? "اليوم" : "Today";
+    return "اليوم";
   const yest = new Date(now); yest.setDate(now.getDate() - 1);
   if (d.toDateString() === yest.toDateString())
-    return locale === "ar" ? "أمس" : "Yesterday";
-  return d.toLocaleDateString(locale === "ar" ? "ar-SA" : "en-GB", { day: "numeric", month: "long", year: "numeric" });
+    return "أمس";
+  return d.toLocaleDateString("ar-SA", { day: "numeric", month: "long", year: "numeric" });
 }
 
 async function fetchApi(path: string, opts?: RequestInit) {
@@ -197,7 +197,7 @@ export function ChatPage() {
     }
     if (targetType === "AUDIENCE" && selectedAudienceKey) {
       const found = audienceTargets.find((a) => a.key === selectedAudienceKey);
-      return found ? { type: "AUDIENCE", id: found.key, label: found.key === "ALL_WORKERS" ? (isAr ? "كل العمال" : "All workers") : (isAr ? "كل الموظفين" : "All employees") } : null;
+      return found ? { type: "AUDIENCE", id: found.key, label: found.key === "ALL_WORKERS" ? ("كل العمال") : ("كل الموظفين") } : null;
     }
     return null;
   }, [targetType, selectedUserId, selectedShiftId, selectedAudienceKey, membersByShift, shiftTargets, audienceTargets, isAr]);
@@ -457,32 +457,32 @@ export function ChatPage() {
 
   // ─── Render ──────────────────────────────────────────────────────────────────
   return (
-    <div className="cm-root" dir={isAr ? "rtl" : "ltr"}>
+    <div className="cm-root" dir="rtl">
 
       {/* ── SIDEBAR ── */}
       <aside className={`cm-sidebar${mobileView === "thread" ? " cm-sidebar--hidden-mobile" : ""}`}>
         {/* Sidebar header */}
         <div className="cm-sidebar__head">
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: ".5rem" }}>
-            <h1 className="cm-sidebar__title">{isAr ? "المحادثات" : "Chats"}</h1>
+            <h1 className="cm-sidebar__title">{"المحادثات"}</h1>
             <div style={{ display: "flex", gap: ".25rem" }}>
-              <button type="button" className="cm-icon-btn" title={isAr ? "تحديث" : "Refresh"} onClick={() => void loadGroups()}>
+              <button type="button" className="cm-icon-btn" title={"تحديث"} onClick={() => void loadGroups()}>
                 <RefreshCw size={16} />
               </button>
               {isAdmin && (
                 <>
-                  <button type="button" className="cm-icon-btn" title={isAr ? "مجموعة جديدة" : "New group"}
+                  <button type="button" className="cm-icon-btn" title={"مجموعة جديدة"}
                     onClick={() => setShowAdminPanel(showAdminPanel === "new-group" ? "none" : "new-group")}>
                     <Plus size={16} />
                   </button>
-                  <button type="button" className="cm-icon-btn" title={isAr ? "رسالة مباشرة" : "Direct message"}
+                  <button type="button" className="cm-icon-btn" title={"رسالة مباشرة"}
                     onClick={() => setShowAdminPanel(showAdminPanel === "direct" ? "none" : "direct")}>
                     <MessageCircle size={16} />
                   </button>
                 </>
               )}
               {!isAdmin && (
-                <button type="button" className="cm-icon-btn" title={isAr ? "رسالة جديدة" : "New message"}
+                <button type="button" className="cm-icon-btn" title={"رسالة جديدة"}
                   onClick={() => setShowDMPanel((v) => !v)}>
                   <MessageCircle size={16} />
                 </button>
@@ -494,7 +494,7 @@ export function ChatPage() {
             <input
               type="search"
               className="cm-search"
-              placeholder={isAr ? "ابحث في المحادثات…" : "Search chats…"}
+              placeholder={"ابحث في المحادثات…"}
               value={groupSearch}
               onChange={(e) => setGroupSearch(e.target.value)}
             />
@@ -505,14 +505,14 @@ export function ChatPage() {
         {isAdmin && showAdminPanel === "new-group" && (
           <div className="cm-admin-panel">
             <div className="cm-admin-panel__head">
-              <strong>{isAr ? "مجموعة جديدة" : "New Group"}</strong>
+              <strong>{"مجموعة جديدة"}</strong>
               <button type="button" className="cm-icon-btn" onClick={() => setShowAdminPanel("none")}><X size={14} /></button>
             </div>
             <form onSubmit={(e) => void handleCreateGroup(e)} style={{ display: "flex", flexDirection: "column", gap: ".5rem" }}>
               {/* Group name */}
-              <input className="cm-form-input" placeholder={isAr ? "اسم المجموعة *" : "Group name *"} required
+              <input className="cm-form-input" placeholder={"اسم المجموعة *"} required
                 value={createGroupForm.name} onChange={(e) => setCreateGroupForm((p) => ({ ...p, name: e.target.value }))} />
-              <input className="cm-form-input" placeholder={isAr ? "وصف اختياري" : "Description (optional)"}
+              <input className="cm-form-input" placeholder={"وصف اختياري"}
                 value={createGroupForm.description} onChange={(e) => setCreateGroupForm((p) => ({ ...p, description: e.target.value }))} />
 
               {/* Group type */}
@@ -527,12 +527,12 @@ export function ChatPage() {
                   if (groupType === "WORKERS")     autoIds = all.filter((m) => m.role === "WORKER").map((m) => m.id);
                   setCreateGroupForm((p) => ({ ...p, groupType, shiftId: "", selectedMemberIds: autoIds }));
                 }}>
-                <option value="SHIFT">{isAr ? "مجموعة شفت" : "Shift Group"}</option>
-                <option value="ENGINEERS">{isAr ? "كل المهندسين" : "All Engineers"}</option>
-                <option value="ACCOUNTANTS">{isAr ? "كل المحاسبين" : "All Accountants"}</option>
-                <option value="ACC_ENG">{isAr ? "محاسبون + مهندسون" : "Accountants + Engineers"}</option>
-                <option value="WORKERS">{isAr ? "كل العمال" : "All Workers"}</option>
-                <option value="CUSTOM">{isAr ? "مخصص" : "Custom"}</option>
+                <option value="SHIFT">{"مجموعة شفت"}</option>
+                <option value="ENGINEERS">{"كل المهندسين"}</option>
+                <option value="ACCOUNTANTS">{"كل المحاسبين"}</option>
+                <option value="ACC_ENG">{"محاسبون + مهندسون"}</option>
+                <option value="WORKERS">{"كل العمال"}</option>
+                <option value="CUSTOM">{"مخصص"}</option>
               </select>
 
               {/* Shift selector */}
@@ -543,7 +543,7 @@ export function ChatPage() {
                     const members = membersByShift.find((b) => String(b.shiftId) === shiftId)?.members ?? [];
                     setCreateGroupForm((p) => ({ ...p, shiftId, selectedMemberIds: members.map((m) => m.id) }));
                   }}>
-                  <option value="">{isAr ? "اختر شفت…" : "Choose shift…"}</option>
+                  <option value="">{"اختر شفت…"}</option>
                   {shiftTargets.map((s) => (
                     <option key={s.shiftId} value={s.shiftId}>{s.shiftName} ({s.membersCount})</option>
                   ))}
@@ -562,7 +562,7 @@ export function ChatPage() {
                         selectedMemberIds: e.target.checked ? newGroupCandidates.map((m) => m.id) : [],
                       }))}
                     />
-                    {isAr ? "تحديد الكل" : "Select all"} ({newGroupCandidates.length})
+                    {"تحديد الكل"} ({newGroupCandidates.length})
                   </label>
                   {newGroupCandidates.map((m) => (
                     <label key={m.id} style={{ display: "flex", alignItems: "center", gap: ".4rem", fontSize: ".78rem", cursor: "pointer" }}>
@@ -587,14 +587,14 @@ export function ChatPage() {
               {/* Selection counter */}
               {createGroupForm.selectedMemberIds.length > 0 && (
                 <p style={{ fontSize: ".73rem", color: "var(--text-secondary)", margin: 0 }}>
-                  {createGroupForm.selectedMemberIds.length} {isAr ? "عضو محدد" : "member(s) selected"}
+                  {createGroupForm.selectedMemberIds.length} {"عضو محدد"}
                 </p>
               )}
 
               <button type="submit" className="cm-send-btn"
                 disabled={creatingGroup || !createGroupForm.name.trim() || createGroupForm.selectedMemberIds.length === 0}
                 style={{ alignSelf: "flex-end" }}>
-                {creatingGroup ? (isAr ? "جارٍ…" : "Creating…") : (isAr ? "إنشاء" : "Create")}
+                {creatingGroup ? ("جارٍ…") : ("إنشاء")}
               </button>
             </form>
           </div>
@@ -604,40 +604,40 @@ export function ChatPage() {
         {isAdmin && showAdminPanel === "direct" && (
           <div className="cm-admin-panel">
             <div className="cm-admin-panel__head">
-              <strong>{isAr ? "رسالة موجهة" : "Targeted Message"}</strong>
+              <strong>{"رسالة موجهة"}</strong>
               <button type="button" className="cm-icon-btn" onClick={() => setShowAdminPanel("none")}><X size={14} /></button>
             </div>
             <form onSubmit={(e) => void handleSendDirectAdmin(e)} style={{ display: "flex", flexDirection: "column", gap: ".5rem" }}>
               <select className="cm-form-input" value={targetType}
                 onChange={(e) => { setTargetType(e.target.value as AdminTargetType); setSelectedUserId(""); setSelectedShiftId(""); setSelectedAudienceKey(""); }}>
-                <option value="USER">{isAr ? "شخص" : "Person"}</option>
-                <option value="SHIFT">{isAr ? "شفت" : "Shift"}</option>
-                <option value="AUDIENCE">{isAr ? "مجموعة عامة" : "Broadcast"}</option>
+                <option value="USER">{"شخص"}</option>
+                <option value="SHIFT">{"شفت"}</option>
+                <option value="AUDIENCE">{"مجموعة عامة"}</option>
               </select>
               {targetType === "USER" && (
                 <>
                   <select className="cm-form-input" value={roleFilter} onChange={(e) => setRoleFilter(e.target.value as DirectoryRoleFilter)}>
-                    <option value="ALL">{isAr ? "كل الأدوار" : "All roles"}</option>
-                    <option value="WORKER">Worker</option>
-                    <option value="ENGINEER">Engineer</option>
-                    <option value="ACCOUNTANT">Accountant</option>
+                    <option value="ALL">{"كل الأدوار"}</option>
+                    <option value="WORKER">عامل</option>
+                    <option value="ENGINEER">مهندس</option>
+                    <option value="ACCOUNTANT">محاسب</option>
                   </select>
                   <select className="cm-form-input" value={selectedUserId} onChange={(e) => setSelectedUserId(e.target.value)}>
-                    <option value="">{isAr ? "اختر شخصاً…" : "Choose person…"}</option>
+                    <option value="">{"اختر شخصاً…"}</option>
                     {filteredMembers.map((m) => <option key={m.id} value={m.id}>{m.displayLabel}</option>)}
                   </select>
                 </>
               )}
               {targetType === "SHIFT" && (
                 <select className="cm-form-input" value={selectedShiftId} onChange={(e) => setSelectedShiftId(e.target.value)}>
-                  <option value="">{isAr ? "اختر شفت…" : "Choose shift…"}</option>
+                  <option value="">{"اختر شفت…"}</option>
                   {shiftTargets.map((s) => <option key={s.shiftId} value={s.shiftId}>{s.shiftName} ({s.membersCount})</option>)}
                 </select>
               )}
               {targetType === "AUDIENCE" && (
                 <select className="cm-form-input" value={selectedAudienceKey} onChange={(e) => setSelectedAudienceKey(e.target.value as "" | AudienceTarget["key"])}>
-                  <option value="">{isAr ? "اختر مجموعة…" : "Choose audience…"}</option>
-                  {audienceTargets.map((a) => <option key={a.key} value={a.key}>{a.key === "ALL_WORKERS" ? (isAr ? "كل العمال" : "All Workers") : (isAr ? "كل الموظفين" : "All Employees")} ({a.membersCount})</option>)}
+                  <option value="">{"اختر مجموعة…"}</option>
+                  {audienceTargets.map((a) => <option key={a.key} value={a.key}>{a.key === "ALL_WORKERS" ? ("كل العمال") : ("كل الموظفين")} ({a.membersCount})</option>)}
                 </select>
               )}
               {selectedAdminTarget && (
@@ -646,10 +646,10 @@ export function ChatPage() {
                 </div>
               )}
               <textarea className="cm-form-input" rows={2} style={{ resize: "none" }}
-                placeholder={isAr ? "اكتب رسالتك…" : "Write your message…"}
+                placeholder={"اكتب رسالتك…"}
                 value={directMessageText} onChange={(e) => setDirectMessageText(e.target.value)} />
               <button type="submit" className="cm-send-btn" disabled={sendingDirect || !selectedAdminTarget || !directMessageText.trim()} style={{ alignSelf: "flex-end" }}>
-                {sendingDirect ? (isAr ? "جارٍ…" : "Sending…") : <><Send size={13} /> {isAr ? "إرسال" : "Send"}</>}
+                {sendingDirect ? ("جارٍ…") : <><Send size={13} /> {"إرسال"}</>}
               </button>
             </form>
           </div>
@@ -659,19 +659,19 @@ export function ChatPage() {
         {!isAdmin && showDMPanel && (
           <div className="cm-admin-panel">
             <div className="cm-admin-panel__head">
-              <strong>{isAr ? "رسالة جديدة" : "New Message"}</strong>
+              <strong>{"رسالة جديدة"}</strong>
               <button type="button" className="cm-icon-btn" onClick={() => setShowDMPanel(false)}><X size={14} /></button>
             </div>
             <form onSubmit={(e) => void handleSendDM(e)} style={{ display: "flex", flexDirection: "column", gap: ".5rem" }}>
               <select className="cm-form-input" value={dmRecipientId} onChange={(e) => setDmRecipientId(e.target.value)}>
-                <option value="">{isAr ? "اختر المستلم…" : "Choose recipient…"}</option>
+                <option value="">{"اختر المستلم…"}</option>
                 {flatMembers.map((m) => <option key={m.id} value={m.id}>{m.label}</option>)}
               </select>
               <textarea className="cm-form-input" rows={2} style={{ resize: "none" }}
-                placeholder={isAr ? "اكتب رسالتك…" : "Write your message…"}
+                placeholder={"اكتب رسالتك…"}
                 value={dmText} onChange={(e) => setDmText(e.target.value)} />
               <button type="submit" className="cm-send-btn" disabled={sendingDM || !dmRecipientId || !dmText.trim()} style={{ alignSelf: "flex-end" }}>
-                <Send size={13} /> {isAr ? "إرسال" : "Send"}
+                <Send size={13} /> {"إرسال"}
               </button>
             </form>
           </div>
@@ -687,7 +687,7 @@ export function ChatPage() {
           {!loadingGroups && filteredGroups.length === 0 && (
             <div style={{ padding: "2rem 1rem", textAlign: "center", color: "var(--text-muted)" }}>
               <MessageCircle size={32} style={{ margin: "0 auto .75rem", display: "block", opacity: .4 }} />
-              <p style={{ margin: 0, fontSize: ".85rem" }}>{isAr ? "لا توجد محادثات" : "No chats yet"}</p>
+              <p style={{ margin: 0, fontSize: ".85rem" }}>{"لا توجد محادثات"}</p>
             </div>
           )}
           {filteredGroups.map((g) => {
@@ -703,7 +703,7 @@ export function ChatPage() {
                     {g.lastMessage && <span className="cm-group-item__time">{fmtTime(g.lastMessage.createdAt)}</span>}
                   </div>
                   <div className="cm-group-item__bottom">
-                    <span className="cm-group-item__preview">{preview || (isAr ? "لا توجد رسائل" : "No messages")}</span>
+                    <span className="cm-group-item__preview">{preview || ("لا توجد رسائل")}</span>
                     {(g.unreadCount ?? 0) > 0 && <span className="cm-unread-badge">{g.unreadCount}</span>}
                   </div>
                 </div>
@@ -719,7 +719,7 @@ export function ChatPage() {
           <div className="cm-empty-state">
             <MessageCircle size={64} style={{ opacity: .2, marginBottom: "1rem" }} />
             <p style={{ fontSize: "1.1rem", fontWeight: 600, color: "var(--text-muted)" }}>
-              {isAr ? "اختر محادثة لتبدأ" : "Select a chat to start"}
+              {"اختر محادثة لتبدأ"}
             </p>
           </div>
         ) : (
@@ -727,22 +727,22 @@ export function ChatPage() {
             {/* Thread header */}
             <div className="cm-thread-head">
               <button type="button" className="cm-back-btn" onClick={() => setMobileView("sidebar")}>
-                <ChevronRight size={20} style={{ transform: isAr ? "rotate(0deg)" : "rotate(180deg)" }} />
+                <ChevronRight size={20} style={{ transform: "rotate(0deg)" }} />
               </button>
               <Avatar name={selectedGroup?.name ?? "?"} size={40} />
               <div className="cm-thread-head__info">
                 <strong className="cm-thread-head__name">{selectedGroup?.name}</strong>
                 <span className="cm-thread-head__sub">
                   {selectedGroupDetail?.members
-                    ? `${selectedGroupDetail.members.length} ${isAr ? "عضو" : "members"}`
+                    ? `${selectedGroupDetail.members.length} ${"عضو"}`
                     : selectedGroup?.description ?? ""}
                 </span>
               </div>
               <div style={{ display: "flex", gap: ".25rem", marginLeft: "auto" }}>
-                <button type="button" className="cm-icon-btn" onClick={() => void loadMessages(selectedGroupId)} title={isAr ? "تحديث" : "Refresh"}>
+                <button type="button" className="cm-icon-btn" onClick={() => void loadMessages(selectedGroupId)} title={"تحديث"}>
                   <RefreshCw size={16} />
                 </button>
-                <button type="button" className="cm-icon-btn" onClick={() => setShowInfoPanel((v) => !v)} title={isAr ? "تفاصيل" : "Details"}>
+                <button type="button" className="cm-icon-btn" onClick={() => setShowInfoPanel((v) => !v)} title={"تفاصيل"}>
                   <Users size={16} />
                 </button>
               </div>
@@ -757,7 +757,7 @@ export function ChatPage() {
               )}
               {!loadingMessages && messages.length === 0 && (
                 <div style={{ textAlign: "center", padding: "3rem", color: "var(--text-muted)" }}>
-                  <p>{isAr ? "لا توجد رسائل بعد. ابدأ المحادثة!" : "No messages yet. Start the conversation!"}</p>
+                  <p>{"لا توجد رسائل بعد. ابدأ المحادثة!"}</p>
                 </div>
               )}
 
@@ -771,7 +771,7 @@ export function ChatPage() {
                   {dayMsgs.map((msg, idx) => {
                     const isMine = currentUserId !== null && msg.sender?.id === currentUserId;
                     const senderName = isMine
-                      ? (isAr ? "أنت" : "You")
+                      ? ("أنت")
                       : (msg.sender?.fullName ?? msg.sender?.username ?? "?");
                     const prevMsg = dayMsgs[idx - 1];
                     const showSender = !isMine && (
@@ -810,7 +810,7 @@ export function ChatPage() {
               <textarea
                 ref={textareaRef}
                 className="cm-composer__input"
-                placeholder={isAr ? "اكتب رسالتك… (Enter للإرسال، Shift+Enter لسطر جديد)" : "Message… (Enter to send, Shift+Enter for newline)"}
+                placeholder={"اكتب رسالتك… (Enter للإرسال، Shift+Enter لسطر جديد)"}
                 value={messageText}
                 onChange={(e) => setMessageText(e.target.value)}
                 onKeyDown={handleKeyDown}
@@ -828,7 +828,7 @@ export function ChatPage() {
       {showInfoPanel && selectedGroupId && (
         <aside className="cm-info-panel">
           <div className="cm-info-panel__head">
-            <strong>{isAr ? "تفاصيل المجموعة" : "Group Details"}</strong>
+            <strong>{"تفاصيل المجموعة"}</strong>
             <button type="button" className="cm-icon-btn" onClick={() => setShowInfoPanel(false)}><X size={15} /></button>
           </div>
           <div style={{ padding: "1rem" }}>
@@ -839,9 +839,9 @@ export function ChatPage() {
             </div>
 
             <p style={{ fontSize: ".75rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: ".05em", marginBottom: ".5rem" }}>
-              {isAr ? "الأعضاء" : "Members"} {selectedGroupDetail?.members ? `(${selectedGroupDetail.members.length})` : ""}
+              {"الأعضاء"} {selectedGroupDetail?.members ? `(${selectedGroupDetail.members.length})` : ""}
             </p>
-            {loadingDetail && <p style={{ fontSize: ".85rem", color: "var(--text-muted)" }}>{isAr ? "جاري التحميل…" : "Loading…"}</p>}
+            {loadingDetail && <p style={{ fontSize: ".85rem", color: "var(--text-muted)" }}>{"جاري التحميل…"}</p>}
             <div style={{ display: "flex", flexDirection: "column", gap: ".5rem", marginBottom: "1rem" }}>
               {selectedGroupDetail?.members?.map((m) => (
                 <div key={m.id} style={{ display: "flex", alignItems: "center", gap: ".6rem" }}>
@@ -854,7 +854,7 @@ export function ChatPage() {
                   </div>
                   {isAdmin && m.user.id !== currentUserId && (
                     <button type="button" className="cm-icon-btn" style={{ color: "var(--clr-danger)" }}
-                      onClick={() => void handleRemoveMember(m.user.id)} title={isAr ? "إزالة" : "Remove"}>
+                      onClick={() => void handleRemoveMember(m.user.id)} title={"إزالة"}>
                       <Trash2 size={13} />
                     </button>
                   )}
@@ -865,17 +865,17 @@ export function ChatPage() {
             {isAdmin && (
               <>
                 <p style={{ fontSize: ".75rem", fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: ".05em", marginBottom: ".5rem" }}>
-                  {isAr ? "إضافة عضو" : "Add Member"}
+                  {"إضافة عضو"}
                 </p>
                 <form onSubmit={(e) => void handleAddMember(e)} style={{ display: "flex", flexDirection: "column", gap: ".4rem" }}>
-                  <input className="cm-form-input" type="number" min={1} placeholder={isAr ? "معرّف المستخدم" : "User ID"}
+                  <input className="cm-form-input" type="number" min={1} placeholder={"معرّف المستخدم"}
                     value={addMemberForm.userId} onChange={(e) => setAddMemberForm((p) => ({ ...p, userId: e.target.value }))} required />
                   <select className="cm-form-input" value={addMemberForm.role} onChange={(e) => setAddMemberForm((p) => ({ ...p, role: e.target.value as GroupRole }))}>
-                    <option value="MEMBER">Member</option>
-                    <option value="ADMIN">Admin</option>
+                    <option value="MEMBER">عضو</option>
+                    <option value="ADMIN">مدير</option>
                   </select>
                   <button type="submit" className="cm-send-btn" style={{ alignSelf: "flex-end" }}>
-                    <UserPlus size={13} /> {isAr ? "إضافة" : "Add"}
+                    <UserPlus size={13} /> {"إضافة"}
                   </button>
                 </form>
               </>

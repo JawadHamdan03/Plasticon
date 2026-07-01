@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+﻿import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   DollarSign,
   Clock,
@@ -45,7 +45,7 @@ function fmtTime(d: string) {
 }
 
 function fmtDate(d: string, locale: string) {
-  return new Intl.DateTimeFormat(locale === "ar" ? "ar-EG" : "en-US", {
+  return new Intl.DateTimeFormat("ar-EG", {
     weekday: "short",
     month: "short",
     day: "numeric",
@@ -193,35 +193,35 @@ export function MyPayrollPage() {
   const confirmRate = grandTotal > 0 ? (confirmedTotal / grandTotal) * 100 : 0;
 
   const [selectedMonth, selectedYear] = month.split("-");
-  const monthLabel = new Intl.DateTimeFormat(isAr ? "ar-EG" : "en-US", {
+  const monthLabel = new Intl.DateTimeFormat("ar-EG", {
     month: "long",
     year: "numeric",
   }).format(new Date(Number(selectedYear), Number(selectedMonth) - 1, 1));
 
   const t = {
-    title: isAr ? "راتبي الشهري" : "My Payroll",
+    title: "راتبي الشهري",
     subtitle: isAr
       ? "تفاصيل راتبك الشهري وسجل العمل اليومي."
       : "Your monthly salary breakdown and daily work records.",
-    confirmed: isAr ? "المؤكد" : "Confirmed",
-    pending: isAr ? "قيد الانتظار" : "Pending",
-    total: isAr ? "الإجمالي" : "Total",
-    workDays: isAr ? "أيام العمل" : "Work Days",
-    totalHours: isAr ? "إجمالي الساعات" : "Total Hours",
-    dailyRate: isAr ? "السعر اليومي" : "Daily Rate",
-    checkIn: isAr ? "دخول" : "Check-in",
-    checkOut: isAr ? "خروج" : "Check-out",
-    hours: isAr ? "الساعات" : "Hours",
-    dailySalary: isAr ? "الراتب اليومي" : "Daily Pay",
-    status: isAr ? "الحالة" : "Status",
+    confirmed: "المؤكد",
+    pending: "قيد الانتظار",
+    total: "الإجمالي",
+    workDays: "أيام العمل",
+    totalHours: "إجمالي الساعات",
+    dailyRate: "السعر اليومي",
+    checkIn: "دخول",
+    checkOut: "خروج",
+    hours: "الساعات",
+    dailySalary: "الراتب اليومي",
+    status: "الحالة",
     noRecords: isAr
       ? "لا توجد سجلات لهذا الشهر."
       : "No records found for this month.",
     nis: "₪",
-    confirmedProgress: isAr ? "نسبة التأكيد" : "Confirmed",
-    pendingDays: isAr ? "يوم انتظار" : "pending days",
-    confirmedDays: isAr ? "يوم مؤكد" : "confirmed days",
-    dailyRecords: isAr ? "السجلات اليومية" : "Daily Records",
+    confirmedProgress: "نسبة التأكيد",
+    pendingDays: "يوم انتظار",
+    confirmedDays: "يوم مؤكد",
+    dailyRecords: "السجلات اليومية",
   };
 
   return (
@@ -239,7 +239,7 @@ export function MyPayrollPage() {
           />
           <button className="btn btn--ghost btn--sm" onClick={() => void load()}>
             <RefreshCw size={14} />
-            {isAr ? "تحديث" : "Refresh"}
+            {"تحديث"}
           </button>
         </div>
       }
@@ -262,7 +262,7 @@ export function MyPayrollPage() {
       >
         <div>
           <p style={{ margin: 0, fontSize: ".8rem", opacity: .8, fontWeight: 600, letterSpacing: ".06em", textTransform: "uppercase" }}>
-            {isAr ? "إجمالي راتب شهر" : "Total salary for"} {monthLabel}
+            {"إجمالي راتب شهر"} {monthLabel}
           </p>
           <p style={{ margin: ".3rem 0 0", fontSize: "2.2rem", fontWeight: 900, lineHeight: 1 }}>
             {grandTotal.toFixed(2)} <span style={{ fontSize: "1rem", fontWeight: 600, opacity: .9 }}>{t.nis}</span>
@@ -307,42 +307,42 @@ export function MyPayrollPage() {
           icon={<CheckCircle size={20} />}
           label={t.confirmed}
           value={`${confirmedTotal.toFixed(2)} ${t.nis}`}
-          sub={`${confirmedDays} ${isAr ? "يوم" : "days"}`}
+          sub={`${confirmedDays} ${"يوم"}`}
           accent="#10b981"
         />
         <StatCard
           icon={<AlertCircle size={20} />}
           label={t.pending}
           value={`${pendingTotal.toFixed(2)} ${t.nis}`}
-          sub={`${pendingDays} ${isAr ? "يوم" : "days"}`}
+          sub={`${pendingDays} ${"يوم"}`}
           accent="#f59e0b"
         />
         <StatCard
           icon={<Clock size={20} />}
           label={t.totalHours}
           value={`${totalHours.toFixed(1)}h`}
-          sub={isAr ? `متوسط ${(records.length ? totalHours / records.length : 0).toFixed(1)}س/يوم` : `avg ${(records.length ? totalHours / records.length : 0).toFixed(1)}h/day`}
+          sub={`متوسط ${(records.length ? totalHours / records.length : 0).toFixed(1)}س/يوم`}
           accent="#3b82f6"
         />
         <StatCard
           icon={<TrendingUp size={20} />}
           label={t.dailyRate}
           value={`${dailyRate.toFixed(2)} ${t.nis}`}
-          sub={isAr ? "سعر اليوم الواحد" : "per work day"}
+          sub={"سعر اليوم الواحد"}
           accent="#8b5cf6"
         />
         <StatCard
           icon={<Calendar size={20} />}
           label={t.workDays}
           value={records.length}
-          sub={isAr ? "يوم مسجّل" : "days recorded"}
+          sub={"يوم مسجّل"}
           accent="#ec4899"
         />
         <StatCard
           icon={<Briefcase size={20} />}
-          label={isAr ? "الراتب الشهري" : "Monthly Rate"}
+          label={"الراتب الشهري"}
           value={`${(dailyRate * 30).toFixed(0)} ${t.nis}`}
-          sub={isAr ? "بناءً على السعر اليومي" : "based on daily rate"}
+          sub={"بناءً على السعر اليومي"}
           accent="#06b6d4"
         />
       </div>
@@ -362,10 +362,10 @@ export function MyPayrollPage() {
           }}
         >
           {[
-            { label: isAr ? "أيام الدوام الفعلي" : "Days Present", value: records.filter(r => r.hoursWorked > 0).length, color: "#10b981" },
-            { label: isAr ? "أيام بدون خروج" : "Missing Checkout", value: records.filter(r => r.attendance && !r.attendance.checkOut).length, color: "#f59e0b" },
-            { label: isAr ? "إجمالي المستحقات" : "Total Earned", value: `${grandTotal.toFixed(2)} ${t.nis}`, color: "#3b82f6" },
-            { label: isAr ? "متوسط اليومي" : "Daily Average", value: `${(records.length ? grandTotal / records.length : 0).toFixed(2)} ${t.nis}`, color: "#8b5cf6" },
+            { label: "أيام الدوام الفعلي", value: records.filter(r => r.hoursWorked > 0).length, color: "#10b981" },
+            { label: "أيام بدون خروج", value: records.filter(r => r.attendance && !r.attendance.checkOut).length, color: "#f59e0b" },
+            { label: "إجمالي المستحقات", value: `${grandTotal.toFixed(2)} ${t.nis}`, color: "#3b82f6" },
+            { label: "متوسط اليومي", value: `${(records.length ? grandTotal / records.length : 0).toFixed(2)} ${t.nis}`, color: "#8b5cf6" },
           ].map((item) => (
             <div key={item.label} style={{ display: "flex", flexDirection: "column", gap: ".1rem" }}>
               <span style={{ fontSize: ".73rem", color: "var(--text-secondary)", fontWeight: 600, textTransform: "uppercase", letterSpacing: ".04em" }}>{item.label}</span>
@@ -388,18 +388,18 @@ export function MyPayrollPage() {
             {t.dailyRecords}
           </h3>
           <span style={{ fontSize: ".78rem", color: "var(--text-secondary)" }}>
-            {records.length} {isAr ? "سجل" : "records"}
+            {records.length} {"سجل"}
           </span>
         </div>
         <div style={{ overflowX: "auto" }}>
           <table className="admin-table">
             <thead>
               <tr>
-                <th>{isAr ? "التاريخ" : "Date"}</th>
+                <th>{"التاريخ"}</th>
                 <th>{t.checkIn}</th>
                 <th>{t.checkOut}</th>
                 <th>{t.hours}</th>
-                <th>{isAr ? "السعر/يوم" : "Rate/Day"}</th>
+                <th>{"السعر/يوم"}</th>
                 <th>{t.dailySalary}</th>
                 <th>{t.status}</th>
               </tr>
@@ -429,7 +429,7 @@ export function MyPayrollPage() {
                         {r.attendance?.checkOut
                           ? fmtTime(r.attendance.checkOut)
                           : <span style={{ background: "#fef9c3", border: "1px solid #fde047", borderRadius: 4, padding: "1px 6px", color: "#854d0e", fontSize: ".73rem", fontWeight: 600 }}>
-                              {isAr ? "⚠ لم يُسجَّل" : "⚠ Missing"}
+                              {"⚠ لم يُسجَّل"}
                             </span>
                         }
                       </td>

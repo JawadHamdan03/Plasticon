@@ -5,20 +5,20 @@ import {
   FileText, Award, FilePlus, CheckCircle, AlertCircle, Pencil, X, Save,
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
-import { API_BASE_URL } from "../../lib/api";
+import { API_BASE_URL, pictureUrl as globalPictureUrl } from "../../lib/api";
 import { Card } from "../../components/ui/card";
 
 const ROLE_LABEL: Record<string, string> = {
-  ADMIN: "Administrator",
-  ENGINEER: "Engineer",
-  ACCOUNTANT: "Accountant",
-  WORKER: "Worker",
+  ADMIN: "مدير",
+  ENGINEER: "مهندس",
+  ACCOUNTANT: "محاسب",
+  WORKER: "عامل",
 };
 
 const DOC_TYPE_LABEL: Record<string, string> = {
-  CV: "CV / Resume",
-  CERTIFICATE: "Certificate",
-  OTHER: "Other Document",
+  CV: "السيرة الذاتية",
+  CERTIFICATE: "شهادة",
+  OTHER: "مستند آخر",
 };
 
 function initials(name: string) {
@@ -127,9 +127,7 @@ export function ProfilePage() {
 
   const role = String(user.role ?? "WORKER").toUpperCase();
   const completion = calcCompletion(user);
-  const avatarSrc = user.profileImage
-    ? `${API_BASE_URL.replace("/api", "")}/pictures/${user.profileImage}`
-    : null;
+  const avatarSrc = user.profileImage ? globalPictureUrl(user.profileImage) || null : null;
   const joined = user.createdAt ? formatDate(user.createdAt) : "—";
   const skillsArray = user.skills
     ? user.skills.split(",").map((s) => s.trim()).filter(Boolean)
@@ -164,10 +162,10 @@ export function ProfilePage() {
         method: "POST",
         body: fd,
       });
-      if (!res.ok) throw new Error("Photo upload failed");
+      if (!res.ok) throw new Error("فشل رفع الصورة");
       await refreshUser();
     } catch {
-      setPhotoError("Photo upload failed. Please try again.");
+      setPhotoError("فشل رفع الصورة. حاول مرة أخرى.");
     } finally {
       setPhotoUploading(false);
       e.target.value = "";
@@ -186,9 +184,9 @@ export function ProfilePage() {
       if (!res.ok) throw new Error("Failed to save profile");
       await refreshUser();
       setEditMode(false);
-      setSaveMsg({ type: "ok", text: "Profile saved successfully!" });
+      setSaveMsg({ type: "ok", text: "تم حفظ الملف الشخصي بنجاح!" });
     } catch {
-      setSaveMsg({ type: "err", text: "Failed to save. Please try again." });
+      setSaveMsg({ type: "err", text: "فشل الحفظ. حاول مرة أخرى." });
     } finally {
       setSaving(false);
     }
@@ -198,7 +196,7 @@ export function ProfilePage() {
     e.preventDefault();
     const file = docInputRef.current?.files?.[0];
     if (!file) {
-      setDocMsg({ type: "err", text: "Please choose a file first." });
+      setDocMsg({ type: "err", text: "اختر ملفاً أولاً." });
       return;
     }
     setDocUploading(true);
@@ -221,9 +219,9 @@ export function ProfilePage() {
       setDocType("OTHER");
       setDocFileName("");
       if (docInputRef.current) docInputRef.current.value = "";
-      setDocMsg({ type: "ok", text: "Document uploaded successfully!" });
+      setDocMsg({ type: "ok", text: "تم رفع المستند بنجاح!" });
     } catch {
-      setDocMsg({ type: "err", text: "Upload failed. Please try again." });
+      setDocMsg({ type: "err", text: "فشل الرفع. حاول مرة أخرى." });
     } finally {
       setDocUploading(false);
     }
@@ -296,7 +294,7 @@ export function ProfilePage() {
               type="button"
               onClick={() => photoInputRef.current?.click()}
               disabled={photoUploading}
-              title="Change photo"
+              title="تغيير الصورة"
               style={{
                 position: "absolute",
                 bottom: 0,
@@ -367,7 +365,7 @@ export function ProfilePage() {
                     fontWeight: 700,
                   }}
                 >
-                  <CheckCircle size={12} /> Complete
+                  <CheckCircle size={12} /> مكتمل
                 </span>
               )}
             </div>
@@ -387,7 +385,7 @@ export function ProfilePage() {
                 style={{ display: "flex", justifyContent: "space-between", marginBottom: ".3rem" }}
               >
                 <span style={{ fontSize: ".75rem", color: "var(--text-secondary)" }}>
-                  Profile completion
+                  اكتمال الملف الشخصي
                 </span>
                 <span
                   style={{
@@ -450,11 +448,11 @@ export function ProfilePage() {
           >
             {editMode ? (
               <>
-                <X size={15} /> Cancel
+                <X size={15} /> إلغاء
               </>
             ) : (
               <>
-                <Pencil size={15} /> Edit Profile
+                <Pencil size={15} /> تعديل الملف الشخصي
               </>
             )}
           </button>
@@ -501,7 +499,7 @@ export function ProfilePage() {
             gap: ".5rem",
           }}
         >
-          <User size={16} color="var(--orange-500,#f97316)" /> Personal Information
+          <User size={16} color="var(--orange-500,#f97316)" /> المعلومات الشخصية
         </h3>
 
         {/* ── READ VIEW ── */}
@@ -514,20 +512,20 @@ export function ProfilePage() {
             }}
           >
             {[
-              { label: "Full Name", value: user.name, icon: User },
-              { label: "Email", value: user.email, icon: Mail },
-              { label: "Phone", value: user.phone, icon: Phone },
-              { label: "Job Title", value: user.jobTitle, icon: Briefcase },
-              { label: "Department", value: user.department, icon: Building2 },
+              { label: "الاسم الكامل", value: user.name, icon: User },
+              { label: "البريد الإلكتروني", value: user.email, icon: Mail },
+              { label: "الهاتف", value: user.phone, icon: Phone },
+              { label: "المسمى الوظيفي", value: user.jobTitle, icon: Briefcase },
+              { label: "القسم", value: user.department, icon: Building2 },
               {
-                label: "Date of Birth",
+                label: "تاريخ الميلاد",
                 value: user.dateOfBirth ? formatDate(user.dateOfBirth) : null,
                 icon: Calendar,
               },
-              { label: "Address", value: user.address, icon: MapPin },
-              { label: "LinkedIn", value: user.linkedIn, icon: Link2, isLink: true },
-              { label: "Role", value: ROLE_LABEL[role] ?? role, icon: Shield },
-              { label: "Joined", value: joined, icon: Calendar },
+              { label: "العنوان", value: user.address, icon: MapPin },
+              { label: "لينكدإن", value: user.linkedIn, icon: Link2, isLink: true },
+              { label: "الدور", value: ROLE_LABEL[role] ?? role, icon: Shield },
+              { label: "تاريخ الانضمام", value: joined, icon: Calendar },
             ].map(({ label, value, icon: Icon, isLink }) => (
               <div key={label} style={{ display: "flex", flexDirection: "column", gap: ".2rem" }}>
                 <span
@@ -568,7 +566,7 @@ export function ProfilePage() {
                       fontStyle: value ? "normal" : "italic",
                     }}
                   >
-                    {value ?? "Not set"}
+                    {value ?? "غير محدد"}
                   </span>
                 )}
               </div>
@@ -587,7 +585,7 @@ export function ProfilePage() {
                     color: "var(--text-secondary)",
                   }}
                 >
-                  Bio
+                  نبذة
                 </span>
                 <p
                   style={{
@@ -615,7 +613,7 @@ export function ProfilePage() {
                     color: "var(--text-secondary)",
                   }}
                 >
-                  Skills
+                  المهارات
                 </span>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: ".4rem" }}>
                   {skillsArray.map((s) => (
@@ -651,9 +649,9 @@ export function ProfilePage() {
                     textAlign: "center",
                   }}
                 >
-                  Your profile is incomplete. Click{" "}
-                  <strong style={{ color: "var(--orange-600,#ea580c)" }}>Edit Profile</strong>{" "}
-                  above to fill in your details.
+                  ملفك الشخصي غير مكتمل. انقر على{" "}
+                  <strong style={{ color: "var(--orange-600,#ea580c)" }}>تعديل الملف الشخصي</strong>{" "}
+                  أعلاه لملء بياناتك.
                 </p>
               </div>
             )}
@@ -672,13 +670,13 @@ export function ProfilePage() {
             >
               {(
                 [
-                  { label: "Full Name", key: "fullName" as const, icon: User, type: "text" },
-                  { label: "Phone", key: "phone" as const, icon: Phone, type: "tel" },
-                  { label: "Job Title", key: "jobTitle" as const, icon: Briefcase, type: "text" },
-                  { label: "Department", key: "department" as const, icon: Building2, type: "text" },
-                  { label: "Date of Birth", key: "dateOfBirth" as const, icon: Calendar, type: "date" },
-                  { label: "Address", key: "address" as const, icon: MapPin, type: "text" },
-                  { label: "LinkedIn URL", key: "linkedIn" as const, icon: Link2, type: "url" },
+                  { label: "الاسم الكامل", key: "fullName" as const, icon: User, type: "text" },
+                  { label: "الهاتف", key: "phone" as const, icon: Phone, type: "tel" },
+                  { label: "المسمى الوظيفي", key: "jobTitle" as const, icon: Briefcase, type: "text" },
+                  { label: "القسم", key: "department" as const, icon: Building2, type: "text" },
+                  { label: "تاريخ الميلاد", key: "dateOfBirth" as const, icon: Calendar, type: "date" },
+                  { label: "العنوان", key: "address" as const, icon: MapPin, type: "text" },
+                  { label: "رابط لينكدإن", key: "linkedIn" as const, icon: Link2, type: "url" },
                 ] as const
               ).map(({ label, key, icon: Icon, type }) => (
                 <div key={key}>
@@ -897,9 +895,9 @@ export function ProfilePage() {
                 value={docType}
                 onChange={(e) => setDocType(e.target.value)}
               >
-                <option value="CV">CV / Resume</option>
-                <option value="CERTIFICATE">Certificate</option>
-                <option value="OTHER">Other</option>
+                <option value="CV">سيرة ذاتية</option>
+                <option value="CERTIFICATE">شهادة</option>
+                <option value="OTHER">أخرى</option>
               </select>
             </div>
           </div>
@@ -1051,7 +1049,7 @@ export function ProfilePage() {
                     </p>
                   </div>
                   <a
-                    href={`${API_BASE_URL.replace("/api", "")}/pictures/${doc.filePath}`}
+                    href={globalPictureUrl(doc.filePath)}
                     target="_blank"
                     rel="noreferrer"
                     style={{

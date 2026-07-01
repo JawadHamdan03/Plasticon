@@ -1,11 +1,10 @@
-import { useEffect, useState, useRef, type FormEvent } from "react";
+﻿import { useEffect, useState, useRef, type FormEvent } from "react";
 import { Package, Plus, X, Check, DollarSign, Trash2 } from "lucide-react";
 import { ModulePageShell } from "../../components/ModulePageShell";
 import { Button } from "../../components/ui/button";
 import { Card } from "../../components/ui/card";
-import { useLocale } from "../../context/LocaleContext";
 import { useAuth } from "../../context/AuthContext";
-import { API_BASE_URL } from "../../lib/api";
+import { API_BASE_URL, pictureUrl as globalPictureUrl } from "../../lib/api";
 import { confirmDialog } from "../../lib/dialog";
 
 function authHeaders(): Record<string, string> {
@@ -42,9 +41,7 @@ const STATUS_META: Record<string, { color: string; bg: string; label: string; la
 };
 
 export default function SparePartsManagement() {
-  const { locale } = useLocale();
   const { user } = useAuth();
-  const nav = (en: string, ar: string) => locale === "ar" ? ar : en;
 
   const role = user?.role ?? "";
   const isEngineer = role === "ENGINEER";
@@ -83,8 +80,8 @@ export default function SparePartsManagement() {
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     setError(""); setSuccess("");
-    if (!form.machineId) { setError(nav("Select a machine", "اختر آلة")); return; }
-    if (!form.partName.trim()) { setError(nav("Part name is required", "اسم القطعة مطلوب")); return; }
+    if (!form.machineId) { setError("اختر آلة"); return; }
+    if (!form.partName.trim()) { setError("اسم القطعة مطلوب"); return; }
     setSaving(true);
     try {
       const fd = new FormData();
@@ -106,7 +103,7 @@ export default function SparePartsManagement() {
         const err = await res.json().catch(() => ({}));
         throw new Error((err as { message?: string }).message ?? "Failed to submit");
       }
-      setSuccess(nav("Request submitted successfully", "تم إرسال الطلب بنجاح"));
+      setSuccess("تم إرسال الطلب بنجاح");
       setForm(emptyForm());
       setPhoto(null);
       if (fileRef.current) fileRef.current.value = "";
@@ -161,22 +158,22 @@ export default function SparePartsManagement() {
 
   return (
     <ModulePageShell
-      title={nav("Spare Parts Requests", "طلبات قطع الغيار")}
-      subtitle={nav("Request, track and manage spare part procurement", "طلب وتتبع وإدارة مشتريات قطع الغيار")}
+      title={"طلبات قطع الغيار"}
+      subtitle={"طلب وتتبع وإدارة مشتريات قطع الغيار"}
       icon={<Package size={22} />}
       actions={isEngineer ? (
         <Button size="sm" onClick={() => setShowForm(v => !v)}>
           {showForm ? <X size={14} /> : <Plus size={14} />}
-          {showForm ? nav("Cancel", "إلغاء") : nav("Request Part", "طلب قطعة")}
+          {showForm ? "إلغاء" : "طلب قطعة"}
         </Button>
       ) : undefined}
     >
       {/* KPIs */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: ".75rem", marginBottom: "1.25rem" }}>
         {[
-          { label: nav("Pending",  "قيد الانتظار"), value: pendingCount,  gradient: "linear-gradient(135deg,#f59e0b,#d97706)" },
-          { label: nav("Received", "تم الاستلام"),  value: receivedCount, gradient: "linear-gradient(135deg,#10b981,#059669)" },
-          { label: nav("Priced",   "تم التسعير"),   value: pricedCount,   gradient: "linear-gradient(135deg,#8b5cf6,#7c3aed)" },
+          { label: "قيد الانتظار", value: pendingCount,  gradient: "linear-gradient(135deg,#f59e0b,#d97706)" },
+          { label: "تم الاستلام",  value: receivedCount, gradient: "linear-gradient(135deg,#10b981,#059669)" },
+          { label: "تم التسعير",   value: pricedCount,   gradient: "linear-gradient(135deg,#8b5cf6,#7c3aed)" },
         ].map(k => (
           <div key={k.label} style={{ borderRadius: 14, padding: "1rem 1.1rem", background: k.gradient, color: "#fff", boxShadow: "0 4px 12px rgba(0,0,0,.15)" }}>
             <p style={{ margin: 0, fontSize: ".72rem", fontWeight: 600, opacity: .85, textTransform: "uppercase", letterSpacing: ".06em" }}>{k.label}</p>
@@ -188,39 +185,39 @@ export default function SparePartsManagement() {
       {/* Request form — engineer only */}
       {isEngineer && showForm && (
         <Card className="p-5 mb-5 border-2 border-(--accent)">
-          <h3 style={{ margin: "0 0 1rem", fontSize: ".95rem", fontWeight: 700 }}>{nav("New Part Request", "طلب قطعة جديدة")}</h3>
+          <h3 style={{ margin: "0 0 1rem", fontSize: ".95rem", fontWeight: 700 }}>{"طلب قطعة جديدة"}</h3>
           {error   && <div className="auth-alert auth-alert--error mb-3">{error}</div>}
           {success && <div className="auth-alert mb-3">{success}</div>}
           <form className="module-form" onSubmit={e => void submit(e)}>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))", gap: "1rem" }}>
-              <label>{nav("Machine", "الآلة")} *
+              <label>{"الآلة"} *
                 <select className="input" value={form.machineId} onChange={e => setForm(p => ({ ...p, machineId: e.target.value }))} required>
-                  <option value="">{nav("Select machine...", "اختر الآلة...")}</option>
+                  <option value="">{"اختر الآلة..."}</option>
                   {machines.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
                 </select>
               </label>
-              <label>{nav("Part Name", "اسم القطعة")} *
-                <input type="text" className="input" value={form.partName} onChange={e => setForm(p => ({ ...p, partName: e.target.value }))} placeholder={nav("e.g. Drive Belt, Seal Kit...", "مثال: حزام التشغيل...")} required />
+              <label>{"اسم القطعة"} *
+                <input type="text" className="input" value={form.partName} onChange={e => setForm(p => ({ ...p, partName: e.target.value }))} placeholder={"مثال: حزام التشغيل..."} required />
               </label>
-              <label>{nav("Quantity", "الكمية")} *
+              <label>{"الكمية"} *
                 <input type="number" min={1} className="input" value={form.quantity} onChange={e => setForm(p => ({ ...p, quantity: e.target.value }))} required />
               </label>
-              <label>{nav("Supplier Company", "الشركة الموردة")}
-                <input type="text" className="input" value={form.supplierName} onChange={e => setForm(p => ({ ...p, supplierName: e.target.value }))} placeholder={nav("e.g. Siemens, Bosch...", "مثال: سيمنز، بوش...")} />
+              <label>{"الشركة الموردة"}
+                <input type="text" className="input" value={form.supplierName} onChange={e => setForm(p => ({ ...p, supplierName: e.target.value }))} placeholder={"مثال: سيمنز، بوش..."} />
               </label>
-              <label>{nav("Supplier Country", "بلد المورد")}
-                <input type="text" className="input" value={form.supplierCountry} onChange={e => setForm(p => ({ ...p, supplierCountry: e.target.value }))} placeholder={nav("e.g. China, Germany...", "مثال: الصين، ألمانيا...")} />
+              <label>{"بلد المورد"}
+                <input type="text" className="input" value={form.supplierCountry} onChange={e => setForm(p => ({ ...p, supplierCountry: e.target.value }))} placeholder={"مثال: الصين، ألمانيا..."} />
               </label>
-              <label>{nav("Photo (optional)", "صورة (اختياري)")}
+              <label>{"صورة (اختياري)"}
                 <input ref={fileRef} type="file" accept="image/*" className="input" style={{ padding: ".4rem .6rem" }} onChange={e => setPhoto(e.target.files?.[0] ?? null)} />
               </label>
-              <label style={{ gridColumn: "1 / -1" }}>{nav("Notes", "ملاحظات")}
-                <textarea rows={2} className="input" value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} placeholder={nav("Any additional details...", "تفاصيل إضافية...")} />
+              <label style={{ gridColumn: "1 / -1" }}>{"ملاحظات"}
+                <textarea rows={2} className="input" value={form.notes} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))} placeholder={"تفاصيل إضافية..."} />
               </label>
             </div>
             <div style={{ display: "flex", gap: ".625rem" }}>
-              <Button type="submit" size="sm" disabled={saving}>{saving ? nav("Submitting...", "جارٍ الإرسال...") : nav("Submit Request", "إرسال الطلب")}</Button>
-              <Button type="button" size="sm" variant="outline" onClick={() => { setShowForm(false); setError(""); }}>{nav("Cancel", "إلغاء")}</Button>
+              <Button type="submit" size="sm" disabled={saving}>{saving ? "جارٍ الإرسال..." : "إرسال الطلب"}</Button>
+              <Button type="button" size="sm" variant="outline" onClick={() => { setShowForm(false); setError(""); }}>{"إلغاء"}</Button>
             </div>
           </form>
         </Card>
@@ -232,8 +229,8 @@ export default function SparePartsManagement() {
       ) : requests.length === 0 ? (
         <div className="p-10 text-center" style={{ color: "var(--text-secondary)" }}>
           <Package size={32} style={{ margin: "0 auto 12px", opacity: .3, display: "block" }} />
-          <p style={{ fontWeight: 600 }}>{nav("No requests yet", "لا توجد طلبات بعد")}</p>
-          {isEngineer && <p style={{ fontSize: ".85rem", marginTop: ".25rem" }}>{nav("Click 'Request Part' to submit a request", "انقر على 'طلب قطعة' لتقديم طلب")}</p>}
+          <p style={{ fontWeight: 600 }}>{"لا توجد طلبات بعد"}</p>
+          {isEngineer && <p style={{ fontSize: ".85rem", marginTop: ".25rem" }}>{"انقر على 'طلب قطعة' لتقديم طلب"}</p>}
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -246,7 +243,7 @@ export default function SparePartsManagement() {
                 {/* Photo or placeholder */}
                 {req.imagePath ? (
                   <img
-                    src={`${API_BASE_URL.replace("/api", "")}/pictures/${req.imagePath}`}
+                    src={globalPictureUrl(req.imagePath)}
                     alt={req.partName}
                     style={{ width: "100%", height: 140, objectFit: "cover" }}
                   />
@@ -261,14 +258,14 @@ export default function SparePartsManagement() {
                   <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: ".5rem" }}>
                     <p style={{ margin: 0, fontWeight: 700, fontSize: ".9rem", color: "var(--text-primary)", flex: 1 }}>{req.partName}</p>
                     <span style={{ display: "inline-block", padding: ".15rem .5rem", borderRadius: 999, fontSize: ".72rem", fontWeight: 700, background: meta.bg, color: meta.color, flexShrink: 0 }}>
-                      {locale === "ar" ? meta.labelAr : meta.label}
+                      {meta.labelAr}
                     </span>
                   </div>
 
                   {/* Details */}
                   <div style={{ fontSize: ".8rem", color: "var(--text-secondary)", display: "flex", flexDirection: "column", gap: ".2rem" }}>
                     <span>🔧 {req.machine?.name ?? `Machine #${req.machineId}`}</span>
-                    <span>📦 {nav("Qty", "كمية")}: <strong style={{ color: "var(--text-primary)" }}>{req.quantity}</strong></span>
+                    <span>📦 {"كمية"}: <strong style={{ color: "var(--text-primary)" }}>{req.quantity}</strong></span>
                     {canViewAll && req.engineer && <span>👤 {req.engineer.fullName}</span>}
                     {req.supplierName && <span>🏭 {req.supplierName}{req.supplierCountry ? ` — ${req.supplierCountry}` : ""}</span>}
                     {req.notes && <span style={{ fontStyle: "italic" }}>{req.notes}</span>}
@@ -283,7 +280,7 @@ export default function SparePartsManagement() {
                       </p>
                       {req.pricedBy && (
                         <p style={{ margin: ".2rem 0 0", fontSize: ".72rem", color: "#6d28d9" }}>
-                          {nav("Priced by", "سعّره")}: {req.pricedBy.fullName}
+                          {"سعّره"}: {req.pricedBy.fullName}
                         </p>
                       )}
                     </div>
@@ -293,7 +290,7 @@ export default function SparePartsManagement() {
                         type="number"
                         min={0}
                         step="0.01"
-                        placeholder={nav("Unit price (₪)...", "سعر الوحدة (₪)...")}
+                        placeholder={"سعر الوحدة (₪)..."}
                         className="input"
                         style={{ flex: 1, padding: ".3rem .5rem", fontSize: ".82rem" }}
                         value={priceInputs[req.id] ?? ""}
@@ -301,12 +298,12 @@ export default function SparePartsManagement() {
                       />
                       <Button size="sm" onClick={() => void handleSetPrice(req.id)} disabled={!priceInputs[req.id]}>
                         <DollarSign size={13} />
-                        {nav("Set", "تعيين")}
+                        {"تعيين"}
                       </Button>
                     </div>
                   ) : (
                     <p style={{ margin: 0, fontSize: ".78rem", color: "var(--text-secondary)", fontStyle: "italic" }}>
-                      {nav("Awaiting price from accountant", "بانتظار التسعير من المحاسب")}
+                      {"بانتظار التسعير من المحاسب"}
                     </p>
                   )}
 
@@ -315,7 +312,7 @@ export default function SparePartsManagement() {
                     {isEngineer && isMyRequest && req.status === "PENDING" && (
                       <Button size="sm" onClick={() => void handleReceived(req.id)}>
                         <Check size={12} />
-                        {nav("Mark Received", "تأكيد الاستلام")}
+                        {"تأكيد الاستلام"}
                       </Button>
                     )}
                     {isAdmin && (
@@ -325,7 +322,7 @@ export default function SparePartsManagement() {
                         style={{ display: "flex", alignItems: "center", gap: ".3rem", padding: ".3rem .6rem", borderRadius: 6, border: "1px solid #fecaca", background: "#fee2e2", color: "#dc2626", cursor: "pointer", fontSize: ".78rem", fontWeight: 600 }}
                       >
                         <Trash2 size={12} />
-                        {nav("Delete", "حذف")}
+                        {"حذف"}
                       </button>
                     )}
                   </div>

@@ -44,7 +44,7 @@ function ShiftBadge({ shift }: { shift: Shift | null }) {
   const color = shiftColor[letter] ?? "#64748b";
   return (
     <span style={{ display: "inline-flex", alignItems: "center", gap: ".25rem", padding: ".2rem .6rem", borderRadius: 999, fontSize: ".75rem", fontWeight: 700, background: `${color}18`, color, border: `1px solid ${color}30` }}>
-      Shift {shift.name}
+      وردية {shift.name}
     </span>
   );
 }
@@ -94,7 +94,7 @@ export function UsersAdminPage() {
       if (!res.ok) throw new Error(await readApiError(res));
       setUsers((await res.json()) as AdminUser[]);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to load users");
+      setError(e instanceof Error ? e.message : "فشل تحميل المستخدمين");
     } finally {
       setLoading(false);
     }
@@ -133,12 +133,12 @@ export function UsersAdminPage() {
       });
       if (!res.ok) throw new Error(await readApiError(res));
       setSaveTone("success");
-      setSaveMsg("Saved successfully");
+      setSaveMsg("تم الحفظ بنجاح");
       setEditModal(null);
       await loadUsers();
     } catch (e) {
       setSaveTone("error");
-      setSaveMsg(e instanceof Error ? e.message : "Failed to save");
+      setSaveMsg(e instanceof Error ? e.message : "فشل الحفظ");
     } finally {
       setSaving(false);
     }
@@ -168,20 +168,20 @@ export function UsersAdminPage() {
       });
       if (!res.ok) throw new Error(await readApiError(res));
       setCreateTone("success");
-      setCreateMsg("User created successfully");
+      setCreateMsg("تم إنشاء المستخدم بنجاح");
       setCreateForm(BLANK_CREATE);
       setShowCreate(false);
       await loadUsers();
     } catch (e) {
       setCreateTone("error");
-      setCreateMsg(e instanceof Error ? e.message : "Failed to create user");
+      setCreateMsg(e instanceof Error ? e.message : "فشل إنشاء المستخدم");
     } finally {
       setCreating(false);
     }
   };
 
   const handleDelete = async (u: AdminUser) => {
-    if (!confirm(`Delete user "${u.fullName}"? This is a soft delete — the account will be deactivated.`)) return;
+    if (!confirm(`حذف المستخدم "${u.fullName}"؟ سيتم تعطيل الحساب.`)) return;
     try {
       const token = localStorage.getItem("plasticon_token");
       const res = await fetch(`${API_BASE_URL}/users/${u.id}`, {
@@ -192,7 +192,7 @@ export function UsersAdminPage() {
       if (!res.ok) throw new Error(await readApiError(res));
       await loadUsers();
     } catch (e) {
-      alert(e instanceof Error ? e.message : "Failed to delete user");
+      alert(e instanceof Error ? e.message : "فشل حذف المستخدم");
     }
   };
 
@@ -200,15 +200,15 @@ export function UsersAdminPage() {
 
   return (
     <ModulePageShell
-      title="Users"
-      subtitle="Manage user roles and shift assignments"
+      title="المستخدمون"
+      subtitle="إدارة أدوار المستخدمين وتعيين الورديات"
       actions={
         <div style={{ display: "flex", gap: ".5rem" }}>
           <button type="button" className="auth-button" onClick={() => { setShowCreate(true); setCreateMsg(""); setCreateForm(BLANK_CREATE); }}>
-            <UserPlus size={14} style={{ marginRight: ".35rem" }} /> Create User
+            <UserPlus size={14} style={{ marginRight: ".35rem" }} /> إنشاء مستخدم
           </button>
           <button type="button" className="auth-button auth-button--ghost" onClick={() => void loadUsers()}>
-            <RefreshCw size={14} style={{ marginRight: ".35rem" }} /> Refresh
+            <RefreshCw size={14} style={{ marginRight: ".35rem" }} /> تحديث
           </button>
         </div>
       }
@@ -249,14 +249,14 @@ export function UsersAdminPage() {
             <table className="admin-table">
               <thead>
                 <tr>
-                  <th>ID</th>
-                  <th>Name</th>
-                  <th>Username</th>
-                  <th>Email</th>
-                  <th>Role</th>
-                  <th>Shift</th>
-                  <th>Status</th>
-                  <th>Edit</th>
+                  <th>#</th>
+                  <th>الاسم</th>
+                  <th>اسم المستخدم</th>
+                  <th>البريد</th>
+                  <th>الدور</th>
+                  <th>الوردية</th>
+                  <th>الحالة</th>
+                  <th>تعديل</th>
                 </tr>
               </thead>
               <tbody>
@@ -270,18 +270,18 @@ export function UsersAdminPage() {
                     <td><ShiftBadge shift={u.shift} /></td>
                     <td>
                       <span style={{ fontSize: ".78rem", fontWeight: 600, color: u.isActive ? "#16a34a" : "#dc2626" }}>
-                        {u.isActive ? "Active" : "Inactive"}
+                        {u.isActive ? "نشط" : "غير نشط"}
                       </span>
                     </td>
                     <td>
                       <div style={{ display: "flex", gap: ".4rem", alignItems: "center" }}>
                         <button type="button" onClick={() => openEdit(u)}
                           style={{ display: "inline-flex", alignItems: "center", gap: ".3rem", padding: ".3rem .65rem", borderRadius: 7, border: "1px solid var(--border-default)", background: "transparent", color: "var(--text-secondary)", cursor: "pointer", fontSize: ".78rem", fontWeight: 600 }}>
-                          <Pencil size={12} /> Edit
+                          <Pencil size={12} /> تعديل
                         </button>
                         <button type="button" onClick={() => void handleDelete(u)}
                           style={{ display: "inline-flex", alignItems: "center", gap: ".3rem", padding: ".3rem .65rem", borderRadius: 7, border: "1px solid #ef444433", background: "#ef444408", color: "#ef4444", cursor: "pointer", fontSize: ".78rem", fontWeight: 600 }}>
-                          <Trash2 size={12} /> Delete
+                          <Trash2 size={12} /> حذف
                         </button>
                       </div>
                     </td>
@@ -303,7 +303,7 @@ export function UsersAdminPage() {
             {/* Header */}
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
               <div>
-                <h3 style={{ margin: 0, fontSize: "1rem", fontWeight: 800 }}>Edit User</h3>
+                <h3 style={{ margin: 0, fontSize: "1rem", fontWeight: 800 }}>تعديل المستخدم</h3>
                 <p style={{ margin: "2px 0 0", fontSize: ".82rem", color: "var(--text-secondary)" }}>
                   {editModal.fullName} · @{editModal.username}
                 </p>
@@ -316,7 +316,7 @@ export function UsersAdminPage() {
 
             {/* Role picker */}
             <div>
-              <p style={{ margin: "0 0 .6rem", fontSize: ".83rem", fontWeight: 700 }}>Role</p>
+              <p style={{ margin: "0 0 .6rem", fontSize: ".83rem", fontWeight: 700 }}>الدور</p>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(110px, 1fr))", gap: ".5rem" }}>
                 {ROLES.map((r) => {
                   const color = roleColor[r];
@@ -336,18 +336,18 @@ export function UsersAdminPage() {
             {needsShift && (
               <div>
                 <p style={{ margin: "0 0 .5rem", fontSize: ".83rem", fontWeight: 700 }}>
-                  Shift Assignment
-                  <span style={{ marginLeft: ".35rem", fontSize: ".75rem", fontWeight: 400, color: "var(--text-muted)" }}>(optional — leave unset to remove from shift)</span>
+                  تعيين الوردية
+                  <span style={{ marginLeft: ".35rem", fontSize: ".75rem", fontWeight: 400, color: "var(--text-muted)" }}>(اختياري — اتركه فارغاً لإلغاء الوردية)</span>
                 </p>
                 {shifts.length === 0 ? (
-                  <p style={{ fontSize: ".8rem", color: "var(--text-secondary)" }}>No shifts found. Create shifts in the Shifts page first.</p>
+                  <p style={{ fontSize: ".8rem", color: "var(--text-secondary)" }}>لا توجد ورديات. أنشئ الورديات أولاً من صفحة الورديات.</p>
                 ) : (
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(100px, 1fr))", gap: ".5rem" }}>
                     {/* No-shift option */}
                     <button type="button"
                       onClick={() => setEditShiftId("")}
                       style={{ padding: ".7rem .5rem", borderRadius: 10, border: editShiftId === "" ? "2px solid #94a3b8" : "2px solid var(--border-default)", background: editShiftId === "" ? "rgba(148,163,184,.12)" : "var(--bg-surface)", color: editShiftId === "" ? "#64748b" : "var(--text-secondary)", fontWeight: 700, fontSize: ".78rem", cursor: "pointer", transition: "all .15s" }}>
-                      None
+                      بلا وردية
                     </button>
                     {shifts.map((s) => {
                       const letter = shiftLetter(s.name);
@@ -358,7 +358,7 @@ export function UsersAdminPage() {
                           onClick={() => setEditShiftId(String(s.id))}
                           style={{ padding: ".7rem .5rem", borderRadius: 10, border: isSelected ? `2px solid ${color}` : "2px solid var(--border-default)", background: isSelected ? `${color}15` : "var(--bg-surface)", color: isSelected ? color : "var(--text-primary)", fontWeight: 700, fontSize: ".85rem", cursor: "pointer", transition: "all .15s", display: "flex", flexDirection: "column", alignItems: "center", gap: ".2rem" }}>
                           <span style={{ fontSize: "1.25rem", fontWeight: 900 }}>{letter}</span>
-                          <span style={{ fontSize: ".7rem", fontWeight: 600, opacity: .8 }}>Shift {s.name}</span>
+                          <span style={{ fontSize: ".7rem", fontWeight: 600, opacity: .8 }}>وردية {s.name}</span>
                         </button>
                       );
                     })}
@@ -369,19 +369,19 @@ export function UsersAdminPage() {
 
             {/* Current assignment summary */}
             <div style={{ padding: ".75rem 1rem", borderRadius: 8, background: "var(--bg-subtle)", border: "1px solid var(--border-subtle)", fontSize: ".82rem", color: "var(--text-secondary)", display: "flex", flexDirection: "column", gap: ".3rem" }}>
-              <span><strong>Current:</strong> {editModal.role} · Shift {editModal.shift?.name ?? "none"}</span>
-              <span><strong>New:</strong> {editRole} · Shift {needsShift && editShiftId ? (shifts.find((s) => String(s.id) === editShiftId)?.name ?? "?") : "none"}</span>
+              <span><strong>الحالي:</strong> {editModal.role} · شفت {editModal.shift?.name ?? "بدون"}</span>
+              <span><strong>الجديد:</strong> {editRole} · شفت {needsShift && editShiftId ? (shifts.find((s) => String(s.id) === editShiftId)?.name ?? "?") : "بدون"}</span>
             </div>
 
             {/* Actions */}
             <div style={{ display: "flex", gap: ".75rem", justifyContent: "flex-end" }}>
               <button type="button" onClick={() => setEditModal(null)}
                 style={{ padding: ".5rem 1.25rem", borderRadius: 8, border: "1px solid var(--border-default)", background: "transparent", cursor: "pointer", fontWeight: 600 }}>
-                Cancel
+                إلغاء
               </button>
               <button type="button" onClick={() => void handleSave()} disabled={saving}
                 style={{ display: "inline-flex", alignItems: "center", gap: ".4rem", padding: ".5rem 1.5rem", borderRadius: 8, background: "var(--brand-primary,#f97316)", color: "#fff", border: "none", fontWeight: 700, cursor: "pointer", opacity: saving ? .6 : 1 }}>
-                <Check size={15} /> {saving ? "Saving…" : "Save Changes"}
+                <Check size={15} /> {saving ? "جارٍ الحفظ..." : "حفظ التغييرات"}
               </button>
             </div>
           </div>
@@ -397,8 +397,8 @@ export function UsersAdminPage() {
             {/* Header */}
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
               <div>
-                <h3 style={{ margin: 0, fontSize: "1rem", fontWeight: 800 }}>Create New User</h3>
-                <p style={{ margin: "2px 0 0", fontSize: ".82rem", color: "var(--text-secondary)" }}>Fill in all required fields to create the account</p>
+                <h3 style={{ margin: 0, fontSize: "1rem", fontWeight: 800 }}>إنشاء مستخدم جديد</h3>
+                <p style={{ margin: "2px 0 0", fontSize: ".82rem", color: "var(--text-secondary)" }}>أدخل جميع الحقول المطلوبة لإنشاء الحساب</p>
               </div>
               <button type="button" onClick={() => setShowCreate(false)}
                 style={{ width: 32, height: 32, border: "none", background: "var(--bg-subtle)", borderRadius: 8, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -409,7 +409,7 @@ export function UsersAdminPage() {
             <form onSubmit={(e) => { void handleCreate(e); }} style={{ display: "flex", flexDirection: "column", gap: ".9rem" }}>
               {/* Role selector */}
               <div>
-                <p style={{ margin: "0 0 .5rem", fontSize: ".83rem", fontWeight: 700 }}>Role</p>
+                <p style={{ margin: "0 0 .5rem", fontSize: ".83rem", fontWeight: 700 }}>الدور</p>
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(100px, 1fr))", gap: ".4rem" }}>
                   {ROLES.map((r) => {
                     const color = roleColor[r];
@@ -428,29 +428,29 @@ export function UsersAdminPage() {
               {/* Two-column fields */}
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: ".75rem" }}>
                 <label style={{ display: "flex", flexDirection: "column", gap: ".3rem", fontSize: ".83rem", fontWeight: 600 }}>
-                  Full Name *
+                  الاسم الكامل *
                   <input required value={createForm.fullName} onChange={(e) => setCreateForm((f) => ({ ...f, fullName: e.target.value }))}
-                    placeholder="e.g. Ahmad Ali" style={inputStyle} />
+                    placeholder="مثال: أحمد علي" style={inputStyle} />
                 </label>
                 <label style={{ display: "flex", flexDirection: "column", gap: ".3rem", fontSize: ".83rem", fontWeight: 600 }}>
-                  Username *
+                  اسم المستخدم *
                   <input required value={createForm.username} onChange={(e) => setCreateForm((f) => ({ ...f, username: e.target.value }))}
-                    placeholder="e.g. ahmad_ali" style={inputStyle} />
+                    placeholder="مثال: ahmad_ali" style={inputStyle} />
                 </label>
                 <label style={{ display: "flex", flexDirection: "column", gap: ".3rem", fontSize: ".83rem", fontWeight: 600 }}>
-                  Email *
+                  البريد الإلكتروني *
                   <input required type="email" value={createForm.email} onChange={(e) => setCreateForm((f) => ({ ...f, email: e.target.value }))}
                     placeholder="user@example.com" style={inputStyle} />
                 </label>
                 <label style={{ display: "flex", flexDirection: "column", gap: ".3rem", fontSize: ".83rem", fontWeight: 600 }}>
-                  National ID * <span style={{ fontWeight: 400, color: "var(--text-muted)", fontSize: ".75rem" }}>(9 digits)</span>
+                  رقم الهوية * <span style={{ fontWeight: 400, color: "var(--text-muted)", fontSize: ".75rem" }}>(9 أرقام)</span>
                   <input required value={createForm.nationalId} onChange={(e) => setCreateForm((f) => ({ ...f, nationalId: e.target.value }))}
                     placeholder="123456789" maxLength={9} style={inputStyle} />
                 </label>
               </div>
 
               <label style={{ display: "flex", flexDirection: "column", gap: ".3rem", fontSize: ".83rem", fontWeight: 600 }}>
-                Password * <span style={{ fontWeight: 400, color: "var(--text-muted)", fontSize: ".75rem" }}>(min 8 characters)</span>
+                كلمة المرور * <span style={{ fontWeight: 400, color: "var(--text-muted)", fontSize: ".75rem" }}>(8 أحرف على الأقل)</span>
                 <input required type="password" value={createForm.password} onChange={(e) => setCreateForm((f) => ({ ...f, password: e.target.value }))}
                   placeholder="••••••••" minLength={8} style={inputStyle} />
               </label>
@@ -464,11 +464,11 @@ export function UsersAdminPage() {
               <div style={{ display: "flex", gap: ".75rem", justifyContent: "flex-end" }}>
                 <button type="button" onClick={() => setShowCreate(false)}
                   style={{ padding: ".5rem 1.25rem", borderRadius: 8, border: "1px solid var(--border-default)", background: "transparent", cursor: "pointer", fontWeight: 600 }}>
-                  Cancel
+                  إلغاء
                 </button>
                 <button type="submit" disabled={creating}
                   style={{ display: "inline-flex", alignItems: "center", gap: ".4rem", padding: ".5rem 1.5rem", borderRadius: 8, background: "var(--brand-primary,#f97316)", color: "#fff", border: "none", fontWeight: 700, cursor: "pointer", opacity: creating ? .6 : 1 }}>
-                  <UserPlus size={15} /> {creating ? "Creating…" : "Create Account"}
+                  <UserPlus size={15} /> {creating ? "جارٍ الإنشاء..." : "إنشاء حساب"}
                 </button>
               </div>
             </form>

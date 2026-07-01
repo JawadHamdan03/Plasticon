@@ -1,9 +1,8 @@
-import React, { useEffect, useState } from "react";
+﻿import React, { useEffect, useState } from "react";
 import { AlertTriangle, Save } from "lucide-react";
 import { ModulePageShell } from "../../components/ModulePageShell";
 import { Button } from "../../components/ui/button";
 import { Card } from "../../components/ui/card";
-import { useLocale } from "../../context/LocaleContext";
 import { useAuth } from "../../context/AuthContext";
 import { API_BASE_URL } from "../../lib/api";
 
@@ -105,16 +104,16 @@ export default function RawMaterialAlerts() {
 
   return (
     <ModulePageShell
-      title={nav("Raw Material Alerts", "تنبيهات المواد الخام")}
-      subtitle={nav("Monitor and manage raw material stock levels", "مراقبة وإدارة مستويات مخزون المواد الخام")}
+      title={"تنبيهات المواد الخام"}
+      subtitle={"مراقبة وإدارة مستويات مخزون المواد الخام"}
       icon={<AlertTriangle size={22} />}
     >
       {/* KPI Cards */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: ".75rem", marginBottom: "1.25rem" }}>
         {[
-          { label: nav("Total Materials", "إجمالي المواد"),       value: totalMaterials, gradient: "linear-gradient(135deg,#3b82f6,#1d4ed8)" },
-          { label: nav("Low Stock",       "مخزون منخفض"),          value: lowCount,       gradient: "linear-gradient(135deg,#f59e0b,#d97706)" },
-          { label: nav("Critical",        "حرج (لا مخزون)"),       value: criticalCount,  gradient: "linear-gradient(135deg,#ef4444,#dc2626)" },
+          { label: "إجمالي المواد",       value: totalMaterials, gradient: "linear-gradient(135deg,#3b82f6,#1d4ed8)" },
+          { label: "مخزون منخفض",          value: lowCount,       gradient: "linear-gradient(135deg,#f59e0b,#d97706)" },
+          { label: "حرج (لا مخزون)",       value: criticalCount,  gradient: "linear-gradient(135deg,#ef4444,#dc2626)" },
         ].map((kpi) => (
           <div key={kpi.label} style={{ borderRadius: 14, padding: "1rem 1.1rem", background: kpi.gradient, color: "#fff", boxShadow: "0 4px 12px rgba(0,0,0,.15)" }}>
             <p style={{ margin: 0, fontSize: ".72rem", fontWeight: 600, opacity: .85, textTransform: "uppercase", letterSpacing: ".06em" }}>{kpi.label}</p>
@@ -129,18 +128,18 @@ export default function RawMaterialAlerts() {
           {loading ? (
             <div className="flex justify-center p-10"><div className="spinner" /></div>
           ) : materials.length === 0 ? (
-            <div className="p-10 text-center text-(--text-secondary)">{nav("No materials found", "لا توجد مواد")}</div>
+            <div className="p-10 text-center text-(--text-secondary)">{"لا توجد مواد"}</div>
           ) : (
             <table className="data-table w-full">
               <thead>
                 <tr>
-                  <th>{nav("Material", "المادة")}</th>
-                  <th>{nav("Unit", "الوحدة")}</th>
-                  <th>{nav("Current Stock", "المخزون الحالي")}</th>
-                  <th>{nav("Min Threshold", "الحد الأدنى")}</th>
-                  <th>{nav("Status", "الحالة")}</th>
-                  {canEdit && <th>{nav("Update Stock", "تحديث المخزون")}</th>}
-                  {canEdit && <th>{nav("Set Threshold", "تحديد الحد")}</th>}
+                  <th>{"المادة"}</th>
+                  <th>{"الوحدة"}</th>
+                  <th>{"المخزون الحالي"}</th>
+                  <th>{"الحد الأدنى"}</th>
+                  <th>{"الحالة"}</th>
+                  {canEdit && <th>{"تحديث المخزون"}</th>}
+                  {canEdit && <th>{"تحديد الحد"}</th>}
                 </tr>
               </thead>
               <tbody>

@@ -2,12 +2,9 @@ import {
   createContext,
   useContext,
   useEffect,
-  useState,
   type ReactNode,
 } from "react";
 import type { Locale } from "../content/authCopy";
-
-const LOCALE_KEY = "plasticon_locale";
 
 type LocaleContextValue = {
   locale: Locale;
@@ -17,20 +14,15 @@ type LocaleContextValue = {
 const LocaleContext = createContext<LocaleContextValue | null>(null);
 
 export function LocaleProvider({ children }: { children: ReactNode }) {
-  const [locale, setLocaleState] = useState<Locale>(() => {
-    const saved = window.localStorage.getItem(LOCALE_KEY);
-    return saved === "ar" ? "ar" : "en";
-  });
+  const locale: Locale = "ar";
 
   useEffect(() => {
-    window.localStorage.setItem(LOCALE_KEY, locale);
-    document.documentElement.lang = locale === "ar" ? "ar" : "en";
-    document.documentElement.dir = locale === "ar" ? "rtl" : "ltr";
-  }, [locale]);
+    document.documentElement.lang = "ar";
+    document.documentElement.dir = "rtl";
+  }, []);
 
-  const setLocale = (nextLocale: Locale) => {
-    setLocaleState(nextLocale);
-  };
+  // No-op: locale is permanently Arabic
+  const setLocale = (_nextLocale: Locale) => undefined;
 
   return (
     <LocaleContext.Provider value={{ locale, setLocale }}>

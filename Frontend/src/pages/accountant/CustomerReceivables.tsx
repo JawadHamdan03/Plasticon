@@ -4,7 +4,7 @@ import { Plus, Pencil, Trash2, CheckCircle, Clock, AlertTriangle, Users, X, Save
 import { ModulePageShell } from "../../components/ModulePageShell";
 import { Button } from "../../components/ui/button";
 import { Card } from "../../components/ui/card";
-import { useLocale } from "../../context/LocaleContext";
+
 import { API_BASE_URL } from "../../lib/api";
 import { useAuth } from "../../context/AuthContext";
 
@@ -33,10 +33,8 @@ const STATUS_META: Record<string, { label: string; labelAr: string; color: strin
 const emptyForm = { customerName: "", amount: "", dueDate: "", status: "PENDING", notes: "" };
 
 export default function CustomerReceivables() {
-  const { locale } = useLocale();
   const { user } = useAuth();
   const isAdmin = user?.role === "ADMIN";
-  const nav = (en: string, ar: string) => locale === "ar" ? ar : en;
 
   const [receivables, setReceivables] = useState<CustomerReceivable[]>([]);
   const [loading, setLoading] = useState(true);
@@ -91,7 +89,7 @@ export default function CustomerReceivables() {
   };
 
   const handleDelete = async (id: number) => {
-    if (!(await confirmDialog(nav("Delete this receivable?", "حذف هذا الحساب؟"), { danger: true }))) return;
+    if (!(await confirmDialog("حذف هذا الحساب؟", { danger: true }))) return;
     await fetch(`${API_BASE_URL}/customer-receivables/${id}`, { method: "DELETE", headers: authHeaders(), credentials: "include" });
     void fetchReceivables();
   };
@@ -105,17 +103,17 @@ export default function CustomerReceivables() {
 
   return (
     <ModulePageShell
-      title={nav("Customer Receivables", "الحسابات المدينة")}
-      subtitle={nav("Track payments due from customers", "تتبع المدفوعات المستحقة من العملاء")}
+      title={"الحسابات المدينة"}
+      subtitle={"تتبع المدفوعات المستحقة من العملاء"}
       icon={<Users size={22} />}
     >
       {/* KPIs */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: ".75rem", marginBottom: "1.25rem" }}>
         {[
-          { label: nav("Total Receivables", "إجمالي المستحقات"), value: fmtMoney(totalAmount),     gradient: "linear-gradient(135deg,#3b82f6,#1d4ed8)" },
-          { label: nav("Pending",           "معلق"),              value: fmtMoney(pendingAmount),   gradient: "linear-gradient(135deg,#f59e0b,#d97706)" },
-          { label: nav("Collected",         "محصّل"),             value: fmtMoney(collectedAmount), gradient: "linear-gradient(135deg,#10b981,#059669)" },
-          { label: nav("Overdue",           "متأخر"),             value: overdueCount,              gradient: "linear-gradient(135deg,#ef4444,#dc2626)" },
+          { label: "إجمالي المستحقات", value: fmtMoney(totalAmount),     gradient: "linear-gradient(135deg,#3b82f6,#1d4ed8)" },
+          { label: "معلق",              value: fmtMoney(pendingAmount),   gradient: "linear-gradient(135deg,#f59e0b,#d97706)" },
+          { label: "محصّل",             value: fmtMoney(collectedAmount), gradient: "linear-gradient(135deg,#10b981,#059669)" },
+          { label: "متأخر",             value: overdueCount,              gradient: "linear-gradient(135deg,#ef4444,#dc2626)" },
         ].map((k) => (
           <div key={k.label} style={{ borderRadius: 14, padding: "1rem 1.1rem", background: k.gradient, color: "#fff", boxShadow: "0 4px 12px rgba(0,0,0,.15)" }}>
             <p style={{ margin: 0, fontSize: ".72rem", fontWeight: 600, opacity: .85, textTransform: "uppercase", letterSpacing: ".06em" }}>{k.label}</p>
@@ -129,18 +127,18 @@ export default function CustomerReceivables() {
         {!isAdmin && (
           <Button size="sm" onClick={openNew}>
             <Plus size={15} className="me-1" />
-            {nav("Add Receivable", "إضافة حساب مدين")}
+            {"إضافة حساب مدين"}
           </Button>
         )}
         <select className="input text-sm h-8 min-w-[140px]" value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}>
-          <option value="">{nav("All Statuses", "جميع الحالات")}</option>
-          <option value="PENDING">{nav("Pending", "معلق")}</option>
-          <option value="COLLECTED">{nav("Collected", "محصّل")}</option>
-          <option value="OVERDUE">{nav("Overdue", "متأخر")}</option>
+          <option value="">{"جميع الحالات"}</option>
+          <option value="PENDING">{"معلق"}</option>
+          <option value="COLLECTED">{"محصّل"}</option>
+          <option value="OVERDUE">{"متأخر"}</option>
         </select>
         {filterStatus && (
           <button className="text-xs text-[var(--text-secondary)] underline" onClick={() => setFilterStatus("")}>
-            {nav("Clear", "مسح")}
+            {"مسح"}
           </button>
         )}
       </div>
@@ -151,42 +149,42 @@ export default function CustomerReceivables() {
           <div className="flex items-center justify-between mb-5">
             <div>
               <h3 className="font-bold text-[var(--text-primary)] text-base">
-                {editingId ? nav("Edit Receivable", "تعديل الحساب") : nav("New Receivable", "حساب مدين جديد")}
+                {editingId ? "تعديل الحساب" : "حساب مدين جديد"}
               </h3>
-              <p className="text-xs text-[var(--text-secondary)] mt-0.5">{nav("Enter receivable details", "أدخل بيانات الحساب")}</p>
+              <p className="text-xs text-[var(--text-secondary)] mt-0.5">{"أدخل بيانات الحساب"}</p>
             </div>
             <button className="text-[var(--text-secondary)] hover:text-[var(--text-primary)]" onClick={() => setShowForm(false)}><X size={18} /></button>
           </div>
 
-          <p className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wide mb-2">{nav("Receivable Info", "بيانات الحساب")}</p>
+          <p className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wide mb-2">{"بيانات الحساب"}</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
             <div>
-              <label className="label">{nav("Customer Name", "اسم العميل")}</label>
-              <input className="input" placeholder={nav("e.g. Al-Najah Plastics Co.", "مثال: شركة النجاح للبلاستيك")}
+              <label className="label">{"اسم العميل"}</label>
+              <input className="input" placeholder={"مثال: شركة النجاح للبلاستيك"}
                 value={form.customerName} onChange={(e) => setForm((p) => ({ ...p, customerName: e.target.value }))} />
             </div>
             <div>
-              <label className="label">{nav("Amount ($) *", "المبلغ ($) *")}</label>
+              <label className="label">{"المبلغ ($) *"}</label>
               <input className="input" type="number" min="0" step="0.01" placeholder="0.00"
                 value={form.amount} onChange={(e) => setForm((p) => ({ ...p, amount: e.target.value }))} />
             </div>
             <div>
-              <label className="label">{nav("Due Date *", "تاريخ الاستحقاق *")}</label>
+              <label className="label">{"تاريخ الاستحقاق *"}</label>
               <input className="input" type="date"
                 value={form.dueDate} onChange={(e) => setForm((p) => ({ ...p, dueDate: e.target.value }))} />
             </div>
             <div>
-              <label className="label">{nav("Status", "الحالة")}</label>
+              <label className="label">{"الحالة"}</label>
               <select className="input" value={form.status} onChange={(e) => setForm((p) => ({ ...p, status: e.target.value }))}>
-                <option value="PENDING">{nav("Pending", "معلق")}</option>
-                <option value="COLLECTED">{nav("Collected", "محصّل")}</option>
-                <option value="OVERDUE">{nav("Overdue", "متأخر")}</option>
+                <option value="PENDING">{"معلق"}</option>
+                <option value="COLLECTED">{"محصّل"}</option>
+                <option value="OVERDUE">{"متأخر"}</option>
               </select>
             </div>
             <div className="sm:col-span-2">
-              <label className="label">{nav("Notes", "ملاحظات")}</label>
+              <label className="label">{"ملاحظات"}</label>
               <textarea className="input resize-none" rows={2}
-                placeholder={nav("Invoice reference, payment terms…", "مرجع الفاتورة، شروط الدفع...")}
+                placeholder={"مرجع الفاتورة، شروط الدفع..."}
                 value={form.notes} onChange={(e) => setForm((p) => ({ ...p, notes: e.target.value }))} />
             </div>
           </div>
@@ -194,9 +192,9 @@ export default function CustomerReceivables() {
           <div className="flex gap-2 pt-2 border-t border-[var(--border-default)]">
             <Button size="sm" onClick={handleSave} disabled={saving || !form.amount || !form.dueDate}>
               <Save size={14} className="me-1" />
-              {saving ? nav("Saving...", "جارٍ الحفظ...") : nav("Save Receivable", "حفظ الحساب")}
+              {saving ? "جارٍ الحفظ..." : "حفظ الحساب"}
             </Button>
-            <Button size="sm" variant="outline" onClick={() => setShowForm(false)}>{nav("Cancel", "إلغاء")}</Button>
+            <Button size="sm" variant="outline" onClick={() => setShowForm(false)}>{"إلغاء"}</Button>
           </div>
         </Card>
       )}
@@ -207,8 +205,8 @@ export default function CustomerReceivables() {
       ) : filtered.length === 0 ? (
         <Card className="p-12 text-center text-[var(--text-secondary)]">
           <Users size={32} className="mx-auto mb-3 opacity-30" />
-          <p className="font-medium">{nav("No receivables found", "لا توجد حسابات مدينة")}</p>
-          <p className="text-sm mt-1">{nav("Add your first receivable to get started", "أضف أول حساب للبدء")}</p>
+          <p className="font-medium">{"لا توجد حسابات مدينة"}</p>
+          <p className="text-sm mt-1">{"أضف أول حساب للبدء"}</p>
         </Card>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -223,12 +221,12 @@ export default function CustomerReceivables() {
                     <span style={{ fontSize: "1.3rem" }}>💰</span>
                     <div className="min-w-0">
                       <p className="font-bold text-sm text-[var(--text-primary)] truncate">
-                        {r.customer?.name ?? `${nav("Customer", "عميل")} #${r.customerId}`}
+                        {r.customer?.name ?? `${"عميل"} #${r.customerId}`}
                       </p>
                       <span style={{ background: meta.color + "20", color: meta.color, borderRadius: "20px", padding: "1px 8px", fontSize: ".68rem", fontWeight: 700 }}
                         className="inline-flex items-center gap-1">
                         <StatusIcon size={9} />
-                        {locale === "ar" ? meta.labelAr : meta.label}
+                        {meta.labelAr}
                       </span>
                     </div>
                   </div>
@@ -245,7 +243,7 @@ export default function CustomerReceivables() {
                     <p className="text-xs text-[var(--text-secondary)] truncate">📧 {r.customer.email}</p>
                   )}
                   <p className="text-sm text-[var(--text-secondary)]">
-                    📅 {nav("Due", "الاستحقاق")}: <span className={r.status === "OVERDUE" ? "text-red-600 font-semibold" : ""}>{new Date(r.dueDate).toLocaleDateString()}</span>
+                    📅 {"الاستحقاق"}: <span className={r.status === "OVERDUE" ? "text-red-600 font-semibold" : ""}>{new Date(r.dueDate).toLocaleDateString()}</span>
                   </p>
                   {r.notes && (
                     <p className="text-xs text-[var(--text-secondary)] bg-[var(--bg-surface-2,#f8fafc)] rounded px-2.5 py-1.5 italic">{r.notes}</p>

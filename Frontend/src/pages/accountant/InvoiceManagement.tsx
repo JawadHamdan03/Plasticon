@@ -8,8 +8,7 @@ import {
 import { ModulePageShell } from "../../components/ModulePageShell";
 import { Button } from "../../components/ui/button";
 import { Card } from "../../components/ui/card";
-import { useLocale } from "../../context/LocaleContext";
-import { API_BASE_URL } from "../../lib/api";
+import { API_BASE_URL, pictureUrl as globalPictureUrl } from "../../lib/api";
 import { useAuth } from "../../context/AuthContext";
 
 /* ─── Helpers ─────────────────────────────────────────────── */
@@ -58,15 +57,15 @@ type EditForm = {
 };
 
 /* ─── Constants ───────────────────────────────────────────── */
-const STATUS_META: Record<string, { label: string; labelAr: string; color: string; bg: string; icon: typeof CheckCircle }> = {
-  PAID:    { label: "Paid",    labelAr: "مدفوع", color: "#059669", bg: "#d1fae5", icon: CheckCircle },
-  PENDING: { label: "Pending", labelAr: "معلق",  color: "#d97706", bg: "#fef3c7", icon: Clock },
-  OVERDUE: { label: "Overdue", labelAr: "متأخر", color: "#dc2626", bg: "#fee2e2", icon: AlertCircle },
+const STATUS_META: Record<string, { label: string; color: string; bg: string; icon: typeof CheckCircle }> = {
+  PAID:    { label: "مدفوعة", color: "#059669", bg: "#d1fae5", icon: CheckCircle },
+  PENDING: { label: "معلقة",  color: "#d97706", bg: "#fef3c7", icon: Clock },
+  OVERDUE: { label: "متأخرة", color: "#dc2626", bg: "#fee2e2", icon: AlertCircle },
 };
-const ITEM_TYPES: { value: ItemType; en: string; ar: string }[] = [
-  { value: "PREFORM", en: "Preform", ar: "براعم" },
-  { value: "CAP",     en: "Cap",     ar: "غطاء" },
-  { value: "OTHER",   en: "Other",   ar: "أخرى" },
+const ITEM_TYPES: { value: ItemType; label: string }[] = [
+  { value: "PREFORM", label: "بريفورم" },
+  { value: "CAP",     label: "غطاء" },
+  { value: "OTHER",   label: "أخرى" },
 ];
 const CURRENCIES = ["ILS", "USD", "EUR", "GBP", "SAR", "AED", "JOD", "EGP"];
 const emptyRegular = (): RegularForm  => ({ customerName: "", invoiceNumber: "", totalAmount: "", dueDate: "" });
@@ -76,10 +75,8 @@ const labelStyle: React.CSSProperties = { display: "flex", flexDirection: "colum
 
 /* ─── Component ───────────────────────────────────────────── */
 export default function InvoiceManagement() {
-  const { locale } = useLocale();
   const { user }   = useAuth();
   const isAdmin    = user?.role === "ADMIN";
-  const t = (en: string, ar: string) => locale === "ar" ? ar : en;
 
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [loading,  setLoading]  = useState(true);
@@ -141,16 +138,16 @@ export default function InvoiceManagement() {
     try {
       if (createType === "REGULAR") {
         if (!regForm.customerName.trim() || !regForm.invoiceNumber.trim() || !regForm.totalAmount || !regForm.dueDate)
-          throw new Error(t("All fields are required", "جميع الحقول مطلوبة"));
+          throw new Error("جميع الحقول مطلوبة");
         const res = await apiFetch("/invoices", {
           method: "POST", headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ customerName: regForm.customerName.trim(), invoiceNumber: regForm.invoiceNumber.trim(), totalAmount: parseFloat(regForm.totalAmount), dueDate: regForm.dueDate, invoiceType: "REGULAR", currency: "ILS" }),
         });
-        if (!res.ok) { const j = await res.json() as { message?: string }; throw new Error(j.message ?? "Failed"); }
+        if (!res.ok) { const j = await res.json() as { message?: string }; throw new Error(j.message ?? "فشل"); }
       } else {
         if (!srForm.invoiceNumber.trim() || !srForm.customerName.trim() || !srForm.driverName.trim() || !srForm.departureDate)
-          throw new Error(t("Invoice #, customer, driver and departure date are required", "رقم الفاتورة والعميل والسائق وتاريخ المغادرة مطلوبة"));
-        if (srTotal <= 0) throw new Error(t("Add at least one item with a price > 0", "أضف بنداً واحداً على الأقل بسعر > 0"));
+          throw new Error("رقم الفاتورة والعميل والسائق وتاريخ المغادرة مطلوبة");
+        if (srTotal <= 0) throw new Error("أضف بنداً واحداً على الأقل بسعر > 0");
 
         const departureISO = srForm.departureDate
           ? `${srForm.departureDate}T${srForm.departureTime || "00:00"}:00`
@@ -180,14 +177,14 @@ export default function InvoiceManagement() {
             notes: srForm.notes.trim() || undefined,
           }),
         });
-        if (!res.ok) { const j = await res.json() as { message?: string }; throw new Error(j.message ?? "Failed"); }
+        if (!res.ok) { const j = await res.json() as { message?: string }; throw new Error(j.message ?? "فشل"); }
       }
 
       setCreateType(null);
       setRegForm(emptyRegular());
       setSrForm(emptySR());
       void fetchInvoices();
-    } catch (e) { setCreateErr(e instanceof Error ? e.message : "Failed"); }
+    } catch (e) { setCreateErr(e instanceof Error ? e.message : "فشل"); }
     finally { setCreating(false); }
   }
 
@@ -208,7 +205,7 @@ export default function InvoiceManagement() {
   async function saveEdit() {
     if (!editTarget) return;
     if (!editForm.invoiceNumber.trim() || !editForm.dueDate || !editForm.totalAmount) {
-      setEditError(t("Invoice #, due date and amount are required", "رقم الفاتورة والتاريخ والمبلغ مطلوبة")); return;
+      setEditError("رقم الفاتورة والتاريخ والمبلغ مطلوبة"); return;
     }
     setEditSaving(true); setEditError("");
     try {
@@ -225,9 +222,9 @@ export default function InvoiceManagement() {
           departureTime: editForm.departureTime || undefined,
         }),
       });
-      if (!res.ok) { const j = await res.json() as { message?: string }; throw new Error(j.message ?? "Failed"); }
+      if (!res.ok) { const j = await res.json() as { message?: string }; throw new Error(j.message ?? "فشل"); }
       setEditTarget(null); void fetchInvoices();
-    } catch (e) { setEditError(e instanceof Error ? e.message : "Failed to update"); }
+    } catch (e) { setEditError(e instanceof Error ? e.message : "فشل التحديث"); }
     finally { setEditSaving(false); }
   }
 
@@ -278,8 +275,7 @@ export default function InvoiceManagement() {
   const normalizeFilePath = (value: string | null | undefined) => {
     if (!value) return null;
     if (value.startsWith("http")) return value;
-    const filename = value.replace(/^(?:prisma\/?)?pictures\//, "");
-    return `${API_BASE_URL}/pictures/${filename}`;
+    return globalPictureUrl(value) || null;
   };
 
   /* ── Filtered list ── */
@@ -308,7 +304,7 @@ export default function InvoiceManagement() {
     const Icon = meta.icon;
     return (
       <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold" style={{ background: meta.bg, color: meta.color }}>
-        <Icon size={10} />{locale === "ar" ? meta.labelAr : meta.label}
+        <Icon size={10} />{meta.labelAr}
       </span>
     );
   };
@@ -322,7 +318,7 @@ export default function InvoiceManagement() {
     const c = cfg[type] ?? cfg.REGULAR;
     return (
       <span style={{ padding: ".15rem .45rem", borderRadius: 999, fontSize: ".65rem", fontWeight: 700, background: `${c.color}18`, color: c.color, display: "inline-flex", alignItems: "center", gap: ".2rem" }}>
-        {c.icon}{locale === "ar" ? c.labelAr : c.label}
+        {c.icon}{c.labelAr}
       </span>
     );
   };
@@ -611,7 +607,7 @@ export default function InvoiceManagement() {
                         return (
                           <div key={item.id} style={{ display: "grid", gridTemplateColumns: "120px 1fr 90px 110px 100px 30px", gap: ".4rem", marginBottom: ".4rem", alignItems: "center" }}>
                             <select style={{ ...inputCls, padding: ".38rem .5rem" }} value={item.itemType} onChange={e => patchSRItem(item.id, { itemType: e.target.value as ItemType })}>
-                              {ITEM_TYPES.map(it => <option key={it.value} value={it.value}>{locale === "ar" ? it.ar : it.en}</option>)}
+                              {ITEM_TYPES.map(it => <option key={it.value} value={it.value}>{it.ar}</option>)}
                             </select>
                             <input style={inputCls} placeholder={t("Color, e.g. Natural","اللون مثلاً طبيعي")} value={item.color} onChange={e => patchSRItem(item.id, { color: e.target.value })} />
                             <input type="number" min={0} style={{ ...inputCls, textAlign: "center" }} value={item.quantity} onChange={e => patchSRItem(item.id, { quantity: e.target.value })} />

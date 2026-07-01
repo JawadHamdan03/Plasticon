@@ -4,7 +4,6 @@ import { Plus, Pencil, Trash2, Target, TrendingDown, DollarSign, X, Save } from 
 import { ModulePageShell } from "../../components/ModulePageShell";
 import { Button } from "../../components/ui/button";
 import { Card } from "../../components/ui/card";
-import { useLocale } from "../../context/LocaleContext";
 import { API_BASE_URL } from "../../lib/api";
 import { useAuth } from "../../context/AuthContext";
 
@@ -24,24 +23,22 @@ interface BudgetPlan {
 }
 
 const BUDGET_CATEGORIES = [
-  "Raw Materials",
-  "Production Labor",
-  "Machine Maintenance",
-  "Electricity & Utilities",
-  "Packaging & Logistics",
-  "Admin & Office",
-  "Safety & PPE",
-  "Quality Control",
-  "Other",
+  "مواد خام",
+  "عمالة الإنتاج",
+  "صيانة الماكينات",
+  "الكهرباء والمرافق",
+  "التغليف واللوجستيات",
+  "الإدارة والمكتب",
+  "السلامة والمعدات",
+  "مراقبة الجودة",
+  "أخرى",
 ];
 
-const emptyForm = { month: "", category: "Raw Materials", allocated: "", spent: "" };
+const emptyForm = { month: "", category: "مواد خام", allocated: "", spent: "" };
 
 export default function BudgetPlanning() {
-  const { locale } = useLocale();
   const { user } = useAuth();
   const isAdmin = user?.role === "ADMIN";
-  const nav = (en: string, ar: string) => locale === "ar" ? ar : en;
 
   const [budgets, setBudgets] = useState<BudgetPlan[]>([]);
   const [loading, setLoading] = useState(true);
@@ -89,7 +86,7 @@ export default function BudgetPlanning() {
   };
 
   const handleDelete = async (id: number) => {
-    if (!(await confirmDialog(nav("Delete this budget?", "حذف هذه الميزانية؟"), { danger: true }))) return;
+    if (!(await confirmDialog("حذف هذه الميزانية؟", { danger: true }))) return;
     await fetch(`${API_BASE_URL}/budgets/${id}`, { method: "DELETE", headers: authHeaders(), credentials: "include" });
     void fetchBudgets();
   };
@@ -104,26 +101,26 @@ export default function BudgetPlanning() {
 
   return (
     <ModulePageShell
-      title={nav("Budget Planning", "تخطيط الميزانية")}
-      subtitle={nav("Plan and track budget allocations per category", "تخطيط وتتبع مخصصات الميزانية لكل فئة")}
+      title={"تخطيط الميزانية"}
+      subtitle={"تخطيط وتتبع مخصصات الميزانية لكل فئة"}
       icon={<Target size={22} />}
     >
       {/* KPIs */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: ".75rem", marginBottom: "1.25rem" }}>
         <div style={{ borderRadius: 14, padding: "1rem 1.1rem", background: "linear-gradient(135deg,#3b82f6,#1d4ed8)", color: "#fff", boxShadow: "0 4px 12px rgba(0,0,0,.15)" }}>
-          <p style={{ margin: 0, fontSize: ".72rem", fontWeight: 600, opacity: .85, textTransform: "uppercase", letterSpacing: ".06em" }}>{nav("Total Allocated", "إجمالي المخصص")}</p>
+          <p style={{ margin: 0, fontSize: ".72rem", fontWeight: 600, opacity: .85, textTransform: "uppercase", letterSpacing: ".06em" }}>{"إجمالي المخصص"}</p>
           <p style={{ margin: ".25rem 0 0", fontSize: "1.4rem", fontWeight: 900, lineHeight: 1.1 }}>{fmtMoney(totalAllocated)}</p>
         </div>
         <div style={{ borderRadius: 14, padding: "1rem 1.1rem", background: "linear-gradient(135deg,#f59e0b,#d97706)", color: "#fff", boxShadow: "0 4px 12px rgba(0,0,0,.15)" }}>
-          <p style={{ margin: 0, fontSize: ".72rem", fontWeight: 600, opacity: .85, textTransform: "uppercase", letterSpacing: ".06em" }}>{nav("Total Spent", "إجمالي المنفق")}</p>
+          <p style={{ margin: 0, fontSize: ".72rem", fontWeight: 600, opacity: .85, textTransform: "uppercase", letterSpacing: ".06em" }}>{"إجمالي المنفق"}</p>
           <p style={{ margin: ".25rem 0 0", fontSize: "1.4rem", fontWeight: 900, lineHeight: 1.1 }}>{fmtMoney(totalSpent)}</p>
           <div style={{ marginTop: ".5rem", height: 4, borderRadius: 99, background: "rgba(255,255,255,.3)", overflow: "hidden" }}>
             <div style={{ height: "100%", borderRadius: 99, background: "#fff", width: `${overallPct}%`, transition: "width .3s" }} />
           </div>
-          <p style={{ margin: ".25rem 0 0", fontSize: ".7rem", opacity: .85 }}>{overallPct.toFixed(0)}% {nav("of budget", "من الميزانية")}</p>
+          <p style={{ margin: ".25rem 0 0", fontSize: ".7rem", opacity: .85 }}>{overallPct.toFixed(0)}% {"من الميزانية"}</p>
         </div>
         <div style={{ borderRadius: 14, padding: "1rem 1.1rem", background: remaining >= 0 ? "linear-gradient(135deg,#10b981,#059669)" : "linear-gradient(135deg,#ef4444,#dc2626)", color: "#fff", boxShadow: "0 4px 12px rgba(0,0,0,.15)" }}>
-          <p style={{ margin: 0, fontSize: ".72rem", fontWeight: 600, opacity: .85, textTransform: "uppercase", letterSpacing: ".06em" }}>{nav("Remaining", "المتبقي")}</p>
+          <p style={{ margin: 0, fontSize: ".72rem", fontWeight: 600, opacity: .85, textTransform: "uppercase", letterSpacing: ".06em" }}>{"المتبقي"}</p>
           <p style={{ margin: ".25rem 0 0", fontSize: "1.4rem", fontWeight: 900, lineHeight: 1.1 }}>{fmtMoney(remaining)}</p>
         </div>
       </div>
@@ -133,20 +130,20 @@ export default function BudgetPlanning() {
         {!isAdmin && (
           <Button size="sm" onClick={openNew}>
             <Plus size={15} className="me-1" />
-            {nav("Add Budget", "إضافة ميزانية")}
+            {"إضافة ميزانية"}
           </Button>
         )}
         <select className="input text-sm h-8 min-w-[160px]" value={filterMonth} onChange={(e) => setFilterMonth(e.target.value)}>
-          <option value="">{nav("All Months", "جميع الأشهر")}</option>
+          <option value="">{"جميع الأشهر"}</option>
           {months.map((m) => (
             <option key={m} value={m}>
-              {new Date(m + "-01").toLocaleDateString(locale === "ar" ? "ar-SA" : "en-US", { month: "long", year: "numeric" })}
+              {new Date(m + "-01").toLocaleDateString("ar-SA", { month: "long", year: "numeric" })}
             </option>
           ))}
         </select>
         {filterMonth && (
           <button className="text-xs text-[var(--text-secondary)] underline" onClick={() => setFilterMonth("")}>
-            {nav("Clear", "مسح")}
+            {"مسح"}
           </button>
         )}
       </div>
@@ -157,33 +154,33 @@ export default function BudgetPlanning() {
           <div className="flex items-center justify-between mb-5">
             <div>
               <h3 className="font-bold text-[var(--text-primary)] text-base">
-                {editingId ? nav("Edit Budget", "تعديل الميزانية") : nav("New Budget Entry", "إدخال ميزانية جديد")}
+                {editingId ? "تعديل الميزانية" : "إدخال ميزانية جديد"}
               </h3>
-              <p className="text-xs text-[var(--text-secondary)] mt-0.5">{nav("Set allocation and spending for a category", "حدد المخصص والإنفاق لفئة معينة")}</p>
+              <p className="text-xs text-[var(--text-secondary)] mt-0.5">{"حدد المخصص والإنفاق لفئة معينة"}</p>
             </div>
             <button className="text-[var(--text-secondary)] hover:text-[var(--text-primary)]" onClick={() => setShowForm(false)}><X size={18} /></button>
           </div>
 
-          <p className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wide mb-2">{nav("Budget Details", "بيانات الميزانية")}</p>
+          <p className="text-xs font-semibold text-[var(--text-secondary)] uppercase tracking-wide mb-2">{"بيانات الميزانية"}</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
             <div>
-              <label className="label">{nav("Month *", "الشهر *")}</label>
+              <label className="label">{"الشهر *"}</label>
               <input className="input" type="month"
                 value={form.month} onChange={(e) => setForm((p) => ({ ...p, month: e.target.value }))} />
             </div>
             <div>
-              <label className="label">{nav("Category *", "الفئة *")}</label>
+              <label className="label">{"الفئة *"}</label>
               <select className="input" value={form.category} onChange={(e) => setForm((p) => ({ ...p, category: e.target.value }))}>
                 {BUDGET_CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
               </select>
             </div>
             <div>
-              <label className="label">{nav("Allocated Amount ($) *", "المبلغ المخصص ($) *")}</label>
+              <label className="label">{"المبلغ المخصص ($) *"}</label>
               <input className="input" type="number" min="0" step="0.01" placeholder="0.00"
                 value={form.allocated} onChange={(e) => setForm((p) => ({ ...p, allocated: e.target.value }))} />
             </div>
             <div>
-              <label className="label">{nav("Amount Spent ($)", "المبلغ المنفق ($)")}</label>
+              <label className="label">{"المبلغ المنفق ($)"}</label>
               <input className="input" type="number" min="0" step="0.01" placeholder="0.00"
                 value={form.spent} onChange={(e) => setForm((p) => ({ ...p, spent: e.target.value }))} />
             </div>
@@ -192,9 +189,9 @@ export default function BudgetPlanning() {
           <div className="flex gap-2 pt-2 border-t border-[var(--border-default)]">
             <Button size="sm" onClick={handleSave} disabled={saving || !form.month || !form.allocated}>
               <Save size={14} className="me-1" />
-              {saving ? nav("Saving...", "جارٍ الحفظ...") : nav("Save Budget", "حفظ الميزانية")}
+              {saving ? "جارٍ الحفظ..." : "حفظ الميزانية"}
             </Button>
-            <Button size="sm" variant="outline" onClick={() => setShowForm(false)}>{nav("Cancel", "إلغاء")}</Button>
+            <Button size="sm" variant="outline" onClick={() => setShowForm(false)}>{"إلغاء"}</Button>
           </div>
         </Card>
       )}
@@ -205,8 +202,8 @@ export default function BudgetPlanning() {
       ) : filtered.length === 0 ? (
         <Card className="p-12 text-center text-[var(--text-secondary)]">
           <Target size={32} className="mx-auto mb-3 opacity-30" />
-          <p className="font-medium">{nav("No budget entries found", "لا توجد ميزانيات")}</p>
-          <p className="text-sm mt-1">{nav("Add your first budget allocation", "أضف أول تخصيص ميزانية")}</p>
+          <p className="font-medium">{"لا توجد ميزانيات"}</p>
+          <p className="text-sm mt-1">{"أضف أول تخصيص ميزانية"}</p>
         </Card>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -224,7 +221,7 @@ export default function BudgetPlanning() {
                     <div className="min-w-0">
                       <p className="font-bold text-sm text-[var(--text-primary)] truncate">{b.category}</p>
                       <p className="text-xs text-[var(--text-secondary)]">
-                        {new Date(b.month + "-01").toLocaleDateString(locale === "ar" ? "ar-SA" : "en-US", { month: "long", year: "numeric" })}
+                        {new Date(b.month + "-01").toLocaleDateString("ar-SA", { month: "long", year: "numeric" })}
                       </p>
                     </div>
                   </div>
@@ -238,17 +235,17 @@ export default function BudgetPlanning() {
                 <div className="p-4 flex-1 flex flex-col gap-3">
                   <div className="flex justify-between text-sm">
                     <div>
-                      <p className="text-xs text-[var(--text-secondary)]">{nav("Allocated", "المخصص")}</p>
+                      <p className="text-xs text-[var(--text-secondary)]">{"المخصص"}</p>
                       <p className="font-bold text-blue-600">{fmtMoney(b.allocated)}</p>
                     </div>
                     <div className="text-right">
-                      <p className="text-xs text-[var(--text-secondary)]">{nav("Spent", "المنفق")}</p>
+                      <p className="text-xs text-[var(--text-secondary)]">{"المنفق"}</p>
                       <p className="font-bold text-orange-600">{fmtMoney(b.spent)}</p>
                     </div>
                   </div>
                   <div>
                     <div className="flex justify-between text-xs text-[var(--text-secondary)] mb-1">
-                      <span>{nav("Usage", "الاستخدام")}</span>
+                      <span>{"الاستخدام"}</span>
                       <span>{pct.toFixed(0)}%</span>
                     </div>
                     <div className="w-full bg-gray-100 rounded-full h-2">
@@ -257,7 +254,7 @@ export default function BudgetPlanning() {
                   </div>
                 </div>
                 <div className="border-t border-[var(--border-default)] px-4 py-2.5 flex items-center justify-between">
-                  <span className="text-xs text-[var(--text-secondary)]">{nav("Remaining", "المتبقي")}</span>
+                  <span className="text-xs text-[var(--text-secondary)]">{"المتبقي"}</span>
                   <span className="font-bold text-sm" style={{ color: isOver ? "#dc2626" : "#059669" }}>{fmtMoney(rem)}</span>
                 </div>
               </Card>

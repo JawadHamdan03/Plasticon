@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { Plus, Trash2, FileText, ChevronRight } from "lucide-react";
 import { useLocale } from "../../context/LocaleContext";
 import { useAuth } from "../../context/AuthContext";
@@ -84,7 +84,7 @@ export function QuotationBuilderPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!customerId) { setMsg(isAr ? "اختر عميلاً" : "Select a customer"); return; }
+    if (!customerId) { setMsg("اختر عميلاً"); return; }
     setSaving(true);
     setMsg("");
     try {
@@ -95,7 +95,7 @@ export function QuotationBuilderPage() {
         body: JSON.stringify({ customerId: Number(customerId), notes, validUntil: validUntil || undefined, items }),
       });
       if (!res.ok) throw new Error(await readApiError(res));
-      setMsg(isAr ? "تم إنشاء العرض" : "Quotation created");
+      setMsg("تم إنشاء العرض");
       setCustomerId(""); setNotes(""); setValidUntil("");
       setItems([{ productType: "CAPS", size: "", quantity: 1, pricePerUnit: 0 }]);
       void loadAll();
@@ -116,16 +116,9 @@ export function QuotationBuilderPage() {
     void loadAll();
   };
 
-  const deleteQ = async (id: number) => {
-    if (!confirm(isAr ? "حذف العرض؟" : "Delete quotation?")) return;
-    await fetch(`${API_BASE_URL}/sales-rep/quotations/${id}`, {
-      method: "DELETE", headers: authHeader(), credentials: "include",
-    });
-    void loadAll();
-  };
 
   return (
-    <main className="admin-shell" dir={isAr ? "rtl" : "ltr"}>
+    <main className="admin-shell" dir="rtl">
       <section className="admin-card">
 
         {/* ── Page Header ── */}
@@ -134,10 +127,10 @@ export function QuotationBuilderPage() {
             <p className="auth-eyebrow">Plasticon</p>
             <h1 style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
               <FileText size={24} style={{ color: "var(--accent)" }} />
-              {isAr ? "بناء العروض" : "Quotation Builder"}
+              {"بناء العروض"}
             </h1>
             <p style={{ color: "var(--text-secondary)", marginTop: "2px" }}>
-              {isAr ? "أنشئ وأدر عروض أسعار العملاء" : "Create and manage customer quotations"}
+              {"أنشئ وأدر عروض أسعار العملاء"}
             </p>
           </div>
         </header>
@@ -167,7 +160,7 @@ export function QuotationBuilderPage() {
           >
             <Plus size={16} style={{ color: "var(--accent)" }} />
             <span style={{ fontWeight: 700, fontSize: ".95rem" }}>
-              {isAr ? "عرض جديد" : "New Quotation"}
+              {"عرض جديد"}
             </span>
           </div>
 
@@ -176,18 +169,18 @@ export function QuotationBuilderPage() {
             {/* Customer + Valid Until row */}
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
               <label style={{ display: "flex", flexDirection: "column", gap: "0.35rem", fontSize: ".875rem", fontWeight: 500 }}>
-                {isAr ? "العميل" : "Customer"}
+                {"العميل"}
                 <select
                   value={customerId}
                   onChange={(e) => setCustomerId(e.target.value)}
                   className="admin-input"
                 >
-                  <option value="">{isAr ? "اختر عميلاً..." : "Select customer..."}</option>
+                  <option value="">{"اختر عميلاً..."}</option>
                   {customers.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
                 </select>
               </label>
               <label style={{ display: "flex", flexDirection: "column", gap: "0.35rem", fontSize: ".875rem", fontWeight: 500 }}>
-                {isAr ? "صالح حتى" : "Valid Until"}
+                {"صالح حتى"}
                 <input
                   type="date"
                   value={validUntil}
@@ -201,11 +194,11 @@ export function QuotationBuilderPage() {
             <div>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.75rem" }}>
                 <span style={{ fontWeight: 600, fontSize: ".9rem" }}>
-                  {isAr ? "البنود" : "Items"}
+                  {"البنود"}
                 </span>
                 <button type="button" className="auth-button auth-button--ghost" onClick={addItem} style={{ display: "inline-flex", alignItems: "center", gap: "0.35rem", fontSize: ".8rem" }}>
                   <Plus size={13} />
-                  {isAr ? "إضافة بند" : "Add Item"}
+                  {"إضافة بند"}
                 </button>
               </div>
 
@@ -220,10 +213,10 @@ export function QuotationBuilderPage() {
                 }}
               >
                 {[
-                  isAr ? "نوع المنتج" : "Product",
-                  isAr ? "الحجم" : "Size",
-                  isAr ? "الكمية" : "Qty",
-                  isAr ? "السعر" : "Price / unit",
+                  "نوع المنتج",
+                  "الحجم",
+                  "الكمية",
+                  "السعر",
                   "",
                 ].map((h, i) => (
                   <span key={i} style={{ fontSize: ".72rem", fontWeight: 600, textTransform: "uppercase", letterSpacing: ".04em", color: "var(--text-secondary)" }}>
@@ -253,7 +246,7 @@ export function QuotationBuilderPage() {
                     <option value="PREFORM">PREFORM</option>
                   </select>
                   <input
-                    placeholder={isAr ? "الحجم" : "Size"}
+                    placeholder={"الحجم"}
                     value={item.size}
                     onChange={(e) => updateItem(idx, "size", e.target.value)}
                     className="admin-input"
@@ -261,7 +254,7 @@ export function QuotationBuilderPage() {
                   />
                   <input
                     type="number"
-                    placeholder={isAr ? "الكمية" : "Qty"}
+                    placeholder={"الكمية"}
                     value={item.quantity}
                     min={0}
                     onChange={(e) => updateItem(idx, "quantity", Number(e.target.value))}
@@ -270,7 +263,7 @@ export function QuotationBuilderPage() {
                   />
                   <input
                     type="number"
-                    placeholder={isAr ? "السعر" : "Price"}
+                    placeholder={"السعر"}
                     value={item.pricePerUnit}
                     min={0}
                     step="0.01"
@@ -321,7 +314,7 @@ export function QuotationBuilderPage() {
                 }}
               >
                 <span style={{ fontSize: ".875rem", fontWeight: 600, color: "var(--text-secondary)" }}>
-                  {isAr ? "الإجمالي" : "Running Total"}
+                  {"الإجمالي"}
                 </span>
                 <span style={{ fontSize: "1.4rem", fontWeight: 800, color: "var(--accent)" }}>
                   ₪{total.toFixed(2)}
@@ -331,9 +324,9 @@ export function QuotationBuilderPage() {
 
             {/* Notes */}
             <label style={{ display: "flex", flexDirection: "column", gap: "0.35rem", fontSize: ".875rem", fontWeight: 500 }}>
-              {isAr ? "ملاحظات" : "Notes"}
+              {"ملاحظات"}
               <textarea
-                placeholder={isAr ? "أضف ملاحظات اختيارية..." : "Optional notes..."}
+                placeholder={"أضف ملاحظات اختيارية..."}
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 className="admin-input"
@@ -348,12 +341,12 @@ export function QuotationBuilderPage() {
                 {saving ? (
                   <>
                     <span style={{ width: 14, height: 14, border: "2px solid #fff4", borderTopColor: "#fff", borderRadius: "50%", display: "inline-block", animation: "spin .7s linear infinite" }} />
-                    {isAr ? "جارٍ الحفظ..." : "Saving..."}
+                    {"جارٍ الحفظ..."}
                   </>
                 ) : (
                   <>
                     <Plus size={15} />
-                    {isAr ? "إنشاء العرض" : "Create Quotation"}
+                    {"إنشاء العرض"}
                   </>
                 )}
               </button>
@@ -379,23 +372,23 @@ export function QuotationBuilderPage() {
         <div>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1rem" }}>
             <h2 className="admin-section__title" style={{ margin: 0 }}>
-              {isAr ? "قائمة العروض" : "Quotations List"}
+              {"قائمة العروض"}
             </h2>
             {!loading && (
               <span style={{ fontSize: ".8rem", color: "var(--text-secondary)" }}>
-                {quotations.length} {isAr ? "عرض" : "total"}
+                {quotations.length} {"عرض"}
               </span>
             )}
           </div>
 
           {loading ? (
             <div style={{ padding: "3rem 0", textAlign: "center" }}>
-              <p className="admin-muted">{isAr ? "جارٍ التحميل..." : "Loading..."}</p>
+              <p className="admin-muted">{"جارٍ التحميل..."}</p>
             </div>
           ) : quotations.length === 0 ? (
             <div style={{ padding: "3rem 1rem", textAlign: "center", border: "1px dashed var(--border-default)", borderRadius: "14px" }}>
               <FileText size={36} style={{ color: "var(--text-secondary)", marginBottom: "0.75rem" }} />
-              <p className="admin-muted">{isAr ? "لا توجد عروض بعد" : "No quotations yet"}</p>
+              <p className="admin-muted">{"لا توجد عروض بعد"}</p>
             </div>
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
@@ -448,7 +441,7 @@ export function QuotationBuilderPage() {
                           <p className="admin-muted" style={{ fontSize: ".78rem" }}>
                             {new Date(q.createdAt).toLocaleDateString()}
                             {q.validUntil && (
-                              <span> · {isAr ? "صالح حتى" : "valid until"} {new Date(q.validUntil).toLocaleDateString()}</span>
+                              <span> · {"صالح حتى"} {new Date(q.validUntil).toLocaleDateString()}</span>
                             )}
                           </p>
                         </div>
@@ -494,7 +487,7 @@ export function QuotationBuilderPage() {
                       }}
                     >
                       <span style={{ fontSize: ".72rem", fontWeight: 600, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: ".04em", marginRight: "0.25rem" }}>
-                        {isAr ? "تغيير إلى:" : "Move to:"}
+                        {"تغيير إلى:"}
                       </span>
                       {nextStatuses.map((s) => {
                         const btnColor = STATUS_COLORS[s] ?? "#6b7280";
@@ -525,32 +518,6 @@ export function QuotationBuilderPage() {
                           </button>
                         );
                       })}
-                      {isSalesRep && (
-                        <button
-                          type="button"
-                          onClick={() => deleteQ(q.id)}
-                          style={{
-                            display: "inline-flex",
-                            alignItems: "center",
-                            gap: "3px",
-                            fontSize: ".75rem",
-                            fontWeight: 600,
-                            padding: "3px 10px",
-                            borderRadius: "8px",
-                            border: "1px solid var(--danger)44",
-                            background: "var(--danger)11",
-                            color: "var(--danger)",
-                            cursor: "pointer",
-                            marginLeft: "auto",
-                            transition: "background .15s",
-                          }}
-                          onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "var(--danger)22"; }}
-                          onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = "var(--danger)11"; }}
-                        >
-                          <Trash2 size={11} />
-                          {isAr ? "حذف" : "Delete"}
-                        </button>
-                      )}
                     </div>
                   </article>
                 );

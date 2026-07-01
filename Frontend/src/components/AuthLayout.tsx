@@ -1,7 +1,6 @@
-import type { ReactNode } from "react";
+﻿import type { ReactNode } from "react";
 import { type Locale } from "../content/authCopy";
 import { useLocale } from "../context/LocaleContext";
-import { LocaleSwitch } from "./LocaleSwitch";
 import { DateTimeBadge } from "./DateTimeBadge";
 import { ThemeToggle } from "./ThemeToggle";
 import plasticonLogin from "../assets/plasticonLogin.png";
@@ -14,7 +13,7 @@ export function AuthLayout({ children }: AuthLayoutProps) {
   const { locale } = useLocale();
 
   return (
-    <main className="auth-shell" dir={locale === "ar" ? "rtl" : "ltr"}>
+    <main className="auth-shell" dir="rtl">
       <section style={{ position: "relative", overflow: "hidden" }}>
         <img
           src={plasticonLogin}
@@ -37,7 +36,6 @@ export function AuthLayout({ children }: AuthLayoutProps) {
             }}
           >
             <DateTimeBadge />
-            <LocaleSwitch />
             <ThemeToggle />
           </div>
         </header>

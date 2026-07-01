@@ -286,7 +286,7 @@ export function MyAttendancePage() {
                   <div className="attendance-history-row__top">
                     <strong>
                       {new Date(rec.checkIn).toLocaleDateString(
-                        isAr ? "ar-EG" : "en-US",
+                        "ar-EG",
                         {
                           weekday: "short",
                           year: "numeric",

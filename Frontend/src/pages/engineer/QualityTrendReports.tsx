@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from "react";
+﻿import { useEffect, useState, type FormEvent } from "react";
 import { TrendingUp, Plus, X, AlertTriangle, CheckCircle } from "lucide-react";
 import { ModulePageShell } from "../../components/ModulePageShell";
 import { Card } from "../../components/ui/card";
@@ -77,7 +77,7 @@ export default function QualityTrendReports() {
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     setError(""); setSuccess("");
-    if (!form.machineId) { setError(nav("Select a machine", "اختر آلة")); return; }
+    if (!form.machineId) { setError("اختر آلة"); return; }
     setSaving(true);
     try {
       const res = await apiFetch("/quality-checks", {
@@ -90,7 +90,7 @@ export default function QualityTrendReports() {
         }),
       });
       if (!res.ok) throw new Error(await readApiError(res));
-      setSuccess(nav("Quality check saved", "تم حفظ فحص الجودة"));
+      setSuccess("تم حفظ فحص الجودة");
       setForm(emptyForm());
       setShowForm(false);
       void load();
@@ -105,22 +105,22 @@ export default function QualityTrendReports() {
 
   return (
     <ModulePageShell
-      title={nav("Quality Trends", "اتجاهات الجودة")}
-      subtitle={nav("Track and log quality issues on the production line", "تتبع وتسجيل مشاكل الجودة في خط الإنتاج")}
+      title={"اتجاهات الجودة"}
+      subtitle={"تتبع وتسجيل مشاكل الجودة في خط الإنتاج"}
       icon={<TrendingUp size={22} />}
       actions={isEngineer ? (
         <Button size="sm" onClick={() => setShowForm(v => !v)}>
           {showForm ? <X size={14} /> : <Plus size={14} />}
-          {showForm ? nav("Cancel", "إلغاء") : nav("Log Issue", "تسجيل مشكلة")}
+          {showForm ? "إلغاء" : "تسجيل مشكلة"}
         </Button>
       ) : undefined}
     >
       {/* KPIs */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
         {[
-          { label: nav("Total Checks", "إجمالي الفحوصات"), value: checks.length, icon: "📋", color: "#1d4ed8", bg: "#dbeafe" },
-          { label: nav("Open Issues", "مشاكل مفتوحة"), value: openCount, icon: "⚠️", color: "#d97706", bg: "#fef3c7" },
-          { label: nav("Critical", "حرجة"), value: criticalCount, icon: "🚨", color: "#dc2626", bg: "#fee2e2" },
+          { label: "إجمالي الفحوصات", value: checks.length, icon: "📋", color: "#1d4ed8", bg: "#dbeafe" },
+          { label: "مشاكل مفتوحة", value: openCount, icon: "⚠️", color: "#d97706", bg: "#fef3c7" },
+          { label: "حرجة", value: criticalCount, icon: "🚨", color: "#dc2626", bg: "#fee2e2" },
         ].map(k => (
           <Card key={k.label} className="p-4 flex items-center gap-3">
             <div style={{ width: 40, height: 40, borderRadius: 10, background: k.bg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.2rem", flexShrink: 0 }}>{k.icon}</div>
@@ -135,34 +135,34 @@ export default function QualityTrendReports() {
       {/* Add form */}
       {isEngineer && showForm && (
         <Card className="p-5 mb-5 border-2 border-(--accent)">
-          <h3 style={{ margin: "0 0 1rem", fontSize: ".95rem", fontWeight: 700 }}>{nav("Log Quality Issue", "تسجيل مشكلة جودة")}</h3>
+          <h3 style={{ margin: "0 0 1rem", fontSize: ".95rem", fontWeight: 700 }}>{"تسجيل مشكلة جودة"}</h3>
           {error && <div className="auth-alert auth-alert--error mb-3">{error}</div>}
           {success && <div className="auth-alert mb-3">{success}</div>}
           <form className="module-form" onSubmit={e => void submit(e)}>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))", gap: "1rem" }}>
-              <label>{nav("Machine", "الآلة")} *
+              <label>{"الآلة"} *
                 <select className="input" value={form.machineId} onChange={e => setForm(p => ({ ...p, machineId: e.target.value }))} required>
-                  <option value="">{nav("Select machine...", "اختر الآلة...")}</option>
+                  <option value="">{"اختر الآلة..."}</option>
                   {machines.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
                 </select>
               </label>
-              <label>{nav("Issue Type", "نوع المشكلة")}
+              <label>{"نوع المشكلة"}
                 <select className="input" value={form.issueType} onChange={e => setForm(p => ({ ...p, issueType: e.target.value }))}>
                   {ISSUE_TYPES.map(t => <option key={t} value={t}>{t.replace(/_/g, " ")}</option>)}
                 </select>
               </label>
-              <label>{nav("Severity", "الخطورة")}
+              <label>{"الخطورة"}
                 <select className="input" value={form.severity} onChange={e => setForm(p => ({ ...p, severity: e.target.value as typeof SEVERITIES[number] }))}>
                   {SEVERITIES.map(s => <option key={s} value={s}>{s}</option>)}
                 </select>
               </label>
             </div>
-            <label>{nav("Description", "الوصف")}
-              <textarea rows={3} className="input" value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))} placeholder={nav("Describe the issue...", "اوصف المشكلة...")} />
+            <label>{"الوصف"}
+              <textarea rows={3} className="input" value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))} placeholder={"اوصف المشكلة..."} />
             </label>
             <div style={{ display: "flex", gap: ".625rem" }}>
-              <Button type="submit" size="sm" disabled={saving}>{saving ? nav("Saving...", "جارٍ الحفظ...") : nav("Save", "حفظ")}</Button>
-              <Button type="button" size="sm" variant="outline" onClick={() => { setShowForm(false); setError(""); }}>{nav("Cancel", "إلغاء")}</Button>
+              <Button type="submit" size="sm" disabled={saving}>{saving ? "جارٍ الحفظ..." : "حفظ"}</Button>
+              <Button type="button" size="sm" variant="outline" onClick={() => { setShowForm(false); setError(""); }}>{"إلغاء"}</Button>
             </div>
           </form>
         </Card>
@@ -176,19 +176,19 @@ export default function QualityTrendReports() {
           ) : checks.length === 0 ? (
             <div className="p-10 text-center" style={{ color: "var(--text-secondary)" }}>
               <TrendingUp size={32} style={{ margin: "0 auto 12px", opacity: .3, display: "block" }} />
-              <p style={{ fontWeight: 600 }}>{nav("No quality checks yet", "لا توجد فحوصات جودة بعد")}</p>
-              {isEngineer && <p style={{ fontSize: ".85rem", marginTop: ".25rem" }}>{nav("Click 'Log Issue' to record a quality check", "انقر على 'تسجيل مشكلة' لتسجيل فحص الجودة")}</p>}
+              <p style={{ fontWeight: 600 }}>{"لا توجد فحوصات جودة بعد"}</p>
+              {isEngineer && <p style={{ fontSize: ".85rem", marginTop: ".25rem" }}>{"انقر على 'تسجيل مشكلة' لتسجيل فحص الجودة"}</p>}
             </div>
           ) : (
             <table className="data-table w-full">
               <thead>
                 <tr>
-                  <th>{nav("Machine", "الآلة")}</th>
-                  <th>{nav("Issue Type", "نوع المشكلة")}</th>
-                  <th>{nav("Severity", "الخطورة")}</th>
-                  <th>{nav("Status", "الحالة")}</th>
-                  {canViewAll && <th>{nav("Engineer", "المهندس")}</th>}
-                  <th>{nav("Date", "التاريخ")}</th>
+                  <th>{"الآلة"}</th>
+                  <th>{"نوع المشكلة"}</th>
+                  <th>{"الخطورة"}</th>
+                  <th>{"الحالة"}</th>
+                  {canViewAll && <th>{"المهندس"}</th>}
+                  <th>{"التاريخ"}</th>
                 </tr>
               </thead>
               <tbody>
@@ -205,7 +205,7 @@ export default function QualityTrendReports() {
                       <td>
                         <span style={{ display: "inline-flex", alignItems: "center", gap: ".3rem", fontSize: ".78rem", fontWeight: 600, color: resolved ? "#059669" : "#d97706" }}>
                           {resolved ? <CheckCircle size={12} /> : <AlertTriangle size={12} />}
-                          {resolved ? nav("Resolved", "تم الحل") : nav("Open", "مفتوح")}
+                          {resolved ? "تم الحل" : "مفتوح"}
                         </span>
                       </td>
                       {canViewAll && <td style={{ color: "var(--text-secondary)" }}>{c.engineer?.fullName ?? "—"}</td>}

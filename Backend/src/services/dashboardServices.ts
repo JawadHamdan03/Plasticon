@@ -290,6 +290,134 @@ export const getDashboardAnalytics = async (): Promise<ServiceResult<unknown>> =
   }
 };
 
+export const getDashboardCharts = async (days = 7): Promise<ServiceResult<unknown>> => {
+  const safeDays = Math.max(1, Math.min(365, Math.floor(Number(days) || 7)));
+  try {
+    const [
+      productionByDay,
+      electricityByDay,
+      salesByMonth,
+      expensesByMonth,
+      attendanceByDay,
+      maintenanceByMonth,
+      quotationsByStatus,
+      qualityBySeverity,
+      machinesByStatus,
+      usersByRole,
+    ] = await Promise.all([
+      prisma.$queryRaw<any[]>`
+        SELECT DATE("createdAt") as date,
+               COALESCE(SUM("totalPieces"),0)::int as pieces,
+               COALESCE(SUM("cartonsCount"),0)::int as cartons
+        FROM "ProductionRecord"
+        WHERE "createdAt" >= NOW() - (${safeDays} * INTERVAL '1 day')
+        GROUP BY DATE("createdAt") ORDER BY date`,
+
+      prisma.$queryRaw<any[]>`
+        SELECT DATE(date) as date, COALESCE(SUM(consumption),0)::float as kwh
+        FROM "ElectricityReading"
+        WHERE date >= NOW() - (${safeDays} * INTERVAL '1 day')
+        GROUP BY DATE(date) ORDER BY date`,
+
+      prisma.$queryRaw<any[]>`
+        SELECT TO_CHAR(date,'MM/YY') as month,
+               DATE_TRUNC('month',date) as sort,
+               COALESCE(SUM("totalAmount"),0)::float as amount
+        FROM "Sale"
+        WHERE date >= NOW() - (${safeDays} * INTERVAL '1 day')
+        GROUP BY TO_CHAR(date,'MM/YY'), DATE_TRUNC('month',date)
+        ORDER BY sort`,
+
+      prisma.$queryRaw<any[]>`
+        SELECT TO_CHAR("submittedAt",'MM/YY') as month,
+               DATE_TRUNC('month',"submittedAt") as sort,
+               COALESCE(SUM(amount),0)::float as amount
+        FROM "Expense"
+        WHERE "submittedAt" >= NOW() - (${safeDays} * INTERVAL '1 day')
+        GROUP BY TO_CHAR("submittedAt",'MM/YY'), DATE_TRUNC('month',"submittedAt")
+        ORDER BY sort`,
+
+      prisma.$queryRaw<any[]>`
+        SELECT DATE("checkIn") as date,
+               COUNT(*)::int as present,
+               SUM(CASE WHEN "lateMinutes">0 THEN 1 ELSE 0 END)::int as late
+        FROM "Attendance"
+        WHERE "checkIn" >= NOW() - (${safeDays} * INTERVAL '1 day')
+        GROUP BY DATE("checkIn") ORDER BY date`,
+
+      prisma.$queryRaw<any[]>`
+        SELECT TO_CHAR("createdAt",'MM/YY') as month,
+               DATE_TRUNC('month',"createdAt") as sort,
+               COUNT(*)::int as count
+        FROM "Maintenance"
+        WHERE "createdAt" >= NOW() - (${safeDays} * INTERVAL '1 day')
+        GROUP BY TO_CHAR("createdAt",'MM/YY'), DATE_TRUNC('month',"createdAt")
+        ORDER BY sort`,
+
+      prisma.quotation.groupBy({ by: ["status"], _count: { _all: true } }),
+      prisma.qualityCheck.groupBy({ by: ["severity"], _count: { _all: true } }),
+      prisma.machine.groupBy({ by: ["status"], _count: { _all: true }, where: { deletedAt: null } }),
+      prisma.user.groupBy({ by: ["role"], _count: { _all: true }, where: { deletedAt: null } }),
+    ]);
+
+    const fmtDate = (d: any) =>
+      new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+    const fmtWeekday = (d: any) =>
+      new Date(d).toLocaleDateString("en-US", { weekday: "short" });
+
+    return {
+      status: 200,
+      data: {
+        productionByDay: productionByDay.map((r) => ({
+          date: fmtDate(r.date),
+          pieces: Number(r.pieces) || 0,
+          cartons: Number(r.cartons) || 0,
+        })),
+        electricityByDay: electricityByDay.map((r) => ({
+          date: fmtDate(r.date),
+          kwh: Number(r.kwh) || 0,
+        })),
+        salesByMonth: salesByMonth.map((r) => ({
+          month: r.month,
+          amount: Number(r.amount) || 0,
+        })),
+        expensesByMonth: expensesByMonth.map((r) => ({
+          month: r.month,
+          amount: Number(r.amount) || 0,
+        })),
+        attendanceByDay: attendanceByDay.map((r) => ({
+          date: fmtWeekday(r.date),
+          present: Number(r.present) || 0,
+          late: Number(r.late) || 0,
+        })),
+        maintenanceByMonth: maintenanceByMonth.map((r) => ({
+          month: r.month,
+          count: Number(r.count) || 0,
+        })),
+        quotationsByStatus: quotationsByStatus.map((r) => ({
+          status: r.status,
+          count: r._count._all,
+        })),
+        qualityBySeverity: qualityBySeverity.map((r) => ({
+          severity: r.severity,
+          count: r._count._all,
+        })),
+        machinesByStatus: machinesByStatus.map((r) => ({
+          status: r.status,
+          count: r._count._all,
+        })),
+        usersByRole: usersByRole.map((r) => ({
+          role: r.role,
+          count: r._count._all,
+        })),
+      },
+    };
+  } catch (error) {
+    console.error("getDashboardCharts error:", error);
+    return { status: 500, message: "Failed to load chart data" };
+  }
+};
+
 export const getQuickStats = async (): Promise<ServiceResult<unknown>> => {
   try {
     const [machineStatuses, userRoles] = await Promise.all([

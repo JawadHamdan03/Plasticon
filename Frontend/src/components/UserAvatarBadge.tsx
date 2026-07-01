@@ -1,4 +1,4 @@
-import { API_BASE_URL } from "../lib/api";
+import { pictureUrl } from "../lib/api";
 import { useAuth } from "../context/AuthContext";
 
 type UserAvatarBadgeProps = {
@@ -8,8 +8,7 @@ type UserAvatarBadgeProps = {
 const normalizeImagePath = (value: string | null | undefined) => {
   if (!value) return null;
   if (value.startsWith("http")) return value;
-  const filename = value.replace(/^(?:prisma\/?)?pictures\//, "");
-  return `${API_BASE_URL}/pictures/${filename}`;
+  return pictureUrl(value) || null;
 };
 
 export function UserAvatarBadge({ size = "md" }: UserAvatarBadgeProps) {

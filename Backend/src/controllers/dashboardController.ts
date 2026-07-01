@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import {
   getDashboardAnalytics,
+  getDashboardCharts,
   getDashboardOverview,
   getQuickStats,
 } from "../services/dashboardServices";
@@ -23,5 +24,11 @@ export const dashboardController = {
     res
       .status(result.status)
       .json(result.message ? { message: result.message } : result.data);
+  },
+
+  getChartsHandler: async (req: Request, res: Response) => {
+    const days = Math.max(1, Math.min(365, Math.floor(Number(req.query.days) || 7)));
+    const result = await getDashboardCharts(days);
+    res.status(result.status).json(result.message ? { message: result.message } : result.data);
   },
 };

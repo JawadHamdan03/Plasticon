@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+﻿import { useCallback, useEffect, useState } from "react";
 import { AlertTriangle, CheckCircle2, Clock, RefreshCw, X } from "lucide-react";
 import { useLocale } from "../../context/LocaleContext";
 import { API_BASE_URL, apiFetch, readApiError } from "../../lib/api";
@@ -60,7 +60,7 @@ export function AdminMachineStopsPage() {
       const data = (await res.json()) as StopAlert[];
       setStops(Array.isArray(data) ? data : []);
     } catch (e: any) {
-      setError(e.message ?? "Failed to load");
+      setError(e.message ?? "فشل التحميل");
     } finally {
       setLoading(false);
     }
@@ -74,7 +74,7 @@ export function AdminMachineStopsPage() {
   };
 
   const handleResolve = async (id: number) => {
-    if (!confirm(isAr ? "تأكيد حل هذا التوقف؟" : "Confirm resolving this machine stop?")) return;
+    if (!confirm("تأكيد حل هذا التوقف؟")) return;
     setResolving(id);
     try {
       const res = await apiFetch(
@@ -86,7 +86,7 @@ export function AdminMachineStopsPage() {
         s.id === id ? { ...s, resolved_at: new Date().toISOString() } : s,
       ));
     } catch (e: any) {
-      alert(e.message ?? "Failed to resolve");
+      alert(e.message ?? "فشل الحل");
     } finally {
       setResolving(null);
     }
@@ -103,12 +103,12 @@ export function AdminMachineStopsPage() {
   ];
 
   return (
-    <div style={{ padding: "1.5rem", display: "flex", flexDirection: "column", gap: "1.5rem" }} dir={isAr ? "rtl" : "ltr"}>
+    <div style={{ padding: "1.5rem", display: "flex", flexDirection: "column", gap: "1.5rem" }} dir="rtl">
       {/* Header */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <div>
           <h1 style={{ fontSize: "1.5rem", fontWeight: 800, color: "var(--text-primary)", margin: 0 }}>
-            {isAr ? "توقفات الآلات" : "Machine Stop Alerts"}
+            {"توقفات الآلات"}
           </h1>
           <p style={{ fontSize: ".85rem", color: "var(--text-secondary)", marginTop: ".25rem" }}>
             {isAr
@@ -126,7 +126,7 @@ export function AdminMachineStopsPage() {
           }}
         >
           <RefreshCw size={14} style={loading ? { animation: "spin 1s linear infinite" } : {}} />
-          {isAr ? "تحديث" : "Refresh"}
+          {"تحديث"}
         </button>
       </div>
 
@@ -135,19 +135,19 @@ export function AdminMachineStopsPage() {
         <div style={{ borderRadius: 12, border: "1px solid var(--red-600)", background: "var(--red-50)", padding: "1rem" }}>
           <div style={{ fontSize: "2rem", fontWeight: 900, color: "var(--red-600)" }}>{criticalOpen}</div>
           <div style={{ fontSize: ".85rem", fontWeight: 700, color: "var(--red-600)", marginTop: ".25rem" }}>
-            {isAr ? "توقفات حرجة مفتوحة" : "Open Critical"}
+            {"توقفات حرجة مفتوحة"}
           </div>
         </div>
         <div style={{ borderRadius: 12, border: "1px solid var(--orange-600)", background: "var(--orange-50)", padding: "1rem" }}>
           <div style={{ fontSize: "2rem", fontWeight: 900, color: "var(--orange-600)" }}>{highOpen}</div>
           <div style={{ fontSize: ".85rem", fontWeight: 700, color: "var(--orange-600)", marginTop: ".25rem" }}>
-            {isAr ? "توقفات عالية مفتوحة" : "Open High Priority"}
+            {"توقفات عالية مفتوحة"}
           </div>
         </div>
         <div style={{ borderRadius: 12, border: "1px solid var(--border-default)", background: "var(--bg-card)", padding: "1rem" }}>
           <div style={{ fontSize: "2rem", fontWeight: 900, color: "var(--text-primary)" }}>{totalOpen}</div>
           <div style={{ fontSize: ".85rem", fontWeight: 700, color: "var(--text-secondary)", marginTop: ".25rem" }}>
-            {isAr ? "إجمالي المفتوحة" : "Total Open"}
+            {"إجمالي المفتوحة"}
           </div>
         </div>
       </div>
@@ -166,7 +166,7 @@ export function AdminMachineStopsPage() {
               boxShadow: filter === t.key ? "0 1px 3px rgba(0,0,0,.12)" : "none",
             }}
           >
-            {isAr ? t.labelAr : t.label}
+            {t.labelAr}
           </button>
         ))}
       </div>
@@ -187,7 +187,7 @@ export function AdminMachineStopsPage() {
       ) : stops.length === 0 ? (
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", paddingTop: "5rem", gap: ".75rem" }}>
           <CheckCircle2 size={48} style={{ color: "var(--green-600)" }} />
-          <p style={{ fontWeight: 600, color: "var(--text-secondary)" }}>{isAr ? "لا توجد توقفات" : "No machine stops"}</p>
+          <p style={{ fontWeight: 600, color: "var(--text-secondary)" }}>{"لا توجد توقفات"}</p>
         </div>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: ".75rem" }}>
@@ -224,13 +224,13 @@ export function AdminMachineStopsPage() {
                       {resolved ? (
                         <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: ".75rem", fontWeight: 700, padding: "2px 8px", borderRadius: 99, background: "var(--green-100)", color: "var(--green-600)" }}>
                           <CheckCircle2 size={10} />
-                          {isAr ? "محلول" : "Resolved"}
+                          {"محلول"}
                           {stop.response_minutes != null ? ` · ${Math.round(stop.response_minutes)}m` : ""}
                         </span>
                       ) : (
                         <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: ".75rem", fontWeight: 700, padding: "2px 8px", borderRadius: 99, background: p.bg, color: p.text }}>
                           <Clock size={10} />
-                          {elapsed(stop.started_at)} {isAr ? "منذ" : "ago"}
+                          {elapsed(stop.started_at)} {"منذ"}
                         </span>
                       )}
                     </div>
@@ -243,7 +243,7 @@ export function AdminMachineStopsPage() {
                     {/* Footer meta */}
                     <div style={{ display: "flex", alignItems: "center", gap: ".75rem", fontSize: ".75rem", color: "var(--text-tertiary)", flexWrap: "wrap" }}>
                       <span style={{ fontWeight: 600, color: "var(--text-secondary)" }}>
-                        {isAr ? "بواسطة:" : "By:"} {worker}
+                        {"بواسطة:"} {worker}
                       </span>
                       <span>·</span>
                       <span>{fmt(stop.created_at)}</span>
@@ -251,7 +251,7 @@ export function AdminMachineStopsPage() {
                         <>
                           <span>·</span>
                           <span style={{ color: "var(--green-600)" }}>
-                            {isAr ? "حُل في:" : "Resolved:"} {fmt(stop.resolved_at)}
+                            {"حُل في:"} {fmt(stop.resolved_at)}
                           </span>
                         </>
                       )}
@@ -277,7 +277,7 @@ export function AdminMachineStopsPage() {
                       ) : (
                         <CheckCircle2 size={13} />
                       )}
-                      {isAr ? "تم الحل" : "Resolve"}
+                      {"تم الحل"}
                     </button>
                   )}
                 </div>

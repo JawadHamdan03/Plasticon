@@ -10,7 +10,7 @@ import autoTable from "jspdf-autotable";
 import { Users, TrendingUp, DollarSign, Search, FileText, Pencil, Trash2, ExternalLink, Plus, RefreshCw } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { useLocale } from "../../context/LocaleContext";
-import { API_BASE_URL, readApiError } from "../../lib/api";
+import { API_BASE_URL, pictureUrl as globalPictureUrl, readApiError } from "../../lib/api";
 import { confirmDialog } from "../../lib/dialog";
 import { ModulePageShell } from "../../components/ModulePageShell";
 
@@ -76,16 +76,7 @@ const toPublicFileUrl = (pathOrUrl?: string | null) => {
     return pathOrUrl;
   }
 
-  if (pathOrUrl.startsWith("/pictures/")) {
-    return `${API_BASE_URL}${pathOrUrl}`;
-  }
-
-  const normalized = pathOrUrl
-    .replace(/^prisma[\\/]+pictures[\\/]+/i, "")
-    .replace(/^pictures[\\/]+/i, "")
-    .replace(/^\/+/, "");
-
-  return normalized ? `${API_BASE_URL}/pictures/${normalized}` : "";
+  return globalPictureUrl(pathOrUrl);
 };
 
 const getRecordInvoiceUrl = (record: {
@@ -110,7 +101,7 @@ const getRecordInvoiceUrl = (record: {
 };
 
 const formatMoney = (locale: string, value: number) =>
-  "₪" + new Intl.NumberFormat(locale === "ar" ? "ar-EG" : "en-US", {
+  "₪" + new Intl.NumberFormat("ar-EG", {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(value);
@@ -288,7 +279,7 @@ export function SalesPage() {
     doc.text(`${isArabic ? "رقم العملية" : "Sale ID"}: #${sale.id}`, 14, 30);
     doc.text(`${isArabic ? "الزبون" : "Customer"}: ${customerName}`, 14, 36);
     doc.text(
-      `${isArabic ? "التاريخ" : "Date"}: ${new Date(sale.date).toLocaleDateString(locale === "ar" ? "ar-EG" : "en-US")}`,
+      `${isArabic ? "التاريخ" : "Date"}: ${new Date(sale.date).toLocaleDateString("ar-EG")}`,
       14,
       42,
     );

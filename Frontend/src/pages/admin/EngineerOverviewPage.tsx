@@ -155,11 +155,8 @@ export default function EngineerOverviewPage() {
 
   return (
     <ModulePageShell
-      title={nav("Engineer Overview", "نظرة عامة على المهندسين")}
-      subtitle={nav(
-        "Admin view of all engineer data in one place",
-        "عرض إداري لجميع بيانات المهندسين في مكان واحد",
-      )}
+      title={"نظرة عامة على المهندسين"}
+      subtitle="عرض إداري لجميع بيانات المهندسين في مكان واحد"
     >
       <div className="space-y-6">
         {/* Summary KPIs */}
@@ -167,7 +164,7 @@ export default function EngineerOverviewPage() {
           <Card className="p-4 bg-linear-to-br from-blue-50 to-blue-100 dark:from-blue-900/30 dark:to-blue-800/30 border border-blue-200 dark:border-blue-800">
             <div className="flex items-center justify-between mb-1">
               <p className="text-xs text-slate-500">
-                {nav("Health Records", "سجلات الصحة")}
+                {"سجلات الصحة"}
               </p>
               <Activity size={16} className="text-blue-600" />
             </div>
@@ -178,7 +175,7 @@ export default function EngineerOverviewPage() {
           <Card className="p-4 bg-linear-to-br from-orange-50 to-orange-100 dark:from-orange-900/30 dark:to-orange-800/30 border border-orange-200 dark:border-orange-800">
             <div className="flex items-center justify-between mb-1">
               <p className="text-xs text-slate-500">
-                {nav("Low Stock Parts", "قطع منخفضة")}
+                {"قطع منخفضة"}
               </p>
               <AlertTriangle size={16} className="text-orange-600" />
             </div>
@@ -189,7 +186,7 @@ export default function EngineerOverviewPage() {
           <Card className="p-4 bg-linear-to-br from-red-50 to-red-100 dark:from-red-900/30 dark:to-red-800/30 border border-red-200 dark:border-red-800">
             <div className="flex items-center justify-between mb-1">
               <p className="text-xs text-slate-500">
-                {nav("Overdue Schedules", "جداول متأخرة")}
+                {"جداول متأخرة"}
               </p>
               <Clock size={16} className="text-red-600" />
             </div>
@@ -205,7 +202,7 @@ export default function EngineerOverviewPage() {
           <Card className="p-4 bg-linear-to-br from-purple-50 to-purple-100 dark:from-purple-900/30 dark:to-purple-800/30 border border-purple-200 dark:border-purple-800">
             <div className="flex items-center justify-between mb-1">
               <p className="text-xs text-slate-500">
-                {nav("Open Quality Issues", "مشاكل جودة مفتوحة")}
+                {"مشاكل جودة مفتوحة"}
               </p>
               <Wrench size={16} className="text-purple-600" />
             </div>
@@ -228,7 +225,7 @@ export default function EngineerOverviewPage() {
               }`}
             >
               {tab.icon}
-              {nav(tab.label, tab.labelAr)}
+              {tab.labelAr}
             </button>
           ))}
         </div>
@@ -251,7 +248,7 @@ export default function EngineerOverviewPage() {
                 <Card className="p-12 text-center border border-dashed border-slate-300 dark:border-slate-600">
                   <Activity className="mx-auto mb-3 text-slate-400" size={40} />
                   <p className="text-slate-500">
-                    {nav("No health records yet", "لا توجد سجلات صحة بعد")}
+                    {"لا توجد سجلات صحة بعد"}
                   </p>
                 </Card>
               ) : (
@@ -261,22 +258,22 @@ export default function EngineerOverviewPage() {
                       <thead className="bg-slate-50 dark:bg-slate-700/50 border-b border-slate-200 dark:border-slate-700">
                         <tr>
                           <th className="text-left py-3 px-4 font-semibold text-slate-600 dark:text-slate-300">
-                            {nav("Machine", "الآلة")}
+                            {"الآلة"}
                           </th>
                           <th className="text-left py-3 px-4 font-semibold text-slate-600 dark:text-slate-300">
-                            {nav("Status", "الحالة")}
+                            {"الحالة"}
                           </th>
                           <th className="text-left py-3 px-4 font-semibold text-slate-600 dark:text-slate-300">
-                            {nav("Downtime %", "توقف")}
+                            {"توقف"}
                           </th>
                           <th className="text-left py-3 px-4 font-semibold text-slate-600 dark:text-slate-300">
-                            {nav("Efficiency", "الكفاءة")}
+                            {"الكفاءة"}
                           </th>
                           <th className="text-left py-3 px-4 font-semibold text-slate-600 dark:text-slate-300">
-                            {nav("Recorded By", "سجله")}
+                            {"سجله"}
                           </th>
                           <th className="text-left py-3 px-4 font-semibold text-slate-600 dark:text-slate-300">
-                            {nav("Date", "التاريخ")}
+                            {"التاريخ"}
                           </th>
                         </tr>
                       </thead>
@@ -344,7 +341,7 @@ export default function EngineerOverviewPage() {
                 <Card className="p-12 text-center border border-dashed border-slate-300 dark:border-slate-600">
                   <Package className="mx-auto mb-3 text-slate-400" size={40} />
                   <p className="text-slate-500">
-                    {nav("No spare parts yet", "لا توجد قطع غيار بعد")}
+                    {"لا توجد قطع غيار بعد"}
                   </p>
                 </Card>
               ) : (
@@ -354,22 +351,22 @@ export default function EngineerOverviewPage() {
                       <thead className="bg-slate-50 dark:bg-slate-700/50 border-b border-slate-200 dark:border-slate-700">
                         <tr>
                           <th className="text-left py-3 px-4 font-semibold text-slate-600 dark:text-slate-300">
-                            {nav("Part", "القطعة")}
+                            {"القطعة"}
                           </th>
                           <th className="text-left py-3 px-4 font-semibold text-slate-600 dark:text-slate-300">
-                            {nav("Machine", "الآلة")}
+                            {"الآلة"}
                           </th>
                           <th className="text-left py-3 px-4 font-semibold text-slate-600 dark:text-slate-300">
-                            {nav("Qty / Min", "الكمية / الحد")}
+                            {"الكمية / الحد"}
                           </th>
                           <th className="text-left py-3 px-4 font-semibold text-slate-600 dark:text-slate-300">
-                            {nav("Unit Price", "السعر")}
+                            {"السعر"}
                           </th>
                           <th className="text-left py-3 px-4 font-semibold text-slate-600 dark:text-slate-300">
-                            {nav("Supplier", "المورد")}
+                            {"المورد"}
                           </th>
                           <th className="text-left py-3 px-4 font-semibold text-slate-600 dark:text-slate-300">
-                            {nav("Status", "الحالة")}
+                            {"الحالة"}
                           </th>
                         </tr>
                       </thead>
@@ -402,11 +399,11 @@ export default function EngineerOverviewPage() {
                                 {low ? (
                                   <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300">
                                     <AlertTriangle size={11} />{" "}
-                                    {nav("Low Stock", "مخزون منخفض")}
+                                    {"مخزون منخفض"}
                                   </span>
                                 ) : (
                                   <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300">
-                                    <CheckCircle size={11} /> {nav("OK", "جيد")}
+                                    <CheckCircle size={11} /> {"جيد"}
                                   </span>
                                 )}
                               </td>
@@ -425,10 +422,7 @@ export default function EngineerOverviewPage() {
                 <Card className="p-12 text-center border border-dashed border-slate-300 dark:border-slate-600">
                   <Calendar className="mx-auto mb-3 text-slate-400" size={40} />
                   <p className="text-slate-500">
-                    {nav(
-                      "No maintenance schedules yet",
-                      "لا توجد جداول صيانة بعد",
-                    )}
+                    {"لا توجد جداول صيانة بعد"}
                   </p>
                 </Card>
               ) : (
@@ -463,19 +457,19 @@ export default function EngineerOverviewPage() {
                                       : "bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300"
                                 }`}
                               >
-                                {overdue ? nav("Overdue", "متأخر") : s.status}
+                                {overdue ? "متأخر" : s.status}
                               </span>
                             </div>
                             <p className="text-xs text-slate-500">
                               {s.scheduleType} · {s.frequency} ·{" "}
-                              {nav("Due", "موعد")}:{" "}
+                              {"موعد"}:{" "}
                               {new Date(
                                 s.nextScheduledDate,
                               ).toLocaleDateString()}
                             </p>
                             {s.assignedEngineer && (
                               <p className="text-xs text-slate-400 mt-0.5">
-                                {nav("Engineer", "المهندس")}:{" "}
+                                {"المهندس"}:{" "}
                                 {s.assignedEngineer.fullName}
                               </p>
                             )}
@@ -501,7 +495,7 @@ export default function EngineerOverviewPage() {
                     size={40}
                   />
                   <p className="text-slate-500">
-                    {nav("No quality checks yet", "لا توجد فحوصات جودة بعد")}
+                    {"لا توجد فحوصات جودة بعد"}
                   </p>
                 </Card>
               ) : (
@@ -511,22 +505,22 @@ export default function EngineerOverviewPage() {
                       <thead className="bg-slate-50 dark:bg-slate-700/50 border-b border-slate-200 dark:border-slate-700">
                         <tr>
                           <th className="text-left py-3 px-4 font-semibold text-slate-600 dark:text-slate-300">
-                            {nav("Machine", "الآلة")}
+                            {"الآلة"}
                           </th>
                           <th className="text-left py-3 px-4 font-semibold text-slate-600 dark:text-slate-300">
-                            {nav("Issue Type", "نوع المشكلة")}
+                            {"نوع المشكلة"}
                           </th>
                           <th className="text-left py-3 px-4 font-semibold text-slate-600 dark:text-slate-300">
-                            {nav("Severity", "الخطورة")}
+                            {"الخطورة"}
                           </th>
                           <th className="text-left py-3 px-4 font-semibold text-slate-600 dark:text-slate-300">
-                            {nav("Engineer", "المهندس")}
+                            {"المهندس"}
                           </th>
                           <th className="text-left py-3 px-4 font-semibold text-slate-600 dark:text-slate-300">
-                            {nav("Status", "الحالة")}
+                            {"الحالة"}
                           </th>
                           <th className="text-left py-3 px-4 font-semibold text-slate-600 dark:text-slate-300">
-                            {nav("Date", "التاريخ")}
+                            {"التاريخ"}
                           </th>
                         </tr>
                       </thead>
@@ -556,11 +550,11 @@ export default function EngineerOverviewPage() {
                               {q.resolvedAt ? (
                                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300">
                                   <CheckCircle size={10} />{" "}
-                                  {nav("Resolved", "محلول")}
+                                  {"محلول"}
                                 </span>
                               ) : (
                                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300">
-                                  <Clock size={10} /> {nav("Open", "مفتوح")}
+                                  <Clock size={10} /> {"مفتوح"}
                                 </span>
                               )}
                             </td>

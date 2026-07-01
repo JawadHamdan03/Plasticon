@@ -47,7 +47,7 @@ export function FinancialReportsScreen() {
     try {
       const res = await api.get<FinancialReport[] | { data: FinancialReport[] }>('/financial-reports?limit=50');
       setReports(Array.isArray(res) ? res : ((res as any).data ?? []));
-    } catch (e: any) { setApiError(e?.message ?? 'Failed to load'); setReports([]); }
+    } catch (e: any) { setApiError(e?.message ?? 'فشل التحميل'); setReports([]); }
     finally { setLoading(false); setRefreshing(false); }
   }, []);
 
@@ -67,7 +67,7 @@ export function FinancialReportsScreen() {
         try {
           await api.delete(`/financial-reports/${r.id}`);
           setReports((p) => p.filter((x) => x.id !== r.id));
-        } catch (e: any) { Alert.alert('Error', e.message ?? 'Failed'); }
+        } catch (e: any) { Alert.alert('خطأ', e.message ?? 'فشلت العملية'); }
       }},
     ]);
   };
@@ -91,7 +91,7 @@ export function FinancialReportsScreen() {
         setReports((p) => [cr, ...p]);
       }
       setModal(false);
-    } catch (e: any) { Alert.alert(isAr ? 'خطأ' : 'Error', e.message ?? 'Failed'); }
+    } catch (e: any) { Alert.alert('خطأ', e.message ?? 'فشلت العملية'); }
     finally { setSaving(false); }
   };
 

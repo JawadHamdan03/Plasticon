@@ -35,7 +35,7 @@ export function ForgotPasswordPage() {
       setSent(true);
       if (data.resetUrl) setResetUrl(data.resetUrl);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Request failed");
+      setError(err instanceof Error ? err.message : "فشل الطلب");
     } finally {
       setSubmitting(false);
     }
@@ -75,7 +75,7 @@ export function ForgotPasswordPage() {
               color: "var(--text-primary)",
             }}
           >
-            Plasticon
+            لاميكو
           </span>
         </div>
 
@@ -102,7 +102,7 @@ export function ForgotPasswordPage() {
               fontWeight: 800,
             }}
           >
-            Check your inbox
+            تحقق من بريدك الوارد
           </h2>
           <p
             style={{
@@ -112,7 +112,7 @@ export function ForgotPasswordPage() {
               fontSize: ".9rem",
             }}
           >
-            We've sent a password reset link to
+            لقد أرسلنا رابط إعادة تعيين كلمة المرور إلى
           </p>
           <p
             style={{
@@ -144,7 +144,7 @@ export function ForgotPasswordPage() {
                 boxShadow: "0 4px 14px rgba(249,115,22,.35)",
               }}
             >
-              Open reset link <ArrowRight size={16} />
+              فتح رابط الإعادة <ArrowRight size={16} />
             </a>
           )}
 
@@ -156,8 +156,7 @@ export function ForgotPasswordPage() {
               lineHeight: 1.6,
             }}
           >
-            Didn't receive it? Check your spam folder or try again in a few
-            minutes.
+            لم تستلمه؟ تحقق من مجلد البريد المزعج أو حاول مجدداً بعد دقائق.
           </p>
 
           <Link
@@ -172,7 +171,7 @@ export function ForgotPasswordPage() {
               textDecoration: "none",
             }}
           >
-            <ArrowLeft size={14} /> Back to Sign In
+            <ArrowLeft size={14} /> العودة لتسجيل الدخول
           </Link>
         </div>
       </div>
@@ -212,7 +211,7 @@ export function ForgotPasswordPage() {
             color: "var(--text-primary)",
           }}
         >
-          Plasticon
+          لاميكو
         </span>
       </div>
 
@@ -241,7 +240,7 @@ export function ForgotPasswordPage() {
             lineHeight: 1.2,
           }}
         >
-          Forgot your password?
+          نسيت كلمة المرور؟
         </h1>
         <p
           style={{
@@ -251,8 +250,7 @@ export function ForgotPasswordPage() {
             lineHeight: 1.65,
           }}
         >
-          No worries — enter your work email and we'll send you a secure reset
-          link.
+          لا تقلق — أدخل بريدك الإلكتروني وسنرسل لك رابط إعادة تعيين آمن.
         </p>
       </div>
 
@@ -260,7 +258,7 @@ export function ForgotPasswordPage() {
       <form className="auth-form" onSubmit={handleSubmit} noValidate>
         <div className="form-group">
           <label className="auth-label" htmlFor="forgot-email">
-            Work email address
+            بريدك الإلكتروني للعمل
           </label>
           <div className="auth-input-wrapper">
             <Mail size={16} className="auth-input-icon" />
@@ -268,7 +266,7 @@ export function ForgotPasswordPage() {
               id="forgot-email"
               type="email"
               className={`auth-input${error ? " auth-input--error" : ""}`}
-              placeholder="you@company.com"
+              placeholder="بريدك@الشركة.com"
               autoComplete="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -306,7 +304,7 @@ export function ForgotPasswordPage() {
                 className="spinner"
                 style={{ width: 16, height: 16, borderTopColor: "#fff" }}
               />
-              Sending reset link…
+              جاري إرسال الرابط...
             </span>
           ) : (
             <span
@@ -317,7 +315,7 @@ export function ForgotPasswordPage() {
                 gap: ".5rem",
               }}
             >
-              Send Reset Link <ArrowRight size={16} />
+              إرسال رابط الاستعادة <ArrowRight size={16} />
             </span>
           )}
         </button>
@@ -336,8 +334,7 @@ export function ForgotPasswordPage() {
           lineHeight: 1.6,
         }}
       >
-        🔒 The reset link expires in <strong>15 minutes</strong> and can only be
-        used once.
+        🔒 رابط الاستعادة ينتهي خلال <strong>15 دقيقة</strong> ويمكن استخدامه مرة واحدة فقط.
       </div>
 
       {/* Footer */}
@@ -349,7 +346,7 @@ export function ForgotPasswordPage() {
           color: "var(--text-secondary)",
         }}
       >
-        Remember your password?{" "}
+        تتذكر كلمة المرور؟{" "}
         <Link
           to="/login"
           style={{
@@ -358,7 +355,7 @@ export function ForgotPasswordPage() {
             textDecoration: "none",
           }}
         >
-          Back to Sign In
+          العودة لتسجيل الدخول
         </Link>
       </p>
     </div>
